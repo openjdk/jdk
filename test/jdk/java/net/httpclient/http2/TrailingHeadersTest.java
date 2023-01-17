@@ -153,8 +153,18 @@ public class TrailingHeadersTest {
             this.sendResponseHeaders(200, resp.length);
             DataFrame dataFrame = new DataFrame(this.streamid, 0, ByteBuffer.wrap(resp));
             this.conn.outputQ.put(dataFrame);
-            int flags = HeaderFrame.END_HEADERS & HeaderFrame.END_STREAM;
-            HeaderFrame headerFrame = new HeadersFrame(this.streamid, flags, List.of());
+
+            // Encoding sample headers here can intermittently cause an IllegalStateException as the encoder may be busy.
+            // Leaving the code commented out here as it can be useful to observe how Trailing Headers appear in the log.
+            /*
+            HttpHeadersBuilder hb = this.conn.createNewHeadersBuilder();
+            hb.setHeader("x-sample", "val");
+            HeaderFrame headerFrame = new HeadersFrame(this.streamid, 0, this.conn.encodeHeaders(hb.build()));
+            */
+
+            HeaderFrame headerFrame = new HeadersFrame(this.streamid, 0, List.of());
+            headerFrame.setFlag(HeaderFrame.END_HEADERS);
+            headerFrame.setFlag(HeaderFrame.END_STREAM);
             this.conn.outputQ.put(headerFrame);
         }
     }
@@ -175,6 +185,9 @@ public class TrailingHeadersTest {
                 if (exchange instanceof TrailingHeadersExchange trailingHeadersExchange) {
                     trailingHeadersExchange.sendResponseThenTrailers();
                 }
+            } else {
+                testLog.println(this.getClass().getCanonicalName() + ": Incorrect protocol version");
+                exchange.sendResponseHeaders(400, 0);
             }
         }
     }
@@ -185,7 +198,7 @@ public class TrailingHeadersTest {
         public void handle(Http2TestExchange exchange) throws IOException {
             if (exchange.getProtocol().equals("HTTP/2")) {
                 if (exchange instanceof TrailingHeadersExchange trailingHeadersExchange) {
-                    testLog.println(this.getClass().getCanonicalName() + ": InformationalTrailersHandler: Sending status 100");
+                    testLog.println(this.getClass().getCanonicalName() + ": Sending status 100");
                     trailingHeadersExchange.sendResponseHeaders(100, 0);
 
                     try (InputStream is = exchange.getRequestBody()) {
@@ -194,7 +207,7 @@ public class TrailingHeadersTest {
                     }
                 }
             } else {
-                testLog.println(this.getClass().getCanonicalName() + ": InformationalTrailersHandler: Incorrect protocol version");
+                testLog.println(this.getClass().getCanonicalName() + ": Incorrect protocol version");
                 exchange.sendResponseHeaders(400, 0);
             }
         }
