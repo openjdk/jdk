@@ -37,6 +37,8 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
 
+#include <type_traits>
+
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
 // 2^2  = 4 buckets
@@ -502,7 +504,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     Bucket* prefetch_bucket = (bucket_it+1) < stop_idx ?
                               table->get_bucket(bucket_it+1) : NULL;
 
-    if (!HaveDeletables<IsPointer<VALUE>::value, EVALUATE_FUNC>::
+    if (!HaveDeletables<std::is_pointer<VALUE>::value, EVALUATE_FUNC>::
         have_deletable(bucket, eval_f, prefetch_bucket)) {
         // Nothing to remove in this bucket.
         continue;
