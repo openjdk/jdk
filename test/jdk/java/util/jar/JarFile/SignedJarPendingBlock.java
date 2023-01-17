@@ -42,7 +42,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-public class PendingBlocksJar {
+public class SignedJarPendingBlock {
 
     public static void main(String[] args) throws Exception {
         Path jar = createJarFile();
