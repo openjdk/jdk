@@ -76,6 +76,12 @@ public class CustomApproveButtonTest {
             if (customApproveButton.getText() == null) {
                 throw new RuntimeException("Approve button text is null in FileChooser!");
             }
+            if (customApproveButton.getToolTipText() == null) {
+                throw new RuntimeException("Approve button tooptip is null in FileChooser!");
+            }
+            if (customApproveButton.getMnemonic() != 0) {
+                throw new RuntimeException("Approve button mnemonic is non-zero in FileChooser!");
+            }
         } finally {
             if (frame != null) {
                 frame.dispose();
