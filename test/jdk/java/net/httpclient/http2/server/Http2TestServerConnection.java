@@ -961,6 +961,13 @@ public class Http2TestServerConnection {
             try {
                 ResponseHeaders oh = getPushResponse(promisedStreamid);
                 outputQ.put(oh);
+
+                // For testing the client-side effects of sending trailing headers after Push Promise response headers
+                if (properties.getProperty("TrailingHeadersTest.sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
+                    System.err.println("Sending trailing headers after push promise response headers");
+                    outputQ.put(getTrailingHeadersFrame(promisedStreamid));
+                }
+
                 ii.transferTo(oo);
             } catch (Throwable ex) {
                 System.err.printf("TestServer: pushing response error: %s\n",
@@ -971,6 +978,16 @@ public class Http2TestServerConnection {
             }
         });
 
+    }
+
+    private HeadersFrame getTrailingHeadersFrame(int promisedStreamid) {
+        /*
+        HttpHeadersBuilder hb = createNewHeadersBuilder();
+        hb.addHeader("x-trailing-header", "trailing-value");
+        HttpHeaders headers = hb.build();
+        */
+        // TODO: see if there is a safe way to encode headers without interrupting connection thread
+        return new HeadersFrame(promisedStreamid, HeaderFrame.END_HEADERS, List.of());
     }
 
     // returns a minimal response with status 200
