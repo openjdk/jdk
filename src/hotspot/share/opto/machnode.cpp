@@ -208,7 +208,6 @@ const RegMask &MachNode::in_RegMask( uint idx ) const {
     skipped += num_edges;
     opcnt++;                          // Bump operand count
     assert( opcnt < numopnds, "Accessing non-existent operand" );
-
     num_edges = _opnds[opcnt]->num_edges(); // leaves for next operand
   }
 
