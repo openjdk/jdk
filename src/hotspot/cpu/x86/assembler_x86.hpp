@@ -1873,6 +1873,8 @@ private:
   void pmovzxdq(XMMRegister dst, XMMRegister src);
   void vpmovzxdq(XMMRegister dst, XMMRegister src, int vector_len);
   void evpmovzxbw(XMMRegister dst, KRegister mask, Address src, int vector_len);
+  void evpmovzxbd(XMMRegister dst, KRegister mask, Address src, int vector_len);
+  void evpmovzxbd(XMMRegister dst, Address src, int vector_len);
 
   // Sign extend moves
   void pmovsxbd(XMMRegister dst, XMMRegister src);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2021, 2023, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -33,9 +33,11 @@
 
 #define __ _masm->
 
-ATTRIBUTE_ALIGNED(32) juint ADLER32_ASCALE_TABLE[] = {
+ATTRIBUTE_ALIGNED(64) juint ADLER32_ASCALE_TABLE[] = {
     0x00000000UL, 0x00000001UL, 0x00000002UL, 0x00000003UL,
-    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL
+    0x00000004UL, 0x00000005UL, 0x00000006UL, 0x00000007UL,
+    0x00000008UL, 0x00000009UL, 0x0000000AUL, 0x0000000BUL,
+    0x0000000CUL, 0x0000000DUL, 0x0000000EUL, 0x0000000FUL
 };
 
 ATTRIBUTE_ALIGNED(32) juint ADLER32_SHUF0_TABLE[] = {
@@ -67,11 +69,13 @@ address StubGenerator::generate_updateBytesAdler32() {
   StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
   address start = __ pc();
 
+  // Choose an appropriate LIMIT for inner loop based on the granularity
+  // of intermediate results. For int, LIMIT of 5552 will ensure intermediate
+  // results does not overflow Integer.MAX_VALUE before modulo operations.
   const int LIMIT = 5552;
   const int BASE = 65521;
   const int CHUNKSIZE =  16;
   const int CHUNKSIZE_M1 = CHUNKSIZE - 1;
-
 
   const Register init_d = c_rarg0;
   const Register data = r9;
@@ -101,17 +105,21 @@ address StubGenerator::generate_updateBytesAdler32() {
   const XMMRegister xtmp1 = xmm3;
   const XMMRegister xsa = xmm4;
   const XMMRegister xtmp2 = xmm5;
+  const XMMRegister xtmp3 = xmm8;
+  const XMMRegister xtmp4 = xmm9;
+  const XMMRegister xtmp5 = xmm10;
 
-  Label SLOOP1, SLOOP1A, SKIP_LOOP_1A, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
+  Label SLOOP1, SPRELOOP1A_AVX2, SLOOP1A_AVX2, SLOOP1A_AVX3, SKIP_LOOP_1A, SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
+  __ movq(xtmp3, r12);
+  __ movq(xtmp4, r13);
+  __ movq(xtmp5, r14);
 
   __ vmovdqu(yshuf0, ExternalAddress((address)ADLER32_SHUF0_TABLE), r14 /*rscratch*/);
   __ vmovdqu(yshuf1, ExternalAddress((address)ADLER32_SHUF1_TABLE), r14 /*rscratch*/);
+
   __ movptr(data, c_rarg1); //data
   __ movl(size, c_rarg2); //length
 
@@ -121,7 +129,6 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ cmpl(size, 32);
   __ jcc(Assembler::below, LT64);
   __ movdl(xa, init_d); //vmovd - 32bit
-  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
 
   __ bind(SLOOP1);
   __ movl(s, LIMIT);
@@ -132,28 +139,72 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ jcc(Assembler::aboveEqual, SKIP_LOOP_1A);
 
   __ align32();
-  __ bind(SLOOP1A);
-  __ vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
-  __ addptr(data, CHUNKSIZE);
-  __ vpshufb(ydata0, ydata, yshuf0, Assembler::AVX_256bit);
-  __ vpaddd(ya, ya, ydata0, Assembler::AVX_256bit);
-  __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
-  __ vpshufb(ydata1, ydata, yshuf1, Assembler::AVX_256bit);
-  __ vpaddd(ya, ya, ydata1, Assembler::AVX_256bit);
-  __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
-  __ cmpptr(data, end);
-  __ jcc(Assembler::below, SLOOP1A);
+  if (VM_Version::supports_avx512vl()) {
+    __ cmpl(s, VM_Version::avx3_threshold());
+    __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
+    // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
+    __ cmpl(s, 128);
+    __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
+    __ vpxor(yb, yb, yb, Assembler::AVX_512bit);
+
+    __ bind(SLOOP1A_AVX3);
+      __ evpmovzxbd(ydata, Address(data, 0), Assembler::AVX_512bit);
+      __ vpaddd(ya, ya, ydata, Assembler::AVX_512bit);
+      __ vpaddd(yb, yb, ya, Assembler::AVX_512bit);
+      __ addptr(data, CHUNKSIZE);
+      __ cmpptr(data, end);
+      __ jcc(Assembler::below, SLOOP1A_AVX3);
+
+    __ vpslld(yb, yb, 4, Assembler::AVX_512bit); //b is scaled by 16(avx512))
+    __ vpmulld(ysa, ya, ExternalAddress((address)ADLER32_ASCALE_TABLE), Assembler::AVX_512bit, r14 /*rscratch*/);
+
+    // compute horizontal sums of ya, yb, ysa
+    __ vextracti64x4(xtmp0, ya, 1);
+    __ vextracti64x4(xtmp1, yb, 1);
+    __ vextracti64x4(xtmp2, ysa, 1);
+    __ vpaddd(xtmp0, xtmp0, ya, Assembler::AVX_256bit);
+    __ vpaddd(xtmp1, xtmp1, yb, Assembler::AVX_256bit);
+    __ vpaddd(xtmp2, xtmp2, ysa, Assembler::AVX_256bit);
+    __ vextracti128(xa, xtmp0, 1);
+    __ vextracti128(xb, xtmp1, 1);
+    __ vextracti128(xsa, xtmp2, 1);
+    __ vpaddd(xa, xa, xtmp0, Assembler::AVX_128bit);
+    __ vpaddd(xb, xb, xtmp1, Assembler::AVX_128bit);
+    __ vpaddd(xsa, xsa, xtmp2, Assembler::AVX_128bit);
+    __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
+    __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
+    __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
+    __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
+    __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
+    __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
+
+    __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
+
+    __ addptr(end, CHUNKSIZE_M1);
+    __ testl(s, CHUNKSIZE_M1);
+    __ jcc(Assembler::notEqual, DO_FINAL);
+    __ jmp(SKIP_LOOP_1A_AVX3);
+  }
+
+  __ align32();
+  __ bind(SPRELOOP1A_AVX2);
+  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
+  __ bind(SLOOP1A_AVX2);
+    __ vbroadcastf128(ydata, Address(data, 0), Assembler::AVX_256bit);
+    __ addptr(data, CHUNKSIZE);
+    __ vpshufb(ydata0, ydata, yshuf0, Assembler::AVX_256bit);
+    __ vpaddd(ya, ya, ydata0, Assembler::AVX_256bit);
+    __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
+    __ vpshufb(ydata1, ydata, yshuf1, Assembler::AVX_256bit);
+    __ vpaddd(ya, ya, ydata1, Assembler::AVX_256bit);
+    __ vpaddd(yb, yb, ya, Assembler::AVX_256bit);
+    __ cmpptr(data, end);
+    __ jcc(Assembler::below, SLOOP1A_AVX2);
 
   __ bind(SKIP_LOOP_1A);
-  __ addptr(end, CHUNKSIZE_M1);
-  __ testl(s, CHUNKSIZE_M1);
-  __ jcc(Assembler::notEqual, DO_FINAL);
-
-  // either we're done, or we just did LIMIT
-  __ subl(size, s);
 
   // reduce
-  __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8
+  __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8(avx)
   __ vpmulld(ysa, ya, ExternalAddress((address)ADLER32_ASCALE_TABLE), Assembler::AVX_256bit, r14 /*rscratch*/);
 
   // compute horizontal sums of ya, yb, ysa
@@ -170,13 +221,22 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
   __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
 
+  __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
+
+  __ addptr(end, CHUNKSIZE_M1);
+  __ testl(s, CHUNKSIZE_M1);
+  __ jcc(Assembler::notEqual, DO_FINAL);
+
+  __ bind(SKIP_LOOP_1A_AVX3);
+  // either we're done, or we just did LIMIT
+  __ subl(size, s);
+
   __ movdl(rax, xa);
   __ xorl(rdx, rdx);
   __ movl(rcx, BASE);
   __ divl(rcx); // divide edx:eax by ecx, quot->eax, rem->edx
   __ movl(a_d, rdx);
 
-  __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
   __ movdl(rax, xb);
   __ addl(rax, b_d);
   __ xorl(rdx, rdx);
@@ -189,7 +249,6 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   // continue loop
   __ movdl(xa, a_d);
-  __ vpxor(yb, yb, yb, Assembler::AVX_256bit);
   __ jmp(SLOOP1);
 
   __ bind(FINISH);
@@ -205,26 +264,7 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ jcc(Assembler::notZero, FINAL_LOOP);
   __ jmp(ZERO_SIZE);
 
-  // handle remaining 1...15 bytes
   __ bind(DO_FINAL);
-  // reduce
-  __ vpslld(yb, yb, 3, Assembler::AVX_256bit); //b is scaled by 8
-  __ vpmulld(ysa, ya, ExternalAddress((address)ADLER32_ASCALE_TABLE), Assembler::AVX_256bit, r14 /*rscratch*/); //scaled a
-
-  __ vextracti128(xtmp0, ya, 1);
-  __ vextracti128(xtmp1, yb, 1);
-  __ vextracti128(xtmp2, ysa, 1);
-  __ vpaddd(xa, xa, xtmp0, Assembler::AVX_128bit);
-  __ vpaddd(xb, xb, xtmp1, Assembler::AVX_128bit);
-  __ vpaddd(xsa, xsa, xtmp2, Assembler::AVX_128bit);
-  __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-  __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-  __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-  __ vphaddd(xa, xa, xa, Assembler::AVX_128bit);
-  __ vphaddd(xb, xb, xb, Assembler::AVX_128bit);
-  __ vphaddd(xsa, xsa, xsa, Assembler::AVX_128bit);
-  __ vpsubd(xb, xb, xsa, Assembler::AVX_128bit);
-
   __ movdl(a_d, xa);
   __ movdl(rax, xb);
   __ addl(b_d, rax);
@@ -255,9 +295,10 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ movl(rax, rdx);
 
   __ bind(END);
-  __ pop(r14);
-  __ pop(r13);
-  __ pop(r12);
+
+  __ movq(r14, xtmp5);
+  __ movq(r13, xtmp4);
+  __ movq(r12, xtmp3);
 
   __ leave();
   __ ret(0);
