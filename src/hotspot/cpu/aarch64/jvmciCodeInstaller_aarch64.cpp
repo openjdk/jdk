@@ -90,6 +90,10 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   if (inst->is_adr_aligned() || inst->is_ldr_literal()
       || (NativeInstruction::maybe_cpool_ref(pc))) {
     address dest = _constants->start() + data_offset;
+    if (_nmethod_entry_patch_offset == pc_offset) {
+      // Remember the offset into constants
+      _nmethod_entry_patch_offset = data_offset;
+    }
     _instructions->relocate(pc, section_word_Relocation::spec((address) dest, CodeBuffer::SECT_CONSTS));
     JVMCI_event_3("relocating at " PTR_FORMAT " (+%d) with destination at %d", p2i(pc), pc_offset, data_offset);
   } else {
@@ -122,27 +126,28 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
+  NativeCall* call = NULL;
   switch (_next_call_type) {
     case INLINE_INVOKE:
-      break;
+      return;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE: {
       assert(!method->is_static(), "cannot call static method with invokeinterface");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), virtual_call_Relocation::spec(_invoke_mark_pc));
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_virtual_call_stub());
       break;
     }
     case INVOKESTATIC: {
       assert(method->is_static(), "cannot call non-static method with invokestatic");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::static_call_type);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_static_call_stub());
       break;
     }
     case INVOKESPECIAL: {
       assert(!method->is_static(), "cannot call static method with invokespecial");
-      NativeCall* call = nativeCall_at(_instructions->start() + pc_offset);
+      call = nativeCall_at(_instructions->start() + pc_offset);
       _instructions->relocate(call->instruction_address(), relocInfo::opt_virtual_call_type);
       call->trampoline_jump(cbuf, SharedRuntime::get_resolve_opt_virtual_call_stub());
       break;
@@ -150,6 +155,15 @@ void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& metho
     default:
       JVMCI_ERROR("invalid _next_call_type value");
       break;
+  }
+  if (Continuations::enabled()) {
+    // Check for proper post_call_nop
+    NativePostCallNop* nop = nativePostCallNop_at(call->next_instruction_address());
+    if (nop == NULL) {
+      JVMCI_ERROR("missing post call nop at offset %d", pc_offset);
+    } else {
+      _instructions->relocate(call->next_instruction_address(), relocInfo::post_call_nop_type);
+    }
   }
 }
 

@@ -28,6 +28,9 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
+#if INCLUDE_JVMCI
+#include "utilities/formatBuffer.hpp"
+#endif
 
 class nmethod;
 
@@ -55,6 +58,10 @@ public:
   void set_guard_value(nmethod* nm, int value);
 
   void arm_all_nmethods();
+
+#if INCLUDE_JVMCI
+  bool verify_barrier(nmethod* nm, FormatBuffer<>& msg);
+#endif
 };
 
 

@@ -59,6 +59,4 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // Define the condition to use this -XX flag.
 #define USE_POLL_BIT_ONLY UseSIGTRAP
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
 #endif // CPU_PPC_GLOBALDEFINITIONS_PPC_HPP

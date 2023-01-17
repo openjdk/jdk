@@ -1478,9 +1478,9 @@ jlong JVMCIEnv::make_oop_handle(const Handle& obj) {
 
 oop JVMCIEnv::resolve_oop_handle(jlong oopHandle) {
   assert(oopHandle != 0, "should be a valid handle");
-  oop obj = *((oopDesc**) oopHandle);
+  oop obj = NativeAccess<>::oop_load(reinterpret_cast<oop*>(oopHandle));
   if (obj != NULL) {
-    oopDesc::verify(obj);
+    guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
   }
   return obj;
 }

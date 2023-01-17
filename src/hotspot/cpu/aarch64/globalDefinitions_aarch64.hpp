@@ -58,8 +58,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
 #if defined(__APPLE__) || defined(_WIN64)
 #define R18_RESERVED
 #define R18_RESERVED_ONLY(code) code

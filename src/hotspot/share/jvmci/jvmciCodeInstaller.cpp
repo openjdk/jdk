@@ -27,6 +27,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciRuntime.hpp"
@@ -379,7 +380,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
   if (obj == nullptr) {
     JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly NULL", Handle());
   } else {
-    oopDesc::verify(obj);
+    guarantee(oopDesc::is_oop_or_null(obj), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
   }
   return Handle(stream->thread(), obj);
 }
@@ -727,6 +728,11 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
       JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode object must be a HotSpotNmethod when installing a HotSpotCompiledNmethod", JVMCI::ok);
     }
 
+    if (UseZGC && _nmethod_entry_patch_offset == -1) {
+      // ZGC requires the use of entry barriers for correctness
+      JVMCI_THROW_MSG_(IllegalArgumentException, "InstalledCode entry barrier is missing", JVMCI::ok);
+    }
+
     JVMCIObject mirror = installed_code;
     nmethod* nm = NULL; // nm is an out parameter of register_method
     result = runtime()->register_method(jvmci_env(),
@@ -751,7 +757,8 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         mirror,
                                         failed_speculations,
                                         speculations,
-                                        speculations_len);
+                                        speculations_len,
+                                        _nmethod_entry_patch_offset);
     if (result == JVMCI::ok) {
       cb = nm;
       if (compile_state == NULL) {
@@ -759,6 +766,20 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
         nm->maybe_print_nmethod(directive);
         DirectivesStack::release(directive);
+      }
+
+      if (nm != nullptr) {
+        if (_nmethod_entry_patch_offset != -1) {
+          BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+          if (bs_nm == nullptr) {
+            JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is not required", JVMCI::ok);
+          }
+
+          FormatBuffer<> msg("%s", "");
+          if (!bs_nm->verify_barrier(nm, msg)) {
+            JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
+          }
+        }
       }
     }
   }
@@ -804,7 +825,9 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   }
   _constants_size = data_section_size;
   _next_call_type = INVOKE_INVALID;
+  _has_monitors = false;
   _has_wide_vector = false;
+  _nmethod_entry_patch_offset = -1;
 }
 
 u1 CodeInstaller::as_read_oop_tag(HotSpotCompiledCodeStream* stream, u1 patch_object_tag, JVMCI_TRAPS) {
@@ -1253,6 +1276,9 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
       break;
     case FRAME_COMPLETE:
       _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
+      break;
+    case ENTRY_BARRIER_PATCH:
+      _nmethod_entry_patch_offset = pc_offset;
       break;
     case INVOKEVIRTUAL:
     case INVOKEINTERFACE:
