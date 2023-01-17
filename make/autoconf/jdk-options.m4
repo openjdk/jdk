@@ -410,7 +410,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 [
-  UTIL_ARG_ENABLE(NAME: asan, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: asan, DEFAULT: false, RESULT: ASAN_ENABLED,
       DESC: [enable AddressSanitizer],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
@@ -426,7 +426,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # ASan is simply incompatible with gcc -Wstringop-truncation. See
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer"
+        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -DADDRESS_SANITIZER"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -436,10 +436,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
-        ASAN_ENABLED="yes"
-      ],
-      IF_DISABLED: [
-        ASAN_ENABLED="no"
       ])
 
   AC_SUBST(ASAN_ENABLED)
