@@ -4453,6 +4453,13 @@ void PhaseIdealLoop::build_and_optimize() {
     C->restore_major_progress(old_progress);
     return;
   }
+  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+    IdealLoopTree* lpt = iter.current();
+    if (lpt->is_innermost() && lpt->is_counted()) {
+      lpt->_head->as_CountedLoop()->clear_has_been_range_checks();
+      lpt->_head->as_CountedLoop()->clear_has_range_checks();
+    }
+  }
 
   if (do_max_unroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
