@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1835,6 +1835,15 @@ public final class Main {
             // Check whether a specific PBE algorithm was specified
             if (!"PBE".equalsIgnoreCase(keyAlgName)) {
                 useDefaultPBEAlgorithm = false;
+            }
+
+            String[] weakAlgs = new String[] {"DES", "DESEDE", "MD5", "SHA1", "RC2", "RC4"};
+            boolean isWeak = Arrays.stream(weakAlgs).anyMatch(
+                    keyAlgName.toUpperCase(Locale.ENGLISH)::contains);
+            if (isWeak) {
+                weakWarnings.add(String.format(
+                        rb.getString("key.algorithm.weak"),
+                        rb.getString("the.generated.secretkey"), keyAlgName));
             }
 
             if (verbose) {
