@@ -59,7 +59,7 @@ public class Juggle01 extends ThreadedGCTest implements GarbageProducerAware, Me
         private class Juggler implements Runnable {
                 public void run() {
                         int index = LocalRandom.nextInt(array.length);
-                        // Synchronizing on array object would reduce the concurrency.
+                        // Synchronizing to prevent multiple object creation for the same index at the same time.
                         synchronized (indexLocks[index]) {
                                 array[index] = null;
                                 array[index] = garbageProducer.create(objectSize);
