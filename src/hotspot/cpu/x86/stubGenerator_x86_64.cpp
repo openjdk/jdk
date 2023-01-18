@@ -2763,8 +2763,28 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
+    Label L_bigOK, L_continue;
+    __ cmpl(len, 384);
+    __ jcc(Assembler::above, L_bigOK);
+#ifdef _WIN64
+    __ push(y);
+    __ push(z);
+#endif
+    __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                            a, j, k,
+                            l, y, z,
+                            c_farg0, c_farg1, c_farg2,
+                            is_pclmulqdq_supported);
+#ifdef _WIN64
+    __ pop(z);
+    __ pop(y);
+#endif
+    __ jmp(L_continue);
+
+    __ bind(L_bigOK);
     __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
     __ kernel_crc32_avx512(crc, buf, len, j, l, k);
+    __ bind(L_continue);
   } else {
 #ifdef _WIN64
     __ push(y);
