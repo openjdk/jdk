@@ -59,7 +59,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-public class VerifyUnrelatedSignatureFiles {
+public class IgnoreUnrelatedSignatureFiles {
 
     private static final JavaUtilZipFileAccess JUZA = SharedSecrets.getJavaUtilZipFileAccess();
 
