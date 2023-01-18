@@ -962,13 +962,14 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @return boolean indicating whether this {@code BitSet} includes
      *         the specified {@code BitSet}
      * @since  21
+     * @author Fabio Romano
      */
     public boolean includes(BitSet set) {
         if (set.cardinality > cardinality || set.length() > length())
             return false;
         
         // set.wordsInUse <= wordsInUse
-        for (int i = set.wordsInUse - 1; i >= 0; i--)
+        for (int i = 0; i < set.wordsInUse; i++)
             if ((~set.words[i] | words[i]) != WORD_MASK) // Perform logical (!a | b) on words in common
                 return false;
         return true;
