@@ -175,9 +175,13 @@ public class IgnoreUnrelatedSignatureFiles {
 
             // These files are not signature-related and should be signed
             Set<String> expectedSigned = Set.of("a.txt",
+                    "META-INF/unrelated.txt",
                     "META-INF/SIG-CUSTOM2.C-1",
+                    "META-INF/SIG-CUSTOM2.",
+                    "META-INF/SIG-CUSTOM2.ABCD",
                     "META-INF/subdirectory/SIG-CUSTOM2.SF",
-                    "META-INF/subdirectory/SIG-CUSTOM2.CS1");
+                    "META-INF/subdirectory/SIG-CUSTOM2.CS1"
+            );
 
             Set<String> actualSigned = jf.getManifest().getEntries().keySet();
 
@@ -258,15 +262,21 @@ public class IgnoreUnrelatedSignatureFiles {
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar), manifest)) {
             // Regular file
             write(out, "a.txt", "a");
-            // Custom SIG files with valid extension
+            // Regular file in META-INF
+            write(out, "META-INF/unrelated.txt", "a");
+
+            // Custom SIG files with valid extension (no extension is also OK)
             write(out, "META-INF/SIG-CUSTOM.SF", "");
             write(out, "META-INF/SIG-CUSTOM.CS1", "");
+            write(out, "META-INF/SIG-CUSTOM", "");
 
-            // Custom SIG files with invalid extension
+            // Custom SIG files with invalid extensions
             write(out, "META-INF/SIG-CUSTOM2.SF", "");
             write(out, "META-INF/SIG-CUSTOM2.C-1", "");
+            write(out, "META-INF/SIG-CUSTOM2.", "");
+            write(out, "META-INF/SIG-CUSTOM2.ABCD", "");
 
-            // Custom SIG files with valid extension, invalid directory
+            // Custom SIG files with valid extensions in subdirectories
             write(out, "META-INF/subdirectory/SIG-CUSTOM2.SF", "");
             write(out, "META-INF/subdirectory/SIG-CUSTOM2.CS1", "");
 
