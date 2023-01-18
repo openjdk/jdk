@@ -1056,7 +1056,7 @@ var getJibProfilesDependencies = function (input, common) {
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
         linux_s390x: "gcc8.2.0-Fedora27+1.0",
-        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.0"
+        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
