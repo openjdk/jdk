@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -181,6 +181,7 @@ class MacroAssembler: public Assembler {
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
@@ -1328,8 +1329,6 @@ public:
     jalr(x0, x1, 0);
   }
 
-private:
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below), when a set of Labels must
@@ -1343,6 +1342,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+
   void repne_scan(Register addr, Register value, Register count, Register tmp);
 
   // Return true if an address is within the 48-bit RISCV64 address space.

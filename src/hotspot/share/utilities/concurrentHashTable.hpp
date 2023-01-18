@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/tableStatistics.hpp"
 
 // A mostly concurrent-hash-table where the read-side is wait-free, inserts are
@@ -271,8 +272,17 @@ class ConcurrentHashTable : public CHeapObj<F> {
   };
 
 
-  // Max number of deletes in one bucket chain during bulk delete.
-  static const size_t BULK_DELETE_LIMIT = 256;
+  // When doing deletes, we need to store the pointers until the next
+  // visible epoch.  In the normal case (good hash function and
+  // reasonable sizing), we can save these pointers on the stack
+  // (there should not be more than a few entries per bucket). But if
+  // the hash function is bad and/or the sizing of the table is bad,
+  // we can not use a fixed size stack buffer alone. We will use a
+  // heap buffer as fall-back when the stack is not enough, and then
+  // we have to pay for a dynamic allocation.  `StackBufferSize` tells
+  // the size of optimistic stack buffer that will almost always be
+  // used.
+  static const size_t StackBufferSize = 256;
 
   // Simple getters and setters for the internal table.
   InternalTable* get_table() const;
@@ -349,7 +359,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // Check for dead items in a bucket.
   template <typename EVALUATE_FUNC>
   size_t delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
-                            size_t num_del, Node** ndel);
+                            size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, F>& ndel_heap);
 
   // Check for dead items in this table. During shrink/grow we cannot guarantee
   // that we only visit nodes once. To keep it simple caller will have locked

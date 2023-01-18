@@ -171,32 +171,12 @@ static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
-  // The patching epoch is incremented before the nmethod is disarmed. Disarming
-  // is performed with a release store. In the nmethod entry barrier, the values
-  // are read in the opposite order, such that the load of the nmethod guard
-  // acquires the patching epoch. This way, the guard is guaranteed to block
-  // entries to the nmethod, util it has safely published the requirement for
-  // further fencing by mutators, before they are allowed to enter.
-  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs_asm->increment_patching_epoch();
-
-  // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
-  // Symmetric "LD; FENCE IR, IR" is in the nmethod barrier.
-  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(nm, disarmed_value());
-}
-
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
-  if (!supports_entry_barrier(nm)) {
-    return;
-  }
-
-  if (arm_value == disarmed_value()) {
+  if (value == disarmed_guard_value()) {
     // The patching epoch is incremented before the nmethod is disarmed. Disarming
     // is performed with a release store. In the nmethod entry barrier, the values
     // are read in the opposite order, such that the load of the nmethod guard
@@ -208,14 +188,14 @@ void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
   }
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  barrier->set_value(nm, arm_value);
+  barrier->set_value(nm, value);
 }
 
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
+int BarrierSetNMethod::guard_value(nmethod* nm) {
   if (!supports_entry_barrier(nm)) {
-    return false;
+    return disarmed_guard_value();
   }
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  return barrier->get_value(nm) != disarmed_value();
+  return barrier->get_value(nm);
 }

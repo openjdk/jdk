@@ -880,11 +880,13 @@ unsigned int FileMapInfo::longest_common_app_classpath_prefix_len(int num_paths,
       if (rp_array->at(i)[pos] != '\0' && rp_array->at(i)[pos] == rp_array->at(0)[pos]) {
         continue;
       }
-
       // search backward for the pos before the file separator char
-      while (pos > 0 && rp_array->at(0)[--pos] != *os::file_separator());
-      // return the file separator char position
-      return pos + 1;
+      while (pos > 0) {
+        if (rp_array->at(0)[--pos] == *os::file_separator()) {
+          return pos + 1;
+        }
+      }
+      return 0;
     }
   }
   return 0;
@@ -1022,8 +1024,12 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       //     java -Xshare:auto -cp /x/y/Foo.jar:/x/y/b/Bar.jar  ...
       unsigned int dumptime_prefix_len = header()->common_app_classpath_prefix_size();
       unsigned int runtime_prefix_len = longest_common_app_classpath_prefix_len(shared_app_paths_len, rp_array);
-      mismatch = check_paths(j, shared_app_paths_len, rp_array,
-                             dumptime_prefix_len, runtime_prefix_len);
+      if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
+        log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
+                              dumptime_prefix_len, runtime_prefix_len);
+        mismatch = check_paths(j, shared_app_paths_len, rp_array,
+                               dumptime_prefix_len, runtime_prefix_len);
+      }
       if (mismatch) {
         return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }

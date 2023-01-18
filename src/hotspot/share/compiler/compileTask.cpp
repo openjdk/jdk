@@ -176,7 +176,7 @@ void CompileTask::mark_on_stack() {
 }
 
 bool CompileTask::is_unloaded() const {
-  return _method_holder != NULL && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_global_weak_cleared(_method_holder);
+  return _method_holder != NULL && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
 }
 
 // RedefineClasses support

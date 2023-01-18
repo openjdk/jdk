@@ -228,12 +228,15 @@ class ResourceHashtableBase : public STORAGE {
   void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
+    int cnt = _number_of_entries;
+
+    while (cnt > 0 && bucket < bucket_at(sz)) {
       Node* node = *bucket;
       while (node != nullptr) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
+        --cnt;
       }
       ++bucket;
     }

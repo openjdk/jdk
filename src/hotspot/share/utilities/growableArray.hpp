@@ -514,7 +514,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
 template <typename E, typename Derived>
 void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
   // grow the array by increasing _capacity to the first power of two larger than the size we need
-  expand_to(next_power_of_2((uint32_t)j));
+  expand_to(next_power_of_2(j));
 }
 
 template <typename E, typename Derived>
