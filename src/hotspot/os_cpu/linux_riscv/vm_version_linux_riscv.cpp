@@ -106,7 +106,7 @@ void VM_Version::get_isa() {
   while (isa_ext != NULL) {
     // special case for rv64* string
     if (strncmp(isa_ext, "rv64", sizeof "rv64" - 1) == 0) {
-      const char* base_ext = strdup(isa_ext + 4); // skip "rv64"
+      const char* base_ext = os::strdup(isa_ext + 4); // skip "rv64"
       int i = 0;
       while (base_ext[i] != '\0') {
         const char ch = base_ext[i++];
