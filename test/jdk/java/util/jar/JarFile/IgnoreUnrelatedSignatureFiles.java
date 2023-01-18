@@ -38,11 +38,7 @@ import jdk.security.jarsigner.JarSigner;
 import sun.security.tools.jarsigner.Main;
 import sun.security.util.SignatureFileVerifier;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,6 +51,7 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -75,10 +72,17 @@ public class IgnoreUnrelatedSignatureFiles {
 
     public static void main(String[] args) throws Exception {
 
+        // Regular signed JAR
         Path j = createJarFile();
         Path s = signJarFile(j, "SIGNER1", "signed");
+
+        // Singed JAR with unrelated signature files
         Path m = moveSignatureRelated(s);
         Path sm = signJarFile(m, "SIGNER2", "modified-signed");
+
+        // Signed JAR with custom SIG-* files
+        Path ca = createCustomAlgJar();
+        Path cas = signJarFile(ca, "SIGNER1", "custom-signed");
 
         // 0: Sanity check that the basic signed JAR verifies
         try (JarFile jf = new JarFile(s.toFile(), true)) {
@@ -165,6 +169,23 @@ public class IgnoreUnrelatedSignatureFiles {
         if (message.contains("WARNING")) {
             throw new Exception("jarsigner output contains unexpected  warning: " +message);
         }
+
+        // 8: Check that SignatureFileVerifier.isSigningRelated handles custom SIG-* files correctly
+        try (JarFile jf = new JarFile(cas.toFile(), true)) {
+
+            // These files are not signature-related and should be signed
+            Set<String> expectedSigned = Set.of("a.txt",
+                    "META-INF/SIG-CUSTOM2.C-1",
+                    "META-INF/subdirectory/SIG-CUSTOM2.SF",
+                    "META-INF/subdirectory/SIG-CUSTOM2.CS1");
+
+            Set<String> actualSigned = jf.getManifest().getEntries().keySet();
+
+            if(!expectedSigned.equals(actualSigned)) {
+                throw new Exception("Unexpected MANIFEST entries. Expected %s, got %s"
+                        .formatted(expectedSigned, actualSigned));
+            }
+        }
     }
 
     /**
@@ -223,12 +244,42 @@ public class IgnoreUnrelatedSignatureFiles {
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar), manifest)) {
-            out.putNextEntry(new JarEntry("a.txt"));
-            out.write("a".getBytes(StandardCharsets.UTF_8));
+            write(out, "a.txt", "a");
         }
 
         return jar;
     }
+
+    private static Path createCustomAlgJar() throws Exception {
+        Path jar = Path.of("unrelated-signature-file-custom-sig.jar");
+
+        Manifest manifest = new Manifest();
+        manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar), manifest)) {
+            // Regular file
+            write(out, "a.txt", "a");
+            // Custom SIG files with valid extension
+            write(out, "META-INF/SIG-CUSTOM.SF", "");
+            write(out, "META-INF/SIG-CUSTOM.CS1", "");
+
+            // Custom SIG files with invalid extension
+            write(out, "META-INF/SIG-CUSTOM2.SF", "");
+            write(out, "META-INF/SIG-CUSTOM2.C-1", "");
+
+            // Custom SIG files with valid extension, invalid directory
+            write(out, "META-INF/subdirectory/SIG-CUSTOM2.SF", "");
+            write(out, "META-INF/subdirectory/SIG-CUSTOM2.CS1", "");
+
+        }
+
+        return jar;
+    }
+
+    private static void write(JarOutputStream out, String name, String content) throws IOException {
+        out.putNextEntry(new JarEntry(name));
+        out.write(content.getBytes(StandardCharsets.UTF_8));
+    }
+
     /**
      * Create a signed version of the given jar file
      */
