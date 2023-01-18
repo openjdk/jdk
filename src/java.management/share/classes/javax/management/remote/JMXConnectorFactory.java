@@ -137,7 +137,7 @@ import sun.reflect.misc.ReflectUtil;
  * <code>MalformedURLException</code> if there is none.  An
  * implementation may choose to find providers by other means.  For
  * example, it may support {@linkplain
- * java.base/java.util.ServiceLoader##developing-service-providers service providers},
+ * ServiceLoader##developing-service-providers service providers},
  * where the service interface is <code>JMXConnectorProvider</code>.</p>
  *
  * <p>Every implementation must support the RMI connector protocol with

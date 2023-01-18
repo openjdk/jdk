@@ -127,7 +127,7 @@ import javax.management.remote.JMXConnectorFactory.ConnectorFactory;
  * <code>MalformedURLException</code> if there is none.  An
  * implementation may choose to find providers by other means.  For
  * example, it may support {@linkplain
- * java.base/java.util.ServiceLoader##developing-service-providers service providers},
+ * java.util.ServiceLoader##developing-service-providers service providers},
  * where the service interface is <code>JMXConnectorServerProvider</code>.</p>
  *
  * <p>Every implementation must support the RMI connector protocol with
