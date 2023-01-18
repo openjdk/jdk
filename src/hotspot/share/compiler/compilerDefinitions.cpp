@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ bool CompilationModeFlag::initialize() {
   _mode = Mode::NORMAL;
   // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
   // CompilationModeFlag.
-  if (CompilationMode != NULL) {
+  if (CompilationMode != nullptr) {
     if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
       assert(_mode == Mode::NORMAL, "Precondition");
     } else if (strcmp(CompilationMode, "quick-only") == 0) {
@@ -325,7 +325,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
   }
 
   if (CompilationModeFlag::disable_intermediate()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -677,6 +677,7 @@ nmethod::nmethod(
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
     _nul_chk_table_offset    = _handler_table_offset;
+    _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
     _jvmci_data_offset       = _speculations_offset;
@@ -813,6 +814,7 @@ nmethod::nmethod(
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     set_ctable_begin(header_begin() + _consts_offset);
+    _skipped_instructions_size      = code_buffer->total_skipped_instructions_size();
 
 #if INCLUDE_JVMCI
     if (compiler->is_jvmci()) {
@@ -1113,7 +1115,8 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       oop_Relocation* reloc = iter.oop_reloc();
       if (initialize_immediates && reloc->oop_is_immediate()) {
         oop* dest = reloc->oop_addr();
-        initialize_immediate_oop(dest, cast_from_oop<jobject>(*dest));
+        jobject obj = *reinterpret_cast<jobject*>(dest);
+        initialize_immediate_oop(dest, obj);
       }
       // Refresh the oop-related bits of this instruction.
       reloc->fix_oop_relocation();

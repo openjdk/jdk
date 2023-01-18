@@ -23,7 +23,7 @@ public class T6723444 {
     <X1 extends Throwable, X2 extends Throwable> T6723444(Foo<X1> foo, int i)
         throws X1, X2 {}
 
-    public static void main(String[] args) throws Exception {
+    public static void meth() throws Exception {
 
         // the following 8 statements should compile without error
 

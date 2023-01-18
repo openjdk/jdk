@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,149 +69,137 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(JDK_RC_PLATFORM_NAME)
   AC_SUBST(HOTSPOT_VM_DISTRO)
 
-  # Setup username (for use in adhoc version strings etc)
-  AC_ARG_WITH([build-user], [AS_HELP_STRING([--with-build-user],
-      [build username to use in version strings])])
-  if test "x$with_build_user" = xyes || test "x$with_build_user" = xno; then
-    AC_MSG_ERROR([--with-build-user must have a value])
-  elif test "x$with_build_user" != x; then
-    USERNAME="$with_build_user"
-  else
-    # Outer [ ] to quote m4.
-    [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+  # Note: UTIL_ARG_WITH treats empty strings as valid values when OPTIONAL is false!
+
+  # Outer [ ] to quote m4.
+  [ USERNAME=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
+
+  # $USER may be not defined in dockers, so try to check with $WHOAMI
+  if test "x$USERNAME" = x && test "x$WHOAMI" != x; then
+    [ USERNAME=`$WHOAMI | $TR -d -c '[a-z][A-Z][0-9]'` ]
   fi
+
+  # Setup username (for use in adhoc version strings etc)
+  UTIL_ARG_WITH(NAME: build-user, TYPE: string,
+    RESULT: USERNAME,
+    DEFAULT: $USERNAME,
+    DESC: [build username to use in version strings],
+    DEFAULT_DESC: [current username, sanitized],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY])
   AC_SUBST(USERNAME)
 
   # Set the JDK RC name
-  AC_ARG_WITH(jdk-rc-name, [AS_HELP_STRING([--with-jdk-rc-name],
-      [Set JDK RC name. This is used for FileDescription and ProductName properties
-       of MS Windows binaries. @<:@not specified@:>@])])
-  if test "x$with_jdk_rc_name" = xyes || test "x$with_jdk_rc_name" = xno; then
-    AC_MSG_ERROR([--with-jdk-rc-name must have a value])
-  elif [ ! [[ $with_jdk_rc_name =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-jdk-rc-name contains non-printing characters: $with_jdk_rc_name])
-  elif test "x$with_jdk_rc_name" != x; then
-    # Set JDK_RC_NAME to a custom value if '--with-jdk-rc-name' was used and is not empty.
-    JDK_RC_NAME="$with_jdk_rc_name"
-  else
-    # Otherwise calculate from "branding.conf" included above.
-    JDK_RC_NAME="$PRODUCT_NAME $JDK_RC_PLATFORM_NAME"
-  fi
+  # Otherwise calculate from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: jdk-rc-name, TYPE: string,
+    DEFAULT: $PRODUCT_NAME $JDK_RC_PLATFORM_NAME,
+    DESC: [Set JDK RC name. This is used for FileDescription and ProductName
+       properties of MS Windows binaries.],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(JDK_RC_NAME)
 
   # The vendor name, if any
-  AC_ARG_WITH(vendor-name, [AS_HELP_STRING([--with-vendor-name],
-      [Set vendor name. Among others, used to set the 'java.vendor'
-       and 'java.vm.vendor' system properties. @<:@not specified@:>@])])
-  if test "x$with_vendor_name" = xyes || test "x$with_vendor_name" = xno; then
-    AC_MSG_ERROR([--with-vendor-name must have a value])
-  elif [ ! [[ $with_vendor_name =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-vendor-name contains non-printing characters: $with_vendor_name])
-  elif test "x$with_vendor_name" != x; then
-    # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
-    # Otherwise we will use the value from "branding.conf" included above.
-    COMPANY_NAME="$with_vendor_name"
-  fi
+  # Only set COMPANY_NAME if '--with-vendor-name' was used and is not empty.
+  # Otherwise we will use the value from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: vendor-name, TYPE: string,
+    RESULT: COMPANY_NAME,
+    DEFAULT: $COMPANY_NAME,
+    DESC: [Set vendor name. Among others, used to set the 'java.vendor'
+       and 'java.vm.vendor' system properties.],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(COMPANY_NAME)
 
   # The vendor URL, if any
-  AC_ARG_WITH(vendor-url, [AS_HELP_STRING([--with-vendor-url],
-      [Set the 'java.vendor.url' system property @<:@not specified@:>@])])
-  if test "x$with_vendor_url" = xyes || test "x$with_vendor_url" = xno; then
-    AC_MSG_ERROR([--with-vendor-url must have a value])
-  elif [ ! [[ $with_vendor_url =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-vendor-url contains non-printing characters: $with_vendor_url])
-  elif test "x$with_vendor_url" != x; then
-    # Only set VENDOR_URL if '--with-vendor-url' was used and is not empty.
-    # Otherwise we will use the value from "branding.conf" included above.
-    VENDOR_URL="$with_vendor_url"
-  fi
+  # Only set VENDOR_URL if '--with-vendor-url' was used and is not empty.
+  # Otherwise we will use the value from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: vendor-url, TYPE: string,
+    DEFAULT: $VENDOR_URL,
+    DESC: [Set the 'java.vendor.url' system property],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL)
 
   # The vendor bug URL, if any
-  AC_ARG_WITH(vendor-bug-url, [AS_HELP_STRING([--with-vendor-bug-url],
-      [Set the 'java.vendor.url.bug' system property @<:@not specified@:>@])])
-  if test "x$with_vendor_bug_url" = xyes || test "x$with_vendor_bug_url" = xno; then
-    AC_MSG_ERROR([--with-vendor-bug-url must have a value])
-  elif [ ! [[ $with_vendor_bug_url =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-vendor-bug-url contains non-printing characters: $with_vendor_bug_url])
-  elif test "x$with_vendor_bug_url" != x; then
-    # Only set VENDOR_URL_BUG if '--with-vendor-bug-url' was used and is not empty.
-    # Otherwise we will use the value from "branding.conf" included above.
-    VENDOR_URL_BUG="$with_vendor_bug_url"
-  fi
+  # Only set VENDOR_URL_BUG if '--with-vendor-bug-url' was used and is not empty.
+  # Otherwise we will use the value from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: vendor-bug-url, TYPE: string,
+    RESULT: VENDOR_URL_BUG,
+    DEFAULT: $VENDOR_URL_BUG,
+    DESC: [Set the 'java.vendor.url.bug' system property],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL_BUG)
 
   # The vendor VM bug URL, if any
-  AC_ARG_WITH(vendor-vm-bug-url, [AS_HELP_STRING([--with-vendor-vm-bug-url],
-      [Sets the bug URL which will be displayed when the VM crashes @<:@not specified@:>@])])
-  if test "x$with_vendor_vm_bug_url" = xyes || test "x$with_vendor_vm_bug_url" = xno; then
-    AC_MSG_ERROR([--with-vendor-vm-bug-url must have a value])
-  elif [ ! [[ $with_vendor_vm_bug_url =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-vendor-vm-bug-url contains non-printing characters: $with_vendor_vm_bug_url])
-  elif test "x$with_vendor_vm_bug_url" != x; then
-    # Only set VENDOR_URL_VM_BUG if '--with-vendor-vm-bug-url' was used and is not empty.
-    # Otherwise we will use the value from "branding.conf" included above.
-    VENDOR_URL_VM_BUG="$with_vendor_vm_bug_url"
-  fi
+  # Only set VENDOR_URL_VM_BUG if '--with-vendor-vm-bug-url' was used and is not empty.
+  # Otherwise we will use the value from "branding.conf" included above.
+  UTIL_ARG_WITH(NAME: vendor-vm-bug-url, TYPE: string,
+    RESULT: VENDOR_URL_VM_BUG,
+    DEFAULT: $VENDOR_URL_VM_BUG,
+    DESC: [Sets the bug URL which will be displayed when the VM crashes],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(VENDOR_URL_VM_BUG)
 
   # Override version from arguments
 
   # If --with-version-string is set, process it first. It is possible to
   # override parts with more specific flags, since these are processed later.
-  AC_ARG_WITH(version-string, [AS_HELP_STRING([--with-version-string],
-      [Set version string @<:@calculated@:>@])])
-  if test "x$with_version_string" = xyes || test "x$with_version_string" = xno; then
-    AC_MSG_ERROR([--with-version-string must have a value])
-  elif test "x$with_version_string" != x; then
-    # Additional [] needed to keep m4 from mangling shell constructs.
-    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z0-9]+))?(((\+)([0-9]*))?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
-      VERSION_FEATURE=${BASH_REMATCH[[1]]}
-      VERSION_INTERIM=${BASH_REMATCH[[3]]}
-      VERSION_UPDATE=${BASH_REMATCH[[5]]}
-      VERSION_PATCH=${BASH_REMATCH[[7]]}
-      VERSION_EXTRA1=${BASH_REMATCH[[9]]}
-      VERSION_EXTRA2=${BASH_REMATCH[[11]]}
-      VERSION_EXTRA3=${BASH_REMATCH[[13]]}
-      VERSION_PRE=${BASH_REMATCH[[15]]}
-      version_plus_separator=${BASH_REMATCH[[18]]}
-      VERSION_BUILD=${BASH_REMATCH[[19]]}
-      VERSION_OPT=${BASH_REMATCH[[21]]}
-      # Unspecified numerical fields are interpreted as 0.
-      if test "x$VERSION_INTERIM" = x; then
-        VERSION_INTERIM=0
+  UTIL_ARG_WITH(NAME: version-string, TYPE: string,
+    DEFAULT: [],
+    DESC: [Set version string],
+    DEFAULT_DESC: [calculated],
+    CHECK_VALUE: [
+      if test "x$RESULT" != x; then
+        # Additional [] needed to keep m4 from mangling shell constructs.
+        if [ [[ $RESULT =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z0-9]+))?(((\+)([0-9]*))?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
+          VERSION_FEATURE=${BASH_REMATCH[[1]]}
+          VERSION_INTERIM=${BASH_REMATCH[[3]]}
+          VERSION_UPDATE=${BASH_REMATCH[[5]]}
+          VERSION_PATCH=${BASH_REMATCH[[7]]}
+          VERSION_EXTRA1=${BASH_REMATCH[[9]]}
+          VERSION_EXTRA2=${BASH_REMATCH[[11]]}
+          VERSION_EXTRA3=${BASH_REMATCH[[13]]}
+          VERSION_PRE=${BASH_REMATCH[[15]]}
+          version_plus_separator=${BASH_REMATCH[[18]]}
+          VERSION_BUILD=${BASH_REMATCH[[19]]}
+          VERSION_OPT=${BASH_REMATCH[[21]]}
+          # Unspecified numerical fields are interpreted as 0.
+          if test "x$VERSION_INTERIM" = x; then
+            VERSION_INTERIM=0
+          fi
+          if test "x$VERSION_UPDATE" = x; then
+            VERSION_UPDATE=0
+          fi
+          if test "x$VERSION_PATCH" = x; then
+            VERSION_PATCH=0
+          fi
+          if test "x$VERSION_EXTRA1" = x; then
+            VERSION_EXTRA1=0
+          fi
+          if test "x$VERSION_EXTRA2" = x; then
+            VERSION_EXTRA2=0
+          fi
+          if test "x$VERSION_EXTRA3" = x; then
+            VERSION_EXTRA3=0
+          fi
+          if test "x$version_plus_separator" != x \
+              && test "x$VERSION_BUILD$VERSION_OPT" = x; then
+            AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
+          fi
+          if test "x$VERSION_BUILD" = x0; then
+            AC_MSG_WARN([Version build 0 is interpreted as no build number])
+            VERSION_BUILD=
+          fi
+          # Stop the version part process from setting default values.
+          # We still allow them to explicitly override though.
+          NO_DEFAULT_VERSION_PARTS=true
+        else
+          FAILURE="--with-version-string fails to parse as a valid version string: $RESULT"
+        fi
       fi
-      if test "x$VERSION_UPDATE" = x; then
-        VERSION_UPDATE=0
-      fi
-      if test "x$VERSION_PATCH" = x; then
-        VERSION_PATCH=0
-      fi
-      if test "x$VERSION_EXTRA1" = x; then
-        VERSION_EXTRA1=0
-      fi
-      if test "x$VERSION_EXTRA2" = x; then
-        VERSION_EXTRA2=0
-      fi
-      if test "x$VERSION_EXTRA3" = x; then
-        VERSION_EXTRA3=0
-      fi
-      if test "x$version_plus_separator" != x \
-          && test "x$VERSION_BUILD$VERSION_OPT" = x; then
-        AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
-      fi
-      if test "x$VERSION_BUILD" = x0; then
-        AC_MSG_WARN([Version build 0 is interpreted as no build number])
-        VERSION_BUILD=
-      fi
-      # Stop the version part process from setting default values.
-      # We still allow them to explicitly override though.
-      NO_DEFAULT_VERSION_PARTS=true
-    else
-      AC_MSG_ERROR([--with-version-string fails to parse as a valid version string: $with_version_string])
-    fi
-  fi
+    ])
 
   AC_ARG_WITH(version-pre, [AS_HELP_STRING([--with-version-pre],
       [Set the base part of the version 'PRE' field (pre-release identifier) @<:@'internal'@:>@])],
@@ -290,22 +278,18 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   fi
 
-  AC_ARG_WITH(version-feature, [AS_HELP_STRING([--with-version-feature],
-      [Set version 'FEATURE' field (first number) @<:@current source value@:>@])],
-      [with_version_feature_present=true], [with_version_feature_present=false])
-
-  if test "x$with_version_feature_present" = xtrue; then
-    if test "x$with_version_feature" = xyes || test "x$with_version_feature" = xno; then
-      AC_MSG_ERROR([--with-version-feature must have a value])
-    else
-      JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $with_version_feature)
-    fi
-  else
-    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to get value from version-numbers.conf
-      VERSION_FEATURE="$DEFAULT_VERSION_FEATURE"
-    fi
+  # Default is to get value from version-numbers.conf
+  if test "x$NO_DEFAULT_VERSION_PARTS" = xtrue; then
+    DEFAULT_VERSION_FEATURE="$VERSION_FEATURE"
   fi
+
+  UTIL_ARG_WITH(NAME: version-feature, TYPE: string,
+    DEFAULT: $DEFAULT_VERSION_FEATURE,
+    DESC: [Set version 'FEATURE' field (first number)],
+    DEFAULT_DESC: [current source value],
+    CHECK_VALUE: [
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_FEATURE, $RESULT)
+    ])
 
   AC_ARG_WITH(version-interim, [AS_HELP_STRING([--with-version-interim],
       [Set version 'INTERIM' field (second number) @<:@current source value@:>@])],
@@ -480,91 +464,81 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   VERSION_SHORT=$VERSION_NUMBER${VERSION_PRE:+-$VERSION_PRE}
 
   # The version date
-  AC_ARG_WITH(version-date, [AS_HELP_STRING([--with-version-date],
-      [Set version date @<:@current source value@:>@])])
-  if test "x$with_version_date" = xyes || test "x$with_version_date" = xno; then
-    AC_MSG_ERROR([--with-version-date must have a value])
-  elif test "x$with_version_date" != x; then
-    if [ ! [[ $with_version_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ]; then
-      AC_MSG_ERROR(["$with_version_date" is not a valid version date])
-    else
-      VERSION_DATE="$with_version_date"
-    fi
-  else
-    VERSION_DATE="$DEFAULT_VERSION_DATE"
-  fi
+  UTIL_ARG_WITH(NAME: version-date, TYPE: string,
+    DEFAULT: $DEFAULT_VERSION_DATE,
+    DESC: [Set version date],
+    DEFAULT_DESC: [current source value],
+    CHECK_VALUE: [
+      if test "x$RESULT" = x; then
+        FAILURE="--with-version-date cannot be empty"
+      elif [ ! [[ $RESULT =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ]; then
+        FAILURE="\"$RESULT\" is not a valid version date"
+      fi
+    ])
 
   # The vendor version string, if any
-  AC_ARG_WITH(vendor-version-string, [AS_HELP_STRING([--with-vendor-version-string],
-      [Set vendor version string @<:@not specified@:>@])])
-  if test "x$with_vendor_version_string" = xyes; then
-    AC_MSG_ERROR([--with-vendor-version-string must have a value])
-  elif [ ! [[ $with_vendor_version_string =~ ^[[:graph:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with--vendor-version-string contains non-graphical characters: $with_vendor_version_string])
-  elif test "x$with_vendor_version_string" != xno; then
-    # Set vendor version string if --without is not passed
-    # Check not required if an empty value is passed, since VENDOR_VERSION_STRING
-    # would then be set to ""
-    VENDOR_VERSION_STRING="$with_vendor_version_string"
+  # DEFAULT is set to an empty string in the case of --with-vendor-version-string without
+  # any value, which would set VENDOR_VERSION_STRING_ENABLED to true and ultimately also
+  # cause VENDOR_VERSION_STRING to fall back to the value in DEFAULT
+  UTIL_ARG_WITH(NAME: vendor-version-string, TYPE: string,
+    DEFAULT: [],
+    OPTIONAL: true,
+    DESC: [Set vendor version string],
+    DEFAULT_DESC: [not specified])
+
+  if test "x$VENDOR_VERSION_STRING_ENABLED" = xtrue; then
+    if [ ! [[ $VENDOR_VERSION_STRING =~ ^[[:graph:]]*$ ]] ]; then
+      AC_MSG_ERROR([--with--vendor-version-string contains non-graphical characters: $VENDOR_VERSION_STRING])
+    fi
   fi
 
   # Set the MACOSX Bundle Name base
-  AC_ARG_WITH(macosx-bundle-name-base, [AS_HELP_STRING([--with-macosx-bundle-name-base],
-      [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.
-      @<:@not specified@:>@])])
-  if test "x$with_macosx_bundle_name_base" = xyes || test "x$with_macosx_bundle_name_base" = xno; then
-    AC_MSG_ERROR([--with-macosx-bundle-name-base must have a value])
-  elif [ ! [[ $with_macosx_bundle_name_base =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-macosx-bundle-name-base contains non-printing characters: $with_macosx_bundle_name_base])
-  elif test "x$with_macosx_bundle_name_base" != x; then
-    # Set MACOSX_BUNDLE_NAME_BASE to the configured value.
-    MACOSX_BUNDLE_NAME_BASE="$with_macosx_bundle_name_base"
-  fi
+  UTIL_ARG_WITH(NAME: macosx-bundle-name-base, TYPE: string,
+    DEFAULT: $MACOSX_BUNDLE_NAME_BASE,
+    DESC: [Set the MacOSX Bundle Name base. This is the base name for calculating MacOSX Bundle Names.],
+    DEFAULT_DESC: [from branding.conf],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
 
-  # Set the MACOSX Bundle ID base
-  AC_ARG_WITH(macosx-bundle-id-base, [AS_HELP_STRING([--with-macosx-bundle-id-base],
-      [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.
-      @<:@not specified@:>@])])
-  if test "x$with_macosx_bundle_id_base" = xyes || test "x$with_macosx_bundle_id_base" = xno; then
-    AC_MSG_ERROR([--with-macosx-bundle-id-base must have a value])
-  elif [ ! [[ $with_macosx_bundle_id_base =~ ^[[:print:]]*$ ]] ]; then
-    AC_MSG_ERROR([--with-macosx-bundle-id-base contains non-printing characters: $with_macosx_bundle_id_base])
-  elif test "x$with_macosx_bundle_id_base" != x; then
-    # Set MACOSX_BUNDLE_ID_BASE to the configured value.
-    MACOSX_BUNDLE_ID_BASE="$with_macosx_bundle_id_base"
-  else
-    # If using the default value, append the VERSION_PRE if there is one
-    # to make it possible to tell official builds apart from developer builds
-    if test "x$VERSION_PRE" != x; then
-      MACOSX_BUNDLE_ID_BASE="$MACOSX_BUNDLE_ID_BASE-$VERSION_PRE"
-    fi
+  # If using the default value, append the VERSION_PRE if there is one
+  # to make it possible to tell official builds apart from developer builds
+  if test "x$VERSION_PRE" != x; then
+    MACOSX_BUNDLE_ID_BASE="$MACOSX_BUNDLE_ID_BASE-$VERSION_PRE"
   fi
+
+  # Set the MACOSX Bundle ID base
+  UTIL_ARG_WITH(NAME: macosx-bundle-id-base, TYPE: string,
+    DEFAULT: $MACOSX_BUNDLE_ID_BASE,
+    DESC: [Set the MacOSX Bundle ID base. This is the base ID for calculating MacOSX Bundle IDs.],
+    DEFAULT_DESC: [based on branding.conf and VERSION_PRE],
+    CHECK_VALUE: [UTIL_CHECK_STRING_NON_EMPTY_PRINTABLE])
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
-  # Set the MACOSX CFBundleVersion field
-  AC_ARG_WITH(macosx-bundle-build-version, [AS_HELP_STRING([--with-macosx-bundle-build-version],
-      [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
-      string composed of one to three period-separated integers and should represent the
-      build version. Defaults to the build number.])])
-  if test "x$with_macosx_bundle_build_version" = xyes || test "x$with_macosx_bundle_build_version" = xno; then
-    AC_MSG_ERROR([--with-macosx-bundle-build-version must have a value])
-  elif [ ! [[ $with_macosx_bundle_build_version =~ ^[0-9\.]*$ ]] ]; then
-    AC_MSG_ERROR([--with-macosx-bundle-build-version contains non numbers and periods: $with_macosx_bundle_build_version])
-  elif test "x$with_macosx_bundle_build_version" != x; then
-    MACOSX_BUNDLE_BUILD_VERSION="$with_macosx_bundle_build_version"
+  if test "x$VERSION_BUILD" != x; then
+    MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
   else
-    if test "x$VERSION_BUILD" != x; then
-      MACOSX_BUNDLE_BUILD_VERSION="$VERSION_BUILD"
-    else
-      MACOSX_BUNDLE_BUILD_VERSION=0
-    fi
-
-    # If VERSION_OPT consists of only numbers and periods, add it.
-    if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
-      MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
-    fi
+    MACOSX_BUNDLE_BUILD_VERSION=0
   fi
+
+  # If VERSION_OPT consists of only numbers and periods, add it.
+  if [ [[ $VERSION_OPT =~ ^[0-9\.]+$ ]] ]; then
+    MACOSX_BUNDLE_BUILD_VERSION="$MACOSX_BUNDLE_BUILD_VERSION.$VERSION_OPT"
+  fi
+
+  # Set the MACOSX CFBundleVersion field
+  UTIL_ARG_WITH(NAME: macosx-bundle-build-version, TYPE: string,
+    DEFAULT: $MACOSX_BUNDLE_BUILD_VERSION,
+    DESC: [Set the MacOSX Bundle CFBundleVersion field. This key is a machine-readable
+      string composed of one to three period-separated integers and should represent the
+      build version.],
+    DEFAULT_DESC: [the build number],
+    CHECK_VALUE: [
+      if test "x$RESULT" = x; then
+        FAILURE="--with-macosx-bundle-build-version must have a value"
+      elif [ ! [[ $RESULT =~ ^[0-9\.]*$ ]] ]; then
+        FAILURE="--with-macosx-bundle-build-version contains non numbers and periods: $RESULT"
+      fi
+    ])
   AC_SUBST(MACOSX_BUNDLE_BUILD_VERSION)
 
   # We could define --with flags for these, if really needed
