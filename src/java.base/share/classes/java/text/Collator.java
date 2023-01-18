@@ -99,7 +99,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * // Get the Collator for US English and set its strength to PRIMARY
  * Collator usCollator = Collator.getInstance(Locale.US);
  * usCollator.setStrength(Collator.PRIMARY);
- * if( usCollator.compare("abc", "ABC") == 0 ) {
+ * if (usCollator.compare("abc", "ABC") == 0) {
  *     System.out.println("Strings are equivalent");
  * }
  * }
