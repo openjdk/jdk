@@ -25,6 +25,8 @@
 
 package jdk.internal.util;
 
+import org.openjdk.bench.java.lang.invoke.MethodTypeAcquire;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -279,28 +281,12 @@ public final class Bits {
     }
 
     // Alternative with an internal buffer fixed att offset zero.
-    // To be considered
-    // Pro: Less parameters
-    // Con: VarHandle is not declared static final
     public static final class BigEndianAtZeroBuffer {
 
         private final byte[] buffer;
-        private final VarHandle shortAccess;
-        private final VarHandle charAccess;
-        private final VarHandle intAccess;
-        private final VarHandle floatAccess;
-        private final VarHandle longAccess;
-        private final VarHandle doubleAccess;
-
 
         public BigEndianAtZeroBuffer() {
             this.buffer = new byte[8];
-            this.shortAccess = createWithBufferAtZeroOffset(short[].class);
-            this.charAccess = createWithBufferAtZeroOffset(char[].class);
-            this.intAccess = createWithBufferAtZeroOffset(int[].class);
-            this.floatAccess = createWithBufferAtZeroOffset(float[].class);
-            this.longAccess = createWithBufferAtZeroOffset(long[].class);
-            this.doubleAccess = createWithBufferAtZeroOffset(double[].class);
         }
 
         public byte[] buffer() {
@@ -317,45 +303,39 @@ public final class Bits {
         }
 
         public char getChar() {
-            return (char) charAccess.get();
+            return BigEndianAtZero.getChar(buffer);
         }
 
         public short getShort() {
-            return (short) shortAccess.get();
+            return BigEndianAtZero.getShort(buffer);
         }
 
         public int getUnsignedShort() {
-            return Short.toUnsignedInt((short) shortAccess.get());
+            return BigEndianAtZero.getUnsignedShort(buffer);
         }
 
         public int getInt() {
-            return (int) intAccess.get();
+            return BigEndianAtZero.getInt(buffer);
         }
 
         public float getFloat() {
-            // Using Float.intBitsToFloat collapses NaN values to a single
-            // "canonical" NaN value
-            return Float.intBitsToFloat((int) intAccess.get());
+            return BigEndianAtZero.getFloat(buffer);
         }
 
         public float getFloatRaw() {
-            // Just gets the bits as they are
-            return (float) floatAccess.get();
+            return BigEndianAtZero.getFloatRaw(buffer);
         }
 
         public long getLong() {
-            return (long) longAccess.get();
+            return BigEndianAtZero.getLong(buffer);
         }
 
         public double getDouble() {
-            // Using Double.longBitsToDouble collapses NaN values to a single
-            // "canonical" NaN value
-            return Double.longBitsToDouble((long) longAccess.get());
+            return BigEndianAtZero.getDouble(buffer);
         }
 
         public double getDoubleRaw() {
-            // Just gets the bits as they are
-            return (double) doubleAccess.get();
+            return BigEndianAtZero.getDoubleRaw(buffer);
         }
 
         /*
@@ -368,51 +348,39 @@ public final class Bits {
         }
 
         public void putChar(char val) {
-            charAccess.set(val);
+            BigEndianAtZero.putChar(buffer, val);
         }
 
         public void putShort(short val) {
-            shortAccess.set(val);
+            BigEndianAtZero.putShort(buffer, val);
         }
 
         public void putUnsignedShort(int val) {
-            shortAccess.set((short) (char) val);
+            BigEndianAtZero.putUnsignedShort(buffer, val);
         }
 
         public void putInt(int val) {
-            intAccess.set(val);
+            BigEndianAtZero.putInt(buffer, val);
         }
 
         public void putFloat(float val) {
-            // Using Float.floatToIntBits collapses NaN values to a single
-            // "canonical" NaN value
-            intAccess.set(Float.floatToIntBits(val));
+            BigEndianAtZero.putFloat(buffer, val);
         }
 
         public void putFloatRaw(float val) {
-            // Just sets the bits as they are
-            floatAccess.set(val);
+            BigEndianAtZero.putFloatRaw(buffer, val);
         }
 
         public void putLong(long val) {
-            longAccess.set(val);
+            BigEndianAtZero.putLong(buffer, val);
         }
 
         public void putDouble(double val) {
-            // Using Double.doubleToLongBits collapses NaN values to a single
-            // "canonical" NaN value
-            longAccess.set(Double.doubleToLongBits(val));
+            BigEndianAtZero.putDouble(buffer, val);
         }
 
         public void putDoubleRaw(double val) {
-            // Just sets the bits as they are
-            doubleAccess.set(val);
-        }
-
-        private VarHandle createWithBufferAtZeroOffset(Class<?> viewArrayClass) {
-            var original = create(viewArrayClass, ByteOrder.BIG_ENDIAN);
-            // (byte[] array, long off, ...) {array = this.array, off = 0L}-> (...)
-            return MethodHandles.insertCoordinates(original, 0, buffer, 0);
+            BigEndianAtZero.putDoubleRaw(buffer, val);
         }
 
     }
