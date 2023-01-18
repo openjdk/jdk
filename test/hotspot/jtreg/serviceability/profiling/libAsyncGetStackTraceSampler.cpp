@@ -33,6 +33,7 @@
 #include <sys/time.h>
 #include "jvmti.h"
 #include "profile.h"
+#include "util.hpp"
 
 #ifdef DEBUG
 const int INTERVAL_NS = 20000; // 20us, 50 000 times per second
@@ -41,46 +42,6 @@ const int INTERVAL_NS = 20000; // 20us, 50 000 times per second
 const int INTERVAL_NS = 1000; // 1us, 1 0000 000 times per second
                               // 20000 times more than in a normal profiling run
 #endif
-
-static jvmtiEnv* jvmti;
-
-typedef void (*SigAction)(int, siginfo_t*, void*);
-typedef void (*SigHandler)(int);
-typedef void (*TimerCallback)(void*);
-
-template <class T>
-class JvmtiDeallocator {
- public:
-  JvmtiDeallocator() {
-    elem_ = NULL;
-  }
-
-  ~JvmtiDeallocator() {
-    jvmti->Deallocate(reinterpret_cast<unsigned char*>(elem_));
-  }
-
-  T* get_addr() {
-    return &elem_;
-  }
-
-  T get() {
-    return elem_;
-  }
-
- private:
-  T elem_;
-};
-
-static void GetJMethodIDs(jclass klass) {
-  jint method_count = 0;
-  JvmtiDeallocator<jmethodID*> methods;
-  jvmtiError err = jvmti->GetClassMethods(klass, &method_count, methods.get_addr());
-
-  // If ever the GetClassMethods fails, just ignore it, it was worth a try.
-  if (err != JVMTI_ERROR_NONE && err != JVMTI_ERROR_CLASS_NOT_PREPARED) {
-    fprintf(stderr, "GetJMethodIDs: Error in GetClassMethods: %d\n", err);
-  }
-}
 
 // AsyncGetStackTrace needs class loading events to be turned on!
 static void JNICALL OnClassLoad(jvmtiEnv *jvmti, JNIEnv *jni_env,

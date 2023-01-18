@@ -36,7 +36,7 @@ class compiledFrameStream : public vframeStreamCommon {
   bool cf_next_into_inlined;
   bool _invalid;
  public:
-  compiledFrameStream(): vframeStreamCommon(RegisterMap(NULL,
+  compiledFrameStream(): vframeStreamCommon(RegisterMap(nullptr,
     RegisterMap::UpdateMap::skip,
     RegisterMap::ProcessFrames::skip, RegisterMap::WalkContinuation::skip)),
     cf_next_into_inlined(false), _invalid(true) {};
@@ -100,11 +100,13 @@ class StackWalker {
 
   bool in_c_on_top;
 
+  bool had_first_java_frame;
+
   frame next_c_frame(frame fr);
 
   void init();
 
-  void process();
+  void process(bool potentially_first_java_frame = false);
 
   void advance();
 
@@ -121,7 +123,7 @@ class StackWalker {
 
   void advance_fully_c();
 
-  void process_normal();
+  void process_normal(bool potentially_first_java_frame = false);
 
   // additional check used in process_normal
   bool is_frame_indecipherable();
@@ -171,7 +173,7 @@ public:
   bool is_inlined() const { return _inlined; }
 
   // current frame (surrounding frame if inlined) or NULL if at error or at end
-  const frame* base_frame() const { return has_frame() ? &_frame : NULL; }
+  const frame* base_frame() const { return has_frame() ? &_frame : nullptr; }
 
   // current method or NULL if at error or at end
   Method* method() const { return _method; }

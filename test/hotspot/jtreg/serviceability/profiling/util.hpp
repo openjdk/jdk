@@ -151,13 +151,22 @@ bool isCppFrame(ASGST_CallFrame frame, const char* msg_prefix) {
   return true;
 }
 
-void printJavaFrame(FILE *stream, ASGST_JavaFrame frame) {
+void printMethod(FILE* stream, jmethodID method) {
   JvmtiDeallocator<char*> name;
-  jvmtiError err = jvmti->GetMethodName(frame.method_id, name.get_addr(), NULL, NULL);
+  JvmtiDeallocator<char*> signature;
+  jvmtiError err = jvmti->GetMethodName(method, name.get_addr(), signature.get_addr(), NULL);
   if (err != JVMTI_ERROR_NONE) {
     fprintf(stream, "Error in GetMethodName: %d", err);
     return;
   }
+  jclass klass;
+  JvmtiDeallocator<char*> className;
+  jvmti->GetMethodDeclaringClass(method, &klass);
+  jvmti->GetClassSignature(klass, className.get_addr(), NULL);
+  fprintf(stream, "%s.%s%s", className.get(), name.get(), signature.get());
+}
+
+void printJavaFrame(FILE *stream, ASGST_JavaFrame frame) {
   switch (frame.type) {
     case ASGST_FRAME_JAVA:
     fprintf(stream, "Java");
@@ -169,7 +178,16 @@ void printJavaFrame(FILE *stream, ASGST_JavaFrame frame) {
     fprintf(stream, "Native");
     break;
   }
-  fprintf(stream, " frame, method = %s, bci = %d", name.get(), frame.bci);
+  if (frame.type != ASGST_FRAME_NATIVE) {
+    if (frame.comp_level == 0) {
+      fprintf(stderr, " interpreted");
+    } else {
+      fprintf(stderr, " compiled");
+    }
+  }
+  fprintf(stream, " frame, method = ");
+  printMethod(stream, frame.method_id);
+  fprintf(stream, ", bci = %d", frame.bci);
 }
 
 template <size_t N = 0> const char* lookForMethod(void* pc, std::array<std::pair<const char*, void*>, N> methods = {}) {
@@ -260,4 +278,85 @@ bool areFramesCPPFrames(ASGST_CallFrame *frames, int start, int inclEnd, const c
 
 long getSecondsSinceEpoch(){
     return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+}
+
+typedef struct {
+    jint lineno;                      // line number in the source file
+    jmethodID method_id;              // method executed in this frame
+} ASGCT_CallFrame;
+
+typedef struct {
+    JNIEnv *env_id;                   // Env where trace was recorded
+    jint num_frames;                  // number of frames in this trace
+    ASGCT_CallFrame *frames;          // frames
+} ASGCT_CallTrace;
+
+typedef void (*ASGCTType)(ASGCT_CallTrace *, jint, void *, bool);
+
+static ASGCTType asgct = nullptr;
+
+
+bool isASGCTNativeFrame(ASGCT_CallFrame frame) {
+  return frame.lineno == -3;
+}
+
+void printASGCTFrame(FILE* stream, ASGCT_CallFrame frame) {
+  JvmtiDeallocator<char*> name;
+  jvmtiError err = jvmti->GetMethodName(frame.method_id, name.get_addr(), NULL, NULL);
+  if (err != JVMTI_ERROR_NONE) {
+    fprintf(stream, "=== asgst sampler failed: Error in GetMethodName: %d", err);
+    return;
+  }
+  if (isASGCTNativeFrame(frame)) {
+    fprintf(stream, "Native frame ");
+    printMethod(stream, frame.method_id);
+  } else {
+    fprintf(stream, "Java frame   ");
+    printMethod(stream, frame.method_id);
+    fprintf(stream, ": %d", frame.lineno);
+  }
+}
+
+void printASGCTFrames(FILE* stream, ASGCT_CallFrame *frames, int length) {
+  for (int i = 0; i < length; i++) {
+    fprintf(stream, "Frame %d: ", i);
+    printASGCTFrame(stream, frames[i]);
+    fprintf(stream, "\n");
+  }
+}
+
+void printASGCTTrace(FILE* stream, ASGCT_CallTrace trace) {
+  fprintf(stream, "Trace length: %d\n", trace.num_frames);
+  if (trace.num_frames > 0) {
+    printASGCTFrames(stream, trace.frames, trace.num_frames);
+  }
+}
+
+void printTraces(ASGST_CallTrace* trace, ASGCT_CallTrace* asgct_trace) {
+  fprintf(stderr, "=== asgst trace ===\n");
+  printTrace(stderr, *trace);
+  fprintf(stderr, "=== asgct trace ===\n");
+  printASGCTTrace(stderr, *asgct_trace);
+}
+
+void initASGCT() {
+  void *mptr = dlsym(RTLD_DEFAULT, "AsyncGetCallTrace");
+  if (mptr == nullptr) {
+    fprintf(stderr, "Error: could not find AsyncGetCallTrace!\n");
+    exit(0);
+  }
+  asgct = reinterpret_cast<ASGCTType>(mptr);
+}
+
+JNIEnv* env;
+
+template<int max_depth> void printASGCT(void* ucontext) {
+  ASGCT_CallTrace asgct_trace;
+  static ASGCT_CallFrame asgct_frames[max_depth];
+  asgct_trace.frames = asgct_frames;
+  asgct_trace.env_id = env;
+  asgct_trace.num_frames = 0;
+
+  asgct(&asgct_trace, max_depth, ucontext, false);
+  printASGCTTrace(stderr, asgct_trace);
 }
