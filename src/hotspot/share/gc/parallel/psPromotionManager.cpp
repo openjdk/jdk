@@ -227,7 +227,8 @@ void PSPromotionManager::restore_preserved_marks() {
 }
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  totally_drain = totally_drain || (_target_stack_size == 0);
+  const uint threshold = totally_drain ? 0
+                                       : _target_stack_size;
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
@@ -239,16 +240,10 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
       process_popped_location_depth(task);
     }
 
-    if (totally_drain) {
-      while (tq->pop_local(task)) {
-        process_popped_location_depth(task);
-      }
-    } else {
-      while (tq->size() > _target_stack_size && tq->pop_local(task)) {
-        process_popped_location_depth(task);
-      }
+    while (tq->pop_local(task, threshold)) {
+      process_popped_location_depth(task);
     }
-  } while ((totally_drain && !tq->taskqueue_empty()) || !tq->overflow_empty());
+  } while (!tq->overflow_empty());
 
   assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
   assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
