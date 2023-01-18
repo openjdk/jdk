@@ -3990,7 +3990,6 @@ void IdealLoopTree::dump_head() const {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
-    if (cl->range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
@@ -4453,13 +4452,6 @@ void PhaseIdealLoop::build_and_optimize() {
     C->restore_major_progress(old_progress);
     return;
   }
-  for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-    IdealLoopTree* lpt = iter.current();
-    if (lpt->is_innermost() && lpt->is_counted()) {
-      lpt->_head->as_CountedLoop()->clear_has_been_range_checks();
-      lpt->_head->as_CountedLoop()->clear_has_range_checks();
-    }
-  }
 
   if (do_max_unroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
@@ -4607,7 +4599,6 @@ void PhaseIdealLoop::build_and_optimize() {
             IdealLoopTree *lpt_next = lpt->_next;
             if (lpt_next && lpt_next->is_counted()) {
               CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              lpt_next->has_range_checks();
               if (cl->is_post_loop() && lpt_next->range_checks_present()) {
                 if (!cl->is_multiversioned()) {
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
