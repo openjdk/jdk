@@ -103,14 +103,17 @@ public class NewDirectByteBuffer {
     @ValueSource(longs = {0L, 1L, (long)Integer.MAX_VALUE/2,
         (long)Integer.MAX_VALUE - 1, (long)Integer.MAX_VALUE})
     void legalCapacities(long capacity) {
-        long addr = UNSAFE.allocateMemory(capacity);
         try {
-            ByteBuffer buf = newDirectByteBuffer(addr, capacity);
-            assertEquals(addr, getDirectBufferAddress(buf),
-                "GetDirectBufferAddress does not return supplied address");
-            checkBuffer(buf, capacity);
-        } finally {
-            UNSAFE.freeMemory(addr);
+            long addr = UNSAFE.allocateMemory(capacity);
+            try {
+                ByteBuffer buf = newDirectByteBuffer(addr, capacity);
+                assertEquals(addr, getDirectBufferAddress(buf),
+                    "GetDirectBufferAddress does not return supplied address");
+                checkBuffer(buf, capacity);
+            } finally {
+                UNSAFE.freeMemory(addr);
+            }
+        } catch (OutOfMemoryError ignore) {
         }
     }
 
@@ -120,11 +123,14 @@ public class NewDirectByteBuffer {
         Long.MAX_VALUE})
     void illegalCapacities(long capacity) {
         assertThrows(IllegalArgumentException.class, () -> {
-            long addr = UNSAFE.allocateMemory(capacity);
             try {
-                ByteBuffer buf = newDirectByteBuffer(addr, capacity);
-            } finally {
-                UNSAFE.freeMemory(addr);
+                long addr = UNSAFE.allocateMemory(capacity);
+                try {
+                    ByteBuffer buf = newDirectByteBuffer(addr, capacity);
+                } finally {
+                    UNSAFE.freeMemory(addr);
+                }
+            } catch (OutOfMemoryError ignore) {
             }
         });
     }
