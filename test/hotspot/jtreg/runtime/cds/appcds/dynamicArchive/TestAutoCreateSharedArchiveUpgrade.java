@@ -77,6 +77,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         // Test only default version unless specified in gmk
         if (JDK_VERSIONS == null) {
+            System.out.println("Testing boot JDK");
             setupJVMs(0);
             doTest();
             return;
@@ -101,7 +102,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
-        // Example path: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz/jdk-19/bin/java
         if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
         } else if (PREV_JDK != null) {
@@ -169,7 +169,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
     }
 
     // Fetch JDK artifact depending on platform
-    // If the artifact cannot be found, default to the test.boot.jdk property
+    // If the artifact cannot be found, throw RuntimeException
     private static String fetchJDK(int version) throws Throwable {
         int build;
         String architecture;
@@ -194,23 +194,23 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         // Get correct file name for architecture
         if (Platform.isX64()) {
-            architecture = "x";
+            architecture = "x64";
         } else if (Platform.isAArch64()) {
-            architecture = "aarch";
+            architecture = "aarch64";
         } else {
             throw new RuntimeException("Unsupported architecture " + Platform.getOsArch());
         }
 
-        // File name is bundles/<os>-<architecture>64/jdk-<version>_<os>-<architecture>64_bin.<extension>
+        // File name is bundles/<os>-<architecture>/jdk-<version>_<os>-<architecture>_bin.<extension>
         // Ex: bundles/linux-x64/jdk-19_linux-x64_bin.tar.gz
         if (Platform.isWindows()) {
-            jdkArtifactMap.put("file", "bundles/windows-x64/jdk-" + version + "_windows-x64_bin.zip");
+            jdkArtifactMap.put("file", "bundles/windows-" + architecture + "/jdk-" + version + "_windows-" + architecture + "_bin.zip");
             return fetchJDK(jdkArtifactMap, version);
         } else if (Platform.isOSX()) {
-            jdkArtifactMap.put("file", "bundles/macos-" + architecture + "64/jdk-" + version + "_macos-" + architecture + "64_bin.tar.gz");
+            jdkArtifactMap.put("file", "bundles/macos-" + architecture + "/jdk-" + version + "_macos-" + architecture + "_bin.tar.gz");
             return fetchJDK(jdkArtifactMap, version) +  ".jdk" + FS + "Contents" + FS + "Home";
         } else if (Platform.isLinux()) {
-            jdkArtifactMap.put("file", "bundles/linux-" + architecture + "64/jdk-" + version + "_linux-" + architecture + "64_bin.tar.gz");
+            jdkArtifactMap.put("file", "bundles/linux-" + architecture + "/jdk-" + version + "_linux-" + architecture + "_bin.tar.gz");
             return fetchJDK(jdkArtifactMap, version);
         } else {
             throw new RuntimeException("Unsupported operating system " + Platform.getOsName());
@@ -219,20 +219,15 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     // Fetch JDK artifact
     private static String fetchJDK(HashMap<String, Object> jdkArtifactMap, int version) {
-        String path = null;
         try {
+            String path = null;
             path = ArtifactResolver.resolve("jdk", jdkArtifactMap, true) + "/jdk-" + version;
             System.out.println("Boot JDK path: " + path);
+            return path;
         } catch (ArtifactResolverException e) {
             Throwable cause = e.getCause();
-            if (cause == null) {
-                System.out.println("Cannot resolve artifact, "
-                        + "please check if JIB jar is present in classpath.");
-            } else {
-                throw new RuntimeException("Fetch artifact failed: "
-                        + "\nPlease make sure the artifact is available.", e);
-            }
+            throw new RuntimeException("Fetch artifact failed: "
+                    + "\nPlease make sure the artifact is available.", e);
         }
-        return path;
     }
 }
