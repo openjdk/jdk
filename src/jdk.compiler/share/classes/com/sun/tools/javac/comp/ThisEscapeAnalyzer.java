@@ -91,6 +91,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  <li>The current outer 'this' reference; see {@link OuterRef}
  *  <li>Local variables and method parameters; see {@link VarRef}
  *  <li>The current expression being evaluated, i.e.,what's on top of the Java stack; see {@link ExprRef}
+ *  <li>The current switch expressions's yield value; see {@link YieldRef}
  *  <li>The current method's return value; see {@link ReturnRef}
  * </ul>
  *
