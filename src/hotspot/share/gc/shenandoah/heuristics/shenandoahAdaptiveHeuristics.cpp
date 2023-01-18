@@ -55,6 +55,8 @@ const double ShenandoahAdaptiveHeuristics::HIGHEST_EXPECTED_AVAILABLE_AT_END = 0
 const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
+const uint ShenandoahAdaptiveHeuristics::MINIMUM_RESIZE_INTERVAL = 10;
+
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahGeneration* generation) :
   ShenandoahHeuristics(generation),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
@@ -235,6 +237,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
 void ShenandoahAdaptiveHeuristics::record_cycle_start() {
   ShenandoahHeuristics::record_cycle_start();
   _allocation_rate.allocation_counter_reset();
+  ++_cycles_since_last_resize;
 }
 
 void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
@@ -483,18 +486,19 @@ bool ShenandoahAdaptiveHeuristics::resize_and_evaluate() {
     return true;
   }
 
-  if (_gc_times_learned < ShenandoahLearningSteps) {
-    // We aren't going to attempt to resize our generation until we have 'learned'
-    // something about it. This provides a kind of cool down period after we've made
-    // a change, to help prevent thrashing.
+  if (_cycles_since_last_resize <= MINIMUM_RESIZE_INTERVAL) {
+    log_info(gc, ergo)("Not resizing %s for another " UINT32_FORMAT " cycles.",
+        _generation->name(),  _cycles_since_last_resize);
     return true;
   }
 
   if (!heap->generation_sizer()->transfer_capacity(_generation)) {
     // We could not enlarge our generation, so we must start a gc cycle.
+    log_info(gc, ergo)("Could not increase size of %s, begin gc cycle.", _generation->name());
     return true;
   }
 
+  log_info(gc)("Increased size of %s generation, re-evaluate trigger criteria", _generation->name());
   return should_start_gc();
 }
 
