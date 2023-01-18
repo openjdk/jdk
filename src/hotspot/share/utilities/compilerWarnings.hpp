@@ -70,8 +70,8 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED
 #endif
 
-#ifndef PRAGMA_NONnullptr_IGNORED
-#define PRAGMA_NONnullptr_IGNORED
+#ifndef PRAGMA_NONNULL_IGNORED
+#define PRAGMA_NONNULL_IGNORED
 #endif
 
 // Support warnings for use of certain C functions, except where explicitly
