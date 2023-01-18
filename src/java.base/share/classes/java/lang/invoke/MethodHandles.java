@@ -6749,7 +6749,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
                 // take only those that can contribute to a common suffix because they are longer than the prefix
                 .map(MethodHandle::type)
                 .filter(t -> t.parameterCount() > skipSize)
-                .max(Comparator.comparing(MethodType::parameterCount))
+                .max(Comparator.comparingInt(MethodType::parameterCount))
                 .map(methodType -> List.of(Arrays.copyOfRange(methodType.ptypes(), skipSize, methodType.parameterCount())))
                 .orElse(List.of());
     }
