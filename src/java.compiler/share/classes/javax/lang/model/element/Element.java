@@ -132,8 +132,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * If this element represents an unnamed {@linkplain
      * PackageElement#getSimpleName package} or unnamed {@linkplain
-     * ModuleElement#getSimpleName module}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * ModuleElement#getSimpleName module}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * If it represents a {@linkplain ExecutableElement#getSimpleName
      * constructor}, the name "{@code <init>}" is returned.  If it
@@ -142,8 +142,8 @@ public interface Element extends javax.lang.model.AnnotatedConstruct {
      *
      * If it represents an {@linkplain TypeElement#getSimpleName
      * anonymous class} or {@linkplain ExecutableElement#getSimpleName
-     * instance initializer}, an <a href=Name.html#empty_name>empty
-     * name</a> is returned.
+     * instance initializer}, an {@linkplain Name##empty_name empty
+     * name} is returned.
      *
      * @see PackageElement#getSimpleName
      * @see ExecutableElement#getSimpleName

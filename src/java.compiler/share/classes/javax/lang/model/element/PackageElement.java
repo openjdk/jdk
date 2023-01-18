@@ -74,8 +74,8 @@ public interface PackageElement extends Element, QualifiedNameable {
     /**
      * Returns the fully qualified name of this package.  This is also
      * known as the package's <i>canonical</i> name.  For an
-     * {@linkplain #isUnnamed() unnamed package}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * {@linkplain #isUnnamed() unnamed package}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @apiNote The fully qualified name of a named package that is
      * not a subpackage of a named package is its simple name. The
@@ -92,8 +92,8 @@ public interface PackageElement extends Element, QualifiedNameable {
 
     /**
      * Returns the simple name of this package.  For an {@linkplain
-     * #isUnnamed() unnamed package}, an <a
-     * href=Name.html#empty_name>empty name</a> is returned.
+     * #isUnnamed() unnamed package}, an {@linkplain
+     * Name##empty_name empty name} is returned.
      *
      * @return the simple name of this package or an empty name if
      * this is an unnamed package

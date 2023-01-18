@@ -142,7 +142,7 @@ public interface ExecutableElement extends Element, Parameterizable {
      * initializer}  For a constructor, the name {@code "<init>"} is
      * returned, for a static initializer, the name {@code "<clinit>"}
      * is returned, and for an anonymous class or instance
-     * initializer, an <a href=Name.html#empty_name>empty name</a> is
+     * initializer, an {@linkplain Name##empty_name empty name} is
      * returned.
      */
     @Override
