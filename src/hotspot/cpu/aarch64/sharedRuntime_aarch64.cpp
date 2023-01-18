@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -998,7 +998,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
   __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
 
   OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize)/ VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
   __ str(rscratch1, Address(sp, ContinuationEntry::parent_offset()));
@@ -1104,6 +1103,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ cbnz(c_rarg2, call_thaw);
 
     const address tr_call = __ trampoline_call(resolve);
+    if (tr_call == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -1111,7 +1113,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ b(exit);
 
     CodeBuffer* cbuf = masm->code_section()->outer();
-    CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    if (stub == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
   }
 
   // compiled entry
@@ -1128,6 +1133,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ cbnz(c_rarg2, call_thaw);
 
   const address tr_call = __ trampoline_call(resolve);
+  if (tr_call == nullptr) {
+    fatal("CodeCache is full at gen_continuation_enter");
+  }
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1169,7 +1177,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  if (stub == nullptr) {
+    fatal("CodeCache is full at gen_continuation_enter");
+  }
 }
 
 static void gen_continuation_yield(MacroAssembler* masm,

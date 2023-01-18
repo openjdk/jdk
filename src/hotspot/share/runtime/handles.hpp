@@ -196,7 +196,6 @@ class HandleArea: public Arena {
   // Handle allocation
  private:
   oop* real_allocate_handle(oop obj) {
-    // Ignore UseMallocOnly by allocating only in arena.
     oop* handle = (oop*)internal_amalloc(oopSize);
     *handle = obj;
     return handle;
@@ -212,9 +211,6 @@ class HandleArea: public Arena {
 
   // Garbage collection support
   void oops_do(OopClosure* f);
-
-  // Number of handles in use
-  size_t used() const     { return Arena::used() / oopSize; }
 
   debug_only(bool no_handle_mark_active() { return _no_handle_mark_nesting > 0; })
 };

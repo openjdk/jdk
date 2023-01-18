@@ -217,7 +217,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // instruction patching is handled with isb fences on the way back
     // from the safepoint to Java. So here we can do a plain conditional
     // branch with no fencing.
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldrw(rscratch2, thread_disarmed_addr);
     __ cmp(rscratch1, rscratch2);
   } else if (patching_type == NMethodPatchingType::conc_instruction_and_data_patch) {
@@ -238,7 +238,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // Combine the guard value (low order) with the epoch value (high order).
     __ orr(rscratch1, rscratch1, rscratch2, Assembler::LSL, 32);
     // Compare the global values with the thread-local values.
-    Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
   } else {
@@ -246,7 +246,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // Subsequent loads of oops must occur after load of guard value.
     // BarrierSetNMethod::disarm sets guard with release semantics.
     __ membar(__ LoadLoad);
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldrw(rscratch2, thread_disarmed_addr);
     __ cmpw(rscratch1, rscratch2);
   }

@@ -143,15 +143,12 @@ int SharedRuntime::_implicit_null_throws = 0;
 int SharedRuntime::_implicit_div0_throws = 0;
 
 int64_t SharedRuntime::_nof_normal_calls = 0;
-int64_t SharedRuntime::_nof_optimized_calls = 0;
 int64_t SharedRuntime::_nof_inlined_calls = 0;
 int64_t SharedRuntime::_nof_megamorphic_calls = 0;
 int64_t SharedRuntime::_nof_static_calls = 0;
 int64_t SharedRuntime::_nof_inlined_static_calls = 0;
 int64_t SharedRuntime::_nof_interface_calls = 0;
-int64_t SharedRuntime::_nof_optimized_interface_calls = 0;
 int64_t SharedRuntime::_nof_inlined_interface_calls = 0;
-int64_t SharedRuntime::_nof_megamorphic_interface_calls = 0;
 
 int SharedRuntime::_new_instance_ctr=0;
 int SharedRuntime::_new_array_ctr=0;
@@ -680,17 +677,6 @@ address SharedRuntime::get_poll_stub(address pc) {
   return stub;
 }
 
-
-oop SharedRuntime::retrieve_receiver( Symbol* sig, frame caller ) {
-  assert(caller.is_interpreted_frame(), "");
-  int args_size = ArgumentSizeComputer(sig).size() + 1;
-  assert(args_size <= caller.interpreter_frame_expression_stack_size(), "receiver must be on interpreter stack");
-  oop result = cast_to_oop(*caller.interpreter_frame_tos_at(args_size - 1));
-  assert(Universe::heap()->is_in(result) && oopDesc::is_oop(result), "receiver must be an oop");
-  return result;
-}
-
-
 void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception) {
   if (JvmtiExport::can_post_on_exceptions()) {
     vframeStream vfst(current, true);
@@ -898,9 +884,10 @@ void SharedRuntime::throw_StackOverflowError_common(JavaThread* current, bool de
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
   }
-  // Remove the ExtentLocal cache in case we got a StackOverflowError
-  // while we were trying to remove ExtentLocal bindings.
-  current->set_extentLocalCache(NULL);
+  // Remove the ScopedValue bindings in case we got a
+  // StackOverflowError while we were trying to remove ScopedValue
+  // bindings.
+  current->clear_scopedValueBindings();
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(current, exception);
@@ -2379,10 +2366,6 @@ void SharedRuntime::print_statistics() {
   if (xtty != NULL)  xtty->tail("statistics");
 }
 
-inline double percent(int x, int y) {
-  return 100.0 * x / MAX2(y, 1);
-}
-
 inline double percent(int64_t x, int64_t y) {
   return 100.0 * x / MAX2(y, (int64_t)1);
 }
@@ -2470,19 +2453,16 @@ int MethodArityHistogram::_max_size;
 void SharedRuntime::print_call_statistics(uint64_t comp_total) {
   tty->print_cr("Calls from compiled code:");
   int64_t total  = _nof_normal_calls + _nof_interface_calls + _nof_static_calls;
-  int64_t mono_c = _nof_normal_calls - _nof_optimized_calls - _nof_megamorphic_calls;
-  int64_t mono_i = _nof_interface_calls - _nof_optimized_interface_calls - _nof_megamorphic_interface_calls;
+  int64_t mono_c = _nof_normal_calls - _nof_megamorphic_calls;
+  int64_t mono_i = _nof_interface_calls;
   tty->print_cr("\t" INT64_FORMAT_W(12) " (100%%)  total non-inlined   ", total);
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- virtual calls       ", _nof_normal_calls, percent(_nof_normal_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_calls, percent(_nof_inlined_calls, _nof_normal_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_calls, percent(_nof_optimized_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- monomorphic      ", mono_c, percent(mono_c, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_calls, percent(_nof_megamorphic_calls, _nof_normal_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- interface calls     ", _nof_interface_calls, percent(_nof_interface_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_interface_calls, percent(_nof_inlined_interface_calls, _nof_interface_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- optimized        ", _nof_optimized_interface_calls, percent(_nof_optimized_interface_calls, _nof_interface_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- monomorphic      ", mono_i, percent(mono_i, _nof_interface_calls));
-  tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- megamorphic      ", _nof_megamorphic_interface_calls, percent(_nof_megamorphic_interface_calls, _nof_interface_calls));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.1f%%) |- static/special calls", _nof_static_calls, percent(_nof_static_calls, total));
   tty->print_cr("\t" INT64_FORMAT_W(12) " (%4.0f%%) |  |- inlined          ", _nof_inlined_static_calls, percent(_nof_inlined_static_calls, _nof_static_calls));
   tty->cr();
@@ -2748,10 +2728,6 @@ BufferBlob* AdapterHandlerLibrary::_buffer = NULL;
 
 BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   return _buffer;
-}
-
-extern "C" void unexpected_adapter_call() {
-  ShouldNotCallThis();
 }
 
 static void post_adapter_creation(const AdapterBlob* new_adapter,

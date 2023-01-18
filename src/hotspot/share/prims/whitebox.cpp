@@ -30,6 +30,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "classfile/classLoaderStats.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
@@ -206,7 +207,9 @@ public:
 
 WB_ENTRY(jint, WB_CountAliveClasses(JNIEnv* env, jobject target, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
 
@@ -219,7 +222,9 @@ WB_END
 
 WB_ENTRY(jint, WB_GetSymbolRefcount(JNIEnv* env, jobject unused, jstring name))
   oop h_name = JNIHandles::resolve(name);
-  if (h_name == NULL) return false;
+  if (h_name == NULL) {
+    return 0;
+  }
   Symbol* sym = java_lang_String::as_symbol(h_name);
   TempNewSymbol tsym(sym); // Make sure to decrement reference count on sym on return
   return (jint)sym->refcount();
@@ -496,16 +501,13 @@ WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
 
-WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
+WB_ENTRY(jint, WB_G1CompletedConcurrentMarkCycles(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    if (!g1h->concurrent_mark()->cm_thread()->in_progress()) {
-      g1h->collect(GCCause::_wb_conc_mark);
-      return true;
-    }
-    return false;
+    G1ConcurrentMark* cm = g1h->concurrent_mark();
+    return cm->completed_mark_cycles();
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1StartMarkCycle: G1 GC is not enabled");
+  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1CompletedConcurrentMarkCycles: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
@@ -1819,6 +1821,12 @@ WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_op);
 WB_END
 
+WB_ENTRY(void, WB_ForceClassLoaderStatsSafepoint(JNIEnv* env, jobject wb))
+  nullStream dev_null;
+  ClassLoaderStatsVMOperation force_op(&dev_null);
+  VMThread::execute(&force_op);
+WB_END
+
 WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
   return (jlong) ik->constants();
@@ -2526,13 +2534,13 @@ static JNINativeMethod methods[] = {
 #endif
 #if INCLUDE_G1GC
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
+  {CC"g1CompletedConcurrentMarkCycles", CC"()I",      (void*)&WB_G1CompletedConcurrentMarkCycles},
   {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
   {CC"g1BelongsToHumongousRegion0", CC"(J)Z",         (void*)&WB_G1BelongsToHumongousRegion},
   {CC"g1BelongsToFreeRegion0", CC"(J)Z",              (void*)&WB_G1BelongsToFreeRegion},
   {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
-  {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
   {CC"g1HasRegionsToUncommit",  CC"()Z",              (void*)&WB_G1HasRegionsToUncommit},
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
@@ -2675,6 +2683,7 @@ static JNINativeMethod methods[] = {
   {CC"deflateIdleMonitors", CC"()Z",                  (void*)&WB_DeflateIdleMonitors },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
+  {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getConstantPoolCacheIndexTag0", CC"()I",  (void*)&WB_GetConstantPoolCacheIndexTag},
   {CC"getConstantPoolCacheLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_GetConstantPoolCacheLength},

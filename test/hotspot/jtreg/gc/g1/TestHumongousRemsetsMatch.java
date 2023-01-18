@@ -65,12 +65,7 @@ public class TestHumongousRemsetsMatch {
             }
 
             wb.fullGC();
-
-            // Trigger a concurrent cycle and wait until the Remark pause
-            wb.g1StartConcMarkCycle();
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(200);
-            }
+            wb.g1RunConcurrentGC();
             wb.youngGC(); // Trigger verification error.
 
             System.out.println(lotsOfHumongousObjects + " " + alignmentFudge);

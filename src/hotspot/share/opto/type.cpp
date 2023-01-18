@@ -3578,7 +3578,7 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     ciKlass* eklass = klass->as_obj_array_klass()->element_klass();
-    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, try_for_exact, false, interface_handling);
+    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, false, try_for_exact, interface_handling);
     bool xk = etype->klass_is_exact();
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
     // We used to pass NotNull in here, asserting that the sub-arrays
@@ -4887,6 +4887,9 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
 
 template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*& elem, const T* this_ary,
                                                            const T* other_ary, ciKlass*& res_klass, bool& res_xk) {
+  int dummy;
+  bool this_top_or_bottom = (this_ary->base_element_type(dummy) == Type::TOP || this_ary->base_element_type(dummy) == Type::BOTTOM);
+  bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
   ciKlass* this_klass = this_ary->klass();
   ciKlass* other_klass = other_ary->klass();
   bool this_xk = this_ary->klass_is_exact();
@@ -4898,9 +4901,9 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   if (elem->isa_int()) {
     // Integral array element types have irrelevant lattice relations.
     // It is the klass that determines array layout, not the element type.
-    if (this_klass == NULL)
+    if (this_top_or_bottom)
       res_klass = other_klass;
-    else if (other_klass == NULL || other_klass == this_klass) {
+    else if (other_top_or_bottom || other_klass == this_klass) {
       res_klass = this_klass;
     } else {
       // Something like byte[int+] meets char[int+].
@@ -4912,9 +4915,6 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   } else {// Non integral arrays.
     // Must fall to bottom if exact klasses in upper lattice
     // are not equal or super klass is exact.
-    int dummy;
-    bool this_top_or_bottom = (this_ary->base_element_type(dummy) == Type::TOP || this_ary->base_element_type(dummy) == Type::BOTTOM);
-    bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
     if ((above_centerline(ptr) || ptr == Constant) && !this_ary->is_same_java_type_as(other_ary) &&
         // meet with top[] and bottom[] are processed further down:
         !this_top_or_bottom && !other_top_or_bottom &&
@@ -4951,7 +4951,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
         res_xk = true;
       } else {
         // Only precise for identical arrays
-        res_xk = this_xk && this_ary->is_same_java_type_as(other_ary);
+        res_xk = this_xk && (this_ary->is_same_java_type_as(other_ary) || (this_top_or_bottom && other_top_or_bottom));
       }
       return result;
     }
@@ -4962,7 +4962,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
         res_xk = other_xk;
       } else {
         res_xk = (other_xk && this_xk) &&
-                 (this_ary->is_same_java_type_as(other_ary)); // Only precise for identical arrays
+                 (this_ary->is_same_java_type_as(other_ary) || (this_top_or_bottom && other_top_or_bottom)); // Only precise for identical arrays
       }
       return result;
     default:  {

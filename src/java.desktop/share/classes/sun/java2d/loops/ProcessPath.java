@@ -309,13 +309,13 @@ public class ProcessPath {
             if (c[a1] < (LINE_MIN)) {
                 if (c[a2] < (LINE_MIN)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MIN_CLIPPED;
                 t = (LINE_MIN);
             } else {
                 if (c[a2] > (LINE_MAX)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MAX_CLIPPED;
                 t = (LINE_MAX);
             }
@@ -334,13 +334,13 @@ public class ProcessPath {
             if (c[a1] < (LINE_MIN)) {
                 if (c[a2] < (LINE_MIN)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MIN_CLIPPED;
                 t = (LINE_MIN);
             } else {
                 if (c[a2] > (LINE_MAX)) {
                     return CRES_INVISIBLE;
-                };
+                }
                 res = CRES_MAX_CLIPPED;
                 t = (LINE_MAX);
             }
@@ -1710,7 +1710,7 @@ public class ProcessPath {
             this.y = y;
             this.lastPoint = lastPoint;
         }
-    };
+    }
 
     private static class Edge {
         int x;
@@ -1726,7 +1726,7 @@ public class ProcessPath {
             this.dx = dx;
             this.dir = dir;
         }
-    };
+    }
 
     /* Size of the default buffer in the FillData structure. This buffer is
      * replaced with heap allocated in case of large paths.

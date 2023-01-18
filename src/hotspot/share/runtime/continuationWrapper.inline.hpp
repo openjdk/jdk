@@ -79,7 +79,7 @@ public:
   void done() {
     allow_safepoint(); // must be done first
     _continuation = nullptr;
-    _tail = (stackChunkOop)badOop;
+    *reinterpret_cast<intptr_t*>(&_tail) = badHeapOopVal;
   }
 
   class SafepointOp : public StackObj {
@@ -111,9 +111,7 @@ public:
   stackChunkOop tail() const         { return _tail; }
   void set_tail(stackChunkOop chunk) { _tail = chunk; }
 
-  inline oop parent();
   inline bool is_preempted();
-  inline void set_preempted(bool value);
   inline void read();
   inline void write();
 
@@ -149,8 +147,6 @@ inline ContinuationWrapper::ContinuationWrapper(JavaThread* thread, oop continua
   {
   assert(oopDesc::is_oop(_continuation),
          "Invalid continuation object: " INTPTR_FORMAT, p2i((void*)_continuation));
-  assert(_continuation == _entry->cont_oop(), "cont: " INTPTR_FORMAT " entry: " INTPTR_FORMAT " entry_sp: "
-         INTPTR_FORMAT, p2i((oopDesc*)_continuation), p2i((oopDesc*)_entry->cont_oop()), p2i(entrySP()));
   disallow_safepoint();
   read();
 }
@@ -164,16 +160,8 @@ inline ContinuationWrapper::ContinuationWrapper(oop continuation)
   read();
 }
 
-inline oop ContinuationWrapper::parent() {
-  return jdk_internal_vm_Continuation::parent(_continuation);
-}
-
 inline bool ContinuationWrapper::is_preempted() {
   return jdk_internal_vm_Continuation::is_preempted(_continuation);
-}
-
-inline void ContinuationWrapper::set_preempted(bool value) {
-  jdk_internal_vm_Continuation::set_preempted(_continuation, value);
 }
 
 inline void ContinuationWrapper::read() {

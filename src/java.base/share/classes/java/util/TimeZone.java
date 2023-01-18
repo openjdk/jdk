@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -631,7 +631,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * time zone.
      *
      * <ul>
-     * <li>Use the {@code user.timezone} property value as the default
+     * <li>Use the {@systemProperty user.timezone} property value as the default
      * time zone ID if it's available.</li>
      * <li>Detect the platform time zone ID. The source of the
      * platform time zone and ID mapping may vary with implementation.</li>
@@ -674,13 +674,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = StaticProperty.javaHome();
-            try {
-                zoneID = getSystemTimeZoneID(javaHome);
-                if (zoneID == null) {
-                    zoneID = GMT_ID;
-                }
-            } catch (NullPointerException e) {
+            zoneID = getSystemTimeZoneID(StaticProperty.javaHome());
+            if (zoneID == null) {
                 zoneID = GMT_ID;
             }
         }

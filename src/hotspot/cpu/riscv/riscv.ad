@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1303,7 +1303,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
-    st->print("ld  t1, [xthread, #thread_disarmed_offset]\n\t");
+    st->print("ld  t1, [xthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("beq t0, t1, skip\n\t");
     st->print("jalr #nmethod_entry_barrier_stub\n\t");
     st->print("j skip\n\t");
@@ -1361,8 +1361,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
       Label* guard = &dummy_guard;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
         guard = &stub->guard();
       }
@@ -1443,7 +1444,9 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, true /* at_return */, false /* acquire */, true /* in_nmethod */);
@@ -1839,6 +1842,10 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+
+    case Op_ConvF2HF:
+    case Op_ConvHF2F:
+      return UseZfhmin;
   }
 
   return true; // Per default match rules are supported.
@@ -2978,6 +2985,14 @@ operand immByteMapBase()
 operand immI_16bits()
 %{
   predicate(n->get_int() == 0xFFFF);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immIpowerOf2() %{
+  predicate(is_power_of_2((juint)(n->get_int())));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -5103,6 +5118,7 @@ instruct storeimmL0(immL0 zero, memory mem)
 instruct storeP(iRegP src, memory mem)
 %{
   match(Set mem (StoreP mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(STORE_COST);
   format %{ "sd  $src, $mem\t# ptr, #@storeP" %}
@@ -5118,6 +5134,7 @@ instruct storeP(iRegP src, memory mem)
 instruct storeimmP0(immP0 zero, memory mem)
 %{
   match(Set mem (StoreP mem zero));
+  predicate(n->as_Store()->barrier_data() == 0);
 
   ins_cost(STORE_COST);
   format %{ "sd zr, $mem\t# ptr, #@storeimmP0" %}
@@ -8122,6 +8139,44 @@ instruct convL2F_reg_reg(fRegF dst, iRegL src) %{
   %}
 
   ins_pipe(fp_l2f);
+%}
+
+// float <-> half float
+
+instruct convHF2F_reg_reg(fRegF dst, iRegINoSp src, fRegF tmp) %{
+  predicate(UseZfhmin);
+  match(Set dst (ConvHF2F src));
+  effect(TEMP tmp);
+
+  ins_cost(XFER_COST);
+  format %{ "fmv.h.x $tmp, $src\t#@convHF2F_reg_reg\n\t"
+            "fcvt.s.h $dst, $tmp\t#@convHF2F_reg_reg"
+  %}
+
+  ins_encode %{
+    __ fmv_h_x($tmp$$FloatRegister, $src$$Register);
+    __ fcvt_s_h($dst$$FloatRegister, $tmp$$FloatRegister);
+  %}
+
+  ins_pipe(fp_i2f);
+%}
+
+instruct convF2HF_reg_reg(iRegINoSp dst, fRegF src, fRegF tmp) %{
+  predicate(UseZfhmin);
+  match(Set dst (ConvF2HF src));
+  effect(TEMP tmp);
+
+  ins_cost(XFER_COST);
+  format %{ "fcvt.h.s $tmp, $src\t#@convF2HF_reg_reg\n\t"
+            "fmv.x.h $dst, $tmp\t#@convF2HF_reg_reg"
+  %}
+
+  ins_encode %{
+    __ fcvt_h_s($tmp$$FloatRegister, $src$$FloatRegister);
+    __ fmv_x_h($dst$$Register, $tmp$$FloatRegister);
+  %}
+
+  ins_pipe(fp_f2i);
 %}
 
 // double <-> int
