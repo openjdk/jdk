@@ -56,7 +56,7 @@
 #define PRAGMA_STRINGOP_OVERFLOW_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wstringop-overflow")
 #endif
 
-#define PRAGMA_NONnullptr_IGNORED \
+#define PRAGMA_NONNULL_IGNORED \
   PRAGMA_DISABLE_GCC_WARNING("-Wnonnull")
 
 #if defined(__clang_major__) && \

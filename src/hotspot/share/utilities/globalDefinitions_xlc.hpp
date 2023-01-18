@@ -72,10 +72,10 @@
 // XLC V10 and higher provide the prototype for __dcbtst (void *);
 #endif // USE_XLC_BUILTINS
 
-// nullptr vs nullptr_WORD:
-// Some platform/tool-chain combinations can't assign nullptr to an integer
-// type so we define nullptr_WORD to use in those contexts. For xlc they are the same.
-#define nullptr_WORD  nullptr
+// NULL vs NULL_WORD:
+// Some platform/tool-chain combinations can't assign NULL to an integer
+// type so we define NULL_WORD to use in those contexts. For xlc they are the same.
+#define NULL_WORD  nullptr
 
 // AIX also needs a 64 bit nullptr to work as a null address pointer.
 // Most system includes on AIX would define it as an int 0 if not already defined with one
@@ -83,11 +83,11 @@
 // In this case you need to copy the following defines to a position after #include <dirent.h>
 #include <dirent.h>
 #ifdef _LP64
-  #undef nullptr
-  #define nullptr 0L
+  #undef NULL
+  #define NULL 0L
 #else
-  #ifndef nullptr
-    #define nullptr 0
+  #ifndef NULL
+    #define NULL 0
   #endif
 #endif
 

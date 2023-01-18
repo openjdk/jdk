@@ -51,7 +51,7 @@ void JSON::parse() {
   assert(start != nullptr, "Need something to parse");
   if (start == nullptr) {
     _valid = false;
-    error(INTERNAL_ERROR, "JSON parser was called with a string that was nullptr.");
+    error(INTERNAL_ERROR, "JSON parser was called with a string that was null.");
   } else {
     _valid = parse_json_value();
   }
