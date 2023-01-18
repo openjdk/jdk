@@ -677,6 +677,7 @@ nmethod::nmethod(
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
     _nul_chk_table_offset    = _handler_table_offset;
+    _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset;
     _jvmci_data_offset       = _speculations_offset;
@@ -813,6 +814,7 @@ nmethod::nmethod(
     _consts_offset           = content_offset()      + code_buffer->total_offset_of(code_buffer->consts());
     _stub_offset             = content_offset()      + code_buffer->total_offset_of(code_buffer->stubs());
     set_ctable_begin(header_begin() + _consts_offset);
+    _skipped_instructions_size      = code_buffer->total_skipped_instructions_size();
 
 #if INCLUDE_JVMCI
     if (compiler->is_jvmci()) {

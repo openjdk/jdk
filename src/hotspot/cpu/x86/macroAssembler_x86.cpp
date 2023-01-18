@@ -2035,6 +2035,7 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
   emit_int8((int8_t)0x0f);
   emit_int8((int8_t)0x1f);
   emit_int8((int8_t)0x84);

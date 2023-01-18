@@ -1101,6 +1101,7 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
   nop();
   movk(zr, 0);
   movk(zr, 0);
