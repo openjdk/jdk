@@ -772,7 +772,7 @@ instances of value-based classes.
 \f[V]text-blocks\f[R]: Warns about inconsistent white space characters
 in text block indentation.
 .IP \[bu] 2
-\f[V]this-escape\f[R]: Warns about superclass constructors leaking
+\f[V]this-escape\f[R]: Warns about constructors leaking
 \f[V]this\f[R] prior to subclass initialization.
 .IP \[bu] 2
 \f[V]try\f[R]: Warns about the issues relating to the use of try blocks
@@ -2213,44 +2213,45 @@ declaration of the method \f[V]m1\f[R].
 .RE
 .TP
 \f[V]this\-escape\f[R]
-Warns about superclass constructors leaking \f[V]this\f[R] prior
-to subclass initialization.
-For example:
+Warns about constructors leaking \f[V]this\f[R] prior to subclass
+initialization.
+For example, this class:
 .RS
 .IP
 .nf
 \f[CB]
 public class MyClass {
-
-   public MyClass() {
-       System.out.println("Hash = " + this.hashCode());
-   }
+  public MyClass() {
+    System.out.println(this.hashCode());
+  }
 }
 \f[R]
 .fi
 .PP
-The compiler generates the following warning:
+generates the following warning:
 .IP
 .nf
 \f[CB]
-MyClass.java:4: warning: [this-escape] possible 'this' escape
+MyClass.java:3: warning: [this-escape] possible 'this' escape
                          before subclass is fully initialized
-     System.out.println("Hash = " + this.hashCode());
-                                                 ^
+    System.out.println(this.hashCode());
+                                    ^
 \f[R]
 .fi
 .PP
-Because calls to \f[V]super()\f[R] must precede other initialization,
-subclass fields are unintialized when the superclass constructor executes.
-If the superclass constructor uses the instance in a way that could
-possibly result a subclass method being invoked, that method would be
-operating on a partially initialized instance. In the above example,
-a subclass that overrides \f[V]hashCode()\f[R] in order to incorporate
-some of its own fields would generate an incorrect result.
+A 'this' escape warning is generated when a constructor does something
+that might result in a subclass method being invoked before the
+constructor returns.
+In such cases the subclass method would be operating on an incompletely
+initialized instance.
+In the above example, a subclass of \f[V]MyClass\f[R] that overrides
+\f[V]hashCode()\f[R] to incorporate its own fields would likely produce
+an incorrect result when invoked as shown.
 .PP
-Warnings are only generated when a potential subclass could exist
-outside of the current source file being compiled.
-For example, final and private classes never generate warnings.
+Warnings are only generated if a subclass could exist that is outside
+of the current source file being compiled.
+So, for example, constructors in final and private classes do not
+generate warnings.
 .RE
 .TP
 \f[V]try\f[R]
