@@ -130,31 +130,34 @@ public class MappingResponseSubscriber {
     public void testAsBytes(String uri, boolean sameClient) throws Exception {
         HttpClient client = null;
         for (int i = 0; i < ITERATION_COUNT; i++) {
-            try {
-                if (!sameClient || client == null)
-                    client = newHttpClient();
+            if (!sameClient || client == null)
+                client = newHttpClient();
 
-                HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
-                        .build();
-                BodyHandler<byte[]> handler = new CRSBodyHandler();
-                HttpResponse<byte[]> response = client.send(req, handler);
-                byte[] body = response.body();
-                assertEquals(body, bytes);
-            } finally {
-                if (sameClient) continue;
-                Tracker tracker = TRACKER.getTracker(client);
-                client = null;
-                System.gc();
-                AssertionError error = TRACKER.check(tracker, 1500);
-                if (error != null) throw error;
-            }
+            HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
+                    .build();
+            BodyHandler<byte[]> handler = new CRSBodyHandler();
+            HttpResponse<byte[]> response = client.send(req, handler);
+            byte[] body = response.body();
+            assertEquals(body, bytes);
+
+            // if sameClient we will reuse the client for the next
+            // operation, so there's nothing more to do.
+            if (sameClient) continue;
+
+            // if no error and not same client then wait for the
+            // client to be GC'ed before performing the nex operation
+            Tracker tracker = TRACKER.getTracker(client);
+            client = null;
+            System.gc();
+            AssertionError error = TRACKER.check(tracker, 1500);
+            if (error != null) throw error; // the client didn't shut down properly
         }
         if (sameClient) {
             Tracker tracker = TRACKER.getTracker(client);
             client = null;
             System.gc();
             AssertionError error = TRACKER.check(tracker,1500);
-            if (error != null) throw error;
+            if (error != null) throw error; // the client didn't shut down properly
         }
     }
 
