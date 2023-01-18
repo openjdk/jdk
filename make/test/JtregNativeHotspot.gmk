@@ -1518,6 +1518,17 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
 endif
 
+ifeq ($(ASAN_ENABLED), true)
+  # Any executable which launches the JVM and uses a custom launcher needs to explicitly link in the
+  # default ASan options.
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exeinvoke := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exestack-gap := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exestack-tls := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exeFPRegs := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exesigtest := $(TOPDIR)/make/data/asan/asan_default_options.c
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_EXTRA_FILES_exedaemonDestroy := $(TOPDIR)/make/data/asan/asan_default_options.c
+endif
+
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.
 ifneq ($(filter build-test-hotspot-jtreg-native, $(MAKECMDGOALS)), )
