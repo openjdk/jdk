@@ -249,7 +249,7 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
-        configure_args: concat("--enable-jtreg-failure-handler",
+        configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
@@ -990,7 +990,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [ "lldb" ],
             environment_path: [
                 input.get("gnumake", "install_path") + "/bin",
-                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+                input.get("lldb", "install_path") + "/Xcode/Contents/Developer/usr/bin",
             ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
@@ -1126,7 +1126,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-macosx" + (input.build_cpu == "x64" ? "_x64" : ""),
-            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.1" : devkit_platform_revisions[devkit_platform])
+            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
         cups: {

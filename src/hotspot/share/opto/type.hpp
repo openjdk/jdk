@@ -883,9 +883,9 @@ protected:
     void raw_add(ciKlass* interface);
     void add(ciKlass* interface);
     void verify() const;
-    int _hash_computed:1;
-    int _exact_klass_computed:1;
-    int _is_loaded_computed:1;
+    uint _hash_computed:1;
+    uint _exact_klass_computed:1;
+    uint _is_loaded_computed:1;
     int _hash;
     ciKlass* _exact_klass;
     bool _is_loaded;

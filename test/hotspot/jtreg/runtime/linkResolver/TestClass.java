@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,7 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "utilities/debug.hpp"
-
-class ConditionalTest {
-  class A: AllStatic {};
-  class B: AllStatic {};
-
-  typedef Conditional<true, A, B>::type A_B_if_true;
-  static const bool A_B_if_true_is_A = IsSame<A_B_if_true, A>::value;
-  static const bool A_B_if_true_is_B = IsSame<A_B_if_true, B>::value;
-  STATIC_ASSERT(A_B_if_true_is_A);
-  STATIC_ASSERT(!A_B_if_true_is_B);
-
-  typedef Conditional<false, A, B>::type A_B_if_false;
-  static const bool A_B_if_false_is_A = IsSame<A_B_if_false, A>::value;
-  static const bool A_B_if_false_is_B = IsSame<A_B_if_false, B>::value;
-  STATIC_ASSERT(!A_B_if_false_is_A);
-  STATIC_ASSERT(A_B_if_false_is_B);
-};
+// Used as a reference type for a field in NoSuchFieldReference.jasm
+public class TestClass {}
