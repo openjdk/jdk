@@ -708,6 +708,8 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+  public native long physicalMemory();
+  public native long physicalSwap();
 
   // Decoder
   public native void disableElfSectionCache();

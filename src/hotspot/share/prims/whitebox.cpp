@@ -113,6 +113,7 @@
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 #ifdef LINUX
+#include "os_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "cgroupSubsystem_linux.hpp"
 #endif
@@ -2353,6 +2354,18 @@ WB_ENTRY(jboolean, WB_IsContainerized(JNIEnv* env, jobject o))
   return false;
 WB_END
 
+// Physical memory of the host machine (including containers)
+WB_ENTRY(jlong, WB_PhysicalMemory(JNIEnv* env, jobject o))
+  LINUX_ONLY(return os::Linux::physical_memory();)
+  return os::physical_memory();
+WB_END
+
+// Physical swap of the host machine (including containers), Linux only.
+WB_ENTRY(jlong, WB_PhysicalSwap(JNIEnv* env, jobject o))
+  LINUX_ONLY(return (jlong)os::Linux::host_swap();)
+  return -1; // Not used/implemented on other platforms
+WB_END
+
 WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
                                     jobject o,
                                     jstring proc_cgroups,
@@ -2752,6 +2765,8 @@ static JNINativeMethod methods[] = {
   {CC"validateCgroup",
       CC"(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I",
                                                       (void*)&WB_ValidateCgroup },
+  {CC"physicalMemory",            CC"()J",            (void*)&WB_PhysicalMemory },
+  {CC"physicalSwap",              CC"()J",            (void*)&WB_PhysicalSwap },
   {CC"printOsInfo",               CC"()V",            (void*)&WB_PrintOsInfo },
   {CC"disableElfSectionCache",    CC"()V",            (void*)&WB_DisableElfSectionCache },
   {CC"resolvedMethodItemsCount",  CC"()J",            (void*)&WB_ResolvedMethodItemsCount },
