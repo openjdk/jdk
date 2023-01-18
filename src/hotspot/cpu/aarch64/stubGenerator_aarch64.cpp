@@ -6914,12 +6914,12 @@ typedef __uint128_t u128;
 typedef uint64_t u64;
 typedef uint32_t u32;
 
-#define ADC(result, carry, n, m) {              \
-  u64 c1 = (n >> 64) + carry;                   \
-  u64 n1 = n;                                   \
-  result = n1 + m + c1;                         \
-  carry = (u128)n1 > result;                    \
-}
+  template <typename T>
+  static void ADC(T &result, u64 &carry, u64 n, u64 m) {
+    u128 sum = (u128)n + m + carry;
+    result = (u64)sum;
+    carry = (u64)(sum >> 64);
+  }
 
   static constexpr int BLOCK_LENGTH = 16;
 
@@ -6991,8 +6991,6 @@ typedef uint32_t u32;
       const u64 s3 = ctx_h[3] + (u64)ctx_c[3]; // s3 <= 1_fffffffe
       const u32 s4 = ctx_h[4];                 // s4 <=          5
 
-      uint32_t carry = 0;
-
       if (b_u1 == 0x8a4850e9af0cf61c) {
         asm("nop");
       }
@@ -7000,6 +6998,14 @@ typedef uint32_t u32;
       if (b_u1 == 0x209c0f42766e4ca9) {
         asm("nop");
       }
+
+      printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
+      printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
+
+      static int counter;
+      printf("#%d\n", ++counter);
+
+      uint64_t carry = 0;
 
       ADC(b_s0, carry, b_u0, b_c[0]); if (carry) printf("#");
       ADC(b_s1, carry, b_u1, b_c[1]); if (carry) printf("*");
@@ -7017,10 +7023,7 @@ typedef uint32_t u32;
         }
       }
 
-      printf("\n");
       // printf("C: %08x:%08x:%08x:%08x\n", ctx_c[3], ctx_c[2], ctx_c[1], ctx_c[0]);
-      printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
-      printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
       printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);
       // printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
 
@@ -7114,7 +7117,7 @@ typedef uint32_t u32;
 
     {
       // Fully reduce modulo 2^130 - 5
-      int carry = 0;
+      u64 carry = 0;
       ADC(b_u0, carry, b_u0, (b_u2 >> 2) * 5); if (carry) printf("#");
       ADC(b_u1, carry, b_u1, 0);               if (carry) printf("*");
       b_u2 = (b_u2 + carry) & 3;
