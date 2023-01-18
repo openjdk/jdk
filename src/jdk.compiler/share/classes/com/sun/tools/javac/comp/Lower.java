@@ -463,10 +463,7 @@ public class Lower extends TreeTranslator {
         }
 
         // Map identifiers to ordinal values at runtime, and then switch on that
-        EnumMapping map = enumSwitchMap.get(enumClass);
-        if (map == null)
-            enumSwitchMap.put(enumClass, map = new RuntimeEnumMapping(pos, enumClass));
-        return map;
+        return enumSwitchMap.computeIfAbsent(enumClass, ec -> new RuntimeEnumMapping(pos, ec));
     }
 
     /** Generates a test value and corresponding cases for a switch on an enum type.
