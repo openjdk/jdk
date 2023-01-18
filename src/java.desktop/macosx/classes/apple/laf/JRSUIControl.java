@@ -126,7 +126,7 @@ public final class JRSUIControl {
         NO_CHANGE,
         ALL_CHANGES_IN_BUFFER,
         SOME_CHANGES_IN_BUFFER,
-        CHANGE_WONT_FIT_IN_BUFFER;
+        CHANGE_WONT_FIT_IN_BUFFER
     }
 
     private BufferState loadBufferWithChanges(final ThreadLocalByteBuffer localByteBuffer) {

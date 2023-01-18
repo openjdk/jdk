@@ -96,10 +96,9 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
       // read contents into resource array
       char* buffer = NEW_RESOURCE_ARRAY(char, st.st_size+1);
       ssize_t num_read = ::read(file_handle, (char*) buffer, st.st_size);
+      ::close(file_handle);
       if (num_read >= 0) {
         buffer[num_read] = '\0';
-        // close file
-        ::close(file_handle);
         return parse_string(buffer, stream) > 0;
       }
     }

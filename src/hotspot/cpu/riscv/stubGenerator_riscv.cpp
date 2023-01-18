@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2461,7 +2461,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
@@ -3979,14 +3979,8 @@ class StubGenerator: public StubCodeGenerator {
 
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    Label null_jobject;
-    __ beqz(x10, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(x10, t0, t1);
   }
-
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -4012,6 +4006,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+
     jfr_epilogue(_masm);
     __ leave();
     __ ret();

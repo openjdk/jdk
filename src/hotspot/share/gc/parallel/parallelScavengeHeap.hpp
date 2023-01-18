@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,17 +93,17 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
-  virtual void initialize_serviceability();
+  void initialize_serviceability() override;
 
   void trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs);
-  void trace_heap(GCWhen::Type when, const GCTracer* tracer);
+  void trace_heap(GCWhen::Type when, const GCTracer* tracer) override;
 
   // Allocate in oldgen and record the allocation with the size_policy.
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
  protected:
   static inline size_t total_invocations();
-  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
+  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;
   inline void death_march_check(HeapWord* const result, size_t size);
@@ -126,23 +126,23 @@ class ParallelScavengeHeap : public CollectedHeap {
     MarkSweep
   };
 
-  virtual Name kind() const {
+  Name kind() const override {
     return CollectedHeap::Parallel;
   }
 
-  virtual const char* name() const {
+  const char* name() const override {
     return "Parallel";
   }
 
-  virtual SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
+  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
 
-  virtual GrowableArray<GCMemoryManager*> memory_managers();
-  virtual GrowableArray<MemoryPool*> memory_pools();
+  GrowableArray<GCMemoryManager*> memory_managers() override;
+  GrowableArray<MemoryPool*> memory_pools() override;
 
   static PSYoungGen* young_gen() { return _young_gen; }
   static PSOldGen* old_gen()     { return _old_gen; }
 
-  virtual PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
+  PSAdaptiveSizePolicy* size_policy() { return _size_policy; }
 
   static PSGCAdaptivePolicyCounters* gc_policy_counters() { return _gc_policy_counters; }
 
@@ -154,38 +154,38 @@ class ParallelScavengeHeap : public CollectedHeap {
   PSCardTable* card_table();
 
   // Returns JNI_OK on success
-  virtual jint initialize();
+  jint initialize() override;
 
-  virtual void safepoint_synchronize_begin();
-  virtual void safepoint_synchronize_end();
+  void safepoint_synchronize_begin() override;
+  void safepoint_synchronize_end() override;
 
-  void post_initialize();
+  void post_initialize() override;
   void update_counters();
 
-  size_t capacity() const;
-  size_t used() const;
+  size_t capacity() const override;
+  size_t used() const override;
 
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
-  virtual bool is_maximal_no_gc() const;
+  bool is_maximal_no_gc() const override;
 
-  virtual void register_nmethod(nmethod* nm);
-  virtual void unregister_nmethod(nmethod* nm);
-  virtual void verify_nmethod(nmethod* nm);
+  void register_nmethod(nmethod* nm) override;
+  void unregister_nmethod(nmethod* nm) override;
+  void verify_nmethod(nmethod* nm) override;
 
   void prune_scavengable_nmethods();
 
-  size_t max_capacity() const;
+  size_t max_capacity() const override;
 
   // Whether p is in the allocated part of the heap
-  bool is_in(const void* p) const;
+  bool is_in(const void* p) const override;
 
   bool is_in_reserved(const void* p) const;
 
   bool is_in_young(const void* p) const;
 
-  virtual bool requires_barriers(stackChunkOop obj) const;
+  bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
   HeapWord* base() const { return _reserved.start(); }
@@ -195,7 +195,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // an excessive amount of time is being spent doing collections
   // and caused a NULL to be returned.  If a NULL is not returned,
   // "gc_time_limit_was_exceeded" has an undefined meaning.
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
+  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
 
   // Allocation attempt(s) during a safepoint. It should never be called
   // to allocate a new TLAB as this allocation might be satisfied out
@@ -203,7 +203,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* failed_mem_allocate(size_t size);
 
   // Support for System.gc()
-  void collect(GCCause::Cause cause);
+  void collect(GCCause::Cause cause) override;
 
   // These also should be called by the vm thread at a safepoint (e.g., from a
   // VM operation).
@@ -215,38 +215,38 @@ class ParallelScavengeHeap : public CollectedHeap {
   inline void invoke_scavenge();
 
   // Perform a full collection
-  virtual void do_full_collection(bool clear_all_soft_refs);
+  void do_full_collection(bool clear_all_soft_refs) override;
 
-  void ensure_parsability(bool retire_tlabs);
-  void resize_all_tlabs();
+  void ensure_parsability(bool retire_tlabs) override;
+  void resize_all_tlabs() override;
 
-  size_t tlab_capacity(Thread* thr) const;
-  size_t tlab_used(Thread* thr) const;
-  size_t unsafe_max_tlab_alloc(Thread* thr) const;
+  size_t tlab_capacity(Thread* thr) const override;
+  size_t tlab_used(Thread* thr) const override;
+  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
 
-  void object_iterate(ObjectClosure* cl);
+  void object_iterate(ObjectClosure* cl) override;
   void object_iterate_parallel(ObjectClosure* cl, HeapBlockClaimer* claimer);
-  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num);
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) override;
 
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
 
-  void prepare_for_verify();
+  void prepare_for_verify() override;
   PSHeapSummary create_ps_heap_summary();
-  virtual void print_on(outputStream* st) const;
-  virtual void print_on_error(outputStream* st) const;
-  virtual void gc_threads_do(ThreadClosure* tc) const;
-  virtual void print_tracing_info() const;
+  void print_on(outputStream* st) const override;
+  void print_on_error(outputStream* st) const override;
+  void gc_threads_do(ThreadClosure* tc) const override;
+  void print_tracing_info() const override;
 
-  virtual WorkerThreads* safepoint_workers() { return &_workers; }
+  WorkerThreads* safepoint_workers() override { return &_workers; }
 
   PreGenGCValues get_pre_gc_values() const;
   void print_heap_change(const PreGenGCValues& pre_gc_values) const;
 
   // Used to print information about locations in the hs_err file.
-  virtual bool print_location(outputStream* st, void* addr) const;
+  bool print_location(outputStream* st, void* addr) const override;
 
-  void verify(VerifyOption option /* ignored */);
+  void verify(VerifyOption option /* ignored */) override;
 
   // Resize the young generation.  The reserved space for the
   // generation may be expanded in preparation for the resize.
@@ -270,9 +270,12 @@ class ParallelScavengeHeap : public CollectedHeap {
   }
 
   // Support for loading objects from CDS archive into the heap
-  bool can_load_archived_objects() const { return UseCompressedOops; }
-  HeapWord* allocate_loaded_archive_space(size_t size);
-  void complete_loaded_archive_space(MemRegion archive_space);
+  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size) override;
+  void complete_loaded_archive_space(MemRegion archive_space) override;
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 // Class that can be used to print information about the

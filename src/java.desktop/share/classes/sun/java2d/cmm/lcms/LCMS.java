@@ -96,11 +96,9 @@ final class LCMS implements PCMM {
     }
 
     /* Helper method used from LCMSColorTransfrom */
-    static long createTransform(
-        LCMSProfile[] profiles, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef)
+    static long createTransform(LCMSProfile[] profiles, int renderingIntent,
+                                int inFormatter, int outFormatter,
+                                Object disposerRef)
     {
         long[] ptrs = new long[profiles.length];
         long stamp = lock.readLock();
@@ -113,17 +111,17 @@ final class LCMS implements PCMM {
             }
 
             return createNativeTransform(ptrs, renderingIntent, inFormatter,
-                    isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+                                         outFormatter, disposerRef);
         } finally {
             lock.unlockRead(stamp);
         }
     }
 
-    private static native long createNativeTransform(
-        long[] profileIDs, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef);
+    private static native long createNativeTransform(long[] profileIDs,
+                                                     int renderingIntent,
+                                                     int inFormatter,
+                                                     int outFormatter,
+                                                     Object disposerRef);
 
     /**
      * Constructs ColorTransform object corresponding to the ICC_profiles.
@@ -141,7 +139,7 @@ final class LCMS implements PCMM {
                                     Object srcData, Object dstData,
                                     int srcType, int dstType);
 
-    private LCMS() {};
+    private LCMS() {}
 
     private static LCMS theLcms = null;
 

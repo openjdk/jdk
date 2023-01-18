@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,6 +849,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
     switch (n->Opcode()) {
       case Op_StrComp:
       case Op_StrEquals:
+      case Op_VectorizedHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
@@ -1017,6 +1018,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
+      case Op_VectorizedHashCode:
       case Op_CountPositives: {
         // Do not unroll a loop with String intrinsics code.
         // String intrinsics are large and have loops.
@@ -4381,6 +4383,19 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);
 
+  // If the store is on the backedge, it is not executed in the last
+  // iteration, and we must subtract 1 from the len.
+  Node* backedge = head->loopexit()->proj_out(1);
+  if (store->in(0) == backedge) {
+    len = new SubINode(len, _igvn.intcon(1));
+    _igvn.register_new_node_with_optimizer(len);
+#ifndef PRODUCT
+    if (TraceOptimizeFill) {
+      tty->print_cr("ArrayFill store on backedge, subtract 1 from len.");
+    }
+#endif
+  }
+
   BasicType t = store->as_Mem()->memory_type();
   bool aligned = false;
   if (offset != NULL && head->init_trip()->is_Con()) {
@@ -4482,6 +4497,13 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* n = lpt->_body.at(i);
     _igvn.replace_node(n, C->top());
   }
+
+#ifndef PRODUCT
+  if (TraceOptimizeFill) {
+    tty->print("ArrayFill call   ");
+    call->dump();
+  }
+#endif
 
   return true;
 }
