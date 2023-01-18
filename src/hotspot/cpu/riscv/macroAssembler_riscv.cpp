@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -556,23 +556,59 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
 }
 
 void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp2) {
-  Label done, not_weak;
+  assert_different_registers(value, tmp1, tmp2);
+  Label done, tagged, weak_tagged;
+
   beqz(value, done);           // Use NULL as-is.
+  // Test for tag.
+  andi(t0, value, JNIHandles::tag_mask);
+  bnez(t0, tagged);
 
-  // Test for jweak tag.
-  andi(t0, value, JNIHandles::weak_tag_mask);
-  beqz(t0, not_weak);
-
-  // Resolve jweak.
-  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
-                 Address(value, -JNIHandles::weak_tag_value), tmp1, tmp2);
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
   verify_oop(value);
   j(done);
 
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp1, tmp2);
+  bind(tagged);
+  // Test for jweak tag.
+  andi(t0, value, JNIHandles::TypeTag::weak_global);
+  bnez(t0, weak_tagged);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value,
+                 Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
+  j(done);
+
+  bind(weak_tagged);
+  // Resolve jweak.
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF, value,
+                 Address(value, -JNIHandles::TypeTag::weak_global), tmp1, tmp2);
   verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  beqz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    andi(t0, value, JNIHandles::TypeTag::global); // Test for global tag.
+    bnez(t0, valid_global_tag);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value,
+                 Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
+  verify_oop(value);
+
   bind(done);
 }
 

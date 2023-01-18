@@ -836,9 +836,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
     // Move SP out of the way
     __ mov(sp, rscratch1);
-    } else {
-    __ mov(rscratch1, sp);
+  } else {
+    // Make sure there is room for the exception oop pushed in case method throws
+    // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
+    __ sub(rscratch1, sp, 2 * wordSize);
     __ stp(zr, rscratch1, Address(sp, 4 * wordSize));
+    __ mov(sp, rscratch1);
   }
 }
 
