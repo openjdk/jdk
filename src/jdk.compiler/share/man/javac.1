@@ -2249,8 +2249,8 @@ In the above example, a subclass of \f[V]MyClass\f[R] that overrides
 an incorrect result when invoked as shown.
 .PP
 Warnings are only generated if a subclass could exist that is outside
-of the current source file being compiled.
-So, for example, constructors in final and private classes do not
+of the current module (or package, if no module) being compiled.
+So, for example, constructors in final and non-public classes do not
 generate warnings.
 .RE
 .TP

@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
@@ -41,6 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.sun.tools.javac.code.Directive;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Symbol;
@@ -78,9 +80,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  * This class attempts to identify possible 'this' escapes while also striking a balance
  * between false positives, false negatives, and code complexity. We do this by "executing"
  * the code in candidate constructors and tracking where the original 'this' reference goes.
- * If it ever passes to code outside of the current compilation unit, we declare a possible leak.
- * On the other hand, when constructors and non-overridable methods within the same compilation
- * unit are invoked, we "invoke" them to follow references.
+ * If it passes to code outside of the current module, we declare a possible leak.
  *
  * <p>
  * As we analyze constructors and the methods they invoke, we track the various things in scope
@@ -111,9 +111,9 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
  *  <li>We use a very simplified flow analysis that you might call a "flood analysis", where the union
  *      of every possible code branch is taken.
  *  <li>A "leak" is defined as the possible passing of a subclassed 'this' reference to code defined
- *      outside of the current compilation unit.
+ *      outside of the current module.
  *  <ul>
- *      <li>In other words, we don't try to protect the current compilation unit from itself.
+ *      <li>In other words, we don't try to protect the current module's code from itself.
  *      <li>For example, we ignore private constructors because they can never be directly invoked
  *          by external subclasses, etc. However, they can be indirectly invoked by other constructors.
  *  </ul>
@@ -211,6 +211,16 @@ class ThisEscapeAnalyzer extends TreeScanner {
         if (!lint.isEnabled(Lint.LintCategory.THIS_ESCAPE))
             return;
 
+        // Determine which packages are exported by the containing module, if any.
+        // A null set indicates the unnamed module: all packages are implicitly exported.
+        Set<PackageSymbol> exportedPackages = Optional.ofNullable(env.toplevel.modle)
+            .filter(mod -> mod != syms.noModule)
+            .filter(mod -> mod != syms.unnamedModule)
+            .map(mod -> mod.exports.stream()
+                            .map(Directive.ExportsDirective::getPackage)
+                            .collect(Collectors.toSet()))
+            .orElse(null);
+
         // Build a set of symbols for classes declared in this file
         final Set<Symbol> classSyms = new HashSet<>();
         new TreeScanner() {
@@ -228,24 +238,24 @@ class ThisEscapeAnalyzer extends TreeScanner {
 
             private Lint lint = ThisEscapeAnalyzer.this.lint;
             private JCClassDecl currentClass;
-            private boolean privateOuter;
+            private boolean nonPublicOuter;
 
             @Override
             public void visitClassDef(JCClassDecl tree) {
                 JCClassDecl currentClassPrev = currentClass;
-                boolean privateOuterPrev = privateOuter;
+                boolean nonPublicOuterPrev = nonPublicOuter;
                 Lint lintPrev = lint;
                 lint = lint.augment(tree.sym);
                 try {
                     currentClass = tree;
-                    privateOuter |= tree.sym.isAnonymous();
-                    privateOuter |= (tree.mods.flags & Flags.PRIVATE) != 0;
+                    nonPublicOuter |= tree.sym.isAnonymous();
+                    nonPublicOuter |= (tree.mods.flags & Flags.PUBLIC) == 0;
 
                     // Recurse
                     super.visitClassDef(tree);
                 } finally {
                     currentClass = currentClassPrev;
-                    privateOuter = privateOuterPrev;
+                    nonPublicOuter = nonPublicOuterPrev;
                     lint = lintPrev;
                 }
             }
@@ -278,13 +288,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
                         suppressed.add(tree.sym);
 
                     // Determine if this is a constructor we should analyze
-                    boolean analyzable = currentClassIsExternallyExtendable() &&
+                    boolean extendable = currentClassIsExternallyExtendable();
+                    boolean analyzable = extendable &&
                         TreeInfo.isConstructor(tree) &&
-                        !tree.sym.isPrivate() &&
+                        (tree.sym.flags() & (Flags.PUBLIC | Flags.PROTECTED)) != 0 &&
                         !suppressed.contains(tree.sym);
 
                     // Determine if this method is "invokable" in an analysis (can't be overridden)
-                    boolean invokable = !currentClassIsExternallyExtendable() ||
+                    boolean invokable = !extendable ||
                         TreeInfo.isConstructor(tree) ||
                         (tree.mods.flags & (Flags.STATIC | Flags.PRIVATE | Flags.FINAL)) != 0;
 
@@ -298,15 +309,14 @@ class ThisEscapeAnalyzer extends TreeScanner {
                 }
             }
 
-            // Determines if the current class could be extended in some external compilation unit
+            // Determines if the current class could be extended in some other package/module
             private boolean currentClassIsExternallyExtendable() {
                 return !currentClass.sym.isFinal() &&
-                  !(currentClass.sym.isSealed() &&
-                      currentClass.permitting.stream()
-                        .map(TreeInfo::symbolFor)
-                        .allMatch(classSyms::contains)) &&
+                  currentClass.sym.isPublic() &&
+                  (exportedPackages == null || exportedPackages.contains(currentClass.sym.packge())) &&
+                  !currentClass.sym.isSealed() &&
                   !currentClass.sym.isDirectlyOrIndirectlyLocal() &&
-                  !privateOuter;
+                  !nonPublicOuter;
             }
         }.scan(env.tree);
 
