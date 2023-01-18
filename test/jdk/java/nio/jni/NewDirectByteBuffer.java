@@ -23,6 +23,8 @@
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jdk.internal.misc.Unsafe;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -37,11 +39,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @bug 8299684
  * @summary Unit test for the JNI function NewDirectByteBuffer
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8g)
+ * @modules java.base/jdk.internal.misc
  * @run junit/othervm/native NewDirectByteBuffer
  */
 public class NewDirectByteBuffer {
+    private static final Unsafe UNSAFE;
     static {
         System.loadLibrary("NewDirectByteBuffer");
+        UNSAFE = Unsafe.getUnsafe();
     }
 
     private static final void checkBuffer(ByteBuffer buf, long capacity) {
@@ -98,11 +103,14 @@ public class NewDirectByteBuffer {
     @ValueSource(longs = {0L, 1L, (long)Integer.MAX_VALUE/2,
         (long)Integer.MAX_VALUE - 1, (long)Integer.MAX_VALUE})
     void legalCapacities(long capacity) {
-        ByteBuffer buf = newDirectByteBuffer(capacity);
+        long addr = UNSAFE.allocateMemory(capacity);
+        ByteBuffer buf = newDirectByteBuffer(addr, capacity);
         try {
+            assertEquals(addr, getDirectBufferAddress(buf),
+                "GetDirectBufferAddress does not return supplied address");
             checkBuffer(buf, capacity);
         } finally {
-            freeDirectByteBufferMemory(buf);
+            UNSAFE.freeMemory(addr);
         }
     }
 
@@ -112,15 +120,16 @@ public class NewDirectByteBuffer {
         Long.MAX_VALUE})
     void illegalCapacities(long capacity) {
         assertThrows(IllegalArgumentException.class, () -> {
-            ByteBuffer buf = newDirectByteBuffer(capacity);
+            long addr = UNSAFE.allocateMemory(capacity);
+            ByteBuffer buf = newDirectByteBuffer(addr, capacity);
             if (buf != null) {
-                freeDirectByteBufferMemory(buf);
+                UNSAFE.freeMemory(addr);
             }
         });
     }
 
     // See libNewDirectByteBuffer.c for implementations.
-    private static native ByteBuffer newDirectByteBuffer(long size);
+    private static native ByteBuffer newDirectByteBuffer(long addr, long capacity);
     private static native long getDirectByteBufferCapacity(ByteBuffer buf);
-    private static native void freeDirectByteBufferMemory(ByteBuffer buf);
+    private static native long getDirectBufferAddress(ByteBuffer buf);
 }
