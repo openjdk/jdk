@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,11 +72,11 @@ import java.util.stream.Collectors;
  * formatting. For example,
  * {@link NumberFormat#getCompactNumberInstance(Locale, Style)}.
  *
- * <blockquote><pre>
+ * <blockquote>{@snippet lang=java :
  * NumberFormat fmt = NumberFormat.getCompactNumberInstance(
  *                             Locale.forLanguageTag("hi-IN"), NumberFormat.Style.SHORT);
  * String result = fmt.format(1000);
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <h2><a id="compact_number_style">Style</a></h2>
  * <p>
