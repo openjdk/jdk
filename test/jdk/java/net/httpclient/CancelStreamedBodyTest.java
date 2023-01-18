@@ -104,6 +104,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
 
     static final long SERVER_LATENCY = 75;
     static final int ITERATION_COUNT = 3;
+    static final long CLIENT_SHUTDOWN_GRACE_DELAY = 1500; // milliseconds
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = new TestExecutor(Executors.newCachedThreadPool());
     static final ConcurrentMap<String, Throwable> FAILURES = new ConcurrentHashMap<>();
@@ -287,7 +288,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(tracker, 500);
+            var error = TRACKER.check(tracker, CLIENT_SHUTDOWN_GRACE_DELAY);
             if (error != null) throw error;
         }
     }
@@ -329,7 +330,7 @@ public class CancelStreamedBodyTest implements HttpServerAdapters {
             if (sameClient) continue;
             client = null;
             System.gc();
-            var error = TRACKER.check(tracker, 1);
+            var error = TRACKER.check(tracker, CLIENT_SHUTDOWN_GRACE_DELAY);
             if (error != null) throw error;
         }
     }

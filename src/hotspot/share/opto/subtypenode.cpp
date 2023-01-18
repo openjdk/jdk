@@ -47,7 +47,7 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
   }
 
   if (subk != NULL) {
-    switch (Compile::current()->static_subtype_check(superk, subk)) {
+    switch (Compile::current()->static_subtype_check(superk, subk, false)) {
       case Compile::SSC_always_false:
         return TypeInt::CC_GT;
       case Compile::SSC_always_true:

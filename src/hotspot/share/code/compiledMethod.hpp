@@ -281,6 +281,8 @@ public:
   bool consts_contains(address addr) const { return consts_begin() <= addr && addr < consts_end(); }
   int consts_size() const { return consts_end() - consts_begin(); }
 
+  virtual int skipped_instructions_size() const = 0;
+
   virtual address stub_begin() const = 0;
   virtual address stub_end() const = 0;
   bool stub_contains(address addr) const { return stub_begin() <= addr && addr < stub_end(); }

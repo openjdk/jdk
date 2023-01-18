@@ -189,18 +189,18 @@ public class TestVerifyGCType {
         Asserts.assertTrue(ci != null, "Expected GC not found: " + name + "\n" + data);
 
         // Verify Before
-        verifyType(ci, expectBefore, VERIFY_BEFORE);
+        verifyType(ci, expectBefore, VERIFY_BEFORE, data);
         // Verify During
-        verifyType(ci, expectDuring, VERIFY_DURING);
+        verifyType(ci, expectDuring, VERIFY_DURING, data);
         // Verify After
-        verifyType(ci, expectAfter, VERIFY_AFTER);
+        verifyType(ci, expectAfter, VERIFY_AFTER, data);
     }
 
-    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern) {
+    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern, String data) {
         if (shouldExist) {
-            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         } else {
-            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         }
     }
 
@@ -272,22 +272,26 @@ public class TestVerifyGCType {
             partialFree(used);
 
             used = alloc1M();
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-            partialFree(used);
 
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
+            wb.concurrentGCAcquireControl();
+            try {
+                wb.concurrentGCRunTo(wb.AFTER_MARKING_STARTED);
+                partialFree(used);
+
+                wb.concurrentGCRunToIdle();
+
+                // Trigger two young GCs while preventing a new concurrent GC.
+                // First will be young-prepare-mixed, second will be mixed.
+                used = alloc1M();
+                wb.youngGC(); // young-prepare-mixed
+                partialFree(used);
+
+                used = alloc1M();
+                wb.youngGC(); // mixed
+                partialFree(used);
+            } finally {
+                wb.concurrentGCReleaseControl();
             }
-
-            // Trigger two young GCs, first will be young-prepare-mixed, second will be mixed.
-            used = alloc1M();
-            wb.youngGC(); // young-prepare-mixed
-            partialFree(used);
-
-            used = alloc1M();
-            wb.youngGC(); // mixed
-            partialFree(used);
         }
 
         private static Object[] alloc1M() {
