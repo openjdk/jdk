@@ -104,8 +104,8 @@ public class NewDirectByteBuffer {
         (long)Integer.MAX_VALUE - 1, (long)Integer.MAX_VALUE})
     void legalCapacities(long capacity) {
         long addr = UNSAFE.allocateMemory(capacity);
-        ByteBuffer buf = newDirectByteBuffer(addr, capacity);
         try {
+            ByteBuffer buf = newDirectByteBuffer(addr, capacity);
             assertEquals(addr, getDirectBufferAddress(buf),
                 "GetDirectBufferAddress does not return supplied address");
             checkBuffer(buf, capacity);
@@ -121,8 +121,9 @@ public class NewDirectByteBuffer {
     void illegalCapacities(long capacity) {
         assertThrows(IllegalArgumentException.class, () -> {
             long addr = UNSAFE.allocateMemory(capacity);
-            ByteBuffer buf = newDirectByteBuffer(addr, capacity);
-            if (buf != null) {
+            try {
+                ByteBuffer buf = newDirectByteBuffer(addr, capacity);
+            } finally {
                 UNSAFE.freeMemory(addr);
             }
         });
