@@ -1496,7 +1496,6 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     const jint flags = cfs->get_u2_fast() & JVM_RECOGNIZED_FIELD_MODIFIERS;
     verify_legal_field_modifiers(flags, is_interface, CHECK);
     access_flags.set_flags(flags);
-    AccessFlags original_access_flags = access_flags;
     FieldInfo::FieldFlags fieldFlags(0);
 
     const u2 name_index = cfs->get_u2_fast();
@@ -1565,7 +1564,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     // Update FieldAllocationCount for this kind of field
     fac->update(is_static, type);
 
-    FieldInfo fi(original_access_flags, name_index, signature_index, constantvalue_index, fieldFlags);
+    FieldInfo fi(access_flags, name_index, signature_index, constantvalue_index, fieldFlags);
     fi.set_index(n);
     if (fieldFlags.is_generic()) {
       fi.set_generic_signature_index(generic_signature_index);
