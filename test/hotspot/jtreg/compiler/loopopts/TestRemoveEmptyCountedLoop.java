@@ -28,10 +28,10 @@
  * @key stress randomness
  *
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM
- *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test,compiler.loopopts.TestRemoveEmptyCountedLoop::test2
+ *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:StressSeed=2160808391
- *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test,compiler.loopopts.TestRemoveEmptyCountedLoop::test2
+ *                   -XX:CompileOnly=compiler.loopopts.TestRemoveEmptyCountedLoop::test*
  *                   compiler.loopopts.TestRemoveEmptyCountedLoop
  */
 
@@ -39,33 +39,32 @@ package compiler.loopopts;
 
 public class TestRemoveEmptyCountedLoop {
 
-    public void test() {
-      int k = 3;
-      for (int i=9; i>0; i--) {
-        for (int j=2; j<i; j++) {
-          k = k;
-          k = (1 % j);
+    public static void test1() {
+        int k = 3;
+        for (int i=9; i>0; i--) {
+            for (int j=2; j<i; j++) {
+                k = k;
+                k = (1 % j);
+            }
         }
-      }
     }
 
-    public void test2() {
-      int k = 3;
-      for (int i=9; i>0; i--) {
-          int j = 2;
-          do {
-              try {
-                  k = k;
-                  k = (1 % j);
-              } catch (Exception e) {}
-          } while (++j < i);
-      }
+    public static void test2() {
+        int k = 3;
+        for (int i=9; i>0; i--) {
+            int j = 2;
+            do {
+                try {
+                    k = k;
+                    k = (1 % j);
+                } catch (Exception e) {}
+            } while (++j < i);
+        }
     }
 
     public static void main(String[] args) {
-        TestRemoveEmptyCountedLoop _instance = new TestRemoveEmptyCountedLoop();
-        _instance.test();
-        _instance.test2();
+        test1();
+        test2();
         System.out.println("Test passed.");
     }
 }
