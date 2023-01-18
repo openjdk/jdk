@@ -28,18 +28,21 @@
  * @modules java.base/jdk.internal.access
  * @modules java.base/sun.security.util
  * @modules java.base/sun.security.tools.keytool
- * @compile VerifyUnrelatedSignatureFiles.java
+ * @modules jdk.jartool/sun.security.tools.jarsigner
  * @run main/othervm VerifyUnrelatedSignatureFiles
  */
 
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.security.jarsigner.JarSigner;
+import sun.security.tools.jarsigner.Main;
 import sun.security.util.SignatureFileVerifier;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -138,6 +141,27 @@ public class VerifyUnrelatedSignatureFiles {
                         .formatted(expectedOrder, actualOrder);
                 throw new Exception(msg);
             }
+        }
+
+        // 7: Check that jarsigner ignores unrelated signature files
+        String message = jarSignerVerify(m);
+        if (message.contains("WARNING")) {
+            throw new Exception("jarsigner output contains unexpected  warning: " +message);
+        }
+    }
+
+    /**
+     * run "jarsigner -verify" on the JAR and return the captured output
+     */
+    private static String jarSignerVerify(Path m) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream currentOut = System.out;
+        try {
+            System.setOut(new PrintStream(out));
+            Main.main(new String[] {"-verify", m.toAbsolutePath().toString()});
+            return out.toString(StandardCharsets.UTF_8);
+        } finally {
+            System.setOut(currentOut);
         }
     }
 

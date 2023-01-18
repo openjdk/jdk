@@ -835,8 +835,7 @@ public class Main {
                     if (!extraAttrsDetected && JUZFA.getExtraAttributes(je) != -1) {
                         extraAttrsDetected = true;
                     }
-                    hasSignature = hasSignature
-                            || SignatureFileVerifier.isBlockOrSF(name);
+                    hasSignature |= signatureRelated(name) && SignatureFileVerifier.isBlockOrSF(name);
 
                     CodeSigner[] signers = je.getCodeSigners();
                     boolean isSigned = (signers != null);
