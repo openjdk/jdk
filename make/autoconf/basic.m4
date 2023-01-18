@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 
   # Locate the directory of this script.
   AUTOCONF_DIR=$TOPDIR/make/autoconf
+])
+
+###############################################################################
+# Setup what kind of build environment type we have (CI or local developer)
+AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
+[
+  if test "x$CI" = "xtrue"; then
+    DEFAULT_BUILD_ENV="ci"
+    AC_MSG_NOTICE([CI environment variable set to $CI])
+  else
+    DEFAULT_BUILD_ENV="dev"
+  fi
+
+  UTIL_ARG_WITH(NAME: build-env, TYPE: literal,
+      RESULT: BUILD_ENV,
+      VALID_VALUES: [auto dev ci], DEFAULT: auto,
+      CHECKING_MSG: [for build environment type],
+      DESC: [select build environment type (affects certain default values)],
+      IF_AUTO: [
+        RESULT=$DEFAULT_BUILD_ENV
+      ]
+  )
+  AC_SUBST(BUILD_ENV)
 ])
 
 ###############################################################################
