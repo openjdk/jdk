@@ -32,7 +32,9 @@
 
 const char* VM_Version::_uarch = "";
 const char* VM_Version::_vm_mode = "";
+const char* VM_Version::_isa = "";
 uint32_t VM_Version::_initial_vector_length = 0;
+riscv_cpu_feature VM_Version::_cpu_features;
 
 void VM_Version::initialize() {
   get_os_cpu_info();
@@ -162,7 +164,7 @@ void VM_Version::initialize() {
   }
 
   if (UseRVV) {
-    if (!(_features & CPU_V)) {
+    if (!_cpu_features.ext_v) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
@@ -171,7 +173,7 @@ void VM_Version::initialize() {
     }
   }
 
-  if (UseRVC && !(_features & CPU_C)) {
+  if (UseRVC && !_cpu_features.ext_c) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
@@ -179,6 +181,46 @@ void VM_Version::initialize() {
       warning("UseRVA20U64 is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVA20U64, false);
     }
+  }
+
+  if (UseZba && !_cpu_features.ext_zba) {
+    warning("Zba is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZba, false);
+  }
+
+  if (UseZbb && !_cpu_features.ext_zbb) {
+    warning("Zbb is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZbb, false);
+  }
+
+  if (UseZbs && !_cpu_features.ext_zbs) {
+    warning("Zbs is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZbs, false);
+  }
+
+  if (UseZic64b && !_cpu_features.ext_zic64b) {
+    warning("Zic64b is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZic64b, false);
+  }
+
+  if (UseZicbom && !_cpu_features.ext_zicbom) {
+    warning("Zicbom is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZicbom, false);
+  }
+
+  if (UseZicbop && !_cpu_features.ext_zicbop) {
+    warning("Zicbop is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZicbop, false);
+  }
+
+  if (UseZicboz && !_cpu_features.ext_zicboz) {
+    warning("Zicboz is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZicboz, false);
+  }
+
+  if (UseZfhmin && !_cpu_features.ext_zfhmin) {
+    warning("Zfhmin is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZfhmin, false);
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
@@ -209,10 +251,7 @@ void VM_Version::initialize() {
   buf[0] = '\0';
   if (_uarch != NULL && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
   strcat(buf, "rv64");
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, name);
-  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
-#undef ADD_FEATURE_IF_SUPPORTED
-
+  strcat(buf, _isa);
   _features_string = os::strdup(buf);
 
 #ifdef COMPILER2

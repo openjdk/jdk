@@ -29,37 +29,6 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
 
-#include <asm/hwcap.h>
-#include <sys/auxv.h>
-
-#ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  (1 << ('I' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  (1 << ('M' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  (1 << ('A' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  (1 << ('F' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  (1 << ('D' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  (1 << ('C' - 'A'))
-#endif
-
-#ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  (1 << ('V' - 'A'))
-#endif
-
 #define read_csr(csr)                                           \
 ({                                                              \
         register unsigned long __v;                             \
@@ -71,7 +40,7 @@
 })
 
 uint32_t VM_Version::get_current_vector_length() {
-  assert(_features & CPU_V, "should not call this");
+  assert(_cpu_features.ext_v, "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
@@ -90,29 +59,14 @@ VM_Version::VM_MODE VM_Version::get_satp_mode() {
 }
 
 void VM_Version::get_os_cpu_info() {
-
-  uint64_t auxv = getauxval(AT_HWCAP);
-
-  static_assert(CPU_I == HWCAP_ISA_I, "Flag CPU_I must follow Linux HWCAP");
-  static_assert(CPU_M == HWCAP_ISA_M, "Flag CPU_M must follow Linux HWCAP");
-  static_assert(CPU_A == HWCAP_ISA_A, "Flag CPU_A must follow Linux HWCAP");
-  static_assert(CPU_F == HWCAP_ISA_F, "Flag CPU_F must follow Linux HWCAP");
-  static_assert(CPU_D == HWCAP_ISA_D, "Flag CPU_D must follow Linux HWCAP");
-  static_assert(CPU_C == HWCAP_ISA_C, "Flag CPU_C must follow Linux HWCAP");
-  static_assert(CPU_V == HWCAP_ISA_V, "Flag CPU_V must follow Linux HWCAP");
-
-  // RISC-V has four bit-manipulation ISA-extensions: Zba/Zbb/Zbc/Zbs.
-  // Availability for those extensions could not be queried from HWCAP.
-  // TODO: Add proper detection for those extensions.
-  _features = auxv & (
-      HWCAP_ISA_I |
-      HWCAP_ISA_M |
-      HWCAP_ISA_A |
-      HWCAP_ISA_F |
-      HWCAP_ISA_D |
-      HWCAP_ISA_C |
-      HWCAP_ISA_V);
-
+  /**
+   * cpuinfo in riscv would like:
+   * processor       : 1
+   * hard            : 1
+   * isa             : rv64imafdc
+   * mmu             : sv39
+   * uarch           : sifive,u74-mc
+   */
   if (FILE *f = fopen("/proc/cpuinfo", "r")) {
     char buf[512], *p;
     while (fgets(buf, sizeof (buf), f) != nullptr) {
@@ -124,6 +78,14 @@ void VM_Version::get_os_cpu_info() {
           char* vm_mode = os::strdup(p + 2);
           vm_mode[strcspn(vm_mode, "\n")] = '\0';
           _vm_mode = vm_mode;
+        } else if (strncmp(buf, "isa", sizeof "isa" - 1) == 0) {
+          if (_isa[0]!= '\0') {
+            continue;
+          }
+          char* isa = os::strdup(p + 2);
+          isa[strcspn(isa, "\n")] = '\0';
+          _isa = isa;
+          get_isa();
         } else if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
           char* uarch = os::strdup(p + 2);
           uarch[strcspn(uarch, "\n")] = '\0';
@@ -133,5 +95,56 @@ void VM_Version::get_os_cpu_info() {
       }
     }
     fclose(f);
+  }
+}
+
+void VM_Version::get_isa() {
+  char isa_buf[500];
+  strcpy(isa_buf, _isa);
+  char* saved_ptr;
+  char* isa_ext = strtok_r(isa_buf, "_", &saved_ptr);
+  while (isa_ext != NULL) {
+    // special case for rv64* string
+    if (strncmp(isa_ext, "rv64", sizeof "rv64" - 1) == 0) {
+      const char* base_ext = strdup(isa_ext + 4); // skip "rv64"
+      int i = 0;
+      while (base_ext[i] != '\0') {
+        const char ch = base_ext[i++];
+        if (ch == 'i') {
+          _cpu_features.ext_i = true;
+        } else if (ch == 'm') {
+          _cpu_features.ext_m = true;
+        } else if (ch == 'a') {
+          _cpu_features.ext_a = true;
+        } else if (ch == 'f') {
+          _cpu_features.ext_f = true;
+        } else if (ch == 'd') {
+          _cpu_features.ext_d = true;
+        } else if (ch == 'c') {
+          _cpu_features.ext_c = true;
+        } else if (ch == 'v') {
+          _cpu_features.ext_v = true;
+        }
+      }
+    } else if (strncmp(isa_ext, "zba", sizeof "zba" - 1) == 0) {
+      _cpu_features.ext_zba = true;
+    } else if (strncmp(isa_ext, "zbb", sizeof "zbb" - 1) == 0) {
+      _cpu_features.ext_zbb = true;
+    } else if (strncmp(isa_ext, "zbs", sizeof "zbs" - 1) == 0) {
+      _cpu_features.ext_zbs = true;
+    } else if (strncmp(isa_ext, "zic64b", sizeof "zic64b" - 1) == 0) {
+      _cpu_features.ext_zic64b = true;
+    } else if (strncmp(isa_ext, "zicbom", sizeof "zicbom" - 1) == 0) {
+      _cpu_features.ext_zicbom = true;
+    } else if (strncmp(isa_ext, "zicbop", sizeof "zicbop" - 1) == 0) {
+      _cpu_features.ext_zicbop = true;
+    } else if (strncmp(isa_ext, "zicboz", sizeof "zicboz" - 1) == 0) {
+      _cpu_features.ext_zicboz = true;
+    } else if (strncmp(isa_ext, "zfhmin", sizeof "zfhmin" - 1) == 0) {
+      _cpu_features.ext_zfhmin = true;
+    }
+
+    // read next isa extension string, if any
+    isa_ext = strtok_r(NULL, "_", &saved_ptr);
   }
 }

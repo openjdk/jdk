@@ -32,6 +32,24 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/sizes.hpp"
 
+struct riscv_cpu_feature {
+  bool ext_i;
+  bool ext_m;
+  bool ext_a;
+  bool ext_f;
+  bool ext_d;
+  bool ext_c;
+  bool ext_v;
+  bool ext_zba;
+  bool ext_zbb;
+  bool ext_zbs;
+  bool ext_zic64b;
+  bool ext_zicbom;
+  bool ext_zicbop;
+  bool ext_zicboz;
+  bool ext_zfhmin;
+};
+
 class VM_Version : public Abstract_VM_Version {
 #ifdef COMPILER2
 private:
@@ -50,10 +68,13 @@ enum VM_MODE {
 protected:
   static const char* _uarch;
   static const char* _vm_mode;
+  static const char* _isa;
   static uint32_t _initial_vector_length;
+  static riscv_cpu_feature _cpu_features;
   static void get_os_cpu_info();
   static uint32_t get_current_vector_length();
   static VM_MODE get_satp_mode();
+  static void get_isa();
 
 public:
   // Initialization
@@ -62,21 +83,6 @@ public:
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
-
-  enum Feature_Flag {
-#define CPU_FEATURE_FLAGS(decl)               \
-    decl(I,            "i",            8)     \
-    decl(M,            "m",           12)     \
-    decl(A,            "a",            0)     \
-    decl(F,            "f",            5)     \
-    decl(D,            "d",            3)     \
-    decl(C,            "c",            2)     \
-    decl(V,            "v",           21)
-
-#define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1 << bit),
-    CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
-#undef DECLARE_CPU_FEATURE_FLAG
-  };
 
   static void initialize_cpu_information(void);
 };
