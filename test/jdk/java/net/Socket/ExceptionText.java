@@ -110,8 +110,7 @@ public class ExceptionText {
                 !msg.contains(ADDRESS.getHostAddress())) {
                 if (e instanceof ClosedChannelException)
                     return; // has no detail msg
-                System.err.println("msg = " + msg);
-                throw new RuntimeException("Test failed: exception does not contain address info: " + msg);
+                throw new RuntimeException("Test failed: message '" + msg + "' is missing address info " + dest);
             }
         }
     }
