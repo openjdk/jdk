@@ -63,6 +63,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import static sun.security.util.SignatureFileVerifier.isInMetaInf;
+
 /**
  * An immutable utility class to sign a jar file.
  * <p>
@@ -475,8 +477,6 @@ public final class JarSigner {
         }
     }
 
-    private static final String META_INF = "META-INF/";
-
     // All fields in Builder are duplicated here as final. Those not
     // provided but has a default value will be filled with default value.
 
@@ -731,7 +731,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (isInMetaInf(ze)) {
+            if (isInMetaInf(ze.getName())) {
                 // Store META-INF files in vector, so they can be written
                 // out first
                 mfFiles.addElement(ze);
@@ -959,7 +959,7 @@ public final class JarSigner {
              enum_.hasMoreElements(); ) {
             ZipEntry ze = enum_.nextElement();
 
-            if (!isInMetaInf(ze)) {
+            if (!isInMetaInf(ze.getName())) {
                 if (handler != null) {
                     if (manifest.getAttributes(ze.getName()) != null) {
                         handler.accept("signing", ze.getName());
@@ -974,12 +974,6 @@ public final class JarSigner {
         zos.close();
     }
 
-    /**
-     * Returns true iff the entry resides directly in the META-INF/ directory
-     */
-    private boolean isInMetaInf(ZipEntry ze) {
-        return ze.getName().startsWith(META_INF) && ze.getName().lastIndexOf('/') < META_INF.length();
-    }
 
     private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
             throws IOException {

@@ -39,6 +39,8 @@ import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
 import sun.security.util.Debug;
 
+import static sun.security.util.SignatureFileVerifier.isInMetaInf;
+
 /**
  *
  * @author      Roland Schemers
@@ -135,14 +137,14 @@ class JarVerifier {
          */
 
         if (parsingMeta) {
-            String uname = name.toUpperCase(Locale.ENGLISH);
-            if (isInMetaInf(uname)) {
+
+            if (isInMetaInf(name)) {
 
                 if (je.isDirectory()) {
                     mev.setEntry(null, je);
                     return;
                 }
-
+                String uname = name.toUpperCase(Locale.ENGLISH);
                 if (uname.equals(JarFile.MANIFEST_NAME) ||
                         uname.equals(JarIndex.INDEX_NAME)) {
                     return;
@@ -193,14 +195,6 @@ class JarVerifier {
 
         // don't compute the digest for this entry
         mev.setEntry(null, je);
-    }
-
-    /**
-     * Returns true iff the entry resides directly in the META-INF/ directory
-     */
-    private boolean isInMetaInf(String uname) {
-        return (uname.startsWith("META-INF/") || uname.startsWith("/META-INF/") )
-                && uname.lastIndexOf('/') < "META-INF/".length();
     }
 
     /**

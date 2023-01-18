@@ -81,6 +81,8 @@ public class SignatureFileVerifier {
     /** ConstraintsParameters for checking disabled algorithms */
     private JarConstraintsParameters params;
 
+    private static final String META_INF = "META-INF/";
+
     /**
      * Create the named SignatureFileVerifier.
      *
@@ -143,6 +145,18 @@ public class SignatureFileVerifier {
 
     /**
      * Utility method used by JarVerifier and JarSigner
+     * to determine if a path is located directly in the
+     * META-INF/ directory
+     *
+     * @param name the path name to check
+     * @return true if the path resides in META-INF directly, ignoring case
+     */
+    public static boolean isInMetaInf(String name) {
+        return name.regionMatches(true, 0, META_INF, 0, META_INF.length())
+                && name.lastIndexOf('/') < META_INF.length();
+    }
+    /**
+     * Utility method used by JarVerifier and JarSigner
      * to determine the signature file names and PKCS7 block
      * files names that are supported
      *
@@ -191,14 +205,10 @@ public class SignatureFileVerifier {
      * @return true if the input file name is signature related
      */
     public static boolean isSigningRelated(String name) {
+        if (!isInMetaInf(name)) {
+            return false;
+        }
         name = name.toUpperCase(Locale.ENGLISH);
-        if (!name.startsWith("META-INF/")) {
-            return false;
-        }
-        name = name.substring(9);
-        if (name.indexOf('/') != -1) {
-            return false;
-        }
         if (isBlockOrSF(name) || name.equals("MANIFEST.MF")) {
             return true;
         } else if (name.startsWith("SIG-")) {
