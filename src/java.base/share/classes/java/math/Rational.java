@@ -1724,8 +1724,70 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
-        BigDecimal absVal = new BigDecimal(plainNumerator()).divide(new BigDecimal(denominator), mc);
-        return signum == -1 ? absVal.negate() : absVal;
+        final BigDecimal intPart = new BigDecimal(floor);
+        final BigDecimal num = new BigDecimal(numerator);
+        final BigDecimal den = new BigDecimal(denominator);
+
+        final BigDecimal absVal;
+        MathContext workMc = null;
+        final int prec = mc.getPrecision();
+        if (prec == 0) // arbitrary precision, no rounding
+            absVal = intPart.add(num.divide(den));
+        else if (floor.signum == 0) { // bounded precision, no integer part
+            // one more digit for rounding
+            BigDecimal frac = num.divide(den, new MathContext(prec + 1, RoundingMode.DOWN));
+
+            if (frac.multiply(den).compareTo(num) == 0) { // no remainder
+                frac = frac.stripTrailingZeros();
+                workMc = mc; // round in case of last significand digit is not zero
+            } else { // non-zero discarded part
+                RoundingMode rm = mc.getRoundingMode();
+                // if the remainder is non-zero and the last significand digit is 5,
+                // the discarded fraction of ulp is always > 0.5
+                if (rm == RoundingMode.HALF_EVEN)
+                    rm = RoundingMode.HALF_UP;
+
+                workMc = new MathContext(prec, rm);
+            }
+
+            absVal = frac;
+        } else { // bounded precision, non-zero integer part
+            final int scale = prec - intPart.precision();
+
+            if (scale >= 0) { // result includes the whole integer part
+                // one more digit for rounding
+                BigDecimal frac = num.divide(den, scale + 1, RoundingMode.DOWN);
+
+                if (frac.multiply(den).compareTo(num) == 0) { // no remainder
+                    frac = frac.stripTrailingZeros();
+                    workMc = mc; // round in case of last significand digit is not zero
+                } else { // non-zero discarded part
+                    RoundingMode rm = mc.getRoundingMode();
+                    // if the remainder is non-zero and the last significand digit is 5,
+                    // the discarded fraction of ulp is always > 0.5
+                    if (rm == RoundingMode.HALF_EVEN)
+                        rm = RoundingMode.HALF_UP;
+
+                    workMc = new MathContext(prec, rm);
+                }
+
+                absVal = intPart.add(frac);
+            } else { // scale < 0, truncate the integer part
+                absVal = intPart.setScale(scale + 1, RoundingMode.DOWN); // one more digit for rounding
+                RoundingMode rm = mc.getRoundingMode();
+
+                // if reducing the scale the discarded part is non-zero
+                // and the last significant digit of the truncated is 5,
+                // the discarded fraction of ulp is always > 0.5
+                if (rm == RoundingMode.HALF_EVEN && (num.signum() == 1 || absVal.compareTo(intPart) != 0))
+                    rm = RoundingMode.HALF_UP;
+
+                workMc = new MathContext(prec, rm);
+            }
+        }
+
+        BigDecimal res = r.signum() == -1 ? absVal.negate() : absVal;
+        return workMc == null ? res : res.round(workMc);
     }
 
     /**
