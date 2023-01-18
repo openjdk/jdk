@@ -92,7 +92,7 @@
 #define DTRACE_METHOD_UNLOAD_PROBE(method)                                \
   {                                                                       \
     Method* m = (method);                                                 \
-    if (m != nullptr) {                                                      \
+    if (m != nullptr) {                                                   \
       Symbol* klass_name = m->klass_name();                               \
       Symbol* name = m->name();                                           \
       Symbol* signature = m->signature();                                 \
