@@ -37,8 +37,12 @@ import jdk.internal.access.SharedSecrets;
 import jdk.security.jarsigner.JarSigner;
 import sun.security.util.SignatureFileVerifier;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.CodeSigner;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -62,13 +66,13 @@ public class VerifyUnrelatedSignatureFiles {
 
     public static void main(String[] args) throws Exception {
 
-        File j = createJarFile();
-        File s = signJarFile(j, "SIGNER1", "signed");
-        File m = moveSignatureRelated(s);
-        File sm = signJarFile(m, "SIGNER2", "modified-signed");
+        Path j = createJarFile();
+        Path s = signJarFile(j, "SIGNER1", "signed");
+        Path m = moveSignatureRelated(s);
+        Path sm = signJarFile(m, "SIGNER2", "modified-signed");
 
         // 1: Check ZipFile.Source.isSignatureRelated
-        try(JarFile jarFile = new JarFile(m)) {
+        try(JarFile jarFile = new JarFile(m.toFile())) {
             final List<String> manifestAndSignatureRelatedFiles = JUZA.getManifestAndSignatureRelatedFiles(jarFile);
             for (String signatureRelatedFile : manifestAndSignatureRelatedFiles) {
                 String dir = signatureRelatedFile.substring(0, signatureRelatedFile.lastIndexOf("/"));
@@ -84,14 +88,14 @@ public class VerifyUnrelatedSignatureFiles {
         }
 
         // 3: Check JarInputStream with doVerify = true
-        try(JarInputStream in = new JarInputStream(new FileInputStream(m), true)) {
+        try(JarInputStream in = new JarInputStream(Files.newInputStream(m), true)) {
             while( in.getNextEntry() != null) {
                 in.transferTo(OutputStream.nullOutputStream());
             }
         }
 
         // 4: Check that a JAR containing unrelated .SF, .RSA files is signed as-if it is unsigned
-        try(ZipFile zf = new ZipFile(sm)) {
+        try(ZipFile zf = new ZipFile(sm.toFile())) {
             final ZipEntry mf = zf.getEntry("META-INF/MANIFEST.MF");
             try(InputStream stream = zf.getInputStream(mf)) {
                 final String manifest = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
@@ -105,13 +109,13 @@ public class VerifyUnrelatedSignatureFiles {
         }
 
         // 5: Check that a JAR containing non signature related .SF, .RSA files can be signed
-        try(JarFile jf = new JarFile(sm, true)) {
+        try(JarFile jf = new JarFile(sm.toFile(), true)) {
             checkSignedBy(jf, "a.txt", "CN=SIGNER2");
             checkSignedBy(jf, "META-INF/subdirectory/META-INF/SIGNER1.SF", "CN=SIGNER2");
         }
 
         // 6: Check that JarSigner does not move unrelated [SF,RSA] files to the beginning of signed JARs
-        try(JarFile zf = new JarFile(sm)) {
+        try(JarFile zf = new JarFile(sm.toFile())) {
 
             List<String> actualOrder = zf.stream().map(ZipEntry::getName).toList();
 
@@ -171,27 +175,27 @@ public class VerifyUnrelatedSignatureFiles {
     /**
      * Create a jar file with a '*.SF' file residing in META-INF/subdirectory/
      */
-    private static File createJarFile() throws Exception {
+    private static Path createJarFile() throws Exception {
 
-        File f = File.createTempFile("unrelated-signature-file-", ".jar");
+        Path jar = Path.of("unrelated-signature-file.jar");
 
 
         Manifest manifest = new Manifest();
         manifest.getMainAttributes().put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        try(JarOutputStream out = new JarOutputStream(new FileOutputStream(f), manifest)) {
+        try(JarOutputStream out = new JarOutputStream(Files.newOutputStream(jar), manifest)) {
             out.putNextEntry(new JarEntry("a.txt"));
             out.write("a".getBytes(StandardCharsets.UTF_8));
         }
 
-        return f;
+        return jar;
     }
     /**
      * Create a signed version of the given jar file
      */
-    private static File signJarFile(File f, String signerName, String classifier) throws Exception {
-        File s = File.createTempFile("unrelated-signature-files-" + classifier +"-", ".jar");
+    private static Path signJarFile(Path jar, String signerName, String classifier) throws Exception {
+        Path s = Path.of("unrelated-signature-files-" + classifier +".jar");
 
-        new File("ks").delete();
+        Files.deleteIfExists(Path.of("ks"));
 
         sun.security.tools.keytool.Main.main(
                 ("-keystore ks -storepass changeit -keypass changeit -dname" +
@@ -212,8 +216,8 @@ public class VerifyUnrelatedSignatureFiles {
                 .signerName(signerName)
                 .build();
 
-        try(ZipFile in = new ZipFile(f);
-            OutputStream out = new FileOutputStream(s)) {
+        try(ZipFile in = new ZipFile(jar.toFile());
+            OutputStream out = Files.newOutputStream(s)) {
             signer.sign(in, out);
         }
 
@@ -228,11 +232,11 @@ public class VerifyUnrelatedSignatureFiles {
      * Since the signature related files are moved out of META-INF/, the returned jar file should
      * not be considered signed
      */
-    private static File moveSignatureRelated(File s) throws Exception {
-        File m = File.createTempFile("unrelated-signature-files-modified-", ".jar");
+    private static Path moveSignatureRelated(Path s) throws Exception {
+        Path m = Path.of("unrelated-signature-files-modified.jar");
 
-        try(ZipFile in = new ZipFile(s);
-            ZipOutputStream out = new ZipOutputStream(new FileOutputStream(m))) {
+        try(ZipFile in = new ZipFile(s.toFile());
+            ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(m))) {
 
             // Change the digest of the manifest by lower-casing the Manifest-Version attribute:
             out.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
