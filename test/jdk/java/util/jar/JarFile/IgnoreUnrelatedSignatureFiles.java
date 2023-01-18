@@ -29,7 +29,7 @@
  * @modules java.base/sun.security.util
  * @modules java.base/sun.security.tools.keytool
  * @modules jdk.jartool/sun.security.tools.jarsigner
- * @run main/othervm VerifyUnrelatedSignatureFiles
+ * @run main/othervm IgnoreUnrelatedSignatureFiles
  */
 
 import jdk.internal.access.JavaUtilZipFileAccess;
@@ -54,7 +54,13 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
-import java.util.jar.*;
+import java.util.Map;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -74,6 +80,17 @@ public class IgnoreUnrelatedSignatureFiles {
         Path m = moveSignatureRelated(s);
         Path sm = signJarFile(m, "SIGNER2", "modified-signed");
 
+        // 0: Sanity check that the basic signed JAR verifies
+        try (JarFile jf = new JarFile(s.toFile(), true)) {
+            Map<String, Attributes> entries = jf.getManifest().getEntries();
+            if(entries.size() != 1) {
+                throw new Exception("Expected a single manifest entry for the digest of a.txt, instead found entries: " + entries.keySet());
+            }
+            JarEntry entry = jf.getJarEntry("a.txt");
+            try (InputStream in = jf.getInputStream(entry)) {
+                in.transferTo(OutputStream.nullOutputStream());
+            }
+        }
         // 1: Check ZipFile.Source.isSignatureRelated
         try (JarFile jarFile = new JarFile(m.toFile())) {
             List<String> manifestAndSignatureRelatedFiles = JUZA.getManifestAndSignatureRelatedFiles(jarFile);
