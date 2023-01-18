@@ -25,15 +25,20 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.HeadlessException;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -175,12 +180,16 @@ public class JFileChooserSetLocationTest {
         return pt.get();
     }
 
-    public static void verify(int x1, int x2, int y1, int y2) {
+    public static void verify(int x1, int x2, int y1, int y2) throws Exception {
         System.out.println("verify " + x1 + "==" + x2 + "; " + y1 + "==" + y2);
         if ((Math.abs(x1 - x2) < TOLERANCE_LEVEL) &&
             (Math.abs(y1 - y2) < TOLERANCE_LEVEL)) {
             System.out.println("Test passed");
         } else {
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            BufferedImage bufferedImage = robot.createScreenCapture(
+                    new Rectangle(screenSize));
+            ImageIO.write(bufferedImage, "png",new File("FailureImage.png"));
             throw new RuntimeException(
                     "Test Failed, setLocation() is not working properly");
         }
