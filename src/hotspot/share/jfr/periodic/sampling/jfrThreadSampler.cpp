@@ -41,6 +41,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/stackWatermark.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
@@ -385,6 +386,11 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
   if (is_excluded(thread)) {
     return false;
   }
+
+  // Process the oops in the thread head before calling into code that wants to
+  // stack walk over Loom continuations. The stack walking code will otherwise
+  // skip frames in stack chunks on the Java heap.
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
 
   bool ret = false;
   thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
