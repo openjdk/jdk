@@ -195,7 +195,7 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStrideNegScalePosInIntLoop2")
     private void testStrideNegScalePosInIntLoop2_runner() {
-        testStrideNegScalePosInIntLoop1(0, 100, 200, 0);
+        testStrideNegScalePosInIntLoop2(0, 100, 200, 0);
     }
 
     @Test
@@ -243,6 +243,6 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStridePosScaleNegInIntLoop2")
     private void testStridePosScaleNegInIntLoop2_runner() {
-        testStridePosScaleNegInIntLoop1(0, 100, 200, 198);
+        testStridePosScaleNegInIntLoop2(0, 100, 200, 198);
     }
 }
