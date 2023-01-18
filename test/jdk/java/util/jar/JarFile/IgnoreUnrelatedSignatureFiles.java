@@ -87,7 +87,7 @@ public class IgnoreUnrelatedSignatureFiles {
         // 0: Sanity check that the basic signed JAR verifies
         try (JarFile jf = new JarFile(s.toFile(), true)) {
             Map<String, Attributes> entries = jf.getManifest().getEntries();
-            if(entries.size() != 1) {
+            if (entries.size() != 1) {
                 throw new Exception("Expected a single manifest entry for the digest of a.txt, instead found entries: " + entries.keySet());
             }
             JarEntry entry = jf.getJarEntry("a.txt");
@@ -181,7 +181,7 @@ public class IgnoreUnrelatedSignatureFiles {
 
             Set<String> actualSigned = jf.getManifest().getEntries().keySet();
 
-            if(!expectedSigned.equals(actualSigned)) {
+            if (!expectedSigned.equals(actualSigned)) {
                 throw new Exception("Unexpected MANIFEST entries. Expected %s, got %s"
                         .formatted(expectedSigned, actualSigned));
             }
