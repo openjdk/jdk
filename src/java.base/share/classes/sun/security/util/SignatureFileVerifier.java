@@ -209,9 +209,9 @@ public class SignatureFileVerifier {
             return false;
         }
         name = name.toUpperCase(Locale.ENGLISH);
-        if (isBlockOrSF(name) || name.equals("MANIFEST.MF")) {
+        if (isBlockOrSF(name) || name.equals("META-INF/MANIFEST.MF")) {
             return true;
-        } else if (name.startsWith("SIG-")) {
+        } else if (name.startsWith("SIG-", META_INF.length())) {
             // check filename extension
             // see http://docs.oracle.com/javase/7/docs/technotes/guides/jar/jar.html#Digital_Signatures
             // for what filename extensions are legal
