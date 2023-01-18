@@ -484,6 +484,11 @@ Repeat the tests up to a set number of times, stopping at first failure.
 This helps to reproduce intermittent test failures.
 Defaults to 0.
 
+#### REPORT
+
+Use this report style when reporting test results (sent to JTReg as `-report`).
+Defaults to `files`.
+
 ### Gtest keywords
 
 #### REPEAT

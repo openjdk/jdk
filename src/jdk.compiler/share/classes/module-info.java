@@ -65,7 +65,7 @@ import javax.tools.StandardLocation;
  * <h3>Options and Environment Variables</h3>
  *
  * The full set of options and environment variables supported by <em>javac</em>
- * is given in the <a href="../specs/man/javac.html"><em>javac Tool Guide</em></a>.
+ * is given in the <a href="../../specs/man/javac.html"><em>javac Tool Guide</em></a>.
  * However, there are some restrictions when the compiler is invoked through
  * its API.
  *

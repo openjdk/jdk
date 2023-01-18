@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -224,6 +225,10 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
 }
 
+MemoryUsage ZCollectedHeap::memory_usage() {
+  return _heap.serviceability_memory_pool()->get_memory_usage();
+}
+
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(2);
   memory_managers.append(_heap.serviceability_cycle_memory_manager());
@@ -283,6 +288,14 @@ void ZCollectedHeap::safepoint_synchronize_begin() {
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
+}
+
+void ZCollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void ZCollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }
 
 void ZCollectedHeap::prepare_for_verify() {

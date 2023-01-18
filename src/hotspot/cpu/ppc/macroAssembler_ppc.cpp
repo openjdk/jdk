@@ -1185,6 +1185,7 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
+  InlineSkippedInstructionsCounter skipCounter(this);
   nop();
 }
 

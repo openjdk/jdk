@@ -62,8 +62,6 @@ class ImageScalingHelper {
         PAINT9_TILE
     }
 
-    ;
-
     private static final Insets EMPTY_INSETS = new Insets(0, 0, 0, 0);
 
     static final int PAINT_TOP_LEFT = 1;
