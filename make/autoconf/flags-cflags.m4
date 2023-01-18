@@ -298,14 +298,20 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-qnoopt"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
-    C_O_FLAG_HIGHEST="-O2"
-    C_O_FLAG_HI="-O1"
-    C_O_FLAG_NORM="-O1"
+    # -O2 is a combination of optimizations that favors speed over size. -Ob3 was introduced
+    # starting in Visual Studio 2019 and is an even more aggressive inling hint than -Ob2 which is
+    # the default for -O1 and -O2.
+    C_O_FLAG_HIGHEST_JVM="-O2 -Ob3"
+    C_O_FLAG_HIGHEST="-O2 -Ob3"
+    C_O_FLAG_HI="-O2 -Ob3"
+    # -O2 is a combination of optimizations that favors speed over size.
+    C_O_FLAG_NORM="-O2"
+    # -Od disables optimizations.
     C_O_FLAG_DEBUG="-Od"
-    C_O_FLAG_DEBUG_JVM=""
+    C_O_FLAG_DEBUG_JVM="-Od"
     C_O_FLAG_NONE="-Od"
-    C_O_FLAG_SIZE="-Os"
+    # -O1 is a combination of optimizations that favors size over speed.
+    C_O_FLAG_SIZE="-O1"
   fi
 
   # Now copy to C++ flags
@@ -535,7 +541,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP"
+    TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP -GR-"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:wchar_t-"
   fi
 
