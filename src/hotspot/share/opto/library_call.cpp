@@ -51,6 +51,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -3124,7 +3125,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
   const TypeOopPtr* const xtype = aklass->as_instance_type();
-  Node* event_writer = access_load(jobj, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
+  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
+  Node* event_writer = access_load(jobj_untagged, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
 
   // Load the current thread id from the event writer object.
   Node* const event_writer_tid = load_field_from_object(event_writer, "threadID", "J");

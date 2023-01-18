@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1115,7 +1115,8 @@ void nmethod::fix_oop_relocations(address begin, address end, bool initialize_im
       oop_Relocation* reloc = iter.oop_reloc();
       if (initialize_immediates && reloc->oop_is_immediate()) {
         oop* dest = reloc->oop_addr();
-        initialize_immediate_oop(dest, cast_from_oop<jobject>(*dest));
+        jobject obj = *reinterpret_cast<jobject*>(dest);
+        initialize_immediate_oop(dest, obj);
       }
       // Refresh the oop-related bits of this instruction.
       reloc->fix_oop_relocation();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -122,8 +122,8 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
 
