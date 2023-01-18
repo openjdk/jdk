@@ -1953,11 +1953,12 @@ class MutableBigInteger {
      */
     MutableBigInteger root(int n) {
         // Special cases.
-        if (this.isZero())
-            return new MutableBigInteger(0);
+        if (n == 1 || this.isZero())
+            return this;
 
-        long twoPower = n < 63 ? 1L << n : Long.MAX_VALUE; // avoid overflow
-        if (value.length == 1 && (value[0] & LONG_MASK) < twoPower) // result is unity
+        MutableBigInteger powerOfTwo = new MutableBigInteger(ONE);
+        powerOfTwo.leftShift(n);
+        if (this.compare(powerOfTwo) < 0) // result is unity
             return ONE;
 
         if (bitLength() <= 63) {
@@ -1966,8 +1967,9 @@ class MutableBigInteger {
             long xk = (long) Math.pow(v, 1.0 / n);
 
             // Refine the estimate.
+            long xk1;
             do {
-                long xk1 = xk - (xk - v / BigInteger.pow(xk, n - 1)) / n;
+                xk1 = xk - (xk - v / BigInteger.pow(xk, n - 1)) / n;
                 xk = xk1;
             } while (xk1 < xk); // Terminate when non-decreasing.
 
@@ -1988,17 +1990,23 @@ class MutableBigInteger {
         if (rem != 0)
             shift += n - rem;
 
-        // Shift the value into positive long range.
+        // Shift the value into non-negative long range.
         MutableBigInteger xk = new MutableBigInteger(this);
         xk.rightShift(shift);
-        xk.normalize();
+        
+        // shifting could lead to a zero value for xk
+        // so we need to avoid division by zero in Newton's method
+        if (xk.isZero())
+            xk = new MutableBigInteger(ONE);
+        else {
+            // Use the root of the shifted value as an approximation.
+            xk.normalize();
+            double d = new BigInteger(xk.value, 1).doubleValue();
+            BigInteger bi = BigInteger.valueOf((long) Math.ceil(Math.pow(d, 1.0 / n)));
+            xk = new MutableBigInteger(bi.mag);
+        }
 
-        // Use the root of the shifted value as an approximation.
-        double d = new BigInteger(xk.value, 1).doubleValue();
-        BigInteger bi = BigInteger.valueOf((long) Math.ceil(Math.pow(d, 1.0 / n)));
-        xk = new MutableBigInteger(bi.mag);
-
-        // Shift the approximate square root back into the original range.
+        // Shift the approximate root back into the original range.
         xk.leftShift(shift / n);
 
         // Refine the estimate.
@@ -2007,10 +2015,10 @@ class MutableBigInteger {
         BigInteger deg = BigInteger.valueOf(n);
         boolean stop;
         do {
-            // xk1 = xk + (v / pow(xk, n - 1) - xk) / n
+            // xk1 = xk + (v / xk**(n - 1) - xk) / n
             BigInteger xkVal = xk.toBigInteger();
             xk1 = v.divide(xkVal.pow(n - 1)).subtract(xkVal).divide(deg).add(xkVal);
-            stop = xk1.compare(xkVal) >= 0;  // Terminate when non-decreasing.
+            stop = xk1.compareTo(xkVal) >= 0;  // Terminate when non-decreasing.
 
             if (!stop)
                 xk.copyValue(xk1.mag); // xk = xk1

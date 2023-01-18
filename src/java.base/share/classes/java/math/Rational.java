@@ -327,7 +327,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @param val {@code BigInteger} value to be converted to {@code Rational}.
      */
     public Rational(BigInteger val) {
-        this(val.signum, val.abs());
+        this(val.signum, BigDecimal.toStrictBigInteger(val).abs());
     }
 
     /**
@@ -594,7 +594,8 @@ public class Rational extends Number implements Comparable<Rational> {
         if (num.signum == 0)
             return ZERO;
 
-        return valueOf(num.signum * den.signum, num.abs(), den.abs());
+        return valueOf(num.signum * den.signum, BigDecimal.toStrictBigInteger(num).abs(),
+                BigDecimal.toStrictBigInteger(den).abs());
     }
 
     /**
@@ -645,6 +646,39 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     public int signum() {
         return signum;
+    }
+
+    /**
+     * Returns the integer part of the absolute value of this {@code Rational}.
+     * 
+     * @return {@code floor(abs(this))}.
+     */
+    public BigInteger absFloor() {
+        return floor;
+    }
+
+    /**
+     * Returns the least non-negative numerator necessary to represent the
+     * fractional part of this {@code Rational}.
+     * 
+     * @return {@code min n == d * (abs(this) - absFloor(this))} that is a
+     *         non-negative integer, for some positive integer {@code d}.
+     * @see #absFloor()
+     */
+    public BigInteger numerator() {
+        return numerator;
+    }
+
+    /**
+     * Returns the least positive denominator necessary to represent the fractional
+     * part of this {@code Rational}.
+     * 
+     * @return {@code min d == n / (abs(this) - absFloor(this))} that is a positive
+     *         integer, for some non-negative integer {@code n}.
+     * @see #absFloor()
+     */
+    public BigInteger denominator() {
+        return denominator;
     }
 
     /**
@@ -1012,11 +1046,12 @@ public class Rational extends Number implements Comparable<Rational> {
      * @see BigInteger#sqrt()
      */
     public Rational sqrt(MathContext mc) {
-        if (signum == -1)
+        if (this.signum == -1)
             throw new ArithmeticException("Attempted square root of negative Rational");
 
-        if (signum == 0)
-            return ZERO;
+        // radicand is zero or one
+        if (this.signum == 0 || this.equals(ONE))
+            return this;
 
         final RoundingMode targetRm = mc.getRoundingMode();
         final int originalPrecision = mc.getPrecision();
@@ -1026,24 +1061,23 @@ public class Rational extends Number implements Comparable<Rational> {
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
             // simplify the radicand to improve the sqrt algorithm performance
             BigInteger[] radicand = simplify(plainNumerator(), denominator);
-            BigInteger[] sqrtNumRem = radicand[0].sqrtAndRemainder();
 
+            BigInteger[] sqrtNumRem = radicand[0].sqrtAndRemainder();
             if (sqrtNumRem[1].signum != 0)
                 throw new ArithmeticException("Computed square root not exact.");
 
             BigInteger[] sqrtDenRem = radicand[1].sqrtAndRemainder();
-
             if (sqrtDenRem[1].signum != 0)
                 throw new ArithmeticException("Computed square root not exact.");
 
             Rational result = valueOf(1, sqrtNumRem[0], sqrtDenRem[0]);
 
             if (originalPrecision != 0) {
-                // => targetRm == UNNECESSARY, user-specified number of digits for exact result
+                // => targetRm == UNNECESSARY, but user-specified number of digits
                 result = result.round(new MathContext(originalPrecision, RoundingMode.DOWN));
 
-                // If result*result != this numerically, the square root isn't exact
-                if (result.square().compareTo(this) != 0)
+                // If result*result != this, the square root isn't exact
+                if (!result.square().equals(this))
                     throw new ArithmeticException("Computed square root not exact.");
             }
 
@@ -1084,7 +1118,7 @@ public class Rational extends Number implements Comparable<Rational> {
         Rational working = this;
         if (floor.signum == 1) { // non-zero integer part
             int exp = -floor.bitLength();
-            // scaleAdjust must be even
+            // expAdjust must be even
             expAdjust = (exp & 1) == 0 ? exp : exp + 1;
 
             if (expAdjust != 0) {
@@ -1093,15 +1127,14 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         } else {
             BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
-            int exp = denominator.bitLength() - numerator.bitLength();
-            BigDecimal shiftedNum = numerator.shiftLeft(exp);
+            int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < this * 2^exp < 2
 
             // expAdjust must be even
             if ((exp & 1) == 0)
                 expAdjust = exp;
-            else if (shiftedNum.compareTo(denominator) >= 0) // shifted fractional part >= 1
+            else if (numerator.shiftLeft(exp).compareTo(denominator) >= 0) // this * 2^exp >= 1
                 expAdjust = exp - 1;
-            else // shifted fractional part < 1
+            else // this * 2^exp < 1
                 expAdjust = exp + 1;
 
             if (expAdjust != 0) {
@@ -1161,13 +1194,14 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         do {
-            // approx = 0.5 * (approx + fraction / approx)
+            // approx = 0.5 * (approx + working / approx)
             approx = working.divide(approx).add(approx).multiply(ONE_HALF);
             guessPrecision <<= 1;
-        } while (guessPrecision < targetPrecision + 2);
+        } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
 
         Rational result = approx;
 
+        // Shift the result back into the original range.
         if (expAdjust < 0) { // non-zero integer part
             Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(-expAdjust / 2));
             result = result.multiply(mul);
@@ -1192,7 +1226,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 // boundaries. Test approx and *not* result to
                 // avoid having to detect an arbitrary power
                 // of ten.
-                if (approx.compareTo(ONE) == 0)
+                if (approx.equals(ONE))
                     ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                 result = result.subtract(new Rational(ulp));
@@ -1222,13 +1256,13 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         // Test numerical properties
-        assert rootResultAssertions(2, result, ulp, mc);
+        assert rootResultAssertions(2, result, decimalRes, mc);
         return result;
     }
 
     /**
-     * Returns an approximation to the {@code n}th root of {@code this} with rounding
-     * according to the context settings.
+     * Returns an approximation to the {@code n}th root of {@code this} with
+     * rounding according to the context settings.
      *
      * <p>
      * The value of the returned result is always within one ulp of the exact
@@ -1237,10 +1271,15 @@ public class Rational extends Number implements Comparable<Rational> {
      * HALF_DOWN}, or {@link RoundingMode#HALF_EVEN HALF_EVEN}, the result is within
      * one half an ulp of the exact value.
      *
-     * @param n the root degree
+     * @param n  the root degree
      * @param mc the context to use.
      * @return the {@code n}th root of {@code this}.
-     * @throws ArithmeticException if {@code n} is even and {@code this} is less than zero.
+     * @throws ArithmeticException if {@code n == 0} (Zero-degree roots are not
+     *                             defined.)
+     * @throws ArithmeticException if {@code this == 0} and {@code n} is negative.
+     *                             (This would cause a division by zero.)
+     * @throws ArithmeticException if {@code n} is even and {@code this} is less
+     *                             than zero.
      * @throws ArithmeticException if an exact result is requested
      *                             ({@code mc.getPrecision()==0}) and there is no
      *                             fractional representation of the exact result.
@@ -1250,42 +1289,65 @@ public class Rational extends Number implements Comparable<Rational> {
      *                             {@code mc.getPrecision()} digits.
      * @see BigDecimal#sqrt(MathContext)
      * @see BigInteger#sqrt()
+     * @see BigInteger#root(int)
      * @see #sqrt(MathContext)
      */
-    public Rational root(int n, MathContext mc) {
-        if ((n & 1) == 0 && signum == -1)
+    public Rational root(final int n, MathContext mc) {
+        final int deg; // absolute value of n
+
+        // check the sign of n
+        if (n <= 0) {
+            if (n == 0)
+                throw new ArithmeticException("Attempted zero-degree root");
+            // n < 0
+            if (this.signum == 0) // radicand is zero
+                throw new ArithmeticException("Attempted negative degree root of zero");
+            deg = -n;
+        } else // n > 0
+            deg = n;
+
+        // even-degree root of negative radicand
+        if ((n & 1) == 0 && this.signum == -1)
             throw new ArithmeticException("Attempted " + n + "th root of negative Rational");
 
-        if (signum == 0)
-            return ZERO;
+        // degree is one or the radicand is zero or one
+        if (n == 1 || this.signum == 0 || this.equals(ONE))
+            return this;
+
+        if (n == -1)
+            return this.invert();
 
         final RoundingMode targetRm = mc.getRoundingMode();
         final int originalPrecision = mc.getPrecision();
         // If an exact value is requested, it must be a rational number
-        // so compute nth-root(this) as nth-root((floor * den + num) / den)
-        // == nth-root(floor * den + num) / nth-root(den)
+        // so compute root(this, n) as root((floor * den + num) / den, n)
+        // == root(floor * den + num, n) / root(den, n)
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
             // simplify the radicand to improve the algorithm performance
             BigInteger[] radicand = simplify(plainNumerator(), denominator);
-            BigInteger[] rootNumRem = radicand[0].sqrtAndRemainder();
 
-            if (sqrtNumRem[1].signum != 0)
-                throw new ArithmeticException("Computed square root not exact.");
+            BigInteger[] rootNumRem = radicand[0].rootAndRemainder(deg);
+            if (rootNumRem[1].signum != 0)
+                throw new ArithmeticException("Computed " + n + "th root not exact.");
 
-            BigInteger[] sqrtDenRem = radicand[1].sqrtAndRemainder();
+            BigInteger[] rootDenRem = radicand[1].rootAndRemainder(deg);
+            if (rootDenRem[1].signum != 0)
+                throw new ArithmeticException("Computed " + n + "th root not exact.");
 
-            if (sqrtDenRem[1].signum != 0)
-                throw new ArithmeticException("Computed square root not exact.");
+            Rational result = valueOf(signum, rootNumRem[0], rootDenRem[0]);
 
-            Rational result = valueOf(1, sqrtNumRem[0], sqrtDenRem[0]);
+            if (n > 0)
+                result = valueOf(signum, rootNumRem[0], rootDenRem[0]);
+            else // n < 0, invert the result
+                result = valueOf(signum, rootDenRem[0], rootNumRem[0]);
 
             if (originalPrecision != 0) {
-                // => targetRm == UNNECESSARY, user-specified number of digits for exact result
+                // => targetRm == UNNECESSARY, but user-specified number of digits
                 result = result.round(new MathContext(originalPrecision, RoundingMode.DOWN));
 
-                // If result*result != this numerically, the square root isn't exact
-                if (result.square().compareTo(this) != 0)
-                    throw new ArithmeticException("Computed square root not exact.");
+                // If result**n != this, the root isn't exact
+                if (!result.pow(n).equals(this))
+                    throw new ArithmeticException("Computed " + n + "th root not exact.");
             }
 
             return result;
@@ -1305,8 +1367,16 @@ public class Rational extends Number implements Comparable<Rational> {
          * The main steps of the algorithm below are as follows, first argument reduce
          * the value to the numerical range [1, 2) using the following relations:
          *
-         * x = y * 2 ^ exp sqrt(x) = sqrt(y) * 2^(exp / 2) if exp is even sqrt(x) =
-         * sqrt(y/2) * 2 ^((exp+1)/2) if exp is odd
+         * x = y * 2 ^ exp, root(x, deg) = root(y, deg) * 2^(exp / deg), if exp is a
+         * multiple of deg
+         * 
+         * if exp is not a multiple of deg:
+         * 
+         * sqrt(x) = root(y / 2^(exp % deg), deg) * 2^((exp - (exp % deg)) / deg), if
+         * exp % deg <= deg/2
+         * 
+         * sqrt(x) = root(y / 2^(deg - exp % deg), deg) * 2^((exp + (deg - exp % deg)) /
+         * deg), if exp % deg > deg/2
          *
          * Then use Newton's iteration on the reduced value to compute the numerical
          * digits of the desired result.
@@ -1324,9 +1394,10 @@ public class Rational extends Number implements Comparable<Rational> {
         final int expAdjust;
         Rational working = this;
         if (floor.signum == 1) { // non-zero integer part
-            int exp = -floor.bitLength();
-            // scaleAdjust must be even
-            expAdjust = (exp & 1) == 0 ? exp : exp + 1;
+            int exp = -floor.bitLength() + 1; // 1 <= this * 2^exp < 2
+            // adjust exp to the nearest multiple of deg, round down in case of draw
+            int mod = -(exp % deg); // mod is non-negative
+            expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
 
             if (expAdjust != 0) {
                 Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE.shiftLeft(-expAdjust));
@@ -1334,16 +1405,20 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         } else {
             BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
-            int exp = denominator.bitLength() - numerator.bitLength();
-            BigDecimal shiftedNum = numerator.shiftLeft(exp);
+            int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < this * 2^exp < 2
 
-            // expAdjust must be even
-            if ((exp & 1) == 0)
+            int mod = exp % deg;
+            if (mod == 0)
                 expAdjust = exp;
-            else if (shiftedNum.compareTo(denominator) >= 0) // shifted fractional part >= 1
-                expAdjust = exp - 1;
-            else // shifted fractional part < 1
-                expAdjust = exp + 1;
+            else {
+                if (numerator.shiftLeft(exp).compareTo(denominator) < 0) { // this * 2^exp < 1
+                    exp++;
+                    mod = mod + 1 == deg ? 0 : mod + 1;
+                }
+                // now 1 < this * 2^exp < 2
+                // adjust exp to the nearest multiple of deg, round down in case of draw
+                expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
+            }
 
             if (expAdjust != 0) {
                 Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(expAdjust));
@@ -1351,10 +1426,13 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         }
 
-        assert // Verify 0.5 <= working < 2
-        ONE_HALF.compareTo(working) <= 0 && working.compareTo(TWO) < 0;
+        // Verify 1/2^ceil(deg/2) <= working < 2^floor(deg/2)
+        Rational inf = new Rational(1, BigInteger.ZERO, BigInteger.ONE,
+                BigInteger.ONE.shiftLeft((int) Math.ceil(deg / 2.0)));
+        Rational sup = new Rational(1, BigInteger.ONE.shiftLeft(deg / 2));
+        assert inf.compareTo(working) <= 0 && working.compareTo(sup) < 0;
 
-        // Use good ole' Math.sqrt to get the initial guess for
+        // Use good ole' Math.pow to get the initial guess for
         // the Newton iteration, good to at least 15 decimal
         // digits. This approach does incur the cost of a
         //
@@ -1378,7 +1456,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // low-enough precision, the post-Newton rounding logic
         // could be applied directly.)
 
-        Rational approx = new Rational(Math.sqrt(working.doubleValue()));
+        Rational approx = new Rational(Math.pow(working.doubleValue(), 1.0 / deg));
         int guessPrecision = 15;
         int targetPrecision;
 
@@ -1401,21 +1479,27 @@ public class Rational extends Number implements Comparable<Rational> {
             break;
         }
 
+        final Rational degVal = new Rational(deg);
         do {
             // approx = 0.5 * (approx + fraction / approx)
-            approx = working.divide(approx).add(approx).multiply(ONE_HALF);
+            // approx = approx + (working / approx**(deg - 1) - approx) / deg
+            approx = working.divide(approx.pow(deg - 1)).subtract(approx).divide(degVal).add(approx);
             guessPrecision <<= 1;
-        } while (guessPrecision < targetPrecision + 2);
+        } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
 
         Rational result = approx;
 
+        // Shift the result back into the original range.
         if (expAdjust < 0) { // non-zero integer part
-            Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(-expAdjust / 2));
+            Rational mul = new Rational(1, BigInteger.ONE.shiftLeft(-expAdjust / n));
             result = result.multiply(mul);
         } else if (expAdjust > 0) {
-            Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE.shiftLeft(expAdjust / 2));
+            Rational mul = new Rational(1, BigInteger.ZERO, BigInteger.ONE, BigInteger.ONE.shiftLeft(expAdjust / n));
             result = result.multiply(mul);
         }
+
+        if (n < 0)
+            result = result.invert();
 
         // round with mc
         BigDecimal decimalRes = result.toBigDecimal(mc);
@@ -1426,14 +1510,14 @@ public class Rational extends Number implements Comparable<Rational> {
         case DOWN:
         case FLOOR:
             // Check if too big
-            if (result.square().compareTo(this) > 0) {
+            if (result.pow(n).compareTo(this) > 0) {
                 // Adjust increment down in case of 1 = 10^0
                 // since the next smaller number is only 1/10
                 // as far way as the next larger at exponent
                 // boundaries. Test approx and *not* result to
                 // avoid having to detect an arbitrary power
                 // of ten.
-                if (approx.compareTo(ONE) == 0)
+                if (approx.equals(ONE))
                     ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                 result = result.subtract(new Rational(ulp));
@@ -1444,7 +1528,7 @@ public class Rational extends Number implements Comparable<Rational> {
         case UP:
         case CEILING:
             // Check if too small
-            if (result.square().compareTo(this) < 0) {
+            if (result.pow(n).compareTo(this) < 0) {
                 result = result.add(new Rational(ulp));
                 decimalRes = decimalRes.add(ulp);
             }
@@ -1463,7 +1547,7 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         // Test numerical properties
-        assert rootResultAssertions(2, result, ulp, mc);
+        assert rootResultAssertions(n, result, decimalRes, mc);
         return result;
     }
 
@@ -1496,14 +1580,15 @@ public class Rational extends Number implements Comparable<Rational> {
      * </ul>
      * </ul>
      */
-    private boolean rootResultAssertions(int n, Rational result, BigDecimal ulp, MathContext mc) {
+    private boolean rootResultAssertions(int n, Rational result, BigDecimal decimalRes, MathContext mc) {
         RoundingMode rm = mc.getRoundingMode();
-        BigDecimal neighborUp = result.add(ulp);
+        BigDecimal ulp = decimalRes.ulp();
+        Rational neighborCeil = new Rational(decimalRes.add(ulp));
         // Make neighbor down accurate even for powers of ten
-        if (result.isPowerOfTen())
-            ulp = ulp.divide(TEN);
+        if (decimalRes.isPowerOfTen())
+            ulp = ulp.divide(BigDecimal.TEN);
 
-        BigDecimal neighborDown = result.subtract(ulp);
+        Rational neighborFloor = new Rational(decimalRes.subtract(ulp));
 
         // The starting value and result should be concordant.
         assert (result.signum() == this.signum) : "Bad signum of this and/or its " + n + "th-root.";
@@ -1551,7 +1636,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // compare absolute values.
 
         int err_comp_errCeil = err.compareTo(errCeil);
-        int err_comp_errFloor = err.compareTo(errDown);
+        int err_comp_errFloor = err.compareTo(errFloor);
 
         assert errCeil.signum() == 1 && errFloor.signum() == 1 : "Errors of neighbors raised don't have correct signs";
 
@@ -1639,8 +1724,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return this {@code Rational} converted to a {@code BigDecimal}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
-        BigDecimal decimalPart = new BigDecimal(numerator).divide(new BigDecimal(denominator), mc);
-        BigDecimal absVal = new BigDecimal(floor).add(decimalPart);
+        BigDecimal absVal = new BigDecimal(plainNumerator()).divide(new BigDecimal(denominator), mc);
         return signum == -1 ? absVal.negate() : absVal;
     }
 

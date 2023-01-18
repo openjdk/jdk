@@ -1054,7 +1054,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * Accept no subclasses.
      */
-    private static BigInteger toStrictBigInteger(BigInteger val) {
+    static BigInteger toStrictBigInteger(BigInteger val) {
         return (val.getClass() == BigInteger.class) ?
             val :
             new BigInteger(val.toByteArray().clone());
@@ -2250,8 +2250,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 MathContext mcTmp = new MathContext(tmpPrecision, RoundingMode.HALF_EVEN);
                 // approx = 0.5 * (approx + fraction / approx)
                 approx = ONE_HALF.multiply(approx.add(working.divide(approx, mcTmp), mcTmp));
-                guessPrecision *= 2;
-            } while (guessPrecision < targetPrecision + 2);
+                guessPrecision <<= 1;
+            } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
 
             BigDecimal result = approx.scaleByPowerOfTen(-scaleAdjust/2);
             RoundingMode targetRm = mc.getRoundingMode();
@@ -2349,7 +2349,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         return this.multiply(this);
     }
 
-    private boolean isPowerOfTen() {
+    boolean isPowerOfTen() {
         return BigInteger.ONE.equals(this.unscaledValue());
     }
 

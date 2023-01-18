@@ -2704,6 +2704,60 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         assert r.compareTo(BigInteger.ZERO) >= 0;
         return new BigInteger[] {s, r};
     }
+    
+    /**
+     * Returns the integer {@code n}th root of this BigInteger. The integer
+     * {@code n}th root of the corresponding mathematical integer {@code x} is the
+     * largest mathematical integer {@code r} such that {@code r**n <= x}. It is
+     * equal to the value of {@code floor(root(x, n))}, where {@code root(x, n)}
+     * denotes the real {@code n}th root of {@code x} treated as a real. Note that
+     * the integer {@code n}th root will be less than the real {@code n}th root if
+     * the latter is not representable as an integral value.
+     *
+     * @param n the root degree
+     * @return the integer {@code n}th root of {@code this}
+     * @throws ArithmeticException if {@code n == 0} (Zero-degree roots are not
+     *                             defined.)
+     * @throws ArithmeticException if {@code n} is negative. (This would cause the
+     *                             operation to yield a non-integer value.)
+     * @throws ArithmeticException if {@code n} is even and {@code this} is
+     *                             negative.
+     * @since 21
+     */
+    public BigInteger root(int n) {
+        if (n <= 0)
+            throw new ArithmeticException("Non-positive root degree");
+        
+        if ((n & 1) == 0 && signum < 0)
+            throw new ArithmeticException("Negative radicand with even root degree");
+
+        return new MutableBigInteger(mag).root(n).toBigInteger(signum);
+    }
+    
+    /**
+     * Returns an array of two BigIntegers containing the integer {@code n}th root
+     * {@code r} of {@code this} and its remainder {@code this - r**n},
+     * respectively.
+     *
+     * @param n the root degree
+     * @return an array of two BigIntegers with the integer {@code n}th root at
+     *         offset 0 and the remainder at offset 1
+     * @throws ArithmeticException if {@code n == 0} (Zero-degree roots are not
+     *                             defined.)
+     * @throws ArithmeticException if {@code n} is negative. (This would cause the
+     *                             operation to yield a non-integer value.)
+     * @throws ArithmeticException if {@code n} is even and {@code this} is
+     *                             negative.
+     * @see #sqrt()
+     * @see #root(int)
+     * @since 21
+     */
+    public BigInteger[] rootAndRemainder(int n) {
+        BigInteger root = root(n);
+        BigInteger rem = this.subtract(root.pow(n));
+        assert rem.signum == 0 || rem.signum == this.signum; // abs(root**n) <= abs(this)
+        return new BigInteger[] {root, rem};
+    }
 
     /**
      * Returns a BigInteger whose value is the greatest common divisor of
