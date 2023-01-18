@@ -6932,42 +6932,38 @@ typedef uint32_t u32;
   static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
     setbuf(stdout, NULL);
 
-      julong ctx_h[5];
+    julong ctx_h[5];
 
-      ctx_h[0] = acc_start[0] >> 0;
-      ctx_h[0] |= acc_start[1] << (64-6) >> 32;
+    ctx_h[0] = acc_start[0] >> 0;
+    ctx_h[0] |= acc_start[1] << (64-6) >> 32;
 
-      ctx_h[1] = acc_start[1] >> 6;
-      ctx_h[1] |= acc_start[2] << (64-12) >> 32;
+    ctx_h[1] = acc_start[1] >> 6;
+    ctx_h[1] |= acc_start[2] << (64-12) >> 32;
 
-      ctx_h[2] = acc_start[2] >> 12;
-      ctx_h[2] |= acc_start[3] << (64-18) >> 32;
+    ctx_h[2] = acc_start[2] >> 12;
+    ctx_h[2] |= acc_start[3] << (64-18) >> 32;
 
-      ctx_h[3] = acc_start[3] >> 18;
-      ctx_h[2] |= acc_start[4] << (64-24) >> 32;
+    ctx_h[3] = acc_start[3] >> 18;
+    ctx_h[2] |= acc_start[4] << (64-24) >> 32;
 
-      ctx_h[4] = acc_start[4] >> 24;
+    ctx_h[4] = acc_start[4] >> 24;
 
-      julong ctx_r[5];
+    julong ctx_r[5];
 
-      ctx_r[0] = r_start[0] >> 0;
-      ctx_r[0] |= r_start[1] << (64-6) >> 32;
+    ctx_r[0] = r_start[0] >> 0;
+    ctx_r[0] |= r_start[1] << (64-6) >> 32;
 
-      ctx_r[1] = r_start[1] >> 6;
-      ctx_r[1] |= r_start[2] << (64-12) >> 32;
+    ctx_r[1] = r_start[1] >> 6;
+    ctx_r[1] |= r_start[2] << (64-12) >> 32;
 
-      ctx_r[2] = r_start[2] >> 12;
-      ctx_r[2] |= r_start[3] << (64-18) >> 32;
+    ctx_r[2] = r_start[2] >> 12;
+    ctx_r[2] |= r_start[3] << (64-18) >> 32;
 
-      ctx_r[3] = r_start[3] >> 18;
-      ctx_r[3] |= r_start[4] << (64-24) >> 32;
+    ctx_r[3] = r_start[3] >> 18;
+    ctx_r[3] |= r_start[4] << (64-24) >> 32;
 
-      ctx_r[4] = r_start[4] >> 24;
+    ctx_r[4] = r_start[4] >> 24;
 
-
-    for (int i = 0; i < 5; i++) {
-      acc_start[i] = ctx_h[i];
-    }
 
     u32 *ctx_c = (u32 *)input_start;
 
@@ -6984,29 +6980,14 @@ typedef uint32_t u32;
       ctx_c = (u32 *)input_start;
       u64 *b_c = (u64*)ctx_c;
 
-      // s = h + c, without carry propagation
-      const u64 s0 = ctx_h[0] + (u64)ctx_c[0]; // s0 <= 1_fffffffe
-      const u64 s1 = ctx_h[1] + (u64)ctx_c[1]; // s1 <= 1_fffffffe
-      const u64 s2 = ctx_h[2] + (u64)ctx_c[2]; // s2 <= 1_fffffffe
-      const u64 s3 = ctx_h[3] + (u64)ctx_c[3]; // s3 <= 1_fffffffe
-      const u32 s4 = ctx_h[4];                 // s4 <=          5
-
-      if (b_u1 == 0x8a4850e9af0cf61c) {
-        asm("nop");
-      }
-
-      if (b_u1 == 0x209c0f42766e4ca9) {
-        asm("nop");
-      }
-
       printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
       printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
 
       static int counter;
       printf("#%d\n", ++counter);
 
+      // s = u + c, with carry propagation
       uint64_t carry = 0;
-
       ADC(b_s0, carry, b_u0, b_c[0]); if (carry) printf("#");
       ADC(b_s1, carry, b_u1, b_c[1]); if (carry) printf("*");
       b_s2 = b_u2 + carry;
@@ -7038,12 +7019,6 @@ typedef uint32_t u32;
       const u32 rr3 = (r3 >> 2) + r3; // rr3 <= 13fffffb // rr1 == (r3 >> 2) * 5
 
       // (h + c) * r, without carry propagation
-      const u64 x0 = s0*r0+ s1*rr3+ s2*rr2+ s3*rr1+ s4*rr0; // <= 97ffffe007fffff8
-      const u64 x1 = s0*r1+ s1*r0 + s2*rr3+ s3*rr2+ s4*rr1; // <= 8fffffe20ffffff6
-      const u64 x2 = s0*r2+ s1*r1 + s2*r0 + s3*rr3+ s4*rr2; // <= 87ffffe417fffff4
-      const u64 x3 = s0*r3+ s1*r2 + s2*r1 + s3*r0 + s4*rr3; // <= 7fffffe61ffffff2
-      const u32 x4 = s4 * (r0 & 3); // ...recover 2 bits    // <=                f
-
       const uint64_t  b_r0 = ((uint64_t)r1 << 32) + r0;
       const uint64_t  b_r1 = ((uint64_t)r3 << 32) + r2;
       const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
@@ -7056,7 +7031,7 @@ typedef uint32_t u32;
       r_start_copy[2] = ((b_r0 >> 52) | (b_r1 << 12)) & 0x3ffffff;
       r_start_copy[3] = (b_r1 >> 14) & 0x3ffffff;
       r_start_copy[4] = ((b_r1 >> 40) // | (b_r2 << 24)) & 0x3ffffff
-                    );
+                         );
 
       printf("R:   %016lx:%016lx\n", b_r1, b_r0);
       // printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
@@ -7085,13 +7060,6 @@ typedef uint32_t u32;
       // printf("X: %x:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
 
       // partial reduction modulo 2^130 - 5
-      const u32 u5 = x4 + (x3 >> 32); // u5 <= 7ffffff5
-      const u64 u0 = (u5 >>  2) * 5 + (x0 & 0xffffffff);
-      const u64 u1 = (u0 >> 32)     + (x1 & 0xffffffff) + (x0 >> 32);
-      const u64 u2 = (u1 >> 32)     + (x2 & 0xffffffff) + (x1 >> 32);
-      const u64 u3 = (u2 >> 32)     + (x3 & 0xffffffff) + (x2 >> 32);
-      const u64 u4 = (u3 >> 32)     + (u5 & 3);
-
       u128 b_u3 = b_x2 + (b_x1 >> 64);
       b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
       b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
@@ -7102,14 +7070,7 @@ typedef uint32_t u32;
       b_u2 &= 0xffffffffffffffff;
 
       // Update the hash
-      ctx_h[0] = (u32)u0; // u0 <= 1_9ffffff0
-      ctx_h[1] = (u32)u1; // u1 <= 1_97ffffe0
-      ctx_h[2] = (u32)u2; // u2 <= 1_8fffffe2
-      ctx_h[3] = (u32)u3; // u3 <= 1_87ffffe4
-      ctx_h[4] = (u32)u4; // u4 <=          4
-
       printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
-      // printf("U: %lx:%08lx:%08lx:%08lx:%08lx\n", ctx_h[4], ctx_h[3], ctx_h[2], ctx_h[1], ctx_h[0]);
 
       input_start += BLOCK_LENGTH;
       length -= BLOCK_LENGTH;
