@@ -114,7 +114,7 @@ bool oopDesc::is_oop(oop obj, bool ignore_mark_word) {
   // at a safepoint, it must not be zero.
   // Outside of a safepoint, the header could be changing (for example,
   // another thread could be inflating a lock on this object).
-  if (ignore_mark_word) {
+  if (ignore_mark_word || UseFastLocking) {
     return true;
   }
   if (obj->mark().value() != 0) {

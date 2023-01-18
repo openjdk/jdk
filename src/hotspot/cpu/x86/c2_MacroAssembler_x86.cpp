@@ -45,7 +45,7 @@
 #endif
 
 // C2 compiled method's prolog code.
-void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub) {
+void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub, int max_monitors) {
 
   // WARNING: Initial instruction MUST be 5 bytes or longer so that
   // NativeJump::patch_verified_entry will be able to patch out the entry
@@ -124,6 +124,20 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     jcc(Assembler::equal, L);
     STOP("Stack is not properly aligned!");
     bind(L);
+  }
+#endif
+
+#ifdef _LP64
+  if (UseFastLocking && max_monitors > 0) {
+    C2CheckLockStackStub* stub = new (Compile::current()->comp_arena()) C2CheckLockStackStub();
+    Compile::current()->output()->add_stub(stub);
+    assert(!is_stub, "only methods have monitors");
+    Register thread = r15_thread;
+    movptr(rax, Address(thread, JavaThread::lock_stack_current_offset()));
+    addptr(rax, max_monitors * oopSize);
+    cmpptr(rax, Address(thread, JavaThread::lock_stack_limit_offset()));
+    jcc(Assembler::greaterEqual, stub->entry());
+    bind(stub->continuation());
   }
 #endif
 
@@ -548,7 +562,7 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // rax,: tmp -- KILLED
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
-                                 Register scrReg, Register cx1Reg, Register cx2Reg,
+                                 Register scrReg, Register cx1Reg, Register cx2Reg, Register thread,
                                  RTMLockingCounters* rtm_counters,
                                  RTMLockingCounters* stack_rtm_counters,
                                  Metadata* method_data,
@@ -601,20 +615,38 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   jccb(Assembler::notZero, IsInflated);
 
   if (!UseHeavyMonitors) {
-    // Attempt stack-locking ...
-    orptr (tmpReg, markWord::unlocked_value);
-    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-    lock();
-    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-    jcc(Assembler::equal, COUNT);           // Success
+    if (UseFastLocking) {
+#ifdef _LP64
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, NO_COUNT, false);
+      jmp(COUNT);
+#else
+      // We can not emit the lock-stack-check in verified_entry() because we don't have enough
+      // registers (for thread ptr). Therefor we have to emit the lock-stack-check in
+      // fast_lock_impl(). However, that check can take a slow-path with ZF=1, therefore
+      // we need to handle it specially and force ZF=0 before taking the actual slow-path.
+      Label slow;
+      fast_lock_impl(objReg, tmpReg, thread, scrReg, slow);
+      jmp(COUNT);
+      bind(slow);
+      testptr(objReg, objReg); // ZF=0 to indicate failure
+      jmp(NO_COUNT);
+#endif
+    } else {
+      // Attempt stack-locking ...
+      orptr (tmpReg, markWord::unlocked_value);
+      movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+      lock();
+      cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
+      jcc(Assembler::equal, COUNT);           // Success
 
-    // Recursive locking.
-    // The object is stack-locked: markword contains stack pointer to BasicLock.
-    // Locked by current thread if difference with current SP is less than one page.
-    subptr(tmpReg, rsp);
-    // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
-    movptr(Address(boxReg, 0), tmpReg);
+      // Recursive locking.
+      // The object is stack-locked: markword contains stack pointer to BasicLock.
+      // Locked by current thread if difference with current SP is less than one page.
+      subptr(tmpReg, rsp);
+      // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
+      andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+      movptr(Address(boxReg, 0), tmpReg);
+    }
   } else {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
     testptr(objReg, objReg);
@@ -658,15 +690,8 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   // (rsp or the address of the box) into  m->owner is harmless.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
-  cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(thread, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
-  // If we weren't able to swing _owner from NULL to the BasicLock
-  // then take the slow path.
-  jccb  (Assembler::notZero, NO_COUNT);
-  // update _owner from BasicLock to thread
-  get_thread (scrReg);                    // beware: clobbers ICCs
-  movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
-  xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
   // If the CAS fails we can either retry or pass control to the slow path.
   // We use the latter tactic.
@@ -772,14 +797,24 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 #endif
 
-  if (!UseHeavyMonitors) {
+  if (!UseHeavyMonitors && !UseFastLocking) {
     cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
     jcc   (Assembler::zero, COUNT);                                   // 0 indicates recursive stack-lock
   }
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));   // Examine the object's markword
   if (!UseHeavyMonitors) {
     testptr(tmpReg, markWord::monitor_value);                         // Inflated?
-    jccb   (Assembler::zero, Stacked);
+#if INCLUDE_RTM_OPT
+    if (UseFastLocking && use_rtm) {
+      jcc(Assembler::zero, Stacked);
+    } else
+#endif
+    jccb(Assembler::zero, Stacked);
+    if (UseFastLocking) {
+      // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
+      testptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
+      jcc(Assembler::notEqual, NO_COUNT);
+    }
   }
 
   // It's inflated.
@@ -791,7 +826,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     testptr(boxReg, boxReg);
     jccb(Assembler::notZero, L_regular_inflated_unlock);
     xend();
-    jmpb(DONE_LABEL);
+    jmp(DONE_LABEL);
     bind(L_regular_inflated_unlock);
   }
 #endif
@@ -905,9 +940,15 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #endif
   if (!UseHeavyMonitors) {
     bind  (Stacked);
-    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-    lock();
-    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    if (UseFastLocking) {
+      mov(boxReg, tmpReg);
+      fast_unlock_impl(objReg, boxReg, tmpReg, NO_COUNT);
+      jmp(COUNT);
+    } else {
+      movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+      lock();
+      cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+    }
     // Intentional fall-thru into DONE_LABEL
   }
   bind(DONE_LABEL);

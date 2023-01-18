@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -1143,6 +1144,16 @@ public:
   // java.lang.Thread interruption support
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+
+  static ByteSize lock_stack_current_offset()    { return byte_offset_of(JavaThread, _lock_stack) + LockStack::current_offset(); }
+  static ByteSize lock_stack_limit_offset()    { return byte_offset_of(JavaThread, _lock_stack) + LockStack::limit_offset(); }
+
 
   static OopStorage* thread_oop_storage();
 

@@ -9779,3 +9779,61 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   stop(msg);
   bind(L_stack_ok);
 }
+
+void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread, Register tmp, Label& slow, bool rt_check_stack) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, thread, tmp);
+
+  // First we need to check if the lock-stack has room for pushing the object reference.
+  if (rt_check_stack) {
+    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
+    jcc(Assembler::greaterEqual, slow);
+  }
+#ifdef ASSERT
+  else {
+    Label ok;
+    movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
+    cmpptr(tmp, Address(thread, JavaThread::lock_stack_limit_offset()));
+    jcc(Assembler::less, ok);
+    stop("Not enough room in lock stack; should have been checked in the method prologue");
+    bind(ok);
+  }
+#endif
+
+  // Now we attempt to take the fast-lock.
+  // Clear lowest two header bits (locked state).
+  andptr(hdr, ~(int32_t )markWord::lock_mask_in_place);
+  movptr(tmp, hdr);
+  // Set lowest bit (unlocked state).
+  orptr(hdr, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+
+  // If successful, push object to lock-stack.
+  movptr(tmp, Address(thread, JavaThread::lock_stack_current_offset()));
+  movptr(Address(tmp, 0), obj);
+  increment(tmp, oopSize);
+  movptr(Address(thread, JavaThread::lock_stack_current_offset()), tmp);
+}
+
+void MacroAssembler::fast_unlock_impl(Register obj, Register hdr, Register tmp, Label& slow) {
+  assert(hdr == rax, "header must be in rax for cmpxchg");
+  assert_different_registers(obj, hdr, tmp);
+
+  // Mark-word must be 00 now, try to swing it back to 01 (unlocked)
+  movptr(tmp, hdr); // The expected old value
+  orptr(tmp, markWord::unlocked_value);
+  lock();
+  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::notEqual, slow);
+  // Pop the lock object from the lock-stack.
+#ifdef _LP64
+  const Register thread = r15_thread;
+#else
+  const Register thread = rax;
+  get_thread(rax);
+#endif
+  subptr(Address(thread, JavaThread::lock_stack_current_offset()), oopSize);
+}

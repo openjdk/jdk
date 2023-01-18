@@ -182,12 +182,20 @@ class markWord {
     return markWord(value() | unlocked_value);
   }
   bool has_locker() const {
-    return ((value() & lock_mask_in_place) == locked_value);
+    return !UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
   }
   BasicLock* locker() const {
     assert(has_locker(), "check");
     return (BasicLock*) value();
   }
+
+  bool is_fast_locked() const {
+    return UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
+  }
+  markWord set_fast_locked() const {
+    return markWord(value() & ~lock_mask_in_place);
+  }
+
   bool has_monitor() const {
     return ((value() & lock_mask_in_place) == monitor_value);
   }
@@ -197,7 +205,9 @@ class markWord {
     return (ObjectMonitor*) (value() ^ monitor_value);
   }
   bool has_displaced_mark_helper() const {
-    return ((value() & unlocked_value) == 0);
+    intptr_t lockbits = value() & lock_mask_in_place;
+    return UseFastLocking ? lockbits == monitor_value   // monitor?
+                    : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;

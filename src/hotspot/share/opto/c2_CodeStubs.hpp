@@ -86,4 +86,12 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
+class C2CheckLockStackStub : public C2CodeStub {
+public:
+  C2CheckLockStackStub() : C2CodeStub() {}
+
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+};
+
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP

@@ -70,6 +70,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -487,8 +488,9 @@ JavaThread::JavaThread() :
 
   _class_to_be_initialized(nullptr),
 
-  _SleepEvent(ParkEvent::Allocate(this))
-{
+  _SleepEvent(ParkEvent::Allocate(this)),
+
+  _lock_stack() {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -985,6 +987,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
+  assert(!UseFastLocking, "should not be called with fast-locking");
   if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != NULL; chunk = chunk->next()) {
@@ -1377,6 +1380,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     f->do_oop((oop*)entry->cont_addr());
     f->do_oop((oop*)entry->chunk_addr());
     entry = entry->parent();
+  }
+
+  if (!UseHeavyMonitors && UseFastLocking) {
+    lock_stack().oops_do(f);
   }
 }
 

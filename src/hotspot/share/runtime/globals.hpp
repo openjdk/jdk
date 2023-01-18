@@ -1988,6 +1988,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(size_t, HeapObjectStatsSamplingInterval, 500, DIAGNOSTIC,         \
              "Heap object statistics sampling interval (ms)")               \
+                                                                            \
+  product(bool, UseFastLocking, false, EXPERIMENTAL,                        \
+                "Use fast-locking instead of stack-locking")                \
 
 // end of RUNTIME_FLAGS
 

@@ -135,6 +135,7 @@ class Threads: AllStatic {
   static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner);
 
+  static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
   static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);
 
   // Number of threads on the active threads list

@@ -1651,31 +1651,36 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ ld(obj_reg, Address(oop_handle_reg, 0));
 
     if (!UseHeavyMonitors) {
-      // Load (object->mark() | 1) into swap_reg % x10
-      __ ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ ori(swap_reg, t0, 1);
+      if (UseFastLocking) {
+        __ ld(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ fast_lock(obj_reg, swap_reg, tmp, t0, slow_path_lock);
+      } else {
+        // Load (object->mark() | 1) into swap_reg % x10
+        __ ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ ori(swap_reg, t0, 1);
 
-      // Save (object->mark() | 1) into BasicLock's displaced header
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
+        // Save (object->mark() | 1) into BasicLock's displaced header
+        __ sd(swap_reg, Address(lock_reg, mark_word_offset));
 
-      // src -> dest if dest == x10 else x10 <- dest
-      __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
+        // src -> dest if dest == x10 else x10 <- dest
+        __ cmpxchg_obj_header(x10, lock_reg, obj_reg, t0, count, /*fallthrough*/NULL);
 
-      // Test if the oopMark is an obvious stack pointer, i.e.,
-      //  1) (mark & 3) == 0, and
-      //  2) sp <= mark < mark + os::pagesize()
-      // These 3 tests can be done by evaluating the following
-      // expression: ((mark - sp) & (3 - os::vm_page_size())),
-      // assuming both stack pointer and pagesize have their
-      // least significant 2 bits clear.
-      // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
+        // Test if the oopMark is an obvious stack pointer, i.e.,
+        //  1) (mark & 3) == 0, and
+        //  2) sp <= mark < mark + os::pagesize()
+        // These 3 tests can be done by evaluating the following
+        // expression: ((mark - sp) & (3 - os::vm_page_size())),
+        // assuming both stack pointer and pagesize have their
+        // least significant 2 bits clear.
+        // NOTE: the oopMark is in swap_reg % 10 as the result of cmpxchg
 
-      __ sub(swap_reg, swap_reg, sp);
-      __ andi(swap_reg, swap_reg, 3 - os::vm_page_size());
+        __ sub(swap_reg, swap_reg, sp);
+        __ andi(swap_reg, swap_reg, 3 - os::vm_page_size());
 
-      // Save the test result, for recursive case, the result is zero
-      __ sd(swap_reg, Address(lock_reg, mark_word_offset));
-      __ bnez(swap_reg, slow_path_lock);
+        // Save the test result, for recursive case, the result is zero
+        __ sd(swap_reg, Address(lock_reg, mark_word_offset));
+        __ bnez(swap_reg, slow_path_lock);
+      }
     } else {
       __ j(slow_path_lock);
     }
@@ -1770,7 +1775,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     Label done, not_recursive;
 
-    if (!UseHeavyMonitors) {
+    if (!UseHeavyMonitors && !UseFastLocking) {
       // Simple recursive lock?
       __ ld(t0, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
       __ bnez(t0, not_recursive);
@@ -1786,15 +1791,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     if (!UseHeavyMonitors) {
-      // get address of the stack lock
-      __ la(x10, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
-      //  get old displaced header
-      __ ld(old_hdr, Address(x10, 0));
+      if (UseFastLocking) {
+        __ ld(old_hdr, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+        __ fast_unlock(obj_reg, old_hdr, swap_reg, t0, slow_path_unlock);
+      } else {
+        // get address of the stack lock
+        __ la(x10, Address(sp, lock_slot_offset * VMRegImpl::stack_slot_size));
+        //  get old displaced header
+        __ ld(old_hdr, Address(x10, 0));
 
-      // Atomic swap old header if oop still contains the stack lock
-      Label count;
-      __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, count, &slow_path_unlock);
-      __ bind(count);
+        // Atomic swap old header if oop still contains the stack lock
+        Label count;
+        __ cmpxchg_obj_header(x10, old_hdr, obj_reg, t0, count, &slow_path_unlock);
+        __ bind(count);
+      }
       __ decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
     } else {
       __ j(slow_path_unlock);

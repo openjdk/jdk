@@ -735,6 +735,15 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
 //%note monitor_1
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
+  if (!UseHeavyMonitors && UseFastLocking) {
+    // This is a hack to get around the limitation of registers in x86_32. We really
+    // send an oopDesc* instead of a BasicObjectLock*.
+    Handle h_obj(current, oop((reinterpret_cast<oopDesc*>(elem))));
+    assert(Universe::heap()->is_in_or_null(h_obj()),
+           "must be NULL or an object");
+    ObjectSynchronizer::enter(h_obj, NULL, current);
+    return;
+  }
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif

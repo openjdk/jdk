@@ -180,6 +180,7 @@ void Parse::do_monitor_enter() {
   kill_dead_locals();
 
   C->set_has_monitors(true);
+  C->push_monitor();
 
   // Null check; get casted pointer.
   Node* obj = null_check(peek());
