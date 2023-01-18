@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -921,8 +921,6 @@ void os::run_periodic_checks(outputStream* st) {
   print_handlers |= check_signal_handler(SIGILL);
   print_handlers |= check_signal_handler(SIGFPE);
   print_handlers |= check_signal_handler(SIGBUS);
-  print_handlers |= check_signal_handler(SIGPIPE);
-  print_handlers |= check_signal_handler(SIGXFSZ);
   PPC64_ONLY(print_handlers |= check_signal_handler(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
@@ -935,6 +933,9 @@ void os::run_periodic_checks(outputStream* st) {
   }
 
   print_handlers |= check_signal_handler(PosixSignals::SR_signum);
+
+  // As we ignore SIGPIPE and SIGXFSZ, and expect other code to potentially
+  // install handlers for them, we don't bother checking them here.
 
   if (print_handlers) {
     // If we had a mismatch:
@@ -1274,7 +1275,13 @@ void set_signal_handler(int sig) {
   // Save handler setup for possible later checking
   vm_handlers.set(sig, &sigAct);
 
-  do_check_signal_periodically[sig] = true;
+  bool do_check = true;
+  if (sig == SIGPIPE || sig == SIGXFSZ) {
+    // As we ignore these signals, and expect other code to potentially
+    // install handlers for them, we don't bother checking them.
+    do_check = false;
+  }
+  do_check_signal_periodically[sig] = do_check;
 #ifdef ASSERT
   void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
