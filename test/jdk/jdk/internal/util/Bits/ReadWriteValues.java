@@ -24,18 +24,18 @@
 /*
  * @test
  * @bug 8299576
+ * @modules java.base/jdk.internal.util
  * @summary Verify that reads and writes of primitives are correct
- * @compile/module=java.base java/io/BitsProxy.java
  * @run junit ReadWriteValues
  */
 
-import java.io.BitsProxy;
+import jdk.internal.util.Bits;
+import org.junit.jupiter.api.*;
+
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.DoubleStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-
-import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,7 +53,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             short expected = (short) l;
             RefImpl.putShort(BUFF, OFFSET, expected);
-            short actual = BitsProxy.getShort(BUFF, OFFSET);
+            short actual = Bits.BigEndian.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -62,7 +62,7 @@ final class ReadWriteValues {
     void testPutShort() {
         longs().forEach(l -> {
             short expected = (short) l;
-            BitsProxy.putShort(BUFF, OFFSET, expected);
+            Bits.BigEndian.putShort(BUFF, OFFSET, expected);
             short actual = RefImpl.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -73,7 +73,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             char expected = (char) l;
             RefImpl.putChar(BUFF, OFFSET, expected);
-            char actual = BitsProxy.getChar(BUFF, OFFSET);
+            char actual = Bits.BigEndian.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -82,7 +82,7 @@ final class ReadWriteValues {
     void testPutChar() {
         longs().forEach(l -> {
             char expected = (char) l;
-            BitsProxy.putChar(BUFF, OFFSET, expected);
+            Bits.BigEndian.putChar(BUFF, OFFSET, expected);
             char actual = RefImpl.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -93,7 +93,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             int expected = (int) l;
             RefImpl.putInt(BUFF, OFFSET, expected);
-            int actual = BitsProxy.getInt(BUFF, OFFSET);
+            int actual = Bits.BigEndian.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -102,7 +102,7 @@ final class ReadWriteValues {
     void testPutInt() {
         longs().forEach(l -> {
             int expected = (int) l;
-            BitsProxy.putInt(BUFF, OFFSET, expected);
+            Bits.BigEndian.putInt(BUFF, OFFSET, expected);
             int actual = RefImpl.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -112,7 +112,7 @@ final class ReadWriteValues {
     void testGetLong() {
         longs().forEach(expected -> {
             RefImpl.putLong(BUFF, OFFSET, expected);
-            long actual = BitsProxy.getLong(BUFF, OFFSET);
+            long actual = Bits.BigEndian.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -120,7 +120,7 @@ final class ReadWriteValues {
     @Test
     void testPutLong() {
         longs().forEach(expected -> {
-            BitsProxy.putLong(BUFF, OFFSET, expected);
+            Bits.BigEndian.putLong(BUFF, OFFSET, expected);
             long actual = RefImpl.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -130,7 +130,7 @@ final class ReadWriteValues {
     void testGetFloat() {
         floats().forEach(expected -> {
             RefImpl.putFloat(BUFF, OFFSET, expected);
-            float actual = BitsProxy.getFloat(BUFF, OFFSET);
+            float actual = Bits.BigEndian.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -138,7 +138,7 @@ final class ReadWriteValues {
     @Test
     void testPutFloat() {
         floats().forEach(expected -> {
-            BitsProxy.putFloat(BUFF, OFFSET, expected);
+            Bits.BigEndian.putFloat(BUFF, OFFSET, expected);
             float actual = RefImpl.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -148,7 +148,7 @@ final class ReadWriteValues {
     void testGetDouble() {
         doubles().forEach(expected -> {
             RefImpl.putDouble(BUFF, OFFSET, expected);
-            double actual = BitsProxy.getDouble(BUFF, OFFSET);
+            double actual = Bits.BigEndian.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -156,30 +156,42 @@ final class ReadWriteValues {
     @Test
     void testPutDouble() {
         doubles().forEach(expected -> {
-            BitsProxy.putDouble(BUFF, OFFSET, expected);
+            Bits.BigEndian.putDouble(BUFF, OFFSET, expected);
             double actual = RefImpl.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
 
+    @Test
+    void testPutUnsignedShort() {
+        longs().forEach(l -> {
+            int expected = Short.toUnsignedInt((short) l);
+            Bits.BigEndian.putUnsignedShort(BUFF, OFFSET, expected);
+            int actual = Short.toUnsignedInt(RefImpl.getShort(BUFF, OFFSET));
+            assertEquals(expected, actual);
+        });
+    }
+
+
+
     // Unusual cases
 
     @Test
     void testNullArray() {
-        assertThrowsOriginal(NullPointerException.class, () -> BitsProxy.getInt(null, OFFSET));
-        assertThrowsOriginal(NullPointerException.class, () -> BitsProxy.putInt(null, OFFSET, 1));
+        assertThrowsOriginal(NullPointerException.class, () -> Bits.BigEndian.getInt(null, OFFSET));
+        assertThrowsOriginal(NullPointerException.class, () -> Bits.BigEndian.putInt(null, OFFSET, 1));
     }
 
     @Test
     void testNegArg() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.getInt(BUFF, -1));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.putInt(BUFF, -1, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> Bits.BigEndian.getInt(BUFF, -1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> Bits.BigEndian.putInt(BUFF, -1, 1));
     }
 
     @Test
     void testOutOfBounds() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.getInt(BUFF, BUFF.length));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BitsProxy.putInt(BUFF, BUFF.length, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> Bits.BigEndian.getInt(BUFF, BUFF.length));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> Bits.BigEndian.putInt(BUFF, BUFF.length, 1));
     }
 
     static LongStream longs() {
