@@ -500,10 +500,6 @@ void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
 }
 
-void TenuredGeneration::reset_saved_marks() {
-  _the_space->reset_saved_mark();
-}
-
 bool TenuredGeneration::no_allocs_since_save_marks() {
   return _the_space->saved_mark_at_top();
 }
