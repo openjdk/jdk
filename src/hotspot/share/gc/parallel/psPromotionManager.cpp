@@ -237,7 +237,9 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
     while (tq->pop_overflow(task)) {
-      process_popped_location_depth(task);
+      if (!tq->try_push_to_taskqueue(task)) {
+        process_popped_location_depth(task);
+      }
     }
 
     while (tq->pop_local(task, threshold)) {
