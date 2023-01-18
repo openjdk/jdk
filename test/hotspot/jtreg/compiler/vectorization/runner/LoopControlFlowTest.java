@@ -64,7 +64,7 @@ public class LoopControlFlowTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] loopInvariantCondition() {
         int[] res = new int[SIZE];

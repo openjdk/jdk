@@ -131,7 +131,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert I/L to F/D ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_I2X, ">0"})
     public float[] convertIntToFloat() {
         float[] res = new float[SIZE];
@@ -142,7 +142,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_I2X, ">0"})
     public double[] convertIntToDouble() {
         double[] res = new double[SIZE];
@@ -176,7 +176,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Subword-I to F/D ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_S2X, ">0"})
     public float[] convertShortToFloat() {
         float[] res = new float[SIZE];
@@ -218,7 +218,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to I/L ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public int[] convertFloatToInt() {
         int[] res = new int[SIZE];
@@ -240,7 +240,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_D2X, ">0"})
     public int[] convertDoubleToInt() {
         int[] res = new int[SIZE];
@@ -263,7 +263,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
@@ -274,7 +274,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
@@ -285,7 +285,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         counts = {IRNode.VECTOR_CAST_D2X, ">0"})
     public short[] convertDoubleToShort() {
@@ -297,7 +297,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx", "true"},
         applyIf = {"MaxVectorSize", ">=32"},
         counts = {IRNode.VECTOR_CAST_D2X, ">0"})
     public char[] convertDoubleToChar() {
@@ -310,7 +310,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Between F & D ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public double[] convertFloatToDouble() {
         double[] res = new double[SIZE];
@@ -321,7 +321,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_D2X, ">0"})
     public float[] convertDoubleToFloat() {
         float[] res = new float[SIZE];

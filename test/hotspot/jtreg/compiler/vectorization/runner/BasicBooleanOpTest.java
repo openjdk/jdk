@@ -84,7 +84,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.OR_V, ">0"})
     public boolean[] vectorOr() {
         boolean[] res = new boolean[SIZE];
@@ -95,7 +95,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
     public boolean[] vectorXor() {
         boolean[] res = new boolean[SIZE];
