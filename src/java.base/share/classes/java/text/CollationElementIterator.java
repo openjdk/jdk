@@ -82,6 +82,7 @@ import jdk.internal.icu.text.NormalizerBase;
  * if (col instanceof RuleBasedCollator ruleBasedCollator) {
  *     CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
  *     int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
+ *         \u22ee
  * }
  * }
  * </blockquote>
