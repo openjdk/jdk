@@ -25,7 +25,7 @@
 
 package java.io;
 
-import jdk.internal.util.Bits;
+import jdk.internal.util.Bits.BigEndianAtZero;
 
 import java.util.Objects;
 
@@ -314,7 +314,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final short readShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return Bits.BigEndianAtZero.getShort(readBuffer);
+        return BigEndianAtZero.getShort(readBuffer);
     }
 
     /**
@@ -336,7 +336,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readUnsignedShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return Bits.BigEndianAtZero.getUnsignedShort(readBuffer);
+        return BigEndianAtZero.getUnsignedShort(readBuffer);
     }
 
     /**
@@ -358,7 +358,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final char readChar() throws IOException {
         readFully(readBuffer, 0, 2);
-        return Bits.BigEndianAtZero.getChar(readBuffer);
+        return BigEndianAtZero.getChar(readBuffer);
     }
 
     /**
@@ -380,7 +380,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readInt() throws IOException {
         readFully(readBuffer, 0, 4);
-        return Bits.BigEndianAtZero.getInt(readBuffer);
+        return BigEndianAtZero.getInt(readBuffer);
     }
 
     /**
@@ -402,7 +402,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
-        return Bits.BigEndianAtZero.getLong(readBuffer);
+        return BigEndianAtZero.getLong(readBuffer);
     }
 
     /**
@@ -425,7 +425,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final float readFloat() throws IOException {
         readFully(readBuffer, 0, 4);
-        return Bits.BigEndianAtZero.getFloat(readBuffer);
+        return BigEndianAtZero.getFloat(readBuffer);
     }
 
     /**
@@ -448,7 +448,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final double readDouble() throws IOException {
         readFully(readBuffer, 0, 8);
-        return Bits.BigEndianAtZero.getDouble(readBuffer);
+        return BigEndianAtZero.getDouble(readBuffer);
     }
 
     private char[] lineBuffer;

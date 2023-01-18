@@ -23,14 +23,14 @@
 
 /*
  * @test
- * @bug 8299576
  * @modules java.base/jdk.internal.util
  * @summary Verify that reads and writes of primitives are correct
- * @run junit ReadWriteValues
+ * @run junit ReadWriteValuesAtZero
  */
 
 import jdk.internal.util.Bits;
 import jdk.internal.util.Bits.BigEndian;
+import jdk.internal.util.Bits.BigEndianAtZero;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -40,10 +40,10 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class ReadWriteValues {
+final class ReadWriteValuesAtZero {
 
-    // Makes sure unaligned read/write can be made.
-    private static final int OFFSET = 1;
+    // Here, we are always using offset = zero
+    private static final int OFFSET = 0;
 
     private static final byte[] BUFF = new byte[Long.BYTES + OFFSET];
 
@@ -54,7 +54,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             short expected = (short) l;
             RefImpl.putShort(BUFF, OFFSET, expected);
-            short actual = BigEndian.getShort(BUFF, OFFSET);
+            short actual = BigEndianAtZero.getShort(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -63,7 +63,7 @@ final class ReadWriteValues {
     void testPutShort() {
         longs().forEach(l -> {
             short expected = (short) l;
-            BigEndian.putShort(BUFF, OFFSET, expected);
+            BigEndianAtZero.putShort(BUFF, expected);
             short actual = RefImpl.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -74,7 +74,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             char expected = (char) l;
             RefImpl.putChar(BUFF, OFFSET, expected);
-            char actual = BigEndian.getChar(BUFF, OFFSET);
+            char actual = BigEndianAtZero.getChar(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -83,7 +83,7 @@ final class ReadWriteValues {
     void testPutChar() {
         longs().forEach(l -> {
             char expected = (char) l;
-            BigEndian.putChar(BUFF, OFFSET, expected);
+            BigEndianAtZero.putChar(BUFF, expected);
             char actual = RefImpl.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -94,7 +94,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             int expected = (int) l;
             RefImpl.putInt(BUFF, OFFSET, expected);
-            int actual = BigEndian.getInt(BUFF, OFFSET);
+            int actual = BigEndianAtZero.getInt(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -103,7 +103,7 @@ final class ReadWriteValues {
     void testPutInt() {
         longs().forEach(l -> {
             int expected = (int) l;
-            BigEndian.putInt(BUFF, OFFSET, expected);
+            BigEndianAtZero.putInt(BUFF, expected);
             int actual = RefImpl.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -113,7 +113,7 @@ final class ReadWriteValues {
     void testGetLong() {
         longs().forEach(expected -> {
             RefImpl.putLong(BUFF, OFFSET, expected);
-            long actual = BigEndian.getLong(BUFF, OFFSET);
+            long actual = BigEndianAtZero.getLong(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -121,7 +121,7 @@ final class ReadWriteValues {
     @Test
     void testPutLong() {
         longs().forEach(expected -> {
-            BigEndian.putLong(BUFF, OFFSET, expected);
+            BigEndianAtZero.putLong(BUFF, expected);
             long actual = RefImpl.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -131,7 +131,7 @@ final class ReadWriteValues {
     void testGetFloat() {
         floats().forEach(expected -> {
             RefImpl.putFloat(BUFF, OFFSET, expected);
-            float actual = BigEndian.getFloat(BUFF, OFFSET);
+            float actual = BigEndianAtZero.getFloat(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -139,7 +139,7 @@ final class ReadWriteValues {
     @Test
     void testPutFloat() {
         floats().forEach(expected -> {
-            BigEndian.putFloat(BUFF, OFFSET, expected);
+            BigEndianAtZero.putFloat(BUFF, expected);
             float actual = RefImpl.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -149,7 +149,7 @@ final class ReadWriteValues {
     void testGetDouble() {
         doubles().forEach(expected -> {
             RefImpl.putDouble(BUFF, OFFSET, expected);
-            double actual = BigEndian.getDouble(BUFF, OFFSET);
+            double actual = BigEndianAtZero.getDouble(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -157,7 +157,7 @@ final class ReadWriteValues {
     @Test
     void testPutDouble() {
         doubles().forEach(expected -> {
-            BigEndian.putDouble(BUFF, OFFSET, expected);
+            BigEndianAtZero.putDouble(BUFF, expected);
             double actual = RefImpl.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -167,7 +167,7 @@ final class ReadWriteValues {
     void testPutUnsignedShort() {
         longs().forEach(l -> {
             int expected = Short.toUnsignedInt((short) l);
-            BigEndian.putUnsignedShort(BUFF, OFFSET, expected);
+            BigEndianAtZero.putUnsignedShort(BUFF, expected);
             int actual = Short.toUnsignedInt(RefImpl.getShort(BUFF, OFFSET));
             assertEquals(expected, actual);
         });
@@ -179,20 +179,15 @@ final class ReadWriteValues {
 
     @Test
     void testNullArray() {
-        assertThrowsOriginal(NullPointerException.class, () -> BigEndian.getInt(null, OFFSET));
-        assertThrowsOriginal(NullPointerException.class, () -> BigEndian.putInt(null, OFFSET, 1));
+        assertThrowsOriginal(NullPointerException.class, () -> BigEndianAtZero.getInt(null));
+        assertThrowsOriginal(NullPointerException.class, () -> BigEndianAtZero.putInt(null, 1));
     }
 
-    @Test
-    void testNegArg() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndian.getInt(BUFF, -1));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndian.putInt(BUFF, -1, 1));
-    }
 
     @Test
     void testOutOfBounds() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndian.getInt(BUFF, BUFF.length));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndian.putInt(BUFF, BUFF.length, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndianAtZero.getInt(new byte[1]));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> BigEndianAtZero.putInt(new byte[1],1));
     }
 
     static LongStream longs() {
@@ -246,8 +241,8 @@ final class ReadWriteValues {
     }
 
     /**
-    * Reference implementation from the old java.io.Bits implementation
-    */
+     * Reference implementation from the old java.io.Bits implementation
+     */
     private static final class RefImpl {
         private RefImpl() {}
 

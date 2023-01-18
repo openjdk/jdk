@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
 import jdk.internal.util.Bits;
+import jdk.internal.util.Bits.BigEndian;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -1639,7 +1640,7 @@ public class ObjectOutputStream
         }
 
         public void put(String name, boolean val) {
-            Bits.BigEndian.putBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
+            BigEndian.putBoolean(primVals, getFieldOffset(name, Boolean.TYPE), val);
         }
 
         public void put(String name, byte val) {
@@ -1647,27 +1648,27 @@ public class ObjectOutputStream
         }
 
         public void put(String name, char val) {
-            Bits.BigEndian.putChar(primVals, getFieldOffset(name, Character.TYPE), val);
+            BigEndian.putChar(primVals, getFieldOffset(name, Character.TYPE), val);
         }
 
         public void put(String name, short val) {
-            Bits.BigEndian.putShort(primVals, getFieldOffset(name, Short.TYPE), val);
+            BigEndian.putShort(primVals, getFieldOffset(name, Short.TYPE), val);
         }
 
         public void put(String name, int val) {
-            Bits.BigEndian.putInt(primVals, getFieldOffset(name, Integer.TYPE), val);
+            BigEndian.putInt(primVals, getFieldOffset(name, Integer.TYPE), val);
         }
 
         public void put(String name, float val) {
-            Bits.BigEndian.putFloat(primVals, getFieldOffset(name, Float.TYPE), val);
+            BigEndian.putFloat(primVals, getFieldOffset(name, Float.TYPE), val);
         }
 
         public void put(String name, long val) {
-            Bits.BigEndian.putLong(primVals, getFieldOffset(name, Long.TYPE), val);
+            BigEndian.putLong(primVals, getFieldOffset(name, Long.TYPE), val);
         }
 
         public void put(String name, double val) {
-            Bits.BigEndian.putDouble(primVals, getFieldOffset(name, Double.TYPE), val);
+            BigEndian.putDouble(primVals, getFieldOffset(name, Double.TYPE), val);
         }
 
         public void put(String name, Object val) {
@@ -1909,7 +1910,7 @@ public class ObjectOutputStream
                 out.write(hbuf, 0, 2);
             } else {
                 hbuf[0] = TC_BLOCKDATALONG;
-                Bits.BigEndian.putInt(hbuf, 1, len);
+                BigEndian.putInt(hbuf, 1, len);
                 out.write(hbuf, 0, 5);
             }
         }
@@ -1926,7 +1927,7 @@ public class ObjectOutputStream
             if (pos >= MAX_BLOCK_SIZE) {
                 drain();
             }
-            Bits.BigEndian.putBoolean(buf, pos++, v);
+            BigEndian.putBoolean(buf, pos++, v);
         }
 
         public void writeByte(int v) throws IOException {
@@ -1938,7 +1939,7 @@ public class ObjectOutputStream
 
         public void writeChar(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putChar(buf, pos, (char) v);
+                BigEndian.putChar(buf, pos, (char) v);
                 pos += 2;
             } else {
                 dout.writeChar(v);
@@ -1947,7 +1948,7 @@ public class ObjectOutputStream
 
         public void writeShort(int v) throws IOException {
             if (pos + 2 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putShort(buf, pos, (short) v);
+                BigEndian.putShort(buf, pos, (short) v);
                 pos += 2;
             } else {
                 dout.writeShort(v);
@@ -1956,7 +1957,7 @@ public class ObjectOutputStream
 
         public void writeInt(int v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putInt(buf, pos, v);
+                BigEndian.putInt(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeInt(v);
@@ -1965,7 +1966,7 @@ public class ObjectOutputStream
 
         public void writeFloat(float v) throws IOException {
             if (pos + 4 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putFloat(buf, pos, v);
+                BigEndian.putFloat(buf, pos, v);
                 pos += 4;
             } else {
                 dout.writeFloat(v);
@@ -1974,7 +1975,7 @@ public class ObjectOutputStream
 
         public void writeLong(long v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putLong(buf, pos, v);
+                BigEndian.putLong(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeLong(v);
@@ -1983,7 +1984,7 @@ public class ObjectOutputStream
 
         public void writeDouble(double v) throws IOException {
             if (pos + 8 <= MAX_BLOCK_SIZE) {
-                Bits.BigEndian.putDouble(buf, pos, v);
+                BigEndian.putDouble(buf, pos, v);
                 pos += 8;
             } else {
                 dout.writeDouble(v);
@@ -2043,7 +2044,7 @@ public class ObjectOutputStream
                 }
                 int stop = Math.min(endoff, off + (MAX_BLOCK_SIZE - pos));
                 while (off < stop) {
-                    Bits.BigEndian.putBoolean(buf, pos++, v[off++]);
+                    BigEndian.putBoolean(buf, pos++, v[off++]);
                 }
             }
         }
@@ -2056,7 +2057,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putChar(buf, pos, v[off++]);
+                        BigEndian.putChar(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2073,7 +2074,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 1;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putShort(buf, pos, v[off++]);
+                        BigEndian.putShort(buf, pos, v[off++]);
                         pos += 2;
                     }
                 } else {
@@ -2090,7 +2091,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putInt(buf, pos, v[off++]);
+                        BigEndian.putInt(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2107,7 +2108,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 2;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putFloat(buf, pos, v[off++]);
+                        BigEndian.putFloat(buf, pos, v[off++]);
                         pos += 4;
                     }
                 } else {
@@ -2124,7 +2125,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putLong(buf, pos, v[off++]);
+                        BigEndian.putLong(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {
@@ -2141,7 +2142,7 @@ public class ObjectOutputStream
                     int avail = (MAX_BLOCK_SIZE - pos) >> 3;
                     int stop = Math.min(endoff, off + avail);
                     while (off < stop) {
-                        Bits.BigEndian.putDouble(buf, pos, v[off++]);
+                        BigEndian.putDouble(buf, pos, v[off++]);
                         pos += 8;
                     }
                 } else {
