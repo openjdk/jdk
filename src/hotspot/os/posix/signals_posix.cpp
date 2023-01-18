@@ -597,7 +597,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (!signal_was_handled) {
     // Handle SafeFetch access.
 #ifndef ZERO
-    if (uc != NULL) {
+    if ((sig == SIGSEGV || sig == SIGBUS) && uc != NULL) {
       address pc = os::Posix::ucontext_get_pc(uc);
       if (StubRoutines::is_safefetch_fault(pc)) {
         os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
