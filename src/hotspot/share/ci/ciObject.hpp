@@ -67,7 +67,7 @@ private:
       ciConstant _value;
 
     public:
-      ConstantValue() : _obj(NULL), _off(0), _value(ciConstant()) { }
+      ConstantValue() : _obj(nullptr), _off(0), _value(ciConstant()) { }
       ConstantValue(const ciObject* obj, int off, ciConstant value) : _obj(obj), _off(off), _value(value) { }
 
       const ciObject* obj() const { return _obj; }
