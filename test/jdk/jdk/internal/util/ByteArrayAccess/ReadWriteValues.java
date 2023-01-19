@@ -332,8 +332,8 @@ final class ReadWriteValues {
         assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.getInt(new byte[1]));
         assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.setInt(new byte[1],1));
     }
-    
-    
+
+
     static LongStream longs() {
         return ThreadLocalRandom.current().longs(ITERATIONS);
     }

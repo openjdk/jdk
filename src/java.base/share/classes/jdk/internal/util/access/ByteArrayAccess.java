@@ -578,7 +578,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getDouble(byte[], int)  
+     * @see #getDouble(byte[], int)
      */
     public static void setDouble(byte[] array, int offset, double value) {
         // Using Double.doubleToLongBits collapses NaN values to a single
@@ -677,7 +677,7 @@ public final class ByteArrayAccess {
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 4}
-     * @see #getInt(byte[]) 
+     * @see #getInt(byte[])
      */
     public static void setInt(byte[] array, int value) {
         INT_AT_ZERO.set(array, value);
