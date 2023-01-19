@@ -26,10 +26,11 @@
 package java.util.zip;
 
 import java.io.Closeable;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.EOFException;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
@@ -467,6 +468,15 @@ public class ZipFile implements ZipConstants, Closeable {
             long avail = ((ZipFileInputStream)in).size() - inf.getBytesWritten();
             return (avail > (long) Integer.MAX_VALUE ?
                     Integer.MAX_VALUE : (int) avail);
+        }
+
+        @Override
+        public long transferTo(OutputStream out) throws IOException {
+            if (out instanceof  ZipOutputStream zos
+                    && in instanceof ZipFileInputStream zfi) {
+                return zfi.transferTo(zos.getUncompressed());
+            }
+            return super.transferTo(out);
         }
     }
 
