@@ -181,7 +181,7 @@ void assert_locked_or_safepoint(const Mutex* lock) {
 
 // a weaker assertion than the above
 void assert_locked_or_safepoint_weak(const Mutex* lock) {
-  assert(lock != nullptr, "Need non-nullptr lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->is_locked()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
   if (!Universe::is_fully_initialized()) return;
@@ -190,7 +190,7 @@ void assert_locked_or_safepoint_weak(const Mutex* lock) {
 
 // a stronger assertion than the above
 void assert_lock_strong(const Mutex* lock) {
-  assert(lock != nullptr, "Need non-nullptr lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
 }

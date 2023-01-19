@@ -66,11 +66,11 @@
 
 
 #define DTRACE_MONITOR_PROBE_COMMON(obj, thread)                           \
-  char* bytes = nullptr;                                                      \
+  char* bytes = nullptr;                                                   \
   int len = 0;                                                             \
   jlong jtid = SharedRuntime::get_java_tid(thread);                        \
   Symbol* klassname = obj->klass()->name();                                \
-  if (klassname != nullptr) {                                                 \
+  if (klassname != nullptr) {                                              \
     bytes = (char*)klassname->bytes();                                     \
     len = klassname->utf8_length();                                        \
   }
@@ -540,7 +540,7 @@ bool ObjectMonitor::deflate_monitor() {
     // through the slow path. This is just the first part of the async
     // deflation dance.
     if (try_set_owner_from(nullptr, DEFLATER_MARKER) != nullptr) {
-      // The owner field is no longer nullptr so we lost the race since the
+      // The owner field is no longer null so we lost the race since the
       // ObjectMonitor is now busy.
       return false;
     }
@@ -549,7 +549,7 @@ bool ObjectMonitor::deflate_monitor() {
       // Another thread has raced to enter the ObjectMonitor after
       // is_busy() above or has already entered and waited on
       // it which makes it busy so no deflation. Restore owner to
-      // nullptr if it is still DEFLATER_MARKER.
+      // null if it is still DEFLATER_MARKER.
       if (try_set_owner_from(DEFLATER_MARKER, nullptr) != DEFLATER_MARKER) {
         // Deferred decrement for the JT EnterI() that cancelled the async deflation.
         add_to_contentions(-1);

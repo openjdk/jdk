@@ -89,7 +89,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
  private:
   // The _owner field is only set by the current thread, either to itself after it has acquired
-  // the low-level _lock, or to nullptr before it has released the _lock. Accesses by any thread other
+  // the low-level _lock, or to null before it has released the _lock. Accesses by any thread other
   // than the lock owner are inherently racy.
   Thread* volatile _owner;
   void raw_set_owner(Thread* new_owner) { Atomic::store(&_owner, new_owner); }

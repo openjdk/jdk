@@ -543,7 +543,7 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
 
   if (_threadObj.peek() == nullptr) {
     // If there is no j.l.Thread then it is impossible to have
-    // been interrupted. We can find nullptr during VM initialization
+    // been interrupted. We can find null during VM initialization
     // or when a JNI thread is still in the process of attaching.
     // In such cases this must be the current thread.
     assert(this == Thread::current(), "invariant");
@@ -598,7 +598,7 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread
   thr_type = entry_point == &CompilerThread::thread_entry ? os::compiler_thread :
                                                             os::java_thread;
   os::create_thread(this, thr_type, stack_sz);
-  // The _osthread may be nullptr here because we ran out of memory (too many threads active).
+  // The _osthread may be null here because we ran out of memory (too many threads active).
   // We need to throw and OutOfMemoryError - however we cannot do this here because the caller
   // may hold a lock and all locks must be unlocked before throwing the exception (throwing
   // the exception consists of creating the exception object & initializing it, initialization
@@ -1310,7 +1310,7 @@ void JavaThread::push_jni_handle_block() {
   // Inlined code from jni_PushLocalFrame()
   JNIHandleBlock* old_handles = active_handles();
   JNIHandleBlock* new_handles = JNIHandleBlock::allocate_block(this);
-  assert(old_handles != nullptr && new_handles != nullptr, "should not be nullptr");
+  assert(old_handles != nullptr && new_handles != nullptr, "should not be null");
   new_handles->set_pop_frame_link(old_handles);  // make sure java handles get gc'd.
   set_active_handles(new_handles);
 }
@@ -1551,12 +1551,12 @@ void JavaThread::verify() {
 }
 
 // CR 6300358 (sub-CR 2137150)
-// Most callers of this method assume that it can't return nullptr but a
+// Most callers of this method assume that it can't return null but a
 // thread may not have a name whilst it is in the process of attaching to
 // the VM - see CR 6412693, and there are places where a JavaThread can be
 // seen prior to having its threadObj set (e.g., JNI attaching threads and
 // if vm exit occurs during initialization). These cases can all be accounted
-// for such that this method never returns nullptr.
+// for such that this method never returns null.
 const char* JavaThread::name() const  {
   if (Thread::is_JavaThread_protected(/* target */ this)) {
     // The target JavaThread is protected so get_thread_name_string() is safe:
@@ -1567,7 +1567,7 @@ const char* JavaThread::name() const  {
   return Thread::name();
 }
 
-// Returns a non-nullptr representation of this thread's name, or a suitable
+// Returns a non-null representation of this thread's name, or a suitable
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
@@ -1608,7 +1608,7 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
     }
   }
 #endif
-  assert(name_str != nullptr, "unexpected nullptr thread name");
+  assert(name_str != nullptr, "unexpected null thread name");
   return name_str;
 }
 

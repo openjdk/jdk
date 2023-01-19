@@ -216,7 +216,7 @@ bool Monitor::wait_without_safepoint_check(uint64_t timeout) {
   assert_owner(self);
   check_rank(self);
 
-  // conceptually set the owner to nullptr in anticipation of
+  // conceptually set the owner to null in anticipation of
   // abdicating the lock in wait
   set_owner(nullptr);
 
@@ -237,7 +237,7 @@ bool Monitor::wait(uint64_t timeout) {
   assert_owner(self);
   check_rank(self);
 
-  // conceptually set the owner to nullptr in anticipation of
+  // conceptually set the owner to null in anticipation of
   // abdicating the lock in wait
   set_owner(nullptr);
 
@@ -461,8 +461,8 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
   // It uses the Mutex::_owner, Mutex::_next, and
   // Thread::_owned_locks fields, and no other function
   // changes those fields.
-  // It is illegal to set the mutex from one non-nullptr
-  // owner to another--it must be owned by nullptr as an
+  // It is illegal to set the mutex from one non-null
+  // owner to another--it must be owned by null as an
   // intermediate state.
 
   if (new_owner != nullptr) {

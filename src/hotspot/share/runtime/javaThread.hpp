@@ -131,7 +131,7 @@ class JavaThread: public Thread {
   // adapter to store the callee Method*. This value is NEVER live
   // across a gc point so it does NOT have to be gc'd
   // The handshake is open ended since we can't be certain that it will
-  // be nullptred. This is because we rarely ever see the race and end up
+  // be nulled. This is because we rarely ever see the race and end up
   // in handle_wrong_method which is the backend of the handshake. See
   // code in i2c adapters and handle_wrong_method.
 
@@ -163,7 +163,7 @@ class JavaThread: public Thread {
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
     // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
-    // Especially, reloading pointer from thread after nullptr check must be prevented.
+    // Especially, reloading pointer from thread after null check must be prevented.
     return Atomic::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
@@ -514,7 +514,7 @@ private:
     return on_thread_list() && !is_terminated();
   }
 
-  // Thread oop. threadObj() can be nullptr for initial JavaThread
+  // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
   oop threadObj() const;
   void set_threadOopHandles(oop p);
@@ -536,7 +536,7 @@ private:
 
   ThreadFunction entry_point() const             { return _entry_point; }
 
-  // Allocates a new Java level thread object for this thread. thread_name may be nullptr.
+  // Allocates a new Java level thread object for this thread. thread_name may be null.
   void allocate_threadObj(Handle thread_group, const char* thread_name, bool daemon, TRAPS);
 
   // Last frame anchor routines
@@ -1000,10 +1000,10 @@ private:
   void set_jvmti_thread_state(JvmtiThreadState *value)                           { _jvmti_thread_state = value; }
   // A JvmtiThreadState is lazily allocated. This jvmti_thread_state()
   // getter is used to get this JavaThread's JvmtiThreadState if it has
-  // one which means nullptr can be returned. JvmtiThreadState::state_for()
+  // one which means null can be returned. JvmtiThreadState::state_for()
   // is used to get the specified JavaThread's JvmtiThreadState if it has
   // one or it allocates a new JvmtiThreadState for the JavaThread and
-  // returns it. JvmtiThreadState::state_for() will return nullptr only if
+  // returns it. JvmtiThreadState::state_for() will return null only if
   // the specified JavaThread is exiting.
   JvmtiThreadState *jvmti_thread_state() const                                   { return _jvmti_thread_state; }
   static ByteSize jvmti_thread_state_offset()                                    { return byte_offset_of(JavaThread, _jvmti_thread_state); }

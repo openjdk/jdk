@@ -59,7 +59,7 @@ jobject JNIHandles::make_local(oop obj) {
   return make_local(JavaThread::current(), obj);
 }
 
-// Used by NewLocalRef which requires nullptr on out-of-memory
+// Used by NewLocalRef which requires null on out-of-memory
 jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_failmode) {
   if (obj == nullptr) {
     return nullptr;                // ignore null handles
@@ -90,7 +90,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
     // ignore null handles
     assert(oopDesc::is_oop(obj()), "not an oop");
     oop* ptr = global_handles()->allocate();
-    // Return nullptr on allocation failure.
+    // Return null on allocation failure.
     if (ptr != nullptr) {
       assert(NativeAccess<AS_NO_KEEPALIVE>::oop_load(ptr) == oop(nullptr), "invariant");
       NativeAccess<>::oop_store(ptr, obj());
@@ -125,9 +125,9 @@ jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
   return res;
 }
 
-// Resolve some erroneous cases to nullptr, rather than treating them as
+// Resolve some erroneous cases to null, rather than treating them as
 // possibly unchecked errors.  In particular, deleted handles are
-// treated as nullptr (though a deleted and later reallocated handle
+// treated as null (though a deleted and later reallocated handle
 // isn't detected).
 oop JNIHandles::resolve_external_guard(jobject handle) {
   oop result = nullptr;
@@ -315,7 +315,7 @@ void JNIHandleBlock::zap() {
   // Zap block values
   _top = 0;
   for (int index = 0; index < block_size_in_oops; index++) {
-    // NOT using Access here; just bare clobbering to nullptr, since the
+    // NOT using Access here; just bare clobbering to null, since the
     // block no longer contains valid oops.
     _handles[index] = 0;
   }
