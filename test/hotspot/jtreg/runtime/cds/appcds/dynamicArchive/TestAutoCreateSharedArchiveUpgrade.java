@@ -58,7 +58,6 @@ public class TestAutoCreateSharedArchiveUpgrade {
     private static String BOOT_JDK = System.getProperty("test.boot.jdk", null);
 
     // Comma separated list of JDK major versions that will be tested
-    // If null, BOOT_JDK will be tested
     private static String JDK_VERSIONS = System.getProperty("test.autocreatesharedarchive.jdk.version", null);
 
     private static final String USER_DIR = System.getProperty("user.dir", ".");
@@ -72,12 +71,14 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
     public static void main(String[] args) throws Throwable {
         // Earliest testable version is 19
-        // Only run once if using the default boot jdk
         int n = java.lang.Runtime.version().major();
 
-        // Test only default version unless specified in gmk
+        // If JDK_VERSIONS is specified, test against each specified version;
+        // otherwise test with PREV_JDK if specified;
+        // otherwise test with BOOT_JDK if specified;
+        // otherwise throw SkippedException.
         if (JDK_VERSIONS == null) {
-            System.out.println("Testing boot JDK");
+            System.out.println("JDK_VERSIONS not specified");
             setupJVMs(0);
             doTest();
             return;
