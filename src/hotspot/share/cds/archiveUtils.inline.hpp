@@ -35,7 +35,7 @@ inline bool SharedDataRelocator::do_bit(size_t offset) {
 
   address old_ptr = *p;
   assert(_valid_old_base <= old_ptr && old_ptr < _valid_old_end, "must be");
-  assert(old_ptr != nullptr, "bits for nullptr pointers should have been cleaned at dump time");
+  assert(old_ptr != nullptr, "bits for null pointers should have been cleaned at dump time");
 
   address new_ptr = old_ptr + _delta;
   assert(new_ptr != nullptr, "don't point to the bottom of the archive"); // See ArchivePtrMarker::mark_pointer().

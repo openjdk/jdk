@@ -116,7 +116,7 @@ bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass*
 void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
   constantPoolHandle cp(THREAD, ik->constants());
   if (cp->cache() == nullptr || cp->reference_map() == nullptr) {
-    // The cache may be nullptr if the pool_holder klass fails verification
+    // The cache may be null if the pool_holder klass fails verification
     // at dump time due to missing dependencies.
     return;
   }

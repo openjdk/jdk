@@ -161,8 +161,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   for (int i = 0; i < sz; i+= 2) {
     Handle h_name(THREAD, h_array->obj_at(i));
     typeArrayHandle h_bytes(THREAD, (typeArrayOop)h_array->obj_at(i+1));
-    assert(h_name != nullptr, "Class name is nullptr");
-    assert(h_bytes != nullptr, "Class bytes is nullptr");
+    assert(h_name != nullptr, "Class name is null");
+    assert(h_bytes != nullptr, "Class bytes is null");
 
     char *class_name = java_lang_String::as_utf8_string(h_name());
     if (strstr(class_name, "java/lang/invoke/BoundMethodHandle$Species_") != nullptr) {

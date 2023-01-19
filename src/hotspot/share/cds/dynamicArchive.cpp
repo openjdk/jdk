@@ -232,7 +232,7 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
   }
 
   if (ik->java_mirror() == nullptr) {
-    // nullptr mirror means this class has already been visited and methods are already sorted
+    // null mirror means this class has already been visited and methods are already sorted
     return;
   }
   ik->remove_java_mirror();

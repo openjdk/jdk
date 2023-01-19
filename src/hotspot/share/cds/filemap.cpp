@@ -984,7 +984,7 @@ bool FileMapInfo::validate_boot_class_paths() {
 
 bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
-  assert(appcp != nullptr, "nullptr app classpath");
+  assert(appcp != nullptr, "null app classpath");
   int rp_len = num_paths(appcp);
   bool mismatch = false;
   if (rp_len < shared_app_paths_len) {
@@ -1209,7 +1209,7 @@ public:
   }
 
   bool initialize() {
-    assert(_archive_name != nullptr, "Archive name is nullptr");
+    assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
       FileMapInfo::fail_continue("Specified shared archive not found (%s)", _archive_name);
@@ -1220,7 +1220,7 @@ public:
 
   // for an already opened file, do not set _fd
   bool initialize(int fd) {
-    assert(_archive_name != nullptr, "Archive name is nullptr");
+    assert(_archive_name != nullptr, "Archive name is null");
     assert(fd != -1, "Archive must be opened already");
     // First read the generic header so we know the exact size of the actual header.
     GenericCDSFileMapHeader gen_header;
@@ -1627,7 +1627,7 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   size_t mapping_offset = 0;
 
   if (region == MetaspaceShared::bm) {
-    requested_base = nullptr; // always nullptr for bm region
+    requested_base = nullptr; // always null for bm region
   } else if (size == 0) {
     // This is an unused region (e.g., a heap region when !INCLUDE_CDS_JAVA_HEAP)
     requested_base = nullptr;
@@ -2480,7 +2480,7 @@ void FileMapInfo::patch_heap_embedded_pointers(MemRegion* regions, int num_regio
 void FileMapInfo::fixup_mapped_heap_regions() {
   assert(vmClasses::Object_klass_loaded(), "must be");
   // If any closed regions were found, call the fill routine to make them parseable.
-  // Note that closed_heap_regions may be non-nullptr even if no regions were found.
+  // Note that closed_heap_regions may be non-null even if no regions were found.
   if (num_closed_heap_regions != 0) {
     assert(closed_heap_regions != nullptr,
            "Null closed_heap_regions array with non-zero count");
@@ -2495,7 +2495,7 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 
   // do the same for mapped open archive heap regions
   if (num_open_heap_regions != 0) {
-    assert(open_heap_regions != nullptr, "nullptr open_heap_regions array with non-zero count");
+    assert(open_heap_regions != nullptr, "null open_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(open_heap_regions,
                                                   num_open_heap_regions);
 

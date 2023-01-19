@@ -78,7 +78,7 @@ public:
 
   static unsigned int dumptime_hash(Symbol* sym)  {
     if (sym == nullptr) {
-      // _invoked_name maybe nullptr
+      // _invoked_name maybe null
       return 0;
     }
     return java_lang_String::hash_code((const jbyte*)sym->bytes(), sym->utf8_length());

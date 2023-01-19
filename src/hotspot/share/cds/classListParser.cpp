@@ -469,7 +469,7 @@ InstanceKlass* ClassListParser::load_class_from_source(Symbol* class_name, TRAPS
   if (strncmp(_class_name, "java/", 5) == 0) {
     log_info(cds)("Prohibited package for non-bootstrap classes: %s.class from %s",
           _class_name, _source);
-    THROW_nullptr(vmSymbols::java_lang_ClassNotFoundException());
+    THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
   }
 
   InstanceKlass* k = UnregisteredClasses::load_class(class_name, _source, CHECK_NULL);
@@ -618,7 +618,7 @@ Klass* ClassListParser::load_current_class(Symbol* class_name_symbol, TRAPS) {
 
     if (Signature::is_array(class_name_symbol)) {
       // array classes are not supported in class list.
-      THROW_nullptr(vmSymbols::java_lang_ClassNotFoundException());
+      THROW_NULL(vmSymbols::java_lang_ClassNotFoundException());
     }
 
     JavaValue result(T_OBJECT);

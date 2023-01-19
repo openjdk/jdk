@@ -83,7 +83,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //     url = _shared_jar_urls[index];
     //     define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
     //
-    //   Note that if an element of these 3 _shared_xxx arrays is nullptr, it will be initialized by
+    //   Note that if an element of these 3 _shared_xxx arrays is null, it will be initialized by
     //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
     Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
     Handle url = get_shared_jar_url(index, CHECK_NH);
@@ -142,7 +142,7 @@ void CDSProtectionDomain::define_shared_package(Symbol*  class_name,
                                                    Handle url,
                                                    TRAPS) {
   assert(SystemDictionary::is_system_class_loader(class_loader()), "unexpected class loader");
-  // get_package_name() returns a nullptr handle if the class is in unnamed package
+  // get_package_name() returns a null handle if the class is in unnamed package
   Handle pkgname_string = get_package_name(class_name, CHECK);
   if (pkgname_string.not_null()) {
     Klass* app_classLoader_klass = vmClasses::jdk_internal_loader_ClassLoaders_AppClassLoader_klass();

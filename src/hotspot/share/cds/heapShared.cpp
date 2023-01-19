@@ -1242,7 +1242,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
         // Update the reference in the archived copy of the referencing object.
         log_debug(cds, heap)("(%d) updating oop @[" PTR_FORMAT "] " PTR_FORMAT " ==> " PTR_FORMAT,
                              _level, p2i(new_p), p2i(obj), p2i(archived));
-        RawAccess<IS_NOT_nullptr>::oop_store(new_p, archived);
+        RawAccess<IS_NOT_NULL>::oop_store(new_p, archived);
       }
     }
   }

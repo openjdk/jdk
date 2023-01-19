@@ -624,7 +624,7 @@ bool MetaspaceShared::may_be_eagerly_linked(InstanceKlass* ik) {
     // that may not be expected by custom class loaders.
     //
     // It's OK to do this for the built-in loaders as we know they can
-    // tolerate this. (Note that unregistered classes are loaded by the nullptr
+    // tolerate this. (Note that unregistered classes are loaded by the null
     // loader during DumpSharedSpaces).
     return false;
   }
@@ -838,7 +838,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
-      // for non-system classes. Since we are using the nullptr classloader
+      // for non-system classes. Since we are using the null classloader
       // to load non-system classes for customized class loaders during dumping,
       // we need to temporarily change BytecodeVerificationLocal to be the same as
       // BytecodeVerificationRemote. Note this can cause the parent system
@@ -1268,7 +1268,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 //      archive space, close enough such that narrow class pointer encoding
 //      covers both spaces.
 //      If UseCompressedClassPointers=0, class_space_rs remains unreserved.
-// - On error: nullptr is returned and the spaces remain unreserved.
+// - On error: null is returned and the spaces remain unreserved.
 char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_mapinfo,
                                                           FileMapInfo* dynamic_mapinfo,
                                                           bool use_archive_base_addr,

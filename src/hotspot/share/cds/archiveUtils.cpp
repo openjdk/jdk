@@ -74,7 +74,7 @@ void ArchivePtrMarker::mark_pointer(address* ptr_loc) {
     address value = *ptr_loc;
     // We don't want any pointer that points to very bottom of the archive, otherwise when
     // MetaspaceShared::default_base_address()==0, we can't distinguish between a pointer
-    // to nothing (nullptr) vs a pointer to an objects that happens to be at the very bottom
+    // to nothing (null) vs a pointer to an objects that happens to be at the very bottom
     // of the archive.
     assert(value != (address)ptr_base(), "don't point to the bottom of the archive");
 
@@ -125,7 +125,7 @@ public:
       }
     } else {
       _ptrmap->clear_bit(offset);
-      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> nullptr @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
+      DEBUG_ONLY(log_trace(cds, reloc)("Clearing pointer [" PTR_FORMAT  "] -> null @ " SIZE_FORMAT_W(9), p2i(ptr_loc), offset));
     }
 
     return true;
