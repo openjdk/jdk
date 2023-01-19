@@ -264,7 +264,7 @@ public final class ByteArrayAccess {
      * @param array  to read a value from.
      * @return a {@code boolean} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 1
+     * @throws IndexOutOfBoundsException if {@code array.length < 1}
      * @see #setBoolean(byte[], boolean)
      */
     public static boolean getBoolean(byte[] array) {
@@ -277,7 +277,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code char} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 2
+     * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setChar(byte[], char)
      */
     public static char getChar(byte[] array) {
@@ -290,7 +290,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code short} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 2
+     * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setShort(byte[], short)
      */
     public static short getShort(byte[] array) {
@@ -303,7 +303,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return an {@code int} representing an unsigned short from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 2
+     * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setUnsignedShort(byte[], int)
      */
     public static int getUnsignedShort(byte[] array) {
@@ -316,7 +316,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return an {@code int} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 4
+     * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setInt(byte[], int)
      */
     public static int getInt(byte[] array) {
@@ -333,7 +333,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code float} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 4
+     * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setFloat(byte[], float)
      */
     public static float getFloat(byte[] array) {
@@ -351,7 +351,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code float} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 4
+     * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setFloatRaw(byte[], float)
      */
     public static float getFloatRaw(byte[] array) {
@@ -365,7 +365,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code long} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 8
+     * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setLong(byte[], long)
      */
     public static long getLong(byte[] array) {
@@ -380,7 +380,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code double} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 8
+     * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setDouble(byte[], double)
      */
     public static double getDouble(byte[] array) {
@@ -401,7 +401,7 @@ public final class ByteArrayAccess {
      * @param array  to get a value from.
      * @return a {@code double} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if array.length < 8
+     * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setDoubleRaw(byte[], double)
      */
     public static double getDoubleRaw(byte[] array) {
@@ -422,7 +422,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length]
      * @see #getBoolean(byte[], int)
      */
     public static void setBoolean(byte[] array, int offset, boolean value) {
@@ -439,7 +440,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getChar(byte[], int) 
      */
     public static void setChar(byte[] array, int offset, char value) {
@@ -456,7 +458,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getShort(byte[], int) 
      */
     public static void setShort(byte[] array, int offset, short value) {
@@ -473,7 +476,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getUnsignedShort(byte[], int)  
      */
     public static void setUnsignedShort(byte[] array, int offset, int value) {
@@ -490,7 +494,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 4]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
      * @see #getInt(byte[], int)
      */
     public static void setInt(byte[] array, int offset, int value) {
@@ -509,7 +514,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getFloat(byte[], int)
      */
     public static void setFloat(byte[] array, int offset, float value) {
@@ -531,7 +537,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getFloatRaw(byte[], int)  
      */
     public static void setFloatRaw(byte[] array, int offset, float value) {
@@ -549,7 +556,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 4]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
      * @see #getLong(byte[], int)  
      */
     public static void setLong(byte[] array, int offset, long value) {
@@ -568,7 +576,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getDouble(byte[], int)  
      */
     public static void setDouble(byte[] array, int offset, double value) {
@@ -590,7 +599,8 @@ public final class ByteArrayAccess {
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
-     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 2]
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 2]
      * @see #getDoubleRaw(byte[], int)
      */
     public static void setDoubleRaw(byte[] array, int offset, double value) {
