@@ -2320,6 +2320,35 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
   }
 }
 
+void TemplateTable::load_invokedynamic_entry(Register method) {
+  // setup registers
+  const Register appendix = rax;
+  const Register cache = rcx;
+  const Register index = rdx;
+  assert_different_registers(method, appendix, cache, index);
+
+  __ save_bcp();
+
+  Label resolved;
+
+  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
+  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // Get address of invokedynamic array
+  __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+  __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  __ mov(index, sizeof(ResolvedIndyInfo));
+  __ mull(index, index, index);
+  __ ldr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
+
+  // Compare the method to zero
+  __ testptr(method, method);
+  __ jcc(Assembler::notZero, resolved);
+
+  Bytecodes::Code code = bytecode();
+}
+
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
                                                Register method,
                                                Register itable_index,
@@ -3441,7 +3470,11 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  prepare_invoke(byte_no, rmethod, r0);
+  if (UseNewIndyCode) {
+    load_invokedynamic_entry(rmethod);
+  } else {
+    prepare_invoke(byte_no, rmethod, r0);
+  }
 
   // r0: CallSite object (from cpool->resolved_references[])
   // rmethod: MH.linkToCallSite method (from f2)

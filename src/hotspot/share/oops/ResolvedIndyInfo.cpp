@@ -37,6 +37,13 @@ bool ResolvedIndyInfo::check_no_old_or_obsolete_entry() {
     }
 }
 
+void ResolvedIndyInfo::remove_unshareable_info() {
+        _number_of_parameters = 0;
+        _return_type = 0;
+        _has_appendix = false;
+        _method = nullptr;
+    }
+
 // ResolvedInvokeDynamicInfo
 void ResolvedIndyInfo::print_on(outputStream* st) const {
     st->print_cr("Resolved InvokeDynamic Info:");
@@ -48,6 +55,6 @@ void ResolvedIndyInfo::print_on(outputStream* st) const {
     st->print_cr(" - Has Appendix: %d", has_appendix());
 }
 
-void ResolvedIndyInfo::metaspace_pointers_do(MetaspaceClosure* it) {
+/*void ResolvedIndyInfo::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_method);
-}
+}*/

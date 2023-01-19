@@ -680,7 +680,8 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
                                      TRAPS) {
 
-  const int length = index_map.length() + invokedynamic_index_map.length();
+  // const int length = index_map.length() + invokedynamic_index_map.length();
+  const int length = index_map.length();
   int size = ConstantPoolCache::size(length);
   // Initialize resolvedinvokedynamicinfo array with available data
   Array<ResolvedIndyInfo>* array;
@@ -729,13 +730,17 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
   }
 
   // Append invokedynamic entries at the end
-  int invokedynamic_offset = inverse_index_map.length();
-  for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
-    int offset = i + invokedynamic_offset;
-    ConstantPoolCacheEntry* e = entry_at(offset);
-    int original_index = invokedynamic_inverse_index_map.at(i);
-    e->initialize_entry(original_index);
-    assert(entry_at(offset) == e, "sanity");
+  if (UseNewIndyCode) {
+    // Do nothing
+  } else {
+    int invokedynamic_offset = inverse_index_map.length();
+    for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
+      int offset = i + invokedynamic_offset;
+      ConstantPoolCacheEntry* e = entry_at(offset);
+      int original_index = invokedynamic_inverse_index_map.at(i);
+      e->initialize_entry(original_index);
+      assert(entry_at(offset) == e, "sanity");
+    }
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
@@ -982,7 +987,6 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   }
 
   if (has_appendix) {
-    //const int appendix_index = resolved_invokedynamic_info_array()->at(index).resolved_references_index();
     const int appendix_index = resolved_indy_info(index)->resolved_references_index();
     objArrayOop resolved_references = constant_pool()->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");

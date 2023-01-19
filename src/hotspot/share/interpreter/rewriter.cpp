@@ -265,7 +265,6 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
 
 
 void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
-  if (UseNewCode) { tty->print_cr("Rewriting invokedynamic"); }
   address p = bcp + offset;
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
@@ -282,7 +281,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
     if (UseNewIndyCode) {
-      //if (UseNewCode2) tty->print_cr("Adding new invokedynamic index %d", _invokedynamic_index);
+      if (UseNewCode2) { tty->print_cr("invokedynamic %d -> invokedynamic %d", cp_index, _invokedynamic_index); }
       Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
       int i = ConstantPool::encode_invokedynamic_index(_invokedynamic_index);
       _invokedynamic_index++;
@@ -298,6 +297,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
     if (UseNewIndyCode) {
+      // Should do nothing since we are not patching this bytecode
       int cache_index = ConstantPool::decode_invokedynamic_index(
                           Bytes::get_native_u4(p));
       // We will reverse the bytecode rewriting _after_ adjusting them.

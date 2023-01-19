@@ -28,7 +28,7 @@
 #include "memory/metaspaceClosure.hpp"
 
 class Method;
-class ResolvedIndyInfo : public MetaspaceObj {
+class ResolvedIndyInfo {
      Method* _method;
      u2 _resolved_references_index;
      u2 _cpool_index;
@@ -92,14 +92,9 @@ public:
     void adjust_method_entry(Method* new_method) { _method = new_method; }
     bool check_no_old_or_obsolete_entry();
 
-    void metaspace_pointers_do(MetaspaceClosure* it);
+    // void metaspace_pointers_do(MetaspaceClosure* it);
 
-    void remove_unshareable_info() {
-        _number_of_parameters = 0;
-        _return_type = 0;
-        _has_appendix = false;
-        _method = nullptr;
-    }
+    void remove_unshareable_info();
 
     // Offsets
     static ByteSize method_offset()                    { return byte_offset_of(ResolvedIndyInfo, _method);                    }

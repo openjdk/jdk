@@ -168,7 +168,9 @@ class Rewriter: public StackObj {
     assert(_resolved_reference_limit >= 0, "must add indy refs after first iteration");
     int ref_index = _resolved_references_map.append(cp_index);  // many-to-one
     assert(ref_index >= _resolved_reference_limit, "");
-    _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+    if (UseNewIndyCode && _pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic) {
+      _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+    }
     return ref_index;
   }
 
