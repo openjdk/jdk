@@ -93,7 +93,7 @@ inline u1* WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t le
 template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8(const char* value) {
   if (nullptr == value) {
-    // only write encoding byte indicating nullptr string
+    // only write encoding byte indicating null string
     write<u1>(nullptr_STRING);
     return;
   }

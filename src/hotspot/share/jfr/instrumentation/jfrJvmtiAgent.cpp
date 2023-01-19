@@ -99,7 +99,7 @@ static jclass* create_classes_array(jint classes_count, TRAPS) {
   assert(classes_count > 0, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(THREAD));
   ThreadInVMfromNative tvmfn(THREAD);
-  jclass* const classes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_nullptr(THREAD, jclass, classes_count);
+  jclass* const classes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jclass, classes_count);
   if (nullptr == classes) {
     char error_buffer[ERROR_MSG_BUFFER_SIZE];
     jio_snprintf(error_buffer, ERROR_MSG_BUFFER_SIZE,

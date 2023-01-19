@@ -94,7 +94,7 @@ void JfrRepository::on_vm_error_report(outputStream* st) {
 }
 
 bool JfrRepository::set_path(const char* path) {
-  assert(path != nullptr, "trying to set the repository path with a nullptr string!");
+  assert(path != nullptr, "trying to set the repository path with a null string!");
   if (_path != nullptr) {
     // delete existing
     JfrCHeapObj::free(_path, strlen(_path) + 1);
@@ -144,7 +144,7 @@ void JfrRepository::set_chunk_path(jstring path, JavaThread* jt) {
   ResourceMark rm(jt);
   const char* const canonical_chunk_path = JfrJavaSupport::c_str(path, jt);
   if (nullptr == canonical_chunk_path && !_chunkwriter->is_valid()) {
-    // new output is nullptr and current output is nullptr
+    // new output is nullptr and current output is null
     return;
   }
   instance().set_chunk_path(canonical_chunk_path);

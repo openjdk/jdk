@@ -153,7 +153,7 @@ void ObjectSampleDescription::write_class_name() {
   if (k == nullptr) {
     // might represent a primitive
     const Klass* const ak = java_lang_Class::array_klass_acquire(_object);
-    // If ak is nullptr, this is most likely a mirror associated with a
+    // If ak is null, this is most likely a mirror associated with a
     // jvmti redefine/retransform scratch klass. We can't get any additional
     // information from it.
     if (ak != nullptr) {

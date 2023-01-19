@@ -585,7 +585,7 @@ void JfrThreadSampler::task_stacktrace(JfrSampleType type, JavaThread** last_thr
       MutexLocker tlock(Threads_lock);
       ThreadsListHandle tlh;
       // Resolve a sample session relative start position index into the thread list array.
-      // In cases where the last sampled thread is nullptr or not-nullptr but stale, find_index() returns -1.
+      // In cases where the last sampled thread is null or not-null but stale, find_index() returns -1.
       _cur_index = tlh.list()->find_index_of_JavaThread(*last_thread);
       JavaThread* current = _cur_index != -1 ? *last_thread : nullptr;
 

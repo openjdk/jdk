@@ -1316,7 +1316,7 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   // Dimension and allocate a working byte buffer
   // to be used in building up a modified class [B.
   const jint new_buffer_size = extra_stream_bytes + orig_stream_size;
-  u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_nullptr(THREAD, u1, new_buffer_size);
+  u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, new_buffer_size);
   if (new_buffer == nullptr) {
     log_error(jfr, system) ("Thread local allocation (native) for " SIZE_FORMAT
       " bytes failed in JfrEventClassTransformer::on_klass_creation", static_cast<size_t>(new_buffer_size));
@@ -1555,7 +1555,7 @@ static void cache_class_file_data(InstanceKlass* new_ik, const ClassFileStream* 
   }
   const jint stream_len = new_stream->length();
   JvmtiCachedClassFileData* p =
-    (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_nullptr(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
+    (JvmtiCachedClassFileData*)NEW_C_HEAP_ARRAY_RETURN_NULL(u1, offset_of(JvmtiCachedClassFileData, data) + stream_len, mtInternal);
   if (p == nullptr) {
     log_error(jfr, system)("Allocation using C_HEAP_ARRAY for " SIZE_FORMAT " bytes failed in JfrEventClassTransformer::cache_class_file_data",
       static_cast<size_t>(offset_of(JvmtiCachedClassFileData, data) + stream_len));

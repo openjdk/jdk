@@ -188,8 +188,8 @@ int JfrOSInterface::JfrOSInterfaceImpl::cpu_loads_process(double* pjvmUserLoad,
 }
 
 int JfrOSInterface::JfrOSInterfaceImpl::system_processes(SystemProcess** system_processes, int* no_of_sys_processes) {
-  assert(system_processes != nullptr, "system_processes pointer is nullptr!");
-  assert(no_of_sys_processes != nullptr, "no_of_sys_processes pointer is nullptr!");
+  assert(system_processes != nullptr, "system_processes pointer is null!");
+  assert(no_of_sys_processes != nullptr, "no_of_sys_processes pointer is null!");
   SystemProcessInterface* const iface = system_process_interface();
   return iface == nullptr ? OS_ERR : iface->system_processes(system_processes, no_of_sys_processes);
 }
@@ -202,7 +202,7 @@ int JfrOSInterface::JfrOSInterfaceImpl::network_utilization(NetworkInterface** n
 // assigned char* is RESOURCE_HEAP_ALLOCATED
 // caller need to ensure proper ResourceMark placement.
 int JfrOSInterface::JfrOSInterfaceImpl::os_version(char** os_version) const {
-  assert(os_version != nullptr, "os_version pointer is nullptr!");
+  assert(os_version != nullptr, "os_version pointer is null!");
   stringStream os_ver_info;
   os::print_os_info_brief(&os_ver_info);
   *os_version = os_ver_info.as_string();

@@ -94,7 +94,7 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jobject jvm))
   char pid_buf[32] = { 0 };
   jio_snprintf(pid_buf, sizeof(pid_buf), "%d", os::current_process_id());
   jstring pid_string = env->NewStringUTF(pid_buf);
-  return pid_string; // exception pending if nullptr
+  return pid_string; // exception pending if null
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jobject jvm))

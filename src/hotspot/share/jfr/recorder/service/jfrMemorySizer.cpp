@@ -361,7 +361,7 @@ bool JfrMemorySizer::adjust_options(JfrMemoryOptions* options) {
   //
   // Unordered selection:
   //
-  // C(4, 0) = {} = nullptr set = 1
+  // C(4, 0) = {} = null set = 1
   // C(4, 1) = { (M), (G), (C), (T) } = 4
   // C(4, 2) = { (M, G), (M, C), (M, T), (G, C), (G, T), (C, T) } = 6
   // C(4, 3) = { (M, G, C), (M, G, T), (M, C, T), (G, C, T) } = 4

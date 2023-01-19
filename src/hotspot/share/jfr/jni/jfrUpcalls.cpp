@@ -141,7 +141,7 @@ void JfrUpcalls::on_retransform(jlong trace_id,
                                              CHECK);
   assert(new_byte_array != nullptr, "invariant");
   assert(new_bytes_length > 0, "invariant");
-  unsigned char* const new_bytes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_nullptr(THREAD, unsigned char, new_bytes_length);
+  unsigned char* const new_bytes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, unsigned char, new_bytes_length);
   if (new_bytes == nullptr) {
     log_error_and_throw_oom(new_bytes_length, THREAD); // unwinds
   }
@@ -179,7 +179,7 @@ void JfrUpcalls::new_bytes_eager_instrumentation(jlong trace_id,
                                              CHECK);
   assert(new_byte_array != nullptr, "invariant");
   assert(new_bytes_length > 0, "invariant");
-  unsigned char* const new_bytes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_nullptr(THREAD, unsigned char, new_bytes_length);
+  unsigned char* const new_bytes = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, unsigned char, new_bytes_length);
   if (new_bytes == nullptr) {
     log_error_and_throw_oom(new_bytes_length, THREAD); // this unwinds
   }

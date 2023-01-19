@@ -38,7 +38,7 @@
  * We would not like a user dynamically starting Jfr to
  * tear down the VM she is about to inspect as a side effect.
  *
- * This allocator uses the RETURN_nullptr capabilities
+ * This allocator uses the RETURN_NULL capabilities
  * instead of calling vm_exit_out_of_memory() until Jfr is properly started.
  * This allows for controlled behaviour on allocation failures during startup,
  * which means we can take actions on failure, such as transactional rollback

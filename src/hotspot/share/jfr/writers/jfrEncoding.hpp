@@ -30,7 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 enum JfrStringEncoding {
-  nullptr_STRING = 0,
+  NULL_STRING = 0,
   EMPTY_STRING,
   STRING_CONSTANT,
   UTF8,
