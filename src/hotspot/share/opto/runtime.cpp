@@ -312,7 +312,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
     assert(is_aligned(hs_bytes, BytesPerInt), "must be 4 byte aligned");
     HeapWord* obj = cast_from_oop<HeapWord*>(result);
     if (!is_aligned(hs_bytes, HeapWordSize)) {
-      *reinterpret_cast<jint*>(reinterpret_cast<char*>(obj + hs_bytes)) = 0;
+      *reinterpret_cast<jint*>(reinterpret_cast<char*>(obj) + hs_bytes) = 0;
       hs_bytes += BytesPerInt;
     }
 
