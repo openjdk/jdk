@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,8 +183,8 @@ class ElfFile: public CHeapObj<mtInternal> {
   bool decode(address addr, char* buf, int buflen, int* offset);
 
   bool same_elf_file(const char* filepath) const {
-    assert(filepath != NULL, "null file path");
-    return (_filepath != NULL && !strcmp(filepath, _filepath));
+    assert(filepath != nullptr, "null file path");
+    return (_filepath != nullptr && !strcmp(filepath, _filepath));
   }
 
   NullDecoder::decoder_status get_status() const {
