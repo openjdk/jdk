@@ -6946,70 +6946,66 @@ typedef uint32_t u32;
   static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
     static int counter;
 
-    setbuf(stdout, NULL);
+    DEBUG_ONLY(setbuf(stdout, NULL);)
 
-    u128 b_u0, b_u1, b_u2;
+    u64 b_u0, b_u1, b_u2;
     PACK_26(b_u0, b_u1, b_u2, acc_start);
 
-    uint64_t b_r0, b_r1, b_r2;
+    u64 b_r0, b_r1, b_r2;
     PACK_26(b_r0, b_r1, b_r2, r_start);
     const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
     const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
     while (length >= BLOCK_LENGTH) {
-      printf("#%d\n", ++counter);
+      DEBUG_ONLY(printf("#%d\n", ++counter);)
 
       u64 b_s0, b_s1; u32 b_s2;
       u64 *b_c = (u64*)input_start;
 
-      printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
-      printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
+      DEBUG_ONLY(printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);)
+      DEBUG_ONLY(printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);)
 
       // s = u + c, with carry propagation
       uint64_t carry = 0;
       ADC(b_s0, carry, b_u0, b_c[0]);
       ADC(b_s1, carry, b_u1, b_c[1]);
       b_s2 = b_u2 + carry;
+      // Dead: b_u0, b_u1, b_u2
+      b_s2 += 1;
 
-      if (length >= BLOCK_LENGTH) {
-        b_s2 += 1;
-      } else {
-        juint offset = length % sizeof b_s0;
-        switch (length / sizeof b_s0) {
-          case 0: b_s0 += ((u64)1 << (8 * offset));  break;
-          case 1: b_s1 += ((u64)1 << (8 * offset));  break;
-          case 2: b_s2 += ((u64)1 << (8 * offset));  break;
-          default: ShouldNotReachHere();  break;
-        }
-      }
-
-      printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);
-      printf("R:   %016lx:%016lx\n", b_r1, b_r0);
-      printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);
+      DEBUG_ONLY(printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);)
+      DEBUG_ONLY(printf("R:   %016lx:%016lx\n", b_r1, b_r0);)
+      DEBUG_ONLY(printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);)
 
       {
         const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
         const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
-        const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits    // <=                f
+        const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits
+        // Dead: b_s0, b_s1, b_s2
 
-        printf("X: ");
-        print128(b_x2); printf(":");
-        print128(b_x1); printf(":");
-        print128(b_x0); printf("\n");
+        DEBUG_ONLY(printf("X: "));
+        DEBUG_ONLY(print128(b_x2); printf(":");)
+        DEBUG_ONLY(print128(b_x1); printf(":");)
+        DEBUG_ONLY(print128(b_x0); printf("\n");)
 
         // partial reduction modulo 2^130 - 5
-        u128 b_u3 = b_x2 + (b_x1 >> 64);
-        b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
-        b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
-        b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
+        u128 tmp3 = b_x2 + (b_x1 >> 64);
+        // Dead: b_x2
+        u128 tmp0 = (tmp3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
+        u128 tmp1 = (tmp0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
+        // Dead: b_x1, b_x0
+        b_u0 = tmp0;
+        // Dead: tmp0
+        u128 tmp2 = (tmp1 >> 64)     + (tmp3 & 3);
+        // Dead: tmp3;
+        b_u1 = tmp1;
+        // Dead: tmp1
+        b_u2 = tmp2;
+        // Dead: tmp2
       }
+      // Live: b_u0, b_u1, b_u2
 
-      b_u0 &= 0xffffffffffffffff;
-      b_u1 &= 0xffffffffffffffff;
-      b_u2 &= 0xffffffffffffffff;
-
-      // Update the hash
-      printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
+      DEBUG_ONLY(printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);)
 
       input_start += BLOCK_LENGTH;
       length -= BLOCK_LENGTH;
