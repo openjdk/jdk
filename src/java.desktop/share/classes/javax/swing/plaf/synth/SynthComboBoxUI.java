@@ -353,6 +353,34 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
+     * The minimum size is the size of the display area plus insets plus the button.
+     */
+    @Override
+    public Dimension getMinimumSize( JComponent c ) {
+        if ( !isMinimumSizeDirty ) {
+            return new Dimension(cachedMinimumSize);
+        }
+        Dimension size = getDisplaySize();
+        Insets insets = getInsets();
+        Insets arrowInsets = arrowButton.getInsets();
+        //calculate the width and height of the button
+        int buttonHeight = size.height;
+        int buttonWidth = squareButton ?
+                            buttonHeight :
+                            arrowButton.getPreferredSize().width;
+        //adjust the size based on the button width
+        size.height += insets.top + insets.bottom + arrowInsets.top
+                        + arrowInsets.bottom;
+        size.width  += insets.left + insets.right + arrowInsets.left
+                        + arrowInsets.right + buttonWidth;
+
+        cachedMinimumSize.setSize( size.width, size.height );
+        isMinimumSizeDirty = false;
+
+        return new Dimension(size);
+    }
+
+    /**
      * Paints the specified component according to the Look and Feel.
      * <p>This method is not used by Synth Look and Feel.
      * Painting is handled by the {@link #paint(SynthContext,Graphics)} method.

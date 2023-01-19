@@ -271,19 +271,24 @@ public:
 };
 
 // Helper for performing raw accesses (knows only of memory ordering
-// atomicity decorators as well as compressed oops)
+// atomicity decorators as well as compressed oops).
 template <DecoratorSet decorators = DECORATORS_NONE>
 class RawAccess: public Access<AS_RAW | decorators> {};
 
 // Helper for performing normal accesses on the heap. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class HeapAccess: public Access<IN_HEAP | decorators> {};
 
 // Helper for performing normal accesses in roots. These accesses
-// may resolve an accessor on a GC barrier set
+// may resolve an accessor on a GC barrier set.
 template <DecoratorSet decorators = DECORATORS_NONE>
 class NativeAccess: public Access<IN_NATIVE | decorators> {};
+
+// Helper for performing accesses in nmethods. These accesses
+// may resolve an accessor on a GC barrier set.
+template <DecoratorSet decorators = DECORATORS_NONE>
+class NMethodAccess: public Access<IN_NMETHOD | decorators> {};
 
 // Helper for array access.
 template <DecoratorSet decorators = DECORATORS_NONE>
@@ -362,6 +367,7 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet location_decorators = decorators & IN_DECORATOR_MASK;
   STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
     (location_decorators ^ IN_NATIVE) == 0 ||
+    (location_decorators ^ IN_NMETHOD) == 0 ||
     (location_decorators ^ IN_HEAP) == 0
   ));
 }

@@ -26,6 +26,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
+#include "logging/log.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 
@@ -56,7 +57,12 @@ static void notify() {
   JavaThread* const thread = JavaThread::current();
   // can safepoint here
   ThreadInVMfromNative transition(thread);
-  JfrJavaSupport::notify_all(get_chunk_monitor(thread), thread);
+  jobject monitor = get_chunk_monitor(thread);
+  if (monitor == nullptr) {
+    log_error(jfr, system)("Unable to create chunk rotation monitor");
+    return;
+  }
+  JfrJavaSupport::notify_all(monitor, thread);
 }
 
 void JfrChunkRotation::evaluate(const JfrChunkWriter& writer) {

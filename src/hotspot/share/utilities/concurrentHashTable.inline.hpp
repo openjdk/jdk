@@ -33,8 +33,11 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalCounter.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/numberSeq.hpp"
 #include "utilities/spinYield.hpp"
+
+#include <type_traits>
 
 // 2^30 = 1G buckets
 #define SIZE_BIG_LOG2 30
@@ -47,10 +50,10 @@
 #ifdef ASSERT
 #ifdef _LP64
 // Two low bits are not usable.
-static const void* POISON_PTR = (void*)UCONST64(0xfbadbadbadbadbac);
+static void* const POISON_PTR = (void*)UCONST64(0xfbadbadbadbadbac);
 #else
 // Two low bits are not usable.
-static const void* POISON_PTR = (void*)0xffbadbac;
+static void* const POISON_PTR = (void*)0xffbadbac;
 #endif
 #endif
 
@@ -486,7 +489,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   // table. Can do this in parallel if we want.
   assert((is_mt && _resize_lock_owner != NULL) ||
          (!is_mt && _resize_lock_owner == thread), "Re-size lock not held");
-  Node* ndel[BULK_DELETE_LIMIT];
+  Node* ndel_stack[StackBufferSize];
   InternalTable* table = get_table();
   assert(start_idx < stop_idx, "Must be");
   assert(stop_idx <= _table->_size, "Must be");
@@ -501,7 +504,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
     Bucket* prefetch_bucket = (bucket_it+1) < stop_idx ?
                               table->get_bucket(bucket_it+1) : NULL;
 
-    if (!HaveDeletables<IsPointer<VALUE>::value, EVALUATE_FUNC>::
+    if (!HaveDeletables<std::is_pointer<VALUE>::value, EVALUATE_FUNC>::
         have_deletable(bucket, eval_f, prefetch_bucket)) {
         // Nothing to remove in this bucket.
         continue;
@@ -511,7 +514,8 @@ inline void ConcurrentHashTable<CONFIG, F>::
     // We left critical section but the bucket cannot be removed while we hold
     // the _resize_lock.
     bucket->lock();
-    size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel);
+    GrowableArrayCHeap<Node*, F> extra(0); // use this buffer if StackBufferSize is not enough
+    size_t nd = delete_check_nodes(bucket, eval_f, StackBufferSize, ndel_stack, extra);
     bucket->unlock();
     if (is_mt) {
       GlobalCounter::write_synchronize();
@@ -519,10 +523,11 @@ inline void ConcurrentHashTable<CONFIG, F>::
       write_synchonize_on_visible_epoch(thread);
     }
     for (size_t node_it = 0; node_it < nd; node_it++) {
-      del_f(ndel[node_it]->value());
-      Node::destroy_node(_context, ndel[node_it]);
+      Node*& ndel = node_it < StackBufferSize ? ndel_stack[node_it] : extra.at(static_cast<int>(node_it - StackBufferSize));
+      del_f(ndel->value());
+      Node::destroy_node(_context, ndel);
       JFR_ONLY(safe_stats_remove();)
-      DEBUG_ONLY(ndel[node_it] = (Node*)POISON_PTR;)
+      DEBUG_ONLY(ndel = static_cast<Node*>(POISON_PTR);)
     }
     cs_context = GlobalCounter::critical_section_begin(thread);
   }
@@ -537,7 +542,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   assert(bucket->is_locked(), "Must be locked.");
 
   size_t dels = 0;
-  Node* ndel[BULK_DELETE_LIMIT];
+  Node* ndel[StackBufferSize];
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
   while (rem_n != NULL) {
@@ -548,7 +553,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
       rem_n = next_node;
-      if (dels == BULK_DELETE_LIMIT) {
+      if (dels == StackBufferSize) {
         break;
       }
     } else {
@@ -982,20 +987,24 @@ template <typename CONFIG, MEMFLAGS F>
 template <typename EVALUATE_FUNC>
 inline size_t ConcurrentHashTable<CONFIG, F>::
   delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
-                     size_t num_del, Node** ndel)
+                     size_t num_del, Node** ndel, GrowableArrayCHeap<Node*, F>& extra)
 {
   size_t dels = 0;
   Node* const volatile * rem_n_prev = bucket->first_ptr();
   Node* rem_n = bucket->first();
-  while (rem_n != NULL) {
+  while (rem_n != nullptr) {
     if (eval_f(rem_n->value())) {
-      ndel[dels++] = rem_n;
+      if (dels < num_del) {
+        ndel[dels] = rem_n;
+      } else {
+        guarantee(dels < std::numeric_limits<int>::max(),
+                  "Growable array size is limited by a (signed) int, something is seriously bad if we reach this point, better exit");
+        extra.append(rem_n);
+      }
+      ++dels;
       Node* next_node = rem_n->next();
       bucket->release_assign_node_ptr(rem_n_prev, next_node);
       rem_n = next_node;
-      if (dels == num_del) {
-        break;
-      }
     } else {
       rem_n_prev = rem_n->next_ptr();
       rem_n = rem_n->next();

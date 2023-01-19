@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ import java.text.MessageFormat;
 import java.time.*;
 import java.util.*;
 import java.util.ResourceBundle.Control;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -609,16 +607,19 @@ public class CLDRConverter {
      * Translate the aliases into the real entries in the bundle map.
      */
     static void handleAliases(Map<String, Object> bundleMap) {
-        Set<String> bundleKeys = bundleMap.keySet();
-        try {
-            for (String key : aliases.keySet()) {
-                String targetKey = aliases.get(key);
-                if (bundleKeys.contains(targetKey)) {
-                    bundleMap.putIfAbsent(key, bundleMap.get(targetKey));
+        for (String key : aliases.keySet()) {
+            var source = bundleMap.get(aliases.get(key));
+            if (source != null) {
+                if (bundleMap.get(key) instanceof String[] sa) {
+                    // fill missing elements in case of String array
+                    for (int i = 0; i < sa.length; i++) {
+                        if (sa[i] == null && ((String[])source)[i] != null) {
+                            sa[i] = ((String[])source)[i];
+                        }
+                    }
                 }
+                bundleMap.putIfAbsent(key, source);
             }
-        } catch (Exception ex) {
-            Logger.getLogger(CLDRConverter.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
