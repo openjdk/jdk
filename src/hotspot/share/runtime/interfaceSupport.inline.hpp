@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,7 @@ class ThreadStateTransition : public StackObj {
 
  public:
   ThreadStateTransition(JavaThread *thread) : _thread(thread) {
-    assert(thread != NULL, "must be active Java thread");
+    assert(thread != nullptr, "must be active Java thread");
     assert(thread == Thread::current(), "must be current thread");
   }
 
@@ -145,7 +145,7 @@ class ThreadInVMfromJava : public ThreadStateTransition {
 class ThreadInVMfromUnknown {
   JavaThread* _thread;
  public:
-  ThreadInVMfromUnknown() : _thread(NULL) {
+  ThreadInVMfromUnknown() : _thread(nullptr) {
     Thread* t = Thread::current();
     if (t->is_Java_thread()) {
       JavaThread* t2 = JavaThread::cast(t);
