@@ -35,7 +35,7 @@
 #ifdef ASSERT
 #define VERIFY_OOP(o_) \
       if (VerifyOops) { \
-        assert(oopDesc::is_oop_or_null(oop(o_)), "Expected an oop or nullptr at " PTR_FORMAT, p2i(oop(o_))); \
+        assert(oopDesc::is_oop_or_null(oop(o_)), "Expected an oop or null at " PTR_FORMAT, p2i(oop(o_))); \
         StubRoutines::_verify_oop_count++;  \
       }
 #else

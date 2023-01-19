@@ -292,11 +292,11 @@ void Bytecodes::initialize() {
   def(_ldc                 , "ldc"                 , "bk"   , nullptr    , T_ILLEGAL,  1, true );
   def(_ldc_w               , "ldc_w"               , "bkk"  , nullptr    , T_ILLEGAL,  1, true );
   def(_ldc2_w              , "ldc2_w"              , "bkk"  , nullptr    , T_ILLEGAL,  2, true );
-  def(_iload               , "iload"               , "bi"   , "wbii"  , T_INT    ,  1, false);
-  def(_lload               , "lload"               , "bi"   , "wbii"  , T_LONG   ,  2, false);
-  def(_fload               , "fload"               , "bi"   , "wbii"  , T_FLOAT  ,  1, false);
-  def(_dload               , "dload"               , "bi"   , "wbii"  , T_DOUBLE ,  2, false);
-  def(_aload               , "aload"               , "bi"   , "wbii"  , T_OBJECT ,  1, false);
+  def(_iload               , "iload"               , "bi"   , "wbii"     , T_INT    ,  1, false);
+  def(_lload               , "lload"               , "bi"   , "wbii"     , T_LONG   ,  2, false);
+  def(_fload               , "fload"               , "bi"   , "wbii"     , T_FLOAT  ,  1, false);
+  def(_dload               , "dload"               , "bi"   , "wbii"     , T_DOUBLE ,  2, false);
+  def(_aload               , "aload"               , "bi"   , "wbii"     , T_OBJECT ,  1, false);
   def(_iload_0             , "iload_0"             , "b"    , nullptr    , T_INT    ,  1, false);
   def(_iload_1             , "iload_1"             , "b"    , nullptr    , T_INT    ,  1, false);
   def(_iload_2             , "iload_2"             , "b"    , nullptr    , T_INT    ,  1, false);
@@ -325,11 +325,11 @@ void Bytecodes::initialize() {
   def(_baload              , "baload"              , "b"    , nullptr    , T_INT    , -1, true );
   def(_caload              , "caload"              , "b"    , nullptr    , T_INT    , -1, true );
   def(_saload              , "saload"              , "b"    , nullptr    , T_INT    , -1, true );
-  def(_istore              , "istore"              , "bi"   , "wbii"  , T_VOID   , -1, false);
-  def(_lstore              , "lstore"              , "bi"   , "wbii"  , T_VOID   , -2, false);
-  def(_fstore              , "fstore"              , "bi"   , "wbii"  , T_VOID   , -1, false);
-  def(_dstore              , "dstore"              , "bi"   , "wbii"  , T_VOID   , -2, false);
-  def(_astore              , "astore"              , "bi"   , "wbii"  , T_VOID   , -1, false);
+  def(_istore              , "istore"              , "bi"   , "wbii"     , T_VOID   , -1, false);
+  def(_lstore              , "lstore"              , "bi"   , "wbii"     , T_VOID   , -2, false);
+  def(_fstore              , "fstore"              , "bi"   , "wbii"     , T_VOID   , -1, false);
+  def(_dstore              , "dstore"              , "bi"   , "wbii"     , T_VOID   , -2, false);
+  def(_astore              , "astore"              , "bi"   , "wbii"     , T_VOID   , -1, false);
   def(_istore_0            , "istore_0"            , "b"    , nullptr    , T_VOID   , -1, false);
   def(_istore_1            , "istore_1"            , "b"    , nullptr    , T_VOID   , -1, false);
   def(_istore_2            , "istore_2"            , "b"    , nullptr    , T_VOID   , -1, false);
@@ -403,7 +403,7 @@ void Bytecodes::initialize() {
   def(_lor                 , "lor"                 , "b"    , nullptr    , T_LONG   , -2, false);
   def(_ixor                , "ixor"                , "b"    , nullptr    , T_INT    , -1, false);
   def(_lxor                , "lxor"                , "b"    , nullptr    , T_LONG   , -2, false);
-  def(_iinc                , "iinc"                , "bic"  , "wbiicc", T_VOID   ,  0, false);
+  def(_iinc                , "iinc"                , "bic"  , "wbiicc",    T_VOID   ,  0, false);
   def(_i2l                 , "i2l"                 , "b"    , nullptr    , T_LONG   ,  1, false);
   def(_i2f                 , "i2f"                 , "b"    , nullptr    , T_FLOAT  ,  0, false);
   def(_i2d                 , "i2d"                 , "b"    , nullptr    , T_DOUBLE ,  1, false);
@@ -440,7 +440,7 @@ void Bytecodes::initialize() {
   def(_if_acmpne           , "if_acmpne"           , "boo"  , nullptr    , T_VOID   , -2, false);
   def(_goto                , "goto"                , "boo"  , nullptr    , T_VOID   ,  0, false);
   def(_jsr                 , "jsr"                 , "boo"  , nullptr    , T_INT    ,  0, false);
-  def(_ret                 , "ret"                 , "bi"   , "wbii"  , T_VOID   ,  0, false);
+  def(_ret                 , "ret"                 , "bi"   , "wbii"     , T_VOID   ,  0, false);
   def(_tableswitch         , "tableswitch"         , ""     , nullptr    , T_VOID   , -1, false); // may have backward branches
   def(_lookupswitch        , "lookupswitch"        , ""     , nullptr    , T_VOID   , -1, false); // rewriting in interpreter
   def(_ireturn             , "ireturn"             , "b"    , nullptr    , T_INT    , -1, true);
@@ -512,7 +512,7 @@ void Bytecodes::initialize() {
   def(_fast_linearswitch   , "fast_linearswitch"   , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch   );
   def(_fast_binaryswitch   , "fast_binaryswitch"   , ""     , nullptr    , T_VOID   , -1, false, _lookupswitch   );
 
-  def(_return_register_finalizer , "return_register_finalizer" , "b"    , nullptr    , T_VOID   ,  0, true, _return);
+  def(_return_register_finalizer , "return_register_finalizer" , "b"     , nullptr    , T_VOID   ,  0, true, _return);
 
   def(_invokehandle        , "invokehandle"        , "bJJ"  , nullptr    , T_ILLEGAL, -1, true, _invokevirtual   );
 

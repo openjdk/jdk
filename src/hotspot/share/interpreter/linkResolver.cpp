@@ -731,7 +731,7 @@ Method* LinkResolver::resolve_method(const LinkInfo& link_info,
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Found interface %s, but class was expected",
         resolved_klass->external_name());
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   // 2. check constant pool tag for called method - must be JVM_CONSTANT_Methodref
@@ -741,7 +741,7 @@ Method* LinkResolver::resolve_method(const LinkInfo& link_info,
     ss.print("Method '");
     Method::print_external_name(&ss, link_info.resolved_klass(), link_info.name(), link_info.signature());
     ss.print("' must be Methodref constant");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   // 3. lookup method in resolved klass and its super klasses
@@ -837,7 +837,7 @@ Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Byteco
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Found class %s, but interface was expected", resolved_klass->external_name());
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
   // check constant pool tag for called method - must be JVM_CONSTANT_InterfaceMethodref
@@ -847,7 +847,7 @@ Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Byteco
     ss.print("Method '");
     Method::print_external_name(&ss, link_info.resolved_klass(), link_info.name(), link_info.signature());
     ss.print("' must be InterfaceMethodref constant");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   // lookup method in this interface or its super, java.lang.Object
@@ -866,7 +866,7 @@ Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Byteco
     ss.print("'");
     Method::print_external_name(&ss, resolved_klass, link_info.name(), link_info.signature());
     ss.print("'");
-    THROW_MSG_nullptr(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
   }
 
   if (link_info.check_access()) {
@@ -893,7 +893,7 @@ Method* LinkResolver::resolve_interface_method(const LinkInfo& link_info, Byteco
     Method::print_external_name(&ss, resolved_klass,
                                 resolved_method->name(), resolved_method->signature());
     ss.print("'");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
@@ -1115,7 +1115,7 @@ Method* LinkResolver::linktime_resolve_static_method(const LinkInfo& link_info, 
     ss.print("Expected static method '");
     resolved_method->print_external_name(&ss);
     ss.print("'");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
   return resolved_method;
 }
@@ -1181,7 +1181,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
       resolved_method->print_external_name(&ss);
       ss.print("', is in an indirect superinterface of %s",
                current_klass->external_name());
-      THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+      THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }
   }
 
@@ -1192,7 +1192,7 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
     ss.print("Expecting non-static method '");
     resolved_method->print_external_name(&ss);
     ss.print("'");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
@@ -1333,7 +1333,7 @@ Method* LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_info,
     resolved_method->print_external_name(&ss);
     ss.print("', caller-class: %s",
              (current_klass == nullptr ? "<null>" : current_klass->internal_name()));
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   // check if not static
@@ -1343,7 +1343,7 @@ Method* LinkResolver::linktime_resolve_virtual_method(const LinkInfo& link_info,
     ss.print("Expecting non-static method '");
     resolved_method->print_external_name(&ss);
     ss.print("'");
-    THROW_MSG_nullptr(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
   }
 
   if (log_develop_is_enabled(Trace, vtables)) {

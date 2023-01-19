@@ -365,7 +365,7 @@ class Bytecodes: AllStatic {
   // argument is used for conversion of breakpoints into the original
   // bytecode.  The CI uses these methods but guarantees that
   // breakpoints are hidden so the method argument should be passed as
-  // nullptr since in that case the bcp and Method* are unrelated
+  // null since in that case the bcp and Method* are unrelated
   // memory.
   static Code       code_at(const Method* method, address bcp) {
     assert(method == nullptr || check_method(method, bcp), "bcp must point into method");

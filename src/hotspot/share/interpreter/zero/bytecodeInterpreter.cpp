@@ -3080,7 +3080,7 @@ run:
     // isn't really allocated yet and so doesn't become live until later and
     // in unpredictable places. Instead we must protect the places where we enter the
     // VM. It would be much simpler (and safer) if we could allocate a real handle with
-    // a nullptr oop in it and then overwrite the oop later as needed. This isn't
+    // a null oop in it and then overwrite the oop later as needed. This isn't
     // unfortunately isn't possible.
 
     if (THREAD->has_pending_exception()) {

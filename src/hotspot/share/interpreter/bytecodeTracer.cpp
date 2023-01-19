@@ -202,7 +202,7 @@ void print_symbol(Symbol* sym, outputStream* st) {
 
 void print_oop(oop value, outputStream* st) {
   if (value == nullptr) {
-    st->print_cr(" nullptr");
+    st->print_cr(" null");
   } else if (java_lang_String::is_instance(value)) {
     char buf[40];
     int len = java_lang_String::utf8_length(value);

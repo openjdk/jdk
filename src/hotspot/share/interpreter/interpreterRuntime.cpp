@@ -504,7 +504,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
     should_repeat = false;
 
     // assertions
-    assert(h_exception.not_null(), "nullptr exceptions should be handled by athrow");
+    assert(h_exception.not_null(), "null exceptions should be handled by athrow");
     // Check that exception is a subclass of Throwable.
     assert(h_exception->is_a(vmClasses::Throwable_klass()),
            "Exception not subclass of Throwable");
@@ -740,10 +740,10 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #endif
   Handle h_obj(current, elem->obj());
   assert(Universe::heap()->is_in_or_null(h_obj()),
-         "must be nullptr or an object");
+         "must be null or an object");
   ObjectSynchronizer::enter(h_obj, elem->lock(), current);
   assert(Universe::heap()->is_in_or_null(elem->obj()),
-         "must be nullptr or an object");
+         "must be null or an object");
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
