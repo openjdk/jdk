@@ -253,10 +253,8 @@ CollectedHeap::CollectedHeap() :
 
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
-  int header_size_in_bytes = arrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(is_aligned(header_size_in_bytes, BytesPerInt), "must be aligned to int");
-  int header_size_in_ints = header_size_in_bytes / BytesPerInt;
-  _filler_array_max_size = align_object_size((header_size_in_ints + max_len) / elements_per_word);
+  int base_offset_in_ints = arrayOopDesc::base_offset_in_ints(T_INT);
+  _filler_array_max_size = align_object_size((base_offset_in_ints + max_len) / elements_per_word);
 
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
   NOT_PRODUCT(_promotion_failure_alot_gc_number = 0;)
@@ -411,19 +409,7 @@ void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t siz
 
 size_t CollectedHeap::max_tlab_size() const {
   // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
-  // This restriction could be removed by enabling filling with multiple arrays.
-  // If we compute that the reasonable way as
-  //    header_size + ((sizeof(jint) * max_jint) / HeapWordSize)
-  // we'll overflow on the multiply, so we do the divide first.
-  // We actually lose a little by dividing first,
-  // but that just makes the TLAB  somewhat smaller than the biggest array,
-  // which is fine, since we'll be able to fill that.
-  int header_size_in_bytes = typeArrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(is_aligned(header_size_in_bytes, BytesPerInt), "header size must align to int");
-  size_t max_int_size = header_size_in_bytes / HeapWordSize +
-              sizeof(jint) *
-              ((juint) max_jint / (size_t) HeapWordSize);
-  return align_down(max_int_size, MinObjAlignment);
+  return _filler_array_max_size;
 }
 
 size_t CollectedHeap::filler_array_min_size() {
@@ -439,9 +425,9 @@ void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint v
     payload_start += BytesPerInt;
   }
   assert(is_aligned(payload_start, HeapWordSize), "payload start must be heap word aligned");
-  payload_start = payload_start / HeapWordSize;
-  Copy::fill_to_words(start + payload_start,
-                      words - payload_start, value);
+  int payload_start_in_words = payload_start / HeapWordSize;
+  Copy::fill_to_words(start + payload_start_in_words,
+                      words - payload_start_in_words, value);
 }
 
 #ifdef ASSERT

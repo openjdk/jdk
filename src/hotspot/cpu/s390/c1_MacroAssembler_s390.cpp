@@ -273,7 +273,7 @@ void C1_MacroAssembler::allocate_array(
   Register len,                        // array length
   Register t1,                         // temp register
   Register t2,                         // temp register
-  int      base_offset_in_bytes,       // offset of array elements in bytes
+  int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
   Label&   slow_case                   // Continuation point if fast allocation fails.
@@ -310,7 +310,7 @@ void C1_MacroAssembler::allocate_array(
   Label done;
   Register object_fields = t1;
   Register Rzero = Z_R1_scratch;
-  z_aghi(arr_size, -(base_offset_in_bytes));
+  z_aghi(arr_size, -base_offset_in_bytes);
   z_bre(done); // Jump if size of fields is zero.
   z_la(object_fields, base_offset_in_bytes, obj);
   z_xgr(Rzero, Rzero);

@@ -80,7 +80,6 @@ TEST_VM(arrayOopDesc, narrowOop) {
 }
 // T_VOID and T_ADDRESS are not supported by max_array_length()
 
-
 TEST_VM(arrayOopDesc, base_offset) {
 #ifdef _LP64
   if (UseCompressedClassPointers) {

@@ -366,7 +366,7 @@ void C1_MacroAssembler::allocate_array(
   addi(base, obj, base_offset_in_bytes);               // compute address of first element
   addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
 
-  // Elements are not dword aligned. Zero out leading word.
+  // Zero first 4 bytes, if start offset is not word aligned.
   if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
     assert(is_aligned(base_offset_in_bytes, BytesPerInt), "weird alignment");
     li(t1, 0);

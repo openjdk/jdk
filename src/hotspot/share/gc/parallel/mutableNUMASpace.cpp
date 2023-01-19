@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/mutableNUMASpace.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -109,8 +109,7 @@ void MutableNUMASpace::ensure_parsability() {
             size_t touched_words = words_to_fill;
 #ifndef ASSERT
             if (!ZapUnusedHeapArea) {
-              touched_words = MIN2((size_t)align_object_size(heap_word_size(typeArrayOopDesc::base_offset_in_bytes(T_INT))),
-                touched_words);
+              touched_words = MIN2(CollectedHeap::filler_array_min_size(), touched_words);
             }
 #endif
             MemRegion invalid;

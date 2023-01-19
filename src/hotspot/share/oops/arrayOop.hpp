@@ -48,8 +48,7 @@ class arrayOopDesc : public oopDesc {
 
   // Header size computation.
   // The header is considered the oop part of this type plus the length.
-  // Returns the aligned header_size_in_bytes.  This is not equivalent to
-  // sizeof(arrayOopDesc) which should not appear in the code.
+  // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
     size_t hs = length_offset_in_bytes() + sizeof(int);
 #ifdef ASSERT
@@ -90,10 +89,16 @@ class arrayOopDesc : public oopDesc {
 
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
-    size_t typesize_in_bytes = header_size_in_bytes();
+    size_t hs = header_size_in_bytes();
     return (int)(element_type_should_be_aligned(type)
-                 ? align_up(typesize_in_bytes, BytesPerLong)
-                 : typesize_in_bytes);
+                 ? align_up(hs, BytesPerLong)
+                 : hs);
+  }
+
+  static int base_offset_in_ints(BasicType type) {
+    int base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(type);
+    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be aligned to int");
+    return base_offset_in_bytes / BytesPerInt;
   }
 
   // Returns the address of the first element. The elements in the array will not
@@ -138,16 +143,16 @@ class arrayOopDesc : public oopDesc {
     assert(type >= 0 && type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
-    int elem_size = type2aelembytes(type);
+    const int elem_size = type2aelembytes(type);
     const size_t max_size_bytes = align_down(SIZE_MAX - base_offset_in_bytes(type), MinObjAlignmentInBytes);
-    assert(max_size_bytes % elem_size == 0, "max_size_bytes should be aligned to element size");
+    assert(is_aligned(max_size_bytes, elem_size), "max_size_bytes should be aligned to element size");
     const size_t max_elements_per_size_t = max_size_bytes / elem_size;
     if ((size_t)max_jint < max_elements_per_size_t) {
       // It should be ok to return max_jint here, but parts of the code
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for
       // passing around the size (in words) of an object. So, we need to avoid
       // overflowing an int when we add the header. See CRs 4718400 and 7110613.
-      size_t header_size_words = heap_word_size(base_offset_in_bytes(type));
+      const size_t header_size_words = heap_word_size(base_offset_in_bytes(type));
       return align_down(max_jint - static_cast<int>(header_size_words), MinObjAlignment);
     }
     return (int32_t)max_elements_per_size_t;

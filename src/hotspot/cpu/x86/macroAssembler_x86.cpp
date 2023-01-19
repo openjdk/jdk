@@ -4133,7 +4133,8 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   assert_different_registers(address, length_in_bytes, temp);
   assert(is_aligned(offset_in_bytes, BytesPerInt), "offset must be a multiple of BytesPerInt");
 
-  // note: for the remaining code to work, index must be a multiple of BytesPerInt
+  // For the remaining code to work, length must be a multiple of BytesPerInt.
+  // Check that here.
 #ifdef ASSERT
   {
     Label L;
@@ -4149,9 +4150,10 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   testptr(length_in_bytes, length_in_bytes);
   jcc(Assembler::zero, done);
 
-  // Emit single 32bit store to clear leading bytes, if necessary.
   xorptr(temp, temp);    // use _zero reg to clear memory (shorter code)
+
 #ifdef _LP64
+  // Emit single 32bit store to clear leading bytes, if necessary.
   if (!is_aligned(offset_in_bytes, BytesPerWord)) {
     assert(is_aligned(offset_in_bytes, BytesPerInt), "must be 32-bit-aligned");
     movl(Address(address, offset_in_bytes), temp);
