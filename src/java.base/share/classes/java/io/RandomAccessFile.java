@@ -30,8 +30,7 @@ import java.nio.channels.FileChannel;
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Blocker;
-import jdk.internal.util.Bits;
-import jdk.internal.util.Bits.BigEndianAtZero;
+import jdk.internal.util.ByteArray;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -886,7 +885,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final int readInt() throws IOException {
         readFully(buffer, 0, Integer.BYTES);
-        return BigEndianAtZero.getInt(buffer);
+        return ByteArray.getInt(buffer);
     }
 
     /**
@@ -919,7 +918,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final long readLong() throws IOException {
         readFully(buffer, 0, Long.BYTES);
-        return BigEndianAtZero.getLong(buffer);
+        return ByteArray.getLong(buffer);
     }
 
     /**
@@ -943,7 +942,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final float readFloat() throws IOException {
         readFully(buffer, 0, Float.BYTES);
-        return BigEndianAtZero.getFloat(buffer);
+        return ByteArray.getFloat(buffer);
     }
 
     /**
@@ -967,7 +966,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     public final double readDouble() throws IOException {
         readFully(buffer, 0, Double.BYTES);
-        return BigEndianAtZero.getDouble(buffer);
+        return ByteArray.getDouble(buffer);
     }
 
     /**
@@ -1106,7 +1105,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeInt(int v) throws IOException {
-        BigEndianAtZero.putInt(buffer, v);
+        ByteArray.putInt(buffer, v);
         write(buffer, 0, Integer.BYTES);
         //written += 4;
     }
@@ -1119,7 +1118,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws     IOException  if an I/O error occurs.
      */
     public final void writeLong(long v) throws IOException {
-        BigEndianAtZero.putLong(buffer, v);
+        ByteArray.putLong(buffer, v);
         write(buffer, 0, Long.BYTES);
     }
 
@@ -1135,7 +1134,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        BigEndianAtZero.putFloat(buffer, v);
+        ByteArray.putFloat(buffer, v);
         write(buffer, 0, Float.BYTES);
     }
 
@@ -1151,7 +1150,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        BigEndianAtZero.putDouble(buffer, v);
+        ByteArray.putDouble(buffer, v);
         write(buffer, 0, Double.BYTES);
     }
 

@@ -25,9 +25,7 @@
 
 package java.io;
 
-import jdk.internal.util.Bits;
-import jdk.internal.util.Bits.BigEndian;
-import jdk.internal.util.Bits.BigEndianAtZero;
+import jdk.internal.util.ByteArray;
 
 /**
  * A data output stream lets an application write primitive Java data
@@ -174,7 +172,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeShort(int v) throws IOException {
-        BigEndianAtZero.putUnsignedShort(writeBuffer,v);
+        ByteArray.putUnsignedShort(writeBuffer, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -189,7 +187,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeChar(int v) throws IOException {
-        BigEndianAtZero.putUnsignedShort(writeBuffer, v);
+        ByteArray.putUnsignedShort(writeBuffer, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -204,7 +202,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeInt(int v) throws IOException {
-        BigEndianAtZero.putInt(writeBuffer, v);
+        ByteArray.putInt(writeBuffer, v);
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
@@ -219,7 +217,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeLong(long v) throws IOException {
-        BigEndianAtZero.putLong(writeBuffer, v);
+        ByteArray.putLong(writeBuffer, v);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -238,7 +236,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        BigEndianAtZero.putFloat(writeBuffer, v);
+        ByteArray.putFloat(writeBuffer, v);
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
@@ -257,7 +255,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        BigEndianAtZero.putDouble(writeBuffer, v);
+        ByteArray.putDouble(writeBuffer, v);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -297,7 +295,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            BigEndianAtZero.putUnsignedShort(writeBuffer, v);
+            ByteArray.putUnsignedShort(writeBuffer, v);
             out.write(writeBuffer, 0, 2);
         }
         incCount(len * 2);
@@ -374,7 +372,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         }
 
         int count = 0;
-        BigEndian.putUnsignedShort(bytearr, count, utflen);
+        ByteArray.putUnsignedShort(bytearr, count, utflen);
         count += 2;
         int i = 0;
         for (i = 0; i < strlen; i++) { // optimized for initial run of ASCII
