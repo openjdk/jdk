@@ -25,8 +25,6 @@
 
 package jdk.nio.zipfs;
 
-import jdk.internal.util.ArraysSupport;
-
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -3383,9 +3381,11 @@ class ZipFileSystem extends FileSystem {
         void name(byte[] name, int len) {
             this.name = name;
             this.len = len;
-            // calculate the hashcode the same way as Arrays.hashCode(byte[]) does,
-            // except taking a range
-            this.hashcode = ArraysSupport.vectorizedHashCode(name, 0, len, 1, ArraysSupport.T_BYTE);
+            // calculate the hashcode the same way as Arrays.hashCode() does
+            int result = 1;
+            for (int i = 0; i < len; i++)
+                result = 31 * result + name[i];
+            this.hashcode = result;
         }
 
         @Override
