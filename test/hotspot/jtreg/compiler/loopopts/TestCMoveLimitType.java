@@ -41,7 +41,7 @@
  *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestCMoveLimitType::test*
  *                   -XX:CompileCommand=dontinline,compiler.loopopts.TestCMoveLimitType::dontInline
  *                   -XX:RepeatCompilation=50 -XX:+StressIGVN
- *                   -Xcomp -XX:+TraceLoopOpts
+ *                   -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+TraceLoopOpts
  *                   compiler.loopopts.TestCMoveLimitType
 */
 
