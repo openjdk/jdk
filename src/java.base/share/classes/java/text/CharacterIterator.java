@@ -64,7 +64,7 @@ package java.text;
  * Traverse the text from start to finish
  * {@snippet lang=java :
  * public void traverseForward(CharacterIterator iter) {
- *     for(char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+ *     for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
  *         processChar(c);
  *     }
  * }
@@ -73,7 +73,7 @@ package java.text;
  * Traverse the text backwards, from end to start
  * {@snippet lang=java :
  * public void traverseBackward(CharacterIterator iter) {
- *     for(char c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
+ *     for (char c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
  *         processChar(c);
  *     }
  * }
