@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1595,7 +1595,7 @@ int MethodData::profile_arguments_flag() {
 }
 
 bool MethodData::profile_arguments() {
-  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all && TypeProfileArgsLimit > 0;
 }
 
 bool MethodData::profile_arguments_jsr292_only() {
@@ -1820,4 +1820,14 @@ void MethodData::clean_weak_method_links() {
   CleanExtraDataMethodClosure cl;
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
+}
+
+void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
+  release_C_heap_structures();
+}
+
+void MethodData::release_C_heap_structures() {
+#if INCLUDE_JVMCI
+  FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
+#endif
 }

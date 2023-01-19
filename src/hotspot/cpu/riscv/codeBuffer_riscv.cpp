@@ -1,6 +1,7 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
+ * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences.
+ * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +54,14 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
   bool p_succeeded = true;
   auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
     masm.set_code_section(cb->stubs());
-    masm.align(wordSize, NativeCallTrampolineStub::data_offset);
+    if (!is_aligned(masm.offset() + NativeCallTrampolineStub::data_offset, wordSize)) {
+      if (cb->stubs()->maybe_expand_to_ensure_remaining(NativeInstruction::instruction_size) && cb->blob() == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        p_succeeded = false;
+        return p_succeeded;
+      }
+      masm.align(wordSize, NativeCallTrampolineStub::data_offset);
+    }
 
     LinkedListIterator<int> it(offsets.head());
     int offset = *it.next();

@@ -1473,7 +1473,7 @@ static void gtk3_paint_arrow(WidgetType widget_type, GtkStateType state_type,
             break;
 
         case COMBO_BOX_ARROW_BUTTON:
-            s = (int)(0.3 * height + 0.5) + 1;
+            s = (int)(0.3 * MIN(height, width) + 0.5) + 1;
             a = G_PI;
             break;
 

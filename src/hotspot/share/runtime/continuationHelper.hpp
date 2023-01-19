@@ -75,10 +75,6 @@ public:
   static inline intptr_t* frame_top(const frame &f);
   static inline bool is_deopt_return(address pc, const frame& sender);
   static bool assert_frame_laid_out(frame f);
-
-  static char* method_name(Method* m) { return m != nullptr ? m->name_and_sig_as_C_string() : nullptr; }
-  static Method* top_java_frame_method(const frame& f);
-  static Method* bottom_java_frame_method(const frame& f)  { return frame_method(f); }
 #endif
 };
 
@@ -97,7 +93,6 @@ public:
   static address return_pc(const frame& f);
   static void patch_sender_sp(frame& f, const frame& caller);
 
-  static int size(const frame& f, InterpreterOopMap* mask);
   static int size(const frame& f);
   static inline int expression_stack_size(const frame &f, InterpreterOopMap* mask);
 
@@ -118,7 +113,6 @@ public:
 
   static inline int size(const frame& f);
   static inline int stack_argsize(const frame& f);
-  static inline int num_oops(const frame& f);
 };
 
 class ContinuationHelper::NonInterpretedUnknownFrame : public ContinuationHelper::NonInterpretedFrame  {
@@ -128,8 +122,6 @@ public:
 
 class ContinuationHelper::CompiledFrame : public ContinuationHelper::NonInterpretedFrame {
 public:
-  static inline int num_oops(const frame& f);
-
   static bool is_instance(const frame& f);
 
 #ifdef ASSERT

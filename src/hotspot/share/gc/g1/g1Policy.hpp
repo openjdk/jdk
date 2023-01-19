@@ -101,11 +101,6 @@ class G1Policy: public CHeapObj<mtGC> {
 
   uint _free_regions_at_end_of_collection;
 
-  // These values are predictions of how much we think will survive in each
-  // section of the heap.
-  size_t _predicted_surviving_bytes_from_survivor;
-  size_t _predicted_surviving_bytes_from_old;
-
   size_t _rs_length;
 
   size_t _pending_cards_at_gc_start;
@@ -358,11 +353,6 @@ public:
                                                  uint const max_optional_regions,
                                                  double time_remaining_ms,
                                                  uint& num_optional_regions);
-
-  // Returns whether a collection should be done proactively, taking into
-  // account the current number of free regions and the expected survival
-  // rates in each section of the heap.
-  bool preventive_collection_required(uint region_count);
 
 private:
 

@@ -40,123 +40,154 @@ bool ABIDescriptor::is_volatile_reg(XMMRegister reg) const {
         || _vector_additional_volatile_registers.contains(reg);
 }
 
-static constexpr int INTEGER_TYPE = 0;
-static constexpr int VECTOR_TYPE = 1;
-static constexpr int X87_TYPE = 2;
-
 const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   oop abi_oop = JNIHandles::resolve_non_null(jabi);
   ABIDescriptor abi;
 
   objArrayOop inputStorage = jdk_internal_foreign_abi_ABIDescriptor::inputStorage(abi_oop);
-  parse_register_array(inputStorage, INTEGER_TYPE, abi._integer_argument_registers, as_Register);
-  parse_register_array(inputStorage, VECTOR_TYPE, abi._vector_argument_registers, as_XMMRegister);
+  parse_register_array(inputStorage, StorageType::INTEGER, abi._integer_argument_registers, as_Register);
+  parse_register_array(inputStorage, StorageType::VECTOR, abi._vector_argument_registers, as_XMMRegister);
 
   objArrayOop outputStorage = jdk_internal_foreign_abi_ABIDescriptor::outputStorage(abi_oop);
-  parse_register_array(outputStorage, INTEGER_TYPE, abi._integer_return_registers, as_Register);
-  parse_register_array(outputStorage, VECTOR_TYPE, abi._vector_return_registers, as_XMMRegister);
-  objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at(X87_TYPE));
+  parse_register_array(outputStorage, StorageType::INTEGER, abi._integer_return_registers, as_Register);
+  parse_register_array(outputStorage, StorageType::VECTOR, abi._vector_return_registers, as_XMMRegister);
+  objArrayOop subarray = oop_cast<objArrayOop>(outputStorage->obj_at((int) StorageType::X87));
   abi._X87_return_registers_noof = subarray->length();
 
   objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, INTEGER_TYPE, abi._integer_additional_volatile_registers, as_Register);
-  parse_register_array(volatileStorage, VECTOR_TYPE, abi._vector_additional_volatile_registers, as_XMMRegister);
+  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
+  parse_register_array(volatileStorage, StorageType::VECTOR, abi._vector_additional_volatile_registers, as_XMMRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);
   abi._shadow_space_bytes = jdk_internal_foreign_abi_ABIDescriptor::shadowSpace(abi_oop);
 
-  abi._target_addr_reg = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::targetAddrStorage(abi_oop))->as_Register();
-  abi._ret_buf_addr_reg = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::retBufAddrStorage(abi_oop))->as_Register();
+  abi._scratch1 = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::scratch1(abi_oop));
+  abi._scratch2 = parse_vmstorage(jdk_internal_foreign_abi_ABIDescriptor::scratch2(abi_oop));
 
   return abi;
 }
 
-enum class RegType {
-  INTEGER = 0,
-  VECTOR = 1,
-  X87 = 2,
-  STACK = 3
-};
-
-VMReg ForeignGlobals::vmstorage_to_vmreg(int type, int index) {
-  switch(static_cast<RegType>(type)) {
-    case RegType::INTEGER: return ::as_Register(index)->as_VMReg();
-    case RegType::VECTOR: return ::as_XMMRegister(index)->as_VMReg();
-    case RegType::STACK: return VMRegImpl::stack2reg(index LP64_ONLY(* 2)); // numbering on x64 goes per 64-bits
-    case RegType::X87: break;
-  }
-  return VMRegImpl::Bad();
-}
-
-int RegSpiller::pd_reg_size(VMReg reg) {
-  if (reg->is_Register()) {
+int RegSpiller::pd_reg_size(VMStorage reg) {
+  if (reg.type() == StorageType::INTEGER) {
     return 8;
-  } else if (reg->is_XMMRegister()) {
+  } else if (reg.type() == StorageType::VECTOR) {
     return 16;
   }
   return 0; // stack and BAD
 }
 
-void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMReg reg) {
-  if (reg->is_Register()) {
-    masm->movptr(Address(rsp, offset), reg->as_Register());
-  } else if (reg->is_XMMRegister()) {
-    masm->movdqu(Address(rsp, offset), reg->as_XMMRegister());
+void RegSpiller::pd_store_reg(MacroAssembler* masm, int offset, VMStorage reg) {
+  if (reg.type() == StorageType::INTEGER) {
+    masm->movptr(Address(rsp, offset), as_Register(reg));
+  } else if (reg.type() == StorageType::VECTOR) {
+    masm->movdqu(Address(rsp, offset), as_XMMRegister(reg));
   } else {
     // stack and BAD
   }
 }
 
-void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMReg reg) {
-  if (reg->is_Register()) {
-    masm->movptr(reg->as_Register(), Address(rsp, offset));
-  } else if (reg->is_XMMRegister()) {
-    masm->movdqu(reg->as_XMMRegister(), Address(rsp, offset));
+void RegSpiller::pd_load_reg(MacroAssembler* masm, int offset, VMStorage reg) {
+  if (reg.type() == StorageType::INTEGER) {
+    masm->movptr(as_Register(reg), Address(rsp, offset));
+  } else if (reg.type() == StorageType::VECTOR) {
+    masm->movdqu(as_XMMRegister(reg), Address(rsp, offset));
   } else {
     // stack and BAD
   }
 }
 
-void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMReg tmp, int in_stk_bias, int out_stk_bias) const {
-  Register tmp_reg = tmp->as_Register();
+static constexpr int RBP_BIAS = 16; // skip old rbp and return address
+
+static void move_reg64(MacroAssembler* masm, int out_stk_bias,
+                       Register from_reg, VMStorage to_reg) {
+  int out_bias = 0;
+  switch (to_reg.type()) {
+    case StorageType::INTEGER:
+      assert(to_reg.segment_mask() == REG64_MASK, "only moves to 64-bit registers supported");
+      masm->movq(as_Register(to_reg), from_reg);
+      break;
+    case StorageType::STACK:
+      out_bias = out_stk_bias;
+    case StorageType::FRAME_DATA:
+      assert(to_reg.stack_size() == 8, "only moves with 64-bit targets supported");
+      masm->movq(Address(rsp, to_reg.offset() + out_bias), from_reg);
+      break;
+    default: ShouldNotReachHere();
+  }
+}
+
+static void move_stack64(MacroAssembler* masm, Register tmp_reg, int out_stk_bias,
+                         Address from_address, VMStorage to_reg) {
+  int out_bias = 0;
+  switch (to_reg.type()) {
+    case StorageType::INTEGER:
+      assert(to_reg.segment_mask() == REG64_MASK, "only moves to 64-bit registers supported");
+      masm->movq(as_Register(to_reg), from_address);
+      break;
+    case StorageType::VECTOR:
+      assert(to_reg.segment_mask() == XMM_MASK, "only moves to xmm registers supported");
+      masm->movdqu(as_XMMRegister(to_reg), from_address);
+      break;
+    case StorageType::STACK:
+      out_bias = out_stk_bias;
+    case StorageType::FRAME_DATA:
+      assert(to_reg.stack_size() == 8, "only moves with 64-bit targets supported");
+      masm->movq(tmp_reg, from_address);
+      masm->movq(Address(rsp, to_reg.offset() + out_bias), tmp_reg);
+      break;
+    default: ShouldNotReachHere();
+  }
+}
+
+static void move_xmm(MacroAssembler* masm, int out_stk_bias,
+                     XMMRegister from_reg, VMStorage to_reg) {
+  switch (to_reg.type()) {
+    case StorageType::INTEGER: // windows vargarg floats
+      assert(to_reg.segment_mask() == REG64_MASK, "only moves to 64-bit registers supported");
+      masm->movq(as_Register(to_reg), from_reg);
+      break;
+    case StorageType::VECTOR:
+      assert(to_reg.segment_mask() == XMM_MASK, "only moves to xmm registers supported");
+      masm->movdqu(as_XMMRegister(to_reg), from_reg);
+      break;
+    case StorageType::STACK:
+      assert(to_reg.stack_size() == 8, "only moves with 64-bit targets supported");
+      masm->movq(Address(rsp, to_reg.offset() + out_stk_bias), from_reg);
+      break;
+    default: ShouldNotReachHere();
+  }
+}
+
+void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
+  Register tmp_reg = as_Register(tmp);
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
-    BasicType arg_bt     = move.bt;
-    VMRegPair from_vmreg = move.from;
-    VMRegPair to_vmreg   = move.to;
+    VMStorage from_reg = move.from;
+    VMStorage to_reg   = move.to;
 
-    masm->block_comment(err_msg("bt=%s", null_safe_string(type2name(arg_bt))));
-    switch (arg_bt) {
-      case T_BOOLEAN:
-      case T_BYTE:
-      case T_SHORT:
-      case T_CHAR:
-      case T_INT:
-        masm->move32_64(from_vmreg, to_vmreg, tmp_reg, in_stk_bias, out_stk_bias);
+    // replace any placeholders
+    if (from_reg.type() == StorageType::PLACEHOLDER) {
+      from_reg = locs.get(from_reg);
+    }
+    if (to_reg.type() == StorageType::PLACEHOLDER) {
+      to_reg = locs.get(to_reg);
+    }
+
+    switch (from_reg.type()) {
+      case StorageType::INTEGER:
+        assert(from_reg.segment_mask() == REG64_MASK, "only 64-bit register supported");
+        move_reg64(masm, out_stk_bias, as_Register(from_reg), to_reg);
         break;
-
-      case T_FLOAT:
-        if (to_vmreg.first()->is_Register()) { // Windows vararg call
-          masm->movq(to_vmreg.first()->as_Register(), from_vmreg.first()->as_XMMRegister());
-        } else {
-          masm->float_move(from_vmreg, to_vmreg, tmp_reg, in_stk_bias, out_stk_bias);
-        }
+      case StorageType::VECTOR:
+        assert(from_reg.segment_mask() == XMM_MASK, "only xmm register supported");
+        move_xmm(masm, out_stk_bias, as_XMMRegister(from_reg), to_reg);
         break;
-
-      case T_DOUBLE:
-        if (to_vmreg.first()->is_Register()) { // Windows vararg call
-          masm->movq(to_vmreg.first()->as_Register(), from_vmreg.first()->as_XMMRegister());
-        } else {
-          masm->double_move(from_vmreg, to_vmreg, tmp_reg, in_stk_bias, out_stk_bias);
-        }
-        break;
-
-      case T_LONG:
-        masm->long_move(from_vmreg, to_vmreg, tmp_reg, in_stk_bias, out_stk_bias);
-        break;
-
-      default:
-        fatal("found in upcall args: %s", type2name(arg_bt));
+      case StorageType::STACK: {
+        assert(from_reg.stack_size() == 8, "only stack_size 8 supported");
+        Address from_addr(rbp, RBP_BIAS + from_reg.offset() + in_stk_bias);
+        move_stack64(masm, tmp_reg, out_stk_bias, from_addr, to_reg);
+      } break;
+      default: ShouldNotReachHere();
     }
   }
 }

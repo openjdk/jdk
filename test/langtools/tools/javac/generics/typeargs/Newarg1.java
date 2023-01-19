@@ -14,7 +14,7 @@ class T<X> {
     <K> T(K x) {
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         new <Integer>T<Float>("");
     }
 }
