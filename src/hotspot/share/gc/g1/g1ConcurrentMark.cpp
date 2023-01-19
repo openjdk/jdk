@@ -76,6 +76,7 @@
 #include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -136,6 +137,10 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::allocate_array(size_t count) 
 }
 
 void G1CMMarkStack::deallocate_array(TaskQueueEntryChunk* ptr, size_t count) {
+  if (ptr == nullptr) {
+    assert(count == 0, "size mismatch");
+    return;
+  }
   const bool result = os::release_memory(static_cast<char*>(static_cast<void*>(ptr)),
                                          size_for_array(count));
   assert(result, "Failed to release G1CMMarkStack memory");
