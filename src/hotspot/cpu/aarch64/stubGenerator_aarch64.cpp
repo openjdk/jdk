@@ -6928,52 +6928,37 @@ typedef uint32_t u32;
     printf("%016lx %016lx", (u64)(n >> 64), (u64)(n << 64 >> 64));
   }
 
-  // private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
+#define PACK_26(dest0, dest1, dest2, src) do {  \
+  dest0 = src[0] >> 0;    /* 26 bits */         \
+  dest0 |= src[1] << 26;  /* 26 bits */         \
+  dest0 |= src[2] << 52;  /* 12 bits */         \
+  dest0 &= 0xffffffffffffffff; /* 64 bits */    \
+                                                \
+  dest1 = src[2] >> 12;   /* 14 bits */         \
+  dest1 |= src[3] << 14;  /* 26 bits */         \
+  dest1 |= src[4] << 40;  /* 24 bits */         \
+  dest0 &= 0xffffffffffffffff; /* 64 bits */    \
+                                                \
+  dest2 = src[4] >> 24;   /* 2 bits  */         \
+} while(0)
+
+  // Private void processMultipleBlocks(byte[] input, int offset, int length, long[] aLimbs, long[] rLimbs)
   static void do_poly1305_processBlocks(char *input_start, jlong length, julong *acc_start, julong *r_start) {
+    static int counter;
+
     setbuf(stdout, NULL);
 
-    julong ctx_h[5];
+    u128 b_u0, b_u1, b_u2;
+    PACK_26(b_u0, b_u1, b_u2, acc_start);
 
-    ctx_h[0] = acc_start[0] >> 0;
-    ctx_h[0] |= acc_start[1] << (64-6) >> 32;
-
-    ctx_h[1] = acc_start[1] >> 6;
-    ctx_h[1] |= acc_start[2] << (64-12) >> 32;
-
-    ctx_h[2] = acc_start[2] >> 12;
-    ctx_h[2] |= acc_start[3] << (64-18) >> 32;
-
-    ctx_h[3] = acc_start[3] >> 18;
-    ctx_h[2] |= acc_start[4] << (64-24) >> 32;
-
-    ctx_h[4] = acc_start[4] >> 24;
-
-    julong ctx_r[5];
-
-    ctx_r[0] = r_start[0] >> 0;
-    ctx_r[0] |= r_start[1] << (64-6) >> 32;
-
-    ctx_r[1] = r_start[1] >> 6;
-    ctx_r[1] |= r_start[2] << (64-12) >> 32;
-
-    ctx_r[2] = r_start[2] >> 12;
-    ctx_r[2] |= r_start[3] << (64-18) >> 32;
-
-    ctx_r[3] = r_start[3] >> 18;
-    ctx_r[3] |= r_start[4] << (64-24) >> 32;
-
-    ctx_r[4] = r_start[4] >> 24;
-
+    julong ctx_r[3];
+    PACK_26(ctx_r[0], ctx_r[1], ctx_r[2], r_start);
 
     u32 *ctx_c = (u32 *)input_start;
 
     u64 b_s0;
     u64 b_s1;
     u32 b_s2;
-
-    u64 *b_h = (u64*)ctx_h;
-
-    u128 b_u0 = b_h[0], b_u1 = b_h[1], b_u2;
 
     while (length >= BLOCK_LENGTH) {
 
@@ -6983,7 +6968,6 @@ typedef uint32_t u32;
       printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
       printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
 
-      static int counter;
       printf("#%d\n", ++counter);
 
       // s = u + c, with carry propagation
@@ -7009,29 +6993,12 @@ typedef uint32_t u32;
       // printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
 
       // Local all the things!
-      const u32 r0 = ctx_r[0];       // r0  <= 0fffffff
-      const u32 r1 = ctx_r[1];       // r1  <= 0ffffffc
-      const u32 r2 = ctx_r[2];       // r2  <= 0ffffffc
-      const u32 r3 = ctx_r[3];       // r3  <= 0ffffffc
-      const u32 rr0 = (r0 >> 2) * 5;  // rr0 <= 13fffffb // lose 2 bits...
-      const u32 rr1 = (r1 >> 2) + r1; // rr1 <= 13fffffb // rr1 == (r1 >> 2) * 5
-      const u32 rr2 = (r2 >> 2) + r2; // rr2 <= 13fffffb // rr1 == (r2 >> 2) * 5
-      const u32 rr3 = (r3 >> 2) + r3; // rr3 <= 13fffffb // rr1 == (r3 >> 2) * 5
-
       // (h + c) * r, without carry propagation
-      const uint64_t  b_r0 = ((uint64_t)r1 << 32) + r0;
-      const uint64_t  b_r1 = ((uint64_t)r3 << 32) + r2;
+      const uint64_t  b_r0 = ctx_r[0];
+      const uint64_t  b_r1 = ctx_r[1];
       const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
       const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
-      julong r_start_copy[5];
-
-      r_start_copy[0] = b_r0         & 0x3ffffff;
-      r_start_copy[1] = (b_r0 >> 26) & 0x3ffffff;
-      r_start_copy[2] = ((b_r0 >> 52) | (b_r1 << 12)) & 0x3ffffff;
-      r_start_copy[3] = (b_r1 >> 14) & 0x3ffffff;
-      r_start_copy[4] = ((b_r1 >> 40) // | (b_r2 << 24)) & 0x3ffffff
-                         );
 
       printf("R:   %016lx:%016lx\n", b_r1, b_r0);
       // printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
