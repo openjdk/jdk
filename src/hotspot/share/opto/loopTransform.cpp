@@ -3693,8 +3693,7 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   Node* phi = cl->phi();
   Node* exact_limit = phase->exact_limit(this);
 
-  // There might have been a condition guarding the counted loop.
-  // We need to pin the exact limit to prevent if to float above that check
+  // We need to pin the exact limit to prevent it from floating above the zero trip guard.
   Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
   phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
 
