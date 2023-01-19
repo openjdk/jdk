@@ -27,7 +27,7 @@
 
 class ClassLoaderData;
 
-class InstanceKlassMiscStatus {
+class InstanceKlassFlags {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -63,7 +63,7 @@ class InstanceKlassMiscStatus {
 
  public:
 
-  InstanceKlassMiscStatus() : _flags(0) {}
+  InstanceKlassFlags() : _flags(0) {}
 
   // Create getters and setters for the flag values.
 #define IK_FLAGS_GET(name, ignore)          \
