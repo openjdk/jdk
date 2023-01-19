@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is nullptr. The -Wno-invalid-offsetof
+// offset directly when base address is NULL. The -Wno-invalid-offsetof
 // option could be used to suppress this warning, but we instead just
 // avoid the use of offsetof().
 //
