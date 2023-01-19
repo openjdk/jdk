@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import javax.imageio.stream.ImageInputStream;
  * @see javax.imageio.spi.ImageReaderSpi
  *
  */
-public abstract class ImageReader {
+public abstract class ImageReader implements AutoCloseable {
 
     /**
      * The {@code ImageReaderSpi} that instantiated this object,
@@ -2875,5 +2875,12 @@ public abstract class ImageReader {
         int destHeight = destRegion.y + destRegion.height;
         // Create a new image based on the type specifier
         return imageType.createBufferedImage(destWidth, destHeight);
+    }
+
+    /**
+     * @implNote The default implementation of this method invokes {@link #dispose()}.
+     */
+    public void close() {
+        dispose();
     }
 }

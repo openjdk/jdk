@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import javax.imageio.spi.ImageWriterSpi;
  * @see javax.imageio.spi.ImageWriterSpi
  *
  */
-public abstract class ImageWriter implements ImageTranscoder {
+public abstract class ImageWriter implements ImageTranscoder, AutoCloseable {
 
     /**
      * The {@code ImageWriterSpi} that instantiated this object,
@@ -2014,5 +2014,12 @@ public abstract class ImageWriter implements ImageTranscoder {
      * especially native resources, are released.
      */
     public void dispose() {
+    }
+
+    /**
+     * @implNote The default implementation of this method invokes {@link #dispose()}.
+     */
+    public void close() {
+        dispose();
     }
 }
