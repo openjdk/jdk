@@ -1153,6 +1153,13 @@ public final class Pattern
      *         The character sequence to be matched
      *
      * @return  A new matcher for this pattern
+     *
+     * @implNote When a {@link Pattern} is deserialized, compilation is deferred
+     * until a direct or indirect invocation of this method. Thus, if a
+     * deserialized pattern has {@link #CANON_EQ} among its flags and the number
+     * of combining marks for any character is too large, an
+     * {@link java.lang.OutOfMemoryError} is thrown,
+     * as in {@link #compile(String, int)}.
      */
     public Matcher matcher(CharSequence input) {
         if (!compiled) {
