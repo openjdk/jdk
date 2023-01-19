@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,16 +76,16 @@ import java.util.zip.ZipOutputStream;
  * a {@link NullPointerException}.
  * <p>
  * Example:
- * <pre>
- * JarSigner signer = new JarSigner.Builder(key, certPath)
- *         .digestAlgorithm("SHA-1")
- *         .signatureAlgorithm("SHA1withDSA")
- *         .build();
- * try (ZipFile in = new ZipFile(inputFile);
- *         FileOutputStream out = new FileOutputStream(outputFile)) {
- *     signer.sign(in, out);
+ * {@snippet lang="java" :
+ *     JarSigner signer = new JarSigner.Builder(key, certPath)
+ *             .digestAlgorithm("SHA-256")
+ *             .signatureAlgorithm("SHA256withRSA")
+ *             .build();
+ *     try (ZipFile  in = new ZipFile(inputFile);
+ *             FileOutputStream out = new FileOutputStream(outputFile)) {
+ *         signer.sign(in, out);
+ *     }
  * }
- * </pre>
  *
  * @since 9
  */

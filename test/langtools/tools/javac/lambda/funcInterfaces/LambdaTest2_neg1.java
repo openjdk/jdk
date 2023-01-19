@@ -9,7 +9,7 @@
 
 public class LambdaTest2_neg1 {
 
-    public static void main(String[] args) {
+    public static void meth() {
         LambdaTest2_neg1 test = new LambdaTest2_neg1();
         //not convertible - QooRoo is not a SAM
         test.methodQooRoo((Integer i) -> { });

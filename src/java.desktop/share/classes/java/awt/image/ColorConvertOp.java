@@ -550,7 +550,7 @@ public class ColorConvertOp implements BufferedImageOp, RasterOp {
      */
     public BufferedImage createCompatibleDestImage (BufferedImage src,
                                                     ColorModel destCM) {
-        ColorSpace cs = null;;
+        ColorSpace cs = null;
         if (destCM == null) {
             if (CSList == null) {
                 /* ICC case */

@@ -38,7 +38,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -67,6 +66,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+
+#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -260,7 +261,7 @@ template <oop_kind oops, typename BarrierSetT>
 class Config {
 public:
   typedef Config<oops, BarrierSetT> SelfT;
-  typedef typename Conditional<oops == oop_kind::NARROW, narrowOop, oop>::type OopT;
+  using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static int freeze(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT>(thread, sp);
@@ -483,8 +484,11 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
   assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
-  static const int doYield_stub_frame_size = NOT_PPC64(frame::metadata_words)
-                                             PPC64_ONLY(frame::abi_reg_args_size >> LogBytesPerWord);
+#if !defined(PPC64) || defined(ZERO)
+  static const int doYield_stub_frame_size = frame::metadata_words;
+#else
+  static const int doYield_stub_frame_size = frame::abi_reg_args_size >> LogBytesPerWord;
+#endif
   assert(SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
 
   // properties of the continuation on the stack; all sizes are in words

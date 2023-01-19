@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ protected:
   void set_java_mirror(Handle m);
 
   oop archived_java_mirror() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_archived_java_mirror(oop m) NOT_CDS_JAVA_HEAP_RETURN;
+  void set_archived_java_mirror(int mirror_index) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
   OopHandle java_mirror_handle() const { return _java_mirror; }

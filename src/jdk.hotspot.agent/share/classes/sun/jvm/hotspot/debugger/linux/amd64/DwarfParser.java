@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +30,7 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.DebuggerException;
 
 public class DwarfParser {
+  private static final Cleaner CLEANER = Cleaner.create();
   private final long p_dwarf_context; // native dwarf context handle
 
   private static native void init0();
@@ -41,6 +42,10 @@ public class DwarfParser {
     init0();
   }
 
+  private static Runnable cleanerFor(long context) {
+    return () -> DwarfParser.destroyDwarfContext(context);
+  }
+
   public DwarfParser(Address lib) {
     p_dwarf_context = createDwarfContext(lib.asLongValue());
 
@@ -48,8 +53,7 @@ public class DwarfParser {
       throw new DebuggerException("Could not create DWARF context");
     }
 
-    Cleaner.create()
-           .register(this, () -> DwarfParser.destroyDwarfContext(p_dwarf_context));
+    CLEANER.register(this, cleanerFor(p_dwarf_context));
   }
 
   public boolean isIn(Address pc) {

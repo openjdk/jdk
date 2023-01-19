@@ -82,7 +82,7 @@ class ciMethod : public ciMetadata {
   int _handler_count;
   int _interpreter_invocation_count;
   int _interpreter_throwout_count;
-  int _instructions_size;
+  int _inline_instructions_size;
   int _size_of_parameters;
 
   bool _uses_monitors;
@@ -315,7 +315,8 @@ class ciMethod : public ciMetadata {
   bool check_call(int refinfo_index, bool is_static) const;
   bool ensure_method_data();  // make sure it exists in the VM also
   MethodCounters* ensure_method_counters();
-  int instructions_size();
+
+  int inline_instructions_size();
   int scale_count(int count, float prof_factor = 1.);  // make MDO count commensurate with IIC
 
   // Stack walking support

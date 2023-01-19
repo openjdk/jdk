@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   for (size_t i = 0; i < _nselections; i++) {
     if (_selections[i].tag_sets_selected() == 0) {
       // Return immediately unless all invalid selections should be listed
-      if (out == NULL) {
+      if (out == nullptr) {
         return false;
       }
 
@@ -56,14 +56,14 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {
   bool success = true;
-  if (str == NULL || strcmp(str, "") == 0) {
+  if (str == nullptr || strcmp(str, "") == 0) {
     str = DefaultExpressionString;
   }
   char* copy = os::strdup_check_oom(str, mtLogging);
   // Split string on commas
-  for (char *comma_pos = copy, *cur = copy; success && comma_pos != NULL; cur = comma_pos + 1) {
+  for (char *comma_pos = copy, *cur = copy; success && comma_pos != nullptr; cur = comma_pos + 1) {
     if (_nselections == MaxSelections) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print_cr("Can not have more than " SIZE_FORMAT " log selections in a single configuration.",
                             MaxSelections);
       }
@@ -72,7 +72,7 @@ bool LogSelectionList::parse(const char* str, outputStream* errstream) {
     }
 
     comma_pos = strchr(cur, ',');
-    if (comma_pos != NULL) {
+    if (comma_pos != nullptr) {
       *comma_pos = '\0';
     }
 

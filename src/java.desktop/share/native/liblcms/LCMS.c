@@ -142,8 +142,7 @@ static void ThrowIllegalArgumentException(JNIEnv *env, const char *msg) {
  */
 JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
   (JNIEnv *env, jclass cls, jlongArray profileIDs, jint renderingIntent,
-   jint inFormatter, jboolean isInIntPacked,
-   jint outFormatter, jboolean isOutIntPacked, jobject disposerRef)
+   jint inFormatter, jint outFormatter, jobject disposerRef)
 {
     cmsHPROFILE _iccArray[DF_ICC_BUF_SIZE];
     cmsHPROFILE *iccArray = &_iccArray[0];
@@ -157,16 +156,6 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         // An exception should have already been thrown.
         return 0L;
     }
-
-#ifdef _LITTLE_ENDIAN
-    /* Reversing data packed into int for LE archs */
-    if (isInIntPacked) {
-        inFormatter ^= DOSWAP_SH(1);
-    }
-    if (isOutIntPacked) {
-        outFormatter ^= DOSWAP_SH(1);
-    }
-#endif
 
     if (DF_ICC_BUF_SIZE < size*2) {
         iccArray = (cmsHPROFILE*) malloc(
