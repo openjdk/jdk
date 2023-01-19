@@ -141,7 +141,12 @@ public class VisibleMemberTable {
         }
     }
 
+    /** The class or interface described by this table. */
     private final TypeElement te;
+    /**
+     * The superclass of {@link #te} or null if {@code te} is an
+     * interface or {@code java.lang.Object}.
+     */
     private final TypeElement parent;
 
     private final BaseConfiguration config;
@@ -149,8 +154,20 @@ public class VisibleMemberTable {
     private final Utils utils;
     private final VisibleMemberCache mcache;
 
+    /** Tables for direct and indirect superclasses. */
     private final List<VisibleMemberTable> allSuperclasses;
+    /**
+     * Tables for direct and indirect superinterfaces.
+     * Tables for superinterfaces might not be unique.
+     */
     private final List<VisibleMemberTable> allSuperinterfaces;
+    /**
+     * Tables for direct superclass and direct superinterfaces.
+     *
+     * The position of a table for the superclass in the list is unspecified.
+     * Tables for the superinterfaces might not be unique (i.e. an interface
+     * may be added from different lineages).
+     */
     private final List<VisibleMemberTable> parents;
 
     private Map<Kind, List<Element>> visibleMembers;
@@ -420,7 +437,7 @@ public class VisibleMemberTable {
             VisibleMemberTable vmt = mcache.getVisibleMemberTable(parent);
             allSuperclasses.add(vmt);
             allSuperclasses.addAll(vmt.getAllSuperclasses());
-            // Add direct superinterfaces of a superclass, if any.
+            // Add direct and indirect superinterfaces of a superclass.
             allSuperinterfaces.addAll(vmt.getAllSuperinterfaces());
             parents.add(vmt);
         }
@@ -543,9 +560,7 @@ public class VisibleMemberTable {
                 .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
                 .toList();
 
-        // Filter out the local methods, that do not override or simply
-        // overrides a super method, or those methods that should not
-        // be visible.
+        // Filter out the local methods that either do not override a method or override a method simply.
         Predicate<ExecutableElement> isVisible = m -> {
             OverriddenMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
             return p == null || !p.simpleOverride;
@@ -584,7 +599,7 @@ public class VisibleMemberTable {
         final boolean haveStatic = utils.isStatic(inheritedMethod);
         final boolean inInterface = isEnclosureInterface(inheritedMethod);
 
-        // Static methods in interfaces are never documented.
+        // Static interface methods are never inherited (JLS 8.4.8 and 9.1.3)
         if (haveStatic && inInterface) {
             return false;
         }
@@ -736,9 +751,9 @@ public class VisibleMemberTable {
     }
 
     /*
-     * This class encapsulates the details of local members, orderedMembers
+     * This class encapsulates the details of local members. orderedMembers
      * contains the members in the declaration order, additionally a
-     * HashMap is maintained for performance optimization to lookup
+     * HashMap is maintained for performance optimization to look up
      * members. As a future enhancement is perhaps to consolidate the ordering
      * into a Map, capturing the insertion order, thereby eliminating an
      * ordered list.
@@ -754,7 +769,7 @@ public class VisibleMemberTable {
         LocalMemberTable() {
             orderedMembers = new EnumMap<>(Kind.class);
             memberMap = new EnumMap<>(Kind.class);
-
+            // elements directly declared by te
             List<? extends Element> elements = te.getEnclosedElements();
             for (Element e : elements) {
                 if (options.noDeprecated() && utils.isDeprecated(e)) {
