@@ -144,18 +144,56 @@ public class SwingUtilities3 {
     }
 
     /**
-     * Used within border classes to add specific border implementation details.
+     * A task which paints an <i>unscaled</i> border after {@code Graphics}
+     * transforms are removed. It's used with the
+     * {@link #paintBorder(Component, Graphics, int, int, int, int, UnscaledBorderPainter)
+     * SwingUtilities3.paintBorder} which manages changing the transforms and calculating
+     * the coordinates and size of the border.
      */
     @FunctionalInterface
     public interface UnscaledBorderPainter {
+        /**
+         * Paints the border for the specified component after the
+         * {@code Graphics} transforms are removed.
+         *
+         * <p>
+         * The <i>x</i> and <i>y</i> of the painted border are zero.
+         *
+         * @param c the component for which this border is being painted
+         * @param g the paint graphics
+         * @param w the width of the painted border, in physical pixels
+         * @param h the height of the painted border, in physical pixels
+         * @param scaleFactor the scale that was in the {@code Graphics}
+         *
+         * @see #paintBorder(Component, Graphics, int, int, int, int, UnscaledBorderPainter)
+         * SwingUtilities3.paintBorder
+         * @see javax.swing.border.Border#paintBorder(Component, Graphics, int, int, int, int)
+         * Border.paintBorder
+         */
         void paintUnscaledBorder(Component c, Graphics g,
                                  int w, int h,
                                  double scaleFactor);
     }
 
     /**
-     * Performs common scaling transformation steps required for rendering
-     * the border correctly at different scales.
+     * Paints the border for a component ensuring its sides have consistent
+     * thickness at different scales.
+     * <p>
+     * It performs the following steps:
+     * <ol>
+     *     <li>Reset the scale transform on the {@code Graphics},</li>
+     *     <li>Call {@code painter} to paint the border,</li>
+     *     <li>Restores the transform.</li>
+     * </ol>
+     *
+     * @param c the component for which this border is being painted
+     * @param g the paint graphics
+     * @param x the x position of the painted border
+     * @param y the y position of the painted border
+     * @param w the width of the painted border
+     * @param h the height of the painted border
+     * @param painter the painter object which paints the border after
+     *                the transform on the {@code Graphics} is reset
      */
     public static void paintBorder(Component c, Graphics g,
                                    int x, int y,
@@ -164,7 +202,7 @@ public class SwingUtilities3 {
 
         // Step 1: Reset Transform
         AffineTransform at = null;
-        Stroke oldStk = null;
+        Stroke oldStroke = null;
         boolean resetTransform = false;
         double scaleFactor = 1;
 
@@ -176,7 +214,7 @@ public class SwingUtilities3 {
         if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;
             at = g2d.getTransform();
-            oldStk = g2d.getStroke();
+            oldStroke = g2d.getStroke();
             scaleFactor = Math.min(at.getScaleX(), at.getScaleY());
 
             // if m01 or m10 is non-zero, then there is a rotation or shear,
@@ -208,7 +246,7 @@ public class SwingUtilities3 {
         g.translate(-xtranslation, -ytranslation);
         if (g instanceof Graphics2D) {
             Graphics2D g2d = (Graphics2D) g;
-            g2d.setStroke(oldStk);
+            g2d.setStroke(oldStroke);
             if (resetTransform) {
                 g2d.setTransform(at);
             }
