@@ -157,7 +157,7 @@ WB_ENTRY(jint, WB_GetHeapOopSize(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jint, WB_GetVMPageSize(JNIEnv* env, jobject o))
-  return os::vm_page_size();
+  return (int)os::vm_page_size();
 WB_END
 
 WB_ENTRY(jlong, WB_GetVMAllocationGranularity(JNIEnv* env, jobject o))

@@ -201,7 +201,7 @@ TEST_VM_F(ArgumentsTest, parse_xss) {
   // Test value aligned both to K and vm_page_size.
   {
     EXPECT_TRUE(is_aligned(32 * M, K));
-    EXPECT_TRUE(is_aligned(32 * M, (size_t)os::vm_page_size()));
+    EXPECT_TRUE(is_aligned(32 * M, os::vm_page_size()));
     EXPECT_EQ(parse_xss_inner(to_string(32 * M), JNI_OK), (intx)(32 * M / K));
   }
 

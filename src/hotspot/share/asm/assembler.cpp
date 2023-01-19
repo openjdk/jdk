@@ -133,7 +133,7 @@ void AbstractAssembler::generate_stack_overflow_check(int frame_size_in_bytes) {
   // The entry code may need to bang additional pages if the framesize
   // is greater than a page.
 
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   int bang_end = (int)StackOverflow::stack_shadow_zone_size();
 
   // This is how far the previous frame's stack banging extended.
@@ -246,5 +246,5 @@ bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
   // an explicit null check for -1.
 
   // Check if offset is outside of [0, os::vm_page_size()]
-  return offset < 0 || offset >= os::vm_page_size();
+  return offset < 0 || offset >= static_cast<intptr_t>(os::vm_page_size());
 }

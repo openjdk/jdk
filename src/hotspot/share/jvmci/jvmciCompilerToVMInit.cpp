@@ -74,7 +74,7 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
-int CompilerToVM::Data::vm_page_size;
+size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
 int CompilerToVM::Data::sizeof_ExceptionTableElement = sizeof(ExceptionTableElement);

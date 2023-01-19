@@ -183,7 +183,7 @@ void CodeHeap::clear() {
 
 
 static size_t align_to_page_size(size_t size) {
-  const size_t alignment = (size_t)os::vm_page_size();
+  const size_t alignment = os::vm_page_size();
   assert(is_power_of_2(alignment), "no kidding ???");
   return (size + alignment - 1) & ~(alignment - 1);
 }
@@ -222,7 +222,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   _number_of_committed_segments = size_to_segments(_memory.committed_size());
   _number_of_reserved_segments  = size_to_segments(_memory.reserved_size());
   assert(_number_of_reserved_segments >= _number_of_committed_segments, "just checking");
-  const size_t reserved_segments_alignment = MAX2((size_t)os::vm_page_size(), granularity);
+  const size_t reserved_segments_alignment = MAX2(os::vm_page_size(), granularity);
   const size_t reserved_segments_size = align_up(_number_of_reserved_segments, reserved_segments_alignment);
   const size_t committed_segments_size = align_to_page_size(_number_of_committed_segments);
 

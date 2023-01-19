@@ -1345,7 +1345,7 @@ void os::print_memory_info(outputStream* st) {
   size_t size = sizeof(swap_usage);
 
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   st->print(", physical " UINT64_FORMAT "k",
             os::physical_memory() >> 10);
@@ -1910,10 +1910,10 @@ extern void report_error(char* file_name, int line_no, char* title,
 void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
-  int page_size = getpagesize();
+  size_t page_size = (size_t)getpagesize();
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
-  if (os::vm_page_size() <= 0) {
+  if (os::vm_page_size() == 0) {
     fatal("os_bsd.cpp: os::init: getpagesize() failed (%s)", os::strerror(errno));
   }
   _page_sizes.add(os::vm_page_size());

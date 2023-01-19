@@ -79,7 +79,7 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
-  static_field(CompilerToVM::Data,             vm_page_size,                           int)                                          \
+  static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_ExceptionTableElement,           int)                                          \

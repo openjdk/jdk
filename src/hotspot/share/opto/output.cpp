@@ -370,7 +370,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
   return (C->stub_function() == NULL &&
-          (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
+          (C->has_java_calls() || frame_size_in_bytes > (int)(os::vm_page_size())>>3
            DEBUG_ONLY(|| true)));
 }
 

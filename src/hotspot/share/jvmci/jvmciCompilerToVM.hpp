@@ -70,7 +70,7 @@ class CompilerToVM {
     static CardTable::CardValue* cardtable_start_address;
     static int cardtable_shift;
 
-    static int vm_page_size;
+    static size_t vm_page_size;
 
     static int sizeof_vtableEntry;
     static int sizeof_ExceptionTableElement;

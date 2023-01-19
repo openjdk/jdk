@@ -59,7 +59,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
 
   MemTracker::record_virtual_memory_type(_map_space.base(), mtGC);
 
-  size_t page_size = (size_t)os::vm_page_size();
+  size_t page_size = os::vm_page_size();
 
   if (!_map_space.special()) {
     // Commit entire pages that cover the heap cset map.
