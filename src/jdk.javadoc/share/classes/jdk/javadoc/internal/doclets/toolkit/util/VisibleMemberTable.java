@@ -561,7 +561,7 @@ public class VisibleMemberTable {
 
         // Filter out the local methods that either do not override a method or override a method simply.
         Predicate<ExecutableElement> isVisible = m -> {
-            OverriddenMethodInfo p = overriddenMethodTable.getOrDefault(m, null);
+            OverriddenMethodInfo p = overriddenMethodTable.get(m);
             return p == null || !p.simpleOverride;
         };
 
