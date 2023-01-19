@@ -26,7 +26,7 @@
 package java.lang;
 
 import java.lang.ProcessBuilder.Redirect;
-import java.lang.Runtime.OperatingSystem;
+import jdk.internal.misc.OperatingSystem;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;

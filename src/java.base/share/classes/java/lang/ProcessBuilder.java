@@ -25,7 +25,7 @@
 
 package java.lang;
 
-import java.lang.Runtime.OperatingSystem;
+import jdk.internal.misc.OperatingSystem;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;

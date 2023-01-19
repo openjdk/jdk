@@ -25,7 +25,7 @@
 
 package java.util.zip;
 
-import java.lang.Runtime.OperatingSystem;
+import jdk.internal.misc.OperatingSystem;
 import java.io.Closeable;
 import java.io.InputStream;
 import java.io.IOException;

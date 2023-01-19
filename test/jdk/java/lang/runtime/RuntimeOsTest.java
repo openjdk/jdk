@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.internal.misc.Architecture;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -62,14 +63,14 @@ public class RuntimeOsTest {
     @Test
     void Test2() {
         String archName = System.getProperty("os.arch");
-        Runtime.Architecture arch = switch (archName) {
-            case "x86"             -> Runtime.Architecture.X86;
-            case "amd64", "x86_64" -> Runtime.Architecture.X64;
-            case "arm"             -> Runtime.Architecture.ARM;
-            case "aarch64"         -> Runtime.Architecture.AARCH64;
+        Architecture arch = switch (archName) {
+            case "x86"             -> Architecture.X86;
+            case "amd64", "x86_64" -> Architecture.X64;
+            case "arm"             -> Architecture.ARM;
+            case "aarch64"         -> Architecture.AARCH64;
             default                -> throw new RuntimeException("Unknown architecture: " + archName);
         };
-        Assert.assertEquals(arch, Runtime.Architecture.current(), "Mismatch in architecture");
+        Assert.assertEquals(arch, Architecture.current(), "Mismatch in architecture");
     }
 
     @Test
