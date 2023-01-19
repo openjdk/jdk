@@ -43,13 +43,11 @@ public:
 
   static void set_vm_page_size(size_t n) {
     assert(_vm_page_size == 0, "init only once");
-    assert(n > 0, "sanity");
     _vm_page_size = n;
   }
 
   static void set_vm_allocation_granularity(size_t n) {
     assert(_vm_allocation_granularity == 0, "init only once");
-    assert(n > 0, "sanity");
     _vm_allocation_granularity = n;
   }
 };

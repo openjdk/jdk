@@ -4281,13 +4281,16 @@ void os::init(void) {
   char dummy;   // used to get a guess on initial stack address
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
-
-  size_t page_size = (size_t) sysconf(_SC_PAGESIZE);
+  int sys_pg_size = sysconf(_SC_PAGESIZE);
+  if (sys_pg_size < 0) {
+    fatal("os_linux.cpp: os::init: sysconf failed (%s)",
+          os::strerror(errno));
+  }
+  size_t page_size = (size_t) sys_pg_size;
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
   if (os::vm_page_size() == 0) {
-    fatal("os_linux.cpp: os::init: sysconf failed (%s)",
-          os::strerror(errno));
+    fatal("os_linux.cpp: os::init: OSInfo::set_vm_page_size failed");
   }
   _page_sizes.add(os::vm_page_size());
 
