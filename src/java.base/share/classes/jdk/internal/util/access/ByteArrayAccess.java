@@ -161,7 +161,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
-     * @see #setFloat(byte[], int, float) 
+     * @see #setFloat(byte[], int, float)
      */
     public static float getFloat(byte[] array, int offset) {
         // Using Float.intBitsToFloat collapses NaN values to a single
@@ -442,7 +442,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getChar(byte[], int) 
+     * @see #getChar(byte[], int)
      */
     public static void setChar(byte[] array, int offset, char value) {
         CHAR.set(array, offset, value);
@@ -460,7 +460,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getShort(byte[], int) 
+     * @see #getShort(byte[], int)
      */
     public static void setShort(byte[] array, int offset, short value) {
         SHORT.set(array, offset, value);
@@ -478,7 +478,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getUnsignedShort(byte[], int)  
+     * @see #getUnsignedShort(byte[], int)
      */
     public static void setUnsignedShort(byte[] array, int offset, int value) {
         SHORT.set(array, offset, (short) (char) value);
@@ -539,7 +539,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
-     * @see #getFloatRaw(byte[], int)  
+     * @see #getFloatRaw(byte[], int)
      */
     public static void setFloatRaw(byte[] array, int offset, float value) {
         // Just sets the bits as they are
@@ -558,7 +558,7 @@ public final class ByteArrayAccess {
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
-     * @see #getLong(byte[], int)  
+     * @see #getLong(byte[], int)
      */
     public static void setLong(byte[] array, int offset, long value) {
         LONG.set(array, offset, value);
