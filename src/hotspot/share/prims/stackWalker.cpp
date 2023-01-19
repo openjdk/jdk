@@ -470,8 +470,16 @@ void StackWalker::process_normal(bool potentially_first_java_frame) {
       return;
     } else if (_frame.is_compiled_frame()) {
       CompiledMethod* nm = _frame.cb()->as_compiled_method();
-      if (!nm->is_native_method() && potentially_first_java_frame && !is_decipherable_first_compiled_frame(_thread, &_frame, nm, debug)){
+      if (!nm->is_native_method() && potentially_first_java_frame && !is_decipherable_first_compiled_frame(_thread, &_frame, nm)){
         set_state(STACKWALKER_INDECIPHERABLE_FRAME);
+        return;
+      }
+      if (nm->is_native_method()) {
+        _method = nm->method();
+        _bci = 0;
+        _inlined = false;
+        set_state(STACKWALKER_NATIVE_FRAME);
+        had_first_java_frame = true;
         return;
       }
       _st = compiledFrameStream(_thread, _frame, false);

@@ -855,6 +855,9 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceTest := -ldl -ljvm
 BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCTest := -ldl -ljvm
 BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceInnerCSkipCTest := -ldl -ljvm
 BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSampler := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceSampler2 := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceMoreTraces := -ldl -ljvm
+BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libAsyncGetStackTraceEquivalenceSampler := -ldl -ljvm
 
 ################################################################################
 
