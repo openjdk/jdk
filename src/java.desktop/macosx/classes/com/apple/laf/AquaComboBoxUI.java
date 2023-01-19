@@ -457,7 +457,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     class AquaComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         protected Rectangle rectangleForCurrentValue() {
             int width = comboBox.getWidth();
-            int height = 22;
+            int height = comboBox.getBorder() == null ? 22 : comboBox.getHeight();
             Insets insets = getInsets();
             int buttonSize = height - (insets.top + insets.bottom);
             if ( arrowButton != null )  {
