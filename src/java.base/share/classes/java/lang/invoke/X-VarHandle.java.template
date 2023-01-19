@@ -426,7 +426,7 @@ final class VarHandle$Type$s {
 
             // Reflect on this VarHandle to extract the field name
             var staticField = VarHandles.getStaticFieldFromBaseAndOffset(
-                receiverType, base, fieldOffset, {#if[Object]?fieldType:$type$.class});
+                receiverType, fieldOffset, {#if[Object]?fieldType:$type$.class});
             var receiverTypeRef = staticField.getDeclaringClass().describeConstable();
             if (!receiverTypeRef.isPresent())
                 return Optional.empty();
