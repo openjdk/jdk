@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,7 @@ class PatchCompressedEmbeddedPointers: public BitMapClosure {
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     oop o = ArchiveHeapLoader::decode_from_mapped_archive(v);
-    RawAccess<IS_NOT_NULL>::oop_store(p, o);
+    RawAccess<IS_NOT_nullptr>::oop_store(p, o);
     return true;
   }
 };
@@ -137,7 +137,7 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
     oop o2 = CompressedOops::decode_not_null(new_v);
     assert(o1 == o2, "quick delta must work");
 #endif
-    RawAccess<IS_NOT_NULL>::oop_store(p, new_v);
+    RawAccess<IS_NOT_nullptr>::oop_store(p, new_v);
     return true;
   }
 };
@@ -153,7 +153,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
     intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
-    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
+    RawAccess<IS_NOT_nullptr>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
 };
@@ -317,7 +317,7 @@ class PatchLoadedRegionPointers: public BitMapClosure {
       o += _offset_0;
     }
     ArchiveHeapLoader::assert_in_loaded_heap(o);
-    RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(o));
+    RawAccess<IS_NOT_nullptr>::oop_store(p, cast_to_oop(o));
     return true;
   }
 };
@@ -449,7 +449,7 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
 
   virtual void do_oop(narrowOop* p) {
     // This should be called before the loaded regions are modified, so all the embedded pointers
-    // must be NULL, or must point to a valid object in the loaded regions.
+    // must be nullptr, or must point to a valid object in the loaded regions.
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
       oop o = CompressedOops::decode_not_null(v);
@@ -540,7 +540,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
     FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
-    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+    if (r->mapped_base() != nullptr && r->has_ptrmap()) {
       log_info(cds, heap)("Patching native pointers in heap region %d", i);
       BitMapView bm = r->ptrmap_view();
       PatchNativePointers patcher((Metadata**)r->mapped_base());
