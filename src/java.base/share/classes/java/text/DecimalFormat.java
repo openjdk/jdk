@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormat}. If you need to customize the format object, do
  * something like this:
  *
- * <blockquote><pre>
+ * <blockquote>{@snippet lang=java :
  * NumberFormat f = NumberFormat.getInstance(loc);
  * if (f instanceof DecimalFormat) {
  *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
  * }
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
  * <em>symbols</em>.  The pattern may be set directly using
@@ -340,7 +340,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <blockquote><pre><strong>{@code
  * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale}</strong>{@code
+ * // and percent format for each locale}</strong></pre>
+ * {@snippet lang=java :
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;
@@ -370,7 +371,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         } catch (ParseException e) {}
  *     }
  * }
- * }</pre></blockquote>
+ * }</blockquote>
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat
