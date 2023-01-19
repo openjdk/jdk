@@ -25,7 +25,7 @@
 
 package java.io;
 
-import jdk.internal.util.ByteArray;
+import jdk.internal.util.access.ByteArrayAccess;
 
 import java.util.Objects;
 
@@ -314,7 +314,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final short readShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getShort(readBuffer);
+        return ByteArrayAccess.getShort(readBuffer);
     }
 
     /**
@@ -336,7 +336,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readUnsignedShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getUnsignedShort(readBuffer);
+        return ByteArrayAccess.getUnsignedShort(readBuffer);
     }
 
     /**
@@ -358,7 +358,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final char readChar() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getChar(readBuffer);
+        return ByteArrayAccess.getChar(readBuffer);
     }
 
     /**
@@ -380,7 +380,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readInt() throws IOException {
         readFully(readBuffer, 0, 4);
-        return ByteArray.getInt(readBuffer);
+        return ByteArrayAccess.getInt(readBuffer);
     }
 
     /**
@@ -402,7 +402,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
-        return ByteArray.getLong(readBuffer);
+        return ByteArrayAccess.getLong(readBuffer);
     }
 
     /**
@@ -425,7 +425,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final float readFloat() throws IOException {
         readFully(readBuffer, 0, 4);
-        return ByteArray.getFloat(readBuffer);
+        return ByteArrayAccess.getFloat(readBuffer);
     }
 
     /**
@@ -448,7 +448,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final double readDouble() throws IOException {
         readFully(readBuffer, 0, 8);
-        return ByteArray.getDouble(readBuffer);
+        return ByteArrayAccess.getDouble(readBuffer);
     }
 
     private char[] lineBuffer;

@@ -29,7 +29,7 @@
  * @run junit ReadWriteValues
  */
 
-import jdk.internal.util.ByteArray;
+import jdk.internal.util.access.ByteArrayAccess;
 import org.junit.jupiter.api.*;
 
 import java.util.concurrent.ThreadLocalRandom;
@@ -53,7 +53,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             short expected = (short) l;
             RefImpl.putShort(BUFF, OFFSET, expected);
-            short actual = ByteArray.getShort(BUFF, OFFSET);
+            short actual = ByteArrayAccess.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -62,7 +62,7 @@ final class ReadWriteValues {
     void testPutShort() {
         longs().forEach(l -> {
             short expected = (short) l;
-            ByteArray.setShort(BUFF, OFFSET, expected);
+            ByteArrayAccess.setShort(BUFF, OFFSET, expected);
             short actual = RefImpl.getShort(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -73,7 +73,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             char expected = (char) l;
             RefImpl.putChar(BUFF, OFFSET, expected);
-            char actual = ByteArray.getChar(BUFF, OFFSET);
+            char actual = ByteArrayAccess.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -82,7 +82,7 @@ final class ReadWriteValues {
     void testPutChar() {
         longs().forEach(l -> {
             char expected = (char) l;
-            ByteArray.setChar(BUFF, OFFSET, expected);
+            ByteArrayAccess.setChar(BUFF, OFFSET, expected);
             char actual = RefImpl.getChar(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -93,7 +93,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             int expected = (int) l;
             RefImpl.putInt(BUFF, OFFSET, expected);
-            int actual = ByteArray.getInt(BUFF, OFFSET);
+            int actual = ByteArrayAccess.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -102,7 +102,7 @@ final class ReadWriteValues {
     void testPutInt() {
         longs().forEach(l -> {
             int expected = (int) l;
-            ByteArray.setInt(BUFF, OFFSET, expected);
+            ByteArrayAccess.setInt(BUFF, OFFSET, expected);
             int actual = RefImpl.getInt(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -112,7 +112,7 @@ final class ReadWriteValues {
     void testGetLong() {
         longs().forEach(expected -> {
             RefImpl.putLong(BUFF, OFFSET, expected);
-            long actual = ByteArray.getLong(BUFF, OFFSET);
+            long actual = ByteArrayAccess.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -120,7 +120,7 @@ final class ReadWriteValues {
     @Test
     void testPutLong() {
         longs().forEach(expected -> {
-            ByteArray.setLong(BUFF, OFFSET, expected);
+            ByteArrayAccess.setLong(BUFF, OFFSET, expected);
             long actual = RefImpl.getLong(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -130,7 +130,7 @@ final class ReadWriteValues {
     void testGetFloat() {
         floats().forEach(expected -> {
             RefImpl.putFloat(BUFF, OFFSET, expected);
-            float actual = ByteArray.getFloat(BUFF, OFFSET);
+            float actual = ByteArrayAccess.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -138,7 +138,7 @@ final class ReadWriteValues {
     @Test
     void testPutFloat() {
         floats().forEach(expected -> {
-            ByteArray.setFloat(BUFF, OFFSET, expected);
+            ByteArrayAccess.setFloat(BUFF, OFFSET, expected);
             float actual = RefImpl.getFloat(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -148,7 +148,7 @@ final class ReadWriteValues {
     void testGetDouble() {
         doubles().forEach(expected -> {
             RefImpl.putDouble(BUFF, OFFSET, expected);
-            double actual = ByteArray.getDouble(BUFF, OFFSET);
+            double actual = ByteArrayAccess.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
     }
@@ -156,7 +156,7 @@ final class ReadWriteValues {
     @Test
     void testPutDouble() {
         doubles().forEach(expected -> {
-            ByteArray.setDouble(BUFF, OFFSET, expected);
+            ByteArrayAccess.setDouble(BUFF, OFFSET, expected);
             double actual = RefImpl.getDouble(BUFF, OFFSET);
             assertEquals(expected, actual);
         });
@@ -166,7 +166,7 @@ final class ReadWriteValues {
     void testPutUnsignedShort() {
         longs().forEach(l -> {
             int expected = Short.toUnsignedInt((short) l);
-            ByteArray.setUnsignedShort(BUFF, OFFSET, expected);
+            ByteArrayAccess.setUnsignedShort(BUFF, OFFSET, expected);
             int actual = Short.toUnsignedInt(RefImpl.getShort(BUFF, OFFSET));
             assertEquals(expected, actual);
         });
@@ -178,20 +178,20 @@ final class ReadWriteValues {
 
     @Test
     void testNullArray() {
-        assertThrowsOriginal(NullPointerException.class, () -> ByteArray.getInt(null, OFFSET));
-        assertThrowsOriginal(NullPointerException.class, () -> ByteArray.setInt(null, OFFSET, 1));
+        assertThrowsOriginal(NullPointerException.class, () -> ByteArrayAccess.getInt(null, OFFSET));
+        assertThrowsOriginal(NullPointerException.class, () -> ByteArrayAccess.setInt(null, OFFSET, 1));
     }
 
     @Test
     void testNegArg() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.getInt(BUFF, -1));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.setInt(BUFF, -1, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.getInt(BUFF, -1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.setInt(BUFF, -1, 1));
     }
 
     @Test
     void testOutOfBounds() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.getInt(BUFF, BUFF.length));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.setInt(BUFF, BUFF.length, 1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.getInt(BUFF, BUFF.length));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.setInt(BUFF, BUFF.length, 1));
     }
 
     
@@ -202,7 +202,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             short expected = (short) l;
             RefImpl.putShort(BUFF, 0, expected);
-            short actual = ByteArray.getShort(BUFF);
+            short actual = ByteArrayAccess.getShort(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -211,7 +211,7 @@ final class ReadWriteValues {
     void testPutShortAtZero() {
         longs().forEach(l -> {
             short expected = (short) l;
-            ByteArray.setShort(BUFF, expected);
+            ByteArrayAccess.setShort(BUFF, expected);
             short actual = RefImpl.getShort(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -222,7 +222,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             char expected = (char) l;
             RefImpl.putChar(BUFF, 0, expected);
-            char actual = ByteArray.getChar(BUFF);
+            char actual = ByteArrayAccess.getChar(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -231,7 +231,7 @@ final class ReadWriteValues {
     void testPutCharAtZero() {
         longs().forEach(l -> {
             char expected = (char) l;
-            ByteArray.setChar(BUFF, expected);
+            ByteArrayAccess.setChar(BUFF, expected);
             char actual = RefImpl.getChar(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -242,7 +242,7 @@ final class ReadWriteValues {
         longs().forEach(l -> {
             int expected = (int) l;
             RefImpl.putInt(BUFF, 0, expected);
-            int actual = ByteArray.getInt(BUFF);
+            int actual = ByteArrayAccess.getInt(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -251,7 +251,7 @@ final class ReadWriteValues {
     void testPutIntAtZero() {
         longs().forEach(l -> {
             int expected = (int) l;
-            ByteArray.setInt(BUFF, expected);
+            ByteArrayAccess.setInt(BUFF, expected);
             int actual = RefImpl.getInt(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -261,7 +261,7 @@ final class ReadWriteValues {
     void testGetLongAtZero() {
         longs().forEach(expected -> {
             RefImpl.putLong(BUFF, 0, expected);
-            long actual = ByteArray.getLong(BUFF);
+            long actual = ByteArrayAccess.getLong(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -269,7 +269,7 @@ final class ReadWriteValues {
     @Test
     void testPutLongAtZero() {
         longs().forEach(expected -> {
-            ByteArray.setLong(BUFF, expected);
+            ByteArrayAccess.setLong(BUFF, expected);
             long actual = RefImpl.getLong(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -279,7 +279,7 @@ final class ReadWriteValues {
     void testGetFloatAtZero() {
         floats().forEach(expected -> {
             RefImpl.putFloat(BUFF, 0, expected);
-            float actual = ByteArray.getFloat(BUFF);
+            float actual = ByteArrayAccess.getFloat(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -287,7 +287,7 @@ final class ReadWriteValues {
     @Test
     void testPutFloatAtZero() {
         floats().forEach(expected -> {
-            ByteArray.setFloat(BUFF, expected);
+            ByteArrayAccess.setFloat(BUFF, expected);
             float actual = RefImpl.getFloat(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -297,7 +297,7 @@ final class ReadWriteValues {
     void testGetDoubleAtZero() {
         doubles().forEach(expected -> {
             RefImpl.putDouble(BUFF, 0, expected);
-            double actual = ByteArray.getDouble(BUFF);
+            double actual = ByteArrayAccess.getDouble(BUFF);
             assertEquals(expected, actual);
         });
     }
@@ -305,7 +305,7 @@ final class ReadWriteValues {
     @Test
     void testPutDoubleAtZero() {
         doubles().forEach(expected -> {
-            ByteArray.setDouble(BUFF, expected);
+            ByteArrayAccess.setDouble(BUFF, expected);
             double actual = RefImpl.getDouble(BUFF, 0);
             assertEquals(expected, actual);
         });
@@ -315,7 +315,7 @@ final class ReadWriteValues {
     void testPutUnsignedShortAtZero() {
         longs().forEach(l -> {
             int expected = Short.toUnsignedInt((short) l);
-            ByteArray.setUnsignedShort(BUFF, expected);
+            ByteArrayAccess.setUnsignedShort(BUFF, expected);
             int actual = Short.toUnsignedInt(RefImpl.getShort(BUFF, 0));
             assertEquals(expected, actual);
         });
@@ -325,14 +325,14 @@ final class ReadWriteValues {
 
     @Test
     void testNullArrayAtZero() {
-        assertThrowsOriginal(NullPointerException.class, () -> ByteArray.getInt(null));
-        assertThrowsOriginal(NullPointerException.class, () -> ByteArray.setInt(null, 1));
+        assertThrowsOriginal(NullPointerException.class, () -> ByteArrayAccess.getInt(null));
+        assertThrowsOriginal(NullPointerException.class, () -> ByteArrayAccess.setInt(null, 1));
     }
 
     @Test
     void testOutOfBoundsAtZero() {
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.getInt(new byte[1]));
-        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArray.setInt(new byte[1],1));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.getInt(new byte[1]));
+        assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.setInt(new byte[1],1));
     }
     
     
