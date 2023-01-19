@@ -611,7 +611,7 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
   // those values could change when the ObjectMonitor gets moved from
   // the global free list to a per-thread free list.
 
-  guarantee(obj != nullptr, "must be non-nullptr");
+  guarantee(obj != nullptr, "must be non-null");
 
   // Separate loads in is_being_async_deflated(), which is almost always
   // called before this function, from the load of dmw/header below.
@@ -630,7 +630,7 @@ void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
          INTPTR_FORMAT, p2i(l_object), p2i(obj));
 
   markWord dmw = header();
-  // The dmw has to be neutral (not nullptr, not locked and not marked).
+  // The dmw has to be neutral (not null, not locked and not marked).
   assert(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
 
   // Install displaced mark word if the object's header still points
@@ -1197,7 +1197,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
 
     // Normally the exiting thread is responsible for ensuring succession,
     // but if other successors are ready or other entering threads are spinning
-    // then this thread can simply store nullptr into _owner and exit without
+    // then this thread can simply store null into _owner and exit without
     // waking a successor.  The existence of spinners or ready successors
     // guarantees proper succession (liveness).  Responsibility passes to the
     // ready or running successors.  The exiting thread delegates the duty.
@@ -1244,7 +1244,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
       // I'd like to write: guarantee (w->_thread != current).
       // But in practice an exiting thread may find itself on the EntryList.
       // Let's say thread T1 calls O.wait().  Wait() enqueues T1 on O's waitset and
-      // then calls exit().  Exit release the lock by setting O._owner to nullptr.
+      // then calls exit().  Exit release the lock by setting O._owner to null.
       // Let's say T1 then stalls.  T2 acquires O and calls O.notify().  The
       // notify() operation moves T1 from O's waitset to O's EntryList. T2 then
       // release the lock "O".  T2 resumes immediately after the ST of null into
@@ -2088,7 +2088,7 @@ void ObjectWaiter::wait_reenter_end(ObjectMonitor * const mon) {
 }
 
 inline void ObjectMonitor::AddWaiter(ObjectWaiter* node) {
-  assert(node != nullptr, "should not add nullptr node");
+  assert(node != nullptr, "should not add null node");
   assert(node->_prev == nullptr, "node already in list");
   assert(node->_next == nullptr, "node already in list");
   // put node at end of queue (circular doubly linked list)

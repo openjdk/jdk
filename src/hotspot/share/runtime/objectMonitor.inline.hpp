@@ -61,7 +61,7 @@ inline bool ObjectMonitor::has_owner() const {
   return owner != nullptr && owner != DEFLATER_MARKER;
 }
 
-// Returns nullptr if DEFLATER_MARKER is observed.
+// Returns null if DEFLATER_MARKER is observed.
 inline void* ObjectMonitor::owner() const {
   void* owner = owner_raw();
   return owner != DEFLATER_MARKER ? owner : nullptr;
@@ -73,7 +73,7 @@ inline void* ObjectMonitor::owner_raw() const {
 
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 // This accessor is called when we really need to know if the owner
-// field == DEFLATER_MARKER and any non-nullptr value won't do the trick.
+// field == DEFLATER_MARKER and any non-null value won't do the trick.
 inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
   return owner_raw() == DEFLATER_MARKER;
 }

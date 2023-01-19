@@ -129,7 +129,7 @@ size_t MonitorList::unlink_deflated(Thread* current, LogStream* ls,
   ObjectMonitor* prev = nullptr;
   ObjectMonitor* head = Atomic::load_acquire(&_head);
   ObjectMonitor* m = head;
-  // The in-use list head can be nullptr during the final audit.
+  // The in-use list head can be null during the final audit.
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
       // Find next live ObjectMonitor.
@@ -387,7 +387,7 @@ bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
 
     // This Java Monitor is inflated so obj's header will never be
     // displaced to this thread's BasicLock. Make the displaced header
-    // non-nullptr so this BasicLock is not seen as recursive nor as
+    // non-null so this BasicLock is not seen as recursive nor as
     // being locked. We do this unconditionally so that this thread's
     // BasicLock cannot be mis-interpreted by any stack walkers. For
     // performance reasons, stack walkers generally first check for
@@ -528,7 +528,7 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
 
     markWord dhw = lock->displaced_header();
     if (dhw.value() == 0) {
-      // If the displaced header is nullptr, then this exit matches up with
+      // If the displaced header is null, then this exit matches up with
       // a recursive enter. No real work to do here except for diagnostics.
 #ifndef PRODUCT
       if (mark != markWord::INFLATING()) {
@@ -1012,7 +1012,7 @@ JavaThread* ObjectSynchronizer::get_lock_owner(ThreadsList * t_list, Handle h_ob
   }
 
   if (owner != nullptr) {
-    // owning_thread_from_monitor_owner() may also return nullptr here
+    // owning_thread_from_monitor_owner() may also return null here
     return Threads::owning_thread_from_monitor_owner(t_list, owner);
   }
 
@@ -1333,7 +1333,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
     // pre-locked ObjectMonitor pointer into the object header.   A successful
     // CAS inflates the object *and* confers ownership to the inflating thread.
     // In the current implementation we use a 2-step mechanism where we CAS()
-    // to inflate and then CAS() again to try to swing _owner from nullptr to current.
+    // to inflate and then CAS() again to try to swing _owner from null to current.
     // An inflateTry() method that we could call from enter() would be useful.
 
     // Catch if the object's header is not neutral (not locked and
@@ -1760,7 +1760,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
   if (n->header().value() == 0) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor must "
-                  "have non-nullptr _header field.", p2i(n));
+                  "have non-null _header field.", p2i(n));
     *error_cnt_p = *error_cnt_p + 1;
   }
   const oop obj = n->object_peek();

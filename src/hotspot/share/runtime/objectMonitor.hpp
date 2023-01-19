@@ -184,12 +184,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // allocated and if the PerfDataManager has not freed the PerfData
   // objects which can happen at normal VM shutdown.
   //
-  #define OM_PERFDATA_OP(f, op_str)              \
-    do {                                         \
+  #define OM_PERFDATA_OP(f, op_str)                 \
+    do {                                            \
       if (ObjectMonitor::_sync_ ## f != nullptr &&  \
-          PerfDataManager::has_PerfData()) {     \
-        ObjectMonitor::_sync_ ## f->op_str;      \
-      }                                          \
+          PerfDataManager::has_PerfData()) {        \
+        ObjectMonitor::_sync_ ## f->op_str;         \
+      }                                             \
     } while (0)
 
   static PerfCounter * _sync_ContendedLockAttempts;
@@ -246,7 +246,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Returns true if this OM has an owner, false otherwise.
   bool      has_owner() const;
-  void*     owner() const;  // Returns nullptr if DEFLATER_MARKER is observed.
+  void*     owner() const;  // Returns null if DEFLATER_MARKER is observed.
   void*     owner_raw() const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;

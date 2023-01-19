@@ -614,7 +614,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
   }
 
   guarantee(blob == nullptr || !blob->is_runtime_stub(), "caller should have skipped stub");
-  guarantee(!VtableStubs::contains(return_address), "nullptr exceptions in vtables should have been handled already!");
+  guarantee(!VtableStubs::contains(return_address), "null exceptions in vtables should have been handled already!");
 
 #ifndef PRODUCT
   { ResourceMark rm;
@@ -932,7 +932,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
           // caller-saved registers, as these entry points do.
           VtableStub* vt_stub = VtableStubs::stub_containing(pc);
 
-          // If vt_stub is nullptr, then return nullptr to signal handler to report the SEGV error.
+          // If vt_stub is null, then return null to signal handler to report the SEGV error.
           if (vt_stub == nullptr) return nullptr;
 
           if (vt_stub->is_abstract_method_error(pc)) {
@@ -952,7 +952,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
         } else {
           CodeBlob* cb = CodeCache::find_blob(pc);
 
-          // If code blob is nullptr, then return nullptr to signal handler to report the SEGV error.
+          // If code blob is null, then return null to signal handler to report the SEGV error.
           if (cb == nullptr) return nullptr;
 
           // Exception happened in CodeCache. Must be either:
@@ -992,7 +992,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
           _implicit_null_throws++;
 #endif
           target_pc = cm->continuation_for_implicit_null_exception(pc);
-          // If there's an unexpected fault, target_pc might be nullptr,
+          // If there's an unexpected fault, target_pc might be null,
           // in which case we want to fall through into the normal
           // error handling code.
         }
@@ -1008,7 +1008,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
         _implicit_div0_throws++;
 #endif
         target_pc = cm->continuation_for_implicit_div0_exception(pc);
-        // If there's an unexpected fault, target_pc might be nullptr,
+        // If there's an unexpected fault, target_pc might be null,
         // in which case we want to fall through into the normal
         // error handling code.
         break; // fall through
@@ -1458,8 +1458,8 @@ methodHandle SharedRuntime::resolve_sub_helper(bool is_virtual, bool is_optimize
   CompiledMethod* caller_nm = caller_cb->as_compiled_method_or_null();
 
   // determine call info & receiver
-  // note: a) receiver is nullptr for static calls
-  //       b) an exception is thrown if receiver is nullptr for non-static calls
+  // note: a) receiver is null for static calls
+  //       b) an exception is thrown if receiver is null for non-static calls
   CallInfo call_info;
   Bytecodes::Code invoke_code = Bytecodes::_illegal;
   Handle receiver = find_callee_info(invoke_code, call_info, CHECK_(methodHandle()));
@@ -1803,7 +1803,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(TRAPS) {
   CallInfo call_info;
   Bytecodes::Code bc;
 
-  // receiver is nullptr for static calls. An exception is thrown for nullptr
+  // receiver is null for static calls. An exception is thrown for null
   // receivers for non-static calls
   Handle receiver = find_callee_info(bc, call_info, CHECK_(methodHandle()));
   // Compiler1 can produce virtual call sites that can actually be statically bound
@@ -2135,8 +2135,8 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
   // the case then entry_point may in fact point to a c2i and we'd patch the
-  // call site with the same old data. clear_code will set code() to nullptr
-  // at the end of it. If we happen to see that nullptr then we can skip trying
+  // call site with the same old data. clear_code will set code() to null
+  // at the end of it. If we happen to see that null then we can skip trying
   // to patch. If we hit the window where the callee has a c2i in the
   // from_compiled_entry and the nullptr isn't present yet then we lose the race
   // and patch the code with the same old data. Asi es la vida.

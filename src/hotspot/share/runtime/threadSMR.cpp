@@ -525,7 +525,7 @@ void SafeThreadsListPtr::release_stable_list() {
   _thread->_threads_list_ptr = _previous;
 
   // We're releasing either a leaf or nested ThreadsListHandle. In either
-  // case, we set this thread's hazard ptr back to nullptr and we do it before
+  // case, we set this thread's hazard ptr back to null and we do it before
   // _nested_handle_cnt is decremented below.
   _thread->set_threads_hazard_ptr(nullptr);
   if (_previous != nullptr) {
@@ -571,7 +571,7 @@ void SafeThreadsListPtr::release_stable_list() {
 // the Thread-SMR protocol.
 void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 #ifdef ASSERT
-  assert(_list != nullptr, "_list must not be nullptr");
+  assert(_list != nullptr, "_list must not be null");
 
   if (ThreadsSMRSupport::is_bootstrap_list(_list)) {
     // We are early in VM bootstrapping so nothing to do here.
@@ -623,13 +623,13 @@ void SafeThreadsListPtr::verify_hazard_ptr_scanned() {
 // No real entries, just the final nullptr terminator.
 static JavaThread* const empty_threads_list_data[1] = {};
 
-// Result has 'entries + 1' elements, with the last being the nullptr terminator.
+// Result has 'entries + 1' elements, with the last being the null terminator.
 static JavaThread* const* make_threads_list_data(int entries) {
   if (entries == 0) {
     return empty_threads_list_data;
   }
   JavaThread** data = NEW_C_HEAP_ARRAY(JavaThread*, entries + 1, mtThread);
-  data[entries] = nullptr;         // Make sure the final entry is nullptr.
+  data[entries] = nullptr;         // Make sure the final entry is null.
   return data;
 }
 
@@ -790,7 +790,7 @@ ThreadsListHandle::~ThreadsListHandle() {
 // associated ThreadsList. This ThreadsListHandle "protects" the
 // returned JavaThread *.
 //
-// If thread_oop_p is not nullptr, then the caller wants to use the oop
+// If thread_oop_p is not null, then the caller wants to use the oop
 // after this call so the oop is returned. On success, *jt_pp is set
 // to the converted JavaThread * and true is returned. On error,
 // returns false.
@@ -802,8 +802,8 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
   assert(jt_pp != nullptr, "must have a return JavaThread pointer");
   // thread_oop_p is optional so no assert()
 
-  // The JVM_* interfaces don't allow a nullptr thread parameter; JVM/TI
-  // allows a nullptr thread parameter to signify "current thread" which
+  // The JVM_* interfaces don't allow a null thread parameter; JVM/TI
+  // allows a null thread parameter to signify "current thread" which
   // allows us to avoid calling cv_external_thread_to_JavaThread().
   // The JVM_* interfaces have no such leeway.
 

@@ -267,7 +267,7 @@ Thread::~Thread() {
   assert(last_handle_mark() == nullptr, "check we have reached the end");
 
   ParkEvent::Release(_ParkEvent);
-  // Set to nullptr as a termination indicator for has_terminated().
+  // Set to null as a termination indicator for has_terminated().
   Atomic::store(&_ParkEvent, (ParkEvent*)nullptr);
 
   delete handle_area();

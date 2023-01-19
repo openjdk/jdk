@@ -347,9 +347,9 @@ class Thread: public ThreadShadow {
 
   // Returns the current thread (ASSERTS if nullptr)
   static inline Thread* current();
-  // Returns the current thread, or nullptr if not attached
+  // Returns the current thread, or null if not attached
   static inline Thread* current_or_null();
-  // Returns the current thread, or nullptr if not attached, and is
+  // Returns the current thread, or null if not attached, and is
   // safe for use from signal-handlers
   static inline Thread* current_or_null_safe();
 
@@ -605,7 +605,7 @@ protected:
                                               // and ObjectSynchronizer::read_stable_mark
 
   // Termination indicator used by the signal handler.
-  // _ParkEvent is just a convenient field we can nullptr out after setting the JavaThread termination state
+  // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
   bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
 

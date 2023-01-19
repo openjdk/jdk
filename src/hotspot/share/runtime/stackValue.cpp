@@ -67,8 +67,8 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     if (CompressedOops::is_base(*(void**)addr)) {
       // Compiled code may produce decoded oop = narrow_oop_base
       // when a narrow oop implicit null check is used.
-      // The narrow_oop_base could be nullptr or be the address
-      // of the page below heap. Use nullptr value for both cases.
+      // The narrow_oop_base could be null or be the address
+      // of the page below heap. Use null value for both cases.
       return nullptr;
     }
 #endif
@@ -295,7 +295,7 @@ void StackValue::print_on(outputStream* st) const {
       if (_handle_value() != nullptr) {
         _handle_value()->print_value_on(st);
       } else {
-        st->print("nullptr");
+        st->print("null");
       }
       st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
       break;

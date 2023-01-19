@@ -212,7 +212,7 @@ void VMThread::run() {
   // signal other threads that VM process is gone
   {
     // Note: we must have the _no_safepoint_check_flag. Mutex::lock() allows
-    // VM thread to enter any lock at Safepoint as long as its _owner is nullptr.
+    // VM thread to enter any lock at Safepoint as long as its _owner is null.
     // If that happens after _terminate_lock->wait() has unset _owner
     // but before it actually drops the lock and waits, the notification below
     // may get lost and we will have a hang. To avoid this, we need to use

@@ -1373,7 +1373,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
-  // nullptr owner means not locked so we can skip the search
+  // null owner means not locked so we can skip the search
   if (owner == nullptr) return nullptr;
 
   for (JavaThread* p : *t_list) {
@@ -1555,8 +1555,8 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
 
-      // Keep task in local variable for nullptr check.
-      // ct->_task might be set to nullptr by concurring compiler thread
+      // Keep task in local variable for null check.
+      // ct->_task might be set to null by concurring compiler thread
       // because it completed the compilation. The task is never freed,
       // though, just returned to a free list.
       CompileTask* task = ct->task();

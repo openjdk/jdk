@@ -106,7 +106,7 @@ typedef struct {
 class VMStructs {
 public:
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a nullptr fieldName
+  // the fact that it has a null fieldName
   static VMStructEntry localHotSpotVMStructs[];
   // The function to get localHotSpotVMStructs length
   static size_t localHotSpotVMStructsLength() NOT_VM_STRUCTS_RETURN_(0);
@@ -119,14 +119,14 @@ public:
 
   // Table of integer constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a nullptr typeName
+  // the fact that it has a null typeName
   static VMIntConstantEntry localHotSpotVMIntConstants[];
   // The function to get localHotSpotVMIntConstants length
   static size_t localHotSpotVMIntConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // Table of long constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a nullptr typeName
+  // the fact that it has a null typeName
   static VMLongConstantEntry localHotSpotVMLongConstants[];
   // The function to get localHotSpotVMIntConstants length
   static size_t localHotSpotVMLongConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
@@ -170,13 +170,13 @@ private:
 
 // This macro generates a VMStructEntry line for an unchecked
 // nonstatic field, in which the size of the type is also specified.
-// The type string is given as nullptr, indicating an "opaque" type.
+// The type string is given as null, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
   { QUOTE(typeName), QUOTE(fieldName), nullptr, 0, offset_of(typeName, fieldName), nullptr },
 
 // This macro generates a VMStructEntry line for an unchecked
 // static field, in which the size of the type is also specified.
-// The type string is given as nullptr, indicating an "opaque" type.
+// The type string is given as null, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)       \
  { QUOTE(typeName), QUOTE(fieldName), nullptr, 1, 0, (void*) &typeName::fieldName },
 

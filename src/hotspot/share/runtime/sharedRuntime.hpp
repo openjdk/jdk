@@ -379,7 +379,7 @@ class SharedRuntime: AllStatic {
   // Some architectures require that an argument must be passed in a register
   // AND in a stack slot. These architectures provide a second VMRegPair array
   // to be filled by the c_calling_convention method. On other architectures,
-  // nullptr is being passed as the second VMRegPair array, so arguments are either
+  // null is being passed as the second VMRegPair array, so arguments are either
   // passed in a register OR in a stack slot.
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);

@@ -604,7 +604,7 @@ class PerfDataList : public CHeapObj<mtInternal> {
     ~PerfDataList();
 
     // return the PerfData item indicated by name,
-    // or nullptr if it doesn't exist.
+    // or null if it doesn't exist.
     PerfData* find_by_name(const char* name);
 
     // return true if a PerfData item with the name specified in the

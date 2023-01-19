@@ -356,7 +356,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
           tty->print(" - Reconstructed expression %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
           if (o == nullptr) {
-            tty->print_cr("nullptr");
+            tty->print_cr("null");
           } else {
             ResourceMark rm;
             tty->print_raw_cr(o->klass()->name()->as_C_string());
@@ -400,7 +400,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
           tty->print(" - Reconstructed local %d (OBJECT): ", i);
           oop o = cast_to_oop((address)(*addr));
           if (o == nullptr) {
-            tty->print_cr("nullptr");
+            tty->print_cr("null");
           } else {
             ResourceMark rm;
             tty->print_raw_cr(o->klass()->name()->as_C_string());
@@ -409,7 +409,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 #endif // !PRODUCT
         break;
       case T_CONFLICT:
-        // A dead location. If it is an oop then we need a nullptr to prevent GC from following it
+        // A dead location. If it is an oop then we need a null to prevent GC from following it
         *addr = NULL_WORD;
         break;
       default:

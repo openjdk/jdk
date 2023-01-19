@@ -304,7 +304,7 @@ SignatureStream::SignatureStream(const Symbol* signature,
   _array_prefix = 0;  // just for definiteness
 
   // assigning java/lang/Object to _previous_name means we can
-  // avoid a number of nullptr checks in the parser
+  // avoid a number of null checks in the parser
   _previous_name = vmSymbols::java_lang_Object();
   _names = nullptr;
   next();
@@ -506,7 +506,7 @@ Klass* SignatureStream::as_klass(Handle class_loader, Handle protection_domain,
   Symbol* name = as_symbol();
   Klass* k = nullptr;
   if (failure_mode == ReturnNull) {
-    // Note:  SD::resolve_or_null returns nullptr for most failure modes,
+    // Note:  SD::resolve_or_null returns null for most failure modes,
     // but not all.  Circularity errors, invalid PDs, etc., throw.
     k = SystemDictionary::resolve_or_null(name, class_loader, protection_domain, CHECK_NULL);
   } else if (failure_mode == CachedOrNull) {

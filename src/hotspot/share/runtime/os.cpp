@@ -111,7 +111,7 @@ int os::snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
 
 // Fill in buffer with current local time as an ISO-8601 string.
 // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-// Returns buffer, or nullptr if it failed.
+// Returns buffer, or null if it failed.
 char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
   const jlong now = javaTimeMillis();
   return os::iso8601_time(now, buffer, buffer_length, utc);
@@ -119,7 +119,7 @@ char* os::iso8601_time(char* buffer, size_t buffer_length, bool utc) {
 
 // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
 // E.g., yyyy-mm-ddThh:mm:ss-zzzz.
-// Returns buffer, or nullptr if it failed.
+// Returns buffer, or null if it failed.
 // This would mostly be a call to
 //     strftime(...., "%Y-%m-%d" "T" "%H:%M:%S" "%z", ....)
 // except that on Windows the %z behaves badly, so we do it ourselves.
@@ -130,7 +130,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
 
   // Sanity check the arguments
   if (buffer == nullptr) {
-    assert(false, "nullptr buffer");
+    assert(false, "null buffer");
     return nullptr;
   }
   if (buffer_length < os::iso8601_timestamp_size) {
@@ -325,7 +325,7 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
       if (pelements != nullptr) {
         for (size_t i = 0; i < n; i++) {
           char* path = pelements[i];
-          // Really shouldn't be nullptr, but check can't hurt.
+          // Really shouldn't be null, but check can't hurt.
           size_t plen = (path == nullptr) ? 0 : strlen(path);
           if (plen == 0) {
             continue; // Skip the empty path values.
@@ -654,7 +654,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   DEBUG_ONLY(check_crash_protection());
 
   // On malloc(0), implementations of malloc(3) have the choice to return either
-  // nullptr or a unique non-nullptr pointer. To unify libc behavior across our platforms
+  // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
@@ -706,7 +706,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   DEBUG_ONLY(check_crash_protection());
 
   // On realloc(p, 0), implementers of realloc(3) have the choice to return either
-  // nullptr or a unique non-nullptr pointer. To unify libc behavior across our platforms
+  // null or a unique non-null pointer. To unify libc behavior across our platforms
   // we chose the latter.
   size = MAX2((size_t)1, size);
 
@@ -1106,7 +1106,7 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
 
 
 // Check if pointer can be read from (4-byte read access).
-// Helps to prove validity of a not-nullptr pointer.
+// Helps to prove validity of a non-null pointer.
 // Returns true in very early stages of VM life when stub is not yet generated.
 bool os::is_readable_pointer(const void* p) {
   int* const aligned = (int*) align_down((intptr_t)p, 4);
@@ -1130,7 +1130,7 @@ bool os::is_readable_range(const void* from, const void* to) {
 // The verbose parameter is only set by the debug code in one case
 void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
-  // Handle nullptr first, so later checks don't need to protect against it.
+  // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
     st->print_cr("0x0 is nullptr");
     return;
@@ -1862,7 +1862,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
 char* os::map_memory_to_file(size_t bytes, int file_desc) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
-  // On all current implementations nullptr is interpreted as any available address.
+  // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
