@@ -99,13 +99,12 @@ static char *getTextualSid(SID* sid) {
     }
 
     // S-SID_REVISION
-    snprintf(name, sizeof(name), "S-%lu-", SID_REVISION );
+    sprintf(name, "S-%lu-", SID_REVISION );
 
     // Identifier authority
     if ((sia->Value[0] != 0) || (sia->Value[1] != 0))
     {
-        snprintf(name + strlen(name), sizeof(name) - strlen(name),
-                "0x%02hx%02hx%02hx%02hx%02hx%02hx",
+        sprintf(name + strlen(name), "0x%02hx%02hx%02hx%02hx%02hx%02hx",
                 (USHORT)sia->Value[0],
                 (USHORT)sia->Value[1],
                 (USHORT)sia->Value[2],
@@ -115,7 +114,7 @@ static char *getTextualSid(SID* sid) {
     }
     else
     {
-        snprintf(name + strlen(name), sizeof(name) - strlen(name), "%lu",
+        sprintf(name + strlen(name), "%lu",
                 (ULONG)(sia->Value[5]      )   +
                 (ULONG)(sia->Value[4] <<  8)   +
                 (ULONG)(sia->Value[3] << 16)   +
@@ -124,7 +123,7 @@ static char *getTextualSid(SID* sid) {
 
     // finally, the sub-authorities
     for (i=0 ; i<count; i++) {
-        snprintf(name + strlen(name), sizeof(name) - strlen(name), "-%lu",
+        sprintf(name + strlen(name), "-%lu",
                 *GetSidSubAuthority(sid, i) );
     }
 
