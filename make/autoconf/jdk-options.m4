@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -780,7 +780,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
   $RM "$CODESIGN_TESTFILE"
   $TOUCH "$CODESIGN_TESTFILE"
   CODESIGN_SUCCESS=false
-  $CODESIGN $PARAMS "$CODESIGN_TESTFILE" 2>&AS_MESSAGE_LOG_FD \
+  eval \"$CODESIGN\" $PARAMS \"$CODESIGN_TESTFILE\" 2>&AS_MESSAGE_LOG_FD \
       >&AS_MESSAGE_LOG_FD && CODESIGN_SUCCESS=true
   $RM "$CODESIGN_TESTFILE"
   AC_MSG_CHECKING([$MESSAGE])
@@ -793,7 +793,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
 
 AC_DEFUN([JDKOPT_CHECK_CODESIGN_HARDENED],
 [
-  JDKOPT_CHECK_CODESIGN_PARAMS([-s "$MACOSX_CODESIGN_IDENTITY" --option runtime],
+  JDKOPT_CHECK_CODESIGN_PARAMS([-s \"$MACOSX_CODESIGN_IDENTITY\" --option runtime],
       [if codesign with hardened runtime is possible])
 ])
 
