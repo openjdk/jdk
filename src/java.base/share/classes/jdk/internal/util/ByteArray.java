@@ -33,7 +33,7 @@ import java.nio.ByteOrder;
  * Utility methods for packing/unpacking primitive valueues in/out of byte arrays
  * using {@linkplain ByteOrder#BIG_ENDIAN big endian order} (network order).
  * <p>
- * All methods in this class will throw an {@linkplain IllegalArgumentException} if {@code null} is
+ * All methods in this class will throw an {@linkplain NullPointerException} if {@code null} is
  * passed in as a method parameter for a byte array.
  */
 public final class ByteArray {
