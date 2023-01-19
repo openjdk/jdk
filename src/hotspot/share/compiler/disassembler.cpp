@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,12 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/resourceHash.hpp"
 
-void*       Disassembler::_library               = NULL;
+void*       Disassembler::_library               = nullptr;
 bool        Disassembler::_tried_to_load_library = false;
 bool        Disassembler::_library_usable        = false;
 
 // This routine is in the shared library:
-Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = NULL;
+Disassembler::decode_func_virtual Disassembler::_decode_instructions_virtual = nullptr;
 
 static const char hsdis_library_name[] = "hsdis-" HOTSPOT_LIB_ARCH;
 static const char decode_instructions_virtual_name[] = "decode_instructions_virtual";
@@ -57,11 +57,11 @@ static const char decode_instructions_virtual_name[] = "decode_instructions_virt
 class decode_env {
  private:
   outputStream* _output;      // where the disassembly is directed to
-  CodeBlob*     _codeBlob;    // != NULL only when decoding a CodeBlob
-  nmethod*      _nm;          // != NULL only when decoding a nmethod
+  CodeBlob*     _codeBlob;    // != nullptr only when decoding a CodeBlob
+  nmethod*      _nm;          // != nullptr only when decoding a nmethod
 
-  address       _start;       // != NULL when decoding a range of unknown type
-  address       _end;         // != NULL when decoding a range of unknown type
+  address       _start;       // != nullptr when decoding a range of unknown type
+  address       _end;         // != nullptr when decoding a range of unknown type
 
   char          _option_buf[512];
   char          _print_raw;
@@ -98,7 +98,7 @@ class decode_env {
 
   // Merge new option string with previously recorded options
   void collect_options(const char* p) {
-    if (p == NULL || p[0] == '\0')  return;
+    if (p == nullptr || p[0] == '\0')  return;
     size_t opt_so_far = strlen(_option_buf);
     if (opt_so_far + 1 + strlen(p) + 1 > sizeof(_option_buf))  return;
     char* fillp = &_option_buf[opt_so_far];
@@ -106,7 +106,7 @@ class decode_env {
     strcat(fillp, p);
     // replace white space by commas:
     char* q = fillp;
-    while ((q = strpbrk(q, " \t\n")) != NULL)
+    while ((q = strpbrk(q, " \t\n")) != nullptr)
       *q++ = ',';
   }
 
@@ -146,14 +146,14 @@ class decode_env {
     outputStream* st = output();
 
     if (AbstractDisassembler::show_comment()) {
-      if ((_nm != NULL) && _nm->has_code_comment(pc0, pc)) {
+      if ((_nm != nullptr) && _nm->has_code_comment(pc0, pc)) {
         _nm->print_code_comment_on
                (st,
                 _post_decode_alignment ? _post_decode_alignment : COMMENT_COLUMN,
                 pc0, pc);
         // this calls reloc_string_for which calls oop::print_value_on
       }
-      print_hook_comments(pc0, _nm != NULL);
+      print_hook_comments(pc0, _nm != nullptr);
     }
     Disassembler::annotate(pc0, output());
     // follow each complete insn by a nice newline
@@ -166,25 +166,25 @@ class decode_env {
       const char* file;
       int line;
       Link* next;
-      Link(const char* f, int l) : file(f), line(l), next(NULL) {}
+      Link(const char* f, int l) : file(f), line(l), next(nullptr) {}
     };
     Link *head, *tail;
 
     void append(const char* file, int line) {
-      if (tail != NULL && tail->file == file && tail->line == line) {
+      if (tail != nullptr && tail->file == file && tail->line == line) {
         // Don't print duplicated lines at the same address. This could happen with C
         // macros that end up having multiple "__" tokens on the same __LINE__.
         return;
       }
       Link *link = new Link(file, line);
-      if (head == NULL) {
+      if (head == nullptr) {
         head = tail = link;
       } else {
         tail->next = link;
         tail = link;
       }
     }
-    SourceFileInfo(const char* file, int line) : head(NULL), tail(NULL) {
+    SourceFileInfo(const char* file, int line) : head(nullptr), tail(nullptr) {
       append(file, line);
     }
   };
@@ -199,7 +199,7 @@ class decode_env {
   static GrowableArray<const char*>* _cached_src_lines;
 
   static SourceFileInfoTable& src_table() {
-    if (_src_table == NULL) {
+    if (_src_table == nullptr) {
       _src_table = new (mtCode)SourceFileInfoTable();
     }
     return *_src_table;
@@ -211,11 +211,11 @@ class decode_env {
   // Constructor for a 'decode_env' to decode an arbitrary
   // piece of memory, hopefully containing code.
   decode_env(address start, address end, outputStream* output
-             NOT_PRODUCT(COMMA const AsmRemarks* remarks = NULL COMMA ptrdiff_t disp = 0));
+             NOT_PRODUCT(COMMA const AsmRemarks* remarks = nullptr COMMA ptrdiff_t disp = 0));
 
   // Add 'original_start' argument which is the original address
   // the instructions were located at (if this is not equal to 'start').
-  address decode_instructions(address start, address end, address original_start = NULL);
+  address decode_instructions(address start, address end, address original_start = nullptr);
 
   address handle_event(const char* event, address arg);
 
@@ -228,9 +228,9 @@ class decode_env {
 
 bool decode_env::_optionsParsed = false;
 
-decode_env::SourceFileInfoTable* decode_env::_src_table = NULL;
-const char* decode_env::_cached_src = NULL;
-GrowableArray<const char*>* decode_env::_cached_src_lines = NULL;
+decode_env::SourceFileInfoTable* decode_env::_src_table = nullptr;
+const char* decode_env::_cached_src = nullptr;
+GrowableArray<const char*>* decode_env::_cached_src_lines = nullptr;
 
 void decode_env::hook(const char* file, int line, address pc) {
   // For simplication, we never free from this table. It's really not
@@ -238,7 +238,7 @@ void decode_env::hook(const char* file, int line, address pc) {
   // which means we are debugging the VM and a little bit of extra
   // memory usage doesn't matter.
   SourceFileInfo* found = src_table().get(pc);
-  if (found != NULL) {
+  if (found != nullptr) {
     found->append(file, line);
   } else {
     SourceFileInfo sfi(file, line);
@@ -249,17 +249,17 @@ void decode_env::hook(const char* file, int line, address pc) {
 void decode_env::print_hook_comments(address pc, bool newline) {
   SourceFileInfo* found = src_table().get(pc);
   outputStream* st = output();
-  if (found != NULL) {
+  if (found != nullptr) {
     for (SourceFileInfo::Link *link = found->head; link; link = link->next) {
       const char* file = link->file;
       int line = link->line;
-      if (_cached_src == NULL || strcmp(_cached_src, file) != 0) {
+      if (_cached_src == nullptr || strcmp(_cached_src, file) != 0) {
         FILE* fp;
 
         // _cached_src_lines is a single cache of the lines of a source file, and we refill this cache
         // every time we need to print a line from a different source file. It's not the fastest,
         // but seems bearable.
-        if (_cached_src_lines != NULL) {
+        if (_cached_src_lines != nullptr) {
           for (int i=0; i<_cached_src_lines->length(); i++) {
             os::free((void*)_cached_src_lines->at(i));
           }
@@ -268,14 +268,14 @@ void decode_env::print_hook_comments(address pc, bool newline) {
           _cached_src_lines = new (mtCode) GrowableArray<const char*>(0, mtCode);
         }
 
-        if ((fp = os::fopen(file, "r")) == NULL) {
-          _cached_src = NULL;
+        if ((fp = os::fopen(file, "r")) == nullptr) {
+          _cached_src = nullptr;
           return;
         }
         _cached_src = file;
 
         char line[500]; // don't write lines that are too long in your source files!
-        while (fgets(line, sizeof(line), fp) != NULL) {
+        while (fgets(line, sizeof(line), fp) != nullptr) {
           size_t len = strlen(line);
           if (len > 0 && line[len-1] == '\n') {
             line[len-1] = '\0';
@@ -317,12 +317,12 @@ void decode_env::print_hook_comments(address pc, bool newline) {
 decode_env::decode_env(CodeBlob* code, outputStream* output) :
   _output(output ? output : tty),
   _codeBlob(code),
-  _nm(_codeBlob != NULL && _codeBlob->is_nmethod() ? (nmethod*) code : NULL),
-  _start(NULL),
-  _end(NULL),
+  _nm(_codeBlob != nullptr && _codeBlob->is_nmethod() ? (nmethod*) code : nullptr),
+  _start(nullptr),
+  _end(nullptr),
   _option_buf(),
   _print_raw(0),
-  _cur_insn(NULL),
+  _cur_insn(nullptr),
   _bytes_per_line(0),
   _pre_decode_alignment(0),
   _post_decode_alignment(0),
@@ -338,13 +338,13 @@ decode_env::decode_env(CodeBlob* code, outputStream* output) :
 
 decode_env::decode_env(nmethod* code, outputStream* output) :
   _output(output ? output : tty),
-  _codeBlob(NULL),
+  _codeBlob(nullptr),
   _nm(code),
   _start(_nm->code_begin()),
   _end(_nm->code_end()),
   _option_buf(),
   _print_raw(0),
-  _cur_insn(NULL),
+  _cur_insn(nullptr),
   _bytes_per_line(0),
   _pre_decode_alignment(0),
   _post_decode_alignment(0),
@@ -363,13 +363,13 @@ decode_env::decode_env(nmethod* code, outputStream* output) :
 decode_env::decode_env(address start, address end, outputStream* output
                        NOT_PRODUCT(COMMA const AsmRemarks* remarks COMMA ptrdiff_t disp)) :
   _output(output ? output : tty),
-  _codeBlob(NULL),
-  _nm(NULL),
+  _codeBlob(nullptr),
+  _nm(nullptr),
   _start(start),
   _end(end),
   _option_buf(),
   _print_raw(0),
-  _cur_insn(NULL),
+  _cur_insn(nullptr),
   _bytes_per_line(0),
   _pre_decode_alignment(0),
   _post_decode_alignment(0),
@@ -469,7 +469,7 @@ void decode_env::process_options(outputStream* ost) {
 // binutils decoder does not handle to our liking (suboptimal
 // formatting, incomplete information, ...).
 // Returns:
-// - NULL for all standard invocations. The function result is not
+// - nullptr for all standard invocations. The function result is not
 //        examined (as of now, 20190409) by the hsdis decoder loop.
 // - next for 'insn0' invocations.
 //        next == arg: the custom decoder didn't do anything.
@@ -495,20 +495,20 @@ address decode_env::handle_event(const char* event, address arg) {
   //---<  Event: end decoding loop (error, no progress)  >---
   if (decode_env::match(event, "/insns")) {
     // Nothing to be done here.
-    return NULL;
+    return nullptr;
   }
 
   //---<  Event: start decoding loop  >---
   if (decode_env::match(event, "insns")) {
     // Nothing to be done here.
-    return NULL;
+    return nullptr;
   }
 
   //---<  Event: finish decoding an instruction  >---
   if (decode_env::match(event, "/insn")) {
     output()->fill_to(_post_decode_alignment);
     end_insn(arg);
-    return NULL;
+    return nullptr;
   }
 
   //---<  Event: start decoding an instruction  >---
@@ -517,13 +517,13 @@ address decode_env::handle_event(const char* event, address arg) {
   } else if (match(event, "/insn")) {
     end_insn(arg);
   } else if (match(event, "addr")) {
-    if (arg != NULL) {
+    if (arg != nullptr) {
       print_address(arg);
       return arg;
     }
     calculate_alignment();
     output()->fill_to(_pre_decode_alignment);
-    return NULL;
+    return nullptr;
   }
 
   //---<  Event: call custom decoder (platform specific)  >---
@@ -543,7 +543,7 @@ address decode_env::handle_event(const char* event, address arg) {
   // been printed. The decoded instruction (event "insn") is
   // printed afterwards. That doesn't look nice.
   if (decode_env::match(event, "mach")) {
-    guarantee(arg != NULL, "event_to_env - arg must not be NULL for event 'mach'");
+    guarantee(arg != nullptr, "event_to_env - arg must not be nullptr for event 'mach'");
     static char buffer[64] = { 0, };
     // Output suppressed because it messes up disassembly.
     // Only print this when the mach changes.
@@ -554,16 +554,16 @@ address decode_env::handle_event(const char* event, address arg) {
       buffer[sizeof(buffer) - 1] = '\0';
       output()->print_cr("[Disassembling for mach='%s']", (const char*)arg);
     }
-    return NULL;
+    return nullptr;
   }
 
   //---<  Event: format bytes-per-line  >---
   if (decode_env::match(event, "format bytes-per-line")) {
     _bytes_per_line = (int) (intptr_t) arg;
-    return NULL;
+    return nullptr;
   }
 #endif
-  return NULL;
+  return nullptr;
 }
 
 static void* event_to_env(void* env_pv, const char* event, void* arg) {
@@ -575,8 +575,8 @@ static void* event_to_env(void* env_pv, const char* event, void* arg) {
 void decode_env::print_address(address adr) {
   outputStream* st = output();
 
-  if (adr == NULL) {
-    st->print("NULL");
+  if (adr == nullptr) {
+    st->print("nullptr");
     return;
   }
 
@@ -590,10 +590,10 @@ void decode_env::print_address(address adr) {
   if (Universe::is_fully_initialized()) {
     if (StubRoutines::contains(adr)) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(adr);
-      if (desc == NULL) {
+      if (desc == nullptr) {
         desc = StubCodeDesc::desc_for(adr + frame::pc_return_offset);
       }
-      if (desc != NULL) {
+      if (desc != nullptr) {
         st->print("Stub::%s", desc->name());
         if (desc->begin() != adr) {
           st->print(INTX_FORMAT_W(+) " " PTR_FORMAT, adr - desc->begin(), p2i(adr));
@@ -615,7 +615,7 @@ void decode_env::print_address(address adr) {
     }
   }
 
-  if (_nm == NULL) {
+  if (_nm == nullptr) {
     // Don't do this for native methods, as the function name will be printed in
     // nmethod::reloc_string_for().
     // Allocate the buffer on the stack instead of as RESOURCE array.
@@ -671,19 +671,19 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
   decode_env* env = (decode_env*) env_pv;
   outputStream* st = env->output();
   size_t flen = strlen(format);
-  const char* raw = NULL;
+  const char* raw = nullptr;
   if (flen == 0)  return 0;
   if (flen == 1 && format[0] == '\n') { st->bol(); return 1; }
   if (flen < 2 ||
-      strchr(format, '%') == NULL) {
+      strchr(format, '%') == nullptr) {
     raw = format;
   } else if (format[0] == '%' && format[1] == '%' &&
-             strchr(format+2, '%') == NULL) {
+             strchr(format+2, '%') == nullptr) {
     // happens a lot on machines with names like %foo
     flen--;
     raw = format+1;
   }
-  if (raw != NULL) {
+  if (raw != nullptr) {
     st->print_raw(raw, flen);
     return (int) flen;
   }
@@ -697,17 +697,17 @@ static int printf_to_env(void* env_pv, const char* format, ...) {
 }
 
 // The 'original_start' argument holds the original address where
-// the instructions were located in the originating system. If zero (NULL)
+// the instructions were located in the originating system. If zero (nullptr)
 // is passed in, there is no original address.
 address decode_env::decode_instructions(address start, address end, address original_start /* = 0*/) {
   // CodeComment in Stubs.
   // Properly initialize _start/_end. Overwritten too often if
   // printing of instructions is called for each instruction.
-  assert((_start == NULL) || (start == NULL) || (_start == start), "don't overwrite CTOR values");
-  assert((_end   == NULL) || (end   == NULL) || (_end   == end  ), "don't overwrite CTOR values");
-  if (start != NULL) set_start(start);
-  if (end   != NULL) set_end(end);
-  if (original_start == NULL) {
+  assert((_start == nullptr) || (start == nullptr) || (_start == start), "don't overwrite CTOR values");
+  assert((_end   == nullptr) || (end   == nullptr) || (_end   == end  ), "don't overwrite CTOR values");
+  if (start != nullptr) set_start(start);
+  if (end   != nullptr) set_end(end);
+  if (original_start == nullptr) {
     original_start = start;
   }
 
@@ -721,7 +721,7 @@ address decode_env::decode_instructions(address start, address end, address orig
   // Trying to decode instructions doesn't make sense if we
   // couldn't load the disassembler library.
   if (Disassembler::is_abstract()) {
-    return NULL;
+    return nullptr;
   }
 
   // decode a series of instructions and return the end of the last instruction
@@ -730,13 +730,13 @@ address decode_env::decode_instructions(address start, address end, address orig
     // Print whatever the library wants to print, w/o fancy callbacks.
     // This is mainly for debugging the library itself.
     FILE* out = stdout;
-    FILE* xmlout = (_print_raw > 1 ? out : NULL);
+    FILE* xmlout = (_print_raw > 1 ? out : nullptr);
     return
       (address)
       (*Disassembler::_decode_instructions_virtual)((uintptr_t)start, (uintptr_t)end,
                                                     start, end - start,
-                                                    NULL, (void*) xmlout,
-                                                    NULL, (void*) out,
+                                                    nullptr, (void*) xmlout,
+                                                    nullptr, (void*) out,
                                                     options(), 0/*nice new line*/);
   }
 
@@ -764,7 +764,7 @@ void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int 
   } else if (Verbose) {
     st->print_cr("Try to load hsdis library failed: the length of path is beyond the OS limit");
   }
-  return NULL;
+  return nullptr;
 }
 
 bool Disassembler::load_library(outputStream* st) {
@@ -777,7 +777,7 @@ bool Disassembler::load_library(outputStream* st) {
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   // Print to given stream, if any.
   // Print to tty if Verbose is on and no stream given.
-  st = ((st == NULL) && Verbose) ? tty : st;
+  st = ((st == nullptr) && Verbose) ? tty : st;
 
   // Compute fully qualified library name.
   char ebuf[1024];
@@ -796,13 +796,13 @@ bool Disassembler::load_library(outputStream* st) {
     // Match "[lib]jvm[^/]*" in jvm_path.
     const char* base = buf;
     const char* p = strrchr(buf, *os::file_separator());
-    if (p != NULL) lib_offset = p - base + 1; // this points to the first char after separator
+    if (p != nullptr) lib_offset = p - base + 1; // this points to the first char after separator
 #ifdef _WIN32
     p = strstr(p ? p : base, "jvm");
-    if (p != NULL) jvm_offset = p - base;     // this points to 'j' in jvm.
+    if (p != nullptr) jvm_offset = p - base;     // this points to 'j' in jvm.
 #else
     p = strstr(p ? p : base, "libjvm");
-    if (p != NULL) jvm_offset = p - base + 3; // this points to 'j' in libjvm.
+    if (p != nullptr) jvm_offset = p - base + 3; // this points to 'j' in libjvm.
 #endif
   }
 #endif
@@ -816,47 +816,47 @@ bool Disassembler::load_library(outputStream* st) {
   if (jvm_offset >= 0) {
     // 1. <home>/lib/<vm>/libhsdis-<arch>.so
     _library = dll_load(buf, sizeof buf, jvm_offset, ebuf, sizeof ebuf, st);
-    if (_library == NULL && lib_offset >= 0) {
+    if (_library == nullptr && lib_offset >= 0) {
       // 2. <home>/lib/<vm>/hsdis-<arch>.so
       _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
     }
-    if (_library == NULL && lib_offset > 0) {
+    if (_library == nullptr && lib_offset > 0) {
       // 3. <home>/lib/hsdis-<arch>.so
       buf[lib_offset - 1] = '\0';
       const char* p = strrchr(buf, *os::file_separator());
-      if (p != NULL) {
+      if (p != nullptr) {
         lib_offset = p - buf + 1;
         _library = dll_load(buf, sizeof buf, lib_offset, ebuf, sizeof ebuf, st);
       }
     }
   }
-  if (_library == NULL) {
+  if (_library == nullptr) {
     _library = dll_load(buf, sizeof buf, 0, ebuf, sizeof ebuf, st);
   }
 
   // load the decoder function to use.
-  if (_library != NULL) {
+  if (_library != nullptr) {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
   } else {
     log_warning(os)("Loading hsdis library failed");
   }
   _tried_to_load_library = true;
-  _library_usable        = _decode_instructions_virtual != NULL;
+  _library_usable        = _decode_instructions_virtual != nullptr;
 
   // Create a dummy environment to initialize PrintAssemblyOptions.
   // The PrintAssemblyOptions must be known for abstract disassemblies as well.
   decode_env dummy((unsigned char*)(&buf[0]), (unsigned char*)(&buf[1]), st);
 
   // Report problems during dll_load or dll_lookup, if any.
-  if (st != NULL) {
+  if (st != nullptr) {
     // Success.
     if (_library_usable) {
       st->print_cr("Loaded disassembler from %s", buf);
     } else {
       st->print_cr("Could not load %s; %s; %s",
                    buf,
-                   ((_library != NULL)
+                   ((_library != nullptr)
                     ? "entry point is missing"
                     : ((WizardMode || PrintMiscellaneous)
                        ? (const char*)ebuf
@@ -882,7 +882,7 @@ void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   decode_env env(cb, st);
   env.output()->print_cr("--------------------------------------------------------------------------------");
   env.output()->print("Decoding CodeBlob");
-  if (cb->name() != NULL) {
+  if (cb->name() != nullptr) {
     env.output()->print(", name: %s,", cb->name());
   }
   env.output()->print_cr(" at  [" PTR_FORMAT ", " PTR_FORMAT "]  " JLONG_FORMAT " bytes", p2i(cb->code_begin()), p2i(cb->code_end()), ((jlong)(cb->code_end() - cb->code_begin())));
@@ -923,8 +923,8 @@ void Disassembler::decode(address start, address end, outputStream* st
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   //---<  Test memory before decoding  >---
   if (!os::is_readable_range(start, end)) {
-    //---<  Allow output suppression, but prevent writing to a NULL stream. Could happen with +PrintStubCode.  >---
-    if (st != NULL) {
+    //---<  Allow output suppression, but prevent writing to a nullptr stream. Could happen with +PrintStubCode.  >---
+    if (st != nullptr) {
       st->print("Memory range [" PTR_FORMAT ".." PTR_FORMAT "] not readable", p2i(start), p2i(end));
     }
     return;
