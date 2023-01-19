@@ -75,11 +75,11 @@
 // NULL vs NULL_WORD:
 // Some platform/tool-chain combinations can't assign NULL to an integer
 // type so we define NULL_WORD to use in those contexts. For xlc they are the same.
-#define NULL_WORD  nullptr
+#define NULL_WORD  NULL
 
-// AIX also needs a 64 bit nullptr to work as a null address pointer.
+// AIX also needs a 64 bit NULL to work as a null address pointer.
 // Most system includes on AIX would define it as an int 0 if not already defined with one
-// exception: /usr/include/dirent.h will unconditionally redefine nullptr to int 0 again.
+// exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
 // In this case you need to copy the following defines to a position after #include <dirent.h>
 #include <dirent.h>
 #ifdef _LP64
