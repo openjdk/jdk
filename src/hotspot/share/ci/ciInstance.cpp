@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
+#include "ci/ciNullObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/oop.inline.hpp"
@@ -61,15 +62,16 @@ ciType* ciInstance::java_mirror_type() {
 ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
   oop obj = get_oop();
   assert(obj != NULL, "bad oop");
+  ciConstant value;
   switch(field_btype) {
-    case T_BYTE:    return ciConstant(field_btype, obj->byte_field(offset));
-    case T_CHAR:    return ciConstant(field_btype, obj->char_field(offset));
-    case T_SHORT:   return ciConstant(field_btype, obj->short_field(offset));
-    case T_BOOLEAN: return ciConstant(field_btype, obj->bool_field(offset));
-    case T_INT:     return ciConstant(field_btype, obj->int_field(offset));
-    case T_FLOAT:   return ciConstant(obj->float_field(offset));
-    case T_DOUBLE:  return ciConstant(obj->double_field(offset));
-    case T_LONG:    return ciConstant(obj->long_field(offset));
+    case T_BYTE:    value = ciConstant(field_btype, obj->byte_field(offset)); break;
+    case T_CHAR:    value = ciConstant(field_btype, obj->char_field(offset)); break;
+    case T_SHORT:   value = ciConstant(field_btype, obj->short_field(offset)); break;
+    case T_BOOLEAN: value = ciConstant(field_btype, obj->bool_field(offset)); break;
+    case T_INT:     value = ciConstant(field_btype, obj->int_field(offset)); break;
+    case T_FLOAT:   value = ciConstant(obj->float_field(offset)); break;
+    case T_DOUBLE:  value = ciConstant(obj->double_field(offset)); break;
+    case T_LONG:    value = ciConstant(obj->long_field(offset)); break;
     case T_OBJECT:  // fall through
     case T_ARRAY: {
       oop o = obj->obj_field(offset);
@@ -82,15 +84,16 @@ ciConstant ciInstance::field_value_impl(BasicType field_btype, int offset) {
       // information about the object's class (which is exact) or length.
 
       if (o == NULL) {
-        return ciConstant(field_btype, ciNullObject::make());
+        value = ciConstant(field_btype, ciNullObject::make());
       } else {
-        return ciConstant(field_btype, CURRENT_ENV->get_object(o));
+        value = ciConstant(field_btype, CURRENT_ENV->get_object(o));
       }
+      break;
     }
     default:
       fatal("no field value: %s", type2name(field_btype));
-      return ciConstant();
   }
+  return check_constant_value_cache(offset, value);
 }
 
 // ------------------------------------------------------------------

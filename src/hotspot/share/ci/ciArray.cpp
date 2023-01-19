@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,8 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
 ciConstant ciArray::element_value(int index) {
   BasicType elembt = element_basic_type();
   GUARDED_VM_ENTRY(
-    return element_value_impl(elembt, get_arrayOop(), index);
+    ciConstant value = element_value_impl(elembt, get_arrayOop(), index);
+    return check_constant_value_cache(index, value);
   )
 }
 

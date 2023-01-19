@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
 
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciClassList.hpp"
+#include "ci/ciConstant.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
 // ciObject
 //
@@ -56,6 +58,24 @@ private:
   // handle may, in a small set of cases, correctly be NULL.
   jobject  _handle;
   ciKlass* _klass;
+
+  // Cache constant value lookups to ensure that consistent values are observed during compilation.
+  class ConstantValue {
+    private:
+      const ciObject* _obj;
+      int _off;
+      ciConstant _value;
+
+    public:
+      ConstantValue() : _obj(NULL), _off(0), _value(ciConstant()) { }
+      ConstantValue(const ciObject* obj, int off, ciConstant value) : _obj(obj), _off(off), _value(value) { }
+
+      const ciObject* obj() const { return _obj; }
+      int off() const { return _off; }
+      ciConstant value() const { return _value; }
+  };
+
+  GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:
   ciObject();
@@ -93,6 +113,9 @@ public:
   // Usage note: no address arithmetic allowed.  Oop must
   // be registered with the oopRecorder.
   jobject constant_encoding();
+
+  // Checks the constant value cache
+  ciConstant check_constant_value_cache(int off, ciConstant val);
 
   virtual bool is_object() const            { return true; }
 

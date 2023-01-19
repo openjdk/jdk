@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,6 +166,26 @@ int ciObject::hash() {
 jobject ciObject::constant_encoding() {
   assert(is_null_object() || handle() != NULL, "cannot embed null pointer");
   return handle();
+}
+
+// ------------------------------------------------------------------
+// ciObject::check_constant_value_cache()
+//
+// Cache constant value lookups to ensure that consistent values are observed
+// during compilation because fields may be (re-)initialized concurrently.
+ciConstant ciObject::check_constant_value_cache(int off, ciConstant val) {
+  if (_constant_values == nullptr) {
+    Arena* arena = CURRENT_ENV->arena();
+    _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 0, 0, ConstantValue());
+  }
+  for (int i = 0; i < _constant_values->length(); ++i) {
+    ConstantValue cached_val = _constant_values->at(i);
+    if (cached_val.obj() == this && cached_val.off() == off) {
+      return cached_val.value();
+    }
+  }
+  _constant_values->append(ConstantValue(this, off, val));
+  return val;
 }
 
 // ------------------------------------------------------------------

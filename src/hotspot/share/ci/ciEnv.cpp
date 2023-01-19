@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,8 +171,6 @@ ciEnv::ciEnv(CompileTask* task)
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
 
-  _stable_values = new (_arena) GrowableArray<StableValue>(_arena, 0, 0, StableValue());
-
   _dyno_klasses = NULL;
   _dyno_locs = NULL;
   _dyno_name[0] = '\0';
@@ -293,8 +291,6 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
-
-  _stable_values = nullptr;
 
   _dyno_klasses = NULL;
   _dyno_locs = NULL;
@@ -1296,20 +1292,6 @@ void ciEnv::record_out_of_memory_failure() {
 
 ciInstance* ciEnv::unloaded_ciinstance() {
   GUARDED_VM_ENTRY(return _factory->get_unloaded_object_constant();)
-}
-
-// Cache stable value lookups to ensure that consistent values are observed during compilation.
-ciConstant ciEnv::check_stable_value(const ciObject* obj, int off, ciConstant val) {
-  assert(FoldStableValues && _stable_values != nullptr, "Must be enabled and initialized");
-  assert(obj != nullptr, "Value must have a holder");
-  for (int i = 0; i < _stable_values->length(); ++i) {
-    StableValue cached_val = _stable_values->at(i);
-    if (cached_val.obj() == obj && cached_val.off() == off) {
-      return cached_val.value();
-    }
-  }
-  _stable_values->append(StableValue(obj, off, val));
-  return val;
 }
 
 // ------------------------------------------------------------------
