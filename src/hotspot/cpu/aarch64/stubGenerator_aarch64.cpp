@@ -6963,12 +6963,12 @@ typedef uint32_t u32;
     const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
     while (length >= BLOCK_LENGTH) {
+      printf("#%d\n", ++counter);
+
       u64 *b_c = (u64*)input_start;
 
       printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
       printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
-
-      printf("#%d\n", ++counter);
 
       // s = u + c, with carry propagation
       uint64_t carry = 0;
@@ -6979,8 +6979,8 @@ typedef uint32_t u32;
       if (length >= BLOCK_LENGTH) {
         b_s2 += 1;
       } else {
-        juint offset = length % sizeof (u64);
-        switch (length / sizeof (u64)) {
+        juint offset = length % sizeof b_s0;
+        switch (length / sizeof b_s0) {
           case 0: b_s0 += ((u64)1 << (8 * offset));  break;
           case 1: b_s1 += ((u64)1 << (8 * offset));  break;
           case 2: b_s2 += ((u64)1 << (8 * offset));  break;
