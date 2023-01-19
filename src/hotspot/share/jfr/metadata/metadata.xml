@@ -790,7 +790,7 @@
   </Event>
 
   <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
-         description="Various characteristics and descriptions of the processor(s) the JVM is running on"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on"
          period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
@@ -800,7 +800,7 @@
   </Event>
 
   <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter"
-         description="Various information about the CPU time stamp mechanism / (RD)TSC"
+         description="Information about the CPU time stamp mechanism / (RD)TSC"
          period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
@@ -809,7 +809,7 @@
   </Event>
 
   <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
-         description="Contains information about the recent CPU usage of the JVM process"
+         description="Information about the recent CPU usage of the JVM process"
          period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
