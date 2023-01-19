@@ -27,7 +27,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -570,9 +569,7 @@ public:
 template<bool is_const>
 class OopStorageTest::VM_CountAtSafepoint : public VM_GTestExecuteAtSafepoint {
 public:
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
   VM_CountAtSafepoint(Storage* storage, CountingIterateClosure* cl) :
     _storage(storage), _cl(cl)
@@ -795,9 +792,7 @@ const size_t OopStorageTestIteration::_max_workers;
 template<bool is_const>
 class OopStorageTestIteration::VM_Verify : public VM_GTestExecuteAtSafepoint {
 public:
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
   VM_Verify(Storage* storage, VerifyState* vstate) :
     _storage(storage), _vstate(vstate), _result(false)
@@ -892,9 +887,7 @@ template<bool concurrent, bool is_const>
 class OopStorageTestParIteration::Task : public WorkerTask {
   typedef OopStorage::ParState<concurrent, is_const> StateType;
 
-  typedef typename Conditional<is_const,
-                               const OopStorage,
-                               OopStorage>::type Storage;
+  using Storage = std::conditional_t<is_const, const OopStorage, OopStorage>;
 
 public:
   Task(const char* name, Storage* storage, VerifyState* vstate) :

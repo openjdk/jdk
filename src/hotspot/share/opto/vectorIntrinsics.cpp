@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,7 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
       lshiftopc = Op_LShiftL;
       rshiftopc = Op_URShiftL;
       break;
-    default:
-      assert(false, "Unexpected type");
+    default: fatal("Unexpected type: %s", type2name(elem_bt));
   }
   int lshiftvopc = VectorNode::opcode(lshiftopc, elem_bt);
   int rshiftvopc = VectorNode::opcode(rshiftopc, elem_bt);
