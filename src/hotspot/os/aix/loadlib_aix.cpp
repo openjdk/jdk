@@ -331,8 +331,9 @@ bool LoadedLibraries::reload() {
 
 void LoadedLibraries::print(outputStream* os) {
   MiscUtils::AutoCritSect lck(&g_cs);
-  reload_table();
-  
+  if (!g_first) {
+     reload_table();
+   } 
   for (loaded_module_t* lm = g_first; lm; lm = lm->next) {
     print_entry(lm, os);
     os->cr();
