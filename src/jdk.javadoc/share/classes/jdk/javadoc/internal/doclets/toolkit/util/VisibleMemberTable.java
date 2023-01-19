@@ -202,12 +202,12 @@ public class VisibleMemberTable {
         computeVisibleMembers();
     }
 
-    List<VisibleMemberTable> getAllSuperclasses() {
+    private List<VisibleMemberTable> getAllSuperclasses() {
         ensureInitialized();
         return allSuperclasses;
     }
 
-    List<VisibleMemberTable> getAllSuperinterfaces() {
+    private List<VisibleMemberTable> getAllSuperinterfaces() {
         ensureInitialized();
         return allSuperinterfaces;
     }
@@ -244,7 +244,6 @@ public class VisibleMemberTable {
      */
     public List<Element> getVisibleMembers(Kind kind, Predicate<Element> p) {
         ensureInitialized();
-
         return visibleMembers.getOrDefault(kind, List.of()).stream()
                 .filter(p)
                 .toList();
@@ -585,14 +584,14 @@ public class VisibleMemberTable {
         }
     }
 
-    boolean isEnclosureInterface(Element e) {
+    private boolean isEnclosureInterface(Element e) {
         TypeElement enclosing = utils.getEnclosingTypeElement(e);
         return utils.isPlainInterface(enclosing);
     }
 
-    boolean allowInheritedMethod(ExecutableElement inheritedMethod,
-                                 Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
-                                 LocalMemberTable lmt) {
+    private boolean allowInheritedMethod(ExecutableElement inheritedMethod,
+                                         Map<ExecutableElement, List<ExecutableElement>> overriddenByTable,
+                                         LocalMemberTable lmt) {
         if (!isInherited(inheritedMethod))
             return false;
 
@@ -798,7 +797,7 @@ public class VisibleMemberTable {
                         }
                         break;
                     case CONSTRUCTOR:
-                            addMember(e, Kind.CONSTRUCTORS);
+                        addMember(e, Kind.CONSTRUCTORS);
                         break;
                     case ENUM_CONSTANT:
                         addMember(e, Kind.ENUM_CONSTANTS);
@@ -869,8 +868,8 @@ public class VisibleMemberTable {
         }
     }
 
-    record PropertyMembers(ExecutableElement propertyMethod, VariableElement field,
-                           ExecutableElement getter, ExecutableElement setter) { }
+    private record PropertyMembers(ExecutableElement propertyMethod, VariableElement field,
+                                   ExecutableElement getter, ExecutableElement setter) { }
 
     /*
      * JavaFX convention notes.
