@@ -2334,7 +2334,13 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         register_new_node(adj_cmp, ctrl);
         Node* adj_bool = new BoolNode(adj_cmp, bt);
         register_new_node(adj_bool, ctrl);
-        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+        // Prevent type from becoming too pessimistic due to type underflow. The new limit
+        // may be arbitrarily decreased by unrolling, but we know it is in [min_int, hi].
+        const TypeInt* old_limit_t = _igvn.type(old_limit)->is_int();
+        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : old_limit_t->_lo,
+                                                      stride_con > 0 ? old_limit_t->_hi : max_jint,
+                                                      Type::WidenMax);
+        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, no_underflow_t);
       }
       register_new_node(new_limit, ctrl);
     }
