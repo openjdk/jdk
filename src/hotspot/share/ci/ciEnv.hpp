@@ -107,7 +107,7 @@ private:
   ciInstance* _the_min_jint_string; // The Java string "-2147483648"
 
   // Look up a klass by name from a particular class loader (the accessor's).
-  // If require_local, result must be defined in that class loader, or nullptr.
+  // If require_local, result must be defined in that class loader, or null.
   // If !require_local, a result from remote class loader may be reported,
   // if sufficient class loader constraints exist such that initiating
   // a class loading request from the given loader is bound to return
@@ -269,7 +269,7 @@ private:
   }
 
   // See if we already have an unloaded klass for the given name
-  // or return nullptr if not.
+  // or return null if not.
   ciKlass *check_get_unloaded_klass(ciKlass*  accessing_klass, ciSymbol* name) {
     return _factory->get_unloaded_klass(accessing_klass, name, false);
   }

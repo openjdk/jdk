@@ -80,7 +80,7 @@ ciObjArrayKlass::ciObjArrayKlass(ciSymbol* array_name,
 // What is the one-level element type of this array?
 ciKlass* ciObjArrayKlass::element_klass() {
   if (_element_klass == nullptr) {
-    assert(dimension() > 1, "_element_klass should not be nullptr");
+    assert(dimension() > 1, "_element_klass should not be null");
     // Produce the element klass.
     if (is_loaded()) {
       VM_ENTRY_MARK;

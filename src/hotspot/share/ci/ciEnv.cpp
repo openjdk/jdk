@@ -1354,7 +1354,7 @@ bool ciEnv::print_dyno_loc(outputStream* out, const InstanceKlass* ik) const {
 }
 
 // Look up the location descriptor for the given class and return it as a string.
-// Returns nullptr if no location is found.
+// Returns null if no location is found.
 const char *ciEnv::dyno_name(const InstanceKlass* ik) const {
   if (ik->is_hidden()) {
     stringStream ss;

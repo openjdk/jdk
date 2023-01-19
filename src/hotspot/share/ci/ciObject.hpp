@@ -53,7 +53,7 @@ class ciObject : public ciBaseObject {
 
 private:
   // A JNI handle referring to an oop in the VM.  This
-  // handle may, in a small set of cases, correctly be nullptr.
+  // handle may, in a small set of cases, correctly be null.
   jobject  _handle;
   ciKlass* _klass;
 

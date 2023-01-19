@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_CI_CInullptrOBJECT_HPP
-#define SHARE_CI_CInullptrOBJECT_HPP
+#ifndef SHARE_CI_CINULLOBJECT_HPP
+#define SHARE_CI_CINULLOBJECT_HPP
 
 #include "ci/ciClassList.hpp"
 #include "ci/ciObject.hpp"
@@ -51,4 +51,4 @@ public:
   static ciNullObject* make();
 };
 
-#endif // SHARE_CI_CInullptrOBJECT_HPP
+#endif // SHARE_CI_CINULLOBJECT_HPP

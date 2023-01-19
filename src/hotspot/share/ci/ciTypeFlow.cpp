@@ -588,7 +588,7 @@ void ciTypeFlow::StateVector::do_checkcast(ciBytecodeStream* str) {
   bool will_link;
   ciKlass* klass = str->get_klass(will_link);
   if (!will_link) {
-    // VM's interpreter will not load 'klass' if object is nullptr.
+    // VM's interpreter will not load 'klass' if object is null.
     // Type flow after this block may still be needed in two situations:
     // 1) C2 uses do_null_assert() and continues compilation for later blocks
     // 2) C2 does an OSR compile in a later block (see bug 4778368).

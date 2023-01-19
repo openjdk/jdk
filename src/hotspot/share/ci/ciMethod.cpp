@@ -564,7 +564,7 @@ void ciMethod::assert_call_type_ok(int bci) {
  *
  * @param [in]bci         bci of the call
  * @param [in]i           argument number
- * @param [out]type       profiled type of argument, nullptr if none
+ * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
@@ -602,7 +602,7 @@ bool ciMethod::argument_profiled_type(int bci, int i, ciKlass*& type, ProfilePtr
  * the call at bci bci
  *
  * @param [in]bci         bci of the call
- * @param [out]type       profiled type of argument, nullptr if none
+ * @param [out]type       profiled type of argument, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
@@ -637,7 +637,7 @@ bool ciMethod::return_profiled_type(int bci, ciKlass*& type, ProfilePtrKind& ptr
  * Check whether profiling provides a type for the parameter i
  *
  * @param [in]i           parameter number
- * @param [out]type       profiled type of parameter, nullptr if none
+ * @param [out]type       profiled type of parameter, null if none
  * @param [out]ptr_kind   whether always null, never null or maybe null
  * @return                true if profiling exists
  *
@@ -659,7 +659,7 @@ bool ciMethod::parameter_profiled_type(int i, ciKlass*& type, ProfilePtrKind& pt
 // ciMethod::find_monomorphic_target
 //
 // Given a certain calling environment, find the monomorphic target
-// for the call.  Return nullptr if the call is not monomorphic in
+// for the call.  Return null if the call is not monomorphic in
 // its calling environment, or if there are only abstract methods.
 // The returned method is never abstract.
 // Note: If caller uses a non-null result, it must inform dependencies
@@ -748,7 +748,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
     // If we are going to reason about inheritance, it's easiest
     // if the method in question is public, protected, or private.
     // If the answer is not root_m, it is conservatively correct
-    // to return nullptr, even if the CHA encountered irrelevant
+    // to return null, even if the CHA encountered irrelevant
     // methods in other packages.
     // %%% TO DO: Work out logic for package-private methods
     // with the same name but different vtable indexes.
@@ -811,7 +811,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
   }
 
   if (m == nullptr) {
-    // Return nullptr only if there was a problem with lookup (uninitialized class, etc.)
+    // Return null only if there was a problem with lookup (uninitialized class, etc.)
     return nullptr;
   }
 

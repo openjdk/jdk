@@ -403,7 +403,7 @@ private:
   // Coherent snapshot of original header.
   MethodData::CompilerCounters _orig;
 
-  // Area dedicated to parameters. nullptr if no parameter profiling for this method.
+  // Area dedicated to parameters. null if no parameter profiling for this method.
   DataLayout* _parameters;
   int parameters_size() const {
     return _parameters == nullptr ? 0 : parameters_type_data()->size_in_bytes();
@@ -518,7 +518,7 @@ public:
   DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
                                                                parameters_size()); }
 
-  // Get the data at an arbitrary bci, or nullptr if there is none. If m
+  // Get the data at an arbitrary bci, or null if there is none. If m
   // is not nullptr look for a SpeculativeTrapData if any first.
   ciProfileData* bci_to_data(int bci, ciMethod* m = nullptr);
 

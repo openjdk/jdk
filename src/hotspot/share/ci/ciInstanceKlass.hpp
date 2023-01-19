@@ -72,7 +72,7 @@ private:
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
-  //   nullptr: no implementor.
+  //   null: no implementor.
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;

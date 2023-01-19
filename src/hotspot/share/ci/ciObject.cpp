@@ -91,7 +91,7 @@ ciObject::ciObject(ciKlass* klass) {
 // ------------------------------------------------------------------
 // ciObject::ciObject
 //
-// nullptr variant.  Used only by ciNullObject.
+// null variant.  Used only by ciNullObject.
 ciObject::ciObject() {
   ASSERT_IN_VM;
   _handle = nullptr;
@@ -113,7 +113,7 @@ oop ciObject::get_oop() const {
 ciKlass* ciObject::klass() {
   if (_klass == nullptr) {
     if (_handle == nullptr) {
-      // When both _klass and _handle are nullptr, we are dealing
+      // When both _klass and _handle are null, we are dealing
       // with the distinguished instance of ciNullObject.
       // No one should ask it for its klass.
       assert(is_null_object(), "must be null object");

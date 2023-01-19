@@ -44,7 +44,7 @@
 // the ciField will be incomplete.
 
 // The ciObjectFactory cannot create circular data structures in one query.
-// To avoid vicious circularities, we initialize ciField::_type to nullptr
+// To avoid vicious circularities, we initialize ciField::_type to null
 // for reference types and derive it lazily from the ciField::_signature.
 // Primitive types are eagerly initialized, and basic layout queries
 // can succeed without initialization, using only the BasicType of the field.

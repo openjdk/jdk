@@ -174,13 +174,13 @@ public:
       T_BOTTOM  = T_CONFLICT,
       T_LONG2   = T_SHORT,     // 2nd word of T_LONG
       T_DOUBLE2 = T_CHAR,      // 2nd word of T_DOUBLE
-      T_nullptr    = T_BYTE       // for now.
+      T_NULL    = T_BYTE       // for now.
     };
     static ciType* top_type()    { return ciType::make((BasicType)T_TOP); }
     static ciType* bottom_type() { return ciType::make((BasicType)T_BOTTOM); }
     static ciType* long2_type()  { return ciType::make((BasicType)T_LONG2); }
     static ciType* double2_type(){ return ciType::make((BasicType)T_DOUBLE2); }
-    static ciType* null_type()   { return ciType::make((BasicType)T_nullptr); }
+    static ciType* null_type()   { return ciType::make((BasicType)T_NULL); }
 
     static ciType* half_type(ciType* t) {
       switch (t->basic_type()) {
@@ -333,7 +333,7 @@ public:
     }
     // pop_objArray and pop_typeArray narrow the tos to ciObjArrayKlass
     // or ciTypeArrayKlass (resp.).  In the rare case that an explicit
-    // null is popped from the stack, we return nullptr.  Caller beware.
+    // null is popped from the stack, we return null.  Caller beware.
     ciObjArrayKlass* pop_objArray() {
       ciType* array = pop_value();
       if (array == null_type())  return nullptr;
@@ -818,7 +818,7 @@ public:
   int backedge_copy_count(int ciBlockIndex, JsrSet* jsrs) const;
 
   // Return an existing block containing bci which has a JsrSet compatible
-  // with jsrs, or nullptr if there is none.
+  // with jsrs, or null if there is none.
   Block* existing_block_at(int bci, JsrSet* set) { return block_at(bci, set, no_create); }
 
   // Tell whether the flow analysis has encountered an error of some sort.

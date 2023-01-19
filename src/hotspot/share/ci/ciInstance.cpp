@@ -42,7 +42,7 @@
 ciType* ciInstance::java_mirror_type() {
   VM_ENTRY_MARK;
   oop m = get_oop();
-  // Return nullptr if it is not java.lang.Class.
+  // Return null if it is not java.lang.Class.
   if (m == nullptr || m->klass() != vmClasses::Class_klass()) {
     return nullptr;
   }

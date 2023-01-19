@@ -288,7 +288,7 @@ class ciMethod : public ciMetadata {
   }
 
   // Given a certain calling environment, find the monomorphic target
-  // for the call.  Return nullptr if the call is not monomorphic in
+  // for the call.  Return null if the call is not monomorphic in
   // its calling environment.
   ciMethod* find_monomorphic_target(ciInstanceKlass* caller,
                                     ciInstanceKlass* callee_holder,
@@ -296,7 +296,7 @@ class ciMethod : public ciMetadata {
                                     bool check_access = true);
 
   // Given a known receiver klass, find the target for the call.
-  // Return nullptr if the call has no target or is abstract.
+  // Return null if the call has no target or is abstract.
   ciMethod* resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access = true, bool allow_abstract = false);
 
   // Find the proper vtable index to invoke this method.
