@@ -79,7 +79,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * format pattern for a specific locale, you can do so with:
  * <blockquote>
  * {@snippet lang=java :
- * new SimpleDateFormat(aPattern, DateFormatSymbols.getInstance(aLocale)).
+ * new SimpleDateFormat(aPattern, DateFormatSymbols.getInstance(aLocale));
  * }
  * </blockquote>
  *
