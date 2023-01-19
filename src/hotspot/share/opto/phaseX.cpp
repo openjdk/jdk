@@ -1148,6 +1148,10 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
     }
   }
 #endif
+
+  if (VerifyIterativeGVN) {
+    DEBUG_ONLY(verify_optimize();)
+  }
 }
 #endif /* PRODUCT */
 
@@ -1208,7 +1212,6 @@ void PhaseIterGVN::optimize() {
     loop_count++;
   }
   NOT_PRODUCT(verify_PhaseIterGVN();)
-  DEBUG_ONLY(verify_optimize();)
 }
 
 #ifdef ASSERT
@@ -1263,23 +1266,6 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
     // the inputs all the way down to the LoadNode. We don't do that.
     return false;
   }
-  if (n->is_CastII()) {
-    if (n->in(0) != nullptr && n->in(0)->in(0) != nullptr && n->in(0)->in(0)->is_If()) {
-      IfNode* iff = n->in(0)->in(0)->as_If();
-      if (iff->in(1)->is_Bool() && iff->in(1)->in(1)->Opcode() == Op_CmpI) {
-        Node* cmp = iff->in(1)->in(1);
-        if (cmp->in(1) == n->in(1) && type(cmp->in(2))->isa_int()) {
-          // cmp->in(1) may have been updated, but the update not propagated down.
-          // Current notification code does not notify correctly if in(1) is replaced
-          // and only the new in(1) has this CastII below itself.
-          // We could fix this, but it would require a walk down:
-          // CmpI -> Bool -> If -> IfProj -> CastII
-          // On every level, this could be multiple uses.
-          return false;
-        }
-      }
-    }
-  }
   if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub
@@ -1303,7 +1289,7 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
       // Sub nodes can replace Sub( CastII(CastII(x)), x) with zero, but the notification
       // goes only over a singe CastII node. We could make the notification a recursive
       // traversal: traverse down the CastII outputs recursively, and find all SubNodes.
-      return false;
+      tty->print_cr("Known issue: Sub( CastII(CastII(x)), x)");
     }
   }
   tty->cr();
@@ -1693,18 +1679,65 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
       if (use_op == Op_CmpI) {
-        Node* in1 = use->in(1);
-        for (uint i = 0; i < in1->outcnt(); i++) {
-          if (in1->raw_out(i)->Opcode() == Op_CastII) {
-            Node* castii = in1->raw_out(i);
-            if (castii->in(0) != NULL && castii->in(0)->in(0) != NULL && castii->in(0)->in(0)->is_If()) {
-              Node* ifnode = castii->in(0)->in(0);
-              if (ifnode->in(1) != NULL && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == use) {
-                // Reprocess a CastII node that may depend on an
-                // opaque node value when the opaque node is
-                // removed. In case it carries a dependency we can do
-                // a better job of computing its type.
-                _worklist.push(castii);
+        Node* cmp = use;
+        Node* in1 = cmp->in(1);
+        Node* in2 = cmp->in(2);
+        assert(in1 != in2, "sanity");
+        // Notify CmpI / If pattern from CastIINode::Value (left pattern).
+        // Must also notify if in1 is modified and possibly turns into X (right pattern).
+        //
+        // in1  in2                   in1  in2
+        //  |    |                     |    |
+        //  +--- | --+                 |    |
+        //  |    |   |                 |    |
+        // CmpINode  |                CmpINode
+        //    |      |                   |
+        // BoolNode  |                BoolNode
+        //    |      |        OR         |
+        //  IfNode   |                 IfNode
+        //    |      |                   |
+        //  IfProj   |                 IfProj   X
+        //    |      |                   |      |
+        //   CastIINode                 CastIINode
+        //
+        if (in1 == n) {
+          // in1 modified -> could turn into X -> do traversal basen on right pattern.
+          for (uint i2 = 0; i2 < cmp->outcnt(); i2++) {
+            Node* bol = cmp->raw_out(i2); // For each Bool
+            if(bol != nullptr && bol->is_Bool()) {
+              for (uint i3 = 0; i3 < bol->outcnt(); i3++) {
+                Node* iff = bol->raw_out(i3); // For each If
+                if(iff != nullptr && iff->is_If()) {
+                  for (uint i4 = 0; i4 < iff->outcnt(); i4++) {
+                    Node* if_proj = iff->raw_out(i4); // For each IfProj
+                    if(if_proj != nullptr && (if_proj->is_IfFalse() || if_proj->is_IfTrue())) {
+                      for (uint i5 = 0; i5 < if_proj->outcnt(); i5++) {
+                        Node* castii = if_proj->raw_out(i5); // For each CastII
+                        if (castii->is_CastII() &&
+                            castii->as_CastII()->carry_dependency()) {
+                          _worklist.push(castii);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } else {
+          // Only in2 modified -> can assume X == in2 (left pattern).
+          assert(n == in2, "only in2 modified");
+          // Find all CastII with input in1.
+          for (uint j = 0; j < in1->outcnt(); j++) {
+            Node* castii = in1->raw_out(j);
+            if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
+              // Find If.
+              if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
+                Node* ifnode = castii->in(0)->in(0);
+                // Check that if connects to the cmp
+                if (ifnode->in(1) != nullptr && ifnode->in(1)->is_Bool() && ifnode->in(1)->in(1) == cmp) {
+                  _worklist.push(castii);
+                }
               }
             }
           }

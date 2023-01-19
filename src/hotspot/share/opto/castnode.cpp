@@ -226,9 +226,23 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
     res = widen_type(phase, res, T_INT);
   }
 
-  // Try to improve the type of the CastII if we recognize a CmpI/If
-  // pattern.
-  if (_dependency != RegularDependency) {
+  // Try to improve the type of the CastII if we recognize a CmpI/If pattern.
+  //
+  // in1  in2
+  //  |    |
+  //  +--- | --+
+  //  |    |   |
+  // CmpINode  |
+  //    |      |
+  // BoolNode  |
+  //    |      |
+  //  IfNode   |
+  //    |      |
+  //  IfProj   |
+  //    |      |
+  //   CastIINode
+  //
+  if (carry_dependency()) {
     if (in(0) != NULL && in(0)->in(0) != NULL && in(0)->in(0)->is_If()) {
       assert(in(0)->is_IfFalse() || in(0)->is_IfTrue(), "should be If proj");
       Node* proj = in(0);
