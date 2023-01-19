@@ -1703,8 +1703,7 @@ address StubGenerator::generate_base64_encodeBlock()
   }
 
   __ BIND(L_not512);
-  if (VM_Version::supports_avx2()
-      && VM_Version::supports_avx512vlbw()) {
+  if (VM_Version::supports_avx2()/) {
     /*
     ** This AVX2 encoder is based off the paper at:
     **      https://dl.acm.org/doi/10.1145/3132709
@@ -1721,15 +1720,17 @@ address StubGenerator::generate_base64_encodeBlock()
     __ vmovdqu(xmm9, ExternalAddress(StubRoutines::x86::base64_avx2_shuffle_addr()), rax);
     // 6-bit mask for 2nd and 4th (and multiples) 6-bit values
     __ movl(rax, 0x0fc0fc00);
+    __ movdl(xmm8, rax);
     __ vmovdqu(xmm1, ExternalAddress(StubRoutines::x86::base64_avx2_input_mask_addr()), rax);
-    __ evpbroadcastd(xmm8, rax, Assembler::AVX_256bit);
+    __ vpbroadcastd(xmm8, xmm8, Assembler::AVX_256bit);
 
     // Multiplication constant for "shifting" right by 6 and 10
     // bits
     __ movl(rax, 0x04000040);
 
     __ subl(length, 24);
-    __ evpbroadcastd(xmm7, rax, Assembler::AVX_256bit);
+    __ movdl(xmm7, rax);
+    __ vpbroadcastd(xmm7, xmm7, Assembler::AVX_256bit);
 
     // For the first load, we mask off reading of the first 4
     // bytes into the register. This is so we can get 4 3-byte
@@ -1831,19 +1832,23 @@ address StubGenerator::generate_base64_encodeBlock()
     // Load masking register for first and third (and multiples)
     // 6-bit values.
     __ movl(rax, 0x003f03f0);
-    __ evpbroadcastd(xmm6, rax, Assembler::AVX_256bit);
+    __ movdl(xmm6, rax);
+    __ vpbroadcastd(xmm6, xmm6, Assembler::AVX_256bit);
     // Multiplication constant for "shifting" left by 4 and 8 bits
     __ movl(rax, 0x01000010);
-    __ evpbroadcastd(xmm5, rax, Assembler::AVX_256bit);
+    __ movdl(xmm5, rax);
+    __ vpbroadcastd(xmm5, xmm5, Assembler::AVX_256bit);
 
     // Isolate 6-bit chunks of interest
     __ vpand(xmm0, xmm8, xmm1, Assembler::AVX_256bit);
 
     // Load constants for encoding
     __ movl(rax, 0x19191919);
-    __ evpbroadcastd(xmm3, rax, Assembler::AVX_256bit);
+    __ movdl(xmm3, rax);
+    __ vpbroadcastd(xmm3, xmm3, Assembler::AVX_256bit);
     __ movl(rax, 0x33333333);
-    __ evpbroadcastd(xmm4, rax, Assembler::AVX_256bit);
+    __ movdl(xmm4, rax);
+    __ vpbroadcastd(xmm4, xmm4, Assembler::AVX_256bit);
 
     // Shift output bytes 0 and 2 into proper lanes
     __ vpmulhuw(xmm2, xmm0, xmm7, Assembler::AVX_256bit);
@@ -2571,6 +2576,177 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ align32();
     __ BIND(L_bruteForce);
   }   // End of if(avx512_vbmi)
+
+  if (VM_Version::supports_avx2()){
+
+// Dump of assembler code for function fast_avx2_base64_decode:
+//    0x0000555555557a60 <+0>:     f3 0f 1e fa     				endbr64
+//    0x0000555555557a64 <+4>:     55      						push   rbp
+//    0x0000555555557a65 <+5>:     48 89 e5        				mov    rbp,rsp
+//    0x0000555555557a68 <+8>:     41 54   						push   r12
+//    0x0000555555557a6a <+10>:    49 89 fc        				mov    r12,rdi
+//    0x0000555555557a6d <+13>:    53      						push   rbx
+//    0x0000555555557a6e <+14>:    48 89 fb        				mov    rbx,rdi
+//    0x0000555555557a71 <+17>:    48 83 e4 e0     				and    rsp,0xffffffffffffffe0
+//    0x0000555555557a75 <+21>:    48 83 fa 2c     				cmp    rdx,0x2c
+//    0x0000555555557a79 <+25>:    0f 86 b0 00 00 00       		jbe    0x555555557b2f <fast_avx2_base64_decode+207>
+//    0x0000555555557a7f <+31>:    c4 e2 7d 59 25 28 24 00 00      vpbroadcastq ymm4,QWORD PTR [rip+0x2428]        # 0x555555559eb0
+//    0x0000555555557a88 <+40>:    c5 7d 6f 1d 50 23 00 00 		vmovdqa ymm11,YMMWORD PTR [rip+0x2350]        # 0x555555559de0
+//    0x0000555555557a90 <+48>:    c4 62 7d 78 15 17 24 00 00      vpbroadcastb ymm10,BYTE PTR [rip+0x2417]        # 0x555555559eb0
+//    0x0000555555557a99 <+57>:    c5 7d 6f 0d 5f 23 00 00 		vmovdqa ymm9,YMMWORD PTR [rip+0x235f]        # 0x555555559e00
+//    0x0000555555557aa1 <+65>:    c5 7d 6f 05 77 23 00 00 		vmovdqa ymm8,YMMWORD PTR [rip+0x2377]        # 0x555555559e20
+//    0x0000555555557aa9 <+73>:    c5 fd 6f 3d 8f 23 00 00 		vmovdqa ymm7,YMMWORD PTR [rip+0x238f]        # 0x555555559e40
+//    0x0000555555557ab1 <+81>:    c5 fd 6f 35 a7 23 00 00 		vmovdqa ymm6,YMMWORD PTR [rip+0x23a7]        # 0x555555559e60
+//    0x0000555555557ab9 <+89>:    c5 7d 6f 2d bf 23 00 00 		vmovdqa ymm13,YMMWORD PTR [rip+0x23bf]        # 0x555555559e80
+//    0x0000555555557ac1 <+97>:    c5 7d 6f 25 17 22 00 00 		vmovdqa ymm12,YMMWORD PTR [rip+0x2217]        # 0x555555559ce0
+//    0x0000555555557ac9 <+105>:   eb 32   						jmp    0x555555557afd <fast_avx2_base64_decode+157>
+//    0x0000555555557acb <+107>:   0f 1f 44 00 00  				nop    DWORD PTR [rax+rax*1+0x0]
+//    0x0000555555557ad0 <+112>:   c5 fd fc c2     				vpaddb ymm0,ymm0,ymm2
+//    0x0000555555557ad4 <+116>:   c4 e2 7d 04 c7  				vpmaddubsw ymm0,ymm0,ymm7
+//    0x0000555555557ad9 <+121>:   c5 fd f5 c6     				vpmaddwd ymm0,ymm0,ymm6
+//    0x0000555555557add <+125>:   c4 c2 7d 00 c5  				vpshufb ymm0,ymm0,ymm13
+//    0x0000555555557ae2 <+130>:   c4 e2 1d 36 c0  				vpermd ymm0,ymm12,ymm0
+//    0x0000555555557ae7 <+135>:   48 83 ea 20     				sub    rdx,0x20
+//    0x0000555555557aeb <+139>:   c5 fe 7f 03     				vmovdqu YMMWORD PTR [rbx],ymm0
+//    0x0000555555557aef <+143>:   48 83 c6 20     				add    rsi,0x20
+//    0x0000555555557af3 <+147>:   48 83 c3 18     				add    rbx,0x18
+//    0x0000555555557af7 <+151>:   48 83 fa 2c     				cmp    rdx,0x2c
+//    0x0000555555557afb <+155>:   76 2f   						jbe    0x555555557b2c <fast_avx2_base64_decode+204>
+//    0x0000555555557afd <+157>:   c5 fe 6f 16     				vmovdqu ymm2,YMMWORD PTR [rsi]
+//    0x0000555555557b01 <+161>:   c5 f5 72 d2 04  				vpsrld ymm1,ymm2,0x4
+//    0x0000555555557b06 <+166>:   c5 dd db c9     				vpand  ymm1,ymm4,ymm1
+//    0x0000555555557b0a <+170>:   c5 ed db dc     				vpand  ymm3,ymm2,ymm4
+//    0x0000555555557b0e <+174>:   c5 ad 74 c2     				vpcmpeqb ymm0,ymm10,ymm2
+//    0x0000555555557b12 <+178>:   c4 e2 25 00 db  				vpshufb ymm3,ymm11,ymm3
+//    0x0000555555557b17 <+183>:   c4 e2 35 00 e9  				vpshufb ymm5,ymm9,ymm1
+//    0x0000555555557b1c <+188>:   c4 e2 7d 17 dd  				vptest ymm3,ymm5
+//    0x0000555555557b21 <+193>:   c5 fd fc c1     				vpaddb ymm0,ymm0,ymm1
+//    0x0000555555557b25 <+197>:   c4 e2 3d 00 c0  				vpshufb ymm0,ymm8,ymm0
+//    0x0000555555557b2a <+202>:   74 a4   						je     0x555555557ad0 <fast_avx2_base64_decode+112>
+//    0x0000555555557b2c <+204>:   c5 f8 77        				vzeroupper
+//    0x0000555555557b2f <+207>:   48 89 df        				mov    rdi,rbx
+//    0x0000555555557b32 <+210>:   e8 59 ec ff ff  				call   0x555555556790 <chromium_base64_decode>
+//    0x0000555555557b37 <+215>:   4c 29 e3        				sub    rbx,r12
+//    0x0000555555557b3a <+218>:   48 01 c3        				add    rbx,rax
+//    0x0000555555557b3d <+221>:   48 83 f8 ff     				cmp    rax,0xffffffffffffffff
+//    0x0000555555557b41 <+225>:   48 0f 45 c3     				cmovne rax,rbx
+//    0x0000555555557b45 <+229>:   48 8d 65 f0     				lea    rsp,[rbp-0x10]
+//    0x0000555555557b49 <+233>:   5b      						pop    rbx
+//    0x0000555555557b4a <+234>:   41 5c  						 	pop    r12
+//    0x0000555555557b4c <+236>:   5d      						pop    rbp
+//    0x0000555555557b4d <+237>:   c3      						ret
+// End of assembler dump.
+//
+
+// (gdb) x/100gx 0x555555559d60
+// 0x555555559d60: 0x8000000000000000      0x8000000080000000
+// 0x555555559d70: 0x8000000080000000      0x8000000080000000
+// 0x555555559d80: 0x0809070805060405      0x0e0f0d0e0b0c0a0b
+// 0x555555559d90: 0x0405030401020001      0x0a0b090a07080607
+// 0x555555559da0: 0x0400004004000040      0x0400004004000040
+// 0x555555559db0: 0x0400004004000040      0x0400004004000040
+// 0x555555559dc0: 0x0100001001000010      0x0100001001000010
+// 0x555555559dd0: 0x0100001001000010      0x0100001001000010
+// 0x555555559de0: 0x1111111111111115      0x1a1b1b1b1a131111
+// 0x555555559df0: 0x1111111111111115      0x1a1b1b1b1a131111
+// 0x555555559e00: 0x0804080402011010      0x1010101010101010
+// 0x555555559e10: 0x0804080402011010      0x1010101010101010
+// 0x555555559e20: 0xb9b9bfbf04131000      0x0000000000000000
+// 0x555555559e30: 0xb9b9bfbf04131000      0x0000000000000000
+// 0x555555559e40: 0x0140014001400140      0x0140014001400140
+// 0x555555559e50: 0x0140014001400140      0x0140014001400140
+// 0x555555559e60: 0x0001100000011000      0x0001100000011000
+// 0x555555559e70: 0x0001100000011000      0x0001100000011000
+// 0x555555559e80: 0x090a040506000102      0xffffffff0c0d0e08
+// 0x555555559e90: 0x090a040506000102      0xffffffff0c0d0e08
+// 0x555555559ea0: 0x0fc0fc000fc0fc00      0x003f03f0003f03f0
+// 0x555555559eb0: 0x2f2f2f2f2f2f2f2f      0x000000f43b031b01
+// 0x555555559ec0: 0xffffb1680000001d      0xffffb1e800000128
+// 0x555555559ed0: 0xffffb1f800000150      0xffffb26800000168
+// 0x555555559ee0: 0xffffb3a800000464      0xffffb49800000110
+// 0x555555559ef0: 0xffffb5d800000180      0xffffb948000001b0
+// 0x555555559f00: 0xffffb9f800000218      0xffffbbd800000250
+// 0x555555559f10: 0xffffbd980000029c      0xffffbf68000002e8
+// 0x555555559f20: 0xffffc18800000334      0xffffc3a800000380
+// 0x555555559f30: 0xffffc578000003cc      0xffffc75800000418
+// 0x555555559f40: 0xffffc8d8000004b0      0xffffca9800000504
+// 0x555555559f50: 0xffffcac800000540      0xffffcc5800000554
+// 0x555555559f60: 0xffffcc8800000584      0xffffcdc800000598
+// 0x555555559f70: 0xffffcfe8000005b8      0xffffd3f8000005fc
+// 0x555555559f80: 0xffffd4c800000658      0xffffd53800000684
+// 0x555555559f90: 0xffffd738000006a0      0xffffda68000006d0
+// 0x555555559fa0: 0xffffdba800000700      0x0000000000000728
+// 0x555555559fb0: 0x0000000000000014      0x0110780100527a01
+// 0x555555559fc0: 0x0000019008070c1b      0x0000001c00000014
+// 0x555555559fd0: 0x00000026ffffb290      0x0000000010074400
+// 0x555555559fe0: 0x0000003400000024      0x00000080ffffb038
+// 0x555555559ff0: 0x0f4a180e46100e00      0x3a1a3f008008770b
+// 0x55555555a000: 0x000000002224332a      0x0000005c00000014
+// 0x55555555a010: 0x00000010ffffb090      0x0000000000000000
+// 0x55555555a020: 0x0000007400000014      0x00000070ffffb088
+// 0x55555555a030: 0x0000000000000000      0x0000008c0000002c
+// 0x55555555a040: 0x00000133ffffb310      0x0e470286100e4e00
+// 0x55555555a050: 0x100e0ade02038318      0x100e640b49080e44
+// 0x55555555a060: 0x0000c6c34b080e41      0x000000bc00000064
+// 0x55555555a070: 0x0000036cffffb420      0x0e48028f100e4f00
+// (gdb)
+
+
+
+// (gdb) x/200wx 0x555555559d60
+// 0x555555559d60: 0x00000000      0x80000000      0x80000000      0x80000000
+// 0x555555559d70: 0x80000000      0x80000000      0x80000000      0x80000000
+// 0x555555559d80: 0x05060405      0x08090708      0x0b0c0a0b      0x0e0f0d0e
+// 0x555555559d90: 0x01020001      0x04050304      0x07080607      0x0a0b090a
+// 0x555555559da0: 0x04000040      0x04000040      0x04000040      0x04000040
+// 0x555555559db0: 0x04000040      0x04000040      0x04000040      0x04000040
+// 0x555555559dc0: 0x01000010      0x01000010      0x01000010      0x01000010
+// 0x555555559dd0: 0x01000010      0x01000010      0x01000010      0x01000010
+// 0x555555559de0: 0x11111115      0x11111111      0x1a131111      0x1a1b1b1b
+// 0x555555559df0: 0x11111115      0x11111111      0x1a131111      0x1a1b1b1b
+// 0x555555559e00: 0x02011010      0x08040804      0x10101010      0x10101010
+// 0x555555559e10: 0x02011010      0x08040804      0x10101010      0x10101010
+// 0x555555559e20: 0x04131000      0xb9b9bfbf      0x00000000      0x00000000
+// 0x555555559e30: 0x04131000      0xb9b9bfbf      0x00000000      0x00000000
+// 0x555555559e40: 0x01400140      0x01400140      0x01400140      0x01400140
+// 0x555555559e50: 0x01400140      0x01400140      0x01400140      0x01400140
+// 0x555555559e60: 0x00011000      0x00011000      0x00011000      0x00011000
+// 0x555555559e70: 0x00011000      0x00011000      0x00011000      0x00011000
+// 0x555555559e80: 0x06000102      0x090a0405      0x0c0d0e08      0xffffffff
+// 0x555555559e90: 0x06000102      0x090a0405      0x0c0d0e08      0xffffffff
+// 0x555555559ea0: 0x0fc0fc00      0x0fc0fc00      0x003f03f0      0x003f03f0
+// 0x555555559eb0: 0x2f2f2f2f      0x2f2f2f2f      0x3b031b01      0x000000f4
+// 0x555555559ec0: 0x0000001d      0xffffb168      0x00000128      0xffffb1e8
+// 0x555555559ed0: 0x00000150      0xffffb1f8      0x00000168      0xffffb268
+// 0x555555559ee0: 0x00000464      0xffffb3a8      0x00000110      0xffffb498
+// 0x555555559ef0: 0x00000180      0xffffb5d8      0x000001b0      0xffffb948
+// 0x555555559f00: 0x00000218      0xffffb9f8      0x00000250      0xffffbbd8
+// 0x555555559f10: 0x0000029c      0xffffbd98      0x000002e8      0xffffbf68
+// 0x555555559f20: 0x00000334      0xffffc188      0x00000380      0xffffc3a8
+// 0x555555559f30: 0x000003cc      0xffffc578      0x00000418      0xffffc758
+// 0x555555559f40: 0x000004b0      0xffffc8d8      0x00000504      0xffffca98
+// 0x555555559f50: 0x00000540      0xffffcac8      0x00000554      0xffffcc58
+// 0x555555559f60: 0x00000584      0xffffcc88      0x00000598      0xffffcdc8
+// 0x555555559f70: 0x000005b8      0xffffcfe8      0x000005fc      0xffffd3f8
+// 0x555555559f80: 0x00000658      0xffffd4c8      0x00000684      0xffffd538
+// 0x555555559f90: 0x000006a0      0xffffd738      0x000006d0      0xffffda68
+// 0x555555559fa0: 0x00000700      0xffffdba8      0x00000728      0x00000000
+// 0x555555559fb0: 0x00000014      0x00000000      0x00527a01      0x01107801
+// 0x555555559fc0: 0x08070c1b      0x00000190      0x00000014      0x0000001c
+// 0x555555559fd0: 0xffffb290      0x00000026      0x10074400      0x00000000
+// 0x555555559fe0: 0x00000024      0x00000034      0xffffb038      0x00000080
+// 0x555555559ff0: 0x46100e00      0x0f4a180e      0x8008770b      0x3a1a3f00
+// 0x55555555a000: 0x2224332a      0x00000000      0x00000014      0x0000005c
+// 0x55555555a010: 0xffffb090      0x00000010      0x00000000      0x00000000
+// 0x55555555a020: 0x00000014      0x00000074      0xffffb088      0x00000070
+// 0x55555555a030: 0x00000000      0x00000000      0x0000002c      0x0000008c
+// 0x55555555a040: 0xffffb310      0x00000133      0x100e4e00      0x0e470286
+// 0x55555555a050: 0x02038318      0x100e0ade      0x49080e44      0x100e640b
+// 0x55555555a060: 0x4b080e41      0x0000c6c3      0x00000064      0x000000bc
+// 0x55555555a070: 0xffffb420      0x0000036c      0x100e4f00      0x0e48028f
+// (gdb)
+
+  }
 
   // Use non-AVX code to decode 4-byte chunks into 3 bytes of output
 
@@ -3835,9 +4011,7 @@ void StubGenerator::generate_all() {
   }
 
   if (UseBASE64Intrinsics) {
-    if(VM_Version::supports_avx2() &&
-       VM_Version::supports_avx512bw() &&
-       VM_Version::supports_avx512vl()) {
+    if(VM_Version::supports_avx2()) {
       StubRoutines::x86::_avx2_shuffle_base64 = base64_avx2_shuffle_addr();
       StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
       StubRoutines::x86::_avx2_lut_base64 = base64_avx2_lut_addr();

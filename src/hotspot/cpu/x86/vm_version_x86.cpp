@@ -1140,7 +1140,7 @@ void VM_Version::get_processor_features() {
   }
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
-  if ((UseAVX > 2) && supports_avx512vl() && supports_avx512bw()) {
+  if (UseAVX >= 2) {
     if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
       UseBASE64Intrinsics = true;
     }
