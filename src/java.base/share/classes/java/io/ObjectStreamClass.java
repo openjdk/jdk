@@ -1987,14 +1987,14 @@ public final class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> ByteArray.putBoolean(buf, off, unsafe.getBoolean(obj, key));
+                    case 'Z' -> ByteArray.setBoolean(buf, off, unsafe.getBoolean(obj, key));
                     case 'B' -> buf[off] = unsafe.getByte(obj, key);
-                    case 'C' -> ByteArray.putChar(buf, off, unsafe.getChar(obj, key));
-                    case 'S' -> ByteArray.putShort(buf, off, unsafe.getShort(obj, key));
-                    case 'I' -> ByteArray.putInt(buf, off, unsafe.getInt(obj, key));
-                    case 'F' -> ByteArray.putFloat(buf, off, unsafe.getFloat(obj, key));
-                    case 'J' -> ByteArray.putLong(buf, off, unsafe.getLong(obj, key));
-                    case 'D' -> ByteArray.putDouble(buf, off, unsafe.getDouble(obj, key));
+                    case 'C' -> ByteArray.setChar(buf, off, unsafe.getChar(obj, key));
+                    case 'S' -> ByteArray.setShort(buf, off, unsafe.getShort(obj, key));
+                    case 'I' -> ByteArray.setInt(buf, off, unsafe.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloat(buf, off, unsafe.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLong(buf, off, unsafe.getLong(obj, key));
+                    case 'D' -> ByteArray.setDouble(buf, off, unsafe.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }

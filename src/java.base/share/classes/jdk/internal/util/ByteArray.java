@@ -30,8 +30,11 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 
 /**
- * Utility methods for packing/unpacking primitive values in/out of byte arrays
+ * Utility methods for packing/unpacking primitive valueues in/out of byte arrays
  * using {@linkplain ByteOrder#BIG_ENDIAN big endian order} (network order).
+ * <p>
+ * All methods in this class will throw an {@linkplain IllegalArgumentException} if {@code null} is
+ * passed in as a method parameter for a byte array.
  */
 public final class ByteArray {
 
@@ -54,53 +57,65 @@ public final class ByteArray {
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
-     * given offsets.
+     * a given offsets.
      */
 
-    public static boolean getBoolean(byte[] b, int off) {
-        return b[off] != 0;
+    public static boolean getBoolean(byte[] array, int offset) {
+        return array[offset] != 0;
     }
 
-    public static char getChar(byte[] b, int off) {
-        return (char) CHAR.get(b, off);
+    public static char getChar(byte[] array, int offset) {
+        return (char) CHAR.get(array, offset);
     }
 
-    public static short getShort(byte[] b, int off) {
-        return (short) SHORT.get(b, off);
+    public static short getShort(byte[] array, int offset) {
+        return (short) SHORT.get(array, offset);
     }
 
-    public static int getUnsignedShort(byte[] b, int off) {
-        return Short.toUnsignedInt((short) SHORT.get(b, off));
+    public static int getUnsignedShort(byte[] array, int offset) {
+        return Short.toUnsignedInt((short) SHORT.get(array, offset));
     }
 
-    public static int getInt(byte[] b, int off) {
-        return (int) INT.get(b, off);
+    /**
+     * Reads an {@code int} from the provided {@code array} at the given {@code offset} using big endian order.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to read a value from.
+     * @param offset where extraction in the array should begin
+     * @return an {@code int} from the array
+     * @throws NullPointerException      if the provided {@code array} is {@code null}
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 4]
+     * @see #setInt(byte[], int, int)
+     */
+    public static int getInt(byte[] array, int offset) {
+        return (int) INT.get(array, offset);
     }
 
-    public static float getFloat(byte[] b, int off) {
+    public static float getFloat(byte[] array, int offset) {
         // Using Float.intBitsToFloat collapses NaN values to a single
         // "canonical" NaN value
-        return Float.intBitsToFloat((int) INT.get(b, off));
+        return Float.intBitsToFloat((int) INT.get(array, offset));
     }
 
-    public static float getFloatRaw(byte[] b, int off) {
+    public static float getFloatRaw(byte[] array, int offset) {
         // Just gets the bits as they are
-        return (float) FLOAT.get(b, off);
+        return (float) FLOAT.get(array, offset);
     }
 
-    public static long getLong(byte[] b, int off) {
-        return (long) LONG.get(b, off);
+    public static long getLong(byte[] array, int offset) {
+        return (long) LONG.get(array, offset);
     }
 
-    public static double getDouble(byte[] b, int off) {
+    public static double getDouble(byte[] array, int offset) {
         // Using Double.longBitsToDouble collapses NaN values to a single
         // "canonical" NaN value
-        return Double.longBitsToDouble((long) LONG.get(b, off));
+        return Double.longBitsToDouble((long) LONG.get(array, offset));
     }
 
-    public static double getDoubleRaw(byte[] b, int off) {
+    public static double getDoubleRaw(byte[] array, int offset) {
         // Just gets the bits as they are
-        return (double) DOUBLE.get(b, off);
+        return (double) DOUBLE.get(array, offset);
     }
 
     /*
@@ -108,102 +123,112 @@ public final class ByteArray {
      * offset zero.
      */
 
-    public static boolean getBoolean(byte[] b) {
-        return b[0] != 0;
+    public static boolean getBoolean(byte[] array) {
+        return array[0] != 0;
     }
 
-    public static char getChar(byte[] b) {
-        return (char) CHAR_AT_ZERO.get(b);
+    public static char getChar(byte[] array) {
+        return (char) CHAR_AT_ZERO.get(array);
     }
 
-    public static short getShort(byte[] b) {
-        return (short) SHORT_AT_ZERO.get(b);
+    public static short getShort(byte[] array) {
+        return (short) SHORT_AT_ZERO.get(array);
     }
 
-    public static int getUnsignedShort(byte[] b) {
-        return Short.toUnsignedInt((short) SHORT_AT_ZERO.get(b));
+    public static int getUnsignedShort(byte[] array) {
+        return Short.toUnsignedInt((short) SHORT_AT_ZERO.get(array));
     }
 
-    public static int getInt(byte[] b) {
-        return (int) INT_AT_ZERO.get(b);
+    public static int getInt(byte[] array) {
+        return (int) INT_AT_ZERO.get(array);
     }
 
-    public static float getFloat(byte[] b) {
+    public static float getFloat(byte[] array) {
         // Using Float.intBitsToFloat collapses NaN values to a single
         // "canonical" NaN value
-        return Float.intBitsToFloat((int) INT_AT_ZERO.get(b));
+        return Float.intBitsToFloat((int) INT_AT_ZERO.get(array));
     }
 
-    public static float getFloatRaw(byte[] b) {
+    public static float getFloatRaw(byte[] array) {
         // Just gets the bits as they are
-        return (float) FLOAT_AT_ZERO.get(b);
+        return (float) FLOAT_AT_ZERO.get(array);
     }
 
-    public static long getLong(byte[] b) {
-        return (long) LONG_AT_ZERO.get(b);
+    public static long getLong(byte[] array) {
+        return (long) LONG_AT_ZERO.get(array);
     }
 
-    public static double getDouble(byte[] b) {
+    public static double getDouble(byte[] array) {
         // Using Double.longBitsToDouble collapses NaN values to a single
         // "canonical" NaN value
-        return Double.longBitsToDouble((long) LONG_AT_ZERO.get(b));
+        return Double.longBitsToDouble((long) LONG_AT_ZERO.get(array));
     }
 
-    public static double getDoubleRaw(byte[] b) {
+    public static double getDoubleRaw(byte[] array) {
         // Just gets the bits as they are
-        return (double) DOUBLE_AT_ZERO.get(b);
+        return (double) DOUBLE_AT_ZERO.get(array);
     }
 
     /*
-     * Methods for packing primitive values into byte arrays starting at given
-     * offsets.
+     * Methods for packing primitive values into byte arrays starting at a given
+     * offset.
      */
 
-    public static void putBoolean(byte[] b, int off, boolean val) {
-        b[off] = (byte) (val ? 1 : 0);
+    public static void setBoolean(byte[] array, int offset, boolean value) {
+        array[offset] = (byte) (value ? 1 : 0);
     }
 
-    public static void putChar(byte[] b, int off, char val) {
-        CHAR.set(b, off, val);
-        //SHORT.set(b, off, (short) val);
+    public static void setChar(byte[] array, int offset, char value) {
+        CHAR.set(array, offset, value);
     }
 
-    public static void putShort(byte[] b, int off, short val) {
-        SHORT.set(b, off, val);
+    public static void setShort(byte[] array, int offset, short value) {
+        SHORT.set(array, offset, value);
     }
 
-    public static void putUnsignedShort(byte[] b, int off, int val) {
-        SHORT.set(b, off, (short) (char) val);
+    public static void setUnsignedShort(byte[] array, int offset, int value) {
+        SHORT.set(array, offset, (short) (char) value);
     }
 
-    public static void putInt(byte[] b, int off, int val) {
-        INT.set(b, off, val);
+    /**
+     * Writes an {@code int} to the provided {@code array} at the given {@code offset} using big endian order.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to write a value to
+     * @param offset where writing in the array should begin
+     * @throws NullPointerException      if the provided {@code array} is {@code null}
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside the range [0, array.length - 4]
+     * @see #setInt(byte[], int, int)
+     */
+    public static void setInt(byte[] array, int offset, int value) {
+        INT.set(array, offset, value);
     }
 
-    public static void putFloat(byte[] b, int off, float val) {
+    public static void setFloat(byte[] array, int offset, float value) {
         // Using Float.floatToIntBits collapses NaN values to a single
         // "canonical" NaN value
-        INT.set(b, off, Float.floatToIntBits(val));
+        INT.set(array, offset, Float.floatToIntBits(value));
     }
 
-    public static void putFloatRaw(byte[] b, int off, float val) {
+    public static void setFloatRaw(byte[] array, int offset, float value) {
         // Just sets the bits as they are
-        FLOAT.set(b, off, val);
+        FLOAT.set(array, offset, value);
     }
 
-    public static void putLong(byte[] b, int off, long val) {
-        LONG.set(b, off, val);
+    public static void setLong(byte[] array, int offset, long value) {
+        LONG.set(array, offset, value);
     }
 
-    public static void putDouble(byte[] b, int off, double val) {
+    public static void setDouble(byte[] array, int offset, double value) {
         // Using Double.doubleToLongBits collapses NaN values to a single
         // "canonical" NaN value
-        LONG.set(b, off, Double.doubleToLongBits(val));
+        LONG.set(array, offset, Double.doubleToLongBits(value));
     }
 
-    public static void putDoubleRaw(byte[] b, int off, double val) {
+    public static void setDoubleRaw(byte[] array, int offset, double value) {
         // Just sets the bits as they are
-        DOUBLE.set(b, off, val);
+        DOUBLE.set(array, offset, value);
     }
 
 
@@ -211,55 +236,55 @@ public final class ByteArray {
      * Methods for packing primitive values into byte arrays starting at offset zero.
      */
 
-    public static void putBoolean(byte[] b, boolean val) {
-        b[0] = (byte) (val ? 1 : 0);
+    public static void setBoolean(byte[] array, boolean value) {
+        array[0] = (byte) (value ? 1 : 0);
     }
 
-    public static void putChar(byte[] b, char val) {
-        CHAR_AT_ZERO.set(b, val);
+    public static void setChar(byte[] array, char value) {
+        CHAR_AT_ZERO.set(array, value);
     }
 
-    public static void putShort(byte[] b, short val) {
-        SHORT_AT_ZERO.set(b, val);
+    public static void setShort(byte[] array, short value) {
+        SHORT_AT_ZERO.set(array, value);
     }
 
-    public static void putUnsignedShort(byte[] b, int val) {
-        SHORT_AT_ZERO.set(b, (short) (char) val);
+    public static void setUnsignedShort(byte[] array, int value) {
+        SHORT_AT_ZERO.set(array, (short) (char) value);
     }
 
-    public static void putInt(byte[] b, int val) {
-        INT_AT_ZERO.set(b, val);
+    public static void setInt(byte[] array, int value) {
+        INT_AT_ZERO.set(array, value);
     }
 
-    public static void putFloat(byte[] b, float val) {
+    public static void setFloat(byte[] array, float value) {
         // Using Float.floatToIntBits collapses NaN values to a single
         // "canonical" NaN value
-        INT_AT_ZERO.set(b, Float.floatToIntBits(val));
+        INT_AT_ZERO.set(array, Float.floatToIntBits(value));
     }
 
-    public static void putFloatRaw(byte[] b, float val) {
+    public static void setFloatRaw(byte[] array, float value) {
         // Just sets the bits as they are
-        FLOAT_AT_ZERO.set(b, val);
+        FLOAT_AT_ZERO.set(array, value);
     }
 
-    public static void putLong(byte[] b, long val) {
-        LONG_AT_ZERO.set(b, val);
+    public static void setLong(byte[] array, long value) {
+        LONG_AT_ZERO.set(array, value);
     }
 
-    public static void putDouble(byte[] b, double val) {
+    public static void setDouble(byte[] array, double value) {
         // Using Double.doubleToLongBits collapses NaN values to a single
         // "canonical" NaN value
-        LONG_AT_ZERO.set(b, Double.doubleToLongBits(val));
+        LONG_AT_ZERO.set(array, Double.doubleToLongBits(value));
     }
 
-    public static void putDoubleRaw(byte[] b, double val) {
+    public static void setDoubleRaw(byte[] array, double value) {
         // Just sets the bits as they are
-        DOUBLE_AT_ZERO.set(b, val);
+        DOUBLE_AT_ZERO.set(array, value);
     }
 
     private static VarHandle createAtZeroOffset(Class<?> viewArrayClass) {
         var original = create(viewArrayClass);
-        // (byte[] array, int off, ...) -> { off = 0 } -> (byte[], ...)
+        // (byte[] array, int offset, ...) -> { offset = 0 } -> (byte[], ...)
         return MethodHandles.insertCoordinates(original, 1, 0);
     }
 
