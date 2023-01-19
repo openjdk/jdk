@@ -422,7 +422,7 @@ extern "C" JNIEXPORT void nm(intptr_t p) {
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
   if (cb == nullptr) {
-    tty->print_cr("nullptr");
+    tty->print_cr("null");
   } else {
     cb->print();
   }
@@ -485,7 +485,7 @@ extern "C" JNIEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
   if (p == nullptr) {
-    tty->print_cr("nullptr");
+    tty->print_cr("null");
     return;
   }
   if (Universe::heap()->is_in(p)) {

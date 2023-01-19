@@ -302,7 +302,7 @@ template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
   }
 
   virtual bool remove_before(LinkedListNode<E>* ref) {
-    assert(ref != nullptr, "nullptr pointer");
+    assert(ref != nullptr, "null pointer");
     LinkedListNode<E>* p = this->head();
     LinkedListNode<E>* to_delete = nullptr; // to be deleted
     LinkedListNode<E>* prev = nullptr;      // node before the node to be deleted

@@ -187,7 +187,7 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // Non-nullptr address guaranteed to generate a SEGV mapping error on read, for test purposes.
+  // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
   static constexpr intptr_t segfault_address = (1 * K) AIX_ONLY(+ (4 * K));
 
   // Max value for the ErrorLogPrintCodeLimit flag.
