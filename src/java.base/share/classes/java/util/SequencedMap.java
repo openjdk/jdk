@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,13 +75,25 @@ package java.util;
  * iteration, searching, copying, and streaming of this map's mappings in either forward order or
  * reverse order.
  * <p>
- * The {@link Map.Entry} instances obtained from the {@link entrySet} view
- * of this collection, and from its reverse-ordered view, maintain a connection
+ * A map's reverse-ordered view is generally not serializable, even if the original
+ * map is serializable.
+ * <p>
+ * The {@link Map.Entry} instances obtained by iterating the {@link #entrySet} view, the
+ * {@link #sequencedEntrySet} view, and its reverse-ordered view, maintain a connection
  * to the underlying map. If the underlying map permits it, calling the
  * {@link Map.Entry#setValue setValue} method on such an {@code Entry} will
  * modify the value of the underlying mapping. It is, however, unspecified whether
  * modifications to the value in the underlying mapping are visible in the
  * {@code Entry} instance.
+ * <p>
+ * The methods
+ * {@link #firstEntry},
+ * {@link #lastEntry},
+ * {@link #pollFirstEntry}, and
+ * {@link #pollLastEntry}
+ * return {@link Map.Entry} instances that represent snapshots of mappings as
+ * of the time of the call. They do <em>not</em> support mutation of the
+ * underlying map via the optional {@link Map.Entry#setValue setValue} method.
  * <p>
  * Depending upon the underlying implementation, the {@code Entry} instances
  * returned by other methods in this interface might or might not be connected
@@ -133,7 +145,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> firstEntry() {
         var it = entrySet().iterator();
-        return it.hasNext() ? it.next() : null;
+        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
     }
 
     /**
@@ -152,7 +164,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
      */
     default Map.Entry<K,V> lastEntry() {
         var it = reversed().entrySet().iterator();
-        return it.hasNext() ? it.next() : null;
+        return it.hasNext() ? Map.Entry.copyOf(it.next()) : null;
     }
 
     /**
@@ -178,7 +190,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollFirstEntry() {
         var it = entrySet().iterator();
         if (it.hasNext()) {
-            var entry = it.next();
+            var entry = Map.Entry.copyOf(it.next());
             it.remove();
             return entry;
         } else {
@@ -209,7 +221,7 @@ public interface SequencedMap<K, V> extends Map<K, V> {
     default Map.Entry<K,V> pollLastEntry() {
         var it = reversed().entrySet().iterator();
         if (it.hasNext()) {
-            var entry = it.next();
+            var entry = Map.Entry.copyOf(it.next());
             it.remove();
             return entry;
         } else {

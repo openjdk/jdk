@@ -60,6 +60,9 @@ package java.util;
  * methods, allow convenient iteration, searching, copying, and streaming of the elements of
  * this collection in either forward order or reverse order.
  * <p>
+ * A collection's reverse-ordered view is generally not serializable, even if the original
+ * collection is serializable.
+ * <p>
  * This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
  * Java Collections Framework</a>.
