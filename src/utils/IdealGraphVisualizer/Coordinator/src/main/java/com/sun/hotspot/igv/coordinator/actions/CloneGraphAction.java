@@ -61,7 +61,7 @@ public final class CloneGraphAction extends CookieAction {
 
     @Override
     public String getName() {
-        return "Open clone";
+        return "Open in new tab";
     }
 
     @Override

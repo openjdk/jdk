@@ -950,12 +950,16 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
         super.setSelectedObjects(new HashSet<>(list));
     }
 
+    @Override
+    public void resetUndoRedoManager() {
+        undoRedoManager = new UndoRedo.Manager();
+        undoRedoManager.setLimit(UNDOREDO_LIMIT);
+    }
+
     private UndoRedo.Manager getUndoRedoManager() {
         if (undoRedoManager == null) {
-            undoRedoManager = new UndoRedo.Manager();
-            undoRedoManager.setLimit(UNDOREDO_LIMIT);
+            resetUndoRedoManager();
         }
-
         return undoRedoManager;
     }
 

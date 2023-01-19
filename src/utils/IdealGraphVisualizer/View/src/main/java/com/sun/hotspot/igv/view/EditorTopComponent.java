@@ -62,7 +62,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Thomas Wuerthinger
  */
-public final class EditorTopComponent extends TopComponent {
+public final class EditorTopComponent extends TopComponent implements TopComponent.Cloneable {
 
     private final DiagramViewer scene;
     private final InstanceContent graphContent;
@@ -390,6 +390,22 @@ public final class EditorTopComponent extends TopComponent {
     @Override
     public UndoRedo getUndoRedo() {
         return scene.getUndoRedo();
+    }
+
+    public void resetUndoRedo() {
+        scene.resetUndoRedoManager();
+    }
+
+    @Override
+    public TopComponent cloneComponent() {
+        EditorTopComponent etc = new EditorTopComponent(getModel().getFirstGraph());
+        etc.getModel().setSelectedNodes(new HashSet<>(getModel().getSelectedNodes()));
+        etc.getModel().setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
+        if (getModel().getGraph().isDiffGraph()) {
+            etc.getModel().setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
+        }
+        etc.resetUndoRedo();
+        return etc;
     }
 
     /** This method is called from within the constructor to

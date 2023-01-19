@@ -143,6 +143,9 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
         selectGraph(currentGraph);
     }
 
+    public boolean getHideDuplicates() {
+        return hideDuplicates;
+    }
 
     public DiagramViewModel(InputGraph graph, FilterChain filterChain, FilterChain sequenceFilterChain) {
         assert filterChain != null;

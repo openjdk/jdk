@@ -70,6 +70,8 @@ public interface DiagramViewer {
 
     ChangedEvent<DiagramViewer> getZoomChangedEvent();
 
+    void resetUndoRedoManager();
+
     UndoRedo getUndoRedo();
 
     void componentHidden();
