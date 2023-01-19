@@ -818,7 +818,7 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             throw new ArithmeticException("Divide by zero");
 
-        BigInteger plainNum = plainNumerator();
+        BigInteger plainNum = wholeNumerator();
         BigInteger[] quotAndRem = denominator.divideAndRemainder(plainNum);
         return valueOf(signum, quotAndRem[0], quotAndRem[1], plainNum);
     }
@@ -826,7 +826,7 @@ public class Rational extends Number implements Comparable<Rational> {
     /**
      * Returns (floor * denominator + numerator)
      */
-    private BigInteger plainNumerator() {
+    private BigInteger wholeNumerator() {
         return floor.multiply(denominator).add(numerator);
     }
 
@@ -1060,7 +1060,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // == sqrt(floor * den + num) / sqrt(den)
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
             // simplify the radicand to improve the sqrt algorithm performance
-            BigInteger[] radicand = simplify(plainNumerator(), denominator);
+            BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
             BigInteger[] sqrtNumRem = radicand[0].sqrtAndRemainder();
             if (sqrtNumRem[1].signum != 0)
@@ -1324,7 +1324,7 @@ public class Rational extends Number implements Comparable<Rational> {
         // == root(floor * den + num, n) / root(den, n)
         if (targetRm == RoundingMode.UNNECESSARY || originalPrecision == 0) {
             // simplify the radicand to improve the algorithm performance
-            BigInteger[] radicand = simplify(plainNumerator(), denominator);
+            BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
             BigInteger[] rootNumRem = radicand[0].rootAndRemainder(deg);
             if (rootNumRem[1].signum != 0)
@@ -1716,12 +1716,21 @@ public class Rational extends Number implements Comparable<Rational> {
      * according to the context settings. Note that this conversion can lose
      * information about the {@code Rational} value.
      * <p>
-     * To have an exception thrown if the conversion is inexact (in other words if a
-     * nonzero fractional part is discarded), use the {@link #toBigDecimalExact()}
-     * method.
+     * To always have an exception thrown if the conversion is inexact (in other
+     * words if a nonzero fractional part is discarded), use the
+     * {@link #toBigDecimalExact()} method.
      *
      * @param mc the context to use.
      * @return this {@code Rational} converted to a {@code BigDecimal}.
+     * @throws ArithmeticException if the result is inexact but the rounding mode is
+     *                             {@code UNNECESSARY} or {@code mc.precision == 0}
+     *                             and this {@code Rational} has a non-terminating
+     *                             decimal expansion
+     * @implNote The semantics of this method exactly mimic that of the
+     *           {@link BigDecimal#divide(BigDecimal, MathContext)} method, but
+     *           avoiding the division of the whole numerator by the denominator to
+     *           compute the absolute value: {@code (absFloor() * denominator() +
+     *           numerator()) / denominator()}.
      */
     public BigDecimal toBigDecimal(MathContext mc) {
         final BigDecimal intPart = new BigDecimal(floor);
@@ -1729,23 +1738,30 @@ public class Rational extends Number implements Comparable<Rational> {
         final BigDecimal den = new BigDecimal(denominator);
 
         final BigDecimal absVal;
-        MathContext workMc = null;
+        MathContext workMc;
         final int prec = mc.getPrecision();
-        if (prec == 0) // arbitrary precision, no rounding
+        if (prec == 0) { // arbitrary precision
             absVal = intPart.add(num.divide(den));
-        else if (floor.signum == 0) { // bounded precision, no integer part
+            workMc = null; // no rounding
+        } else if (floor.signum == 0) { // bounded precision, no integer part
             // one more digit for rounding
             BigDecimal frac = num.divide(den, new MathContext(prec + 1, RoundingMode.DOWN));
 
             if (frac.multiply(den).compareTo(num) == 0) { // no remainder
-                frac = frac.stripTrailingZeros();
-                workMc = mc; // round in case of last significand digit is not zero
-            } else { // non-zero discarded part
+                workMc = mc; // user-supplied MathContext is sufficient
+            } else { // non-zero discarded fraction
                 RoundingMode rm = mc.getRoundingMode();
-                // if the remainder is non-zero and the last significand digit is 5,
-                // the discarded fraction of ulp is always > 0.5
-                if (rm == RoundingMode.HALF_EVEN)
+
+                if (rm == RoundingMode.UNNECESSARY)
+                    throw new ArithmeticException("Rounding necessary");
+
+                if (rm == RoundingMode.HALF_EVEN) {
+                    // ensure rounding up if last significand digit is 5
                     rm = RoundingMode.HALF_UP;
+                } else if (roundUp(rm)) {
+                    // ensure rounding up if last significand digit is 0
+                    frac = frac.add(frac.ulp());
+                }
 
                 workMc = new MathContext(prec, rm);
             }
@@ -1760,34 +1776,59 @@ public class Rational extends Number implements Comparable<Rational> {
 
                 if (frac.multiply(den).compareTo(num) == 0) { // no remainder
                     frac = frac.stripTrailingZeros();
-                    workMc = mc; // round in case of last significand digit is not zero
-                } else { // non-zero discarded part
+                    workMc = mc; // user-supplied MathContext is sufficient
+                } else { // non-zero discarded fraction
                     RoundingMode rm = mc.getRoundingMode();
-                    // if the remainder is non-zero and the last significand digit is 5,
-                    // the discarded fraction of ulp is always > 0.5
-                    if (rm == RoundingMode.HALF_EVEN)
+
+                    if (rm == RoundingMode.UNNECESSARY)
+                        throw new ArithmeticException("Rounding necessary");
+
+                    if (rm == RoundingMode.HALF_EVEN) {
+                        // ensure rounding up if last significand digit is 5
                         rm = RoundingMode.HALF_UP;
+                    } else if (roundUp(rm)) {
+                        // ensure rounding up if last significand digit is 0
+                        frac = frac.add(frac.ulp());
+                    }
 
                     workMc = new MathContext(prec, rm);
                 }
 
                 absVal = intPart.add(frac);
             } else { // scale < 0, truncate the integer part
-                absVal = intPart.setScale(scale + 1, RoundingMode.DOWN); // one more digit for rounding
-                RoundingMode rm = mc.getRoundingMode();
+                // one more digit for rounding
+                BigDecimal trunc = intPart.setScale(scale + 1, RoundingMode.DOWN);
 
-                // if reducing the scale the discarded part is non-zero
-                // and the last significant digit of the truncated is 5,
-                // the discarded fraction of ulp is always > 0.5
-                if (rm == RoundingMode.HALF_EVEN && (num.signum() == 1 || absVal.compareTo(intPart) != 0))
-                    rm = RoundingMode.HALF_UP;
+                if (numerator.signum == 0 && trunc.compareTo(intPart) == 0) { // no remainder
+                    workMc = mc; // user-supplied MathContext is sufficient
+                } else { // non-zero discarded part
+                    RoundingMode rm = mc.getRoundingMode();
 
-                workMc = new MathContext(prec, rm);
+                    if (rm == RoundingMode.UNNECESSARY)
+                        throw new ArithmeticException("Rounding necessary");
+
+                    if (rm == RoundingMode.HALF_EVEN) {
+                        // ensure rounding up if last significand digit is 5
+                        rm = RoundingMode.HALF_UP;
+                    } else if (roundUp(rm)) {
+                        // ensure rounding up if last significand digit is 0
+                        trunc = trunc.add(trunc.ulp());
+                    }
+
+                    workMc = new MathContext(prec, rm);
+                }
+
+                absVal = trunc;
             }
         }
 
-        BigDecimal res = r.signum() == -1 ? absVal.negate() : absVal;
+        BigDecimal res = signum == -1 ? absVal.negate() : absVal;
         return workMc == null ? res : res.round(workMc);
+    }
+
+    private boolean roundUp(RoundingMode rm) {
+        return rm == RoundingMode.UP || signum != -1 && rm == RoundingMode.CEILING
+                || signum == -1 && rm == RoundingMode.FLOOR;
     }
 
     /**
