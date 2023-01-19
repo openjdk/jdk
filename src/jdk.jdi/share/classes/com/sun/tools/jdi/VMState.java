@@ -173,19 +173,24 @@ class VMState {
     private final ReferenceQueue<VMListener> listenersReferenceQueue = new ReferenceQueue<>();
 
     private void removeUnreachableListeners() {
-        boolean found = false;
-        while (listenersReferenceQueue.poll() != null) {
-            found = true;
+        // If there are no listeners on the ReferenceQueue, then that means none
+        // are unreachable and we can just return.
+        if (listenersReferenceQueue.poll() == null) {
+            return; // There are no unreachable listeners
         }
-        if (found) {
-            Iterator<WeakReference<VMListener>> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                VMListener l = iter.next().get();
-                if (l == null) {
-                    iter.remove();
-                }
+
+        // We always need to clear the ReferenceQueue
+        while (listenersReferenceQueue.poll() != null)
+            ;
+
+        // Remove unreachable listeners since we know there is at least one.
+        Iterator<WeakReference<VMListener>> iter = listeners.iterator();
+        while (iter.hasNext()) {
+            VMListener l = iter.next().get();
+            if (l == null) {
+                iter.remove();
             }
-         }
+        }
     }
 
     synchronized void addListener(VMListener listener) {
