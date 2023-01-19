@@ -1034,13 +1034,13 @@ const char* Arguments::build_resource_string(char** args, int count) {
   }
   size_t length = 0;
   for (int i = 0; i < count; i++) {
-    length += strlen(args[i]) + 1; // add 1 for a space or nullptr terminating character
+    length += strlen(args[i]) + 1; // add 1 for a space or null terminating character
   }
   char* s = NEW_RESOURCE_ARRAY(char, length);
   char* dst = s;
   for (int j = 0; j < count; j++) {
-    size_t offset = strlen(args[j]) + 1; // add 1 for a space or nullptr terminating character
-    jio_snprintf(dst, length, "%s ", args[j]); // jio_snprintf will replace the last space character with nullptr character
+    size_t offset = strlen(args[j]) + 1; // add 1 for a space or null terminating character
+    jio_snprintf(dst, length, "%s ", args[j]); // jio_snprintf will replace the last space character with null character
     dst += offset;
     length -= offset;
   }
@@ -1475,9 +1475,9 @@ void set_object_alignment() {
 size_t Arguments::max_heap_for_compressed_oops() {
   // Avoid sign flip.
   assert(OopEncodingHeapMax > (uint64_t)os::vm_page_size(), "Unusual page size");
-  // We need to fit both the nullptr page and the heap into the memory budget, while
+  // We need to fit both the null page and the heap into the memory budget, while
   // keeping alignment constraints of the heap. To guarantee the latter, as the
-  // nullptr page is located before the heap, we pad the nullptr page to the conservative
+  // null page is located before the heap, we pad the null page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
   size_t displacement_due_to_null_page = align_up((size_t)os::vm_page_size(),
                                                   _conservative_max_heap_alignment);
@@ -2194,7 +2194,7 @@ bool valid_jdwp_agent(char *name, bool is_path) {
 
 int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase) {
   // --patch-module=<module>=<file>(<pathsep><file>)*
-  assert(patch_mod_tail != nullptr, "Unexpected nullptr patch-module value");
+  assert(patch_mod_tail != nullptr, "Unexpected null patch-module value");
   // Find the equal sign between the module name and the path specification
   const char* module_equal = strchr(patch_mod_tail, '=');
   if (module_equal == nullptr) {
@@ -3284,7 +3284,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_OK;
   }
 
-  // '+ 1' for nullptr termination even with max bytes
+  // '+ 1' for null termination even with max bytes
   size_t bytes_alloc = stbuf.st_size + 1;
 
   char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtArguments);
@@ -3368,7 +3368,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
       }
     }
 
-    // steal a white space character and set it to nullptr
+    // steal a white space character and set it to null
     *wrt++ = '\0';
     // We now have a complete token
 
@@ -3923,7 +3923,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 #endif
 
 #if defined(AIX)
-  UNSUPPORTED_OPTION_nullptr(AllocateHeapAt);
+  UNSUPPORTED_OPTION_NULL(AllocateHeapAt);
 #endif
 
 #ifndef PRODUCT
@@ -4150,7 +4150,7 @@ const char* Arguments::PropertyList_get_readable_value(SystemProperty *pl, const
       } else if (strcmp(key, "jdk.boot.class.path.append") == 0) {
         return prop->value();
       } else {
-        // Property is internal and not jdk.boot.class.path.append so return nullptr.
+        // Property is internal and not jdk.boot.class.path.append so return null.
         return nullptr;
       }
     }
@@ -4212,7 +4212,7 @@ void Arguments::PropertyList_unique_add(SystemProperty** plist, const char* k, c
 // the destination buffer pointed by buf. Otherwise, returns false.
 // Notes:
 // 1. If the length (buflen) of the destination buffer excluding the
-// nullptr terminator character is not long enough for holding the expanded
+// null terminator character is not long enough for holding the expanded
 // pid characters, it also returns false instead of returning the partially
 // expanded one.
 // 2. The passed in "buflen" should be large enough to hold the null terminator.

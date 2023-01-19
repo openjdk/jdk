@@ -41,7 +41,7 @@ class outputStream;
 //  /* If you use a wrong type, a run-time assertion will happen */
 //  intx v = flag->read<intx>();
 //
-//  /* If you use a wrong type, or a nullptr flag, an error code is returned */
+//  /* If you use a wrong type, or a null flag, an error code is returned */
 //  JVMFlag::Error err = JVMFlagAccess::get<JVM_FLAG_TYPE(intx)>(flag, &v, origin);
 
 #define JVM_FLAG_TYPE(t) \

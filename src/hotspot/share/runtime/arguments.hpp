@@ -55,7 +55,7 @@ struct SpecialFlag {
 };
 
 struct LegacyGCLogging {
-    const char* file;        // nullptr -> stdout
+    const char* file;        // null -> stdout
     int lastFlag;            // 0 not set; 1 -> -verbose:gc; 2 -> -Xloggc
 };
 
@@ -677,14 +677,14 @@ do {                                                     \
 } while(0)
 
 // similar to UNSUPPORTED_OPTION but sets flag to nullptr
-#define UNSUPPORTED_OPTION_nullptr(opt)                     \
-do {                                                     \
-  if (opt) {                                             \
-    if (FLAG_IS_CMDLINE(opt)) {                          \
+#define UNSUPPORTED_OPTION_NULL(opt)                         \
+do {                                                         \
+  if (opt) {                                                 \
+    if (FLAG_IS_CMDLINE(opt)) {                              \
       warning("-XX flag " #opt " not supported in this VM"); \
-    }                                                    \
-    FLAG_SET_DEFAULT(opt, nullptr);                         \
-  }                                                      \
+    }                                                        \
+    FLAG_SET_DEFAULT(opt, nullptr);                          \
+  }                                                          \
 } while(0)
 
 // Initialize options not supported in this release, with a warning

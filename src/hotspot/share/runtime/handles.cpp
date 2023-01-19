@@ -53,9 +53,9 @@ oop* HandleArea::allocate_null_handle() {
 #define DEF_METADATA_HANDLE_FN_NOINLINE(name, type) \
 name##Handle::name##Handle(const name##Handle &h) {                    \
   _value = h._value;                                                   \
-  if (_value != nullptr) {                                                \
+  if (_value != nullptr) {                                             \
     assert(_value->is_valid(), "obj is valid");                        \
-    if (h._thread != nullptr) {                                           \
+    if (h._thread != nullptr) {                                        \
       assert(h._thread == Thread::current(), "thread must be current");\
       _thread = h._thread;                                             \
     } else {                                                           \
@@ -64,15 +64,15 @@ name##Handle::name##Handle(const name##Handle &h) {                    \
     assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
-    _thread = nullptr;                                                    \
+    _thread = nullptr;                                                 \
   }                                                                    \
 }                                                                      \
 name##Handle& name##Handle::operator=(const name##Handle &s) {         \
   remove();                                                            \
   _value = s._value;                                                   \
-  if (_value != nullptr) {                                                \
+  if (_value != nullptr) {                                             \
     assert(_value->is_valid(), "obj is valid");                        \
-    if (s._thread != nullptr) {                                           \
+    if (s._thread != nullptr) {                                        \
       assert(s._thread == Thread::current(), "thread must be current");\
       _thread = s._thread;                                             \
     } else {                                                           \
@@ -81,12 +81,12 @@ name##Handle& name##Handle::operator=(const name##Handle &s) {         \
     assert(_thread->is_in_live_stack((address)this), "not on stack?"); \
     _thread->metadata_handles()->push((Metadata*)_value);              \
   } else {                                                             \
-    _thread = nullptr;                                                    \
+    _thread = nullptr;                                                 \
   }                                                                    \
   return *this;                                                        \
 }                                                                      \
 inline void name##Handle::remove() {                                   \
-  if (_value != nullptr) {                                                \
+  if (_value != nullptr) {                                             \
     int i = _thread->metadata_handles()->find_from_end((Metadata*)_value); \
     assert(i!=-1, "not in metadata_handles list");                     \
     _thread->metadata_handles()->remove_at(i);                         \

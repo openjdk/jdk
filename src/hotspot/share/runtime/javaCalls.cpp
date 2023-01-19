@@ -95,7 +95,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   debug_only(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
-  assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to nullptr");
+  assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to null");
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }

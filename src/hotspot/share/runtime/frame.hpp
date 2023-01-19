@@ -159,10 +159,10 @@ class frame {
   // Every frame needs to return a unique id which distinguishes it from all other frames.
   // For sparc and ia32 use sp. ia64 can have memory frames that are empty so multiple frames
   // will have identical sp values. For ia64 the bsp (fp) value will serve. No real frame
-  // should have an id() of nullptr so it is a distinguishing value for an unmatchable frame.
+  // should have an id() of null so it is a distinguishing value for an unmatchable frame.
   // We also have relationals which allow comparing a frame to anoth frame's id() allow
   // us to distinguish younger (more recent activation) from older (less recent activations)
-  // A nullptr id is only valid when comparing for equality.
+  // A null id is only valid when comparing for equality.
 
   intptr_t* id(void) const;
   bool is_younger(intptr_t* id) const;

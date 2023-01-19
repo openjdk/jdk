@@ -66,7 +66,7 @@ struct DummyLimit {
 template <typename T>
 class LimitGetter {
 public:
-  // These functions return nullptr for develop flags in a PRODUCT build
+  // These functions return null for develop flags in a PRODUCT build
   static constexpr const JVMFlagLimit* no_limit(...) {
     return nullptr;
   }

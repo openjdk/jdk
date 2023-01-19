@@ -98,7 +98,7 @@ void JVMFlag::set_product() {
   assert(is_product(), "sanity");
 }
 
-// Get custom message for this locked flag, or nullptr if
+// Get custom message for this locked flag, or null if
 // none is available. Returns message type produced.
 JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
   buf[0] = '\0';
@@ -543,7 +543,7 @@ const int EXPERIMENTAL = JVMFlag::KIND_EXPERIMENTAL;
 
 static JVMFlag flagTable[NUM_JVMFlagsEnum + 1] = {
   MATERIALIZE_ALL_FLAGS
-  JVMFlag() // The iteration code wants a flag with a nullptr name at the end of the table.
+  JVMFlag() // The iteration code wants a flag with a null name at the end of the table.
 };
 
 // We want flagTable[] to be completely initialized at C++ compilation time, which requires

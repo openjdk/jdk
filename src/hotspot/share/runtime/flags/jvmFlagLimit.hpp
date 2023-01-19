@@ -58,12 +58,12 @@ template <typename T> class JVMTypedFlagLimit;
 // To query the range information of a JVMFlag:
 //     JVMFlagLimit::get_range(JVMFlag*)
 //     JVMFlagLimit::get_range_at(int flag_enum)
-// If the given flag doesn't have a range, nullptr is returned.
+// If the given flag doesn't have a range, null is returned.
 //
 // To query the constraint information of a JVMFlag:
 //     JVMFlagLimit::get_constraint(JVMFlag*)
 //     JVMFlagLimit::get_constraint_at(int flag_enum)
-// If the given flag doesn't have a constraint, nullptr is returned.
+// If the given flag doesn't have a constraint, null is returned.
 
 class JVMFlagLimit {
   short _constraint_func;

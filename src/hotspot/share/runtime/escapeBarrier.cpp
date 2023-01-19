@@ -174,8 +174,8 @@ class EscapeBarrierSuspendHandshake : public HandshakeClosure {
 };
 
 void EscapeBarrier::sync_and_suspend_one() {
-  assert(_calling_thread != nullptr, "calling thread must not be nullptr");
-  assert(_deoptee_thread != nullptr, "deoptee thread must not be nullptr");
+  assert(_calling_thread != nullptr, "calling thread must not be null");
+  assert(_deoptee_thread != nullptr, "deoptee thread must not be null");
   assert(barrier_active(), "should not call");
 
   // Sync with other threads that might be doing deoptimizations
@@ -205,7 +205,7 @@ void EscapeBarrier::sync_and_suspend_one() {
 
 void EscapeBarrier::sync_and_suspend_all() {
   assert(barrier_active(), "should not call");
-  assert(_calling_thread != nullptr, "calling thread must not be nullptr");
+  assert(_calling_thread != nullptr, "calling thread must not be null");
   assert(all_threads(), "sanity");
 
   // Sync with other threads that might be doing deoptimizations
