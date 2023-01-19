@@ -1060,7 +1060,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
 
   const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
-  const size_t page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
 #ifdef ASSERT
