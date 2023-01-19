@@ -6937,7 +6937,7 @@ typedef uint32_t u32;
   dest1 = src[2] >> 12;   /* 14 bits */         \
   dest1 |= src[3] << 14;  /* 26 bits */         \
   dest1 |= src[4] << 40;  /* 24 bits */         \
-  dest0 &= 0xffffffffffffffff; /* 64 bits */    \
+  dest1 &= 0xffffffffffffffff; /* 64 bits */    \
                                                 \
   dest2 = src[4] >> 24;   /* 2 bits  */         \
 } while(0)
@@ -6951,20 +6951,15 @@ typedef uint32_t u32;
     u128 b_u0, b_u1, b_u2;
     PACK_26(b_u0, b_u1, b_u2, acc_start);
 
-    julong ctx_r[3];
-    PACK_26(ctx_r[0], ctx_r[1], ctx_r[2], r_start);
-
-    u64 b_s0, b_s1;
-    u32 b_s2;
-
-    const uint64_t  b_r0 = ctx_r[0];
-    const uint64_t  b_r1 = ctx_r[1];
+    uint64_t b_r0, b_r1, b_r2;
+    PACK_26(b_r0, b_r1, b_r2, r_start);
     const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
     const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
     while (length >= BLOCK_LENGTH) {
       printf("#%d\n", ++counter);
 
+      u64 b_s0, b_s1; u32 b_s2;
       u64 *b_c = (u64*)input_start;
 
       printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
