@@ -853,7 +853,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
 
     __ bind(Lstatic); // Static case: Lock the java mirror
     // Load mirror from interpreter frame.
-    __ ld(Robj_to_lock, _abi0(callers_sp), R1_SP); // Sets Robj_to_lock = fp.
+    __ ld(Robj_to_lock, _abi0(callers_sp), R1_SP);
     __ ld(Robj_to_lock, _ijava_state_neg(mirror), Robj_to_lock);
 
     __ bind(Ldone);
@@ -1032,7 +1032,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(Rmirror, _ijava_state_neg(mirror), R1_SP);
   __ sub(R12_scratch2, R18_locals, R1_SP);
   __ srdi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
-  // Now &fp()[R12_scratch2] == R18_locals
+  // Store relativized R18_locals, see frame::interpreter_frame_locals().
   __ std(R12_scratch2, _ijava_state_neg(locals), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 

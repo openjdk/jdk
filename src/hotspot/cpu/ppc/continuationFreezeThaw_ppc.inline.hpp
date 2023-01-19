@@ -505,7 +505,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp + frame::metadata_words_at_top == esp+1, " frame_sp=" PTR_FORMAT " esp=" PTR_FORMAT, p2i(frame_sp), p2i(esp));
     caller.set_sp(fp);
     frame f(frame_sp, hf.pc(), frame_sp, fp);
-    // we need to set the locals now so that the caller of new_stack_frame() can call
+    // we need to set the locals so that the caller of new_stack_frame() can call
     // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(ijava_idx(locals)) + padding;
     assert((int)offset == hf.interpreter_frame_method()->max_locals() + frame::metadata_words_at_top + padding - 1, "");

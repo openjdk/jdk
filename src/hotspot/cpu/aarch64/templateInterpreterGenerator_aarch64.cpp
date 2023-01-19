@@ -820,7 +820,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
-  // Now &fp()[rscratch1] == rlocals
+  // Store relativized rlocals, see frame::interpreter_frame_locals().
   __ stp(rscratch1, rcpool, Address(sp, 2 * wordSize));
 
   // set sender sp
