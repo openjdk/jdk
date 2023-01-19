@@ -160,7 +160,6 @@ void basic_types_init() {
   static_assert((size_t)HeapWordSize >= sizeof(juint),
                 "HeapWord should be at least as large as juint");
   static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
-  static_assert(sizeof(nullptr) == sizeof(char*), "nullptr must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )
