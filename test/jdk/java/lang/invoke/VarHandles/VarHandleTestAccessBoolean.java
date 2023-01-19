@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccessBoolean
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessBoolean
- * @run testng/othervm -Diters=20000                         VarHandleTestAccessBoolean
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessBoolean
+ * @run testng/othervm -Diters=10   -Xint                                                   VarHandleTestAccessBoolean
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessBoolean
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessBoolean
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessBoolean
  */
 
 import org.testng.annotations.BeforeClass;
@@ -280,6 +280,8 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
+    // CompileThresholdScaling is set to 0.1 and ITERS to 2000 to reduce
+    // the test execution
     @Test(dataProvider = "accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
@@ -288,9 +290,6 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
             atc.testAccess(t);
         }
     }
-
-
-
 
     static void testInstanceFinalField(VarHandleTestAccessBoolean recv, VarHandle vh) {
         // Plain
