@@ -173,7 +173,6 @@ final class ReadWriteValues {
     }
 
 
-
     // Unusual cases
 
     @Test
@@ -194,7 +193,6 @@ final class ReadWriteValues {
         assertThrowsOriginal(IndexOutOfBoundsException.class, () -> ByteArrayAccess.setInt(BUFF, BUFF.length, 1));
     }
 
-    
     // At-zero methods
 
     @Test
@@ -469,5 +467,4 @@ final class ReadWriteValues {
             putLong(b, off, Double.doubleToLongBits(val));
         }
     }
-
 }
