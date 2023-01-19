@@ -48,7 +48,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class UpdateDensePrefixAndCompactionTask;
 
  private:
-  typedef GenericTaskQueue<oop, mtGC>             OopTaskQueue;
+  typedef OverflowTaskQueue<oop, mtGC>            OopTaskQueue;
   typedef GenericTaskQueueSet<OopTaskQueue, mtGC> OopTaskQueueSet;
 
   // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
@@ -66,11 +66,11 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet*    _region_task_queues;
   static PSOldGen*              _old_gen;
 
-  OverflowTaskQueue<oop, mtGC>        _marking_stack;
+  OopTaskQueue                  _oop_stack;
   ObjArrayTaskQueue             _objarray_stack;
   size_t                        _next_shadow_region;
 
-  // Is there a way to reuse the _marking_stack for the
+  // Is there a way to reuse the _oop_stack for the
   // saving empty regions?  For now just create a different
   // type of TaskQueue.
   RegionTaskQueue              _region_stack;
@@ -108,7 +108,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
  protected:
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
-  OverflowTaskQueue<oop, mtGC>*  marking_stack()       { return &_marking_stack; }
+  OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
   // Pushes onto the marking stack.  If the marking stack is full,
   // pushes onto the overflow stack.
@@ -221,7 +221,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 };
 
 bool ParCompactionManager::marking_stacks_empty() const {
-  return _marking_stack.is_empty() && _objarray_stack.is_empty();
+  return _oop_stack.is_empty() && _objarray_stack.is_empty();
 }
 
 #endif // SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP

@@ -81,7 +81,7 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
     _manager_array[i] = new ParCompactionManager();
-    oop_task_queues()->register_queue(i, _manager_array[i]->marking_stack());
+    oop_task_queues()->register_queue(i, _manager_array[i]->oop_stack());
     _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
@@ -117,12 +117,12 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
 
 inline void ParCompactionManager::publish_and_drain_oop_tasks() {
   oop obj;
-  while (marking_stack()->pop_overflow(obj)) {
-    if (!marking_stack()->try_push_to_taskqueue(obj)) {
+  while (oop_stack()->pop_overflow(obj)) {
+    if (!oop_stack()->try_push_to_taskqueue(obj)) {
       follow_contents(obj);
     }
   }
-  while (marking_stack()->pop_local(obj)) {
+  while (oop_stack()->pop_local(obj)) {
     follow_contents(obj);
   }
 }

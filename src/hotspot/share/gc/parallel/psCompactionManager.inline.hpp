@@ -78,7 +78,7 @@ inline bool ParCompactionManager::steal(int queue_num, size_t& region) {
 }
 
 inline void ParCompactionManager::push(oop obj) {
-  _marking_stack.push(obj);
+  _oop_stack.push(obj);
 }
 
 void ParCompactionManager::push_objarray(oop obj, size_t index)
