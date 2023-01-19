@@ -257,6 +257,11 @@ void JfrNativeSamplerCallback::call() {
 }
 
 bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
+  // Process the oops in the thread head before calling into code that wants to
+  // stack walk over Loom continuations. The stack walking code will otherwise
+  // skip frames in stack chunks on the Java heap.
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+
   OSThreadSampler sampler(thread, *this, frames, max_frames);
   sampler.take_sample();
   /* We don't want to allocate any memory using malloc/etc while the thread
@@ -275,6 +280,11 @@ bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackF
 }
 
 bool JfrThreadSampleClosure::sample_thread_in_native(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
+  // Process the oops in the thread head before calling into code that wants to
+  // stack walk over Loom continuations. The stack walking code will otherwise
+  // skip frames in stack chunks on the Java heap.
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+
   JfrNativeSamplerCallback cb(*this, thread, frames, max_frames);
   if (JfrOptionSet::sample_protection()) {
     ThreadCrashProtection crash_protection;
@@ -386,11 +396,6 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
   if (is_excluded(thread)) {
     return false;
   }
-
-  // Process the oops in the thread head before calling into code that wants to
-  // stack walk over Loom continuations. The stack walking code will otherwise
-  // skip frames in stack chunks on the Java heap.
-  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
 
   bool ret = false;
   thread->set_trace_flag();  // Provides StoreLoad, needed to keep read of thread state from floating up.
