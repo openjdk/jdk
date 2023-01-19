@@ -6954,16 +6954,16 @@ typedef uint32_t u32;
     julong ctx_r[3];
     PACK_26(ctx_r[0], ctx_r[1], ctx_r[2], r_start);
 
-    u32 *ctx_c = (u32 *)input_start;
-
-    u64 b_s0;
-    u64 b_s1;
+    u64 b_s0, b_s1;
     u32 b_s2;
 
-    while (length >= BLOCK_LENGTH) {
+    const uint64_t  b_r0 = ctx_r[0];
+    const uint64_t  b_r1 = ctx_r[1];
+    const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
+    const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
 
-      ctx_c = (u32 *)input_start;
-      u64 *b_c = (u64*)ctx_c;
+    while (length >= BLOCK_LENGTH) {
+      u64 *b_c = (u64*)input_start;
 
       printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);
       printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);
@@ -6972,11 +6972,11 @@ typedef uint32_t u32;
 
       // s = u + c, with carry propagation
       uint64_t carry = 0;
-      ADC(b_s0, carry, b_u0, b_c[0]); if (carry) printf("#");
-      ADC(b_s1, carry, b_u1, b_c[1]); if (carry) printf("*");
+      ADC(b_s0, carry, b_u0, b_c[0]);
+      ADC(b_s1, carry, b_u1, b_c[1]);
       b_s2 = b_u2 + carry;
 
-      if (length > BLOCK_LENGTH) {
+      if (length >= BLOCK_LENGTH) {
         b_s2 += 1;
       } else {
         juint offset = length % sizeof (u64);
@@ -6988,49 +6988,26 @@ typedef uint32_t u32;
         }
       }
 
-      // printf("C: %08x:%08x:%08x:%08x\n", ctx_c[3], ctx_c[2], ctx_c[1], ctx_c[0]);
       printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);
-      // printf("S: %lx:%09lx:%09lx:%09lx:%09lx\n", (u64)s4, s3, s2, s1, s0);
-
-      // Local all the things!
-      // (h + c) * r, without carry propagation
-      const uint64_t  b_r0 = ctx_r[0];
-      const uint64_t  b_r1 = ctx_r[1];
-      const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
-      const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
-
-
       printf("R:   %016lx:%016lx\n", b_r1, b_r0);
-      // printf("R:  %08x:%08x:%08x:%08x\n", r3, r2, r1, r0);
-
       printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);
-      // printf("RR:  %08x:%08x:%08x:%08x\n", rr3, rr2, rr1, rr0);
 
-      // {
-      //   const u64 tx0 = s0*r0+ s1*rr3;
-      //   const u64 tx1 = s0*r1+ s1*r0;
-      //   const u128 b_tx0 = (u128)b_s0*b_r0;
+      {
+        const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
+        const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
+        const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits    // <=                f
 
-      //   print128(b_tx0); printf("\n");
-      //   printf("TX: %016lx:%016lx\n", tx1, tx0);
-      // }
-      const u128 tst = (u128)b_s0*b_r0;
+        printf("X: ");
+        print128(b_x2); printf(":");
+        print128(b_x1); printf(":");
+        print128(b_x0); printf("\n");
 
-      const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
-      const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
-      const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits    // <=                f
-
-      printf("X: ");
-      print128(b_x2); printf(":");
-      print128(b_x1); printf(":");
-      print128(b_x0); printf("\n");
-      // printf("X: %x:%017lx:%017lx:%017lx:%017lx\n", x4, x3, x2, x1, x0);
-
-      // partial reduction modulo 2^130 - 5
-      u128 b_u3 = b_x2 + (b_x1 >> 64);
-      b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
-      b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
-      b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
+        // partial reduction modulo 2^130 - 5
+        u128 b_u3 = b_x2 + (b_x1 >> 64);
+        b_u0 = (b_u3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
+        b_u1 = (b_u0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
+        b_u2 = (b_u1 >> 64)     + (b_u3 & 3);
+      }
 
       b_u0 &= 0xffffffffffffffff;
       b_u1 &= 0xffffffffffffffff;
@@ -7046,8 +7023,8 @@ typedef uint32_t u32;
     {
       // Fully reduce modulo 2^130 - 5
       u64 carry = 0;
-      ADC(b_u0, carry, b_u0, (b_u2 >> 2) * 5); if (carry) printf("#");
-      ADC(b_u1, carry, b_u1, 0);               if (carry) printf("*");
+      ADC(b_u0, carry, b_u0, (b_u2 >> 2) * 5);
+      ADC(b_u1, carry, b_u1, 0);
       b_u2 = (b_u2 + carry) & 3;
     }
 
