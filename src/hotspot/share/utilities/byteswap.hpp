@@ -217,7 +217,7 @@ struct ByteswapImpl<T, 4> final {
 template <typename T>
 struct ByteswapImpl<T, 8> final {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned __int64) == sizeof(4));
+  STATIC_ASSERT(sizeof(unsigned __int64) == sizeof(8));
   STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
 
   ALWAYSINLINE T operator()(T x) const {
