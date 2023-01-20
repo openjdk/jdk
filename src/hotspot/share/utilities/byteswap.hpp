@@ -163,11 +163,11 @@ struct ByteswapImpl<T, 8> final {
 
 #else
 
-// We do not use __builtin_bswap and friends for GCC. Unfortunately on architectures that do not
-// have a byteswap instruction (i.e. RISC-V), GCC emits a function call to libgcc regardless of
-// optimization options, even when the generic implementation is, for example, less than 20
-// instructions. GCC is however able to recognize the fallback as byteswapping regardless of
-// architecture and appropriately replaces the code in -O2 with the appropriate
+// We do not use __builtin_bswap and friends for GCC in release builds. Unfortunately on
+// architectures that do not have a byteswap instruction (i.e. RISC-V), GCC emits a function call to
+// libgcc regardless of optimization options, even when the generic implementation is, for example,
+// less than 20 instructions. GCC is however able to recognize the fallback as byteswapping
+// regardless of architecture and appropriately replaces the code in -O2 with the appropriate
 // architecture-specific byteswap instruction, if available. If it is not available, GCC emits the
 // exact same implementation that underpins its __builtin_bswap in libgcc as there is really only
 // one way to implement it, as we have in fallback.
