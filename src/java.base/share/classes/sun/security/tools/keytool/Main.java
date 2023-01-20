@@ -1837,14 +1837,10 @@ public final class Main {
                 useDefaultPBEAlgorithm = false;
             }
 
-            String[] weakAlgs = new String[] {"DES", "DESEDE", "MD5", "SHA1", "RC2", "RC4"};
-            boolean isWeak = Arrays.stream(weakAlgs).anyMatch(
-                    keyAlgName.toUpperCase(Locale.ENGLISH)::contains);
-            if (isWeak) {
-                weakWarnings.add(String.format(
-                        rb.getString("key.algorithm.weak"),
-                        rb.getString("the.generated.secretkey"), keyAlgName));
-            }
+            SecretKeyConstraintsParameters skcp =
+                    new SecretKeyConstraintsParameters(secKey);
+            checkWeakConstraint(rb.getString("the.generated.secretkey"),
+                    keyAlgName, skcp);
 
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString(
@@ -5074,6 +5070,16 @@ public final class Main {
             CertPathConstraintsParameters cpcp) throws Exception {
         if (crl instanceof X509CRLImpl impl) {
             checkWeakConstraint(label, impl.getSigAlgName(), key, cpcp);
+        }
+    }
+
+    private void checkWeakConstraint(String label, String keyAlg,
+            SecretKeyConstraintsParameters skcp) {
+        try {
+            LEGACY_CHECK.permits(keyAlg, skcp, false);
+        } catch (CertPathValidatorException e) {
+            weakWarnings.add(String.format(
+                    rb.getString("key.algorithm.weak"), label, keyAlg));
         }
     }
 
