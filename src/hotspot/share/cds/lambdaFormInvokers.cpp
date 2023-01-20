@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ static bool should_be_archived(char* line) {
 
 void LambdaFormInvokers::append(char* line) {
   MutexLocker ml(Thread::current(), LambdaFormInvokers_lock);
-  if (_lambdaform_lines == NULL) {
+  if (_lambdaform_lines == nullptr) {
     _lambdaform_lines = new GrowableArrayCHeap<char*, mtClassShared>(150);
   }
   _lambdaform_lines->append(line);
@@ -118,7 +118,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_null(cds_name, THREAD);
-  guarantee(cds_klass != NULL, "jdk/internal/misc/CDS must exist!");
+  guarantee(cds_klass != nullptr, "jdk/internal/misc/CDS must exist!");
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
@@ -161,8 +161,8 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   for (int i = 0; i < sz; i+= 2) {
     Handle h_name(THREAD, h_array->obj_at(i));
     typeArrayHandle h_bytes(THREAD, (typeArrayOop)h_array->obj_at(i+1));
-    assert(h_name != NULL, "Class name is NULL");
-    assert(h_bytes != NULL, "Class bytes is NULL");
+    assert(h_name != nullptr, "Class name is null");
+    assert(h_bytes != nullptr, "Class bytes is null");
 
     char *class_name = java_lang_String::as_utf8_string(h_name());
     if (strstr(class_name, "java/lang/invoke/BoundMethodHandle$Species_") != nullptr) {
@@ -171,7 +171,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       // need to regenerate.
       TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
       Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
-      assert(klass != NULL, "must already be loaded");
+      assert(klass != nullptr, "must already be loaded");
       if (!klass->is_shared() && klass->shared_classpath_index() < 0) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
@@ -184,7 +184,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       // make a copy of class bytes so GC will not affect us.
       char *buf = NEW_RESOURCE_ARRAY(char, len);
       memcpy(buf, (char*)h_bytes->byte_at_addr(0), len);
-      ClassFileStream st((u1*)buf, len, NULL, ClassFileStream::verify);
+      ClassFileStream st((u1*)buf, len, nullptr, ClassFileStream::verify);
       regenerate_class(class_name, st, CHECK);
     }
   }
@@ -193,7 +193,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st, TRAPS) {
   TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
   Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
-  assert(klass != NULL, "must exist");
+  assert(klass != nullptr, "must exist");
   assert(klass->is_instance_klass(), "Should be");
 
   ClassLoaderData* cld = ClassLoaderData::the_null_class_loader_data();

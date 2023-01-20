@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,11 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicCharOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private char[] a;
     private char[] b;
@@ -64,6 +66,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public char[] vectorNeg() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -73,8 +77,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that Math.abs() on unsigned subword types can NOT be vectorized
-    // since all the values are non-negative according to the semantics.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(failOn = {IRNode.ABS_V})
     public char[] vectorAbs() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -84,6 +89,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public char[] vectorAdd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -93,6 +100,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public char[] vectorSub() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -102,6 +111,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public char[] vectorMul() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -111,6 +122,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
     public char[] vectorMulAdd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,6 +133,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public char[] vectorMulSub() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -130,6 +145,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public char[] vectorNot() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -139,6 +156,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.AND_V, ">0"})
     public char[] vectorAnd() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -148,6 +167,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.OR_V, ">0"})
     public char[] vectorOr() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -157,6 +178,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public char[] vectorXor() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -167,6 +190,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.LSHIFT_V, ">0"})
     public char[] vectorShiftLeft() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -176,6 +201,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_V, ">0"})
     public char[] vectorSignedShiftRight() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -185,6 +212,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_V, ">0"})
     public char[] vectorUnsignedShiftRight() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -195,6 +224,8 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     // ------------- ReverseBytes -------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
+        counts = {IRNode.REVERSE_BYTES_V, ">0"})
     public char[] reverseBytesWithChar() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -204,6 +235,9 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that reverseBytes cannot be vectorized if the vector element
+    // type doesn't match the caller's class type.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] reverseBytesWithInt() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -212,4 +246,3 @@ public class BasicCharOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

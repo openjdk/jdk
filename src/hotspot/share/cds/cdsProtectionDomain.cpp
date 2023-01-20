@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //   for fast access by the VM.
     // all packages from module image are already created during VM bootstrap in
     // Modules::define_module().
-    assert(pkg_entry != NULL, "archived class in module image cannot be from unnamed package");
+    assert(pkg_entry != nullptr, "archived class in module image cannot be from unnamed package");
     ModuleEntry* mod_entry = pkg_entry->module();
     return get_shared_protection_domain(class_loader, mod_entry, THREAD);
   } else {
@@ -83,17 +83,17 @@ Handle CDSProtectionDomain::init_security_info(Handle class_loader, InstanceKlas
     //     url = _shared_jar_urls[index];
     //     define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
     //
-    //   Note that if an element of these 3 _shared_xxx arrays is NULL, it will be initialized by
+    //   Note that if an element of these 3 _shared_xxx arrays is null, it will be initialized by
     //   the corresponding SystemDictionaryShared::get_shared_xxx() function.
     Handle manifest = get_shared_jar_manifest(index, CHECK_NH);
     Handle url = get_shared_jar_url(index, CHECK_NH);
     int index_offset = index - ClassLoaderExt::app_class_paths_start_index();
     if (index_offset < PackageEntry::max_index_for_defined_in_class_path()) {
-      if (pkg_entry == NULL || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
+      if (pkg_entry == nullptr || !pkg_entry->is_defined_by_cds_in_class_path(index_offset)) {
         // define_shared_package only needs to be called once for each package in a jar specified
         // in the shared class path.
         define_shared_package(class_name, class_loader, manifest, url, CHECK_NH);
-        if (pkg_entry != NULL) {
+        if (pkg_entry != nullptr) {
           pkg_entry->set_defined_by_cds_in_class_path(index_offset);
         }
       }
@@ -108,7 +108,7 @@ Handle CDSProtectionDomain::get_package_name(Symbol* class_name, TRAPS) {
   ResourceMark rm(THREAD);
   Handle pkgname_string;
   TempNewSymbol pkg = ClassLoader::package_from_class_name(class_name);
-  if (pkg != NULL) { // Package prefix found
+  if (pkg != nullptr) { // Package prefix found
     const char* pkgname = pkg->as_klass_external_name();
     pkgname_string = java_lang_String::create_from_str(pkgname,
                                                        CHECK_(pkgname_string));
@@ -118,17 +118,17 @@ Handle CDSProtectionDomain::get_package_name(Symbol* class_name, TRAPS) {
 
 PackageEntry* CDSProtectionDomain::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
   PackageEntry* pkg_entry = ik->package();
-  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != NULL) {
+  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != nullptr) {
     assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
     assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
     assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");
     return pkg_entry;
   }
   TempNewSymbol pkg_name = ClassLoader::package_from_class_name(ik->name());
-  if (pkg_name != NULL) {
+  if (pkg_name != nullptr) {
     pkg_entry = ClassLoaderData::class_loader_data(class_loader())->packages()->lookup_only(pkg_name);
   } else {
-    pkg_entry = NULL;
+    pkg_entry = nullptr;
   }
   return pkg_entry;
 }
@@ -142,7 +142,7 @@ void CDSProtectionDomain::define_shared_package(Symbol*  class_name,
                                                    Handle url,
                                                    TRAPS) {
   assert(SystemDictionary::is_system_class_loader(class_loader()), "unexpected class loader");
-  // get_package_name() returns a NULL handle if the class is in unnamed package
+  // get_package_name() returns a null handle if the class is in unnamed package
   Handle pkgname_string = get_package_name(class_name, CHECK);
   if (pkgname_string.not_null()) {
     Klass* app_classLoader_klass = vmClasses::jdk_internal_loader_ClassLoaders_AppClassLoader_klass();
@@ -177,7 +177,7 @@ Handle CDSProtectionDomain::create_jar_manifest(const char* manifest_chars, size
 
 Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS) {
   Handle manifest;
-  if (shared_jar_manifest(shared_path_index) == NULL) {
+  if (shared_jar_manifest(shared_path_index) == nullptr) {
     SharedClassPathEntry* ent = FileMapInfo::shared_path(shared_path_index);
     size_t size = (size_t)ent->manifest_size();
     if (size == 0) {
@@ -186,7 +186,7 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 
     // ByteArrayInputStream bais = new ByteArrayInputStream(buf);
     const char* src = ent->manifest();
-    assert(src != NULL, "No Manifest data");
+    assert(src != nullptr, "No Manifest data");
     manifest = create_jar_manifest(src, size, CHECK_NH);
     atomic_set_shared_jar_manifest(shared_path_index, manifest());
   }
@@ -197,7 +197,7 @@ Handle CDSProtectionDomain::get_shared_jar_manifest(int shared_path_index, TRAPS
 
 Handle CDSProtectionDomain::get_shared_jar_url(int shared_path_index, TRAPS) {
   Handle url_h;
-  if (shared_jar_url(shared_path_index) == NULL) {
+  if (shared_jar_url(shared_path_index) == nullptr) {
     JavaValue result(T_OBJECT);
     const char* path = FileMapInfo::shared_path_name(shared_path_index);
     Handle path_string = java_lang_String::create_from_str(path, CHECK_(url_h));
@@ -240,7 +240,7 @@ Handle CDSProtectionDomain::get_shared_protection_domain(Handle class_loader,
                                                             Handle url,
                                                             TRAPS) {
   Handle protection_domain;
-  if (shared_protection_domain(shared_path_index) == NULL) {
+  if (shared_protection_domain(shared_path_index) == nullptr) {
     Handle pd = get_protection_domain_from_classloader(class_loader, url, THREAD);
     atomic_set_shared_protection_domain(shared_path_index, pd());
   }
@@ -257,9 +257,9 @@ Handle CDSProtectionDomain::get_shared_protection_domain(Handle class_loader,
 Handle CDSProtectionDomain::get_shared_protection_domain(Handle class_loader,
                                                          ModuleEntry* mod, TRAPS) {
   ClassLoaderData *loader_data = mod->loader_data();
-  if (mod->shared_protection_domain() == NULL) {
+  if (mod->shared_protection_domain() == nullptr) {
     Symbol* location = mod->location();
-    if (location != NULL) {
+    if (location != nullptr) {
       Handle location_string = java_lang_String::create_from_symbol(
                                      location, CHECK_NH);
       Handle url;
@@ -293,7 +293,7 @@ void CDSProtectionDomain::atomic_set_array_index(OopHandle array, int index, oop
   // The important thing here is that all threads pick up the same result.
   // It doesn't matter which racing thread wins, as long as only one
   // result is used by all threads, and all future queries.
-  ((objArrayOop)array.resolve())->atomic_compare_exchange_oop(index, o, NULL);
+  ((objArrayOop)array.resolve())->replace_if_null(index, o);
 }
 
 oop CDSProtectionDomain::shared_protection_domain(int index) {
@@ -301,7 +301,7 @@ oop CDSProtectionDomain::shared_protection_domain(int index) {
 }
 
 void CDSProtectionDomain::allocate_shared_protection_domain_array(int size, TRAPS) {
-  if (_shared_protection_domains.resolve() == NULL) {
+  if (_shared_protection_domains.resolve() == nullptr) {
     oop spd = oopFactory::new_objArray(
         vmClasses::ProtectionDomain_klass(), size, CHECK);
     _shared_protection_domains = OopHandle(Universe::vm_global(), spd);
@@ -313,7 +313,7 @@ oop CDSProtectionDomain::shared_jar_url(int index) {
 }
 
 void CDSProtectionDomain::allocate_shared_jar_url_array(int size, TRAPS) {
-  if (_shared_jar_urls.resolve() == NULL) {
+  if (_shared_jar_urls.resolve() == nullptr) {
     oop sju = oopFactory::new_objArray(
         vmClasses::URL_klass(), size, CHECK);
     _shared_jar_urls = OopHandle(Universe::vm_global(), sju);
@@ -325,7 +325,7 @@ oop CDSProtectionDomain::shared_jar_manifest(int index) {
 }
 
 void CDSProtectionDomain::allocate_shared_jar_manifest_array(int size, TRAPS) {
-  if (_shared_jar_manifests.resolve() == NULL) {
+  if (_shared_jar_manifests.resolve() == nullptr) {
     oop sjm = oopFactory::new_objArray(
         vmClasses::Jar_Manifest_klass(), size, CHECK);
     _shared_jar_manifests = OopHandle(Universe::vm_global(), sjm);
