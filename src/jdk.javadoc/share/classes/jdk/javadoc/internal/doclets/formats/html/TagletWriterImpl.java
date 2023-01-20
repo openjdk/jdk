@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -549,17 +549,17 @@ public class TagletWriterImpl extends TagletWriter {
                 if (utils.isGenericType(referencedType)) {
                     // This is a generic type link, use the TypeMirror representation.
                     return plainOrCode(isLinkPlain, htmlWriter.getLink(
-                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, referencedType)));
+                            new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, referencedType)));
                 }
                 labelContent = plainOrCode(isLinkPlain, Text.of(utils.getSimpleName(refClass)));
             }
-            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.DEFAULT, refClass)
+            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, refClass)
                     .label(labelContent));
         } else if (refMem == null) {
             // This is a fragment reference since refClass and refFragment are not null but refMem is null.
-            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SEE_TAG, refClass)
+            return htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, refClass)
                     .label(labelContent)
-                    .where(refFragment)
+                    .fragment(refFragment)
                     .style(null));
         } else {
             // Must be a member reference since refClass is not null and refMemName is not null.
@@ -610,7 +610,7 @@ public class TagletWriterImpl extends TagletWriter {
                 }
             }
 
-            return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SEE_TAG, containing,
+            return htmlWriter.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, containing,
                     refMem, (labelContent.isEmpty()
                             ? plainOrCode(isLinkPlain, Text.of(refMemName))
                             : labelContent), null, false);
@@ -816,16 +816,15 @@ public class TagletWriterImpl extends TagletWriter {
         Element exception = ch.getException(throwsTag);
         Content excName;
         if (substituteType != null) {
-            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+            excName = htmlWriter.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                    substituteType));
         } else if (exception == null) {
             excName = Text.of(throwsTag.getExceptionName().toString());
         } else if (exception.asType() == null) {
             excName = Text.of(utils.getFullyQualifiedName(exception));
         } else {
-            HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+            HtmlLinkInfo link = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                                                  exception.asType());
-            link.excludeTypeBounds = true;
             excName = htmlWriter.getLink(link);
         }
         body.add(HtmlTree.CODE(excName));
@@ -840,8 +839,7 @@ public class TagletWriterImpl extends TagletWriter {
 
     @Override
     public Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content) {
-        var linkInfo = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER, throwsType);
-        linkInfo.excludeTypeBounds = true;
+        var linkInfo = new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, throwsType);
         var link = htmlWriter.getLink(linkInfo);
         var concat = new ContentBuilder(HtmlTree.CODE(link));
         if (content.isPresent()) {
@@ -854,7 +852,7 @@ public class TagletWriterImpl extends TagletWriter {
     @Override
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
         return includeLink
-                ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.VALUE_TAG, field, constantVal)
+                ? htmlWriter.getDocLink(HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, field, constantVal)
                 : Text.of(constantVal);
     }
 
