@@ -112,7 +112,7 @@ struct ByteswapFallbackImpl<T, 8> {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc)
 
-#if defined(__clang__)
+#if defined(__clang__) || defined(ASSERT)
 
 // Unlike GCC, Clang is willing to inline the generic implementation of __builtin_bswap when
 // architecture support is unavailable in -O2. This ensures we avoid the function call to libgcc.
