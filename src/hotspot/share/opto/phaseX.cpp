@@ -1283,15 +1283,6 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
     // after loop-opts, so that should take care of many of these cases.
     return false;
   }
-  if (n->is_Sub() && n->in(1)->eqv_uncast(n->in(2))) {
-    if ((n->in(1)->is_ConstraintCast() && n->in(1)->in(1)->is_ConstraintCast()) ||
-        (n->in(2)->is_ConstraintCast() && n->in(2)->in(1)->is_ConstraintCast())) {
-      // Sub nodes can replace Sub( CastII(CastII(x)), x) with zero, but the notification
-      // goes only over a singe CastII node. We could make the notification a recursive
-      // traversal: traverse down the CastII outputs recursively, and find all SubNodes.
-      tty->print_cr("Known issue: Sub( CastII(CastII(x)), x)");
-    }
-  }
   tty->cr();
   tty->print_cr("Missed Value optimization:");
   n->dump_bfs(1, 0, "");
@@ -1746,13 +1737,30 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
 
-    // If changed Cast input, check Phi users for simple cycles
+    // If changed Cast input, notify down for Phi and Sub - both do "uncast"
     if (use->is_ConstraintCast()) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->is_Phi() || u->is_Sub()) {
           // Phi (.., CastII, ..) or Sub(Cast(x), x)
           _worklist.push(u);
+        } else if (u->is_ConstraintCast()) {
+          // Follow cast-chains down to Sub: Sub( CastII(CastII(x)), x)
+          // This case is quite rare. Let's BFS-traverse casts, to find Subs:
+          ResourceMark rm;
+          Unique_Node_List casts;
+          casts.push(u); // start traversal
+          for (uint j = 0; j < casts.size(); ++j) {
+            Node* cast = casts.at(j); // for every cast
+            for (DUIterator_Fast kmax, k = cast->fast_outs(kmax); k < kmax; k++) {
+              Node* cast_use = cast->fast_out(k);
+              if (cast_use->is_ConstraintCast()) {
+                casts.push(cast_use); // traverse this cast also
+              } else if (cast_use->is_Sub()) {
+                _worklist.push(cast_use); // found Sub
+              }
+            }
+          }
         }
       }
     }
