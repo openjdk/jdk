@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,29 +28,57 @@
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
-// unsigned count_trailing_zeros(T x)
+#include <type_traits>
 
-// Return the number of trailing zeros in x, e.g. the zero-based index
-// of the least significant set bit in x.
+// unsigned count_trailing_zeros<T>(T)
+//
 // Precondition: x != 0.
+//
+// Count the number of trailing (starting from the LSB) zero bits in an unsigned integer. Also known
+// as the zero-based index of the first set least significant bit.
 
-// We implement and support variants for 8, 16, 32 and 64 bit integral types.
+template <typename T>
+using CanCountTrailingZerosImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
+                                                                std::is_unsigned<T>::value &&
+                                                                sizeof(T) <= 8)>;
 
-// Dispatch on toolchain to select implementation.
+template <typename T>
+struct CountTrailingZerosImpl;
+
+template <typename T, ENABLE_IF(CanCountTrailingZerosImpl<T>::value)>
+ALWAYSINLINE unsigned count_trailing_zeros(T v) {
+  precond(v != 0);
+  return CountTrailingZerosImpl<T>{}(v);
+}
 
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc)
 
-inline unsigned count_trailing_zeros_32(uint32_t x) {
-  return __builtin_ctz(x);
-}
+template <typename T>
+struct CountTrailingZerosImpl final {
+  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
 
-inline unsigned count_trailing_zeros_64(uint64_t x) {
-  return __builtin_ctzll(x);
-}
+  // Smaller integer types will be handled via integer promotion to unsigned int.
+
+  ALWAYSINLINE unsigned operator()(unsigned int x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return __builtin_ctz(x);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
+    return __builtin_ctzl(x);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+    return __builtin_ctzll(x);
+  }
+};
 
 /*****************************************************************************
  * Microsoft Visual Studio
@@ -64,25 +92,42 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 #pragma intrinsic(_BitScanForward64)
 #endif
 
-inline unsigned count_trailing_zeros_32(uint32_t x) {
-  unsigned long index;
-  _BitScanForward(&index, x);
-  return index;
-}
+template <typename T>
+struct CountTrailingZerosImpl final {
+  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
 
-inline unsigned count_trailing_zeros_64(uint64_t x) {
-  unsigned long index;
-#ifdef _LP64
-  _BitScanForward64(&index, x);
-#else
-  if (_BitScanForward(&index, static_cast<uint32_t>(x)) == 0) {
-    // no bit found? If so, try the upper dword. Otherwise index already contains the result
-    _BitScanForward(&index, static_cast<uint32_t>(x >> 32));
-    index += 32;
+  // Smaller integer types will be handled via integer promotion to unsigned long.
+
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+    unsigned long index;
+    unsigned char result = _BitScanForward(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>(index);
   }
+
+  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+#ifdef _LP64
+    unsigned long index;
+    unsigned char result = _BitScanForward64(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>(index);
+#else
+    unsigned long index;
+    unsigned long low = static_cast<unsigned long>(x);
+    if (low != 0ul) {
+      unsigned char result = _BitScanForward(&index, low);
+      postcond(result != 0);
+    } else {
+      unsigned char result = _BitScanForward(&index, static_cast<unsigned long>(x >> 32));
+      postcond(result != 0);
+      index += 32ul;
+    }
+    return static_cast<unsigned>(index);
 #endif
-  return index;
-}
+  }
+};
 
 /*****************************************************************************
  * IBM XL C/C++
@@ -91,31 +136,36 @@ inline unsigned count_trailing_zeros_64(uint64_t x) {
 
 #include <builtins.h>
 
-inline unsigned count_trailing_zeros_32(uint32_t x) {
-  return __cnttz4(x);
-}
+template <typename T>
+struct CountTrailingZerosImpl final {
+  STATIC_ASSERT(CanCountTrailingZerosImpl<T>::value);
 
-inline unsigned count_trailing_zeros_64(uint64_t x) {
-  return __cnttz8(x);
-}
+  // Smaller integer types will be handled via integer promotion to unsigned int.
+
+  ALWAYSINLINE unsigned operator()(unsigned int x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return __cnttz4(x);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned int) || sizeof(T) == sizeof(unsigned long long));
+    return sizeof(unsigned long) == sizeof(unsigned int) ? __cnttz4(static_cast<unsigned int>(x))
+                                                         : __cnttz8(x);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+    return __cnttz8(x);
+  }
+};
 
 /*****************************************************************************
  * Unknown toolchain
  *****************************************************************************/
 #else
-#error Unknown TARGET_COMPILER
 
-#endif // Toolchain dispatch
+#error Unknown toolchain.
 
-template<typename T,
-         ENABLE_IF(std::is_integral<T>::value),
-         ENABLE_IF(sizeof(T) <= sizeof(uint64_t))>
-inline unsigned count_trailing_zeros(T x) {
-  assert(x != 0, "precondition");
-  return (sizeof(x) <= sizeof(uint32_t)) ?
-         count_trailing_zeros_32(static_cast<uint32_t>(x)) :
-         count_trailing_zeros_64(x);
-}
-
+#endif
 
 #endif // SHARE_UTILITIES_COUNT_TRAILING_ZEROS_HPP

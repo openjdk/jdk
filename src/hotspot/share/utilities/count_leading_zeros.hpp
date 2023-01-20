@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,32 @@
 #ifndef SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 #define SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
-// uint32_t count_leading_zeros(T x)
+#include <type_traits>
 
-// Return the number of leading zeros in x, e.g. the zero-based index
-// of the most significant set bit in x.  Undefined for 0.
+// unsigned count_leading_zeros<T>(T)
+//
+// Precondition: x != 0.
+//
+// Count the number of leading (starting from the MSB) zero bits in an unsigned integer. Also known
+// as the zero-based index of the first set most significant bit.
 
-// We implement and support variants for 8, 16, 32 and 64 bit integral types.
-template <typename T, size_t n> struct CountLeadingZerosImpl;
+template <typename T>
+using CanCountLeadingZerosImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
+                                                               std::is_unsigned<T>::value &&
+                                                               sizeof(T) <= 8)>;
 
-template <typename T> unsigned count_leading_zeros(T v) {
-  assert(v != 0, "precondition");
-  return CountLeadingZerosImpl<T, sizeof(T)>::doit(v);
+template <typename T>
+struct CountLeadingZerosImpl;
+
+template <typename T, ENABLE_IF(CanCountLeadingZerosImpl<T>::value)>
+ALWAYSINLINE unsigned count_leading_zeros(T v) {
+  precond(v != 0);
+  return CountLeadingZerosImpl<T>{}(v);
 }
 
 /*****************************************************************************
@@ -46,27 +58,25 @@ template <typename T> unsigned count_leading_zeros(T v) {
  *****************************************************************************/
 #if defined(TARGET_COMPILER_gcc)
 
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    return __builtin_clz((uint32_t)v & 0xFF) - 24u;
-  }
-};
+template <typename T>
+struct CountLeadingZerosImpl final {
+  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
 
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    return __builtin_clz((uint32_t)v & 0xFFFF) - 16u;
-  }
-};
+  // Smaller integer types will be handled via integer promotion to unsigned int.
 
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __builtin_clz(v);
+  ALWAYSINLINE unsigned operator()(unsigned int x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return __builtin_clz(x) - ((sizeof(unsigned int) - sizeof(T)) * 8);
   }
-};
 
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __builtin_clzll(v);
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
+    return __builtin_clzl(x);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+    return __builtin_clzll(x);
   }
 };
 
@@ -76,53 +86,74 @@ template <typename T> struct CountLeadingZerosImpl<T, 8> {
 #elif defined(TARGET_COMPILER_visCPP)
 
 #include <intrin.h>
-#pragma intrinsic(_BitScanReverse)
 
+#if defined(AARCH64)
+
+#pragma intrinsic(_CountLeadingZeros)
+#pragma intrinsic(_CountLeadingZeros64)
+
+template <typename T>
+struct CountLeadingZerosImpl final {
+  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
+
+  // Smaller integer types will be handled via integer promotion to unsigned long.
+
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
+    return _CountLeadingZeros(x) - ((sizeof(unsigned long) - sizeof(T)) * 8);
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
+    return _CountLeadingZeros64(x);
+  }
+};
+
+#else
+
+#pragma intrinsic(_BitScanReverse)
 #ifdef _LP64
 #pragma intrinsic(_BitScanReverse64)
 #endif
 
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    unsigned long index;
-    _BitScanReverse(&index, (uint32_t)v & 0xFF);
-    return 7u - index;
-  }
-};
+template <typename T>
+struct CountLeadingZerosImpl final {
+  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
 
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    unsigned long index;
-    _BitScanReverse(&index, (uint32_t)v & 0xFFFF);
-    return 15u - index;
-  }
-};
+  // Smaller integer types will be handled via integer promotion to unsigned long.
 
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned long));
     unsigned long index;
-    _BitScanReverse(&index, v);
-    return 31u - index;
+    unsigned char result = _BitScanReverse(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>((sizeof(T) * 8 - 1) - index);
   }
-};
 
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
+  ALWAYSINLINE unsigned operator()(unsigned __int64 x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
 #ifdef _LP64
     unsigned long index;
-    _BitScanReverse64(&index, v);
-    return 63u - index;
+    unsigned char result = _BitScanReverse64(&index, x);
+    postcond(result != 0);
+    return static_cast<unsigned>(63ul - index);
 #else
-    uint64_t high = ((uint64_t)v) >> 32ULL;
-    if (high != 0) {
-      return count_leading_zeros((uint32_t)high);
+    unsigned long index;
+    unsigned long high = static_cast<unsigned long>(x >> 32);
+    if (high != 0ul) {
+      unsigned char result = _BitScanReverse(&index, high);
+      postcond(result != 0);
+      index += 31ul;
     } else {
-      return count_leading_zeros((uint32_t)v) + 32;
+      unsigned char result = _BitScanReverse(&index, static_cast<unsigned long>(x));
+      postcond(result != 0);
     }
+    return static_cast<unsigned>(63ul - index);
 #endif
   }
 };
 
+#endif
 /*****************************************************************************
  * IBM XL C/C++
  *****************************************************************************/
@@ -130,86 +161,35 @@ template <typename T> struct CountLeadingZerosImpl<T, 8> {
 
 #include <builtins.h>
 
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFF) - 24u;
-  }
-};
+template <typename T>
+struct CountLeadingZerosImpl final {
+  STATIC_ASSERT(CanCountLeadingZerosImpl<T>::value);
 
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    return __cntlz4((uint32_t)v & 0xFFFF) - 16u;
-  }
-};
+  // Smaller integer types will be handled via integer promotion to unsigned int.
 
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return __cntlz4(v);
+  ALWAYSINLINE unsigned operator()(unsigned int x) const {
+    STATIC_ASSERT(sizeof(T) <= sizeof(unsigned int));
+    return __cntlz4(x) - ((sizeof(unsigned int) - sizeof(T)) * 8);
   }
-};
 
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    return __cntlz8(v);
+  ALWAYSINLINE unsigned operator()(unsigned long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned int) || sizeof(T) == sizeof(unsigned long long));
+    return sizeof(unsigned long) == sizeof(unsigned int) ? __cntlz4(static_cast<unsigned int>(x))
+                                                         : __cntlz8(x) - 32u;
+  }
+
+  ALWAYSINLINE unsigned operator()(unsigned long long x) const {
+    STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+    return __cntlz8(x);
   }
 };
 
 /*****************************************************************************
- * Fallback
+ * Unknown toolchain
  *****************************************************************************/
 #else
 
-inline uint32_t count_leading_zeros_32(uint32_t x) {
-  assert(x != 0, "precondition");
-
-  // Efficient and portable fallback implementation:
-  // http://graphics.stanford.edu/~seander/bithacks.html#IntegerLogDeBruijn
-  // - with positions xor'd by 31 to get number of leading zeros
-  // rather than position of highest bit.
-  static const uint32_t MultiplyDeBruijnBitPosition[32] = {
-      31, 22, 30, 21, 18, 10, 29,  2, 20, 17, 15, 13, 9,  6, 28,  1,
-      23, 19, 11,  3, 16, 14,  7, 24, 12,  4,  8, 25, 5, 26, 27,  0
-  };
-
-  // First round down to one less than a power of 2
-  x |= x >> 1;
-  x |= x >> 2;
-  x |= x >> 4;
-  x |= x >> 8;
-  x |= x >> 16;
-  // Multiply by a magic constant which ensure the highest 5 bits point to
-  // the right index in the lookup table
-  return MultiplyDeBruijnBitPosition[(x * 0x07c4acddu) >> 27u];
-}
-
-template <typename T> struct CountLeadingZerosImpl<T, 1> {
-  static unsigned doit(T v) {
-    return count_leading_zeros_32((uint32_t)v & 0xFF) - 24u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 2> {
-  static unsigned doit(T v) {
-    return count_leading_zeros_32((uint32_t)v & 0xFFFF) - 16u;
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 4> {
-  static unsigned doit(T v) {
-    return count_leading_zeros_32(v);
-  }
-};
-
-template <typename T> struct CountLeadingZerosImpl<T, 8> {
-  static unsigned doit(T v) {
-    uint64_t high = ((uint64_t)v) >> 32ULL;
-    if (high != 0) {
-      return count_leading_zeros_32((uint32_t)high);
-    } else {
-      return count_leading_zeros_32((uint32_t)v) + 32u;
-    }
-  }
-};
+#error Unknown compiler.
 
 #endif
 
