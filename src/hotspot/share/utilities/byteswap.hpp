@@ -210,7 +210,7 @@ struct ByteswapImpl<T, 4> final {
   STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
 
   ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(__builtin_bswap32(static_cast<unsigned long>(x)));
+    return static_cast<T>(_byteswap_ulong(static_cast<unsigned long>(x)));
   }
 };
 
