@@ -814,7 +814,7 @@
                                                                                                                                      \
   nonstatic_field(ciMethod,                    _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(ciMethod,                    _interpreter_throwout_count,                   int)                                   \
-  nonstatic_field(ciMethod,                    _instructions_size,                            int)                                   \
+  nonstatic_field(ciMethod,                    _inline_instructions_size,                     int)                                   \
                                                                                                                                      \
   nonstatic_field(ciMethodData,                _data_size,                                    int)                                   \
   nonstatic_field(ciMethodData,                _state,                                        u_char)                                \

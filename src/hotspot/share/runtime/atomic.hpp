@@ -26,9 +26,7 @@
 #define SHARE_RUNTIME_ATOMIC_HPP
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
@@ -392,7 +390,7 @@ template<typename T, typename PlatformOp>
 struct Atomic::LoadImpl<
   T,
   PlatformOp,
-  typename EnableIf<std::is_integral<T>::value || IsPointer<T>::value>::type>
+  typename EnableIf<std::is_integral<T>::value || std::is_pointer<T>::value>::type>
 {
   T operator()(T const volatile* dest) const {
     // Forward to the platform handler for the size of T.
@@ -509,15 +507,15 @@ struct Atomic::PlatformStore {
 
 template<typename D>
 inline void Atomic::inc(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
-  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   Atomic::add(dest, I(1), order);
 }
 
 template<typename D>
 inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
-  typedef typename Conditional<IsPointer<D>::value, ptrdiff_t, D>::type I;
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
   #pragma warning(suppress: 4146)
   Atomic::add(dest, I(-1), order);
@@ -525,12 +523,12 @@ inline void Atomic::dec(D volatile* dest, atomic_memory_order order) {
 
 template<typename D, typename I>
 inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
-  STATIC_ASSERT(IsPointer<D>::value || std::is_integral<D>::value);
+  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
   STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
-  typedef typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type PI;
-  typedef typename Conditional<IsPointer<D>::value, PI, D>::type AddendType;
+  using PI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
+  using AddendType = std::conditional_t<std::is_pointer<D>::value, PI, D>;
   // Only allow conversions that can't change the value.
   STATIC_ASSERT(IsSigned<I>::value == IsSigned<AddendType>::value);
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
@@ -700,7 +698,7 @@ struct Atomic::AddImpl<
 
   // Type of the scaled addend.  An integral type of the same size as a
   // pointer, and the same signedness as I.
-  using SI = typename Conditional<IsSigned<I>::value, intptr_t, uintptr_t>::type;
+  using SI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
 
   // Type of the unscaled destination.  A pointer type with pointee size == 1.
   using UP = const char*;

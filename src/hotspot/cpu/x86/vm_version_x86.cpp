@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1695,12 +1695,25 @@ void VM_Version::get_processor_features() {
       warning("vectorizedMismatch intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+  if (UseAVX >= 2) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  } else if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic))
+      warning("vectorizedHashCode intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
+  }
 #else
   if (UseVectorizedMismatchIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
     }
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+  if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+      warning("vectorizedHashCode intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
 #endif // _LP64
 

@@ -1587,6 +1587,15 @@ static void gen_continuation_yield(MacroAssembler* masm,
   __ bind(L_pinned);
 
   // Pinned, return to caller
+
+  // handle pending exception thrown by freeze
+  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
+  Label ok;
+  __ jcc(Assembler::equal, ok);
+  __ leave();
+  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  __ bind(ok);
+
   __ leave();
   __ ret(0);
 }

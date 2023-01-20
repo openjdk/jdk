@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -410,7 +410,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_CODE_COVERAGE],
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 [
-  UTIL_ARG_ENABLE(NAME: asan, DEFAULT: false,
+  UTIL_ARG_ENABLE(NAME: asan, DEFAULT: false, RESULT: ASAN_ENABLED,
       DESC: [enable AddressSanitizer],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
@@ -426,7 +426,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # ASan is simply incompatible with gcc -Wstringop-truncation. See
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer"
+        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -DADDRESS_SANITIZER"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -436,10 +436,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $ASAN_CFLAGS"
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
-        ASAN_ENABLED="yes"
-      ],
-      IF_DISABLED: [
-        ASAN_ENABLED="no"
       ])
 
   AC_SUBST(ASAN_ENABLED)
@@ -453,8 +449,9 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
 [
   # GCC reports lots of likely false positives for stringop-truncation and format-overflow.
   # Silence them for now.
-  UBSAN_CFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
-  UBSAN_LDFLAGS="-fsanitize=undefined -fsanitize=float-divide-by-zero"
+  UBSAN_CHECKS="-fsanitize=undefined -fsanitize=float-divide-by-zero -fno-sanitize=shift-base"
+  UBSAN_CFLAGS="$UBSAN_CHECKS -Wno-stringop-truncation -Wno-format-overflow -fno-omit-frame-pointer -DUNDEFINED_BEHAVIOR_SANITIZER"
+  UBSAN_LDFLAGS="$UBSAN_CHECKS"
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
       CHECK_AVAILABLE: [
@@ -783,7 +780,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
   $RM "$CODESIGN_TESTFILE"
   $TOUCH "$CODESIGN_TESTFILE"
   CODESIGN_SUCCESS=false
-  $CODESIGN $PARAMS "$CODESIGN_TESTFILE" 2>&AS_MESSAGE_LOG_FD \
+  eval \"$CODESIGN\" $PARAMS \"$CODESIGN_TESTFILE\" 2>&AS_MESSAGE_LOG_FD \
       >&AS_MESSAGE_LOG_FD && CODESIGN_SUCCESS=true
   $RM "$CODESIGN_TESTFILE"
   AC_MSG_CHECKING([$MESSAGE])
@@ -796,7 +793,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
 
 AC_DEFUN([JDKOPT_CHECK_CODESIGN_HARDENED],
 [
-  JDKOPT_CHECK_CODESIGN_PARAMS([-s "$MACOSX_CODESIGN_IDENTITY" --option runtime],
+  JDKOPT_CHECK_CODESIGN_PARAMS([-s \"$MACOSX_CODESIGN_IDENTITY\" --option runtime],
       [if codesign with hardened runtime is possible])
 ])
 
