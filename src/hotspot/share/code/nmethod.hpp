@@ -292,9 +292,9 @@ class nmethod : public CompiledMethod {
           AbstractCompiler* compiler,
           CompLevel comp_level
 #if INCLUDE_JVMCI
-          , char* speculations = NULL,
+          , char* speculations = nullptr,
           int speculations_len = 0,
-          JVMCINMethodData* jvmci_data = NULL
+          JVMCINMethodData* jvmci_data = nullptr
 #endif
           );
 
