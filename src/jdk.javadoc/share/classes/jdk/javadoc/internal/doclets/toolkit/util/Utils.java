@@ -1063,10 +1063,6 @@ public class Utils {
         }.visit(t);
     }
 
-    public TypeElement getSuperClass(TypeElement te) {
-        return (TypeElement) typeUtils.asElement(te.getSuperclass());
-    }
-
     private boolean checkType(TypeElement te) {
         return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
     }

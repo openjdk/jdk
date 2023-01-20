@@ -183,7 +183,7 @@ public class VisibleMemberTable {
         utils = configuration.utils;
         options = configuration.getOptions();
         te = typeElement;
-        parent = utils.getSuperClass(te);
+        parent = (TypeElement) utils.typeUtils.asElement(te.getSuperclass());
         this.mcache = mcache;
         allSuperclasses = new ArrayList<>();
         allSuperinterfaces = new ArrayList<>();
