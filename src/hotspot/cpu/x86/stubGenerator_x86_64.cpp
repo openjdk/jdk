@@ -2156,6 +2156,60 @@ address StubGenerator::base64_vbmi_join_2_3_addr() {
   return start;
 }
 
+address StubGenerator::base64_AVX2_tables_addr() {
+  __ align64();
+  StubCodeMark mark(this, "StubRoutines", "AVX2_tables_base64");
+  address start = __ pc();
+
+  assert(((unsigned long long)start & 0x3f) == 0,
+         "Alignment problem (0x%08llx)", (unsigned long long)start);
+  __ emit_data64(0x2f2f2f2f2f2f2f2f, relocInfo::none);
+
+  // Permute table
+  __ emit_data64(0x0000000100000000, relocInfo::none);
+  __ emit_data64(0x0000000400000002, relocInfo::none);
+  __ emit_data64(0x0000000600000005, relocInfo::none);
+  __ emit_data64(0xffffffffffffffff, relocInfo::none);
+  
+  // lut_lo
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+  
+  // lut_hi
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
+  
+  // lut_roll
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  
+  // merge table
+  __ emit_data64(0x0140014001400140, relocInfo::none);
+  __ emit_data64(0x0140014001400140, relocInfo::none);
+  __ emit_data64(0x0140014001400140, relocInfo::none);
+  __ emit_data64(0x0140014001400140, relocInfo::none);
+  
+  // merge multiplier
+  __ emit_data64(0x0001100000011000, relocInfo::none);
+  __ emit_data64(0x0001100000011000, relocInfo::none);
+  __ emit_data64(0x0001100000011000, relocInfo::none);
+  __ emit_data64(0x0001100000011000, relocInfo::none);
+  
+  // Shuffle table
+  __ emit_data64(0x090a040506000102, relocInfo::none);
+  __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
+  __ emit_data64(0x090a040506000102, relocInfo::none);
+  __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
+
+  return start;
+}
+
 address StubGenerator::base64_decoding_table_addr() {
   StubCodeMark mark(this, "StubRoutines", "decoding_table_base64");
   address start = __ pc();
@@ -2579,6 +2633,16 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   if (VM_Version::supports_avx2()){
 
+////////////////////////////////////////////
+//
+//  **** Make sure inputs match ****
+// size_t fast_avx2_base64_decode(char *out, const char *src, size_t srclen)
+//
+// Handle MIME?!?!  r12 is used for length calculation (from out)
+//
+// rbx is out, r12 is saved out, rdx is size, rsi is src
+//
+////////////////////////////////////////////
 // Dump of assembler code for function fast_avx2_base64_decode:
 //    0x0000555555557a60 <+0>:     f3 0f 1e fa     				endbr64
 //    0x0000555555557a64 <+4>:     55      						push   rbp
@@ -2590,6 +2654,12 @@ address StubGenerator::generate_base64_decodeBlock() {
 //    0x0000555555557a71 <+17>:    48 83 e4 e0     				and    rsp,0xffffffffffffffe0
 //    0x0000555555557a75 <+21>:    48 83 fa 2c     				cmp    rdx,0x2c
 //    0x0000555555557a79 <+25>:    0f 86 b0 00 00 00       		jbe    0x555555557b2f <fast_avx2_base64_decode+207>
+
+  __ cmpl(length, 44);
+  __ jbe(Assembler::belowEqual, L_tailProc);
+
+  // Set up constants
+
 //    0x0000555555557a7f <+31>:    c4 e2 7d 59 25 28 24 00 00      vpbroadcastq ymm4,QWORD PTR [rip+0x2428]        # 0x555555559eb0
 //    0x0000555555557a88 <+40>:    c5 7d 6f 1d 50 23 00 00 		vmovdqa ymm11,YMMWORD PTR [rip+0x2350]        # 0x555555559de0
 //    0x0000555555557a90 <+48>:    c4 62 7d 78 15 17 24 00 00      vpbroadcastb ymm10,BYTE PTR [rip+0x2417]        # 0x555555559eb0
@@ -2600,6 +2670,21 @@ address StubGenerator::generate_base64_decodeBlock() {
 //    0x0000555555557ab9 <+89>:    c5 7d 6f 2d bf 23 00 00 		vmovdqa ymm13,YMMWORD PTR [rip+0x23bf]        # 0x555555559e80
 //    0x0000555555557ac1 <+97>:    c5 7d 6f 25 17 22 00 00 		vmovdqa ymm12,YMMWORD PTR [rip+0x2217]        # 0x555555559ce0
 //    0x0000555555557ac9 <+105>:   eb 32   						jmp    0x555555557afd <fast_avx2_base64_decode+157>
+
+  __ lea(r12, ExternalAddress(StubRoutines::x86::base64_AVX2_tables_addr()));
+  __ vpbroadcastq(xmm4, Address(r12, 0), Assembler::AVX_256bit);
+  __ vmovdqu(xmm11, Address(r12, 0x28));
+  __ vpbroadcastb(xmm10, Address(r12, 0), Assembler::AVX_256bit);
+  __ vmovdqu(xmm9, Address(r12, 0x48));
+  __ vmovdqu(xmm8, Address(r12, 0x68));
+  __ vmovdqu(xmm7, Address(r12, 0x88));
+  __ vmovdqu(xmm6, Address(r12, 0xa8));
+  __ vmovdqu(xmm13, Address(r12, 0xc8));
+  __ vmovdqu(xmm12, Address(r12, 0x08));
+  __ jmp(L_enterLoop);
+
+  __ align32();
+  __ bind(L_topLoop);
 //    0x0000555555557acb <+107>:   0f 1f 44 00 00  				nop    DWORD PTR [rax+rax*1+0x0]
 //    0x0000555555557ad0 <+112>:   c5 fd fc c2     				vpaddb ymm0,ymm0,ymm2
 //    0x0000555555557ad4 <+116>:   c4 e2 7d 04 c7  				vpmaddubsw ymm0,ymm0,ymm7
@@ -2612,6 +2697,20 @@ address StubGenerator::generate_base64_decodeBlock() {
 //    0x0000555555557af3 <+147>:   48 83 c3 18     				add    rbx,0x18
 //    0x0000555555557af7 <+151>:   48 83 fa 2c     				cmp    rdx,0x2c
 //    0x0000555555557afb <+155>:   76 2f   						jbe    0x555555557b2c <fast_avx2_base64_decode+204>
+
+  __ vpaddb(xmm0, xmm0, xmm2, Assembler::AVX_256bit);
+  __ vpmaddubsw(xmm0, xmm0, xmm7, Assembler::AVX_256bit);
+  __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
+  __ vpshufb(xmm0, xmm12, xmm0, Assembler::AVX256bit);
+  __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
+  __ subq(rdx, 0x20);
+  __ vmovdqu(Address(rbx, 0), xmm0);
+  __ addptr(rsi, 0x20);
+  __ addq(rbx, 0x18);
+  __ cmpq(rdx, 0x2c);
+  __ jcc(Assembler::belowEqual, L_tailProc);
+
+  __ bind(L_enterLoop);
 //    0x0000555555557afd <+157>:   c5 fe 6f 16     				vmovdqu ymm2,YMMWORD PTR [rsi]
 //    0x0000555555557b01 <+161>:   c5 f5 72 d2 04  				vpsrld ymm1,ymm2,0x4
 //    0x0000555555557b06 <+166>:   c5 dd db c9     				vpand  ymm1,ymm4,ymm1
@@ -2624,6 +2723,22 @@ address StubGenerator::generate_base64_decodeBlock() {
 //    0x0000555555557b25 <+197>:   c4 e2 3d 00 c0  				vpshufb ymm0,ymm8,ymm0
 //    0x0000555555557b2a <+202>:   74 a4   						je     0x555555557ad0 <fast_avx2_base64_decode+112>
 //    0x0000555555557b2c <+204>:   c5 f8 77        				vzeroupper
+
+  __ vmovdqu(xmm2, Address(rsi, 0));
+  __ vpsrld(xmm1, xmm2, 0x4, Address::AVX_256bit);
+  __ vpand(xmm1, xmm4, xmm1, Address::AVX_256bit);
+  __ vpand(xmm3, xmm2, xmm4, Address::AVX_256bit);
+  __ vpcmpeqb(xmm0, xmm10, xmm2, Address::AVX_256bit);
+  __ vpshufb(xmm3, xmm11, xmm3, Assembler::AVX256bit);
+  __ vpshufb(xmm5, xmm9, xmm1, Assembler::AVX256bit);
+  __ vptest(xmm3, xmm5);
+  __ vpaddb(xmm0, xmm0, xmm1, Assembler::AVX256bit);
+  __ vpshufb(xmm0, xmm8, xmm0, Assembler::AVX256bit);
+  __ jcc(Assembler::equal, L_topLoop);
+
+  __ vzeroupper();
+
+  __ bind(L_tailProc);
 //    0x0000555555557b2f <+207>:   48 89 df        				mov    rdi,rbx
 //    0x0000555555557b32 <+210>:   e8 59 ec ff ff  				call   0x555555556790 <chromium_base64_decode>
 //    0x0000555555557b37 <+215>:   4c 29 e3        				sub    rbx,r12
@@ -2637,6 +2752,18 @@ address StubGenerator::generate_base64_decodeBlock() {
 //    0x0000555555557b4d <+237>:   c3      						ret
 // End of assembler dump.
 //
+
+// 0x555555559ce0: 0x0000000100000000      0x0000000400000002
+// 0x555555559cf0: 0x0000000600000005      0xffffffffffffffff
+// 0x555555559d00: 0x003f003f003f003f      0x3f003f003f003f00
+// 0x555555559d10: 0x003f0000003f0000      0x00003f0000003f00
+// 0x555555559d20: 0x0404040404040404      0xbfbfbfbfbfbfbfbf
+// 0x555555559d30: 0x1313131313131313      0x1010101010101010
+// 0x555555559d40: 0xb9b9b9b9b9b9b9b9      0x605a40392f2b1933
+// 0x555555559d50: 0x000000000000007a      0x0000000000000000
+// 0x555555559d60: 0x8000000000000000      0x8000000080000000
+// 0x555555559d70: 0x8000000080000000      0x8000000080000000
+// 0x555555559d80: 0x0809070805060405      0x0e0f0d0e0b0c0a0b
 
 // (gdb) x/100gx 0x555555559d60
 // 0x555555559d60: 0x8000000000000000      0x8000000080000000
