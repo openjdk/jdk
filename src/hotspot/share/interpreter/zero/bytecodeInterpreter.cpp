@@ -1365,7 +1365,7 @@ run:
           CONTINUE;                                                          \
       }
 
-#define nullptr_COMPARISON_NOT_OP(name)                                         \
+#define NULL_COMPARISON_NOT_OP(name)                                         \
       CASE(_if##name): {                                                     \
           int skip = (!(STACK_OBJECT(-1) == nullptr))                           \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
@@ -1375,7 +1375,7 @@ run:
           CONTINUE;                                                          \
       }
 
-#define nullptr_COMPARISON_OP(name)                                             \
+#define NULL_COMPARISON_OP(name)                                             \
       CASE(_if##name): {                                                     \
           int skip = ((STACK_OBJECT(-1) == nullptr))                            \
                       ? (int16_t)Bytes::get_Java_u2(pc + 1) : 3;             \
@@ -1390,8 +1390,8 @@ run:
       COMPARISON_OP(ge, >=);
       COMPARISON_OP2(eq, ==);  /* include ref comparison */
       COMPARISON_OP2(ne, !=);  /* include ref comparison */
-      nullptr_COMPARISON_OP(null);
-      nullptr_COMPARISON_NOT_OP(nonnull);
+      NULL_COMPARISON_OP(null);
+      NULL_COMPARISON_NOT_OP(nonnull);
 
       /* Goto pc at specified offset in switch table. */
 
