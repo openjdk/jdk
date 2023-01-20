@@ -24,6 +24,8 @@
 /*
  * @test
  * @bug 8154556
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
+ *          to hit compilation thresholds
  * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsLong
  * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsLong
  * @run testng/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsLong
@@ -219,8 +221,6 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
         return cases.stream().map(tc -> new Object[]{tc.toString(), tc}).toArray(Object[][]::new);
     }
 
-    // CompileThresholdScaling is set to 0.1 and ITERS to 2000 to reduce
-    // the test execution
     @Test(dataProvider = "accessTestCaseProvider")
     public <T> void testAccess(String desc, AccessTestCase<T> atc) throws Throwable {
         T t = atc.get();
