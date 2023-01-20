@@ -38,7 +38,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.concurrent.TimeUnit;
-import java.lang.Runtime.OperatingSystem;
+
+//import jdk.internal.misc.Architecture;
+//import jdk.internal.misc.OperatingSystem;
 
 /**
  * Benchmark assesses Runtime.OperatingSystem enum resolution
@@ -48,22 +50,22 @@ import java.lang.Runtime.OperatingSystem;
 @State(Scope.Thread)
 @Warmup(iterations = 10, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
-@Fork(3)
+@Fork(value = 3, jvmArgsPrepend = {"--add-exports", "java.base/jdk.internal.misc=ALL_UNNAMED"})
 public class RuntimeOS {
 
-    @Benchmark
-    public void tWindows(Blackhole bh) {
-        bh.consume(OperatingSystem.Windows.isCurrent());
-    }
-
-    @Benchmark
-    public void tMacOsX(Blackhole bh) {
-        bh.consume(OperatingSystem.MacOSX.isCurrent());
-    }
-
-    @Benchmark
-    public void tLinux(Blackhole bh) {
-        bh.consume(OperatingSystem.Linux.isCurrent());
-    }
+//    @Benchmark
+//    public void tWindows(Blackhole bh) {
+//        bh.consume(OperatingSystem.Windows.isCurrent());
+//    }
+//
+//    @Benchmark
+//    public void tMacOsX(Blackhole bh) {
+//        bh.consume(OperatingSystem.MacOSX.isCurrent());
+//    }
+//
+//    @Benchmark
+//    public void tLinux(Blackhole bh) {
+//        bh.consume(OperatingSystem.Linux.isCurrent());
+//    }
 
 }

@@ -27,38 +27,41 @@ import org.testng.Assert;
 
 import java.util.Locale;
 
-import static java.lang.Runtime.OperatingSystem.AIX;
-import static java.lang.Runtime.OperatingSystem.Linux;
-import static java.lang.Runtime.OperatingSystem.MacOSX;
-import static java.lang.Runtime.OperatingSystem.Windows;
+import jdk.internal.misc.OperatingSystem;
+
+import static jdk.internal.misc.OperatingSystem.AIX;
+import static jdk.internal.misc.OperatingSystem.Linux;
+import static jdk.internal.misc.OperatingSystem.MacOSX;
+import static jdk.internal.misc.OperatingSystem.Windows;
 
 /**
  * @test
  * @summary test platform enum
+ * @modules java.base/jdk.internal.misc
  * @run testng RuntimeOsTest
  */
 
 @Test
 public class RuntimeOsTest {
     /**
-     * Test consistency of System property "os.name" with Runtime.OperatingSystem.current().
+     * Test consistency of System property "os.name" with OperatingSystem.current().
      */
     @Test
     void test1() {
         String osName = System.getProperty("os.name").substring(0, 3).toLowerCase(Locale.ROOT);
-        Runtime.OperatingSystem os = switch (osName) {
+        OperatingSystem os = switch (osName) {
             case "win" -> Windows;
             case "lin" -> Linux;
             case "mac" -> MacOSX;
             case "aix" -> AIX;
             default    -> throw new RuntimeException("unknown OS kind: " + osName);
         };
-        Assert.assertEquals(os, Runtime.OperatingSystem.current(), "mismatch in OperatingSystem.current vs " + osName);
+        Assert.assertEquals(os, OperatingSystem.current(), "mismatch in OperatingSystem.current vs " + osName);
     }
 
 
     /**
-     * Test consistency of System property "os.arch" with Runtime.Architecture.current().
+     * Test consistency of System property "os.arch" with Architecture.current().
      */
     @Test
     void Test2() {
@@ -76,7 +79,7 @@ public class RuntimeOsTest {
     @Test
     void Test3() {
         int count = 0;
-        for (Runtime.OperatingSystem os : Runtime.OperatingSystem.values()) {
+        for (OperatingSystem os : OperatingSystem.values()) {
             System.out.println("os: " + os + ", current: " + os.isCurrent());
             if  (os.isCurrent()) {
                 count++;
