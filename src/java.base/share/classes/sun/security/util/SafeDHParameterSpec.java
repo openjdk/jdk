@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,22 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISPOINTER_HPP
-#define SHARE_METAPROGRAMMING_ISPOINTER_HPP
+package sun.security.util;
 
-#include "metaprogramming/integralConstant.hpp"
+import java.math.BigInteger;
+import javax.crypto.spec.DHParameterSpec;
 
-// This metafunction returns true iff the type T is (irrespective of CV qualifiers)
-// a pointer type.
+/**
+ * Internal marker class for well-known safe DH parameters. It should
+ * only be used with trusted callers since it does not have all the needed
+ * values for validation.
+ */
 
-template <typename T> class IsPointer: public FalseType {};
+public final class SafeDHParameterSpec extends DHParameterSpec {
+    public SafeDHParameterSpec(BigInteger p, BigInteger g) {
+        super(p, g);
+    }
 
-template <typename T> class IsPointer<T*>: public TrueType {};
-template <typename T> class IsPointer<T* const>: public TrueType {};
-template <typename T> class IsPointer<T* volatile>: public TrueType {};
-template <typename T> class IsPointer<T* const volatile>: public TrueType {};
-
-#endif // SHARE_METAPROGRAMMING_ISPOINTER_HPP
+    public SafeDHParameterSpec(BigInteger p, BigInteger g, int l) {
+        super(p, g, l);
+    }
+}

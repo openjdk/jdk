@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +196,7 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStrideNegScalePosInIntLoop2")
     private void testStrideNegScalePosInIntLoop2_runner() {
-        testStrideNegScalePosInIntLoop1(0, 100, 200, 0);
+        testStrideNegScalePosInIntLoop2(0, 100, 200, 0);
     }
 
     @Test
@@ -243,6 +244,6 @@ public class TestLongRangeChecks {
 
     @Run(test = "testStridePosScaleNegInIntLoop2")
     private void testStridePosScaleNegInIntLoop2_runner() {
-        testStridePosScaleNegInIntLoop1(0, 100, 200, 198);
+        testStridePosScaleNegInIntLoop2(0, 100, 200, 198);
     }
 }

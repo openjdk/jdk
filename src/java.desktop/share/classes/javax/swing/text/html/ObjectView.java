@@ -91,13 +91,15 @@ public class ObjectView extends ComponentView  {
         String classname = (String) attr.getAttribute(HTML.Attribute.CLASSID);
         try {
             ReflectUtil.checkPackageAccess(classname);
-            Class<?> c = Class.forName(classname, true,Thread.currentThread().
+            Class<?> c = Class.forName(classname, false,Thread.currentThread().
                                        getContextClassLoader());
-            Object o = c.newInstance();
-            if (o instanceof Component) {
-                Component comp = (Component) o;
-                setParameters(comp, attr);
-                return comp;
+            if (Component.class.isAssignableFrom(c)) {
+                Object o = c.newInstance();
+                if (o instanceof Component) {
+                    Component comp = (Component) o;
+                    setParameters(comp, attr);
+                    return comp;
+                }
             }
         } catch (Throwable e) {
             // couldn't create a component... fall through to the

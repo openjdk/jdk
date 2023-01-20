@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isPointer.hpp"
 #include "metaprogramming/isSame.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -1092,7 +1091,7 @@ namespace AccessInternal {
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
-                   (IsPointer<T>::value || std::is_integral<T>::value) ||
+                   (std::is_pointer<T>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // not allowed primitive type
   }
 

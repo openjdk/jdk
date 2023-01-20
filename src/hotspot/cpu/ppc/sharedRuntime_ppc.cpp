@@ -1990,6 +1990,19 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ bind(L_pinned); // pinned -- return to caller
 
+  // handle pending exception thrown by freeze
+  Label ok;
+  __ ld(tmp, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
+  __ cmpdi(CCR0, tmp, 0);
+  __ beq(CCR0, ok);
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
+  __ mtctr(tmp);
+  __ bctr();
+  __ bind(ok);
+
   // Pop frame and return
   __ pop_frame();
   __ ld(R0, _abi0(lr), R1_SP); // Return pc
