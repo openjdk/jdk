@@ -95,21 +95,21 @@ public class TestBytecodeFrame extends MethodUniverse {
 
         // The BytecodeFrame objects below will not all pass BytecodeFrame.verifyInvariants
         // but that's fine for simply testing equals and hashCode.
-        BytecodeFrame caller = new BytecodeFrame(null, m3, 0, true,  true,  values,  slotKinds, 1, 1, 0);
-        BytecodeFrame f1 =  new BytecodeFrame(caller, m1, 0, true,  true,  values,  slotKinds,  1, 1, 0);
+        BytecodeFrame caller = new BytecodeFrame(null, m3, 0, false, true,  values,  slotKinds, 1, 1, 0);
+        BytecodeFrame f1 =  new BytecodeFrame(caller, m1, 0, false,  true,  values,  slotKinds,  1, 1, 0);
                                                                                                            // Differing field
-        assertNotEquals(f1, new BytecodeFrame(caller, m2, 0, true,  true,  values,  slotKinds,  1, 1, 0)); // method
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 1, true,  true,  values,  slotKinds,  1, 1, 0)); // bci
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, true,  values,  slotKinds,  1, 1, 0)); // rethrowException
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  false, values,  slotKinds,  1, 1, 0)); // duringCall
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  true,  values2, slotKinds,  1, 1, 0)); // values
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  true,  values,  slotKinds2, 1, 1, 0)); // slotKinds
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  false, values,  slotKinds,  2, 1, 0)); // numLocals
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  false, values,  slotKinds,  1, 2, 0)); // numStack
-        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  false, values,  slotKinds,  1, 1, 1)); // numLocks
+        assertNotEquals(f1, new BytecodeFrame(caller, m2, 0, false, true,  values,  slotKinds,  1, 1, 0)); // method
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 1, false, true,  values,  slotKinds,  1, 1, 0)); // bci
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, true,  true,  values,  slotKinds,  1, 1, 0)); // rethrowException
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, false, values,  slotKinds,  1, 1, 0)); // duringCall
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, true,  values2, slotKinds,  1, 1, 0)); // values
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, true,  values,  slotKinds2, 1, 1, 0)); // slotKinds
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, false, values,  slotKinds,  2, 1, 0)); // numLocals
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, false, values,  slotKinds,  1, 2, 0)); // numStack
+        assertNotEquals(f1, new BytecodeFrame(caller, m1, 0, false, false, values,  slotKinds,  1, 1, 1)); // numLocks
         assertEquals(f1, f1);
 
-        BytecodeFrame f2 = new BytecodeFrame(caller, m1, 0, true,  true,  values,  slotKinds, 1, 1, 0);
+        BytecodeFrame f2 = new BytecodeFrame(caller, m1, 0, false,  true,  values,  slotKinds, 1, 1, 0);
         assertEquals(f1, f2);
     }
 }
