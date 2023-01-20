@@ -1064,14 +1064,7 @@ public class Utils {
     }
 
     public TypeElement getSuperClass(TypeElement te) {
-        if (checkType(te)) {
-            return null;
-        }
-        TypeMirror superclass = te.getSuperclass();
-        if (isNoType(superclass) && isClass(te)) {
-            superclass = getObjectType();
-        }
-        return asTypeElement(superclass);
+        return (TypeElement) typeUtils.asElement(te.getSuperclass());
     }
 
     private boolean checkType(TypeElement te) {
