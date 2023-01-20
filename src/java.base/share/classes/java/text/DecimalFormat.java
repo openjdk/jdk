@@ -71,9 +71,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * something like this:
  *
  * <blockquote>{@snippet lang=java :
- * NumberFormat f = NumberFormat.getInstance(loc);
- * if (f instanceof DecimalFormat) {
- *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+ * NumberFormat numFormat = NumberFormat.getInstance(loc);
+ * if (numFormat instanceof DecimalFormat decFormat) {
+ *     decFormat.setDecimalSeparatorAlwaysShown(true);
  * }
  * }</blockquote>
  *
