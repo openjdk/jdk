@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,7 @@ public class CertignaCA {
     // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
     // Issuer: CN=Certigna, O=Dhimyotis, C=FR
     // Serial number: 6f82fa28acd6f784bb5b120ba87367ad
-    // Valid from: Wed Nov 25 03:33:52 PST 2015 until: Sat Nov 22 03:33:52
-    // PST 2025
+    // Valid from: Wed Nov 25 03:33:52 PST 2015 until: Sat Nov 22 03:33:52 PST 2025
     private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
             "MIIGFjCCBP6gAwIBAgIQb4L6KKzW94S7WxILqHNnrTANBgkqhkiG9w0BAQsFADA0\n" +
             "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJRGhpbXlvdGlzMREwDwYDVQQDDAhDZXJ0\n" +
@@ -88,8 +87,7 @@ public class CertignaCA {
     // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
     // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
     // Serial number: 2959798fe2e0e7b43810169ae938bc5f
-    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59
-    // PDT 2023
+    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59 PDT 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
             "MIIIkzCCBnugAwIBAgIQKVl5j+Lg57Q4EBaa6Ti8XzANBgkqhkiG9w0BAQsFADB9\n" +
             "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJREhJTVlPVElTMRwwGgYDVQQLDBMwMDAy\n" +
@@ -144,8 +142,7 @@ public class CertignaCA {
     // Issuer: CN=Certigna Services CA, OID.2.5.4.97=NTRFR-48146308100036,
     // OU=0002 48146308100036, O=DHIMYOTIS, C=FR
     // Serial number: f88f2566b3dbf73763622db9b2bf9cc
-    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59
-    // PDT 2023
+    // Valid from: Sun Mar 13 16:00:00 PDT 2022 until: Mon Mar 13 15:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
             "MIIImTCCBoGgAwIBAgIQD4jyVms9v3N2NiLbmyv5zDANBgkqhkiG9w0BAQsFADB9\n" +
             "MQswCQYDVQQGEwJGUjESMBAGA1UECgwJREhJTVlPVElTMRwwGgYDVQQLDBMwMDAy\n" +
