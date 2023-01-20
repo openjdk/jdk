@@ -180,7 +180,7 @@ ciConstant ciObject::check_constant_value_cache(int off, ciConstant val) {
   }
   for (int i = 0; i < _constant_values->length(); ++i) {
     ConstantValue cached_val = _constant_values->at(i);
-    if (cached_val.obj() == this && cached_val.off() == off) {
+    if (cached_val.off() == off) {
       return cached_val.value();
     }
   }

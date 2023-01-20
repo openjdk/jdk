@@ -1821,7 +1821,6 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
     const Type* told = type(n);
     const Type* tnew = n->Value(this);
     if (told != tnew) {
-      DEBUG_ONLY(verify_type(n, tnew, told);)
       // Check special cases that are ok
       if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
         const TypeInteger* t0 = told->is_integer(tnew->basic_type());
@@ -1831,12 +1830,13 @@ void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
           continue; // ignore integer widen
         }
       }
-      if (n->is_Load()) {
+      if (n->is_Load() && !told->singleton()) {
         // MemNode::can_see_stored_value looks up through many memory nodes,
         // which means we would need to notify modifications from far up in
         // the inputs all the way down to the LoadNode. We don't do that.
         continue;
       }
+      verify_type(n, tnew, told);
       tty->cr();
       tty->print_cr("Missed optimization (PhaseCCP):");
       n->dump_bfs(1, 0, "");

@@ -62,15 +62,13 @@ private:
   // Cache constant value lookups to ensure that consistent values are observed during compilation.
   class ConstantValue {
     private:
-      const ciObject* _obj;
       int _off;
       ciConstant _value;
 
     public:
-      ConstantValue() : _obj(nullptr), _off(0), _value(ciConstant()) { }
-      ConstantValue(const ciObject* obj, int off, ciConstant value) : _obj(obj), _off(off), _value(value) { }
+      ConstantValue() : _off(0), _value(ciConstant()) { }
+      ConstantValue(const ciObject* obj, int off, ciConstant value) : _off(off), _value(value) { }
 
-      const ciObject* obj() const { return _obj; }
       int off() const { return _off; }
       ciConstant value() const { return _value; }
   };

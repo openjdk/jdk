@@ -94,10 +94,11 @@ ciConstant ciArray::element_value_impl(BasicType elembt,
 // Returns T_ILLEGAL if there is no element at the given index.
 ciConstant ciArray::element_value(int index) {
   BasicType elembt = element_basic_type();
+  ciConstant value;
   GUARDED_VM_ENTRY(
-    ciConstant value = element_value_impl(elembt, get_arrayOop(), index);
-    return check_constant_value_cache(index, value);
+    value = element_value_impl(elembt, get_arrayOop(), index);
   )
+  return check_constant_value_cache(index, value);
 }
 
 // ------------------------------------------------------------------
