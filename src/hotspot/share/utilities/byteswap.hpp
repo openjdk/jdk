@@ -56,21 +56,6 @@ ALWAYSINLINE T byteswap(T x) {
 }
 
 /*****************************************************************************
- * Implementation
- *****************************************************************************/
-
-// We support 8-bit integer types to be compatible with C++23's std::byteswap.
-template <typename T>
-struct ByteswapImpl<T, 1> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 1);
-
-  ALWAYSINLINE T operator()(T x) const {
-    return x;
-  }
-};
-
-/*****************************************************************************
  * Fallback
  *****************************************************************************/
 
@@ -135,6 +120,17 @@ struct ByteswapFallbackImpl<T, 8> {
 // architecture unlike GCC. This suggests the optimization pass for GCC that recognizes byteswapping
 // is architecture agnostic, while for Clang it is not.
 
+// We support 8-bit integer types to be compatible with C++23's std::byteswap.
+template <typename T>
+struct ByteswapImpl<T, 1> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(T) == 1);
+
+  ALWAYSINLINE T operator()(T x) const {
+    return x;
+  }
+};
+
 template <typename T>
 struct ByteswapImpl<T, 2> final {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
@@ -191,6 +187,17 @@ struct ByteswapImpl final : public ByteswapFallbackImpl<T, N> {};
 #pragma intrinsic(_byteswap_ushort)
 #pragma intrinsic(_byteswap_ulong)
 #pragma intrinsic(_byteswap_uint64)
+
+// We support 8-bit integer types to be compatible with C++23's std::byteswap.
+template <typename T>
+struct ByteswapImpl<T, 1> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(T) == 1);
+
+  ALWAYSINLINE T operator()(T x) const {
+    return x;
+  }
+};
 
 template <typename T>
 struct ByteswapImpl<T, 2> final {
