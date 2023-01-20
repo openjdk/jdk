@@ -28,7 +28,7 @@
  * @bug 8300079
  * @summary Verify that String.copyValueOf properly handles null input with intrinsified helper methods.
  * @run main/othervm -XX:-TieredCompilation -Xcomp
- *                   -XX:CompileCommand=compileonly,compiler.intrinsics.string.TestCopyValueOf::test 
+ *                   -XX:CompileCommand=compileonly,compiler.intrinsics.string.TestCopyValueOf::test
  *                   -XX:CompileCommand=dontinline,java.lang.String::rangeCheck
  *                   compiler.intrinsics.string.TestCopyValueOf
  */
