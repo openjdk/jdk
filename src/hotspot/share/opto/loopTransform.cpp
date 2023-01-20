@@ -2319,7 +2319,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
             bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
           // Loop was unrolled before, and had an unrolling protection CMoveI.
           // Use inputs to previous CMoveI for the new one:
-          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with overflow
+          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
           limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
         } else {
           // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
