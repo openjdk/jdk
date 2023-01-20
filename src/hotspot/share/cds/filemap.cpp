@@ -2495,7 +2495,7 @@ void FileMapInfo::fixup_mapped_heap_regions() {
 
   // do the same for mapped open archive heap regions
   if (num_open_heap_regions != 0) {
-    assert(open_heap_regions != nullptr, "null open_heap_regions array with non-zero count");
+    assert(open_heap_regions != nullptr, "Null open_heap_regions array with non-zero count");
     G1CollectedHeap::heap()->fill_archive_regions(open_heap_regions,
                                                   num_open_heap_regions);
 
