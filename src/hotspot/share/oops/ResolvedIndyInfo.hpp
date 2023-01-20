@@ -29,6 +29,8 @@
 
 class Method;
 class ResolvedIndyInfo {
+    friend class VMStructs;
+
      Method* _method;
      u2 _resolved_references_index;
      u2 _cpool_index;
