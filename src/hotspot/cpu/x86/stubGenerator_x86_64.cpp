@@ -2644,6 +2644,10 @@ address StubGenerator::generate_base64_decodeBlock() {
     //
     ////////////////////////////////////////////
 
+    // *************** NEEDS TO BE FIXED ************
+    __ cmpl(isURL, 0);
+    __ jcc(Assembler::notZero, L_tailProc);
+
     __ cmpl(length, 44);
     __ jcc(Assembler::belowEqual, L_tailProc);
 
@@ -2668,7 +2672,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ vpaddb(xmm0, xmm0, xmm2, Assembler::AVX_256bit);
     __ vpmaddubsw(xmm0, xmm0, xmm7, Assembler::AVX_256bit);
     __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
-    __ vpshufb(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
+    __ vpshufb(xmm0, xmm0, xmm13, Assembler::AVX_256bit);
     __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
     __ subl(length, 0x20);
     __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0);
