@@ -1,0 +1,238 @@
+#
+# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Run tests (cross-compile)'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      bootjdk-platform:
+        required: true
+        type: string
+      runs-on:
+        required: true
+        type: string
+
+jobs:
+  test:
+    name: test
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test-name:
+          - 'jdk/tier1 part 1'
+          - 'jdk/tier1 part 2'
+          - 'jdk/tier1 part 3'
+          - 'langtools/tier1'
+          - 'hs/tier1 common'
+          - 'hs/tier1 compiler 1'
+          - 'hs/tier1 compiler 2'
+          - 'hs/tier1 compiler 3'
+          - 'hs/tier1 compiler not xcomp'
+          - 'hs/tier1 gc'
+          - 'hs/tier1 runtime'
+          - 'hs/tier1 serviceability'
+
+        include:
+          - test-name: 'jdk/tier1 part 1'
+            test-suite: 'test/jdk/:tier1_part1'
+
+          - test-name: 'jdk/tier1 part 2'
+            test-suite: 'test/jdk/:tier1_part2'
+
+          - test-name: 'jdk/tier1 part 3'
+            test-suite: 'test/jdk/:tier1_part3'
+
+          - test-name: 'langtools/tier1'
+            test-suite: 'test/langtools/:tier1'
+
+          - test-name: 'hs/tier1 common'
+            test-suite: 'test/hotspot/jtreg/:tier1_common'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler 1'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_1'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler 2'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_2'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler 3'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_3'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 compiler not xcomp'
+            test-suite: 'test/hotspot/jtreg/:tier1_compiler_not_xcomp'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 gc'
+            test-suite: 'test/hotspot/jtreg/:tier1_gc'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 runtime'
+            test-suite: 'test/hotspot/jtreg/:tier1_runtime'
+            debug-suffix: -debug
+
+          - test-name: 'hs/tier1 serviceability'
+            test-suite: 'test/hotspot/jtreg/:tier1_serviceability'
+            debug-suffix: -debug
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v3
+
+      - name: 'Initialize platform variables'
+        id: platform-variables
+        uses: ./.github/actions/init-platform-variables
+        with:
+          platform: ${{ inputs.platform }}
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: ${{ inputs.bootjdk-platform }}
+
+      - name: 'Get JTReg'
+        id: jtreg
+        uses: ./.github/actions/get-jtreg
+
+      - name: 'Get bundles'
+        id: bundles
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          debug-suffix: ${{ matrix.debug-suffix }}
+
+      - name: 'Install dependencies'
+        run: |
+          sudo apt-get update
+          sudo apt-get install qemu-user-static
+
+      - name: 'Create sysroot'
+        uses: ./.github/actions/create-sysroot
+        with:
+          target-cpu: ${{ steps.platform-variables.outputs.target-cpu }}
+          gnu-arch: ${{ steps.platform-variables.outputs.gnu-arch }}
+          debian-arch: ${{ steps.platform-variables.outputs.debian-arch }}
+          debian-repository: ${{ steps.platform-variables.outputs.debian-repository }}
+          debian-version: sid # it's necessary to get libc 2.34
+          debian-keyring: ${{ steps.platform-variables.outputs.debian-keyring }}
+
+      - name: 'Mount folders in sysroot'
+        run: |
+          sudo mkdir -p sysroot/dev sysroot/proc sysroot/run sysroot/sys sysroot/usr/lib64 sysroot/usr/lib/x86_64-linux-gnu sysroot/home/runner
+          sudo ln -s -r sysroot/usr/lib64 sysroot/lib64
+          sudo chown $(id -u):$(id -g) sysroot/home/runner
+          sudo mount --bind /dev sysroot/dev
+          sudo mount --bind /proc sysroot/proc
+          sudo mount --bind /run sysroot/run
+          sudo mount --bind /sys sysroot/sys
+          sudo mount --bind /usr/lib64 sysroot/usr/lib64
+          sudo mount --bind /usr/lib/x86_64-linux-gnu sysroot/usr/lib/x86_64-linux-gnu
+          sudo mount --bind /home/runner sysroot/home/runner
+
+      - name: 'Run tests'
+        id: run-tests
+        run: >
+          sudo chroot --userspec=$(id -u):$(id -g) sysroot bash -x -c "
+          cd $GITHUB_WORKSPACE;
+          make test-prebuilt
+          TEST='${{ matrix.test-suite }}'
+          BOOT_JDK=${{ steps.bootjdk.outputs.path }}
+          JT_HOME=${{ steps.jtreg.outputs.path }}
+          JDK_IMAGE_DIR=${{ steps.bundles.outputs.jdk-path }}
+          SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
+          TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
+          JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful;TIMEOUT_FACTOR=8'
+          JTREG_EXTRA_PROBLEM_LISTS='ProblemList-GHA.txt'
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY"
+          "
+
+      - name: 'Umount folders in sysroot'
+        run: |
+          sudo rm sysroot/lib64
+          sudo umount -l sysroot/dev
+          sudo umount -l sysroot/proc
+          sudo umount -l sysroot/run
+          sudo umount -l sysroot/sys
+          sudo umount -l sysroot/usr/lib64
+          sudo umount -l sysroot/usr/lib/x86_64-linux-gnu
+          sudo umount -l sysroot/home/runner
+
+        # This is a separate step, since if the markdown from a step gets bigger than
+        # 1024 kB it is skipped, but then the short summary above is still generated
+      - name: 'Generate test report'
+        run: bash ./.github/scripts/gen-test-results.sh "$GITHUB_STEP_SUMMARY"
+        if: always()
+
+      - name: 'Package test results'
+        id: package
+        run: |
+          # Package test-results and relevant parts of test-support
+          mkdir results
+
+          if [[ -d build/run-test-prebuilt/test-results ]]; then
+            cd build/run-test-prebuilt/test-results/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-results.zip" .
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-results directory'
+          fi
+
+          if [[ -d build/run-test-prebuilt/test-support ]]; then
+            cd build/run-test-prebuilt/test-support/
+            zip -r -9 "$GITHUB_WORKSPACE/results/test-support.zip" . -i *.jtr -i */hs_err*.log -i */replay*.log
+            cd $GITHUB_WORKSPACE
+          else
+            echo '::warning ::Missing test-support directory'
+          fi
+
+          artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }} | tr '/ ' '__')"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
+        if: always()
+
+      - name: 'Upload test results'
+        uses: actions/upload-artifact@v3
+        with:
+          path: results
+          name: ${{ steps.package.outputs.artifact-name }}
+        if: always()
+
+        # This is the best way I found to abort the job with an error message
+      - name: 'Notify about test failures'
+        uses: actions/github-script@v6
+        with:
+          script: core.setFailed('${{ steps.run-tests.outputs.error-message }}')
+        if: always() && steps.run-tests.outputs.failure == 'true'
