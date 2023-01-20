@@ -363,8 +363,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
  *             System.out.println(" -> " + form.parse(form.format(myNumber)));
- *         } catch (ParseException e) {
- *         }
+ *         } catch (ParseException e) {}
  *     }
  * }
  * }</blockquote>
