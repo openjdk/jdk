@@ -127,7 +127,7 @@ public class NewDirectByteBuffer {
         Long.MAX_VALUE})
     void illegalCapacities(long capacity) {
         assertThrows(IllegalArgumentException.class, () -> {
-            long addr = UNSAFE.allocateMemory(capacity);
+            long addr = UNSAFE.allocateMemory(1);
             try {
                 ByteBuffer buf = newDirectByteBuffer(addr, capacity);
             } finally {
