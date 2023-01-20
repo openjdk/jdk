@@ -27,6 +27,7 @@
 #define CPU_PPC_BYTES_PPC_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
  public:
@@ -36,11 +37,6 @@ class Bytes: AllStatic {
   // Can I count on address always being a pointer to an unsigned char? Yes.
 
 #if defined(VM_LITTLE_ENDIAN)
-
-  // Forward declarations of the compiler-dependent implementation
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
 
   static inline u2   get_native_u2(address p) {
     return (intptr_t(p) & 1) == 0
@@ -151,11 +147,6 @@ class Bytes: AllStatic {
 
 #else // !defined(VM_LITTLE_ENDIAN)
 
-  // Thus, a swap between native and Java ordering is always a no-op:
-  static inline u2   swap_u2(u2 x)  { return x; }
-  static inline u4   swap_u4(u4 x)  { return x; }
-  static inline u8   swap_u8(u8 x)  { return x; }
-
   static inline u2   get_native_u2(address p) {
     return (intptr_t(p) & 1) == 0
              ?   *(u2*)p
@@ -264,8 +255,16 @@ class Bytes: AllStatic {
   static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, x); }
 
 #endif // VM_LITTLE_ENDIAN
-};
 
-#include OS_CPU_HEADER(bytes)
+#ifdef VM_LITTLE_ENDIAN
+  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
+  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
+  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
+#else
+  static inline u2 swap_u2(u2 x) { return x; }
+  static inline u4 swap_u4(u4 x) { return x; }
+  static inline u8 swap_u8(u8 x) { return x; }
+#endif
+};
 
 #endif // CPU_PPC_BYTES_PPC_HPP

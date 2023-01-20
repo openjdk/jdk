@@ -27,6 +27,7 @@
 #define CPU_AARCH64_BYTES_AARCH64_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
  public:
@@ -52,15 +53,15 @@ class Bytes: AllStatic {
   static inline void put_Java_u4(address p, u4 x)     { put_native_u4(p, swap_u4(x)); }
   static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, swap_u8(x)); }
 
-
-  // Efficient swapping of byte ordering
-  static inline u2   swap_u2(u2 x);                   // compiler-dependent implementation
-  static inline u4   swap_u4(u4 x);                   // compiler-dependent implementation
-  static inline u8   swap_u8(u8 x);
+#ifdef VM_LITTLE_ENDIAN
+  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
+  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
+  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
+#else
+  static inline u2 swap_u2(u2 x) { return x; }
+  static inline u4 swap_u4(u4 x) { return x; }
+  static inline u8 swap_u8(u8 x) { return x; }
+#endif
 };
-
-
-// The following header contains the implementations of swap_u2, swap_u4, and swap_u8[_base]
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_AARCH64_BYTES_AARCH64_HPP

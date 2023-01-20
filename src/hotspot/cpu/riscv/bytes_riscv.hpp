@@ -28,16 +28,22 @@
 #define CPU_RISCV_BYTES_RISCV_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/byteswap.hpp"
 
 class Bytes: AllStatic {
  public:
   // Efficient reading and writing of unaligned unsigned data in platform-specific byte ordering
   // RISCV needs to check for alignment.
 
-  // Forward declarations of the compiler-dependent implementation
-  static inline u2 swap_u2(u2 x);
-  static inline u4 swap_u4(u4 x);
-  static inline u8 swap_u8(u8 x);
+#ifdef VM_LITTLE_ENDIAN
+  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
+  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
+  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
+#else
+  static inline u2 swap_u2(u2 x) { return x; }
+  static inline u4 swap_u4(u4 x) { return x; }
+  static inline u8 swap_u8(u8 x) { return x; }
+#endif
 
   static inline u2 get_native_u2(address p) {
     if ((intptr_t(p) & 1) == 0) {
@@ -163,7 +169,5 @@ class Bytes: AllStatic {
   static inline void put_Java_u4(address p, u4 x) { put_native_u4(p, swap_u4(x)); }
   static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, swap_u8(x)); }
 };
-
-#include OS_CPU_HEADER(bytes)
 
 #endif // CPU_RISCV_BYTES_RISCV_HPP
