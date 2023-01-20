@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,30 @@
  * questions.
  */
 
-package jdk.test.lib.artifacts;
+/*
+ * @test
+ * @bug 8300399
+ * @summary EdDSA does not verify when there is no message
+ * @run main EmptyMessage
+ */
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.spec.NamedParameterSpec;
 
-import java.nio.file.Path;
-import java.util.Map;
+public class EmptyMessage {
+    public static void main(String[] args) throws Exception {
+        var g = KeyPairGenerator.getInstance("EdDSA");
+        g.initialize(NamedParameterSpec.ED25519);
+        var kp = g.generateKeyPair();
 
-public interface ArtifactManager {
-    public Path resolve(Artifact artifact) throws ArtifactResolverException;
-    default public Path resolve(String name, Map<String, Object> artifactDescription,
-                        boolean unpack) throws ArtifactResolverException {
-        throw new ArtifactResolverException("not implemented");
+        var ss = Signature.getInstance("EdDSA");
+        ss.initSign(kp.getPrivate());
+        var sig = ss.sign();
+
+        var ps = Signature.getInstance("EdDSA");
+        ps.initVerify(kp.getPublic());
+        if (!ps.verify(sig)) {
+            throw new RuntimeException();
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,17 +76,15 @@ import jdk.internal.icu.text.NormalizerBase;
  * <p>
  * Example of the iterator usage,
  * <blockquote>
- * <pre>
- *
- *  String testString = "This is a test";
- *  Collator col = Collator.getInstance();
- *  if (col instanceof RuleBasedCollator) {
- *      RuleBasedCollator ruleBasedCollator = (RuleBasedCollator)col;
- *      CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
- *      int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
- *          :
- *  }
- * </pre>
+ * {@snippet lang=java :
+ * String testString = "This is a test";
+ * Collator col = Collator.getInstance();
+ * if (col instanceof RuleBasedCollator ruleBasedCollator) {
+ *     CollationElementIterator collationElementIterator = ruleBasedCollator.getCollationElementIterator(testString);
+ *     int primaryOrder = CollationElementIterator.primaryOrder(collationElementIterator.next());
+ *         \u22ee
+ * }
+ * }
  * </blockquote>
  *
  * <p>
