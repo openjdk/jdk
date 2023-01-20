@@ -77,22 +77,22 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     final long length;
     final boolean readOnly;
-    final SegmentScope session;
+    final SegmentScope scope;
 
     @ForceInline
-    AbstractMemorySegmentImpl(long length, boolean readOnly, SegmentScope session) {
+    AbstractMemorySegmentImpl(long length, boolean readOnly, SegmentScope scope) {
         this.length = length;
         this.readOnly = readOnly;
-        this.session = session;
+        this.scope = scope;
     }
 
-    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session);
+    abstract AbstractMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope scope);
 
     abstract ByteBuffer makeByteBuffer();
 
     @Override
     public AbstractMemorySegmentImpl asReadOnly() {
-        return dup(0, length, true, session);
+        return dup(0, length, true, scope);
     }
 
     @Override
@@ -113,7 +113,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
-        return dup(offset, newSize, readOnly, session);
+        return dup(offset, newSize, readOnly, scope);
     }
 
     @Override
@@ -359,12 +359,12 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public SegmentScope scope() {
-        return session;
+        return scope;
     }
 
     @ForceInline
     public final MemorySessionImpl sessionImpl() {
-        return (MemorySessionImpl)session;
+        return (MemorySessionImpl)scope;
     }
 
     private IndexOutOfBoundsException outOfBoundException(long offset, long length) {
@@ -481,11 +481,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         int size = limit - pos;
 
         AbstractMemorySegmentImpl bufferSegment = (AbstractMemorySegmentImpl) NIO_ACCESS.bufferSegment(bb);
-        final SegmentScope bufferSession;
+        final SegmentScope bufferScope;
         if (bufferSegment != null) {
-            bufferSession = bufferSegment.session;
+            bufferScope = bufferSegment.scope;
         } else {
-            bufferSession = MemorySessionImpl.heapSession(bb);
+            bufferScope = MemorySessionImpl.heapSession(bb);
         }
         boolean readOnly = bb.isReadOnly();
         int scaleFactor = getScaleFactor(bb);
@@ -508,10 +508,10 @@ public abstract sealed class AbstractMemorySegmentImpl
                 throw new AssertionError("Cannot get here");
             }
         } else if (unmapper == null) {
-            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferSession);
+            return new NativeMemorySegmentImpl(bbAddress + (pos << scaleFactor), size << scaleFactor, readOnly, bufferScope);
         } else {
             // we can ignore scale factor here, a mapped buffer is always a byte buffer, so scaleFactor == 0.
-            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferSession);
+            return new MappedMemorySegmentImpl(bbAddress + pos, unmapper, size, readOnly, bufferScope);
         }
     }
 

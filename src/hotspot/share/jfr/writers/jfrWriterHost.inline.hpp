@@ -73,6 +73,7 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
+  assert(len <= max_jint, "invariant");
   // Might need T + 1 size
   u1* const pos = ensure_size(sizeof(T) * len + len);
   if (pos) {
@@ -125,8 +126,9 @@ template <typename T>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::be_write(const T* value, size_t len) {
   assert(value != NULL, "invariant");
   assert(len > 0, "invariant");
-  // Might need T + 1 size
-  u1* const pos = ensure_size(sizeof(T) * len + len);
+  assert(len <= max_jint, "invariant");
+  // Big endian writes map one-to-one for length, so no extra space is needed.
+  u1* const pos = ensure_size(sizeof(T) * len);
   if (pos) {
     this->set_current_pos(BE::be_write(value, len, pos));
   }
@@ -361,6 +363,12 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_be_at_offset(T value, in
     be_write(value);
     this->seek(current); // restore
   }
+}
+
+template <typename BE, typename IE, typename WriterPolicyImpl>
+template <typename T>
+inline size_t WriterHost<BE, IE, WriterPolicyImpl>::size_in_bytes(T value) {
+  return IE::size_in_bytes(value);
 }
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP

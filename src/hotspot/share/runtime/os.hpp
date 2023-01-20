@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,13 +500,13 @@ class os: AllStatic {
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
+  static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
 
   // Page manipulation
   struct page_info {
     size_t size;
     int lgrp_id;
   };
-  static bool   get_page_info(char *start, page_info* info);
   static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
 
   static char*  non_memory_address_word();
@@ -746,6 +746,10 @@ class os: AllStatic {
   // of some platforms don't.
   static int vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
   static int snprintf(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+
+  // Performs snprintf and asserts the result is non-negative (so there was not
+  // an encoding error) and that the output was not truncated.
+  static int snprintf_checked(char* buf, size_t len, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 
   // Get host name in buffer provided
   static bool get_host_name(char* buf, size_t buflen);

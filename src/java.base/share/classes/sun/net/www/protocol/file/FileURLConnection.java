@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.net.FileNameMap;
 import java.io.*;
 import java.text.Collator;
 import java.security.Permission;
-import sun.net.*;
 import sun.net.www.*;
 import java.util.*;
 import java.text.SimpleDateFormat;
@@ -82,15 +81,7 @@ public class FileURLConnection extends URLConnection {
                         throw new FileNotFoundException(filename + " exists, but is not accessible");
                     files = Arrays.<String>asList(fileList);
                 } else {
-
                     is = new BufferedInputStream(new FileInputStream(filename));
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    if (meteredInput)   {
-                        ProgressSource pi = new ProgressSource(url, "GET", file.length());
-                        is = new MeteredStream(is, pi, file.length());
-                    }
                 }
             } catch (IOException e) {
                 throw e;

@@ -60,6 +60,7 @@ requires.properties= \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
     vm.cds \
+    vm.cds.write.archived.java.heap \
     vm.continuations \
     vm.musl \
     vm.debug \
@@ -71,7 +72,7 @@ requires.properties= \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=7.1+1
+requiredVersion=7.1.1+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them

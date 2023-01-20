@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * https://bugs.openjdk.org/browse/JDK-8059327
  *
  * Also:
- * JDK-8061550: XMLEntityScanner can corrupt corrupt content during parsing
+ * JDK-8061550: XMLEntityScanner can corrupt content during parsing
  * https://bugs.openjdk.org/browse/JDK-8061550
  *
  * @Summary: verify that the character cache in XMLEntityScanner is reset properly

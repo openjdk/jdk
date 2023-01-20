@@ -132,7 +132,6 @@ class Space: public CHeapObj<mtGC> {
 
   // Testers
   bool is_empty() const              { return used() == 0; }
-  bool not_empty() const             { return used() > 0; }
 
   // Returns true iff the given the space contains the
   // given address as part of an allocated object. For
@@ -173,14 +172,6 @@ class Space: public CHeapObj<mtGC> {
   // each.  Objects allocated by applications of the closure are not
   // included in the iteration.
   virtual void object_iterate(ObjectClosure* blk) = 0;
-
-  // Create and return a new dirty card to oop closure. Can be
-  // overridden to return the appropriate type of closure
-  // depending on the type of space in which the closure will
-  // operate. ResourceArea allocated.
-  virtual DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                             CardTable::PrecisionStyle precision,
-                                             HeapWord* boundary);
 
   // If "p" is in the space, returns the address of the start of the
   // "block" that contains "p".  We say "block" instead of "object" since
@@ -249,16 +240,14 @@ class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
-  CardTable::PrecisionStyle _precision;
   HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
                                 // pointing below boundary.
-  HeapWord* _min_done;          // ObjHeadPreciseArray precision requires
-                                // a downwards traversal; this is the
+  HeapWord* _min_done;          // Need a downwards traversal to compensate
+                                // imprecise write barrier; this is the
                                 // lowest location already done (or,
                                 // alternatively, the lowest address that
                                 // shouldn't be done again.  NULL means infinity.)
   NOT_PRODUCT(HeapWord* _last_bottom;)
-  NOT_PRODUCT(HeapWord* _last_explicit_min_done;)
 
   // Get the actual top of the area on which the closure will
   // operate, given where the top is assumed to be (the end of the
@@ -278,25 +267,13 @@ protected:
 
 public:
   DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
-                        CardTable::PrecisionStyle precision,
                         HeapWord* boundary) :
-    _cl(cl), _sp(sp), _precision(precision), _boundary(boundary),
+    _cl(cl), _sp(sp), _boundary(boundary),
     _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
-    NOT_PRODUCT(_last_explicit_min_done = NULL);
   }
 
   void do_MemRegion(MemRegion mr) override;
-
-  void set_min_done(HeapWord* min_done) {
-    _min_done = min_done;
-    NOT_PRODUCT(_last_explicit_min_done = _min_done);
-  }
-#ifndef PRODUCT
-  void set_last_bottom(HeapWord* last_bottom) {
-    _last_bottom = last_bottom;
-  }
-#endif
 };
 
 // A structure to represent a point at which objects are being copied
@@ -399,13 +376,6 @@ public:
   // space.
   virtual HeapWord* forward(oop q, size_t size, CompactPoint* cp,
                     HeapWord* compact_top);
-
-  // Return a size with adjustments as required of the space.
-  virtual size_t adjust_object_size_v(size_t size) const { return size; }
-
-  void set_first_dead(HeapWord* value) { _first_dead = value; }
-  void set_end_of_live(HeapWord* value) { _end_of_live = value; }
-
 protected:
   // Used during compaction.
   HeapWord* _first_dead;
@@ -471,7 +441,6 @@ class ContiguousSpace: public CompactibleSpace {
   void check_mangled_unused_area_complete() PRODUCT_RETURN;
 
   // Size computations: sizes in bytes.
-  size_t capacity() const        { return byte_size(bottom(), end()); }
   size_t used() const override   { return byte_size(bottom(), top()); }
   size_t free() const override   { return byte_size(top(),    end()); }
 
@@ -495,10 +464,8 @@ class ContiguousSpace: public CompactibleSpace {
     set_top(compaction_top());
   }
 
-  // Override.
   DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                     CardTable::PrecisionStyle precision,
-                                     HeapWord* boundary) override;
+                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
@@ -574,28 +541,30 @@ class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
 
 public:
   ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
-                       CardTable::PrecisionStyle precision,
                        HeapWord* boundary) :
-    DirtyCardToOopClosure(sp, cl, precision, boundary)
+    DirtyCardToOopClosure(sp, cl, boundary)
   {}
 };
 
-// A ContigSpace that Supports an efficient "block_start" operation via
-// a BlockOffsetArray (whose BlockOffsetSharedArray may be shared with
-// other spaces.)  This is the abstract base class for old generation
-// (tenured) spaces.
 
 #if INCLUDE_SERIALGC
-class OffsetTableContigSpace: public ContiguousSpace {
+
+// Class TenuredSpace is used by TenuredGeneration; it supports an efficient
+// "block_start" operation via a BlockOffsetArray (whose BlockOffsetSharedArray
+// may be shared with other spaces.)
+
+class TenuredSpace: public ContiguousSpace {
   friend class VMStructs;
  protected:
   BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
 
+  // Mark sweep support
+  size_t allowed_dead_ratio() const override;
  public:
   // Constructor
-  OffsetTableContigSpace(BlockOffsetSharedArray* sharedOffsetArray,
-                         MemRegion mr);
+  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
+               MemRegion mr);
 
   void set_bottom(HeapWord* value) override;
   void set_end(HeapWord* value) override;
@@ -616,21 +585,6 @@ class OffsetTableContigSpace: public ContiguousSpace {
 
   // Debugging
   void verify() const override;
-};
-
-
-// Class TenuredSpace is used by TenuredGeneration
-
-class TenuredSpace: public OffsetTableContigSpace {
-  friend class VMStructs;
- protected:
-  // Mark sweep support
-  size_t allowed_dead_ratio() const override;
- public:
-  // Constructor
-  TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
-               MemRegion mr) :
-    OffsetTableContigSpace(sharedOffsetArray, mr) {}
 };
 #endif //INCLUDE_SERIALGC
 

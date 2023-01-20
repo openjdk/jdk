@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.util.Objects;
  * file system. {@code Path} defines the {@link #getFileName() getFileName},
  * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath
  * subpath} methods to access the path components or a subsequence of its name
- * elements, and {@link #getExtension() getExtension} to obtain its extension.
+ * elements.
  *
  * <p> In addition to accessing the components of a path, a {@code Path} also
  * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)
@@ -280,7 +280,7 @@ public interface Path
      *          possibly only a single period character, or an empty string if
      *          no extension is found
      *
-     * @since 20
+     * @since 21
      */
     default String getExtension() {
         // empty extension if the file name is null

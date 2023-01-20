@@ -20,7 +20,7 @@ public class MostSpecific05 {
         void map(NumberConverter<? extends B> m) { }
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         MyMapper<Number, Double> mm = new MyMapper<Number, Double>();
         mm.map(e->1.0); //ambiguous - implicit
         mm.map((Object e)->1.0); //ok

@@ -267,7 +267,7 @@ mlib_image* mlib_ImageCreate(mlib_type type,
 /* sanity check */
   if (width <= 0 || height <= 0 || channels < 1 || channels > 4) {
     return NULL;
-  };
+  }
 
   if (!SAFE_TO_MULT(width, channels)) {
     return NULL;
@@ -322,7 +322,7 @@ mlib_image* mlib_ImageCreate(mlib_type type,
   if (image == NULL) {
     mlib_free(data);
     return NULL;
-  };
+  }
 
   image -> type     = type;
   image -> channels = channels;

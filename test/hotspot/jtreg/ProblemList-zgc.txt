@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,9 @@ resourcehogs/serviceability/sa/TestHeapDumpForLargeArray.java 8276539   generic-
 serviceability/sa/CDSJMapClstats.java                         8276539   generic-all
 serviceability/sa/ClhsdbJhisto.java                           8276539   generic-all
 
-serviceability/sa/ClhsdbCDSCore.java                          8268722   macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core                8268722,8284045   macosx-x64,generic-all
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core             8268722   macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-process             8276402   generic-all
-serviceability/sa/ClhsdbJstack.java#id0                       8276402   generic-all
-serviceability/sa/ClhsdbPmap.java#core                        8268722   macosx-x64
-serviceability/sa/ClhsdbPstack.java#core                      8268722   macosx-x64
-serviceability/sa/TestJmapCore.java                           8268722,8268283,8270202   macosx-x64,linux-aarch64,linux-x64
-serviceability/sa/TestJmapCoreMetaspace.java                  8268722,8268636   generic-all
+serviceability/sa/ClhsdbFindPC.java#xcomp-core                8284045   generic-all
+serviceability/sa/TestJmapCore.java                           8268283,8270202   linux-aarch64,linux-x64,macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java                  8268636   generic-all
 
 serviceability/sa/TestJhsdbJstackMixed.java                   8248912   generic-all
 serviceability/sa/ClhsdbPstack.java#process                   8248912   generic-all
@@ -47,42 +41,5 @@ serviceability/sa/ClhsdbPstack.java#core                      8248912   generic-
 
 vmTestbase/gc/gctests/MemoryEaterMT/MemoryEaterMT.java        8289582   windows-x64
 
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem001/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem002/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem003/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem004/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem005/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem006/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem007/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem008/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem009/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem010/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem011/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem012/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem013/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem014/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem015/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem016/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem017/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem018/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem019/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem020/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem021/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem022/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem023/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem024/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem025/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem026/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem027/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem028/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem029/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem030/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem031/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem032/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem033/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem034/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem035/TestDescription.java 8297979 generic-all
-vmTestbase/nsk/monitoring/stress/lowmem/lowmem036/TestDescription.java 8297979 generic-all
-
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter001/TestDescription.java 8298059 generic-x64
-vmTestbase/nsk/jdi/ExceptionRequest/addInstanceFilter/instancefilter004/TestDescription.java 8298059 generic-x64
+vmTestbase/nsk/monitoring/MemoryPoolMBean/isCollectionUsageThresholdExceeded/isexceeded002/TestDescription.java 8298302 generic-all
+vmTestbase/nsk/sysdict/vm/stress/chain/chain007/chain007.java 8298991 linux-x64

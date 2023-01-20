@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     if (rindex < 0)
       rindex = m->constants()->cp_to_object_index(ldc2.pool_index());
     if (rindex >= 0) {
-      oop coop = m->constants()->resolved_references()->obj_at(rindex);
+      oop coop = m->constants()->resolved_reference_at(rindex);
       oop roop = (result == NULL ? Universe::the_null_sentinel() : result);
       assert(roop == coop, "expected result for assembly code");
     }
@@ -372,6 +372,9 @@ JRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* current
                                  CHECK);
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 
@@ -383,6 +386,9 @@ JRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread*
           Universe::delayed_stack_overflow_error_message());
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
+  // Remove the ScopedValue bindings in case we got a StackOverflowError
+  // while we were trying to manipulate ScopedValue bindings.
+  current->clear_scopedValueBindings();
   THROW_HANDLE(exception);
 JRT_END
 

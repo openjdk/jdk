@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,11 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicFloatOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private float[] a;
     private float[] b;
@@ -61,6 +63,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+        counts = {IRNode.NEG_V, ">0"})
     public float[] vectorNeg() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +74,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+        counts = {IRNode.ABS_V, ">0"})
     public float[] vectorAbs() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +85,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.SQRT_V, ">0"})
     public float[] vectorSqrt() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +96,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public float[] vectorAdd() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +107,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public float[] vectorSub() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +118,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public float[] vectorMul() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +129,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.DIV_V, ">0"})
     public float[] vectorDiv() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -124,6 +140,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+        counts = {IRNode.MAX_V, ">0"})
     public float[] vectorMax() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,6 +151,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+        counts = {IRNode.MIN_V, ">0"})
     public float[] vectorMin() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -142,6 +162,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulAdd() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -151,6 +173,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulSub1() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -160,6 +184,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulSub2() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -169,6 +195,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulAdd1() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -178,6 +206,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulAdd2() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -187,6 +217,8 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+        counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulSub() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -223,4 +255,3 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

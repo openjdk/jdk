@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,6 +268,7 @@ macro(OnSpinWait)
 macro(Opaque1)
 macro(OpaqueLoopInit)
 macro(OpaqueLoopStride)
+macro(OpaqueZeroTripGuard)
 macro(Opaque3)
 macro(Opaque4)
 macro(ProfileBoolean)
@@ -505,9 +506,12 @@ macro(VectorCastI2X)
 macro(VectorCastL2X)
 macro(VectorCastF2X)
 macro(VectorCastD2X)
+macro(VectorCastF2HF)
+macro(VectorCastHF2F)
 macro(VectorUCastB2X)
 macro(VectorUCastS2X)
 macro(VectorUCastI2X)
+macro(VectorizedHashCode)
 macro(VectorInsert)
 macro(MaskAll)
 macro(AndVMask)

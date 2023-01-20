@@ -59,6 +59,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseZbb)) {
       FLAG_SET_DEFAULT(UseZbb, true);
     }
+    if (FLAG_IS_DEFAULT(UseZbs)) {
+      FLAG_SET_DEFAULT(UseZbs, true);
+    }
     if (FLAG_IS_DEFAULT(UseZic64b)) {
       FLAG_SET_DEFAULT(UseZic64b, true);
     }
@@ -70,6 +73,9 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseZicboz)) {
       FLAG_SET_DEFAULT(UseZicboz, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZfhmin)) {
+      FLAG_SET_DEFAULT(UseZfhmin, true);
     }
   }
 

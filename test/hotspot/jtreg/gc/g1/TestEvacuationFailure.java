@@ -50,7 +50,6 @@ public class TestEvacuationFailure {
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc",
                                                                   GCTestWithEvacuationFailure.class.getName());
 

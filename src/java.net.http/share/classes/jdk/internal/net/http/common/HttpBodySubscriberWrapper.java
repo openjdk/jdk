@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
@@ -174,6 +173,14 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                 propagateError(t);
             }
         }
+    }
+
+    /**
+     * {@return true if this subscriber has already completed, either normally
+     * or abnormally}
+     */
+    public boolean completed() {
+        return completed.get();
     }
 
     @Override

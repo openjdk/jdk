@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2035,6 +2035,7 @@ void MacroAssembler::post_call_nop() {
   }
   InstructionMark im(this);
   relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
   emit_int8((int8_t)0x0f);
   emit_int8((int8_t)0x1f);
   emit_int8((int8_t)0x84);
@@ -3873,31 +3874,69 @@ void MacroAssembler::vpermd(XMMRegister dst,  XMMRegister nds, AddressLiteral sr
   }
 }
 
-void MacroAssembler::clear_jweak_tag(Register possibly_jweak) {
-  const int32_t inverted_jweak_mask = ~static_cast<int32_t>(JNIHandles::weak_tag_mask);
-  STATIC_ASSERT(inverted_jweak_mask == -2); // otherwise check this code
+void MacroAssembler::clear_jobject_tag(Register possibly_non_local) {
+  const int32_t inverted_mask = ~static_cast<int32_t>(JNIHandles::tag_mask);
+  STATIC_ASSERT(inverted_mask == -4); // otherwise check this code
   // The inverted mask is sign-extended
-  andptr(possibly_jweak, inverted_jweak_mask);
+  andptr(possibly_non_local, inverted_mask);
 }
 
 void MacroAssembler::resolve_jobject(Register value,
                                      Register thread,
                                      Register tmp) {
   assert_different_registers(value, thread, tmp);
-  Label done, not_weak;
+  Label done, tagged, weak_tagged;
   testptr(value, value);
-  jcc(Assembler::zero, done);                // Use NULL as-is.
-  testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
-  jcc(Assembler::zero, not_weak);
-  // Resolve jweak.
-  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
+  jcc(Assembler::zero, done);           // Use NULL as-is.
+  testptr(value, JNIHandles::tag_mask); // Test for tag.
+  jcc(Assembler::notZero, tagged);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp, thread);
   verify_oop(value);
   jmp(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
+
+  bind(tagged);
+  testptr(value, JNIHandles::TypeTag::weak_global); // Test for weak tag.
+  jcc(Assembler::notZero, weak_tagged);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp, thread);
   verify_oop(value);
+  jmp(done);
+
+  bind(weak_tagged);
+  // Resolve jweak.
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
+                 value, Address(value, -JNIHandles::TypeTag::weak_global), tmp, thread);
+  verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value,
+                                            Register thread,
+                                            Register tmp) {
+  assert_different_registers(value, thread, tmp);
+  Label done;
+
+  testptr(value, value);
+  jcc(Assembler::zero, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    testptr(value, JNIHandles::TypeTag::global); // Test for global tag.
+    jcc(Assembler::notZero, valid_global_tag);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, -JNIHandles::TypeTag::global), tmp, thread);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -5108,7 +5147,7 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                                     Register tmp1, Register thread_tmp) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, thread_tmp);
@@ -5120,7 +5159,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators, Reg
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, dst, val, tmp1, tmp2, tmp3);
@@ -8228,24 +8267,27 @@ void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Registe
   addl(tmp1, in2);
   addq(tmp1, in1);
 
-  BIND(L_wordByWord);
   cmpq(in1, tmp1);
-  jcc(Assembler::greaterEqual, L_byteByByteProlog);
-    crc32(in_out, Address(in1, 0), 4);
-    addq(in1, 4);
-    jmp(L_wordByWord);
+  jccb(Assembler::greaterEqual, L_byteByByteProlog);
+  align(16);
+  BIND(L_wordByWord);
+    crc32(in_out, Address(in1, 0), 8);
+    addq(in1, 8);
+    cmpq(in1, tmp1);
+    jcc(Assembler::less, L_wordByWord);
 
   BIND(L_byteByByteProlog);
   andl(in2, 0x00000007);
   movl(tmp2, 1);
 
-  BIND(L_byteByByte);
   cmpl(tmp2, in2);
   jccb(Assembler::greater, L_exit);
+  BIND(L_byteByByte);
     crc32(in_out, Address(in1, 0), 1);
     incq(in1);
     incl(tmp2);
-    jmp(L_byteByByte);
+    cmpl(tmp2, in2);
+    jcc(Assembler::lessEqual, L_byteByByte);
 
   BIND(L_exit);
 }
@@ -9010,26 +9052,6 @@ void MacroAssembler::evand(BasicType type, XMMRegister dst, KRegister mask, XMMR
       evpandq(dst, mask, nds, src, merge, vector_len); break;
     default:
       fatal("Unexpected type argument %s", type2name(type)); break;
-  }
-}
-
-void MacroAssembler::anytrue(Register dst, uint masklen, KRegister src1, KRegister src2) {
-   masklen = masklen < 8 ? 8 : masklen;
-   ktest(masklen, src1, src2);
-   setb(Assembler::notZero, dst);
-   movzbl(dst, dst);
-}
-
-void MacroAssembler::alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch) {
-  if (masklen < 8) {
-    knotbl(kscratch, src2);
-    kortestbl(src1, kscratch);
-    setb(Assembler::carrySet, dst);
-    movzbl(dst, dst);
-  } else {
-    ktest(masklen, src1, src2);
-    setb(Assembler::carrySet, dst);
-    movzbl(dst, dst);
   }
 }
 

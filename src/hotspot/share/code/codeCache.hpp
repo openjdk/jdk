@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ class CodeCache : AllStatic {
   static void check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set);
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, CodeBlobType code_blob_type);
-  static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or NULL
+  static CodeHeap* get_code_heap_containing(void* p);         // Returns the CodeHeap containing the given pointer, or nullptr
   static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
@@ -321,7 +321,7 @@ class CodeCache : AllStatic {
 
   static int get_codemem_full_count(CodeBlobType code_blob_type) {
     CodeHeap* heap = get_code_heap(code_blob_type);
-    return (heap != NULL) ? heap->full_count() : 0;
+    return (heap != nullptr) ? heap->full_count() : 0;
   }
 
   // CodeHeap State Analytics.
@@ -366,7 +366,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
       // Filter is_unloading as required
       if (_only_not_unloading) {
         CompiledMethod* cm = _code_blob->as_compiled_method_or_null();
-        if (cm != NULL && cm->is_unloading()) {
+        if (cm != nullptr && cm->is_unloading()) {
           continue;
         }
       }
@@ -376,10 +376,10 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
   }
 
  public:
-  CodeBlobIterator(LivenessFilter filter, T* nm = NULL)
+  CodeBlobIterator(LivenessFilter filter, T* nm = nullptr)
     : _only_not_unloading(filter == only_not_unloading)
   {
-    if (Filter::heaps() == NULL) {
+    if (Filter::heaps() == nullptr) {
       // The iterator is supposed to shortcut since we have
       // _heap == _end, but make sure we do not have garbage
       // in other fields as well.
@@ -388,9 +388,9 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
     }
     _heap = Filter::heaps()->begin();
     _end = Filter::heaps()->end();
-    // If set to NULL, initialized by first call to next()
+    // If set to nullptr, initialized by first call to next()
     _code_blob = nm;
-    if (nm != NULL) {
+    if (nm != nullptr) {
       while(!(*_heap)->contains_blob(_code_blob)) {
         ++_heap;
       }
@@ -409,7 +409,7 @@ template <class T, class Filter, bool is_relaxed> class CodeBlobIterator : publi
     }
   }
 
-  bool end()  const { return _code_blob == NULL; }
+  bool end()  const { return _code_blob == nullptr; }
   T* method() const { return (T*)_code_blob; }
 
 private:
@@ -421,9 +421,9 @@ private:
     }
     CodeHeap *heap = *_heap;
     // Get first method CodeBlob
-    if (_code_blob == NULL) {
+    if (_code_blob == nullptr) {
       _code_blob = CodeCache::first_blob(heap);
-      if (_code_blob == NULL) {
+      if (_code_blob == nullptr) {
         return false;
       } else if (Filter::apply(_code_blob)) {
         return true;
@@ -431,10 +431,10 @@ private:
     }
     // Search for next method CodeBlob
     _code_blob = CodeCache::next_blob(heap, _code_blob);
-    while (_code_blob != NULL && !Filter::apply(_code_blob)) {
+    while (_code_blob != nullptr && !Filter::apply(_code_blob)) {
       _code_blob = CodeCache::next_blob(heap, _code_blob);
     }
-    return _code_blob != NULL;
+    return _code_blob != nullptr;
   }
 };
 
