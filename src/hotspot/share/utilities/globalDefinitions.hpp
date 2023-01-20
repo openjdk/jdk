@@ -1164,6 +1164,44 @@ inline intx byte_size(void* from, void* to) {
   return (address)to - (address)from;
 }
 
+// Right shifts with signed integers are compiler implementation specific according to the C++ standard.
+// Use a portable version instead.
+inline int64_t shift_right_arithmetic(int64_t value, uint8_t shift_amount) {
+  return value < 0 ? (int64_t)(~(~(uint64_t)value >> shift_amount)) : (int64_t)((uint64_t)value >> shift_amount);
+}
+
+// Taken from rom section 8-2 of Henry S. Warren, Jr., Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174.
+inline uint64_t multiply_high_unsigned(const uint64_t x, const uint64_t y) {
+  const uint64_t x1 = x >> 32u;
+  const uint64_t x2 = x & 0xFFFFFFFF;
+  const uint64_t y1 = y >> 32u;
+  const uint64_t y2 = y & 0xFFFFFFFF;
+  const uint64_t z2 = x2 * y2;
+  const uint64_t t = x1 * y2 + (z2 >> 32u);
+  uint64_t z1 = t & 0xFFFFFFFF;
+  const uint64_t z0 = t >> 32u;
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + (z1 >> 32u);
+}
+
+// Taken from java.lang.Math::multiplyHigh which uses the technique from section 8-2 of Henry S. Warren, Jr.,
+// Hacker's Delight (2nd ed.) (Addison Wesley, 2013), 173-174 but adapted for signed longs.
+inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
+  const jlong x1 = shift_right_arithmetic(x, 32);
+  const jlong x2 = x & 0xFFFFFFFF;
+  const jlong y1 = shift_right_arithmetic(y, 32);
+  const jlong y2 = y & 0xFFFFFFFF;
+
+  const uint64_t z2 = x2 * y2;
+  const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
+  int64_t z1 = t & 0xFFFFFFFF;
+  const int64_t z0 = shift_right_arithmetic(t, 32);
+  z1 += x2 * y1;
+
+  return x1 * y1 + z0 + shift_right_arithmetic(z1, 32);
+}
+
 // Pack and extract shorts to/from ints:
 
 inline int extract_low_short_from_int(jint x) {
