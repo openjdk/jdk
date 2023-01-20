@@ -351,15 +351,15 @@ public final class BytecodeFrame extends BytecodePosition {
     }
 
     @Override
-    public int hashCode()
+    public int hashCode() {
         return Objects.hash(super.hashCode(),
-                            duringCall,
-                            numLocals,
-                            numLocks,
-                            numStack,
-                            rethrowException,
-                            Arrays.hashCode(slotKinds),
-                            Arrays.hashCode(values));
+                        duringCall,
+                        numLocals,
+                        numLocks,
+                        numStack,
+                        rethrowException,
+                        Arrays.hashCode(slotKinds),
+                        Arrays.hashCode(values));
     }
 
     @Override
@@ -373,16 +373,14 @@ public final class BytecodeFrame extends BytecodePosition {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        // @formatter:off
         BytecodeFrame that = (BytecodeFrame) obj;
         return duringCall == that.duringCall &&
-               numLocals == that.numLocals &&
-               numLocks == that.numLocks &&
-               numStack == that.numStack &&
-               rethrowException == that.rethrowException &&
-               Arrays.equals(slotKinds, that.slotKinds) &&
-               Arrays.equals(values, that.values);
-        // @formatter:on
+                        numLocals == that.numLocals &&
+                        numLocks == that.numLocks &&
+                        numStack == that.numStack &&
+                        rethrowException == that.rethrowException &&
+                        Arrays.equals(slotKinds, that.slotKinds) &&
+                        Arrays.equals(values, that.values);
     }
 
     @Override
