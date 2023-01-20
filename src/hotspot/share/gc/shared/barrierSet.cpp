@@ -57,9 +57,8 @@ static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_
     // The GC needs nmethod entry barriers to do concurrent GC
     return barrier_set_nmethod;
   } else {
-    // The GC needs nmethod entry barriers for code cache unloading (recently
-    // used heuristics) and, if it's a SATB GC, to keep alive constant objects
-    // of nmethods because they are weakly referenced.
+    // The GC needs nmethod entry barriers to deal with continuations
+    // and code cache unloading
     return new BarrierSetNMethod();
   }
 }

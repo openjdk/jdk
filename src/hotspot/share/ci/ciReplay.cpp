@@ -1529,7 +1529,7 @@ void ciReplay::initialize(ciMethod* m) {
   } else {
     EXCEPTION_CONTEXT;
     // m->_instructions_size = rec->_instructions_size;
-    m->_instructions_size = -1;
+    m->_inline_instructions_size = -1;
     m->_interpreter_invocation_count = rec->_interpreter_invocation_count;
     m->_interpreter_throwout_count = rec->_interpreter_throwout_count;
     MethodCounters* mcs = method->get_method_counters(CHECK_AND_CLEAR);

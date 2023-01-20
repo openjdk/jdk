@@ -116,6 +116,9 @@ final class SSLConfiguration implements Cloneable {
     static final boolean enableFFDHE =
             Utilities.getBooleanProperty("jsse.enableFFDHE", true);
 
+    static final boolean enableDtlsResumeCookie = Utilities.getBooleanProperty(
+            "jdk.tls.enableDtlsResumeCookie", true);
+
     // Is the extended_master_secret extension supported?
     static {
         boolean supportExtendedMasterSecret = Utilities.getBooleanProperty(
