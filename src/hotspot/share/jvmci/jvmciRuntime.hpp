@@ -457,8 +457,8 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            JVMCIObject               nmethod_mirror,
                                            FailedSpeculation**       failed_speculations,
                                            char*                     speculations,
-                       int                       speculations_len,
-                       int                       nmethod_entry_patch_offset);
+                                           int                       speculations_len,
+                                           int                       nmethod_entry_patch_offset);
 
   // Detach `thread` from this runtime and destroy this runtime's JavaVM
   // if using one JavaVM per JVMCI compilation .

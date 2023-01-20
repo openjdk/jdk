@@ -559,7 +559,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   // create nmethod
   nmethod* nm = NULL;
 #if INCLUDE_JVMCI
-    int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
+  int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
 #endif
   int nmethod_size =
     CodeBlob::allocation_size(code_buffer, sizeof(nmethod))

@@ -2099,8 +2099,8 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        JVMCIObject nmethod_mirror,
                                                        FailedSpeculation** failed_speculations,
                                                        char* speculations,
-                                int speculations_len,
-                                int nmethod_entry_patch_offset) {
+                                                       int speculations_len,
+                                                       int nmethod_entry_patch_offset) {
   JVMCI_EXCEPTION_CONTEXT;
   CompLevel comp_level = CompLevel_full_optimization;
   char* failure_detail = NULL;

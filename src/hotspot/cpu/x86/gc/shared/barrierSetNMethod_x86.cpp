@@ -186,7 +186,9 @@ static NativeNMethodCmpBarrier* native_nmethod_barrier(nmethod* nm) {
     barrier_address = nm->code_begin() + nm->jvmci_nmethod_data()->nmethod_entry_patch_offset();
   } else
 #endif
-  barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+    {
+      barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
+    }
 
   NativeNMethodCmpBarrier* barrier = reinterpret_cast<NativeNMethodCmpBarrier*>(barrier_address);
   barrier->verify();

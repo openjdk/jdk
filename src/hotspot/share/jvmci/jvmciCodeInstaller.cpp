@@ -770,12 +770,9 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
 
       if (nm != nullptr) {
         if (_nmethod_entry_patch_offset != -1) {
-          BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-          if (bs_nm == nullptr) {
-            JVMCI_THROW_MSG_(IllegalArgumentException, "nmethod entry barrier is not required", JVMCI::ok);
-          }
-
           FormatBuffer<> msg("%s", "");
+          BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+
           if (!bs_nm->verify_barrier(nm, msg)) {
             JVMCI_THROW_MSG_(IllegalArgumentException, err_msg("nmethod entry barrier is malformed: %s", msg.buffer()), JVMCI::ok);
           }
