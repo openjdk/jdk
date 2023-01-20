@@ -294,6 +294,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Sets the time zone ID. This does not change any other data in
      * the time zone object.
      * @param ID the new time zone ID.
+     * @implNote The default implementation throws a
+     * {@code NullPointerException} if {@code ID} is {@code null}
      * @throws NullPointerException if {@code ID} is {@code null}
      */
     public void setID(String ID)
@@ -523,6 +525,8 @@ public abstract class TimeZone implements Serializable, Cloneable {
      *
      * @return the specified {@code TimeZone}, or the GMT zone if the given ID
      * cannot be understood.
+     * @implNote The default implementation throws a
+     * {@code NullPointerException} if {@code ID} is {@code null}
      * @throws NullPointerException if {@code ID} is {@code null}
      */
     public static synchronized TimeZone getTimeZone(String ID) {
