@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1160,6 +1160,8 @@ private:
   void vcvtps2ph(XMMRegister dst, XMMRegister src, int imm8, int vector_len);
   void vcvtph2ps(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvtps2ph(Address dst, KRegister mask, XMMRegister src, int imm8, int vector_len);
+  void vcvtps2ph(Address dst, XMMRegister src, int imm8, int vector_len);
+  void vcvtph2ps(XMMRegister dst, Address src, int vector_len);
 
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
@@ -1734,6 +1736,7 @@ private:
   void orq(Address dst, int32_t imm32);
   void orq(Address dst, Register src);
   void orq(Register dst, int32_t imm32);
+  void orq_imm32(Register dst, int32_t imm32);
   void orq(Register dst, Address src);
   void orq(Register dst, Register src);
 
@@ -1971,9 +1974,12 @@ private:
   void vptest(XMMRegister dst, Address src);
 
   void evptestmb(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evptestmd(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evptestnmd(KRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Vector compare
   void vptest(XMMRegister dst, XMMRegister src, int vector_len);
+  void vtestps(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Interleave Low Bytes
   void punpcklbw(XMMRegister dst, XMMRegister src);

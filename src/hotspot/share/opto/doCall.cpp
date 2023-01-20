@@ -597,7 +597,7 @@ void Parse::do_call() {
 
   if (receiver_constraint != NULL) {
     Node* receiver_node = stack(sp() - nargs);
-    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint));
+    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = NULL;
     Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
     if (bad_type_ctrl != NULL) {
@@ -894,7 +894,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.
 // Case 2: we have some handlers, with loaded exception klasses that have
-// no subklasses.  We do a Deutsch-Shiffman style type-check on the incoming
+// no subklasses.  We do a Deutsch-Schiffman style type-check on the incoming
 // exception oop and branch to the handler directly.
 // Case 3: We have some handlers with subklasses or are not loaded at
 // compile-time.  We have to call the runtime to resolve the exception.

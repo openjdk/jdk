@@ -131,14 +131,14 @@ public class CallArranger {
         return handle;
     }
 
-    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope session) {
+    public static MemorySegment arrangeUpcall(MethodHandle target, MethodType mt, FunctionDescriptor cDesc, SegmentScope scope) {
         Bindings bindings = getBindings(mt, cDesc, true);
 
         if (bindings.isInMemoryReturn) {
             target = SharedUtils.adaptUpcallForIMR(target, false /* need the return value as well */);
         }
 
-        return UpcallLinker.make(CWindows, target, bindings.callingSequence, session);
+        return UpcallLinker.make(CWindows, target, bindings.callingSequence, scope);
     }
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {

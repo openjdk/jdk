@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ NumberSeq::NumberSeq(double alpha) :
 
 bool NumberSeq::check_nums(NumberSeq *total, int n, NumberSeq **parts) {
   for (int i = 0; i < n; ++i) {
-    if (parts[i] != NULL && total->num() != parts[i]->num())
+    if (parts[i] != nullptr && total->num() != parts[i]->num())
       return false;
   }
   return true;

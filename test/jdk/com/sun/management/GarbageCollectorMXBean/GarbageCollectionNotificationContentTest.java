@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,14 +46,14 @@ import com.sun.management.GcInfo;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.Field;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.gc.GC;
-import gc.testlibrary.g1.MixedGCProvoker;
 
 public class GarbageCollectionNotificationContentTest {
     private static HashMap<String,GarbageCollectionNotificationInfo> listenerInvoked
         = new HashMap<String,GarbageCollectionNotificationInfo>();
-    static volatile long count = 0;
-    static volatile long number = 0;
+    static volatile long notificationReceivedCount = 0;
+    static volatile long numberOfGCMBeans = 0;
     static Object synchronizer = new Object();
 
     static class GcListener implements NotificationListener {
@@ -64,12 +64,12 @@ public class GarbageCollectionNotificationContentTest {
                     GarbageCollectionNotificationInfo.from((CompositeData) notif.getUserData());
                 String source = ((ObjectName)notif.getSource()).getCanonicalName();
                 synchronized(synchronizer) {
-                    if(listenerInvoked.get(source) == null) {
-                            listenerInvoked.put(((ObjectName)notif.getSource()).getCanonicalName(),gcNotif);
-                            count++;
-                            if(count >= number) {
-                                synchronizer.notify();
-                            }
+                    if (listenerInvoked.get(source) == null) {
+                        listenerInvoked.put(((ObjectName)notif.getSource()).getCanonicalName(), gcNotif);
+                        notificationReceivedCount++;
+                        if (notificationReceivedCount >= numberOfGCMBeans) {
+                            synchronizer.notify();
+                        }
                     }
                 }
             }
@@ -85,16 +85,14 @@ public class GarbageCollectionNotificationContentTest {
             System.out.println("GC Notification not supported by the JVM, test skipped");
             return;
         }
-        final ObjectName gcMXBeanPattern =
-                new ObjectName("java.lang:type=GarbageCollector,*");
-        Set<ObjectName> names =
-                mbs.queryNames(gcMXBeanPattern, null);
+        final ObjectName gcMXBeanPattern = new ObjectName("java.lang:type=GarbageCollector,*");
+        Set<ObjectName> names = mbs.queryNames(gcMXBeanPattern, null);
         if (names.isEmpty())
             throw new Exception("Test incorrect: no GC MXBeans");
-        number = names.size();
+        numberOfGCMBeans = names.size();
         for (ObjectName n : names) {
-            if(mbs.isInstanceOf(n,"javax.management.NotificationEmitter")) {
-                listenerInvoked.put(n.getCanonicalName(),null);
+            if (mbs.isInstanceOf(n, "javax.management.NotificationEmitter")) {
+                listenerInvoked.put(n.getCanonicalName(), null);
                 GcListener listener = new GcListener();
                 mbs.addNotificationListener(n, listener, null, null);
             }
@@ -108,11 +106,11 @@ public class GarbageCollectionNotificationContentTest {
         }
         // Trigger G1's concurrent mark
         if (GC.G1.isSelected()) {
-            MixedGCProvoker.provokeConcMarkCycle();
+            WhiteBox.getWhiteBox().g1RunConcurrentGC();
         }
         int wakeup = 0;
         synchronized(synchronizer) {
-            while(count != number) {
+            while(notificationReceivedCount != numberOfGCMBeans) {
                 synchronizer.wait(10000);
                 wakeup++;
                 if(wakeup > 10)
@@ -126,9 +124,9 @@ public class GarbageCollectionNotificationContentTest {
     }
 
     private static void checkGarbageCollectionNotificationInfoContent(GarbageCollectionNotificationInfo notif) throws Exception {
-        System.out.println("GC notification for "+notif.getGcName());
-        System.out.print("Action: "+notif.getGcAction());
-        System.out.println(" Cause: "+notif.getGcCause());
+        System.out.println("GC notification for " + notif.getGcName());
+        System.out.print("Action: " + notif.getGcAction());
+        System.out.println(" Cause: " + notif.getGcCause());
         GcInfo info = notif.getGcInfo();
         System.out.print("GC Info #" + info.getId());
         System.out.print(" start:" + info.getStartTime());
@@ -136,6 +134,12 @@ public class GarbageCollectionNotificationContentTest {
         System.out.println(" (" + info.getDuration() + "ms)");
         Map<String, MemoryUsage> usage = info.getMemoryUsageBeforeGc();
 
+        // Check MemoryUsage is present. For all but No GC events, check Eden usage decreases:
+        boolean doCheckMemoryUsage = true;
+        if (notif.getGcCause().equals("No GC")) {
+            System.out.println("(skip memory usage check for event with 'No GC' cause)");
+            doCheckMemoryUsage = false;
+        }
         List<String> pnames = new ArrayList<String>();
         for (Map.Entry entry : usage.entrySet() ) {
             String poolname = (String) entry.getKey();
@@ -143,22 +147,22 @@ public class GarbageCollectionNotificationContentTest {
             MemoryUsage busage = (MemoryUsage) entry.getValue();
             MemoryUsage ausage = (MemoryUsage) info.getMemoryUsageAfterGc().get(poolname);
             if (ausage == null) {
-                throw new RuntimeException("After Gc Memory does not exist" +
-                    " for " + poolname);
+                throw new RuntimeException("After Gc Memory does not exist for " + poolname);
             }
             System.out.println("Usage for pool " + poolname);
             System.out.println("   Before GC: " + busage);
             System.out.println("   After GC: " + ausage);
 
-            checkMemoryUsage(poolname, busage, ausage);
+            if (doCheckMemoryUsage) {
+                checkMemoryUsage(poolname, busage, ausage);
+            }
         }
 
         // check if memory usage for all memory pools are returned
         List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
         for (MemoryPoolMXBean p : pools ) {
             if (!pnames.contains(p.getName())) {
-                throw new RuntimeException("GcInfo does not contain " +
-                    "memory usage for pool " + p.getName());
+                throw new RuntimeException("GcInfo does not contain memory usage for pool " + p.getName());
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ class CDSHeapVerifier : public KlassClosure {
         return &excl[1];
       }
     }
-    return NULL;
+    return nullptr;
   }
-  int trace_to_root(oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
+  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
 
   CDSHeapVerifier();
   ~CDSHeapVerifier();
@@ -82,7 +82,9 @@ public:
   // For ResourceHashtable::iterate()
   inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
 
-  static void verify() NOT_DEBUG_RETURN;
+  static void verify();
+
+  static void trace_to_root(outputStream* st, oop orig_obj);
 };
 
 #endif // INCLUDE_CDS_JAVA_HEAP

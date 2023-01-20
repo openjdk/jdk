@@ -64,7 +64,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         if (isIllegalType(type.returnType()))
             return true;
 
-        for (Class<?> pType : type.parameterArray()) {
+        for (Class<?> pType : type.ptypes()) {
             if (isIllegalType(pType))
                 return true;
         }
@@ -117,7 +117,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         outArgs[outArgs.length - 1] = names[GET_NEP];
         names[LINKER_CALL] = new LambdaForm.Name(linker, outArgs);
 
-        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, LAST_RESULT);
+        LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, LAST_RESULT);
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
         return lform;

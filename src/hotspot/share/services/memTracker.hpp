@@ -109,7 +109,11 @@ class MemTracker : AllStatic {
     if (!enabled()) {
       return memblock;
     }
-    return MallocTracker::record_free(memblock);
+    return MallocTracker::record_free_block(memblock);
+  }
+  static inline void deaccount(MallocHeader::FreeInfo free_info) {
+    assert(enabled(), "NMT must be enabled");
+    MallocTracker::deaccount(free_info);
   }
 
   // Record creation of an arena

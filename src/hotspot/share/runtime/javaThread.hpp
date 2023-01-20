@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -92,7 +92,7 @@ class JavaThread: public Thread {
   OopHandle      _threadObj;                     // The Java level thread object
   OopHandle      _vthread; // the value returned by Thread.currentThread(): the virtual thread, if mounted, otherwise _threadObj
   OopHandle      _jvmti_vthread;
-  OopHandle      _extentLocalCache;
+  OopHandle      _scopedValueCache;
 
   static OopStorage* _thread_oop_storage;
 
@@ -520,8 +520,9 @@ private:
   void set_threadOopHandles(oop p);
   oop vthread() const;
   void set_vthread(oop p);
-  oop extentLocalCache() const;
-  void set_extentLocalCache(oop p);
+  oop scopedValueCache() const;
+  void set_scopedValueCache(oop p);
+  void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
 
@@ -740,11 +741,7 @@ private:
   }
 
   // Misc. accessors/mutators
-  void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
-  void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
-  bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
-
-  static ByteSize extentLocalCache_offset()       { return byte_offset_of(JavaThread, _extentLocalCache); }
+  static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
@@ -821,7 +818,7 @@ private:
   // We don't assert it is Thread::current here as that is done at the
   // external JNI entry points where the JNIEnv is passed into the VM.
   static JavaThread* thread_from_jni_environment(JNIEnv* env) {
-    JavaThread* current = (JavaThread*)((intptr_t)env - in_bytes(jni_environment_offset()));
+    JavaThread* current = reinterpret_cast<JavaThread*>(((intptr_t)env - in_bytes(jni_environment_offset())));
     // We can't normally get here in a thread that has completed its
     // execution and so "is_terminated", except when the call is from
     // AsyncGetCallTrace, which can be triggered by a signal at any point in
@@ -937,8 +934,17 @@ private:
   Klass* security_get_caller_class(int depth);
 
   // Print stack trace in external format
+  // These variants print carrier/platform thread information only.
   void print_stack_on(outputStream* st);
   void print_stack() { print_stack_on(tty); }
+  // This prints the currently mounted virtual thread.
+  void print_vthread_stack_on(outputStream* st);
+  // This prints the active stack: either carrier/platform or virtual.
+  void print_active_stack_on(outputStream* st);
+  // Print current stack trace for checked JNI warnings and JNI fatal errors.
+  // This is the external format from above, but selecting the platform
+  // or vthread as applicable.
+  void print_jni_stack();
 
   // Print stack traces in various internal formats
   void trace_stack()                             PRODUCT_RETURN;

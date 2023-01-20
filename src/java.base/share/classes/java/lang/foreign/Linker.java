@@ -180,9 +180,7 @@ public sealed interface Linker permits AbstractLinker {
      *
      * @return a linker for the ABI associated with the OS and processor where the Java runtime is currently executing.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static Linker nativeLinker() {
@@ -305,8 +303,8 @@ public sealed interface Linker permits AbstractLinker {
          *          before it can be overwritten by the Java runtime, or read through conventional means}
          * <p>
          * A downcall method handle linked with this option will feature an additional {@link MemorySegment}
-         * parameter directly following the target address parameter. This memory segment must be a
-         * native segment into which the captured state is written.
+         * parameter directly following the target address, and optional {@link SegmentAllocator} parameters.
+         * This memory segment must be a native segment into which the captured state is written.
          *
          * @param capturedState the names of the values to save.
          * @see CaptureCallState#supported()
@@ -325,6 +323,10 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * Execution state is captured by a downcall method handle on invocation, by writing it
          * to a native segment provided by the user to the downcall method handle.
+         * For this purpose, a downcall method handle linked with the {@link #captureCallState(String[])}
+         * option will feature an additional {@link MemorySegment} parameter directly
+         * following the target address, and optional {@link SegmentAllocator} parameters.
+         * This parameter represents the native segment into which the captured state is written.
          * <p>
          * The native segment should have the layout {@linkplain CaptureCallState#layout associated}
          * with the particular {@code CaptureCallState} instance used to link the downcall handle.
@@ -347,6 +349,7 @@ public sealed interface Linker permits AbstractLinker {
          * }
          * }
          */
+        @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
         sealed interface CaptureCallState extends Option
                                           permits LinkerOptions.CaptureCallStateImpl {
             /**

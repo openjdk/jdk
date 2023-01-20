@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ template <class T> class ValueRecorder : public StackObj {
   // The zero index is reserved for a constant (shareable) null.
   // Indexes may not be negative.
 
-  // Use the given arena to manage storage, if not NULL.
+  // Use the given arena to manage storage, if not nullptr.
   // By default, uses the current ResourceArea.
-  ValueRecorder(Arena* arena = NULL);
+  ValueRecorder(Arena* arena = nullptr);
 
   // Generate a new index on which nmethod::oop_addr_at will work.
   // allocate_index and find_index never return the same index,
@@ -70,18 +70,18 @@ template <class T> class ValueRecorder : public StackObj {
   T at(int index);
 
   int count() {
-    if (_handles == NULL) return 0;
-    // there is always a NULL virtually present as first object
+    if (_handles == nullptr) return 0;
+    // there is always a nullptr virtually present as first object
     return _handles->length() + first_index;
   }
 
-  // Helper function; returns false for NULL or Universe::non_oop_word().
+  // Helper function; returns false for nullptr or Universe::non_oop_word().
   inline bool is_real(T h);
 
   // copy the generated table to nmethod
   void copy_values_to(nmethod* nm);
 
-  bool is_unused() { return _handles == NULL && !_complete; }
+  bool is_unused() { return _handles == nullptr && !_complete; }
 #ifdef ASSERT
   bool is_complete() { return _complete; }
 #endif
@@ -132,7 +132,7 @@ template <class T> class ValueRecorder : public StackObj {
 
   enum { null_index = 0, first_index = 1, index_cache_threshold = 20 };
 
-  GrowableArray<T>*        _handles;  // ordered list (first is always NULL)
+  GrowableArray<T>*        _handles;  // ordered list (first is always nullptr)
   GrowableArray<int>*       _no_finds; // all unfindable indexes; usually empty
   IndexCache<T>*           _indexes;  // map: handle -> its probable index
   Arena*                    _arena;
@@ -154,7 +154,7 @@ class ObjectLookup : public ResourceObj {
 
    public:
     ObjectEntry(jobject value, int index) : _value(value), _index(index) {}
-    ObjectEntry() : _value(NULL), _index(0) {}
+    ObjectEntry() : _value(nullptr), _index(0) {}
     oop oop_value() const;
     int index() { return _index; }
   };
@@ -181,13 +181,13 @@ class OopRecorder : public ResourceObj {
   ValueRecorder<Metadata*>    _metadata;
   ObjectLookup*               _object_lookup;
  public:
-  OopRecorder(Arena* arena = NULL, bool deduplicate = false);
+  OopRecorder(Arena* arena = nullptr, bool deduplicate = false);
 
   int allocate_oop_index(jobject h) {
     return _oops.allocate_index(h);
   }
   virtual int find_index(jobject h) {
-    return _object_lookup != NULL ? _object_lookup->find_index(h, this) : _oops.find_index(h);
+    return _object_lookup != nullptr ? _object_lookup->find_index(h, this) : _oops.find_index(h);
   }
   jobject oop_at(int index) {
     return _oops.at(index);

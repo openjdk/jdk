@@ -26,6 +26,9 @@
 package com.sun.tools.javac.main;
 
 import java.io.*;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.InvalidPathException;
+import java.nio.file.ReadOnlyFileSystemException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -608,13 +611,22 @@ public class JavaCompiler {
      *  @param content      The characters to be parsed.
      */
     protected JCCompilationUnit parse(JavaFileObject filename, CharSequence content) {
+        return parse(filename, content, false);
+    }
+
+    /** Parse contents of input stream.
+     *  @param filename     The name of the file from which input stream comes.
+     *  @param content      The characters to be parsed.
+     *  @param silent       true if TaskListeners should not be notified
+     */
+    private JCCompilationUnit parse(JavaFileObject filename, CharSequence content, boolean silent) {
         long msec = now();
         JCCompilationUnit tree = make.TopLevel(List.nil());
         if (content != null) {
             if (verbose) {
                 log.printVerbose("parsing.started", filename);
             }
-            if (!taskListener.isEmpty()) {
+            if (!taskListener.isEmpty() && !silent) {
                 TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, filename);
                 taskListener.started(e);
                 keepComments = true;
@@ -630,7 +642,7 @@ public class JavaCompiler {
 
         tree.sourcefile = filename;
 
-        if (content != null && !taskListener.isEmpty()) {
+        if (content != null && !taskListener.isEmpty() && !silent) {
             TaskEvent e = new TaskEvent(TaskEvent.Kind.PARSE, tree);
             taskListener.finished(e);
         }
@@ -1673,7 +1685,11 @@ public class JavaCompiler {
                 }
                 if (results != null && file != null)
                     results.add(file);
-            } catch (IOException ex) {
+            } catch (IOException
+                    | UncheckedIOException
+                    | FileSystemNotFoundException
+                    | InvalidPathException
+                    | ReadOnlyFileSystemException ex) {
                 log.error(cdef.pos(),
                           Errors.ClassCantWrite(cdef.sym, ex.getMessage()));
                 return;
@@ -1800,7 +1816,7 @@ public class JavaCompiler {
         DiagnosticHandler dh = new DiscardDiagnosticHandler(log);
         JavaFileObject prevSource = log.useSource(fo);
         try {
-            JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false));
+            JCTree.JCCompilationUnit t = parse(fo, fo.getCharContent(false), true);
             return tree2Name.apply(t);
         } catch (IOException e) {
             return null;
