@@ -27,10 +27,6 @@
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
  *          when SecurityManager is enabled
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters

@@ -29,10 +29,6 @@
  *      header only in the case where an authenticator is configured
  *      for the client. If no authenticator is configured the client
  *      should simply let the caller deal with the unauthorized response.
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib

@@ -29,10 +29,6 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DependentActionsTest
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true DependentActionsTest
  * @run testng/othervm/java.security.policy=dependent.policy
   *        -Djdk.internal.httpclient.debug=true DependentActionsTest

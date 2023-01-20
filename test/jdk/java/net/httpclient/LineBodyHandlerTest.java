@@ -79,12 +79,6 @@ import static org.testng.Assert.assertTrue;
  *          the BodyHandlers returned by BodyHandler::fromLineSubscriber
  *          and BodyHandler::asLines
  * @bug 8256459
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build ReferenceTracker jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext

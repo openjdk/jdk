@@ -29,10 +29,6 @@
  *          are no active streams on the connection.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=errors -Djdk.httpclient.keepalive.timeout=1
  *                                                             IdleConnectionTimeoutTest

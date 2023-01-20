@@ -25,10 +25,6 @@
  * @test
  * @bug 8199943
  * @summary Test for cookie handling when retrying after close
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib

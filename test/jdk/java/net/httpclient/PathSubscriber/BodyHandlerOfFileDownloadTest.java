@@ -26,10 +26,6 @@
  * @bug 8237470
  * @summary Confirm HttpResponse.BodySubscribers#ofFileDownload(Path)
  *          works only with the default file system
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters

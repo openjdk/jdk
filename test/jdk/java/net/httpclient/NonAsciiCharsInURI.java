@@ -26,12 +26,6 @@
  * @summary Verify that non-US-ASCII chars are replaced with a sequence of
  *          escaped octets that represent that char in the UTF-8 character set.
  * @bug 8201238
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @compile -encoding utf-8 NonAsciiCharsInURI.java

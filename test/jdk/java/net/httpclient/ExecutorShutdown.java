@@ -26,10 +26,6 @@
  * @bug 8277969
  * @summary Test for edge case where the executor is not accepting
  *          new tasks while the client is still running
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib

@@ -66,10 +66,6 @@ import static org.testng.Assert.assertTrue;
 /*
  * @test
  * @summary Basic tests for Flow adapter Subscribers
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib

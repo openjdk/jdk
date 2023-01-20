@@ -25,10 +25,6 @@
  * @test
  * @summary Exercise a streaming subscriber ( InputStream ) without holding a
  *          strong (or any ) reference to the client.
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib lib

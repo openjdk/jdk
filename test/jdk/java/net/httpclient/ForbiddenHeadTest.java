@@ -31,9 +31,7 @@
  *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
- *          java.base/sun.net.www.http
  *          java.base/sun.net.www
- *          java.base/sun.net
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build DigestEchoServer ForbiddenHeadTest jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext

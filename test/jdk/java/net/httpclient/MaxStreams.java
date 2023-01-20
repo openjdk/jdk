@@ -26,10 +26,6 @@
  * @bug 8196389
  * @summary Should HttpClient support SETTINGS_MAX_CONCURRENT_STREAMS from the server
  *
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  *          java.logging
  *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib

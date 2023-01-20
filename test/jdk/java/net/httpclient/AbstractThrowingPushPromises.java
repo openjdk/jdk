@@ -35,10 +35,6 @@
  *        ReferenceTracker AbstractThrowingPushPromises
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        <concrete-class-name>
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true <concrete-class-name>
  */
 

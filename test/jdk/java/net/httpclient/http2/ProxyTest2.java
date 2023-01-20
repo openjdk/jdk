@@ -63,12 +63,7 @@ import java.util.concurrent.*;
  * @bug 8181422
  * @summary  Verifies that you can access an HTTP/2 server over HTTPS by
  *           tunnelling through an HTTP/1.1 proxy.
- * @modules java.net.http
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  * @run main/othervm ProxyTest2
  * @author danielfuchs
