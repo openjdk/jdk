@@ -866,9 +866,6 @@ public sealed class ICC_Profile implements Serializable
      *         not permit read access to the given file
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
-        if (fileName == null) {
-            throw new IllegalArgumentException("null fileName");
-        }
         InputStream is;
         File f = getProfileFile(fileName);
         if (f != null) {
@@ -899,9 +896,6 @@ public sealed class ICC_Profile implements Serializable
      *         Profile data
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-        if (s == null) {
-            throw new IllegalArgumentException("null stream");
-        }
         return getInstance(getProfileDataFromStream(s));
     }
 
