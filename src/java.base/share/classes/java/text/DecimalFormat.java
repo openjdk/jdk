@@ -346,28 +346,25 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * NumberFormat form;
  * for (int j = 0; j < 4; ++j) {
  *     System.out.println("FORMAT");
- *     for (int i = 0; i < locales.length; ++i) {
- *         if (locales[i].getCountry().length() == 0) {
- *            continue; // Skip language-only locales
+ *     for (Locale locale : locales) {
+ *         if (locale.getCountry().length() == 0) {
+ *             continue; // Skip language-only locales
  *         }
- *         System.out.print(locales[i].getDisplayName());
- *         switch (j) {
- *         case 0:
- *             form = NumberFormat.getInstance(locales[i]); break;
- *         case 1:
- *             form = NumberFormat.getIntegerInstance(locales[i]); break;
- *         case 2:
- *             form = NumberFormat.getCurrencyInstance(locales[i]); break;
- *         default:
- *             form = NumberFormat.getPercentInstance(locales[i]); break;
- *         }
- *         if (form instanceof DecimalFormat) {
- *             System.out.print(": " + ((DecimalFormat) form).toPattern());
+ *         System.out.print(locale.getDisplayName());
+ *         form = switch (j) {
+ *             case 0 -> NumberFormat.getInstance(locale);
+ *             case 1 -> NumberFormat.getIntegerInstance(locale);
+ *             case 2 -> NumberFormat.getCurrencyInstance(locale);
+ *             default -> NumberFormat.getPercentInstance(locale);
+ *         };
+ *         if (form instanceof DecimalFormat decForm) {
+ *             System.out.print(": " + decForm.toPattern());
  *         }
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
  *             System.out.println(" -> " + form.parse(form.format(myNumber)));
- *         } catch (ParseException e) {}
+ *         } catch (ParseException e) {
+ *         }
  *     }
  * }
  * }</blockquote>
