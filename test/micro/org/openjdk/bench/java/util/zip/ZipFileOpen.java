@@ -29,7 +29,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -60,12 +59,17 @@ public class ZipFileOpen {
         try (FileOutputStream fos = new FileOutputStream(tempFile);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
 
-            Random random = new Random(4711);
+            // Vary dir and entry sizes, with a bias towards shorter entries.
+            String[] dirPrefixes = new String[] { "dir1", "dir2", "dir3",
+                    "longer-directory-name-", "ridiculously-long-pathname-to-help-exercize-vectorized-subroutines-"};
+            String[] entryPrefixes = new String[] { "e", "long-entry-name-",
+                    "ridiculously-long-entry-name-to-help-exercize-vectorized-subroutines-"};
+
             for (int i = 0; i < size; i++) {
-                String ename = "long-directory-name-" + (random.nextInt(90000) + 10000) + "-" + i + "/";
+                String ename = dirPrefixes[i % dirPrefixes.length] + i + "/";
                 zos.putNextEntry(new ZipEntry(ename));
 
-                ename += "long-entry-name-"  + (random.nextInt(90000) + 10000)  + "-" + i;
+                ename += entryPrefixes[i % entryPrefixes.length] + "-" + i;
                 zos.putNextEntry(new ZipEntry(ename));
             }
         }
