@@ -1368,7 +1368,7 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
   const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
   if (src_type == nullptr || dst_type == nullptr) {
-    //return false;
+    return false;
   }
   BasicType src_elem = src_type->elem()->array_element_basic_type();
   BasicType dst_elem = dst_type->elem()->array_element_basic_type();
