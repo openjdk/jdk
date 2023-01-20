@@ -61,8 +61,7 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _num_optional_regions(0),
   _bytes_used_before(0),
   _inc_build_state(Inactive),
-  _inc_part_start(0),
-  _inc_bytes_used_before(0) {
+  _inc_part_start(0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -133,7 +132,7 @@ void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
 
-  _inc_bytes_used_before = 0;
+  _bytes_used_before = 0;
 
   update_incremental_marker();
 }
@@ -217,7 +216,7 @@ void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   // Ignore calls to this due to retirement during full gc.
 
   if (!_g1h->collector_state()->in_full_gc()) {
-    _inc_bytes_used_before += hr->used();
+    _bytes_used_before += hr->used();
   }
 
   assert(!hr->in_collection_set(), "invariant");
@@ -333,8 +332,6 @@ double G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1Survi
   init_region_lengths(eden_region_length, survivor_region_length);
 
   verify_young_cset_indices();
-
-  _bytes_used_before = _inc_bytes_used_before;
 
   double predicted_base_time_ms = _policy->predict_base_time_ms(pending_cards);
   // Base time already includes the whole remembered set related time, so do not add that here

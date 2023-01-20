@@ -156,9 +156,7 @@ class G1CollectionSet {
   // correspond to the first x entries in the collection set candidates.
   uint _num_optional_regions;
 
-  // The number of bytes in the collection set before the pause. Set from
-  // the incrementally built collection set at the start of an evacuation
-  // pause, and updated as more regions are added to the collection set.
+  // The number of used bytes in the collection set as evacuated.
   size_t _bytes_used_before;
 
   enum CSetBuildType {
@@ -168,15 +166,6 @@ class G1CollectionSet {
 
   CSetBuildType _inc_build_state;
   size_t _inc_part_start;
-
-  // The associated information that is maintained while the incremental
-  // collection set is being built with *young* regions. Used to populate
-  // the recorded info for the evacuation pause.
-
-  // The number of bytes in the incrementally built collection set.
-  // Used to set _collection_set_bytes_used_before at the start of
-  // an evacuation pause.
-  size_t _inc_bytes_used_before;
 
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
@@ -275,10 +264,6 @@ public:
 
   size_t bytes_used_before() const {
     return _bytes_used_before;
-  }
-
-  void reset_bytes_used_before() {
-    _bytes_used_before = 0;
   }
 
   // Finalize the initial collection set consisting of all young regions potentially a
