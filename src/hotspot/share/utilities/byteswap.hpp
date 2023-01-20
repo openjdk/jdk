@@ -79,7 +79,7 @@ struct ByteswapFallbackImpl;
 
 // We support 8-bit integer types to be compatible with C++23's std::byteswap.
 template <typename T>
-struct ByteswapFallbackImpl<T, 1> final {
+struct ByteswapFallbackImpl<T, 1> {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
   STATIC_ASSERT(sizeof(T) == 1);
 
@@ -89,7 +89,7 @@ struct ByteswapFallbackImpl<T, 1> final {
 };
 
 template <typename T>
-struct ByteswapFallbackImpl<T, 2> final {
+struct ByteswapFallbackImpl<T, 2> {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
   STATIC_ASSERT(sizeof(T) == 2);
 
@@ -99,7 +99,7 @@ struct ByteswapFallbackImpl<T, 2> final {
 };
 
 template <typename T>
-struct ByteswapFallbackImpl<T, 4> final {
+struct ByteswapFallbackImpl<T, 4> {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
   STATIC_ASSERT(sizeof(T) == 4);
 
@@ -110,7 +110,7 @@ struct ByteswapFallbackImpl<T, 4> final {
 };
 
 template <typename T>
-struct ByteswapFallbackImpl<T, 8> final {
+struct ByteswapFallbackImpl<T, 8> {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
   STATIC_ASSERT(sizeof(T) == 8);
 
