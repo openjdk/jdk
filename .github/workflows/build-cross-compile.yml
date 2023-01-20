@@ -58,9 +58,6 @@ jobs:
         target-cpu:
           - aarch64
           - arm
-          - s390x
-          - ppc64le
-          - riscv64
         include:
           - target-cpu: aarch64
             gnu-arch: aarch64
@@ -73,22 +70,6 @@ jobs:
             debian-repository: https://httpredir.debian.org/debian/
             debian-version: bullseye
             gnu-abi: eabihf
-          - target-cpu: s390x
-            gnu-arch: s390x
-            debian-arch: s390x
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-          - target-cpu: ppc64le
-            gnu-arch: powerpc64le
-            debian-arch: ppc64el
-            debian-repository: https://httpredir.debian.org/debian/
-            debian-version: bullseye
-          - target-cpu: riscv64
-            gnu-arch: riscv64
-            debian-arch: riscv64
-            debian-repository: https://deb.debian.org/debian-ports
-            debian-keyring: /usr/share/keyrings/debian-ports-archive-keyring.gpg
-            debian-version: sid
 
     steps:
       - name: 'Checkout the JDK source'
