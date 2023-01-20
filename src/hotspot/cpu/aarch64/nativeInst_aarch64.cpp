@@ -529,28 +529,25 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
 #if INCLUDE_JVMCI
 // Generate a trampoline for a branch to dest.  If there's no need for a
 // trampoline, simply patch the call directly to dest.
-address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
+void NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS) {
   MacroAssembler a(&cbuf);
-  address stub = NULL;
 
   if (a.far_branches()) {
     if (!is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
-      stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
+      address stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
       if (stub == nullptr) {
-        JVMCI_ERROR_0("could not emit trampoline stub - code cache is full");
+        JVMCI_ERROR("could not emit trampoline stub - code cache is full");
       }
-      // A relocation is created while emitting the stub and will ensure this
-      // call instruction is subsequently patched to call the stub
+      // The relocation is created while emitting the stub will ensure this
+      // call instruction is subsequently patched to call the stub.
     } else {
-      // Not sure how this can be happen but let's be defensive
-      JVMCI_ERROR_0("single-use stub should not exist");
+      // Not sure how this can be happen but be defensive
+      JVMCI_ERROR("single-use stub should not exist");
     }
   } else {
     // If not using far branches, patch this call directly to dest.
     set_destination(dest);
   }
-
-  return stub;
 }
 #endif
 

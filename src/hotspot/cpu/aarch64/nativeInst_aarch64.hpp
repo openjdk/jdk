@@ -257,7 +257,7 @@ public:
 
   address get_trampoline();
 #if INCLUDE_JVMCI
-  address trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
+  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
 #endif
 };
 
