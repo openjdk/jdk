@@ -698,7 +698,7 @@ public final class String
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
      */
-    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length) {
+    static String newStringUTF8NoRepl(byte[] bytes, int offset, int length, boolean noCopy) {
         checkBoundsOffCount(offset, length, bytes.length);
         if (length == 0) {
             return "";
@@ -709,6 +709,8 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
+                if (noCopy && offset == 0 && length == bytes.length)
+                    return new String(bytes, LATIN1);
                 return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
             }
             dst = new byte[length];
@@ -777,7 +779,7 @@ public final class String
             return "";
         }
         if (cs == UTF_8.INSTANCE) {
-            return newStringUTF8NoRepl(src, 0, src.length);
+            return newStringUTF8NoRepl(src, 0, src.length, true);
         }
         if (cs == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS)
@@ -799,6 +801,8 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
+            if (COMPACT_STRINGS)
+                return new String(src, LATIN1);
             return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
         }
         int en = scale(len, cd.maxCharsPerByte());

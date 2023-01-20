@@ -2472,7 +2472,7 @@ public final class System {
             }
 
             public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len);
+                return String.newStringUTF8NoRepl(bytes, off, len, false);
             }
 
             public byte[] getBytesUTF8NoRepl(String s) {
