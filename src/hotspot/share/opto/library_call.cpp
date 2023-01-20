@@ -5699,8 +5699,8 @@ bool LibraryCallKit::inline_montgomerySquare() {
   Node* m    = argument(5);
 
   const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
-  const TypeAryPtr* n_type = a->Value(&_gvn)->isa_aryptr();
-  const TypeAryPtr* m_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
   if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
       n_type == nullptr || n_type->elem() == Type::BOTTOM ||
       m_type == nullptr || m_type->elem() == Type::BOTTOM) {
