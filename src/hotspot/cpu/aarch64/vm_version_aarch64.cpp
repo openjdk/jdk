@@ -570,10 +570,10 @@ void VM_Version::check_virtualizations() {
   // check for various strings in the dmi data indicating virtualizations
   char line[500];
   FILE* fp = os::fopen(info_file, "r");
-  if (fp == NULL) {
+  if (fp == nullptr) {
     return;
   }
-  while (fgets(line, sizeof(line), fp) != NULL) {
+  while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strcasestr(line, "KVM") != 0) {
       Abstract_VM_Version::_detected_virtualization = KVM;
       break;
