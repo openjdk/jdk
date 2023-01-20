@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,35 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/isPointer.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test
+ * @bug 8300399
+ * @summary EdDSA does not verify when there is no message
+ * @run main EmptyMessage
+ */
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.spec.NamedParameterSpec;
 
-class IsPointerTest: AllStatic {
-  class A: AllStatic {};
+public class EmptyMessage {
+    public static void main(String[] args) throws Exception {
+        var g = KeyPairGenerator.getInstance("EdDSA");
+        g.initialize(NamedParameterSpec.ED25519);
+        var kp = g.generateKeyPair();
 
-  static const bool ip_voidptr = IsPointer<void*>::value;
-  STATIC_ASSERT(ip_voidptr);
+        var ss = Signature.getInstance("EdDSA");
+        ss.initSign(kp.getPrivate());
+        var sig = ss.sign();
 
-  static const bool ip_Aptr = IsPointer<A*>::value;
-  STATIC_ASSERT(ip_Aptr);
-
-  static const bool ip_cAptr = IsPointer<const A*>::value;
-  STATIC_ASSERT(ip_cAptr);
-
-  static const bool ip_vAptr = IsPointer<volatile A*>::value;
-  STATIC_ASSERT(ip_vAptr);
-
-  static const bool ip_Avptr = IsPointer<A* volatile>::value;
-  STATIC_ASSERT(ip_Avptr);
-
-  static const bool ip_intptrt = IsPointer<intptr_t>::value;
-  STATIC_ASSERT(!ip_intptrt);
-
-  static const bool ip_char = IsPointer<char>::value;
-  STATIC_ASSERT(!ip_char);
-};
+        var ps = Signature.getInstance("EdDSA");
+        ps.initVerify(kp.getPublic());
+        if (!ps.verify(sig)) {
+            throw new RuntimeException();
+        }
+    }
+}

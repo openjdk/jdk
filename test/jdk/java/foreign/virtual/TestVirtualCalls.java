@@ -24,7 +24,7 @@
 /*
  * @test
  * @enablePreview
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @library ../
  * @run testng/othervm
  *   --enable-native-access=ALL-UNNAMED

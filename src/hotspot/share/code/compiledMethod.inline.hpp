@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,13 @@ inline bool CompiledMethod::is_deopt_mh_entry(address pc) {
 // (b) it is a deopt PC
 
 inline address CompiledMethod::get_deopt_original_pc(const frame* fr) {
-  if (fr->cb() == NULL)  return NULL;
+  if (fr->cb() == nullptr)  return nullptr;
 
   CompiledMethod* cm = fr->cb()->as_compiled_method_or_null();
-  if (cm != NULL && cm->is_deopt_pc(fr->pc()))
+  if (cm != nullptr && cm->is_deopt_pc(fr->pc()))
     return cm->get_original_pc(fr);
 
-  return NULL;
+  return nullptr;
 }
 
 
