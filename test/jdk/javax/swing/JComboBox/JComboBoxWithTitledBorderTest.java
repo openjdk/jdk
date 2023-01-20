@@ -20,9 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -31,6 +33,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
 import javax.imageio.ImageIO;
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
@@ -41,7 +44,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.UnsupportedLookAndFeelException;
-
 
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
@@ -164,8 +166,8 @@ public class JComboBoxWithTitledBorderTest {
 
     private static void captureScreen() {
         try {
-            final Rectangle screenBounds = new Rectangle(0, 0,
-                    1280, 720);
+            final Rectangle screenBounds = new Rectangle(
+                    Toolkit.getDefaultToolkit().getScreenSize());
             ImageIO.write(robot.createScreenCapture(screenBounds),
                     "png", new File("screen.png"));
         } catch (Exception e) {
