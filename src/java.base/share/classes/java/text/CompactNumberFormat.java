@@ -384,8 +384,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param decimalPattern a decimal pattern for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
-     *        {@linkplain CompactNumberFormat##compact_number_patterns
-     *        compact number patterns}
+     *        {@linkplain ##compact_number_patterns compact number patterns}
      * @throws NullPointerException if any of the given arguments is
      *       {@code null}
      * @throws IllegalArgumentException if the given {@code decimalPattern} or the
@@ -412,8 +411,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param decimalPattern a decimal pattern for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
-     *        {@linkplain CompactNumberFormat##compact_number_patterns
-     *        compact number patterns}
+     *        {@linkplain ##compact_number_patterns compact number patterns}
      * @param pluralRules a String designating plural rules which associate
      *        the {@code Count} keyword, such as "{@code one}", and the
      *        actual integer number. Its syntax is defined in Unicode Consortium's
