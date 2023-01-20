@@ -614,7 +614,14 @@ public class CLDRConverter {
      */
     static void handleAliases(Map<String, Object> bundleMap) {
         for (String key : aliases.keySet()) {
-            var source = bundleMap.get(aliases.get(key));
+            var sourceKey = aliases.get(key);
+            if (key.startsWith("ListPatterns_")) {
+                String k;
+                while ((k = aliases.get(sourceKey)) != null) {
+                    sourceKey = k;
+                }
+            }
+            var source = bundleMap.get(sourceKey);
             if (source != null) {
                 if (bundleMap.get(key) instanceof String[] sa) {
                     // fill missing elements in case of String array
@@ -864,6 +871,7 @@ public class CLDRConverter {
         "DayPeriodRules",
         "DateFormatItemInputRegions.allowed",
         "DateFormatItemInputRegions.preferred",
+        "ListPatterns",
     };
 
     static final Set<String> availableSkeletons = new HashSet<>();
@@ -928,6 +936,14 @@ public class CLDRConverter {
                     formatData.put(k + ".NumberElements", neNew);
                 });
         }
+
+        // ListPatterns
+        for (var lpKey : Bundle.LIST_PATTERN_KEYS) {
+            copyIfPresent(map, lpKey, formatData);
+            copyIfPresent(map, lpKey + "-short", formatData);
+            copyIfPresent(map, lpKey + "-narrow", formatData);
+        }
+
         return formatData;
     }
 

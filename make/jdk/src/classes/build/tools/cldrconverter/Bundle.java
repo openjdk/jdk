@@ -108,6 +108,12 @@ class Bundle {
         "narrow.Eras"
     };
 
+    static final String[] LIST_PATTERN_KEYS = {
+            "ListPatterns_standard",
+            "ListPatterns_or",
+            "ListPatterns_unit",
+    };
+
     // DateFormatItem prefix
     static final String DATEFORMATITEM_KEY_PREFIX = "DateFormatItem.";
     static final String DATEFORMATITEM_INPUT_REGIONS_PREFIX = "DateFormatItemInputRegions.";
