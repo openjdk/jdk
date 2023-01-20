@@ -5645,8 +5645,8 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
 
   const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
   const TypeAryPtr* b_type = b->Value(&_gvn)->isa_aryptr();
-  const TypeAryPtr* n_type = a->Value(&_gvn)->isa_aryptr();
-  const TypeAryPtr* m_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
   if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
       b_type == nullptr || b_type->elem() == Type::BOTTOM ||
       n_type == nullptr || n_type->elem() == Type::BOTTOM ||
