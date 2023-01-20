@@ -7054,7 +7054,17 @@ typedef uint32_t u32;
     __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
 
     __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
-}
+  }
+
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+    __ mul(prod_lo, n, m);
+    __ umulh(prod_hi, n, m);
+  }
+  void wide_madd(Register sum_hi, Register sum_lo, Register n, Register m) {
+    wide_mul(rscratch1, rscratch2, n, m);
+    __ adds(sum_lo, sum_lo, rscratch1);
+    __ adc(sum_hi, sum_hi, rscratch2);
+  }
 
   address generate_poly1305_processBlocks1() {
     __ align(CodeEntryAlignment);
@@ -7063,6 +7073,57 @@ typedef uint32_t u32;
     Label here;
     __ set_last_Java_frame(sp, rfp, lr, rscratch1);
     __ enter();
+
+    RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r26) - r18_tls - rscratch1 - rscratch2).begin();
+
+    // Arguments
+    const Register input_start = *++regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+
+    // R_n is the randomly-generated key, packed into three registers
+    const Register R_0 = *++regs, R_1 = *++regs, R_2 = *++regs;
+    pack_26(R_0, R_1, R_2, r_start);
+
+    // RR_n is (R_n >> 2) * 5
+    const Register RR_0 = *++regs, RR_1 = *++regs;
+    __ add(RR_0, R_0, R_0, Assembler::LSR, 2);
+    __ add(RR_1, R_1, R_1, Assembler::LSR, 2);
+
+    // U_n is the current checksum
+    const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+    pack_26(U_0, U_1, U_2, acc_start);
+
+    static constexpr int BLOCK_LENGTH = 16;
+    Label DONE;
+
+    __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+    __ br(Assembler::GE, DONE); {
+      // S_n is to be the sum of U_n and the next block of data
+      const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+      __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
+      __ adds(S_0, U_0, S_0);
+      __ adcs(S_1, U_1, S_1);
+      __ adc(S_2, U_2, zr);
+      __ add(S_2, S_2, 1);
+
+      // Recycle registers U_0, U_1, U_2
+      regs = (regs.remaining() + U_0 + U_1 + U_2).begin();
+
+      const Register
+        X_0 = *++regs, X_0HI = *++regs,
+        X_1 = *++regs, X_1HI = *++regs,
+        X_2 = *++regs;
+
+      wide_mul(X_0, X_0HI, S_0, R_0);  wide_madd(X_0, X_0HI, S_1, RR_1); wide_madd(X_0, X_0HI, S_2, RR_0);
+      wide_mul(X_1, X_1HI, S_0, R_1);  wide_madd(X_1, X_1HI, S_1, R_0);  wide_madd(X_0, X_0HI, S_2, RR_1);
+      __ andr(X_2, R_0, 3);
+      __ mul(X_2, S_2, X_2);
+
+      // Recycle registers S_0, S_1, S_2
+      regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
+
+    }
+
+    __ bind(DONE);
     return start;
   }
 
@@ -8258,6 +8319,7 @@ typedef uint32_t u32;
 
     if (UsePoly1305Intrinsics) {
       StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+      generate_poly1305_processBlocks1();
     }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)

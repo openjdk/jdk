@@ -194,6 +194,10 @@ public:
   RegImpl operator*() {
     return _regs.first();
   }
+
+  AbstractRegSet<RegImpl> remaining() const {
+    return _regs;
+  }
 };
 
 template <class RegImpl>
