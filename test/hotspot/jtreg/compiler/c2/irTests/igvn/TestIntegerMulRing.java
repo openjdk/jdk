@@ -37,7 +37,7 @@ public class TestIntegerMulRing {
     public static long lFld, lFld2, lFld3, lFld4;
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:-SplitIfBlocks");
     }
 
     @Test
@@ -114,9 +114,9 @@ public class TestIntegerMulRing {
 
     @Test
     @Warmup(0)
-    @Arguments({Argument.BOOLEAN_TOGGLE_FIRST_TRUE, Argument.BOOLEAN_TOGGLE_FIRST_FALSE})
+    @Arguments({Argument.TRUE, Argument.FALSE})
     @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
-    public static void testMinValueMinus1(boolean flag, boolean flag2) {
+    public static void testLongMinValueMinus1(boolean flag, boolean flag2) {
         long l = flag ? -1 : Long.MIN_VALUE;
         int x = flag2 ? -1 : 0;
 
@@ -124,6 +124,671 @@ public class TestIntegerMulRing {
             lFld = 23;
         } else {
             lFld = 34; // Emits StoreL since warmup is 0 and no UCT will be emitted.
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L}, counts = {IRNode.STORE_I, "1"})
+    public static void testLongMinValuePlus1(boolean flag, boolean flag2) {
+        long l = flag ? -1 : Long.MIN_VALUE;
+        int x = flag2 ? 1 : 0;
+
+        if (l * x <= 0L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testLongMinValueUnderflowOnce(boolean flag, boolean flag2) {
+        long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
+        int x = flag2 ? 4 : 6;
+
+        if (l * x <= 4L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_L, "1"})
+    public static void testLongMinValueUnderflowOnceTwice(boolean flag, boolean flag2) {
+        long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
+        int x = flag2 ? 6 : 8;
+
+        if (l * x <= 4L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testLongMinValueUnderflowTwice(boolean flag, boolean flag2) {
+        long l = flag ? Long.MIN_VALUE/2 : Long.MIN_VALUE/2 + 1;
+        int x = flag2 ? 8 : 10;
+
+        if (l * x <= 8L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testLongMaxValueOverflowOnce(boolean flag, boolean flag2) {
+        long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
+        int x = flag ? 4 : 6;
+
+        if (l * x >= -8L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_L, "1"})
+    public static void testLongMaxValueOverflowOnceTwice(boolean flag, boolean flag2) {
+        long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
+        int x = flag ? 6 : 8;
+
+        if (l * x >= -8L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_L, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testLongMaxValueOverflowTwice(boolean flag, boolean flag2) {
+        long l = flag2 ? Long.MAX_VALUE/2 - 1 : Long.MAX_VALUE/2;
+        int x = flag ? 8 : 10;
+
+        if (l * x >= -16L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
+    public static void testLongProductsOverflowOnceAtMin(boolean flag, boolean flag2) {
+        long l = flag ? Long.MAX_VALUE/2 + 1 : Long.MAX_VALUE/2 + 2;
+        int x = flag2 ? 2 : 3;
+
+        // [MAX_VALUE/2 + 1, MAX_VALUE/2 + 2] * [2,3]: All cross products overflow exactly once.
+        // Result: [MIN_VALUE, MIN_VALUE/2 + 3] -> 2L outside range and If can be optimized away.
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
+    public static void testLongProductsOverflowOnceAtMax(boolean flag, boolean flag2) {
+        // 88971434439113593 * 311 = Long.MAX_VALUE*3 + 2 --cast to long--> Long.MAX_VALUE
+        long l = flag ? 88971434439113592L : 88971434439113593L;
+        int x = flag2 ? 310 : 311;
+
+        // All cross products overflow exactly once.
+        // Result: [y, MAX_VALUE], where y > 2 -> 2L outside range and If can be optimized away.
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
+    public static void testLongProductsUnderflowOnceAtMin(boolean flag, boolean flag2) {
+        long l = flag ? Long.MIN_VALUE/3 - 1 : Long.MIN_VALUE/3 - 2;
+        int x = flag2 ? 3 : 4;
+
+        // [MIN_VALUE/3 - 1, MIN_VALUE/3 - 2] * [3,4]: All cross products underflow exactly once.
+        // Result: [MAX_VALUE + MIN_VALUE/3 - 5, MAX_VALUE] -> 2L outside range and If can be optimized away.
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_L, counts = {IRNode.STORE_L, "1"})
+    public static void testLongProductsUnderflowOnceAtMax(boolean flag, boolean flag2) {
+        // -6917529027641081856 * 4 = Long.MIN_VALUE*3 --cast to long--> Long.MIN_VALUE
+        long l = flag ? -6917529027641081856L : -6917529027641081855L;
+        int x = flag2 ? 3 : 4;
+
+        // All cross products underflow exactly once.
+        // Result: [MIN_VALUE, y], where y < 2 -> 2L outside range and If can be optimized away.
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongProductsDifferentNumberOfOverflow(boolean flag, boolean flag2) {
+        // 88971434439113593 * 311 = Long.MAX_VALUE*3 + 2 --cast to long--> Long.MAX_VALUE // Overflown once
+        // 88971434439113594 * 311 = (Long.MAX_VALUE*3 + 311) + 2 --cast to long--> Long.MIN_VALUE + 310 // Overflown twice
+        long l = flag ? 88971434439113593L : 88971434439113594L;
+        int x = flag2 ? 310 : 311;
+
+        // Different number of overflows -> cannot optimize If away
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongProductsDifferentNumberOfUnderflows(boolean flag, boolean flag2) {
+        // -6917529027641081856 * 4 = Long.MIN_VALUE*3 --cast to long--> Long.MIN_VALUE // Underflown once
+        // -6917529027641081857 * 4 = (Long.MIN_VALUE*3 - 4) --cast to long--> Long.MAX_VALUE - 3 // Underflown twice
+        long l = flag ? -6917529027641081856L : -6917529027641081857L;
+        int x = flag2 ? 3 : 4;
+
+        // Different number of underflows -> cannot optimize If away
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongNotSameOverflow1(boolean flag, boolean flag2) {
+        long l = flag ? 1 : Long.MAX_VALUE;
+        int x = flag2 ? -1 : 2;
+
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongNotSameOverflow2(boolean flag, boolean flag2) {
+        long l = flag ? 1 : Long.MIN_VALUE;
+        int x = flag2 ? -1 : 2;
+
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongNotSameOverflow3(boolean flag, boolean flag2) {
+        long l = flag ? -1 : Long.MIN_VALUE;
+        long x = flag2 ? Long.MIN_VALUE : -1;
+
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongNotSameOverflow4(boolean flag, boolean flag2) {
+        long l = flag ? -1 : Long.MAX_VALUE;
+        long x = flag2 ? Long.MAX_VALUE : -1;
+
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_L, "1"})
+    public static void testLongNotSameOverflow5(boolean flag, boolean flag2) {
+        long l = flag ? Long.MIN_VALUE : Long.MAX_VALUE;
+        long x = flag2 ? Long.MAX_VALUE : -1;
+
+        if (l * x != 2L) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    // Int cases
+    @Test
+    @IR(failOn = IRNode.IF, counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1"})
+    public static void testIntPositive() {
+        int i = 26000000;
+        if (i * 81 == 1) {
+            iFld = 23;
+        }
+        if (i * 81 == 2106000000) {
+            iFld = 34;
+        }
+
+        if (i * 83 == 1) {
+            lFld = 23;
+        }
+        if (i * 83 == -2136967296) {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @IR(failOn = IRNode.IF, counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1"})
+    public static void testIntPositive2() {
+        int i = -26000000;
+        if (i * -81 == 1) {
+            iFld = 23;
+        }
+        if (i * -81 == 2106000000) {
+            iFld = 34;
+        }
+
+        if (i * -83 == 1) {
+            lFld = 23;
+        }
+        if (i * -83 == -2136967296) {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @IR(failOn = IRNode.IF, counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1"})
+    public static void testIntNegative() {
+        int i = 26000000;
+        if (i * -81 == 1) {
+            iFld = 23;
+        }
+        if (i * -81 == -2106000000) {
+            iFld = 34;
+        }
+
+        if (i * -83 == 1) {
+            lFld = 23;
+        }
+        if (i * -83 == 2136967296) {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @IR(failOn = IRNode.IF, counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1"})
+    public static void testIntNegative2() {
+        int i = -26000000;
+        if (i * 81 == 1) {
+            iFld = 23;
+        }
+        if (i * 81 == -2106000000) {
+            iFld = 34;
+        }
+
+        if (i * 83 == 1) {
+            lFld = 23;
+        }
+        if (i * 83 == 2136967296) {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntMinValueMinus1(boolean flag, boolean flag2) {
+        int l = flag ? -1 : Integer.MIN_VALUE;
+        int x = flag2 ? -1 : 0;
+
+        if (l * x != 2) { // Type of multiplication is INT as Integer.MIN_VALUE * -1 does overflow. If cannot be removed.
+            lFld = 23;
+        } else {
+            lFld = 34; // Emits StoreL since warmup is 0 and no UCT will be emitted.
+        }
+    }
+
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L}, counts = {IRNode.STORE_I, "1"})
+    public static void testIntMinValuePlus1(boolean flag, boolean flag2) {
+        int l = flag ? -1 : Integer.MIN_VALUE;
+        int x = flag2 ? 1 : 0;
+
+        if (l * x <= 0) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testIntMinValueUnderflowOnce(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
+        int x = flag2 ? 4 : 6;
+
+        if (l * x <= 4) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_I, "1"})
+    public static void testIntMinValueUnderflowOnceTwice(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
+        int x = flag2 ? 6 : 8;
+
+        if (l * x <= 4) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testIntMinValueUnderflowTwice(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MIN_VALUE/2 : Integer.MIN_VALUE/2 + 1;
+        int x = flag2 ? 8 : 10;
+
+        if (l * x <= 8) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testIntMaxValueOverflowOnce(boolean flag, boolean flag2) {
+        int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
+        int x = flag ? 4 : 6;
+
+        if (l * x >= -8) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_I, "1", IRNode.STORE_L, "1", IRNode.MUL_I, "1"})
+    public static void testIntMaxValueOverflowOnceTwice(boolean flag, boolean flag2) {
+        int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
+        int x = flag ? 6 : 8;
+
+        if (l * x >= -8) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = {IRNode.MUL_I, IRNode.STORE_L, IRNode.LSHIFT}, counts = {IRNode.STORE_I, "1"})
+    public static void testIntMaxValueOverflowTwice(boolean flag, boolean flag2) {
+        int l = flag2 ? Integer.MAX_VALUE/2 - 1 : Integer.MAX_VALUE/2;
+        int x = flag ? 8 : 10;
+
+        if (l * x >= -16L) {
+            iFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
+    public static void testIntProductsOverflowOnceAtMin(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MAX_VALUE/2 + 1 : Integer.MAX_VALUE/2 + 2;
+        int x = flag2 ? 2 : 3;
+
+        // [MAX_VALUE/2 + 1, MAX_VALUE/2 + 2] * [2,3]: All cross products overflow exactly once.
+        // Result: [MIN_VALUE, MIN_VALUE/2 + 3] -> 2 outside range and If can be optimized away.
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
+    public static void testIntProductsOverflowOnceAtMax(boolean flag, boolean flag2) {
+        // 63786643 * 101 = Integer.MAX_VALUE*3 + 2 --cast to int--> Integer.MAX_VALUE
+        int l = flag ? 63786642 : 63786643;
+        int x = flag2 ? 100 : 101;
+
+        // All cross products overflow exactly once.
+        // Result: [y, MAX_VALUE], where y > 2 -> 2 outside range and If can be optimized away.
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
+    public static void testIntProductsUnderflowOnceAtMin(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MIN_VALUE/3 - 1 : Integer.MIN_VALUE/3 - 2;
+        int x = flag2 ? 3 : 4;
+
+        // [MIN_VALUE/3 - 1, MIN_VALUE/3 - 2] * [3,4]: All cross products underflow exactly once.
+        // Result: [MAX_VALUE + MIN_VALUE/3 - 5, MAX_VALUE] -> 2 outside range and If can be optimized away.
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(failOn = IRNode.MUL_I, counts = {IRNode.STORE_L, "1"})
+    public static void testIntProductsUnderflowOnceAtMax(boolean flag, boolean flag2) {
+        // -1610612736 * 4 = Integer.MIN_VALUE*3 --cast to int--> Integer.MIN_VALUE
+        int l = flag ? -1610612736 : -1610612735;
+        int x = flag2 ? 3 : 4;
+
+        // All cross products underflow exactly once.
+        // Result: [MIN_VALUE, y], where y < 2 -> 2 outside range and If can be optimized away.
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntProductsDifferentNumberOfOverflow(boolean flag, boolean flag2) {
+        // 63786643 * 101 = Integer.MAX_VALUE*3 + 2 --cast to int--> Integer.MAX_VALUE // Overflown once
+        // 63786644 * 101 = (Integer.MAX_VALUE*3 + 101) + 2 --cast to int--> Integer.MIN_VALUE + 100 // Overflown twice
+        int l = flag ? 63786643 : 63786644;
+        int x = flag2 ? 100 : 101;
+
+        // Different number of overflows -> cannot optimize If away
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntProductsDifferentNumberOfUnderflows(boolean flag, boolean flag2) {
+        // -1610612736 * 4 = Integer.MIN_VALUE*3 --cast to int--> Integer.MIN_VALUE // Underflown once
+        // -1610612737 * 4 = (Integer.MIN_VALUE*3 - 4) --cast to int--> Integer.MAX_VALUE - 3 // Underflown twice
+        int l = flag ? -1610612736 : -1610612737;
+        int x = flag2 ? 3 : 4;
+
+        // Different number of underflows -> cannot optimize If away
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntNotSameOverflow1(boolean flag, boolean flag2) {
+        int l = flag ? 1 : Integer.MAX_VALUE;
+        int x = flag2 ? -1 : 2;
+
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntNotSameOverflow2(boolean flag, boolean flag2) {
+        int l = flag ? 1 : Integer.MIN_VALUE;
+        int x = flag2 ? -1 : 2;
+
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntNotSameOverflow3(boolean flag, boolean flag2) {
+        int l = flag ? -1 : Integer.MIN_VALUE;
+        int x = flag2 ? Integer.MIN_VALUE : -1;
+
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntNotSameOverflow4(boolean flag, boolean flag2) {
+        int l = flag ? -1 : Integer.MAX_VALUE;
+        int x = flag2 ? Integer.MAX_VALUE : -1;
+
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
+        }
+    }
+
+    @Test
+    @Warmup(0)
+    @Arguments({Argument.TRUE, Argument.FALSE})
+    @IR(counts = {IRNode.STORE_L, "2", IRNode.MUL_I, "1"})
+    public static void testIntNotSameOverflow5(boolean flag, boolean flag2) {
+        int l = flag ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        int x = flag2 ? Integer.MAX_VALUE : -1;
+
+        if (l * x != 2) {
+            lFld = 23;
+        } else {
+            lFld = 34;
         }
     }
 

@@ -281,68 +281,103 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-// Helper classes to perform mul_ring() for MulI/MulLNode.
-template <typename IntegerType>
-struct OverflowType : AllStatic {
-  static_assert(IsSame<IntegerType, TypeInt>::value, "must be TypeInteger");
-  static const Type* overflow() { return TypeInt::INT; }
-};
-
-template <>
-struct OverflowType<TypeLong> : AllStatic {
-  static const Type* overflow() { return TypeLong::LONG; }
-};
-
+// Classes to perform mul_ring() for MulI/MulLNode.
+//
+// This class checks if all cross products of the left and right input of a multiplication have the same "overflow value".
+// Without overflow/underflow:
+// Product is positive? High signed multiplication result: 0
+// Product is negative? High signed multiplication result: -1
+//
+// We normalize these values (see normalize_overflow_value()) such that we get the same "overflow value" by adding 1 if
+// the product is negative. This allows us to compare all the cross product "overflow values". If one is different,
+// compared to the others, then we know that this multiplication has a different number of over- or underflows compared
+// to the others. In this case, we need to use bottom type and cannot guarantee a better type. Otherwise, we can take
+// the min und max of all computed cross products as type of this Mul node.
 template<typename IntegerType>
 class IntegerMulRing {
-  typedef typename Conditional<IsSame<TypeInt, IntegerType>::value, jint, jlong>::type NativeType;
+  using NativeType = std::conditional_t<std::is_same<TypeInt, IntegerType>::value, jint, jlong>;
 
-  const IntegerType* _left;
-  const IntegerType* _right;
-  NativeType _min_value = IntegerType::MIN->_lo;
+  NativeType _lo_left;
+  NativeType _lo_right;
+  NativeType _hi_left;
+  NativeType _hi_right;
+  NativeType _lo_lo_product;
+  NativeType _lo_hi_product;
+  NativeType _hi_lo_product;
+  NativeType _hi_hi_product;
+  short _widen_left;
+  short _widen_right;
 
-  // Check overflow by using arithmetic equality: x = a * b <=> x / a = b. Since a and b are integer numbers, the division
-  // x / a does not underflow/overflow since |x / a| <= |x|. If a * b does underflow/overflow, then we'll get a different
-  // result compared to a * b. Special case MIN_VALUE * -1 whose result is MIN_VALUE.
-  bool does_overflow(const NativeType product_a_b, const NativeType a, const NativeType b) const {
-    if (a == 0 || b == 0) {
-      // Trivially no overflow.
-      return false;
-    } else if (a == -1 && b == _min_value) {
-      // Special case 'MIN_VALUE * -1 = MIN_VALUE' does overflow.
-      return true;
-    }
-    return product_a_b / a != b;
+  static const Type* overflow_type();
+  static NativeType multiply_high_signed_overflow_value(NativeType x, NativeType y);
+
+  // Pre-compute cross products which are used at several places
+  void compute_cross_products() {
+    _lo_lo_product = java_multiply(_lo_left, _lo_right);
+    _lo_hi_product = java_multiply(_lo_left, _hi_right);
+    _hi_lo_product = java_multiply(_hi_left, _lo_right);
+    _hi_hi_product = java_multiply(_hi_left, _hi_right);
+  }
+
+  bool cross_products_not_same_overflow() const {
+    const NativeType lo_lo_high_product = multiply_high_signed_overflow_value(_lo_left, _lo_right);
+    const NativeType lo_hi_high_product = multiply_high_signed_overflow_value(_lo_left, _hi_right);
+    const NativeType hi_lo_high_product = multiply_high_signed_overflow_value(_hi_left, _lo_right);
+    const NativeType hi_hi_high_product = multiply_high_signed_overflow_value(_hi_left, _hi_right);
+    return lo_lo_high_product != lo_hi_high_product ||
+           lo_hi_high_product != hi_lo_high_product ||
+           hi_lo_high_product != hi_hi_high_product;
+  }
+
+  static NativeType normalize_overflow_value(const NativeType x, const NativeType y, NativeType result) {
+    return java_multiply(x, y) < 0 ? result + 1 : result;
   }
 
  public:
-  IntegerMulRing(const IntegerType* left, const IntegerType* right) : _left(left), _right(right) {}
+  IntegerMulRing(const IntegerType* left, const IntegerType* right) : _lo_left(left->_lo), _lo_right(right->_lo),
+    _hi_left(left->_hi), _hi_right(right->_hi), _widen_left(left->_widen), _widen_right(right->_widen)  {
+    compute_cross_products();
+  }
 
   // Compute the product type by multiplying the two input type ranges. We take the minimum and maximum of all possible
   // values (requires 4 multiplications of all possible combinations of the two range boundary values). If any of these
-  // multiplications overflows/underflows, we return the bottom type (full range of values).
+  // multiplications overflows/underflows, we need to make sure that they all have the same number of overflows/underflows
+  // If that is not the case, we return the bottom type to cover all values due to the inconsistent overflows/underflows).
   const Type* compute() const {
-    const NativeType lo_left = _left->_lo;
-    const NativeType hi_left = _left->_hi;
-    const NativeType lo_right = _right->_lo;
-    const NativeType hi_right = _right->_hi;
-    const NativeType lo_lo_product = java_multiply(lo_left, lo_right);
-    const NativeType lo_hi_product = java_multiply(lo_left, hi_right);
-    const NativeType hi_lo_product = java_multiply(hi_left, lo_right);
-    const NativeType hi_hi_product = java_multiply(hi_left, hi_right);
-
-    if (does_overflow(lo_lo_product, lo_left, lo_right) ||
-        does_overflow(lo_hi_product, lo_left, hi_right) ||
-        does_overflow(hi_lo_product, hi_left, lo_right) ||
-        does_overflow(hi_hi_product, hi_left, hi_right)) {
-      return OverflowType<IntegerType>::overflow(); // Full range of values - bottom type.
+    if (cross_products_not_same_overflow()) {
+      return overflow_type();
     }
-
-    const NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
-    const NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
-    return IntegerType::make(min, max, MAX2(_left->_widen, _right->_widen));
+    const NativeType min = MIN4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
+    const NativeType max = MAX4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
+    return IntegerType::make(min, max, MAX2(_widen_left, _widen_right));
   }
 };
+
+
+template <>
+const Type* IntegerMulRing<TypeInt>::overflow_type() {
+  return TypeInt::INT;
+}
+
+template <>
+jint IntegerMulRing<TypeInt>::multiply_high_signed_overflow_value(const jint x, const jint y) {
+  const jlong x_64 = x;
+  const jlong y_64 = y;
+  const jlong product = x_64 * y_64;
+  const jint result = (jint)((uint64_t)product >> 32u);
+  return normalize_overflow_value(x, y, result);
+}
+
+template <>
+const Type* IntegerMulRing<TypeLong>::overflow_type() {
+  return TypeLong::LONG;
+}
+
+template <>
+jlong IntegerMulRing<TypeLong>::multiply_high_signed_overflow_value(const jlong x, const jlong y) {
+  const jlong result = multiply_high_signed(x, y);
+  return normalize_overflow_value(x, y, result);
+}
 
 // Compute the product type of two integer ranges into this node.
 const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
