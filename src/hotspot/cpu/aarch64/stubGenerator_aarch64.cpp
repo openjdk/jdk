@@ -6948,64 +6948,64 @@ typedef uint32_t u32;
 
     DEBUG_ONLY(setbuf(stdout, NULL);)
 
-    u64 b_u0, b_u1, b_u2;
-    PACK_26(b_u0, b_u1, b_u2, acc_start);
+    u64 u0, u1, u2;
+    PACK_26(u0, u1, u2, acc_start);
 
-    u64 b_r0, b_r1, b_r2;
-    PACK_26(b_r0, b_r1, b_r2, r_start);
-    const uint64_t  b_rr0 = (b_r0 >> 2) * 5;
-    const uint64_t  b_rr1 = (b_r1 >> 2) * 5;
+    u64 r0, r1, r2;
+    PACK_26(r0, r1, r2, r_start);
+    const uint64_t  rr0 = (r0 >> 2) * 5;
+    const uint64_t  rr1 = (r1 >> 2) * 5;
 
     while (length >= BLOCK_LENGTH) {
       DEBUG_ONLY(printf("#%d\n", ++counter);)
 
-      u64 b_s0, b_s1; u32 b_s2;
-      u64 *b_c = (u64*)input_start;
+      u64 s0, s1; u32 s2;
+      u64 *c = (u64*)input_start;
 
-      DEBUG_ONLY(printf("C: %016lx:%016lx\n", (u64)b_c[1], (u64)b_c[0]);)
-      DEBUG_ONLY(printf("U: %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);)
+      DEBUG_ONLY(printf("C: %016lx:%016lx\n", (u64)c[1], (u64)c[0]);)
+      DEBUG_ONLY(printf("U: %lx:%016lx:%016lx\n", (u64)u2, (u64)u1, (u64)u0);)
 
       // s = u + c, with carry propagation
       uint64_t carry = 0;
-      ADC(b_s0, carry, b_u0, b_c[0]);
-      ADC(b_s1, carry, b_u1, b_c[1]);
-      b_s2 = b_u2 + carry;
-      // Dead: b_u0, b_u1, b_u2
-      b_s2 += 1;
+      ADC(s0, carry, u0, c[0]);
+      ADC(s1, carry, u1, c[1]);
+      s2 = u2 + carry;
+      // Dead: u0, u1, u2
+      s2 += 1;
 
-      DEBUG_ONLY(printf("S: %lx:%016lx:%016lx\n", (u64)b_s2, b_s1, b_s0);)
-      DEBUG_ONLY(printf("R:   %016lx:%016lx\n", b_r1, b_r0);)
-      DEBUG_ONLY(printf("RR:   %016lx:%016lx\n", b_rr1, b_rr0);)
+      DEBUG_ONLY(printf("S: %lx:%016lx:%016lx\n", (u64)s2, s1, s0);)
+      DEBUG_ONLY(printf("R:   %016lx:%016lx\n", r1, r0);)
+      DEBUG_ONLY(printf("RR:   %016lx:%016lx\n", rr1, rr0);)
 
       {
-        const u128 b_x0 = (u128)b_s0*b_r0 + (u128)b_s1*b_rr1 + (u128)b_s2*b_rr0;
-        const u128 b_x1 = (u128)b_s0*b_r1 + (u128)b_s1*b_r0  + (u128)b_s2*b_rr1;
-        const u64 b_x2 = b_s2 * (b_r0 & 3); // ...recover 2 bits
-        // Dead: b_s0, b_s1, b_s2
+        const u128 x0 = (u128)s0*r0 + (u128)s1*rr1 + (u128)s2*rr0;
+        const u128 x1 = (u128)s0*r1 + (u128)s1*r0  + (u128)s2*rr1;
+        const u64 x2 = s2 * (r0 & 3); // ...recover 2 bits
+        // Dead: s0, s1, s2
 
         DEBUG_ONLY(printf("X: "));
-        DEBUG_ONLY(print128(b_x2); printf(":");)
-        DEBUG_ONLY(print128(b_x1); printf(":");)
-        DEBUG_ONLY(print128(b_x0); printf("\n");)
+        DEBUG_ONLY(print128(x2); printf(":");)
+        DEBUG_ONLY(print128(x1); printf(":");)
+        DEBUG_ONLY(print128(x0); printf("\n");)
 
         // partial reduction modulo 2^130 - 5
-        u128 tmp3 = b_x2 + (b_x1 >> 64);
-        // Dead: b_x2
-        u128 tmp0 = (tmp3 >>  2) * 5 + (b_x0 & 0xffffffffffffffff);
-        u128 tmp1 = (tmp0 >> 64)     + (b_x1 & 0xffffffffffffffff) + (b_x0 >> 64);
-        // Dead: b_x1, b_x0
-        b_u0 = tmp0;
+        u128 tmp3 = x2 + (x1 >> 64);
+        // Dead: x2
+        u128 tmp0 = (tmp3 >>  2) * 5 + (x0 & 0xffffffffffffffff);
+        u128 tmp1 = (tmp0 >> 64)     + (x1 & 0xffffffffffffffff) + (x0 >> 64);
+        // Dead: x1, x0
+        u0 = tmp0;
         // Dead: tmp0
         u128 tmp2 = (tmp1 >> 64)     + (tmp3 & 3);
         // Dead: tmp3;
-        b_u1 = tmp1;
+        u1 = tmp1;
         // Dead: tmp1
-        b_u2 = tmp2;
+        u2 = tmp2;
         // Dead: tmp2
       }
-      // Live: b_u0, b_u1, b_u2
+      // Live: u0, u1, u2
 
-      DEBUG_ONLY(printf("U:   %lx:%016lx:%016lx\n", (u64)b_u2, (u64)b_u1, (u64)b_u0);)
+      DEBUG_ONLY(printf("U:   %lx:%016lx:%016lx\n", (u64)u2, (u64)u1, (u64)u0);)
 
       input_start += BLOCK_LENGTH;
       length -= BLOCK_LENGTH;
@@ -7014,16 +7014,16 @@ typedef uint32_t u32;
     {
       // Fully reduce modulo 2^130 - 5
       u64 carry = 0;
-      ADC(b_u0, carry, b_u0, (b_u2 >> 2) * 5);
-      ADC(b_u1, carry, b_u1, 0);
-      b_u2 = (b_u2 + carry) & 3;
+      ADC(u0, carry, u0, (u2 >> 2) * 5);
+      ADC(u1, carry, u1, 0);
+      u2 = (u2 + carry) & 3;
     }
 
-    acc_start[0] = b_u0         & 0x3ffffff;
-    acc_start[1] = (b_u0 >> 26) & 0x3ffffff;
-    acc_start[2] = ((b_u0 >> 52) | (b_u1 << 12)) & 0x3ffffff;
-    acc_start[3] = (b_u1 >> 14) & 0x3ffffff;
-    acc_start[4] = ((b_u1 >> 40) | (b_u2 << 24)) & 0x3ffffff;
+    acc_start[0] = u0         & 0x3ffffff;
+    acc_start[1] = (u0 >> 26) & 0x3ffffff;
+    acc_start[2] = ((u0 >> 52) | (u1 << 12)) & 0x3ffffff;
+    acc_start[3] = (u1 >> 14) & 0x3ffffff;
+    acc_start[4] = ((u1 >> 40) | (u2 << 24)) & 0x3ffffff;
   }
 
   address generate_poly1305_processBlocks() {
@@ -7039,6 +7039,30 @@ typedef uint32_t u32;
     __ reset_last_Java_frame(true);
     __ leave();
     __ ret(lr);
+    return start;
+  }
+
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
+    __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
+    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
+    __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
+    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
+
+    __ orr(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
+    __ orr(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
+    __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
+    __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+
+    __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+}
+
+  address generate_poly1305_processBlocks1() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+    address start = __ pc();
+    Label here;
+    __ set_last_Java_frame(sp, rfp, lr, rscratch1);
+    __ enter();
     return start;
   }
 
