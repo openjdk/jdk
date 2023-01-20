@@ -2,7 +2,7 @@ Owner: CN=Certigna, O=Dhimyotis, C=FR
 Issuer: CN=Certigna, O=Dhimyotis, C=FR
 Serial number: fedce3010fc948ff
 Valid from: Fri Jun 29 15:13:05 GMT 2007 until: Tue Jun 29 15:13:05 GMT 2027
-Signature algorithm name: SHA1withRSA (weak)
+Signature algorithm name: SHA1withRSA
 Subject Public Key Algorithm: 2048-bit RSA key
 Version: 3
 -----BEGIN CERTIFICATE-----
