@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,13 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class ArrayShiftOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private int[] ints;
     private long[] longs;
@@ -68,6 +70,10 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"avx512f", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public int[] intCombinedRotateShift() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -77,6 +83,10 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"avx512f", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public long[] longCombinedRotateShift() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -86,6 +96,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public int[] intShiftLargeDistConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -95,6 +107,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public int[] intShiftLargeDistInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -104,6 +118,30 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
+    public short[] shortShiftLargeDistConstant() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) (shorts1[i] >> 65);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
+    public short[] shortShiftLargeDistInvariant() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) (shorts2[i] >> (largeDist - 25));
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.LSHIFT_V, ">0"})
     public long[] longShiftLargeDistConstant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -113,6 +151,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.URSHIFT_V, ">0"})
     public long[] longShiftLargeDistInvariant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -122,8 +162,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that any shift operation with distance value from another array
-    // cannot be vectorized since C2 vector shift node doesn't support it.
+    // Note that shift with variant distance cannot be vectorized.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public long[] variantShiftDistance() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,6 +173,19 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    // Note that shift with variant distance cannot be vectorized.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public short[] loopIndexShiftDistance() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (short) (shorts1[i] >> i);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,7 +196,8 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     // Note that right shift operations on subword expressions cannot be
-    // vectorized since precise type info about signness is missing.
+    // vectorized since precise type info about signedness is missing.
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public short[] subwordExpressionRightShift() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -152,4 +206,3 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

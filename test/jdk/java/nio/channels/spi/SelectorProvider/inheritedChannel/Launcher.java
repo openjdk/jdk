@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 
+import static java.net.StandardProtocolFamily.INET;
 import static java.net.StandardProtocolFamily.UNIX;
 
 public class Launcher {
@@ -100,11 +101,18 @@ public class Launcher {
                                                         String... args)
             throws IOException
     {
-        try (ServerSocketChannel ssc = ServerSocketChannel.open()) {
-            ssc.socket().bind(new InetSocketAddress(InetAddress.getLocalHost(), 0));
-            InetSocketAddress isa = new InetSocketAddress(InetAddress.getLocalHost(),
-                                                      ssc.socket().getLocalPort());
-            SocketChannel sc1 = SocketChannel.open(isa);
+        ServerSocketChannel ch;
+        try {
+            ch = ServerSocketChannel.open(INET);
+            System.out.println("Using INET (IPv4) channel");
+        } catch (Exception e) {
+            ch = ServerSocketChannel.open();
+            System.out.println("Using default channel (probably IPv6)");
+        }
+        try (ServerSocketChannel ssc = ch) {
+            ssc.socket().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            System.out.println("Socket bound to " + ssc.getLocalAddress());
+            SocketChannel sc1 = SocketChannel.open(ssc.getLocalAddress());
             try (SocketChannel sc2 = ssc.accept()) {
                 launch(className, options, args, Util.getFD(sc2));
             }

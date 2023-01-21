@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ template <MEMFLAGS F> inline BasicHashtableEntry<F>* HashtableBucket<F>::get_ent
 
 template <MEMFLAGS F> inline void BasicHashtable<F>::set_entry(int index, BasicHashtableEntry<F>* entry) {
   _buckets[index].set_entry(entry);
-  if (entry != NULL) {
+  if (entry != nullptr) {
     JFR_ONLY(_stats_rate.add();)
   } else {
     JFR_ONLY(_stats_rate.remove();)

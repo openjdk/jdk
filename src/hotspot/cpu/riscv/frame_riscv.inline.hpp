@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,7 +384,9 @@ frame frame::sender_raw(RegisterMap* map) const {
   if (is_entry_frame()) {
     return sender_for_entry_frame(map);
   }
-
+  if (is_upcall_stub_frame()) {
+    return sender_for_upcall_stub_frame(map);
+  }
   if (is_interpreted_frame()) {
     return sender_for_interpreter_frame(map);
   }

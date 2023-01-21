@@ -196,7 +196,7 @@ public interface StateTrackable {
          * whether or not that cached information was out of date.
          */
         UNTRACKABLE,
-    };
+    }
 
     /**
      * Returns the general state of the complex data held by this
