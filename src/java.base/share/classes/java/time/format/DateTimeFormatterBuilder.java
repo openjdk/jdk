@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2600,7 +2600,7 @@ public final class DateTimeFormatterBuilder {
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             int preLen = buf.length();
-            if (printerParser.format(context, buf) == false) {
+            if (!printerParser.format(context, buf)) {
                 return false;
             }
             int len = buf.length() - preLen;
@@ -2608,9 +2608,7 @@ public final class DateTimeFormatterBuilder {
                 throw new DateTimeException(
                     "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
-            }
+            buf.insert(preLen, String.valueOf(padChar).repeat(padWidth - len));
             return true;
         }
 
