@@ -236,7 +236,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
       if ((src_alloc = state.is_alias(val)) && state.get_object_state(src_alloc)->is_virtual()
           // put_static_field or unknown dst or dst has materialized.
           && (!is_field || !(dst_alloc=state.is_alias(obj)) || !state.get_object_state(dst_alloc)->is_virtual())) {
-        EscapedState* escaped = state.materialize(this, src_alloc);
+        EscapedState* escaped = state.materialize(this, val);
         val = escaped->get_materialized_value();
       }
     }

@@ -448,11 +448,12 @@ static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
   }
 }
 
-EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* map) {
+EscapedState* PEAState::materialize(GraphKit* kit, Node* var, SafePointNode* map) {
+  ObjID alloc = is_alias(var);
+  assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
   if (Verbose) {
-    tty->print("PEA materializes a virtual object: ");
-    alloc->dump();
+    tty->print_cr("PEA materializes a virtual object: %d", alloc->_idx);
   }
 #endif
 
@@ -471,8 +472,8 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
                                            alloc->in(AllocateNode::AllocSize),
                                            alloc->in(AllocateNode::KlassNode),
                                            alloc->in(AllocateNode::InitialTest));
-  Node* obj = alloc->result_cast();
-  const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
+
+  const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();
   Node* objx = kit->set_output_for_allocation(allocx, oop_type);
   VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
 
@@ -542,9 +543,9 @@ EscapedState* PEAState::materialize(GraphKit* kit, ObjID alloc, SafePointNode* m
 #endif
 
   // replace obj with objx
-  replace_in_map(kit, obj, objx);
+  replace_in_map(kit, var, objx);
   _alias.put(objx, alloc);
-  _alias.remove(obj);
+  _alias.remove(var);
 
 #ifdef ASSERT
   validate();
@@ -569,8 +570,6 @@ void PEAState::print_on(outputStream* os) const {
     os->print_cr("]");
     return true;
   });
-
-  validate();
 }
 #endif
 

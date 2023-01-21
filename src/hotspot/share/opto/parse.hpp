@@ -497,7 +497,7 @@ class Parse : public GraphKit {
   PhiNode *ensure_phi(       int idx, bool nocreate = false);
   PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
   // materialize object ID
-  Node* ensure_object_materialized(ObjID id, PEAState& state, SafePointNode* map, RegionNode* r, int pnum);
+  Node* ensure_object_materialized(Node* var, PEAState& state, SafePointNode* map, RegionNode* r, int pnum);
 
   // Helper to merge the current memory state into the given basic block
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);

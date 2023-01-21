@@ -145,7 +145,7 @@ class PEAState {
   void remove_alias(ObjID id, Node* var);
 
   void add_new_allocation(Node* obj);
-  EscapedState* materialize(GraphKit* kit, ObjID alloc, SafePointNode* map = nullptr);
+  EscapedState* materialize(GraphKit* kit, Node* var, SafePointNode* map = nullptr);
 
 #ifndef PRODUCT
   void print_on(outputStream* os) const;

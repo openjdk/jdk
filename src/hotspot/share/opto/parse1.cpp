@@ -1840,11 +1840,11 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
             } else if (!check_elide_phi || !target->can_elide_SEL_phi(j)) {
               phi = ensure_phi(j, nophi);
 
-              // Part-1: only check 'm'.
+              // Part-1: only check 'm'. ensure_phi has replaced m with phi.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
                 PEAState& as = block()->state();
                 const PEAState& pred_as = save_block->state();
-                ObjID id = as.is_alias(m);
+                ObjID id = as.is_alias(phi);
 
                 if (id != nullptr) {
                   as.add_alias(id, phi); // order matters here since we use refcnt to delete dead id.
@@ -1858,16 +1858,12 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
                       SafePointNode* map = block()->from_block()->start_map();
                       // object materialization takes place in from_block. It is the initial block that the current block(target) merged.
                       // from block isn't save_block! see Block::record_state().
-                      Node* mv = ensure_object_materialized(id, as, map, r, block()->init_pnum());
+                      Node* mv = ensure_object_materialized(m, map->jvms()->alloc_state(), map, r, block()->init_pnum());
                       phi->replace_edge(m, mv);
                       as.update(id, new EscapedState(phi));
                     } else {
                       // TODO: merge two virtuals
                     }
-                  }
-
-                  if (as.is_alias(m)) {  // materialization above has removed it.
-                    as.remove_alias(id, m);
                   }
                 }
               } // DoPartialEscapeAnalysis
@@ -1895,7 +1891,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
             if (pred_as.contains(id)) {
               // id are in both AS and PRED_AS
               if (!as.get_object_state(id)->is_virtual() && pred_as.get_object_state(id)->is_virtual()) {
-                n = ensure_object_materialized(id, pred_as, newin, r, pnum);
+                n = ensure_object_materialized(n, pred_as, newin, r, pnum);
               } else if (as.get_object_state(id)->is_virtual() && !pred_as.get_object_state(id)->is_virtual()) {
                 // TODO: materailize all.
                 assert(false, "not implement yet");
@@ -2150,6 +2146,20 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   gvn().set_type(phi, t);
   if (C->do_escape_analysis()) record_for_igvn(phi);
   map->set_req(idx, phi);
+
+  // replace o with phi in allocation state.
+  if (DoPartialEscapeAnalysis) {
+    PEAState& as = block()->state();
+    ObjID id = as.is_alias(o);
+    if (id != nullptr) {
+      as.add_alias(id, phi);
+      // o is dead here based on SSA property:
+      // the newer revision shadows the older revision.
+      //
+      // [xliu]: does ideal graph ensure SSA property?
+      as.remove_alias(id, o);
+    }
+  }
   return phi;
 }
 
@@ -2190,12 +2200,12 @@ PhiNode *Parse::ensure_memory_phi(int idx, bool nocreate) {
   return phi;
 }
 
-Node* Parse::ensure_object_materialized(ObjID id, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
+Node* Parse::ensure_object_materialized(Node* var, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
   assert(map() != from_map, "should be different");
 
   GraphKit kit(from_map->jvms());
   kit.set_control(r->in(pnum));
-  EscapedState* es = state.materialize(&kit, id, from_map);
+  EscapedState* es = state.materialize(&kit, var, from_map);
   add_exception_states_from(kit.transfer_exceptions_into_jvms());
   Node* mv = es->get_materialized_value();
   r->set_req(pnum, mv->in(0));
