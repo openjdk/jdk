@@ -2170,37 +2170,37 @@ address StubGenerator::base64_AVX2_tables_addr() {
   __ emit_data64(0x0000000400000002, relocInfo::none);
   __ emit_data64(0x0000000600000005, relocInfo::none);
   __ emit_data64(0xffffffffffffffff, relocInfo::none);
-  
+
   // lut_lo
   __ emit_data64(0x1111111111111115, relocInfo::none);
   __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
   __ emit_data64(0x1111111111111115, relocInfo::none);
   __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
-  
+
   // lut_hi
   __ emit_data64(0x0804080402011010, relocInfo::none);
   __ emit_data64(0x1010101010101010, relocInfo::none);
   __ emit_data64(0x0804080402011010, relocInfo::none);
   __ emit_data64(0x1010101010101010, relocInfo::none);
-  
+
   // lut_roll
   __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
   __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
-  
+
   // merge table
   __ emit_data64(0x0140014001400140, relocInfo::none);
   __ emit_data64(0x0140014001400140, relocInfo::none);
   __ emit_data64(0x0140014001400140, relocInfo::none);
   __ emit_data64(0x0140014001400140, relocInfo::none);
-  
+
   // merge multiplier
   __ emit_data64(0x0001100000011000, relocInfo::none);
   __ emit_data64(0x0001100000011000, relocInfo::none);
   __ emit_data64(0x0001100000011000, relocInfo::none);
   __ emit_data64(0x0001100000011000, relocInfo::none);
-  
+
   // Shuffle table
   __ emit_data64(0x090a040506000102, relocInfo::none);
   __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
@@ -2694,7 +2694,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ vpaddb(xmm0, xmm0, xmm1, Assembler::AVX_256bit);
     __ vpshufb(xmm0, xmm8, xmm0, Assembler::AVX_256bit);
     __ jcc(Assembler::equal, L_topLoop);
-    
+
     __ bind(L_tailProc);
 
     __ vzeroupper();
