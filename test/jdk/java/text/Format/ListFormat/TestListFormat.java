@@ -47,30 +47,74 @@ public class TestListFormat {
 
     static Arguments[] getInstance_3Arg() {
         return new Arguments[] {
-            arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
-                    "afo, ika, and uni"),
+                arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
+                        "afo, ika, and uni", false),
+                arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.FULL,
+                        "afo, ika, or uni", false),
+                arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.FULL,
+                        "afo, ika, uni", false),
+                arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
+                        "afo, ika, & uni", false),
+                arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.SHORT,
+                        "afo, ika, or uni", false),
+                arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
+                        "afo, ika, uni", false),
+                arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
+                        "afo, ika, uni", false),
+                arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.NARROW,
+                        "afo, ika, or uni", false),
+                arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
+                        "afo ika uni", false),
+
+                arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
+                        "afo\u3001ika\u3001uni", false),
+                arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.FULL,
+                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.FULL,
+                        "afo ika uni", false),
+                arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
+                        "afo\u3001ika\u3001uni", false),
+                arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.SHORT,
+                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
+                        "afo ika uni", false),
+                arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
+                        "afo\u3001ika\u3001uni", false),
+                arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.NARROW,
+                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
+                        "afoikauni", true), // no delimiter
         };
     }
 
-//    @Test
-//    void getInstance_noArg() {
-//        assertEquals(ListFormat.getInstance(), ListFormat.getInstance(Locale.getDefault(Locale.Category.FORMAT), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
-//    }
+    @Test
+    void getInstance_noArg() {
+        assertEquals(ListFormat.getInstance(), ListFormat.getInstance(Locale.getDefault(Locale.Category.FORMAT), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
+    }
 
     @ParameterizedTest
     @MethodSource
-    void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected) throws ParseException {
+    void getInstance_2Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
         var f = ListFormat.getInstance(l, type, style);
-        compareResult(f, expected);
+        compareResult(f, expected, roundTrip);
     }
 
-    private static void compareResult(ListFormat f, String expected) throws ParseException {
+    @ParameterizedTest
+    @MethodSource
+    void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
+        var f = ListFormat.getInstance(l, type, style);
+        compareResult(f, expected, roundTrip);
+    }
+
+    private static void compareResult(ListFormat f, String expected, boolean roundTrip) throws ParseException {
         var result = f.format(SAMPLES);
         assertEquals(expected, result);
-        if (f.parseObject(result) instanceof Object[] ra) {
-            assertArrayEquals(SAMPLES, ra);
-        } else {
-            fail();
+        if (!roundTrip) {
+            if (f.parseObject(result) instanceof Object[] ra) {
+                assertArrayEquals(SAMPLES, ra);
+            } else {
+                fail();
+            }
         }
     }
 }

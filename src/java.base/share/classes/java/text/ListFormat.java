@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@ package java.text;
 
 import sun.util.locale.provider.LocaleProviderAdapter;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -61,20 +64,31 @@ public class ListFormat extends Format {
     private static final int THREE = 4;
     private static final int PATTERN_ARRAY_LENGTH = THREE + 1;
 
+    /**
+     * @serial
+     */
     private final Locale locale;
+
+    /**
+     * @serial
+     */
     private final String[] patterns;
-    private final String startBefore;
-    private final String startBetween;
-    private final String middleBetween;
-    private final String endBetween;
-    private final String endAfter;
-    private final Pattern startPattern;
-    private final Pattern endPattern;
+
+    private String startBefore;
+    private String startBetween;
+    private String middleBetween;
+    private String endBetween;
+    private String endAfter;
+    private Pattern startPattern;
+    private Pattern endPattern;
 
     private ListFormat(Locale l, String[] patterns) {
         locale = l;
         this.patterns = patterns;
+        init();
+    }
 
+    private void init() {
         // get pattern strings
         var m = Pattern.compile("(?<startBefore>.*?)\\{0}(?<startBetween>.*?)\\{1}").matcher(patterns[START]);
         if (m.matches()) {
@@ -195,6 +209,48 @@ public class ListFormat extends Format {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+
+        if (obj instanceof ListFormat lf) {
+            return locale.equals(lf.locale) &&
+                Arrays.equals(patterns, lf.patterns);
+        }
+
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hash(locale, patterns);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            ListFormat -
+                locale: %s
+                start pattern: %s
+                middle pattern: %s
+                end pattern: %s
+                pattern for two: %s
+                pattern for three: %s
+            """.formatted(locale.getDisplayName(), patterns[START], patterns[MIDDLE], patterns[END], patterns[TWO], patterns[THREE]);
+    }
+
     private MessageFormat generateMessageFormat(Object[] objs) {
         return switch (objs.length) {
             case 0, 1 ->
@@ -216,6 +272,13 @@ public class ListFormat extends Format {
         IntStream.range(2, count - 1).forEach(i -> sb.append(middleBetween).append("{" + i + "}"));
         sb.append(patterns[END].replaceFirst("\\{0}", "").replaceFirst("\\{1}", "\\{" + (count - 1) + "\\}"));
         return sb.toString();
+    }
+
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+        init();
     }
 
     /**
