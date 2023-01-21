@@ -121,6 +121,7 @@ class oopDesc;
 
 // Format 64-bit quantities.
 #define INT64_FORMAT             "%"          PRId64
+#define INT64_PLUS_FORMAT        "%+"         PRId64
 #define INT64_FORMAT_X           "0x%"        PRIx64
 #define INT64_FORMAT_X_0         "0x%016"     PRIx64
 #define INT64_FORMAT_W(width)    "%"   #width PRId64
