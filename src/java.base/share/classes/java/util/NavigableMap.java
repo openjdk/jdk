@@ -66,12 +66,18 @@ package java.util;
  * {@link #pollLastEntry} that return and/or remove the least and
  * greatest mappings, if any exist, else returning {@code null}.
  *
- * <p>Implementations of entry-returning methods are expected to
- * return {@code Map.Entry} pairs representing snapshots of mappings
- * at the time they were produced, and thus generally do <em>not</em>
- * support the optional {@code Entry.setValue} method. Note however
- * that it is possible to change mappings in the associated map using
- * method {@code put}.
+ * <p>The methods
+ * {@link #ceilingEntry},
+ * {@link #firstEntry},
+ * {@link #floorEntry},
+ * {@link #higherEntry},
+ * {@link #lastEntry},
+ * {@link #lowerEntry},
+ * {@link #pollFirstEntry}, and
+ * {@link #pollLastEntry}
+ * return {@link Map.Entry} instances that represent snapshots of mappings as
+ * of the time of the call. They do <em>not</em> support mutation of the
+ * underlying map via the optional {@link Map.Entry#setValue setValue} method.
  *
  * <p>Methods
  * {@link #subMap(Object, Object) subMap(K, K)},

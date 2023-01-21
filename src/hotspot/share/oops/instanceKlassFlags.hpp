@@ -22,12 +22,12 @@
  *
  */
 
-#ifndef SHARE_OOPS_INSTANCEKLASSMISCSTATUS_HPP
-#define SHARE_OOPS_INSTANCEKLASSMISCSTATUS_HPP
+#ifndef SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
+#define SHARE_OOPS_INSTANCEKLASSFLAGS_HPP
 
 class ClassLoaderData;
 
-class InstanceKlassMiscStatus {
+class InstanceKlassFlags {
   friend class VMStructs;
   friend class JVMCIVMStructs;
 
@@ -63,7 +63,7 @@ class InstanceKlassMiscStatus {
 
  public:
 
-  InstanceKlassMiscStatus() : _flags(0) {}
+  InstanceKlassFlags() : _flags(0) {}
 
   // Create getters and setters for the flag values.
 #define IK_FLAGS_GET(name, ignore)          \
@@ -89,4 +89,4 @@ class InstanceKlassMiscStatus {
   void assert_is_safe(bool set) NOT_DEBUG_RETURN;
 };
 
-#endif // SHARE_OOPS_INSTANCEKLASSMISCSTATUS_HPP
+#endif // SHARE_OOPS_INSTANCEKLASSFLAGS_HPP

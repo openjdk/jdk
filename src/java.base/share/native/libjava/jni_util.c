@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -867,6 +867,13 @@ getStringUTF8(JNIEnv *env, jstring jstr)
         if (str[i] < 0) {
             rlen++;
         }
+    }
+
+    // Check `jint` overflow
+    if (rlen < 0) {
+        (*env)->ReleasePrimitiveArrayCritical(env, value, str, 0);
+        JNU_ThrowOutOfMemoryError(env, "requested array size exceeds VM limit");
+        return NULL;
     }
 
     result = MALLOC_MIN4(rlen);

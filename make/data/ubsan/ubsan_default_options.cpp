@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,27 +21,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/removeReference.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "utilities/debug.hpp"
+extern "C" {
 
-class RemoveReferenceTest {
-  class A: AllStatic {};
+#include "./ubsan_default_options.c"
 
-  typedef const volatile A cvA;
-  typedef const volatile A& cvAref;
-  typedef const volatile A* const volatile cvAptrcv;
-
-  typedef RemoveReference<cvAref>::type rr_cvAref;
-  static const bool rr_cvAref_is_cvAref = IsSame<rr_cvAref, cvA>::value;
-  STATIC_ASSERT(rr_cvAref_is_cvAref);
-
-  typedef RemoveReference<cvAptrcv>::type rr_cvAptrcv;
-  static const bool rr_cvAptrcv_is_cvAptrcv = IsSame<rr_cvAptrcv, cvAptrcv>::value;
-  STATIC_ASSERT(rr_cvAptrcv_is_cvAptrcv);
-};
+} // extern "C"

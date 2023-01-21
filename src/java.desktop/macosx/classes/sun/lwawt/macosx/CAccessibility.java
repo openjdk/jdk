@@ -42,7 +42,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.Arrays;
-import java.util.function.Function;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
@@ -67,6 +66,7 @@ import javax.swing.KeyStroke;
 
 import sun.awt.AWTAccessor;
 import sun.lwawt.LWWindowPeer;
+import sun.swing.SwingAccessor;
 
 class CAccessibility implements PropertyChangeListener {
     private static Set<String> ignoredRoles;
@@ -821,6 +821,18 @@ class CAccessibility implements PropertyChangeListener {
 
                 return allChildren.toArray();
             }
+        }, c);
+    }
+
+    // This method is called from the native in OutlineRowAccessibility.m
+    private static Accessible getAccessibleCurrentAccessible(Accessible a, Component c) {
+        if (a == null) return null;
+        return invokeAndWait(() -> {
+            AccessibleContext ac = a.getAccessibleContext();
+            if (ac != null) {
+                return SwingAccessor.getAccessibleComponentAccessor().getCurrentAccessible(ac);
+            }
+            return null;
         }, c);
     }
 
