@@ -202,7 +202,7 @@ struct ByteswapImpl<T, 1> final {
 template <typename T>
 struct ByteswapImpl<T, 2> final {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned short) == sizeof(2));
+  STATIC_ASSERT(sizeof(unsigned short) == 2);
   STATIC_ASSERT(sizeof(T) == sizeof(unsigned short));
 
   ALWAYSINLINE T operator()(T x) const {
@@ -213,7 +213,7 @@ struct ByteswapImpl<T, 2> final {
 template <typename T>
 struct ByteswapImpl<T, 4> final {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned long) == sizeof(4));
+  STATIC_ASSERT(sizeof(unsigned long) == 4);
   STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
 
   ALWAYSINLINE T operator()(T x) const {
@@ -224,7 +224,7 @@ struct ByteswapImpl<T, 4> final {
 template <typename T>
 struct ByteswapImpl<T, 8> final {
   STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned __int64) == sizeof(8));
+  STATIC_ASSERT(sizeof(unsigned __int64) == 8);
   STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
 
   ALWAYSINLINE T operator()(T x) const {
