@@ -90,9 +90,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusConstant() {
         int[] res = new int[SIZE];
@@ -117,9 +117,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
