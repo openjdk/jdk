@@ -70,7 +70,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * The choice of word size is determined purely by performance concerns.
      */
     private static final int ADDRESS_BITS_PER_WORD = 6;
-    private static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
+    static final int BITS_PER_WORD = 1 << ADDRESS_BITS_PER_WORD;
     private static final int BIT_INDEX_MASK = BITS_PER_WORD - 1;
 
     /* Used to shift left or right for a partial word mask */
@@ -91,24 +91,18 @@ public class BitSet implements Cloneable, java.io.Serializable {
     /**
      * The internal field corresponding to the serialField "bits".
      */
-    private long[] words;
+    long[] words;
 
     /**
      * The number of words in the logical size of this BitSet.
      */
-    private transient int wordsInUse = 0;
-    
-    /**
-     * The number of bits set to {@code true} in this {@code BitSet}.
-     * @since  21
-     */
-    private transient int cardinality = 0;
+    transient int wordsInUse = 0;
 
     /**
      * Whether the size of "words" is user-specified.  If so, we assume
      * the user knows what he's doing and try harder to preserve it.
      */
-    private transient boolean sizeIsSticky = false;
+    transient boolean sizeIsSticky = false;
 
     /* use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
@@ -117,18 +111,17 @@ public class BitSet implements Cloneable, java.io.Serializable {
     /**
      * Given a bit index, return word index containing it.
      */
-    private static int wordIndex(int bitIndex) {
+    static int wordIndex(int bitIndex) {
         return bitIndex >> ADDRESS_BITS_PER_WORD;
     }
 
     /**
      * Every public method must preserve these invariants.
      */
-    private void checkInvariants() {
+    void checkInvariants() {
         assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
         assert(wordsInUse >= 0 && wordsInUse <= words.length);
         assert(wordsInUse == words.length || words[wordsInUse] == 0);
-        assert(cardinality >= 0 && cardinality -1 <= length() - 1); // avoid overflow if get(Integer.MAX_VALUE) == true
     }
 
     /**
@@ -136,14 +129,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * WARNING:This method assumes that the number of words actually in use is
      * less than or equal to the current value of wordsInUse!
      */
-    private void recalculateWordsInUse() {
+    void recalculateWordsInUse() {
         // Traverse the bitset until a used word is found
         int i;
-        for (i = wordsInUse-1; i >= 0; i--)
-            if (words[i] != 0)
-                break;
-
-        wordsInUse = i+1; // The new logical size
+        for (i = wordsInUse - 1; i >= 0 && words[i] == 0; i--);
+        wordsInUse = i + 1; // The new logical size
     }
 
     /**
@@ -178,36 +168,13 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
     /**
      * Creates a bit set using words as the internal representation.
-     * The last word (if there is one) must be non-zero.
      */
-    private BitSet(long[] words) {
+    BitSet(long[] words) {
         this.words = words;
         this.wordsInUse = words.length;
-        computeCardinality();
+        // Set wordsInUse correctly
+        recalculateWordsInUse();
         checkInvariants();
-    }
-
-    private void computeCardinality() {
-        cardinality = bitCount(0, wordsInUse);
-    }
-
-    /**
-     * Returns the number of bits set to true, starting from
-     * startWord (inclusive) to endWord (exclusive)
-     */
-    private int bitCount(int startWord, int endWord) {
-        int sum = 0;
-        for (int i = startWord; i < endWord; i++)
-            sum += bitCount(i);
-        
-        return sum;
-    }
-
-    /**
-     * Returns the number of bits set to true at the specified word
-     */
-    private int bitCount(int wordIndex) {
-        return Long.bitCount(words[wordIndex]);
     }
 
     /**
@@ -227,10 +194,13 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.7
      */
     public static BitSet valueOf(long[] longs) {
+        return new BitSet(getWords(longs));
+    }
+    
+    static long[] getWords(long[] longs) {
         int n;
-        for (n = longs.length; n > 0 && longs[n - 1] == 0; n--)
-            ;
-        return new BitSet(Arrays.copyOf(longs, n));
+        for (n = longs.length; n > 0 && longs[n - 1] == 0; n--);
+        return Arrays.copyOf(longs, n);
     }
 
     /**
@@ -252,13 +222,18 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.7
      */
     public static BitSet valueOf(LongBuffer lb) {
+        return new BitSet(getWords(lb));
+    }
+    
+    static long[] getWords(LongBuffer lb) {
         lb = lb.slice();
         int n;
         for (n = lb.remaining(); n > 0 && lb.get(n - 1) == 0; n--)
             ;
+        
         long[] words = new long[n];
         lb.get(words);
-        return new BitSet(words);
+        return words;
     }
 
     /**
@@ -278,7 +253,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.7
      */
     public static BitSet valueOf(byte[] bytes) {
-        return BitSet.valueOf(ByteBuffer.wrap(bytes));
+        return BitSet.valueOf(getWords(bytes));
+    }
+    
+    static long[] getWords(byte[] bytes) {
+        return getWords(ByteBuffer.wrap(bytes));
     }
 
     /**
@@ -300,6 +279,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.7
      */
     public static BitSet valueOf(ByteBuffer bb) {
+        return new BitSet(getWords(bb));
+    }
+    
+    static long[] getWords(ByteBuffer bb) {
         bb = bb.slice().order(ByteOrder.LITTLE_ENDIAN);
         int n;
         for (n = bb.remaining(); n > 0 && bb.get(n - 1) == 0; n--)
@@ -311,7 +294,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
             words[i++] = bb.getLong();
         for (int remaining = bb.remaining(), j = 0; j < remaining; j++)
             words[i] |= (bb.get() & 0xffL) << (8 * j);
-        return new BitSet(words);
+        
+        return words;
     }
 
     /**
@@ -415,11 +399,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         int wordIndex = wordIndex(bitIndex);
         expandTo(wordIndex);
-        
-        final long bitMask = 1L << bitIndex;
-        words[wordIndex] ^= bitMask;
-        cardinality += (words[wordIndex] & bitMask) != 0 ? 1 : -1;
-        
+
+        words[wordIndex] ^= (1L << bitIndex);
+
         recalculateWordsInUse();
         checkInvariants();
     }
@@ -450,26 +432,18 @@ public class BitSet implements Cloneable, java.io.Serializable {
         long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] ^= (firstWordMask & lastWordMask);
-            cardinality += bitCount(startWordIndex);
         } else {
             // Case 2: Multiple words
             // Handle first word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] ^= firstWordMask;
-            cardinality += bitCount(startWordIndex);
 
             // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++) {
-                cardinality += BITS_PER_WORD - 2 * bitCount(i);
+            for (int i = startWordIndex+1; i < endWordIndex; i++)
                 words[i] ^= WORD_MASK;
-            }
 
             // Handle last word
-            cardinality -= bitCount(endWordIndex);
             words[endWordIndex] ^= lastWordMask;
-            cardinality += bitCount(endWordIndex);
         }
 
         recalculateWordsInUse();
@@ -488,13 +462,9 @@ public class BitSet implements Cloneable, java.io.Serializable {
             throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
-        final long bitMask = 1L << bitIndex;
-        if (wordIndex < wordsInUse && (words[wordIndex] & bitMask) != 0)
-            return;
-        
         expandTo(wordIndex);
-        words[wordIndex] |= bitMask; // Restores invariants
-        cardinality++;
+
+        words[wordIndex] |= (1L << bitIndex); // Restores invariants
 
         checkInvariants();
     }
@@ -540,26 +510,18 @@ public class BitSet implements Cloneable, java.io.Serializable {
         long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] |= (firstWordMask & lastWordMask);
-            cardinality += bitCount(startWordIndex);
         } else {
             // Case 2: Multiple words
             // Handle first word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] |= firstWordMask;
-            cardinality += bitCount(startWordIndex);
 
             // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++) {
-                cardinality += BITS_PER_WORD - bitCount(i);
+            for (int i = startWordIndex+1; i < endWordIndex; i++)
                 words[i] = WORD_MASK;
-            }
 
             // Handle last word (restores invariants)
-            cardinality -= bitCount(endWordIndex);
             words[endWordIndex] |= lastWordMask;
-            cardinality += bitCount(endWordIndex);
         }
 
         checkInvariants();
@@ -596,12 +558,10 @@ public class BitSet implements Cloneable, java.io.Serializable {
             throw new IndexOutOfBoundsException("bitIndex < 0: " + bitIndex);
 
         int wordIndex = wordIndex(bitIndex);
-        final long bitMask = 1L << bitIndex;
-        if (wordIndex >= wordsInUse || (words[wordIndex] & bitMask) == 0)
+        if (wordIndex >= wordsInUse)
             return;
 
-        words[wordIndex] &= ~bitMask;
-        cardinality--;
+        words[wordIndex] &= ~(1L << bitIndex);
 
         recalculateWordsInUse();
         checkInvariants();
@@ -638,26 +598,18 @@ public class BitSet implements Cloneable, java.io.Serializable {
         long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] &= ~(firstWordMask & lastWordMask);
-            cardinality += bitCount(startWordIndex);
         } else {
             // Case 2: Multiple words
             // Handle first word
-            cardinality -= bitCount(startWordIndex);
             words[startWordIndex] &= ~firstWordMask;
-            cardinality += bitCount(startWordIndex);
 
             // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++) {
-                cardinality -= bitCount(i);
+            for (int i = startWordIndex+1; i < endWordIndex; i++)
                 words[i] = 0;
-            }
 
             // Handle last word
-            cardinality -= bitCount(endWordIndex);
             words[endWordIndex] &= ~lastWordMask;
-            cardinality += bitCount(endWordIndex);
         }
 
         recalculateWordsInUse();
@@ -670,9 +622,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since 1.4
      */
     public void clear() {
-        Arrays.fill(words, 0, wordsInUse, 0);
-        wordsInUse = 0;
-        cardinality = 0;
+        while (wordsInUse > 0)
+            words[--wordsInUse] = 0;
     }
 
     /**
@@ -709,47 +660,44 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public BitSet get(int fromIndex, int toIndex) {
+        return new BitSet(getWords(fromIndex, toIndex));
+    }
+    
+    long[] getWords(int fromIndex, int toIndex) {
         checkRange(fromIndex, toIndex);
 
         checkInvariants();
 
-        int len = length();
+        final int len = length();
 
-        // If no set bits in range return empty bitset
+        // If no set bits in range return empty array
         if (len <= fromIndex || fromIndex == toIndex)
-            return new BitSet(0);
+            return new long[0];
 
         // An optimization
         if (toIndex > len)
             toIndex = len;
 
-        BitSet result = new BitSet(toIndex - fromIndex);
-        int targetWords = wordIndex(toIndex - fromIndex - 1) + 1;
+        final long[] result = new long[wordIndex(toIndex - fromIndex - 1) + 1];
         int sourceIndex = wordIndex(fromIndex);
-        boolean wordAligned = ((fromIndex & BIT_INDEX_MASK) == 0);
+        final boolean wordAligned = ((fromIndex & BIT_INDEX_MASK) == 0);
 
         // Process all words but the last word
-        for (int i = 0; i < targetWords - 1; i++, sourceIndex++)
-            result.words[i] = wordAligned ? words[sourceIndex] :
+        for (int i = 0; i < result.length - 1; i++, sourceIndex++)
+            result[i] = wordAligned ? words[sourceIndex] :
                 (words[sourceIndex] >>> fromIndex) |
                 (words[sourceIndex+1] << -fromIndex);
 
         // Process the last word
-        long lastWordMask = WORD_MASK >>> -toIndex;
-        result.words[targetWords - 1] =
+        final long lastWordMask = WORD_MASK >>> -toIndex;
+        result[result.length - 1] =
             ((toIndex-1) & BIT_INDEX_MASK) < (fromIndex & BIT_INDEX_MASK)
             ? /* straddles source words */
             ((words[sourceIndex] >>> fromIndex) |
              (words[sourceIndex+1] & lastWordMask) << -fromIndex)
             :
             ((words[sourceIndex] & lastWordMask) >>> fromIndex);
-
-        // Set wordsInUse and cardinality correctly
-        result.wordsInUse = targetWords;
-        result.recalculateWordsInUse();
-        result.computeCardinality();
-        result.checkInvariants();
-
+        
         return result;
     }
 
@@ -935,7 +883,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.4
      */
     public boolean isEmpty() {
-        return cardinality == 0;
+        return wordsInUse == 0;
     }
 
     /**
@@ -955,34 +903,16 @@ public class BitSet implements Cloneable, java.io.Serializable {
     }
 
     /**
-     * Returns true if all bits set to {@code true} in the specified {@code BitSet}
-     * are also set to {@code true} in this {@code BitSet}.
-     *
-     * @param  set {@code BitSet} to test
-     * @return boolean indicating whether this {@code BitSet} includes
-     *         the specified {@code BitSet}
-     * @since  21
-     * @author Fabio Romano
-     */
-    public boolean includes(BitSet set) {
-        if (set.cardinality > cardinality || set.length() > length())
-            return false;
-        
-        // set.wordsInUse <= wordsInUse
-        for (int i = 0; i < set.wordsInUse; i++)
-            if ((~set.words[i] | words[i]) != WORD_MASK) // Perform logical (!a | b) on words in common
-                return false;
-        return true;
-    }
-
-    /**
      * Returns the number of bits set to {@code true} in this {@code BitSet}.
      *
      * @return the number of bits set to {@code true} in this {@code BitSet}
      * @since  1.4
      */
     public int cardinality() {
-        return cardinality;
+        int sum = 0;
+        for (int i = 0; i < wordsInUse; i++)
+            sum += Long.bitCount(words[i]);
+        return sum;
     }
 
     /**
@@ -1006,7 +936,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
             words[i] &= set.words[i];
 
         recalculateWordsInUse();
-        computeCardinality();
         checkInvariants();
     }
 
@@ -1041,7 +970,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
                              wordsInUse - wordsInCommon);
 
         // recalculateWordsInUse() is unnecessary
-        computeCardinality();
         checkInvariants();
     }
 
@@ -1065,7 +993,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
             clear();
             return;
         }
-
+        
         int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
 
         if (wordsInUse < set.wordsInUse) {
@@ -1084,7 +1012,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
                              set.wordsInUse - wordsInCommon);
 
         recalculateWordsInUse();
-        computeCardinality();
         checkInvariants();
     }
 
@@ -1098,11 +1025,8 @@ public class BitSet implements Cloneable, java.io.Serializable {
      */
     public void andNot(BitSet set) {
         // Perform logical (a & !b) on words in common
-        for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--) {
-            cardinality -= bitCount(i);
+        for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
             words[i] &= ~set.words[i];
-            cardinality += bitCount(i);
-        }
 
         recalculateWordsInUse();
         checkInvariants();
@@ -1168,7 +1092,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
         set.checkInvariants();
 
-        if (cardinality != set.cardinality || length() != set.length())
+        if (length() != set.length()) // more accurate than (wordsInUse != set.wordsInUse)
             return false;
 
         // Check words in use by both BitSets
@@ -1248,7 +1172,6 @@ public class BitSet implements Cloneable, java.io.Serializable {
         // or reduction in logical size
         wordsInUse = words.length;
         recalculateWordsInUse();
-        computeCardinality();
         sizeIsSticky = (words.length > 0 && words[words.length-1] == 0L); // heuristic
         checkInvariants();
     }
@@ -1280,9 +1203,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
 
         final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
-        // Avoid overflow in the case of a humongous cardinality
-        int initialCapacity = (cardinality <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
-            6 * cardinality + 2 : MAX_INITIAL_CAPACITY;
+        int numBits = (wordsInUse > 128) ?
+            cardinality() : wordsInUse * BITS_PER_WORD;
+        // Avoid overflow in the case of a humongous numBits
+        int initialCapacity = (numBits <= (MAX_INITIAL_CAPACITY - 2) / 6) ?
+            6 * numBits + 2 : MAX_INITIAL_CAPACITY;
         StringBuilder b = new StringBuilder(initialCapacity);
         b.append('{');
 
@@ -1343,7 +1268,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
                     hi = fence = (wordsInUse >= wordIndex(Integer.MAX_VALUE))
                                  ? Integer.MAX_VALUE
                                  : wordsInUse << ADDRESS_BITS_PER_WORD;
-                    est = cardinality;
+                    est = cardinality();
                     index = nextSetBit(0);
                 }
                 return hi;
