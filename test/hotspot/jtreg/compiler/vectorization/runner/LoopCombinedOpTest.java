@@ -152,7 +152,7 @@ public class LoopCombinedOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] multipleStoresWithCommonSubExpression() {
         int[] res1 = new int[SIZE];
