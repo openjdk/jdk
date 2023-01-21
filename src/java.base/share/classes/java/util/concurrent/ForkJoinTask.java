@@ -425,6 +425,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 return s;
             if (s == UNCOMPENSATE)
                 uncompensate = true;
+            if (p.runState < 0)       // recheck below if interrupted
+                cancelIgnoringExceptions(this);
         }
         Aux node = null;
         long ns = 0L;
@@ -446,13 +448,14 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             }
             else if (Thread.interrupted()) {
                 interrupted = true;
+                if (p != null && p.runState < 0)
+                    cancelIgnoringExceptions(this);
                 if ((how & INTERRUPTIBLE) != 0) {
-                    s = ABNORMAL;
+                    if ((s = status) >= 0)
+                        s = ABNORMAL; // prefer reporting result to IE
                     break;
                 }
             }
-            else if ((s = status) < 0) // recheck
-                break;
             else if (timed)
                 LockSupport.parkNanos(ns);
             else
@@ -480,11 +483,8 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                         }
                     }
                 }
-                int stat = status;           // prefer completion result
-                if (stat < 0)
-                    s = stat;
             }
-            if (s < 0) {
+            else {
                 signalWaiters();             // help clean or signal
                 if (interrupted)
                     Thread.currentThread().interrupt();
@@ -1502,23 +1502,26 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         public final boolean exec() {
             ForkJoinPool p;
             Thread t = Thread.currentThread();
-            Thread.interrupted();
-            runner = t;
-            try {
-                if ((t instanceof ForkJoinWorkerThread) &&
-                    (p = ((ForkJoinWorkerThread) t).pool) != null &&
-                    p.runState < 0)         // termination check
-                    cancelIgnoringExceptions(this);
-                else if (!isDone())
-                    result = callable.call();
-                return true;
-            } catch (RuntimeException rex) {
-                throw rex;
-            } catch (Exception ex) {
-                throw new RuntimeException(ex);
-            } finally {
-                runner = null;
+            if ((t instanceof ForkJoinWorkerThread) &&
+                (p = ((ForkJoinWorkerThread) t).pool) != null &&
+                p.runState < 0)         // termination check
+                cancelIgnoringExceptions(this);
+            else {
+                Thread.interrupted();
+                runner = t;
+                try {
+                    if (!isDone())
+                        result = callable.call();
+                } catch (RuntimeException rex) {
+                    throw rex;
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                } finally {
+                    runner = null;
+                    Thread.interrupted();
+                }
             }
+            return true;
         }
         public final void run() { invoke(); }
         public final boolean cancel(boolean mayInterruptIfRunning) {
