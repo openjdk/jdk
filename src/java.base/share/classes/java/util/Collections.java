@@ -412,7 +412,7 @@ public class Collections {
      * portion of the list that runs from the first element to the current
      * position, inclusive.
      *
-     * @implSpec This method runs in linear time.  If the specified list does 
+     * @implSpec This method runs in linear time.  If the specified list does
      * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
@@ -461,7 +461,7 @@ public class Collections {
      * portion of the list that runs from the first element to the current
      * position, inclusive.<p>
      *
-     * @implSpec This method runs in linear time.  If the specified list does 
+     * @implSpec This method runs in linear time.  If the specified list does
      * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
