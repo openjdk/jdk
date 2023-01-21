@@ -198,7 +198,7 @@ import java.awt.font.FontRenderContext;
  *             // layout can be null if lineContainsText is true
  *             if (layout != null) {
  *                 layouts.addElement(layout);
- *                 penPositions.addElement(new Float(horizontalPos));
+ *                 penPositions.addElement(Float.valueOf(horizontalPos));
  *                 horizontalPos += layout.getAdvance();
  *                 maxAscent = Math.max(maxAscent, layout.getAscent());
  *                 maxDescent = Math.max(maxDescent,
