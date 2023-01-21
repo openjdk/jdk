@@ -237,10 +237,68 @@ struct ByteswapImpl<T, 8> final {
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_xlc)
 
-// To our knowledge XL C/C++ does not have a compiler intrinsic for byteswapping.
+#include <builtins.h>
 
-template <typename T, size_t N>
-struct ByteswapImpl final : public ByteswapFallbackImpl<T, N> {};
+// We support 8-bit integer types to be compatible with C++23's std::byteswap.
+template <typename T>
+struct ByteswapImpl<T, 1> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(T) == 1);
+
+  ALWAYSINLINE T operator()(T x) const {
+    return x;
+  }
+};
+
+template <typename T>
+struct ByteswapImpl<T, 2> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(unsigned short) == 2);
+  STATIC_ASSERT(sizeof(T) == sizeof(unsigned short));
+
+  ALWAYSINLINE T operator()(T x) const {
+    unsigned short y;
+    __store2r(static_cast<unsigned short>(x), &y);
+    return y;
+  }
+};
+
+template <typename T>
+struct ByteswapImpl<T, 4> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(unsigned int) == 4);
+  STATIC_ASSERT(sizeof(T) == sizeof(unsigned int));
+
+  ALWAYSINLINE T operator()(T x) const {
+    unsigned int y;
+    __store4r(static_cast<unsigned int>(x), &y);
+    return y;
+  }
+};
+
+#if defined(_ARCH_PWR7) && defined(_ARCH_PPC64)
+
+// __store8r is only available on POWER7 and newer in 64-bit mode.
+
+template <typename T>
+struct ByteswapImpl<T, 8> final {
+  STATIC_ASSERT(CanByteswapImpl<T>::value);
+  STATIC_ASSERT(sizeof(unsigned long long) == 8);
+  STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
+
+  ALWAYSINLINE T operator()(T x) const {
+    unsigned long long y;
+    __store8r(static_cast<unsigned long long>(x), &y);
+    return y;
+  }
+};
+
+#else
+
+template <typename T>
+struct ByteswapImpl<T, 8> final : public ByteswapFallbackImpl<T, 8> {};
+
+#endif
 
 /*****************************************************************************
  * Unknown toolchain
