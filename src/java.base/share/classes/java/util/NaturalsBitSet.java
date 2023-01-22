@@ -565,7 +565,7 @@ public class NaturalsBitSet extends BitSet {
         StringBuilder b = new StringBuilder(initialCapacity);
         b.append('{');
 
-        int len = length();
+        final int len = length();
         if (len != 0) {
             int i = nextSetBit(0);
             b.append(i++);
