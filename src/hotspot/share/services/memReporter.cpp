@@ -474,9 +474,9 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
     out->print(" type=%s", NMTUtil::flag_to_name(flags));
   }
 
-  long amount_diff = diff_in_current_scale(current_amount, early_amount);
+  int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
   if (amount_diff != 0) {
-    out->print(" %+ld%s", amount_diff, scale);
+    out->print(" " INT64_PLUS_FORMAT "%s", amount_diff, scale);
   }
   if (current_count > 0) {
     out->print(" #" SIZE_FORMAT "", current_count);
@@ -493,7 +493,7 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   outputStream* out = output();
   out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
   if (diff_in_current_scale(current_amount, early_amount) != 0) {
-    out->print(" %+ld", diff_in_current_scale(current_amount, early_amount));
+    out->print(" " INT64_PLUS_FORMAT "d", diff_in_current_scale(current_amount, early_amount));
   }
 
   out->print(" #" SIZE_FORMAT "", current_count);
@@ -508,15 +508,15 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
   const char* scale = current_scale();
   outputStream* out = output();
   out->print("reserved=" SIZE_FORMAT "%s", amount_in_current_scale(current_reserved), scale);
-  long reserved_diff = diff_in_current_scale(current_reserved, early_reserved);
+  int64_t reserved_diff = diff_in_current_scale(current_reserved, early_reserved);
   if (reserved_diff != 0) {
-    out->print(" %+ld%s", reserved_diff, scale);
+    out->print(" " INT64_PLUS_FORMAT "%s", reserved_diff, scale);
   }
 
   out->print(", committed=" SIZE_FORMAT "%s", amount_in_current_scale(current_committed), scale);
-  long committed_diff = diff_in_current_scale(current_committed, early_committed);
+  int64_t committed_diff = diff_in_current_scale(current_committed, early_committed);
   if (committed_diff != 0) {
-    out->print(" %+ld%s", committed_diff, scale);
+    out->print(" " INT64_PLUS_FORMAT "%s", committed_diff, scale);
   }
 }
 
@@ -660,10 +660,10 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
       out->print("%27s (tracking overhead=" SIZE_FORMAT "%s", " ",
         amount_in_current_scale(_current_baseline.malloc_tracking_overhead()), scale);
 
-      long overhead_diff = diff_in_current_scale(_current_baseline.malloc_tracking_overhead(),
-           _early_baseline.malloc_tracking_overhead());
+      int64_t overhead_diff = diff_in_current_scale(_current_baseline.malloc_tracking_overhead(),
+                                                    _early_baseline.malloc_tracking_overhead());
       if (overhead_diff != 0) {
-        out->print(" %+ld%s", overhead_diff, scale);
+        out->print(" " INT64_PLUS_FORMAT "%s", overhead_diff, scale);
       }
       out->print_cr(")");
     } else if (flag == mtClass) {
@@ -695,18 +695,18 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
                             early_stats.committed());
   out->print_cr(")");
 
-  long diff_used = diff_in_current_scale(current_stats.used(),
-                                         early_stats.used());
+  int64_t diff_used = diff_in_current_scale(current_stats.used(),
+                                            early_stats.used());
 
   size_t current_waste = current_stats.committed() - current_stats.used();
   size_t early_waste = early_stats.committed() - early_stats.used();
-  long diff_waste = diff_in_current_scale(current_waste, early_waste);
+  int64_t diff_waste = diff_in_current_scale(current_waste, early_waste);
 
   // Diff used
   out->print("%27s (    used=" SIZE_FORMAT "%s", " ",
     amount_in_current_scale(current_stats.used()), scale);
   if (diff_used != 0) {
-    out->print(" %+ld%s", diff_used, scale);
+    out->print(" " INT64_PLUS_FORMAT "%s", diff_used, scale);
   }
   out->print_cr(")");
 
@@ -716,7 +716,7 @@ void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
   out->print("%27s (    waste=" SIZE_FORMAT "%s =%2.2f%%", " ",
     amount_in_current_scale(current_waste), scale, waste_percentage);
   if (diff_waste != 0) {
-    out->print(" %+ld%s", diff_waste, scale);
+    out->print(" " INT64_PLUS_FORMAT "%s", diff_waste, scale);
   }
   out->print_cr(")");
 }

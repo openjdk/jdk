@@ -4067,9 +4067,9 @@ public final class String
 
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
-     * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
-     * point</a> is passed through uninterpreted.
+     * from this sequence.  Any char which maps to a {@linkplain
+     * Character##unicode surrogate code point} is passed through
+     * uninterpreted.
      *
      * @return an IntStream of char values from this sequence
      * @since 9
