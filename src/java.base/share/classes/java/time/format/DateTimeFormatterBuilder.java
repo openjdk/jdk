@@ -2600,7 +2600,7 @@ public final class DateTimeFormatterBuilder {
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             int preLen = buf.length();
-            if (!printerParser.format(context, buf)) {
+            if (printerParser.format(context, buf) == false) {
                 return false;
             }
             int len = buf.length() - preLen;
