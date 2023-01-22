@@ -1920,7 +1920,11 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (p < 0) {
             long deadline = idle ? keepAlive + System.currentTimeMillis() : 0L;
             LockSupport.setCurrentBlocker(this);
-            for (;;) {                           // await signal
+            for (;;) {                           // await signal or termination
+                if (runState < 0) {              // activate before exit
+                    do {} while (w.phase < 0 && reactivate() != null);
+                    return -1;
+                }
                 w.access = PARKED;               // enable unpark
                 if (w.phase < 0) {
                     if (idle)
@@ -3810,6 +3814,8 @@ public class ForkJoinPool extends AbstractExecutorService {
             long c = ctl;
             if (blocker.isReleasable())
                 break;
+            if (runState < 0) // will be interrupted on cancellation
+                throw new InterruptedException();
             if ((comp = tryCompensate(c, false)) >= 0) {
                 long post = (comp == 0) ? 0L : RC_UNIT;
                 try {
