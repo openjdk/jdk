@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,25 +21,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_CONDITIONAL_HPP
-#define SHARE_METAPROGRAMMING_CONDITIONAL_HPP
+extern "C" {
 
-#include "memory/allStatic.hpp"
+#include "./ubsan_default_options.c"
 
-// This trait evaluates its typedef called "type" to TrueType iff the condition
-// is true. Otherwise it evaluates to FalseType.
-
-template <bool condition, typename TrueType, typename FalseType>
-struct Conditional: AllStatic {
-  typedef TrueType type;
-};
-
-template <typename TrueType, typename FalseType>
-struct Conditional<false, TrueType, FalseType>: AllStatic {
-  typedef FalseType type;
-};
-
-#endif // SHARE_METAPROGRAMMING_CONDITIONAL_HPP
+} // extern "C"

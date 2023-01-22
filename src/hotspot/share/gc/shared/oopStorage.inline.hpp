@@ -28,7 +28,6 @@
 #include "gc/shared/oopStorage.hpp"
 
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "oops/oop.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -362,7 +361,7 @@ inline bool OopStorage::iterate_impl(F f, Storage* storage) {
   assert_at_safepoint();
   // Propagate const/non-const iteration to the block layer, by using
   // const or non-const blocks as corresponding to Storage.
-  typedef typename Conditional<std::is_const<Storage>::value, const Block*, Block*>::type BlockPtr;
+  using BlockPtr = std::conditional_t<std::is_const<Storage>::value, const Block*, Block*>;
   ActiveArray* blocks = storage->_active_array;
   size_t limit = blocks->block_count();
   for (size_t i = 0; i < limit; ++i) {

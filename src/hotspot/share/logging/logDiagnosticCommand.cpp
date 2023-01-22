@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_alloc
 
 int LogDiagnosticCommand::num_arguments() {
   ResourceMark rm;
-  LogDiagnosticCommand* dcmd = new LogDiagnosticCommand(NULL, false);
-  if (dcmd != NULL) {
+  LogDiagnosticCommand* dcmd = new LogDiagnosticCommand(nullptr, false);
+  if (dcmd != nullptr) {
     DCmdMark mark(dcmd);
     return dcmd->_dcmdparser.num_arguments();
   } else {

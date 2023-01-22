@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,25 @@ public class TestSegments {
         assertFalse(segment.isReadOnly());
     }
 
+    @DataProvider(name = "scopes")
+    public Object[][] scopes() {
+        return new Object[][] {
+                { SegmentScope.auto(), false },
+                { SegmentScope.global(), false },
+                { Arena.openConfined().scope(), true },
+                { Arena.openShared().scope(), false }
+        };
+    }
+
+    @Test(dataProvider = "scopes")
+    public void testIsAccessibleBy(SegmentScope scope, boolean isConfined) {
+        assertTrue(scope.isAccessibleBy(Thread.currentThread()));
+        assertTrue(scope.isAccessibleBy(new Thread()) != isConfined);
+        MemorySegment segment = MemorySegment.ofAddress(0, 0, scope);
+        assertTrue(segment.scope().isAccessibleBy(Thread.currentThread()));
+        assertTrue(segment.scope().isAccessibleBy(new Thread()) != isConfined);
+    }
+
     @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
@@ -264,11 +283,9 @@ public class TestSegments {
         thread.start();
         thread.join();
 
-        if (segment.scope().isAccessibleBy(Thread.currentThread())) {
+        if (!segment.scope().isAccessibleBy(Thread.currentThread())) {
             RuntimeException e = exception.get();
-            if (!(e instanceof IllegalStateException)) {
-                throw e;
-            }
+            throw e;
         } else {
             assertNull(exception.get());
         }
