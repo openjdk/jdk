@@ -110,7 +110,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] shortInductionLoop() {
         int[] res = new int[SIZE];
@@ -175,7 +175,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoop() {
         int[] res = new int[SIZE];
@@ -196,7 +196,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
 
     // ---------- Stride with scale ----------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countupLoopWithNegScale() {
         int[] res = new int[SIZE];
@@ -207,7 +207,7 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] countDownLoopWithNegScale() {
         int[] res = new int[SIZE];

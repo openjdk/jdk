@@ -107,7 +107,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public byte[] vectorMul() {
         byte[] res = new byte[SIZE];
@@ -118,7 +118,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
     public byte[] vectorMulAdd() {
         byte[] res = new byte[SIZE];
@@ -129,7 +129,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public byte[] vectorMulSub() {
         byte[] res = new byte[SIZE];
@@ -186,7 +186,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.LSHIFT_V, ">0"})
     public byte[] vectorShiftLeft() {
         byte[] res = new byte[SIZE];
@@ -197,7 +197,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.RSHIFT_V, ">0"})
     public byte[] vectorSignedShiftRight() {
         byte[] res = new byte[SIZE];
@@ -208,7 +208,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.RSHIFT_V, ">0"})
     public byte[] vectorUnsignedShiftRight() {
         byte[] res = new byte[SIZE];
