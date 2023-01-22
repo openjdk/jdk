@@ -102,7 +102,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Whether the size of "words" is user-specified.  If so, we assume
      * the user knows what he's doing and try harder to preserve it.
      */
-    transient boolean sizeIsSticky = false;
+    private transient boolean sizeIsSticky = false;
 
     /* use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
@@ -118,7 +118,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     /**
      * Every public method must preserve these invariants.
      */
-    void checkInvariants() {
+    private void checkInvariants() {
         assert(wordsInUse == 0 || words[wordsInUse - 1] != 0);
         assert(wordsInUse >= 0 && wordsInUse <= words.length);
         assert(wordsInUse == words.length || words[wordsInUse] == 0);

@@ -532,8 +532,6 @@ public class NaturalsBitSet extends BitSet {
      * @return a string representation of this bit set
      */
     public String toString() {
-        checkInvariants();
-
         final int MAX_INITIAL_CAPACITY = Integer.MAX_VALUE - 8;
         // Avoid overflow in the case of a humongous cardinality
         int initialCapacity = (cardinality <= (MAX_INITIAL_CAPACITY - 2) / 6) ? 6 * cardinality + 2
@@ -541,22 +539,26 @@ public class NaturalsBitSet extends BitSet {
         StringBuilder b = new StringBuilder(initialCapacity);
         b.append('{');
 
-        int i = nextSetBit(0);
-        if (i != -1) {
-            b.append(i);
-            while (true) {
-                if (++i < 0)
-                    break;
-                if ((i = nextSetBit(i)) < 0)
-                    break;
-                int endOfRun = nextClearBit(i);
+        int len = length();
+        if (len != 0) {
+            int i = nextSetBit(0);
+            b.append(i++);
+            
+            if (i != len) {
+                i = nextSetBit(i);
                 do {
-                    b.append(", ").append(i);
-                } while (++i != endOfRun);
+                    int endOfRun = i + 1 < 0 ? len : nextClearBit(i + 1); // avoid overflow
+                    
+                    do {
+                        b.append(", ").append(i++);
+                    } while (i != endOfRun);
+                    
+                    if (i != len)
+                        i = nextSetBit(i + 1);
+                } while (i != len);
             }
         }
 
-        b.append('}');
-        return b.toString();
+        return b.append('}').toString();
     }
 }
