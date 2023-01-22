@@ -1024,6 +1024,12 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * @since  1.2
      */
     public void andNot(BitSet set) {
+        // An optimization
+        if (this == set) {
+            clear();
+            return;
+        }
+        
         // Perform logical (a & !b) on words in common
         for (int i = Math.min(wordsInUse, set.wordsInUse) - 1; i >= 0; i--)
             words[i] &= ~set.words[i];
@@ -1131,7 +1137,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Calling this method may, but is not required to, affect the value
      * returned by a subsequent call to the {@link #size()} method.
      */
-    private void trimToSize() {
+    void trimToSize() {
         if (wordsInUse != words.length) {
             words = Arrays.copyOf(words, wordsInUse);
             checkInvariants();

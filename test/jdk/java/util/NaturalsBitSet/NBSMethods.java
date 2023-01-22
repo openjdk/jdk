@@ -1,30 +1,5 @@
-/*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 /* @test
- * @bug 4098239 4107540 4080736 4261102 4274710 4305272
- *      4979017 4979028 4979031 5030267 6222207 8040806
- * @summary Test the operation of the methods of BitSet class
+ * @summary Test the operation of the methods of NaturalsBitSet class
  * @author Mike McCloskey, Martin Buchholz
  * @run main/othervm BSMethods
  * @key randomness
@@ -36,7 +11,7 @@ import java.util.*;
  * This is a simple test class created to run tests on the BitSet class.
  *
  */
-public class BSMethods {
+public class NBSMethods {
 
     private static Random generator = new Random();
     private static boolean failure = false;
@@ -55,14 +30,14 @@ public class BSMethods {
             fail(diagnostic);
     }
 
-    private static void checkEmpty(BitSet s) {
+    private static void checkEmpty(NaturalsBitSet s) {
         check(s.isEmpty(), "isEmpty");
         check(s.length() == 0, "length");
         check(s.cardinality() == 0, "cardinality");
-        check(s.equals(new BitSet())   , "equals");
-        check(s.equals(new BitSet(0))  , "equals");
-        check(s.equals(new BitSet(127)), "equals");
-        check(s.equals(new BitSet(128)), "equals");
+        check(s.equals(new NaturalsBitSet())   , "equals");
+        check(s.equals(new NaturalsBitSet(0))  , "equals");
+        check(s.equals(new NaturalsBitSet(127)), "equals");
+        check(s.equals(new NaturalsBitSet(128)), "equals");
         check(s.nextSetBit(0)   == -1, "nextSetBit");
         check(s.nextSetBit(127) == -1, "nextSetBit");
         check(s.nextSetBit(128) == -1, "nextSetBit");
@@ -73,14 +48,14 @@ public class BSMethods {
         check(! s.get(0), "get");
     }
 
-    private static BitSet makeSet(int... elts) {
-        BitSet s = new BitSet();
+    private static NaturalsBitSet makeSet(int... elts) {
+        NaturalsBitSet s = new NaturalsBitSet();
         for (int elt : elts)
             s.set(elt);
         return s;
     }
 
-    private static void checkEquality(BitSet s, BitSet t) {
+    private static void checkEquality(NaturalsBitSet s, NaturalsBitSet t) {
         checkSanity(s, t);
         check(s.equals(t), "equals");
         check(s.toString().equals(t.toString()), "equal strings");
@@ -88,8 +63,8 @@ public class BSMethods {
         check(s.cardinality() == t.cardinality(), "equal cardinalities");
     }
 
-    private static void checkSanity(BitSet... sets) {
-        for (BitSet s : sets) {
+    private static void checkSanity(NaturalsBitSet... sets) {
+        for (NaturalsBitSet s : sets) {
             int len = s.length();
             int cardinality1 = s.cardinality();
             int cardinality2 = 0;
@@ -152,7 +127,7 @@ public class BSMethods {
 
     private static void testFlipTime() {
         // Make a fairly random bitset
-        BitSet b1 = new BitSet();
+        NaturalsBitSet b1 = new NaturalsBitSet();
         b1.set(1000);
         long startTime = System.currentTimeMillis();
         for(int x=0; x<100000; x++) {
@@ -176,7 +151,7 @@ public class BSMethods {
 
         for (int i=0; i<100; i++) {
             int numberOfSetBits = generator.nextInt(100) + 1;
-            BitSet testSet = new BitSet();
+            NaturalsBitSet testSet = new NaturalsBitSet();
             int[] history = new int[numberOfSetBits];
 
             // Set some random bits and remember them
@@ -204,7 +179,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<1000; i++) {
-            BitSet b = new BitSet(256);
+            NaturalsBitSet b = new NaturalsBitSet(256);
             int[] history = new int[10];
 
             // Set all the bits
@@ -230,7 +205,7 @@ public class BSMethods {
         }
 
         // regression test for 4350178
-        BitSet bs  = new BitSet();
+        NaturalsBitSet bs  = new NaturalsBitSet();
         if (bs.nextClearBit(0) != 0)
                 failCount++;
         for (int i = 0; i < 64; i++) {
@@ -248,7 +223,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet testSet = new BitSet();
+            NaturalsBitSet testSet = new NaturalsBitSet();
             HashSet<Integer> history = new HashSet<Integer>();
 
             // Set a random number of bits in random places
@@ -258,13 +233,13 @@ public class BSMethods {
             int highestPossibleSetBit = generator.nextInt(1000) + 1;
             for (int x=0; x<numberOfSetBits; x++) {
                 nextBitToSet = generator.nextInt(highestPossibleSetBit);
-                history.add(new Integer(nextBitToSet));
+                history.add(nextBitToSet);
                 testSet.set(nextBitToSet);
             }
 
             // Make sure each bit is set appropriately
             for (int x=0; x<highestPossibleSetBit; x++) {
-                if (testSet.get(x) != history.contains(new Integer(x)))
+                if (testSet.get(x) != history.contains(x))
                     failCount++;
             }
 
@@ -291,7 +266,7 @@ public class BSMethods {
 
             // Make sure each bit is set appropriately
             for (int x=0; x<highestPossibleSetBit; x++) {
-                if (testSet.get(x) != history.contains(new Integer(x)))
+                if (testSet.get(x) != history.contains(x))
                     failCount++;
             }
 
@@ -318,7 +293,7 @@ public class BSMethods {
 
             // Verify they were flipped
             for (int x=0; x<highestPossibleSetBit; x++) {
-                if (testSet.get(x) != history.contains(new Integer(x)))
+                if (testSet.get(x) != history.contains(x))
                     failCount++;
             }
 
@@ -346,8 +321,8 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
 
             // Set some random bits in first set and remember them
             int nextBitToSet = 0;
@@ -359,7 +334,7 @@ public class BSMethods {
                 b2.set(generator.nextInt(255));
 
             // andNot the sets together
-            BitSet b3 = (BitSet)b1.clone();
+            NaturalsBitSet b3 = b1.clone();
             b3.andNot(b2);
 
             // Examine each bit of b3 for errors
@@ -380,8 +355,8 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
 
             // Set some random bits in first set and remember them
             int nextBitToSet = 0;
@@ -393,7 +368,7 @@ public class BSMethods {
                 b2.set(generator.nextInt(255));
 
             // And the sets together
-            BitSet b3 = (BitSet)b1.clone();
+            NaturalsBitSet b3 = b1.clone();
             b3.and(b2);
 
             // Examine each bit of b3 for errors
@@ -408,7 +383,7 @@ public class BSMethods {
         }
 
         // `and' that happens to clear the last word
-        BitSet b4 = makeSet(2, 127);
+        NaturalsBitSet b4 = makeSet(2, 127);
         b4.and(makeSet(2, 64));
         checkSanity(b4);
         if (!(b4.equals(makeSet(2))))
@@ -421,8 +396,8 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
             int[] history = new int[20];
 
             // Set some random bits in first set and remember them
@@ -441,7 +416,7 @@ public class BSMethods {
             }
 
             // Or the sets together
-            BitSet b3 = (BitSet)b1.clone();
+            NaturalsBitSet b3 = b1.clone();
             b3.or(b2);
 
             // Verify the set bits of b3 from the history
@@ -469,8 +444,8 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
 
             // Set some random bits in first set and remember them
             int nextBitToSet = 0;
@@ -482,7 +457,7 @@ public class BSMethods {
                 b2.set(generator.nextInt(255));
 
             // Xor the sets together
-            BitSet b3 = (BitSet)b1.clone();
+            NaturalsBitSet b3 = b1.clone();
             b3.xor(b2);
 
             // Examine each bit of b3 for errors
@@ -498,7 +473,7 @@ public class BSMethods {
         }
 
         // xor that happens to clear the last word
-        BitSet b4 = makeSet(2, 64, 127);
+        NaturalsBitSet b4 = makeSet(2, 64, 127);
         b4.xor(makeSet(64, 127));
         checkSanity(b4);
         if (!(b4.equals(makeSet(2))))
@@ -512,8 +487,8 @@ public class BSMethods {
 
         for (int i=0; i<100; i++) {
             // Create BitSets of different sizes
-            BitSet b1 = new BitSet(generator.nextInt(1000)+1);
-            BitSet b2 = new BitSet(generator.nextInt(1000)+1);
+            NaturalsBitSet b1 = new NaturalsBitSet(generator.nextInt(1000)+1);
+            NaturalsBitSet b2 = new NaturalsBitSet(generator.nextInt(1000)+1);
 
             // Set some random bits
             int nextBitToSet = 0;
@@ -537,7 +512,7 @@ public class BSMethods {
 
         // Test length after set
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
             int highestSetBit = 0;
 
             for(int x=0; x<100; x++) {
@@ -553,7 +528,7 @@ public class BSMethods {
 
         // Test length after flip
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
             for(int x=0; x<100; x++) {
                 // Flip a random range twice
                 int rangeStart = generator.nextInt(100);
@@ -572,8 +547,8 @@ public class BSMethods {
 
         // Test length after or
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
             int bit1 = generator.nextInt(100);
             int bit2 = generator.nextInt(100);
             int highestSetBit = (bit1 > bit2) ? bit1 : bit2;
@@ -592,7 +567,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<1000; i++) {
-            BitSet b1 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
 
             // Make a fairly random bitset
             int numberOfSetBits = generator.nextInt(100) + 1;
@@ -601,7 +576,7 @@ public class BSMethods {
             for (int x=0; x<numberOfSetBits; x++)
                 b1.set(generator.nextInt(highestPossibleSetBit));
 
-            BitSet b2 = (BitSet)b1.clone();
+            NaturalsBitSet b2 = b1.clone();
 
             // Clear out a random range
             int rangeStart = generator.nextInt(100);
@@ -633,7 +608,7 @@ public class BSMethods {
 
         // Test set(int, int)
         for (int i=0; i<1000; i++) {
-            BitSet b1 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
 
             // Make a fairly random bitset
             int numberOfSetBits = generator.nextInt(100) + 1;
@@ -642,7 +617,7 @@ public class BSMethods {
             for (int x=0; x<numberOfSetBits; x++)
                 b1.set(generator.nextInt(highestPossibleSetBit));
 
-            BitSet b2 = (BitSet)b1.clone();
+            NaturalsBitSet b2 = b1.clone();
 
             // Set a random range
             int rangeStart = generator.nextInt(100);
@@ -669,7 +644,7 @@ public class BSMethods {
 
         // Test set(int, int, boolean)
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
 
             // Make a fairly random bitset
             int numberOfSetBits = generator.nextInt(100) + 1;
@@ -678,7 +653,7 @@ public class BSMethods {
             for (int x=0; x<numberOfSetBits; x++)
                 b1.set(generator.nextInt(highestPossibleSetBit));
 
-            BitSet b2 = (BitSet)b1.clone();
+            NaturalsBitSet b2 = b1.clone();
             boolean setOrClear = generator.nextBoolean();
 
             // Set a random range
@@ -709,7 +684,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<1000; i++) {
-            BitSet b1 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
 
             // Make a fairly random bitset
             int numberOfSetBits = generator.nextInt(100) + 1;
@@ -718,7 +693,7 @@ public class BSMethods {
             for (int x=0; x<numberOfSetBits; x++)
                 b1.set(generator.nextInt(highestPossibleSetBit));
 
-            BitSet b2 = (BitSet)b1.clone();
+            NaturalsBitSet b2 = b1.clone();
 
             // Flip a random range
             int rangeStart = generator.nextInt(100);
@@ -744,7 +719,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<1000; i++) {
-            BitSet b1 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
 
             // Make a fairly random bitset
             int numberOfSetBits = generator.nextInt(100) + 1;
@@ -757,9 +732,9 @@ public class BSMethods {
             int rangeStart = generator.nextInt(100);
             int rangeEnd = rangeStart + generator.nextInt(100);
 
-            BitSet b2 = b1.get(rangeStart, rangeEnd);
+            NaturalsBitSet b2 = b1.get(rangeStart, rangeEnd);
 
-            BitSet b3 = new BitSet();
+            NaturalsBitSet b3 = new NaturalsBitSet();
             for(int x=rangeStart; x<rangeEnd; x++)
                 b3.set(x-rangeStart, b1.get(x));
 
@@ -783,8 +758,8 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
-            BitSet b2 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
+            NaturalsBitSet b2 = new NaturalsBitSet(256);
 
             // Set some random bits in first set
             int nextBitToSet = 0;
@@ -824,7 +799,7 @@ public class BSMethods {
         int failCount = 0;
 
         for (int i=0; i<100; i++) {
-            BitSet b1 = new BitSet(256);
+            NaturalsBitSet b1 = new NaturalsBitSet(256);
 
             // Set a random number of increasing bits
             int nextBitToSet = 0;
@@ -849,7 +824,7 @@ public class BSMethods {
     private static void testEmpty() {
         int failCount = 0;
 
-        BitSet b1 = new BitSet();
+        NaturalsBitSet b1 = new NaturalsBitSet();
         if (!b1.isEmpty())
             failCount++;
 
@@ -870,34 +845,34 @@ public class BSMethods {
     }
 
     private static void testEmpty2() {
-        {BitSet t = new BitSet(); t.set(100); t.clear(3,600); checkEmpty(t);}
-        checkEmpty(new BitSet(0));
-        checkEmpty(new BitSet(342));
-        BitSet s = new BitSet(0);
+        {NaturalsBitSet t = new NaturalsBitSet(); t.set(100); t.clear(3,600); checkEmpty(t);}
+        checkEmpty(new NaturalsBitSet(0));
+        checkEmpty(new NaturalsBitSet(342));
+        NaturalsBitSet s = new NaturalsBitSet(0);
         checkEmpty(s);
         s.clear(92);      checkEmpty(s);
         s.clear(127,127); checkEmpty(s);
         s.set(127,127);   checkEmpty(s);
         s.set(128,128);   checkEmpty(s);
-        BitSet empty = new BitSet();
-        {BitSet t = new BitSet(); t.and   (empty);     checkEmpty(t);}
-        {BitSet t = new BitSet(); t.or    (empty);     checkEmpty(t);}
-        {BitSet t = new BitSet(); t.xor   (empty);     checkEmpty(t);}
-        {BitSet t = new BitSet(); t.andNot(empty);     checkEmpty(t);}
-        {BitSet t = new BitSet(); t.and   (t);         checkEmpty(t);}
-        {BitSet t = new BitSet(); t.or    (t);         checkEmpty(t);}
-        {BitSet t = new BitSet(); t.xor   (t);         checkEmpty(t);}
-        {BitSet t = new BitSet(); t.andNot(t);         checkEmpty(t);}
-        {BitSet t = new BitSet(); t.and(makeSet(1));   checkEmpty(t);}
-        {BitSet t = new BitSet(); t.and(makeSet(127)); checkEmpty(t);}
-        {BitSet t = new BitSet(); t.and(makeSet(128)); checkEmpty(t);}
-        {BitSet t = new BitSet(); t.flip(7);t.flip(7); checkEmpty(t);}
-        {BitSet t = new BitSet(); checkEmpty(t.get(200,300));}
-        {BitSet t = makeSet(2,5); check(t.get(2,6).equals(makeSet(0,3)),"");}
+        NaturalsBitSet empty = new NaturalsBitSet();
+        {NaturalsBitSet t = new NaturalsBitSet(); t.and   (empty);     checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.or    (empty);     checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.xor   (empty);     checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.andNot(empty);     checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.and   (t);         checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.or    (t);         checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.xor   (t);         checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.andNot(t);         checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.and(makeSet(1));   checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.and(makeSet(127)); checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.and(makeSet(128)); checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); t.flip(7);t.flip(7); checkEmpty(t);}
+        {NaturalsBitSet t = new NaturalsBitSet(); checkEmpty(t.get(200,300));}
+        {NaturalsBitSet t = makeSet(2,5); check(t.get(2,6).equals(makeSet(0,3)),"");}
     }
 
     private static void testToString() {
-        check(new BitSet().toString().equals("{}"));
+        check(new NaturalsBitSet().toString().equals("{}"));
         check(makeSet(2,3,42,43,234).toString().equals("{2, 3, 42, 43, 234}"));
 
         final long MB = 1024*1024;
@@ -922,8 +897,8 @@ public class BSMethods {
         // Verify that (!b1)|(!b2) == !(b1&b2)
         for (int i=0; i<50; i++) {
             // Construct two fairly random bitsets
-            BitSet b1 = new BitSet();
-            BitSet b2 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
+            NaturalsBitSet b2 = new NaturalsBitSet();
 
             int numberOfSetBits = generator.nextInt(100) + 1;
             int highestPossibleSetBit = generator.nextInt(1000) + 1;
@@ -933,8 +908,8 @@ public class BSMethods {
                 b2.set(generator.nextInt(highestPossibleSetBit));
             }
 
-            BitSet b3 = (BitSet) b1.clone();
-            BitSet b4 = (BitSet) b2.clone();
+            NaturalsBitSet b3 = b1.clone();
+            NaturalsBitSet b4 = b2.clone();
 
             for (int x=0; x<highestPossibleSetBit; x++) {
                 b1.flip(x);
@@ -952,8 +927,8 @@ public class BSMethods {
         // Verify that (b1&(!b2)|(b2&(!b1) == b1^b2
         for (int i=0; i<50; i++) {
             // Construct two fairly random bitsets
-            BitSet b1 = new BitSet();
-            BitSet b2 = new BitSet();
+            NaturalsBitSet b1 = new NaturalsBitSet();
+            NaturalsBitSet b2 = new NaturalsBitSet();
 
             int numberOfSetBits = generator.nextInt(100) + 1;
             int highestPossibleSetBit = generator.nextInt(1000) + 1;
@@ -963,10 +938,10 @@ public class BSMethods {
                 b2.set(generator.nextInt(highestPossibleSetBit));
             }
 
-            BitSet b3 = (BitSet) b1.clone();
-            BitSet b4 = (BitSet) b2.clone();
-            BitSet b5 = (BitSet) b1.clone();
-            BitSet b6 = (BitSet) b2.clone();
+            NaturalsBitSet b3 = b1.clone();
+            NaturalsBitSet b4 = b2.clone();
+            NaturalsBitSet b5 = b1.clone();
+            NaturalsBitSet b6 = b2.clone();
 
             for (int x=0; x<highestPossibleSetBit; x++)
                 b2.flip(x);

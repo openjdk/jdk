@@ -34,13 +34,13 @@ public class NaturalsBitSet extends BitSet {
      * The number of bits set to {@code true} in this {@code BitSet}.
      */
     private transient int cardinality = 0;
-    
+
     /* use serialVersionUID from JDK 21 for interoperability */
     @java.io.Serial
     private static final long serialVersionUID = -212903409561554139L;
 
     /**
-     * Every public method must preserve these invariants.
+     * Every public method must preserve this invariant.
      */
     private void checkCardinality() {
         // avoid overflow if get(Integer.MAX_VALUE) == true
@@ -137,18 +137,22 @@ public class NaturalsBitSet extends BitSet {
     }
 
     /**
-     * Returns a new {@code NaturalsBitSet} containing all the bits in the given byte array.
+     * Returns a new {@code NaturalsBitSet} containing all the bits in the given
+     * byte array.
      *
-     * <p>More precisely,
-     * <br>{@code NaturalsBitSet.valueOf(bytes).get(n) == ((bytes[n/8] & (1<<(n%8))) != 0)}
-     * <br>for all {@code n <  8 * bytes.length}.
+     * <p>
+     * More precisely, <br>
+     * {@code NaturalsBitSet.valueOf(bytes).get(n) == ((bytes[n/8] & (1<<(n%8))) != 0)}
+     * <br>
+     * for all {@code n <  8 * bytes.length}.
      *
-     * <p>This method is equivalent to
+     * <p>
+     * This method is equivalent to
      * {@code NaturalsBitSet.valueOf(ByteBuffer.wrap(bytes))}.
      *
-     * @param bytes a byte array containing a little-endian
-     *        representation of a sequence of bits to be used as the
-     *        initial bits of the new bit set
+     * @param bytes a byte array containing a little-endian representation of a
+     *              sequence of bits to be used as the initial bits of the new bit
+     *              set
      * @return a {@code NaturalsBitSet} containing all the bits in the byte array
      */
     public static NaturalsBitSet valueOf(byte[] bytes) {
@@ -156,19 +160,22 @@ public class NaturalsBitSet extends BitSet {
     }
 
     /**
-     * Returns a new {@code NaturalsBitSet} containing all the bits in the given byte
-     * buffer between its position and limit.
+     * Returns a new {@code NaturalsBitSet} containing all the bits in the given
+     * byte buffer between its position and limit.
      *
-     * <p>More precisely,
-     * <br>{@code NaturalsBitSet.valueOf(bb).get(n) == ((bb.get(bb.position()+n/8) & (1<<(n%8))) != 0)}
-     * <br>for all {@code n < 8 * bb.remaining()}.
+     * <p>
+     * More precisely, <br>
+     * {@code NaturalsBitSet.valueOf(bb).get(n) == ((bb.get(bb.position()+n/8) & (1<<(n%8))) != 0)}
+     * <br>
+     * for all {@code n < 8 * bb.remaining()}.
      *
-     * <p>The byte buffer is not modified by this method, and no
-     * reference to the buffer is retained by the bit set.
+     * <p>
+     * The byte buffer is not modified by this method, and no reference to the
+     * buffer is retained by the bit set.
      *
-     * @param bb a byte buffer containing a little-endian representation
-     *        of a sequence of bits between its position and limit, to be
-     *        used as the initial bits of the new bit set
+     * @param bb a byte buffer containing a little-endian representation of a
+     *           sequence of bits between its position and limit, to be used as the
+     *           initial bits of the new bit set
      * @return a {@code NaturalsBitSet} containing all the bits in the buffer in the
      *         specified range
      */
@@ -181,22 +188,26 @@ public class NaturalsBitSet extends BitSet {
     }
 
     /**
-     * Returns the number of bits set to true, starting from startWord (inclusive)
-     * to endWord (exclusive)
+     * Returns the number of bits set to true, starting from startWordIndex
+     * (inclusive) to endWordIndex (exclusive). Word indices may be greater
+     * than {@code wordsInUse}.
      */
-    private int bitCount(int startWord, int endWord) {
+    private int bitCount(int startWordIndex, int endWordIndex) {
+        endWordIndex = Math.min(endWordIndex, wordsInUse);
         int sum = 0;
-        for (int i = startWord; i < endWord; i++)
-            sum += bitCount(i);
+
+        for (int i = startWordIndex; i < endWordIndex; i++)
+            sum += Long.bitCount(words[i]);
 
         return sum;
     }
 
     /**
-     * Returns the number of bits set to true at the specified word
+     * Returns the number of bits set to true at the specified word.
+     * {@code wordIndex} may be greater than or equal to {@code wordsInUse}.
      */
     private int bitCount(int wordIndex) {
-        return Long.bitCount(words[wordIndex]);
+        return wordIndex < wordsInUse ? Long.bitCount(words[wordIndex]) : 0;
     }
 
     /**
@@ -228,16 +239,22 @@ public class NaturalsBitSet extends BitSet {
         final int startWord = wordIndex(start);
         final int endWord = wordIndex(end - 1);
 
-        cardinality -= bitCount(startWord);
-        cardinality -= bitCount(endWord);
+        if (startWord == endWord) {
+            cardinality -= bitCount(startWord);
+            super.flip(start, end);
+            cardinality += bitCount(startWord);
+        } else {
+            cardinality -= bitCount(startWord);
+            cardinality -= bitCount(endWord);
 
-        super.flip(start, end);
+            super.flip(start, end);
 
-        cardinality += bitCount(startWord);
-        cardinality += bitCount(endWord);
+            cardinality += bitCount(startWord);
+            cardinality += bitCount(endWord);
 
-        for (int i = startWord + 1; i < endWord; i++)
-            cardinality += (bitCount(i) << 1) - BITS_PER_WORD;
+            for (int i = startWord + 1; i < endWord; i++)
+                cardinality += (bitCount(i) << 1) - BITS_PER_WORD;
+        }
 
         checkCardinality();
     }
@@ -273,16 +290,22 @@ public class NaturalsBitSet extends BitSet {
         final int startWord = wordIndex(start);
         final int endWord = wordIndex(end - 1);
 
-        cardinality -= bitCount(startWord);
-        cardinality -= bitCount(endWord);
+        if (startWord == endWord) {
+            cardinality -= bitCount(startWord);
+            super.set(start, end);
+            cardinality += bitCount(startWord);
+        } else {
+            cardinality -= bitCount(startWord);
+            cardinality -= bitCount(endWord);
 
-        for (int i = startWord + 1; i < endWord; i++)
-            cardinality += BITS_PER_WORD - bitCount(i);
+            for (int i = startWord + 1; i < endWord; i++)
+                cardinality += BITS_PER_WORD - bitCount(i);
 
-        super.set(start, end);
+            super.set(start, end);
 
-        cardinality += bitCount(startWord);
-        cardinality += bitCount(endWord);
+            cardinality += bitCount(startWord);
+            cardinality += bitCount(endWord);
+        }
 
         checkCardinality();
     }
@@ -318,16 +341,22 @@ public class NaturalsBitSet extends BitSet {
         final int startWord = wordIndex(start);
         final int endWord = wordIndex(end - 1);
 
-        cardinality -= bitCount(startWord);
-        cardinality -= bitCount(endWord);
+        if (startWord == endWord) {
+            cardinality -= bitCount(startWord);
+            super.clear(start, end);
+            cardinality += bitCount(startWord);
+        } else {
+            cardinality -= bitCount(startWord);
+            cardinality -= bitCount(endWord);
 
-        for (int i = startWord + 1; i < endWord; i++)
-            cardinality -= bitCount(i);
+            for (int i = startWord + 1; i < endWord; i++)
+                cardinality -= bitCount(i);
 
-        super.clear(start, end);
+            super.clear(start, end);
 
-        cardinality += bitCount(startWord);
-        cardinality += bitCount(endWord);
+            cardinality += bitCount(startWord);
+            cardinality += bitCount(endWord);
+        }
 
         checkCardinality();
     }
@@ -392,8 +421,15 @@ public class NaturalsBitSet extends BitSet {
     @Override
     public void or(BitSet set) {
         if (this != set) {
-            super.or(set);
-            computeCardinality();
+            if (set.wordsInUse <= wordsInUse / 2) { // An optimization
+                cardinality -= bitCount(0, set.wordsInUse);
+                super.or(set);
+                cardinality += bitCount(0, set.wordsInUse);
+            } else {
+                super.or(set);
+                computeCardinality();
+            }
+
             checkCardinality();
         }
     }
@@ -403,24 +439,34 @@ public class NaturalsBitSet extends BitSet {
         if (this == set) { // An optimization
             clear();
         } else {
-            super.xor(set);
-            computeCardinality();
+            if (set.wordsInUse <= wordsInUse / 2) { // An optimization
+                cardinality -= bitCount(0, set.wordsInUse);
+                super.xor(set);
+                cardinality += bitCount(0, set.wordsInUse);
+            } else {
+                super.xor(set);
+                computeCardinality();
+            }
+
             checkCardinality();
         }
     }
 
     @Override
     public void andNot(BitSet set) {
-        int wordsInCommon = Math.min(wordsInUse, set.wordsInUse);
-
-        if (wordsInCommon > wordsInUse / 2) { // An optimization
-            super.andNot(set);
-            computeCardinality();
-            checkCardinality();
+        if (this == set) { // An optimization
+            clear();
         } else {
-            cardinality -= bitCount(0, wordsInCommon);
-            super.andNot(set);
-            cardinality += bitCount(0, wordsInCommon);
+            if (set.wordsInUse <= wordsInUse / 2) { // An optimization
+                cardinality -= bitCount(0, set.wordsInUse);
+                super.andNot(set);
+                cardinality += bitCount(0, set.wordsInUse);
+            } else {
+                super.andNot(set);
+                computeCardinality();
+            }
+
+            checkCardinality();
         }
     }
 
@@ -449,17 +495,7 @@ public class NaturalsBitSet extends BitSet {
      */
     @java.io.Serial
     private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
-        ObjectInputStream.GetField fields = s.readFields();
-        words = (long[]) fields.get("bits", null);
-
-        // Assume maximum length then find real length
-        // because recalculateWordsInUse assumes maintenance
-        // or reduction in logical size
-        wordsInUse = words.length;
-        recalculateWordsInUse();
         computeCardinality();
-        sizeIsSticky = (words.length > 0 && words[words.length - 1] == 0L); // heuristic
-        checkInvariants();
         checkCardinality();
     }
 
