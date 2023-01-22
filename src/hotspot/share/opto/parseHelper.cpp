@@ -283,7 +283,7 @@ void Parse::do_new() {
 
   if (DoPartialEscapeAnalysis) {
     // obj is a CheckCastPP Node, aka. cooked oop.
-    block()->state().add_new_allocation(obj);
+    jvms()->alloc_state().add_new_allocation(obj);
   }
 }
 
@@ -365,26 +365,26 @@ void PEAState::add_new_allocation(Node* obj) {
 }
 
 PEAState& PEAState::operator=(const PEAState& init) {
-  assert(0 == _state.number_of_entries(), "invalid state");
-  assert(0 == _alias.number_of_entries(), "invalid state");
+  if (this != &init) {
+    assert(0 == _state.number_of_entries(), "invalid state");
+    assert(0 == _alias.number_of_entries(), "invalid state");
 
-  init._state.iterate([&](ObjID key, ObjectState* value) {
-    _state.put(key, value->clone());
-    return true;
-  });
+    init._state.iterate([&](ObjID key, ObjectState* value) {
+      _state.put(key, value->clone());
+      return true;
+    });
 
-  init._alias.iterate([&](Node* key, ObjID id) {
-    add_alias(id, key);
-    return true;
-  });
+    init._alias.iterate([&](Node* key, ObjID id) {
+      add_alias(id, key);
+      return true;
+    });
 
 #ifdef ASSERT
-  validate();
+    validate();
 #endif
-
+  }
   return *this;
 }
-
 
 void PEAState::remove_alias(ObjID id, Node* var) {
   assert(contains(id), "sanity check");

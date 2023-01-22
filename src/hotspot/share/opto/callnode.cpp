@@ -278,6 +278,7 @@ JVMState::JVMState(ciMethod* method, JVMState* caller) :
   _endoff = _monoff;
   _sp = 0;
 }
+
 JVMState::JVMState(int stack_size) :
   _method(NULL) {
   _bci = InvocationEntryBci;

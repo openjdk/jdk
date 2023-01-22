@@ -227,7 +227,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
 
   // if val is a valid object and the current path isn't dead
   if (DoPartialEscapeAnalysis && !stopped()) {
-    PEAState& state = block()->state();
+    PEAState& state = jvms()->alloc_state();
     AllocateNode* src_alloc;
     AllocateNode* dst_alloc;
 

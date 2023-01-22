@@ -360,14 +360,6 @@ class Parse : public GraphKit {
   bool          _wrote_fields;       // Did we write any field?
   Node*         _alloc_with_final;   // An allocation node with final field
 
-  //
-  // Merge PEAState of all normal exits. this is associated with _exits.map().
-  //
-  // In the future, we would like to add PEAState to JVMState or SafePointNode.
-  // It is because exceptions are not captured in the method are thrown to caller.
-  // We need to maintain a PEAState for each an exception. A block saves a PEAState now.
-  // It will be insufficient because one block may throw a few uncaught exceptions.
-  PEAState      _exit_state;
   // Variables which track Java semantics during bytecode parsing:
 
   Block*            _block;     // block currently getting parsed

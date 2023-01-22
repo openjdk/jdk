@@ -304,7 +304,7 @@ public:
   void      set_map_deep(SafePointNode *map);// reset map for all callers
   void      adapt_position(int delta);       // Adapt offsets in in-array after adding an edge.
   int       interpreter_frame_size() const;
-  PEAState&        alloc_state() { return _alloc_state; }
+  PEAState& alloc_state() { return _alloc_state; }
 
 #ifndef PRODUCT
   void      print_method_with_lineno(outputStream* st, bool show_name) const;

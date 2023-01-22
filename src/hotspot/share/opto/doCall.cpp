@@ -654,7 +654,7 @@ void Parse::do_call() {
     if (cg->is_inline()) {
       static_cast<InlineCallGenerator* >(cg)->set_caller_state(&block()->state());
     } else { // TODO: what about late inline?
-      PEAState& state = block()->state();
+      PEAState& state = jvms->alloc_state();
       // TODO: Should we query BCEA to make an enger inlining decision here?
       // Because callee require a concrete object pointer as an argument,
       // we have nothing to do but matertialize it.
