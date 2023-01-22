@@ -74,7 +74,8 @@ public final class StaticProperty {
         FILE_ENCODING = getProperty(props, "file.encoding");
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
-        jnuCharset = Charset.forName(SUN_JNU_ENCODING, Charset.defaultCharset());
+        var cs = Charset.forName(SUN_JNU_ENCODING, null);
+        jnuCharset = cs != null ? cs : Charset.defaultCharset();
         JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
     }
 
