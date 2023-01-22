@@ -129,7 +129,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * WARNING:This method assumes that the number of words actually in use is
      * less than or equal to the current value of wordsInUse!
      */
-    void recalculateWordsInUse() {
+    private void recalculateWordsInUse() {
         // Traverse the bitset until a used word is found
         int i;
         for (i = wordsInUse - 1; i >= 0 && words[i] == 0; i--);
@@ -375,7 +375,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
     /**
      * Checks that fromIndex ... toIndex is a valid range of bit indices.
      */
-    private static void checkRange(int fromIndex, int toIndex) {
+    static void checkRange(int fromIndex, int toIndex) {
         if (fromIndex < 0)
             throw new IndexOutOfBoundsException("fromIndex < 0: " + fromIndex);
         if (toIndex < 0)
@@ -426,26 +426,38 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
         int startWordIndex = wordIndex(fromIndex);
         int endWordIndex   = wordIndex(toIndex - 1);
-        expandTo(endWordIndex);
 
-        long firstWordMask = WORD_MASK << fromIndex;
-        long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            words[startWordIndex] ^= (firstWordMask & lastWordMask);
+            flipOneWord(fromIndex, toIndex, startWordIndex);
         } else {
             // Case 2: Multiple words
-            // Handle first word
-            words[startWordIndex] ^= firstWordMask;
-
-            // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++)
-                words[i] ^= WORD_MASK;
-
-            // Handle last word
-            words[endWordIndex] ^= lastWordMask;
+            flipMultipleWords(fromIndex, toIndex, startWordIndex, endWordIndex);
         }
+    }
+    
+    void flipOneWord(int fromIndex, int toIndex, int wordIndex) {
+        expandTo(wordIndex);
+        words[wordIndex] ^= (WORD_MASK << fromIndex) & (WORD_MASK >>> -toIndex);
+        recalculateWordsInUse();
+        checkInvariants();
+    }
+    
+    void flipMultipleWords(int fromIndex, int toIndex, int startWordIndex, int endWordIndex) {
+        expandTo(endWordIndex);
+        
+        long firstWordMask = WORD_MASK << fromIndex;
+        long lastWordMask  = WORD_MASK >>> -toIndex;
+        // Handle first word
+        words[startWordIndex] ^= firstWordMask;
 
+        // Handle intermediate words, if any
+        for (int i = startWordIndex+1; i < endWordIndex; i++)
+            words[i] ^= WORD_MASK;
+
+        // Handle last word
+        words[endWordIndex] ^= lastWordMask;
+        
         recalculateWordsInUse();
         checkInvariants();
     }
@@ -506,24 +518,35 @@ public class BitSet implements Cloneable, java.io.Serializable {
         int endWordIndex   = wordIndex(toIndex - 1);
         expandTo(endWordIndex);
 
-        long firstWordMask = WORD_MASK << fromIndex;
-        long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            words[startWordIndex] |= (firstWordMask & lastWordMask);
+            setOneWord(fromIndex, toIndex, startWordIndex);
         } else {
             // Case 2: Multiple words
-            // Handle first word
-            words[startWordIndex] |= firstWordMask;
-
-            // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++)
-                words[i] = WORD_MASK;
-
-            // Handle last word (restores invariants)
-            words[endWordIndex] |= lastWordMask;
+            setMultipleWords(fromIndex, toIndex, startWordIndex, endWordIndex);
         }
+    }
+    
+    void setOneWord(int fromIndex, int toIndex, int wordIndex) {
+        expandTo(wordIndex);
+        words[wordIndex] |= (WORD_MASK << fromIndex) & (WORD_MASK >>> -toIndex);
+        checkInvariants();
+    }
+    
+    void setMultipleWords(int fromIndex, int toIndex, int startWordIndex, int endWordIndex) {
+        expandTo(endWordIndex);
+        
+        long firstWordMask = WORD_MASK << fromIndex;
+        long lastWordMask  = WORD_MASK >>> -toIndex;
+        // Handle first word
+        words[startWordIndex] |= firstWordMask;
 
+        // Handle intermediate words, if any
+        for (int i = startWordIndex+1; i < endWordIndex; i++)
+            words[i] = WORD_MASK;
+
+        // Handle last word (restores invariants)
+        words[endWordIndex] |= lastWordMask;
         checkInvariants();
     }
 
@@ -594,24 +617,34 @@ public class BitSet implements Cloneable, java.io.Serializable {
             endWordIndex = wordsInUse - 1;
         }
 
-        long firstWordMask = WORD_MASK << fromIndex;
-        long lastWordMask  = WORD_MASK >>> -toIndex;
         if (startWordIndex == endWordIndex) {
             // Case 1: One word
-            words[startWordIndex] &= ~(firstWordMask & lastWordMask);
+            clearOneWord(fromIndex, toIndex, startWordIndex);
         } else {
             // Case 2: Multiple words
-            // Handle first word
-            words[startWordIndex] &= ~firstWordMask;
-
-            // Handle intermediate words, if any
-            for (int i = startWordIndex+1; i < endWordIndex; i++)
-                words[i] = 0;
-
-            // Handle last word
-            words[endWordIndex] &= ~lastWordMask;
+            clearMultipleWords(fromIndex, toIndex, startWordIndex, endWordIndex);
         }
+    }
+    
+    void clearOneWord(int fromIndex, int toIndex, int wordIndex) {
+        words[wordIndex] &= ~((WORD_MASK << fromIndex) & (WORD_MASK >>> -toIndex));
+        recalculateWordsInUse();
+        checkInvariants();
+    }
+    
+    void clearMultipleWords(int fromIndex, int toIndex, int startWordIndex, int endWordIndex) {
+        long firstWordMask = WORD_MASK << fromIndex;
+        long lastWordMask  = WORD_MASK >>> -toIndex;
+        // Handle first word
+        words[startWordIndex] &= ~firstWordMask;
 
+        // Handle intermediate words, if any
+        for (int i = startWordIndex+1; i < endWordIndex; i++)
+            words[i] = 0;
+
+        // Handle last word
+        words[endWordIndex] &= ~lastWordMask;
+        
         recalculateWordsInUse();
         checkInvariants();
     }
@@ -1137,7 +1170,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      * Calling this method may, but is not required to, affect the value
      * returned by a subsequent call to the {@link #size()} method.
      */
-    void trimToSize() {
+    private void trimToSize() {
         if (wordsInUse != words.length) {
             words = Arrays.copyOf(words, wordsInUse);
             checkInvariants();

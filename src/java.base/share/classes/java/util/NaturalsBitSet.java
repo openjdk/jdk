@@ -236,23 +236,28 @@ public class NaturalsBitSet extends BitSet {
      */
     @Override
     public void flip(int start, int end) {
-        final int startWord = wordIndex(start);
-        final int endWord = wordIndex(end - 1);
+        checkRange(start, end);
 
-        if (startWord == endWord) {
-            cardinality -= bitCount(startWord);
-            super.flip(start, end);
-            cardinality += bitCount(startWord);
+        if (start == end)
+            return;
+        
+        final int startWordIndex = wordIndex(start);
+        final int endWordIndex = wordIndex(end - 1);
+
+        if (startWordIndex == endWordIndex) {
+            cardinality -= bitCount(startWordIndex);
+            flipOneWord(start, end, startWordIndex);
+            cardinality += bitCount(startWordIndex);
         } else {
-            cardinality -= bitCount(startWord);
-            cardinality -= bitCount(endWord);
+            cardinality -= bitCount(startWordIndex);
+            cardinality -= bitCount(endWordIndex);
 
-            super.flip(start, end);
+            flipMultipleWords(start, end, startWordIndex, endWordIndex);
 
-            cardinality += bitCount(startWord);
-            cardinality += bitCount(endWord);
+            cardinality += bitCount(startWordIndex);
+            cardinality += bitCount(endWordIndex);
 
-            for (int i = startWord + 1; i < endWord; i++)
+            for (int i = startWordIndex + 1; i < endWordIndex; i++)
                 cardinality += (bitCount(i) << 1) - BITS_PER_WORD;
         }
 
@@ -287,24 +292,29 @@ public class NaturalsBitSet extends BitSet {
      */
     @Override
     public void set(int start, int end) {
-        final int startWord = wordIndex(start);
-        final int endWord = wordIndex(end - 1);
+        checkRange(start, end);
 
-        if (startWord == endWord) {
-            cardinality -= bitCount(startWord);
-            super.set(start, end);
-            cardinality += bitCount(startWord);
+        if (start == end)
+            return;
+        
+        final int startWordIndex = wordIndex(start);
+        final int endWordIndex = wordIndex(end - 1);
+
+        if (startWordIndex == endWordIndex) {
+            cardinality -= bitCount(startWordIndex);
+            setOneWord(start, end, startWordIndex);
+            cardinality += bitCount(startWordIndex);
         } else {
-            cardinality -= bitCount(startWord);
-            cardinality -= bitCount(endWord);
+            cardinality -= bitCount(startWordIndex);
+            cardinality -= bitCount(endWordIndex);
 
-            for (int i = startWord + 1; i < endWord; i++)
+            for (int i = startWordIndex + 1; i < endWordIndex; i++)
                 cardinality += BITS_PER_WORD - bitCount(i);
 
-            super.set(start, end);
+            setMultipleWords(start, end, startWordIndex, endWordIndex);
 
-            cardinality += bitCount(startWord);
-            cardinality += bitCount(endWord);
+            cardinality += bitCount(startWordIndex);
+            cardinality += bitCount(endWordIndex);
         }
 
         checkCardinality();
@@ -338,24 +348,40 @@ public class NaturalsBitSet extends BitSet {
      */
     @Override
     public void clear(int start, int end) {
-        final int startWord = wordIndex(start);
-        final int endWord = wordIndex(end - 1);
+        checkRange(start, end);
 
-        if (startWord == endWord) {
-            cardinality -= bitCount(startWord);
-            super.clear(start, end);
-            cardinality += bitCount(startWord);
+        if (start == end)
+            return;
+        
+        final int startWordIndex = wordIndex(start);
+        if (startWordIndex >= wordsInUse)
+            return;
+
+        final int endWordIndex;
+        final int len = length();
+        
+        if (end < len) {
+            endWordIndex = wordIndex(end - 1);
         } else {
-            cardinality -= bitCount(startWord);
-            cardinality -= bitCount(endWord);
+            end = len;
+            endWordIndex = wordsInUse - 1;
+        }
 
-            for (int i = startWord + 1; i < endWord; i++)
+        if (startWordIndex == endWordIndex) {
+            cardinality -= bitCount(startWordIndex);
+            clearOneWord(start, end, startWordIndex);
+            cardinality += bitCount(startWordIndex);
+        } else {
+            cardinality -= bitCount(startWordIndex);
+            cardinality -= bitCount(endWordIndex);
+
+            for (int i = startWordIndex + 1; i < endWordIndex; i++)
                 cardinality -= bitCount(i);
 
-            super.clear(start, end);
+            clearMultipleWords(start, end, startWordIndex, endWordIndex);
 
-            cardinality += bitCount(startWord);
-            cardinality += bitCount(endWord);
+            cardinality += bitCount(startWordIndex);
+            cardinality += bitCount(endWordIndex);
         }
 
         checkCardinality();
