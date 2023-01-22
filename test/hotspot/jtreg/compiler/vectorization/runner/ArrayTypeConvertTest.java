@@ -176,7 +176,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert Subword-I to F/D ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_S2X, ">0"})
     public float[] convertShortToFloat() {
         float[] res = new float[SIZE];
@@ -263,7 +263,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Convert F/D to Subword-I ----------------
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public short[] convertFloatToShort() {
         short[] res = new short[SIZE];
@@ -274,7 +274,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
     public char[] convertFloatToChar() {
         char[] res = new char[SIZE];
