@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package sun.security.provider.certpath.ldap;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.*;
-import javax.naming.CompositeName;
 import javax.naming.Context;
 import javax.naming.InvalidNameException;
 import javax.naming.NamingEnumeration;
@@ -44,6 +43,7 @@ import java.security.cert.*;
 import javax.naming.CommunicationException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
+import javax.naming.ldap.LdapName;
 import javax.security.auth.x500.X500Principal;
 
 import com.sun.jndi.ldap.LdapReferralException;
@@ -218,27 +218,17 @@ final class LDAPCertStoreImpl {
      */
     private class LDAPRequest {
 
-        private final String name;
+        private final LdapName name;
         private Map<String, byte[][]> valueMap;
         private final List<String> requestedAttributes;
 
         LDAPRequest(String name) throws CertStoreException {
-            this.name = checkName(name);
-            requestedAttributes = new ArrayList<>(5);
-        }
-
-        private String checkName(String name) throws CertStoreException {
-            if (name == null) {
-                throw new CertStoreException("Name absent");
-            }
             try {
-                if (new CompositeName(name).size() > 1) {
-                    throw new CertStoreException("Invalid name: " + name);
-                }
+                this.name = new LdapName(name);
             } catch (InvalidNameException ine) {
                 throw new CertStoreException("Invalid name: " + name, ine);
             }
-            return name;
+            requestedAttributes = new ArrayList<>(5);
         }
 
         void addRequestedAttribute(String attrId) {
@@ -317,11 +307,6 @@ final class LDAPCertStoreImpl {
                         if (!newUri.getScheme().equalsIgnoreCase("ldap")) {
                             throw new IllegalArgumentException("Not LDAP");
                         }
-                        String newDn = newUri.getPath();
-                        if (newDn != null && newDn.charAt(0) == '/') {
-                            newDn = newDn.substring(1);
-                        }
-                        checkName(newDn);
                     } catch (Exception e) {
                         throw new NamingException("Cannot follow referral to "
                                 + lre.getReferralInfo());
