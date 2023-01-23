@@ -76,12 +76,18 @@ public class ConstantPoolTestsHelper {
         }
 
         public int getCPCacheIndex(int cpi) {
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
+                for (int indy_index = 0; indy_index < WB.getIndyInfoLength(this.klass); indy_index++) {
+                    if (WB.getIndyCPIndex(this.klass, indy_index) == cpi) {
+                        return ~indy_index;
+                    }
+                }
+            }
             int cacheLength = WB.getConstantPoolCacheLength(this.klass);
             int indexTag = WB.getConstantPoolCacheIndexTag();
             for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
                 if (WB.remapInstructionOperandFromCPCache(this.klass, cpci) == cpi) {
                     if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
-                        System.out.println(cpci);
                         return WB.encodeConstantPoolIndyIndex(cpci) + indexTag;
                     }
                     return cpci;

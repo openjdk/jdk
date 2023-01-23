@@ -1864,6 +1864,24 @@ WB_ENTRY(jint, WB_ConstantPoolEncodeIndyIndex(JNIEnv* env, jobject wb, jint inde
   return ConstantPool::encode_invokedynamic_index(index);
 WB_END
 
+WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->resolved_indy_info_length();
+WB_END
+
+WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
+  InstanceKlass* ik = InstanceKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  ConstantPool* cp = ik->constants();
+  if (cp->cache() == NULL) {
+      return -1;
+  }
+  return cp->resolved_indy_info(index)->cpool_index();
+WB_END
+
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))
   VM_ClearICs clear_ics(preserve_static_stubs == JNI_TRUE);
   VMThread::execute(&clear_ics);
@@ -2691,6 +2709,8 @@ static JNINativeMethod methods[] = {
       CC"(Ljava/lang/Class;I)I",                      (void*)&WB_ConstantPoolRemapInstructionOperandFromCache},
   {CC"encodeConstantPoolIndyIndex0",
       CC"(I)I",                      (void*)&WB_ConstantPoolEncodeIndyIndex},
+  {CC"getIndyInfoLength0", CC"(Ljava/lang/Class;)I",       (void*)&WB_getIndyInfoLength},
+  {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I",       (void*)&WB_getIndyCPIndex},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},

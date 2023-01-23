@@ -2344,7 +2344,64 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   // Compare the method to zero
   __ testptr(method, method);
+  __ bcc(Assembler::notZero, resolved);
+
+  // Call to the interpreter runtime to resolve invokedynamic
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ mov(method, code); // this is essentially Bytecodes::_invokedynamic
+  __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
+  // Update registers with resolved info
+  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
+  __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
+  __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  __ mov(index, sizeof(ResolvedIndyInfo));
+  __ mull(index, index, index);
+  __ ldr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
+  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
+
+#ifdef ASSERT
+  __ testptr(method, method);
   __ jcc(Assembler::notZero, resolved);
+  __ stop("Should be resolved by now");
+#endif // ASSERT
+  __ bind(resolved);
+
+  Label L_no_push;
+  // Check if there is an appendix
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::has_appendix_offset())));
+  __ testl(index, index);
+  __ jcc(Assembler::zero, L_no_push);
+
+  // Get appendix
+  __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::resolved_references_index_offset())));
+  // Push the appendix as a trailing parameter.
+  // This must be done before we get the receiver,
+  // since the parameter_size includes it.
+  __ push(rbx);
+  __ mov(rbx, index);
+  __ load_resolved_reference_at_index(appendix, rbx);
+  __ verify_oop(appendix);
+  __ pop(rbx);
+  __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
+  __ bind(L_no_push);
+
+  // compute return type
+  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::result_type_offset())));
+  // load return address
+  {
+    const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
+    ExternalAddress table(table_addr);
+#ifdef _LP64
+    __ lea(rscratch1, table);
+    __ movptr(index, Address(rscratch1, index, Address::times_ptr));
+#else
+    __ movptr(index, ArrayAddress(table, Address(noreg, index, Address::times_ptr)));
+#endif // _LP64
+  }
+
+  // push return address
+  __ push(index);
 
   Bytecodes::Code code = bytecode();
 }

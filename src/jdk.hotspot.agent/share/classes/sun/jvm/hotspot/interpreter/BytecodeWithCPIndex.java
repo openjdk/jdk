@@ -57,7 +57,6 @@ public abstract class BytecodeWithCPIndex extends Bytecode {
      } else if (code() == Bytecodes._invokedynamic) {
       return cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
      } else {
-      System.out.println("CPCACHE ENTRY " + cpCacheIndex);
       return cpCache.getEntryAt((int) (0xFFFF & cpCacheIndex)).getConstantPoolIndex();
      }
   }

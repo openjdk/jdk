@@ -932,9 +932,12 @@ class ConstantPool : public Metadata {
 
   const char* internal_name() const { return "{constant pool}"; }
 
-    // ResolvedIndyInfo getters
+  // ResolvedIndyInfo getters
   ResolvedIndyInfo* resolved_indy_info(int index) {
     return cache()->resolved_indy_info(index);
+  }
+  int resolved_indy_info_length() {
+    return cache()->resolved_indy_info_length();
   }
   oop resolved_reference_from_indy(int index) {
     return resolved_references()->obj_at(cache()->resolved_indy_info(index)->resolved_references_index());
