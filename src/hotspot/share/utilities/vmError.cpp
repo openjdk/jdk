@@ -458,14 +458,20 @@ static void print_oom_reasons(outputStream* st) {
 }
 
 static void print_stack_location(outputStream* st, void* context, int& continuation) {
+  int i = continuation;
+  // Update continuation with next index before fetching frame
+  continuation = i + 1;
   const frame fr = os::fetch_frame_from_context(context);
-  for (int i = continuation; i < 8; ++i) {
+  while (i < 8) {
+    // Update continuation with next index before printing location
+    continuation = i + 1;
     // decode stack contents if possible
     const intptr_t *slot = fr.sp() + i;
     if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
       st->print("stack at sp + %d slots: ", i);
       os::print_location(st, *(slot));
     }
+    ++i;
   }
 }
 
