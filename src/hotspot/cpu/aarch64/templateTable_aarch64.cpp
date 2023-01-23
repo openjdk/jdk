@@ -2343,8 +2343,10 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
   // Compare the method to zero
-  __ testptr(method, method);
-  __ bcc(Assembler::notZero, resolved);
+  __ subs(method, method);
+  __ br(Assembler::EQ, resolved);
+
+  Bytecodes::Code code = bytecode();
 
   // Call to the interpreter runtime to resolve invokedynamic
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
@@ -2370,8 +2372,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::has_appendix_offset())));
-  __ testl(index, index);
-  __ jcc(Assembler::zero, L_no_push);
+  __ subs(index, index);
+  __ jcc(Assembler::EQ, L_no_push);
 
   // Get appendix
   __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::resolved_references_index_offset())));
@@ -2389,21 +2391,13 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // compute return type
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::result_type_offset())));
   // load return address
+  // Return address is loaded into link register(lr) and not pushed to the stack
+  // like x86
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
-    ExternalAddress table(table_addr);
-#ifdef _LP64
-    __ lea(rscratch1, table);
-    __ movptr(index, Address(rscratch1, index, Address::times_ptr));
-#else
-    __ movptr(index, ArrayAddress(table, Address(noreg, index, Address::times_ptr)));
-#endif // _LP64
+    __ mov(rscratch1, table_addr);
+    __ ldr(lr, Address(rscratch1, index, Address::lsl(3)));
   }
-
-  // push return address
-  __ push(index);
-
-  Bytecodes::Code code = bytecode();
 }
 
 void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
