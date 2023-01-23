@@ -2621,7 +2621,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: ("unpack" frame, deoptee, caller_of_deoptee, ...).
 
-  {
   const Register unroll_block_reg  = Z_tmp_2;
 
   // we need to set `last_Java_frame' because `fetch_unroll_info' will
@@ -2679,7 +2678,6 @@ void SharedRuntime::generate_deopt_blob() {
 
   // stack: (skeletal interpreter frame, ..., optional skeletal
   // interpreter frame, caller of deoptee, ...).
-  }
 
   // push an "unpack" frame taking care of float / int return values.
   __ push_frame(RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers));
@@ -2692,7 +2690,8 @@ void SharedRuntime::generate_deopt_blob() {
   __ z_std(Z_FRET, offset_of(frame::z_abi_160_spill, spill[1]), Z_SP);
 
   // let the unpacker layout information in the skeletal frames just allocated.
-  __ get_PC(Z_RET);
+  offs = __ offset();
+  __ get_PC(Z_RET, offs);
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_RET);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::unpack_frames),
                   Z_thread/*thread*/, exec_mode_reg/*exec_mode*/);
@@ -2755,7 +2754,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // set the "unpack" frame as last_Java_frame.
   // `Deoptimization::uncommon_trap' expects it and considers its
   // sender frame as the deoptee frame.
-  __ get_PC(Z_R1_scratch);
+  int offs = __ offset();
+  __ get_PC(Z_R1_scratch, offs);
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1_scratch);
 
   __ z_lgr(klass_index_reg, Z_ARG1);  // passed implicitly as ARG2
@@ -2820,7 +2820,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // skeletal interpreter frame, (resized) caller of deoptee, ...).
 
   // set the "unpack" frame as last_Java_frame
-  __ get_PC(Z_R1_scratch);
+  offs = __ offset();
+  __ get_PC(Z_R1_scratch, offs);
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1_scratch);
 
   // indicate it is the uncommon trap case
