@@ -5069,7 +5069,7 @@ void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(AllocateA
     set_jvms(sfpt->jvms());
     _reexecute_sp = jvms()->sp();
 
-    create_new_uncommon_traps_with_alloc_state(saved_jvms_before_guards);
+    replace_unrelated_uncommon_traps_with_alloc_state(saved_jvms_before_guards);
 
     // Restore state
     set_jvms(saved_jvms);
@@ -5079,7 +5079,7 @@ void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(AllocateA
 
 // Replace the unrelated uncommon traps with new uncommon trap nodes by reusing the action and reason. The new uncommon
 // traps will have the state of the array allocation. Let the old uncommon trap nodes die.
-void LibraryCallKit::create_new_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards) {
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards) {
   Node* if_proj = saved_jvms_before_guards->map()->control(); // Start the search right before the newly emitted guards
   while (if_proj->is_IfProj()) {
     CallStaticJavaNode* uncommon_trap = get_uncommon_trap_from_success_proj(if_proj);
@@ -5096,13 +5096,11 @@ void LibraryCallKit::create_new_uncommon_traps_with_alloc_state(JVMState* saved_
 void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call) {
   const int trap_request = uncommon_trap_call->uncommon_trap_request();
   assert(trap_request != 0, "no valid UCT trap request");
-  {
-    PreserveJVMState pjvms(this);
-    set_control(uncommon_trap_call->in(0));
-    uncommon_trap(Deoptimization::trap_request_reason(trap_request),
-                  Deoptimization::trap_request_action(trap_request));
-    assert(stopped(), "Should be stopped");
-  }
+  PreserveJVMState pjvms(this);
+  set_control(uncommon_trap_call->in(0));
+  uncommon_trap(Deoptimization::trap_request_reason(trap_request),
+                Deoptimization::trap_request_action(trap_request));
+  assert(stopped(), "Should be stopped");
   _gvn.hash_delete(uncommon_trap_call);
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }

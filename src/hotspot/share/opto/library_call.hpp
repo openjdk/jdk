@@ -269,7 +269,7 @@ class LibraryCallKit : public GraphKit {
   static CallStaticJavaNode* get_uncommon_trap_from_success_proj(Node* node);
   SafePointNode* create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const;
   void replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc, JVMState* saved_jvms_before_guards);
-  void create_new_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards);
+  void replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards);
   void create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
