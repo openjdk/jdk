@@ -1871,7 +1871,7 @@ public final class ObjectStreamClass implements Serializable {
      * Class for computing and caching field/constructor/method signatures
      * during serialVersionUID calculation.
      */
-    private static class MemberSignature {
+    private static final class MemberSignature {
 
         public final Member member;
         public final String name;
@@ -1902,7 +1902,7 @@ public final class ObjectStreamClass implements Serializable {
      * Class for setting and retrieving serializable field values in batch.
      */
     // REMIND: dynamically generate these?
-    private static class FieldReflector {
+    private static final class FieldReflector {
 
         /** handle for performing unsafe operations */
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();

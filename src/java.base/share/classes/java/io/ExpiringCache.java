@@ -23,25 +23,23 @@
  * questions.
  */
 
-/*
- */
-
 package java.io;
 
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
-class ExpiringCache {
+final class ExpiringCache {
 
     private static final int QUERY_OVERFLOW = 300;
     private static final int MAX_ENTRIES = 200;
     private final long millisUntilExpiration;
     private final Map<String,Entry> map;
+
     // Clear out old entries every few queries
     private int queryCount;
 
-    static class Entry {
+    static final class Entry {
         private long timestamp;
         private String val;
 
