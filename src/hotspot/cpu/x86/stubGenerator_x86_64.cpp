@@ -2658,7 +2658,12 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_tables_addr()));
     __ vpbroadcastq(xmm4, Address(r13, 0), Assembler::AVX_256bit);
     __ vmovdqu(xmm11, Address(r13, 0x28));
-    __ vpbroadcastb(xmm10, Address(r13, 0), Assembler::AVX_256bit);
+
+    // The 0x2f2f..2f vector is used both as a table and a mask.  For now, just initialize
+    // using movq instead of a broadcast (slight performance increase).
+    // Will likely be changed back when URL is accelerated.
+    // __ vpbroadcastb(xmm10, Address(r13, 0), Assembler::AVX_256bit);
+    __ vmovdqu(xmm10, xmm4);
     __ vmovdqu(xmm9, Address(r13, 0x48));
     __ vmovdqu(xmm8, Address(r13, 0x68));
     __ vmovdqu(xmm7, Address(r13, 0x88));
