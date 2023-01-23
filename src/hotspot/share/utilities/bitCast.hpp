@@ -101,11 +101,11 @@ inline constexpr To bit_cast(const From& from) {
 #endif
 }
 
-// To is a pointer and From is uintptr_t/intptr_t.
+// To is a pointer and From is equivalent to uintptr_t/intptr_t.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_pointer<To>::value &&
-                    (std::is_same<From, uintptr_t>::value || std::is_same<From, intptr_t>::value))>
+                    std::is_integral<From>::value)>
 inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
@@ -114,11 +114,11 @@ inline To bit_cast(const From& from) {
 #endif
 }
 
-// From is a pointer and To is uintptr_t/intptr_t.
+// From is a pointer and To is equivalent to uintptr_t/intptr_t.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
-                    std::is_pointer<From>::value &&
-                    (std::is_same<To, uintptr_t>::value || std::is_same<To, intptr_t>::value))>
+                    std::is_integral<To>::value &&
+                    std::is_pointer<From>::value)>
 inline To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
