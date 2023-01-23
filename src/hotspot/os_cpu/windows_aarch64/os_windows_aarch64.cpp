@@ -224,50 +224,52 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, int n, const void *context) {
-  if (context == NULL || n < 0 || n >= printable_register_count()) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* X0-X28 */;
+  int n = continuation;
+  if (context == NULL || n < 0 || n >= register_count) {
     return;
   }
 
   const CONTEXT* uc = (const CONTEXT*)context;
-
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
 # define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->id);
-  switch (n) {
-    CASE_PRINT_REG( 0, " X0=", X0); break;
-    CASE_PRINT_REG( 1, " X1=", X1); break;
-    CASE_PRINT_REG( 2, " X2=", X2); break;
-    CASE_PRINT_REG( 3, " X3=", X3); break;
-    CASE_PRINT_REG( 4, " X4=", X4); break;
-    CASE_PRINT_REG( 5, " X5=", X5); break;
-    CASE_PRINT_REG( 6, " X6=", X6); break;
-    CASE_PRINT_REG( 7, " X7=", X7); break;
-    CASE_PRINT_REG( 8, " X8=", X8); break;
-    CASE_PRINT_REG( 9, " X9=", X9); break;
-    CASE_PRINT_REG(10, "X10=", X10); break;
-    CASE_PRINT_REG(11, "X11=", X11); break;
-    CASE_PRINT_REG(12, "X12=", X12); break;
-    CASE_PRINT_REG(13, "X13=", X13); break;
-    CASE_PRINT_REG(14, "X14=", X14); break;
-    CASE_PRINT_REG(15, "X15=", X15); break;
-    CASE_PRINT_REG(16, "X16=", X16); break;
-    CASE_PRINT_REG(17, "X17=", X17); break;
-    CASE_PRINT_REG(18, "X18=", X18); break;
-    CASE_PRINT_REG(19, "X19=", X19); break;
-    CASE_PRINT_REG(20, "X20=", X20); break;
-    CASE_PRINT_REG(21, "X21=", X21); break;
-    CASE_PRINT_REG(22, "X22=", X22); break;
-    CASE_PRINT_REG(23, "X23=", X23); break;
-    CASE_PRINT_REG(24, "X24=", X24); break;
-    CASE_PRINT_REG(25, "X25=", X25); break;
-    CASE_PRINT_REG(26, "X26=", X26); break;
-    CASE_PRINT_REG(27, "X27=", X27); break;
-    CASE_PRINT_REG(28, "X28=", X28); break;
-  }
+    switch (n) {
+      CASE_PRINT_REG( 0, " X0=", X0); break;
+      CASE_PRINT_REG( 1, " X1=", X1); break;
+      CASE_PRINT_REG( 2, " X2=", X2); break;
+      CASE_PRINT_REG( 3, " X3=", X3); break;
+      CASE_PRINT_REG( 4, " X4=", X4); break;
+      CASE_PRINT_REG( 5, " X5=", X5); break;
+      CASE_PRINT_REG( 6, " X6=", X6); break;
+      CASE_PRINT_REG( 7, " X7=", X7); break;
+      CASE_PRINT_REG( 8, " X8=", X8); break;
+      CASE_PRINT_REG( 9, " X9=", X9); break;
+      CASE_PRINT_REG(10, "X10=", X10); break;
+      CASE_PRINT_REG(11, "X11=", X11); break;
+      CASE_PRINT_REG(12, "X12=", X12); break;
+      CASE_PRINT_REG(13, "X13=", X13); break;
+      CASE_PRINT_REG(14, "X14=", X14); break;
+      CASE_PRINT_REG(15, "X15=", X15); break;
+      CASE_PRINT_REG(16, "X16=", X16); break;
+      CASE_PRINT_REG(17, "X17=", X17); break;
+      CASE_PRINT_REG(18, "X18=", X18); break;
+      CASE_PRINT_REG(19, "X19=", X19); break;
+      CASE_PRINT_REG(20, "X20=", X20); break;
+      CASE_PRINT_REG(21, "X21=", X21); break;
+      CASE_PRINT_REG(22, "X22=", X22); break;
+      CASE_PRINT_REG(23, "X23=", X23); break;
+      CASE_PRINT_REG(24, "X24=", X24); break;
+      CASE_PRINT_REG(25, "X25=", X25); break;
+      CASE_PRINT_REG(26, "X26=", X26); break;
+      CASE_PRINT_REG(27, "X27=", X27); break;
+      CASE_PRINT_REG(28, "X28=", X28); break;
+    }
 # undef CASE_PRINT_REG
-}
-
-int os::printable_register_count() {
-  return 29 /* X0-X28 */;
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

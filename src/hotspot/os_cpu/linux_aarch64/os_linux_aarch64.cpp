@@ -359,19 +359,21 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, int n, const void *context) {
-  if (context == NULL || n < 0 || n >= printable_register_count()) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 32 /* r0-r31 */;
+  int n = continuation;
+  if (context == NULL || n < 0 || n >= register_count) {
     return;
   }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print("R%-2d=", n);
-  print_location(st, uc->uc_mcontext.regs[n]);
-}
-
-int os::printable_register_count() {
-  return 32 /* r0-r31 */;
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    st->print("R%-2d=", n);
+    print_location(st, uc->uc_mcontext.regs[n]);
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

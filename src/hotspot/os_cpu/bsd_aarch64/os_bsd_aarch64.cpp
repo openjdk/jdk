@@ -481,30 +481,33 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, int n, const void *context) {
-  if (context == NULL || n < 0 || n >= printable_register_count()) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
+  int n = continuation;
+  if (context == NULL || n < 0 || n >= register_count) {
     return;
   }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-  switch (n) {
-  case 29:
-    st->print(" fp="); print_location(st, uc->context_fp);
-    break;
-  case 30:
-    st->print(" lr="); print_location(st, uc->context_lr);
-    break;
-  case 31:
-    st->print(" sp="); print_location(st, uc->context_sp);
-    break;
-  default:
-    st->print("x%-2d=",n); print_location(st, uc->context_x[n]);
-    break;
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    switch (n) {
+    case 29:
+      st->print(" fp="); print_location(st, uc->context_fp);
+      break;
+    case 30:
+      st->print(" lr="); print_location(st, uc->context_lr);
+      break;
+    case 31:
+      st->print(" sp="); print_location(st, uc->context_sp);
+      break;
+    default:
+      st->print("x%-2d=",n); print_location(st, uc->context_x[n]);
+      break;
+    }
+    ++n;
   }
-}
-
-int os::printable_register_count() {
-  return 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
 }
 
 void os::setup_fpu() {

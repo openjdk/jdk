@@ -453,23 +453,25 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, int n, const void *context) {
-  if (context == NULL || n < 0 || n >= printable_register_count()) {
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 16 /* r0-r15 */ + 1 /* pc */;
+  int n = continuation;
+  if (context == NULL || n < 0 || n >= register_count) {
     return;
   }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  if (n == 0) {
-    st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
-  } else {
-    st->print("r%-2d=", n-1);
-    print_location(st, uc->uc_mcontext.gregs[n-1]);
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    if (n == 0) {
+      st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
+    } else {
+      st->print("r%-2d=", n-1);
+      print_location(st, uc->uc_mcontext.gregs[n-1]);
+    }
+    ++n;
   }
-}
-
-int os::printable_register_count() {
-  return 16 /* r0-r15 */ + 1 /* pc */;
 }
 
 #ifndef PRODUCT

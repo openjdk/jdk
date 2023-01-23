@@ -60,8 +60,9 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmError.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -76,12 +77,12 @@
 bool              VMError::coredump_status;
 char              VMError::coredump_message[O_BUFLEN];
 int               VMError::_current_step;
-int               VMError::_reentrant_iteration_step = -1;
 const char*       VMError::_current_step_info;
 volatile jlong    VMError::_reporting_start_time = -1;
 volatile bool     VMError::_reporting_did_timeout = false;
 volatile jlong    VMError::_step_start_time = -1;
 volatile bool     VMError::_step_did_timeout = false;
+volatile bool     VMError::_step_did_succeed = false;
 volatile intptr_t VMError::_first_error_tid = -1;
 int               VMError::_id;
 const char*       VMError::_message;
@@ -94,13 +95,7 @@ bool              VMError::_print_native_stack_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
-const size_t      VMError::_reentrant_reentries_stack_headroom = 64 * K;
-const size_t      VMError::_global_reentrant_reentries_limit = 8;
-size_t            VMError::_global_reentrant_reentries = 0;
-const size_t      VMError::_default_step_reentrant_reentries_limit = 4;
-size_t            VMError::_step_reentrant_reentries_limit =
-                           _default_step_reentrant_reentries_limit;
-size_t            VMError::_step_reentrant_reentries = 0;
+const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -192,30 +187,9 @@ static bool check_stack_headroom(Thread* thread,
           static_cast<size_t>(stack_headroom) < headroom);
 }
 
-#ifdef ASSERT
-void VMError::reenterant_test_hit_stack_limit() {
-  if (!check_stack_headroom(_thread, _reentrant_reentries_stack_headroom)) {
-    char stack_buffer[_reentrant_reentries_stack_headroom / 2];
-    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
-    reenterant_test_hit_stack_limit();
-  }
-  controlled_crash(14);
-}
-#endif // ASSERT
-
-bool VMError::should_stop_reenterant_entry(const char* &reason) {
-  if (check_stack_headroom(_thread, _reentrant_reentries_stack_headroom)) {
+bool VMError::should_stop_reattempt_step(const char* &reason) {
+  if (check_stack_headroom(_thread, _reattempt_required_stack_headroom)) {
     reason = "Stack headroom limit reached";
-    return true;
-  }
-
-  if (_global_reentrant_reentries >= _global_reentrant_reentries_limit) {
-    reason = "Global reentry limit reached";
-    return true;
-  }
-
-  if (_step_reentrant_reentries >= _step_reentrant_reentries_limit) {
-    reason = "Step-wise reentry limit reached";
     return true;
   }
 
@@ -483,6 +457,18 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("# This output file may be truncated or incomplete.");
 }
 
+static void print_stack_location(outputStream* st, void* context, int& continuation) {
+  const frame fr = os::fetch_frame_from_context(context);
+  for (int i = continuation; i < 8; ++i) {
+    // decode stack contents if possible
+    const intptr_t *slot = fr.sp() + continuation;
+    if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
+      st->print("stack at sp + %d slots: ", i);
+      os::print_location(st, *(slot));
+    }
+  }
+}
+
 static void report_vm_version(outputStream* st, char* buf, int buflen) {
    // VM version
    st->print_cr("#");
@@ -587,24 +573,22 @@ void VMError::clear_step_start_time() {
 // thread can report error, so large buffers are statically allocated in data
 // segment.
 void VMError::report(outputStream* st, bool _verbose) {
-
-// Used for REENTRANT_STEP bookkeeping
-int reentry_step = _current_step;
-bool should_break_on_reenterant_entry = false;
-const char* break_on_reenterant_entry_reason = "";
-# define REENTRANT_ITERATION_STEP (_reentrant_iteration_step-1)
-# define REENTRANT_STEP_REENTRY_LIMIT(limit)               \
-  _step_reentrant_reentries_limit = (limit)
+  // Used by reattempt step logic
+  static int continuation = 0;
+  const char* stop_reattempt_reason = nullptr;
 # define BEGIN                                             \
   if (_current_step == 0) {                                \
+    _step_did_succeed = false;                             \
     _current_step = __LINE__;                              \
     {
       // [Begin logic]
 
-# define STEP_IF(s,cond)                                   \
+# define STEP_IF(s, cond)                                  \
     }                                                      \
+    _step_did_succeed = true;                              \
   }                                                        \
   if (_current_step < __LINE__) {                          \
+    _step_did_succeed = false;                             \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
     record_step_start_time();                              \
@@ -614,64 +598,40 @@ const char* break_on_reenterant_entry_reason = "";
 
 # define STEP(s) STEP_IF(s, true)
 
-# define REENTRANT_STEP_IF(s,cond)                         \
+# define REATTEMPT_STEP_IF_IMPL(s, cond, with_new_timeout) \
     }                                                      \
+    _step_did_succeed = true;                              \
   }                                                        \
-  if (_current_step < __LINE__) {                          \
-    reentry_step = _current_step;                          \
+  if (_current_step < __LINE__ && !_step_did_succeed) {    \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
-    if (_reentrant_iteration_step == -1) {                 \
+    if ((with_new_timeout)) {                              \
       record_step_start_time();                            \
       _step_did_timeout = false;                           \
     }                                                      \
-    if (cond) {                                            \
-      _current_step = reentry_step;                        \
-      should_break_on_reenterant_entry = false;            \
-      break_on_reenterant_entry_reason = "";               \
-      if (_reentrant_iteration_step++ == -1) {             \
-        _step_reentrant_reentries_limit =                  \
-            _default_step_reentrant_reentries_limit;
-        // [Renterant step pre loop logic]
+    const bool cond_value = (cond);                        \
+    if (cond_value && should_stop_reattempt_step(          \
+                          stop_reattempt_reason)) {        \
+      st->print_cr("[stop reattempt (%s) reason: %s]",     \
+                   _current_step_info,                     \
+                   stop_reattempt_reason);                 \
+    } else if (cond_value) {
+      // [Continue Step logic]
 
-# define REENTRANT_LOOP_START(limit)                       \
-        _reentrant_iteration_step++;                       \
-      } else {                                             \
-        _global_reentrant_reentries++;                     \
-        _step_reentrant_reentries++;                       \
-        should_break_on_reenterant_entry =                 \
-            should_stop_reenterant_entry(                  \
-                break_on_reenterant_entry_reason);         \
-      }                                                    \
-      while (REENTRANT_ITERATION_STEP  < (limit)) {        \
-        if (should_break_on_reenterant_entry) {            \
-          st->print_cr("[break (%s, iteration step #%d)"   \
-                       " reason: %s]", _current_step_info, \
-                       REENTRANT_ITERATION_STEP,           \
-                       break_on_reenterant_entry_reason);  \
-          break;                                           \
-        }
-        // [Renterant step loop logic]
+# define REATTEMPT_STEP_IF(s, cond)                        \
+  REATTEMPT_STEP_IF_IMPL(s, cond, false)
 
-# define REENTRANT_LOOP_END                                \
-        _reentrant_iteration_step++;                       \
-      }                                                    \
-      _current_step = __LINE__;                            \
-      _step_reentrant_reentries = 0;                       \
-      _reentrant_iteration_step = -1;                      \
-      record_step_start_time();                            \
-      _step_did_timeout = false;
-      // [Renterant step post loop logic]
+# define REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF(s, cond)       \
+  REATTEMPT_STEP_IF_IMPL(s, cond, true)
 
 # define END                                               \
     }                                                      \
+    _step_did_succeed = true;                              \
     clear_step_start_time();                               \
   }
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
-
-  static bool print_native_stack_succeeded = false;
 
   BEGIN
 
@@ -728,80 +688,6 @@ const char* break_on_reenterant_entry_reason = "";
   TIMEOUT_TEST_STEP
   TIMEOUT_TEST_STEP
   TIMEOUT_TEST_STEP
-
-  // See corresponding test in test/runtime/ErrorHandling/TestReentrantErrorHandler.java
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Step", _verbose && TestReentrantErrorHandler)
-    st->print_cr("TestReentrantErrorHandler Step: Start");
-      // Test secondary crash before loop
-    controlled_crash(TEST_SECONDARY_CRASH);
-    REENTRANT_LOOP_START(4)
-      // Test secondary crash in loop
-      if (REENTRANT_ITERATION_STEP == 0) {
-        controlled_crash(TEST_SECONDARY_CRASH);
-      }
-      // Test timeout in loop
-      if (REENTRANT_ITERATION_STEP == 2) {
-        os::infinite_sleep();
-      }
-      st->print_cr("TestReentrantErrorHandler Step: %d", REENTRANT_ITERATION_STEP);
-    REENTRANT_LOOP_END
-
-    st->print_cr("TestReentrantErrorHandler Step: Finished");
-    // The post loop logic is given another timeout window to allow
-    // for a summary of the (partial) reentrant step. However post
-    // loop logic should not have logic that can timeout, this is
-    // only here to make sure that it would be handled.
-    os::infinite_sleep();
-
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Rentry Limit",
-       _verbose && TestReentrantErrorHandler)
-    st->print_cr("TestReentrantErrorHandler Rentry Limit: Start");
-    REENTRANT_STEP_REENTRY_LIMIT(1);
-    REENTRANT_LOOP_START(2)
-      if (REENTRANT_ITERATION_STEP == 0) {
-        controlled_crash(TEST_SECONDARY_CRASH);
-      }
-      st->print_cr("TestReentrantErrorHandler: BAD LINE.");
-    REENTRANT_LOOP_END
-    st->print_cr("TestReentrantErrorHandler Rentry Limit: Finished");
-
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Global Rentry Limit",
-      _verbose && TestReentrantErrorHandler)
-    st->print_cr("TestReentrantErrorHandler Global Rentry Limit: Start");
-    REENTRANT_STEP_REENTRY_LIMIT(_global_reentrant_reentries_limit);
-    REENTRANT_LOOP_START((int)_global_reentrant_reentries_limit)
-      controlled_crash(TEST_SECONDARY_CRASH);
-    REENTRANT_LOOP_END
-    st->print_cr("TestReentrantErrorHandler Global Rentry Limit: Finished");
-
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Stack Limit",
-      _verbose && TestReentrantErrorHandler)
-    st->print_cr("TestReentrantErrorHandler Stack Limit: Start");
-    reenterant_test_hit_stack_limit();
-    REENTRANT_LOOP_START(1)
-      st->print_cr("TestReentrantErrorHandler: BAD LINE.");
-    REENTRANT_LOOP_END
-    st->print_cr("TestReentrantErrorHandler Stack Limit: Finished");
-
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Step: After", _verbose && TestReentrantErrorHandler)
-    // Crashes in previous reentrant step does not change future reentrant steps
-    st->print_cr("TestReentrantErrorHandler Step: After still works");
-    REENTRANT_LOOP_START(4)
-      st->print_cr("TestReentrantErrorHandler Step: After %d", REENTRANT_ITERATION_STEP);
-    REENTRANT_LOOP_END
-    st->print_cr("TestReentrantErrorHandler Step: After End");
-
-  REENTRANT_STEP_IF("TestReentrantErrorHandler Step: Condition",
-    _verbose && TestReentrantErrorHandler && [](){
-      controlled_crash(TEST_SECONDARY_CRASH);
-      return true;
-    }())
-
-    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
-    REENTRANT_LOOP_START(1)
-      st->print_cr("TestReentrantErrorHandler: BAD LINE.");
-    REENTRANT_LOOP_END
-    st->print_cr("TestReentrantErrorHandler: BAD LINE.");
 
   STEP_IF("test safefetch in error handler", _verbose && TestSafeFetchInErrorHandler)
     // test whether it is safe to use SafeFetch32 in Crash Handler. Test twice
@@ -1011,9 +897,8 @@ const char* break_on_reenterant_entry_reason = "";
       print_native_stack(st, fr, _thread, true, -1, buf, sizeof(buf));
       _print_native_stack_used = true;
     }
-    print_native_stack_succeeded = true;
 
-  STEP_IF("retry printing native stack (no source info)", _verbose && !print_native_stack_succeeded)
+  REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF("retry printing native stack (no source info)", _verbose)
     st->cr();
     st->print_cr("Retrying call stack printing without source information...");
     frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
@@ -1051,21 +936,25 @@ const char* break_on_reenterant_entry_reason = "";
     os::print_context(st, _context);
     st->cr();
 
-  REENTRANT_STEP_IF("printing register info",
+  STEP_IF("printing register info",
       _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
-    if (os::printable_register_count() == 0) {
-      st->print_cr("No register info.");
-    } else {
-      st->print_cr("Register to memory mapping:");
-    }
+    continuation = 0;
+    ResourceMark rm(_thread);
+    st->print_cr("Register to memory mapping:");
+    st->cr();
+    os::print_register_info(st, _context, continuation);
     st->cr();
 
-    REENTRANT_LOOP_START(os::printable_register_count())
-      // decode register contents if possible
-      ResourceMark rm(_thread);
-      os::print_register_info(st, REENTRANT_ITERATION_STEP, _context);
-    REENTRANT_LOOP_END
+  REATTEMPT_STEP_IF("printing register info, attempt 2",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    os::print_register_info(st, _context, continuation);
+    st->cr();
 
+  REATTEMPT_STEP_IF("printing register info, attempt 3",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    os::print_register_info(st, _context, continuation);
     st->cr();
 
   STEP_IF("printing top of stack, instructions near pc", _verbose && _context != nullptr)
@@ -1073,21 +962,25 @@ const char* break_on_reenterant_entry_reason = "";
     os::print_tos_pc(st, _context);
     st->cr();
 
-  REENTRANT_STEP_IF("inspecting top of stack",
+  STEP_IF("inspecting top of stack",
       _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    continuation = 0;
+    ResourceMark rm(_thread);
     st->print_cr("Stack slot to memory mapping:");
+    st->cr();
+    print_stack_location(st, _context, continuation);
+    st->cr();
 
-    REENTRANT_LOOP_START(8)
-      // decode stack contents if possible
-      frame fr = os::fetch_frame_from_context(_context);
-      const intptr_t *slot = fr.sp() + REENTRANT_ITERATION_STEP;
-      if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
-        st->print("stack at sp + %d slots: ", REENTRANT_ITERATION_STEP);
-        ResourceMark rm(_thread);
-        os::print_location(st, *(slot));
-      }
-    REENTRANT_LOOP_END
+  REATTEMPT_STEP_IF("inspecting top of stack, attempt 2",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    print_stack_location(st, _context, continuation);
+    st->cr();
 
+  REATTEMPT_STEP_IF("inspecting top of stack, attempt 3",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    print_stack_location(st, _context, continuation);
     st->cr();
 
   STEP_IF("printing code blobs if possible", _verbose)
@@ -1299,11 +1192,7 @@ const char* break_on_reenterant_entry_reason = "";
 # undef BEGIN
 # undef STEP_IF
 # undef STEP
-# undef REENTRANT_STEP_IF
-# undef REENTRANT_LOOP_START
-# undef REENTRANT_STEP_REENTRY_LIMIT
-# undef REENTRANT_ITERATION_STEP
-# undef REENTRANT_LOOP_END
+# undef REATTEMPT_STEP_IF
 # undef END
 }
 
@@ -1686,9 +1575,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         // The current step had a timeout. Lets continue reporting with the next step.
         st->print_raw("[timeout occurred during error reporting in step \"");
         st->print_raw(_current_step_info);
-        if (_reentrant_iteration_step > 0) {
-          st->print(", iteration step #%d", _reentrant_iteration_step-1);
-        }
         st->print_cr("\"] after " INT64_FORMAT " s.",
                      (int64_t)
                      ((get_current_timestamp() - _step_start_time) / TIMESTAMP_TO_SECONDS_FACTOR));
@@ -1709,13 +1595,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         static char tmp[256]; // cannot use global scratch buffer
         // Note: this string does get parsed by a number of jtreg tests,
         // see hotspot/jtreg/runtime/ErrorHandling.
-        if (_reentrant_iteration_step > 0) {
-          st->print("[error occurred during error reporting (%s, iteration step #%d), id 0x%x",
-                    _current_step_info, _reentrant_iteration_step-1, id);
-        } else {
-          st->print("[error occurred during error reporting (%s), id 0x%x",
-                    _current_step_info, id);
-        }
+        st->print("[error occurred during error reporting (%s), id 0x%x",
+                   _current_step_info, id);
         if (os::exception_name(id, tmp, sizeof(tmp))) {
           st->print(", %s (0x%x) at pc=" PTR_FORMAT, tmp, id, p2i(pc));
         } else {

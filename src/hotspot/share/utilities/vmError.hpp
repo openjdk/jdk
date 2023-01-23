@@ -63,17 +63,11 @@ class VMError : public AllStatic {
   static size_t      _size;
 
   // used by fatal error handler
-  static int         _reentrant_iteration_step;
   static int         _current_step;
   static const char* _current_step_info;
 
-  // used for reentrant reentry logic
-  static const size_t _reentrant_reentries_stack_headroom;
-  static const size_t _global_reentrant_reentries_limit;
-  static size_t       _global_reentrant_reentries;
-  static const size_t _default_step_reentrant_reentries_limit;
-  static size_t       _step_reentrant_reentries_limit;
-  static size_t       _step_reentrant_reentries;
+  // used for reattempt step logic
+  static const size_t _reattempt_required_stack_headroom;
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
@@ -97,6 +91,8 @@ class VMError : public AllStatic {
   static volatile jlong _step_start_time;
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
+  // Whether or not the last error reporting step did succeed.
+  static volatile bool _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)
@@ -126,8 +122,7 @@ class VMError : public AllStatic {
     return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
 
-  DEBUG_ONLY(static void reenterant_test_hit_stack_limit());
-  static bool should_stop_reenterant_entry(const char* &reason);
+  static bool should_stop_reattempt_step(const char* &reason);
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
