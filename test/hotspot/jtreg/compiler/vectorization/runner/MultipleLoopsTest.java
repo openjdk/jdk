@@ -97,7 +97,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopOuterNonCounted() {
         int i = 1;
@@ -113,7 +113,7 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] nestedLoopIndexCompute() {
         int[] res = new int[SIZE];

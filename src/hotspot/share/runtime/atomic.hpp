@@ -27,8 +27,6 @@
 
 #include "memory/allocation.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "metaprogramming/isSigned.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/align.hpp"
@@ -527,10 +525,10 @@ inline D Atomic::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
   STATIC_ASSERT(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
-  using PI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
+  using PI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
   using AddendType = std::conditional_t<std::is_pointer<D>::value, PI, D>;
   // Only allow conversions that can't change the value.
-  STATIC_ASSERT(IsSigned<I>::value == IsSigned<AddendType>::value);
+  STATIC_ASSERT(std::is_signed<I>::value == std::is_signed<AddendType>::value);
   STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
@@ -676,7 +674,7 @@ struct Atomic::AddImpl<
   typename EnableIf<std::is_integral<I>::value &&
                     std::is_integral<D>::value &&
                     (sizeof(I) <= sizeof(D)) &&
-                    (IsSigned<I>::value == IsSigned<D>::value)>::type>
+                    (std::is_signed<I>::value == std::is_signed<D>::value)>::type>
 {
   static D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) {
     D addend = add_value;
@@ -698,7 +696,7 @@ struct Atomic::AddImpl<
 
   // Type of the scaled addend.  An integral type of the same size as a
   // pointer, and the same signedness as I.
-  using SI = std::conditional_t<IsSigned<I>::value, intptr_t, uintptr_t>;
+  using SI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
 
   // Type of the unscaled destination.  A pointer type with pointee size == 1.
   using UP = const char*;
@@ -791,8 +789,8 @@ template<typename D, typename U, typename T>
 struct Atomic::CmpxchgImpl<
   D*, U*, T*,
   typename EnableIf<Atomic::IsPointerConvertible<T*, D*>::value &&
-                    IsSame<std::remove_cv_t<D>,
-                           std::remove_cv_t<U>>::value>::type>
+                    std::is_same<std::remove_cv_t<D>,
+                                 std::remove_cv_t<U>>::value>::type>
 {
   D* operator()(D* volatile* dest, U* compare_value, T* exchange_value,
                atomic_memory_order order) const {

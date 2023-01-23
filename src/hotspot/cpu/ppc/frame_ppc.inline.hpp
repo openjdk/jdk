@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -187,8 +187,9 @@ inline frame::ijava_state* frame::get_ijava_state() const {
   return (ijava_state*) ((uintptr_t)fp() - ijava_state_size);
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**)addr_at(ijava_idx(locals));
+inline intptr_t* frame::interpreter_frame_locals() const {
+  intptr_t n = *addr_at(ijava_idx(locals));
+  return &fp()[n]; // return relativized locals
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {

@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVAC" "1" "2023" "JDK 20-ea" "JDK Commands"
+.TH "JAVAC" "1" "2023" "JDK 20" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -434,6 +434,7 @@ processors.
 .TP
 \f[V]-profile\f[R] \f[I]profile\f[R]
 Checks that the API used is available in the specified profile.
+This option is deprecated and may be removed in a future release.
 .RS
 .PP
 \f[B]Note:\f[R] This can only be used when compiling for releases prior
@@ -721,6 +722,9 @@ a switch statement to the next.
 .IP \[bu] 2
 \f[V]finally\f[R]: Warns about \f[V]finally\f[R] clauses that do not
 terminate normally.
+.IP \[bu] 2
+\f[V]lossy-conversions\f[R]: Warns about possible lossy conversion in
+compound assignment.
 .IP \[bu] 2
 \f[V]missing-explicit-ctor\f[R]: Warns about missing explicit
 constructors in public and protected classes in exported packages.

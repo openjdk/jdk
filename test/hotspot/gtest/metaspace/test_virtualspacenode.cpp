@@ -33,6 +33,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "sanitizers/address.h"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
@@ -378,7 +379,9 @@ public:
         }
 
         // Test-zap
+        ASAN_UNPOISON_MEMORY_REGION(c->base() + r.start(), r.size() * BytesPerWord);
         zap_range(c->base() + r.start(), r.size());
+        ASAN_POISON_MEMORY_REGION(c->base() + r.start(), r.size() * BytesPerWord);
 
         // We should never reach commit limit since it is as large as the whole area.
         ASSERT_TRUE(rc);
@@ -510,7 +513,9 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
   ASSERT_EQ(node->committed_words(), word_size);
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
+  ASAN_UNPOISON_MEMORY_REGION(node->base(), node->word_size() * BytesPerWord);
   zap_range(node->base(), node->word_size());
+  ASAN_POISON_MEMORY_REGION(node->base(), node->word_size() * BytesPerWord);
 
   node->uncommit_range(node->base(), node->word_size());
   ASSERT_EQ(node->committed_words(), (size_t)0);
@@ -524,14 +529,15 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
     ASSERT_EQ(node->committed_words(), i * Settings::commit_granule_words());
     ASSERT_EQ(node->committed_words(), scomm.get());
     DEBUG_ONLY(node->verify_locked();)
+    ASAN_UNPOISON_MEMORY_REGION(node->base(), i * Settings::commit_granule_words() * BytesPerWord);
     zap_range(node->base(), i * Settings::commit_granule_words());
+    ASAN_POISON_MEMORY_REGION(node->base(), i * Settings::commit_granule_words() * BytesPerWord);
   }
 
   node->uncommit_range(node->base(), node->word_size());
   ASSERT_EQ(node->committed_words(), (size_t)0);
   ASSERT_EQ(node->committed_words(), scomm.get());
   DEBUG_ONLY(node->verify_locked();)
-
 }
 
 // Note: we unfortunately need TEST_VM even though the system tested
