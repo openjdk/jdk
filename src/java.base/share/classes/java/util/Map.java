@@ -390,25 +390,48 @@ public interface Map<K, V> {
      * implemented. The Entry may be independent of any map, or it may represent
      * an entry of the entry-set view of a map.
      * <p>
-     * Instances of the {@code Map.Entry} interface may be obtained by iterating
-     * the entry-set view of a map. These instances maintain a connection to the
-     * original, backing map. This connection to the backing map is valid
-     * <i>only</i> for the duration of iteration over the entry-set view.
-     * During iteration of the entry-set view, if supported by the backing map,
-     * a change to a {@code Map.Entry}'s value via the
-     * {@link Map.Entry#setValue setValue} method will be visible in the backing map.
-     * The behavior of such a {@code Map.Entry} instance is undefined outside of
-     * iteration of the map's entry-set view. It is also undefined if the backing
-     * map has been modified after the {@code Map.Entry} was returned by the
-     * iterator, except through the {@code Map.Entry.setValue} method. In particular,
+     * An Entry maintains a connection to its underlying map if the Entry was obtained by
+     * iterating the {@link Map#entrySet} view of a map, either explicitly by using an
+     * {@link Iterator} or implicitly via the enhanced {@code for} statement. This connection
+     * to the backing map is valid <i>only</i> during iteration of the entry-set view. During
+     * the iteration, if supported by the backing map, a change to an Entry's value via
+     * the {@link Map.Entry#setValue setValue} method will be visible in the backing map.
+     * The behavior of such an Entry is undefined outside of iteration of the map's entry-set
+     * view. It is also undefined if the backing map has been modified after the Entry was
+     * returned by the iterator, except through the {@code setValue} method. In addition,
      * a change to the value of a mapping in the backing map might or might not be
-     * visible in the corresponding {@code Map.Entry} element of the entry-set view.
+     * visible in the corresponding Entry of the entry-set view.
+     * <p>
+     * An Entry may also be obtained from a map's entry-set view by other means, for
+     * example, using the
+     * {@link Set#parallelStream parallelStream},
+     * {@link Set#stream stream},
+     * {@link Set#spliterator spliterator} methods,
+     * any of the
+     * {@link Set#toArray toArray} overloads,
+     * or by copying the entry-set view into another collection. It is unspecified whether
+     * the obtained Entry instances are connected to the underlying map, whether changes
+     * to such an Entry will affect the underlying the map and vice-versa, and whether
+     * such an Entry supports the optional {@link Map.Entry#setValue setValue} method.
+     * <p>
+     * In addition, an Entry may be obtained directly from a map, for example via calls
+     * to methods directly on the {@link NavigableMap} interface. An entry thus obtained
+     * is generally not connected to the map and is an unmodifiable snapshot of the mapping
+     * as of the time of the call. Such an Entry also does not generally support the
+     * {@code setValue} method.
+     * <p>
+     * An Entry obtained by direct construction of the {@link AbstractMap.SimpleEntry}
+     * or {@link AbstractMap.SimpleImmutableEntry} classes or from a call to the
+     * {@link Map#entry Map.entry} or {@link Map.Entry#copyOf Map.Entry.copyOf} methods
+     * is not connected to any map.
      *
      * @apiNote
-     * It is possible to create a {@code Map.Entry} instance that is disconnected
-     * from a backing map by using the {@link Map.Entry#copyOf copyOf} method. For example,
-     * the following creates a snapshot of a map's entries that is guaranteed not to
-     * change even if the original map is modified:
+     * The exact behavior of Entry instances obtained from a map's entry-set view other than
+     * via iteration varies across different map implementations; some are connected to the
+     * backing map, and some are not. To guarantee that an Entry is disconnected from its
+     * backing map, use the {@link Map.Entry#copyOf copyOf} method. For example, the following
+     * creates a snapshot of a map's entries that is guaranteed not to change even if the
+     * original map is modified:
      * <pre> {@code
      * var entries = map.entrySet().stream().map(Map.Entry::copyOf).toList()
      * }</pre>
@@ -581,7 +604,7 @@ public interface Map<K, V> {
          *
          * @apiNote
          * An instance obtained from a map's entry-set view has a connection to that map.
-         * The {@code copyOf}  method may be used to create a {@code Map.Entry} instance,
+         * The {@code copyOf} method may be used to create a {@code Map.Entry} instance,
          * containing the same key and value, that is independent of any map.
          *
          * @implNote
