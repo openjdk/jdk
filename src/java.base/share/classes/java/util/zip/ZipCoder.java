@@ -34,6 +34,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.util.Arrays;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -209,25 +210,18 @@ class ZipCoder {
             if (len == 0) {
                 return 0;
             }
-
             int end = off + len;
-            int h = 0;
-            while (off < end) {
-                byte b = a[off];
-                if (b >= 0) {
-                    // ASCII, keep going
-                    h = 31 * h + b;
-                    off++;
-                } else {
-                    // Non-ASCII, fall back to decoding a String
-                    // We avoid using decoder() here since the UTF8ZipCoder is
-                    // shared and that decoder is not thread safe.
-                    // We use the JLA.newStringUTF8NoRepl variant to throw
-                    // exceptions eagerly when opening ZipFiles
-                    return hash(JLA.newStringUTF8NoRepl(a, end - len, len));
-                }
+            int asciiLen = JLA.countPositives(a, off, len);
+            if (asciiLen != len) {
+                // Non-ASCII, fall back to decoding a String
+                // We avoid using decoder() here since the UTF8ZipCoder is
+                // shared and that decoder is not thread safe.
+                // We use the JLA.newStringUTF8NoRepl variant to throw
+                // exceptions eagerly when opening ZipFiles
+                return hash(JLA.newStringUTF8NoRepl(a, off, len));
             }
-
+            // T_BOOLEAN to treat the array as unsigned bytes, in line with StringLatin1.hashCode
+            int h = ArraysSupport.vectorizedHashCode(a, off, len, 0, ArraysSupport.T_BOOLEAN);
             if (a[end - 1] != '/') {
                 h = 31 * h + '/';
             }

@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "metaprogramming/isSame.hpp"
 #include "metaprogramming/isSigned.hpp"
 #include "utilities/debug.hpp"
 
