@@ -342,8 +342,8 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct ip *ip;
     struct sockaddr_in sa_recv;
     jchar pid;
-    struct timeval tv;
-    size_t plen = ICMP_ADVLENMIN + sizeof(tv);
+    struct timeval tv = { 0, 0 };
+    const size_t plen = ICMP_MINLEN + sizeof(tv);
 
     setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
 
@@ -415,7 +415,7 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
                 ip = (struct ip *)recvbuf;
                 hlen = ((jint)(unsigned int)(ip->ip_hl)) << 2;
                 // check if we received enough data
-                if (n < (jint)(hlen + sizeof(struct icmp))) {
+                if (n < (jint)(hlen + plen)) {
                     continue;
                 }
                 icmp = (struct icmp *)(recvbuf + hlen);
