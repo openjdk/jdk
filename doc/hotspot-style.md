@@ -575,9 +575,9 @@ There are a few exceptions to this rule.
 * `#include <type_traits>` with some restrictions, listed below.
 * `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
 
-Certain restrictions apply to the inclusion of `<type_traits>`.
+Certain restrictions apply to the declarations provided by `<type_traits>`.
 
-* The `alignof` operator should always be preferred over `std::alignment_of<>`.
+* The `alignof` operator should be utilized rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
