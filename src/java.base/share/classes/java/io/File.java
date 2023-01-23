@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -759,7 +759,7 @@ public class File
      * Tests whether the application can read the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to read
-     * files that are marked as unreadable. Consequently this method may return
+     * files that are marked as unreadable. Consequently, this method may return
      * {@code true} even though the file does not have read permissions.
      *
      * @return  {@code true} if and only if the file specified by this
@@ -787,7 +787,7 @@ public class File
      * Tests whether the application can modify the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to modify
-     * files that are marked read-only. Consequently this method may return
+     * files that are marked read-only. Consequently, this method may return
      * {@code true} even though the file is marked read-only.
      *
      * @return  {@code true} if and only if the file system actually
@@ -1779,7 +1779,7 @@ public class File
      * Tests whether the application can execute the file denoted by this
      * abstract pathname. On some platforms it may be possible to start the
      * Java virtual machine with special privileges that allow it to execute
-     * files that are not marked executable. Consequently this method may return
+     * files that are not marked executable. Consequently, this method may return
      * {@code true} even though the file does not have execute permissions.
      *
      * @return  {@code true} if and only if the abstract pathname exists
@@ -2327,7 +2327,7 @@ public class File
     /**
      * readObject is called to restore this filename.
      * The original separator character is read.  If it is different
-     * than the separator character on this system, then the old separator
+     * from the separator character on this system, then the old separator
      * is replaced by the local separator.
      *
      * @param  s the {@code ObjectInputStream} from which data is read

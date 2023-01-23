@@ -342,7 +342,7 @@ public class BufferedInputStream extends FilterInputStream {
      *
      * </ul> If the first {@code read} on the underlying stream returns
      * {@code -1} to indicate end-of-file then this method returns
-     * {@code -1}.  Otherwise this method returns the number of bytes
+     * {@code -1}.  Otherwise, this method returns the number of bytes
      * actually read.
      *
      * <p> Subclasses of this class are encouraged, but not required, to

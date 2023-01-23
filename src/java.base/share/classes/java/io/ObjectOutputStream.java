@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -768,7 +768,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes an 8 bit byte.
+     * Writes an 8-bit byte.
      *
      * @param   val the byte value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -779,7 +779,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit short.
+     * Writes a 16-bit short.
      *
      * @param   val the short value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -790,7 +790,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit char.
+     * Writes a 16-bit char.
      *
      * @param   val the char value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -801,7 +801,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit int.
+     * Writes a 32-bit int.
      *
      * @param   val the integer value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -812,7 +812,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit long.
+     * Writes a 64-bit long.
      *
      * @param   val the long value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -823,7 +823,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit float.
+     * Writes a 32-bit float.
      *
      * @param   val the float value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -834,7 +834,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit double.
+     * Writes a 64-bit double.
      *
      * @param   val the double value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
