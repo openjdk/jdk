@@ -58,6 +58,12 @@ ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
+  // Use static_cast for conversion.  See C++14 4.7 Integral
+  // conversions. If To is signed and From unsigned, the result is
+  // implementation-defined.  All supported platforms provide two's
+  // complement behavior, and that behavior is required by C++20.
+  // Using an lvalue to reference cast (see C++03 3.10/15) involves a
+  // reinterpret_cast, which prevents constexpr support.
   return static_cast<To>(from);
 #endif
 }
