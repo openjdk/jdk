@@ -607,6 +607,7 @@ jdk_core_manual_no_input = \
     java/net/httpclient/HttpInputStreamTest.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
+    java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java \
     java/util/zip/ZipFile/TestZipFile.java \
     java/util/zip/ZipFile/TestTooManyEntries.java \
     javax/net/ssl/compatibility/AlpnTest.java \
@@ -617,7 +618,6 @@ jdk_core_manual_no_input = \
     jdk/nio/zipfs/LargeCompressedEntrySizeTest.java \
     java/util/ArrayList/Bug8146568.java \
     java/util/Vector/Bug8148174.java \
-    java/foreign/TestMatrix.java \
     com/sun/net/httpserver/simpleserver/CommandLinePortNotSpecifiedTest.java \
     com/sun/net/httpserver/simpleserver/jwebserver/CommandLinePortNotSpecifiedTest.java \
 
