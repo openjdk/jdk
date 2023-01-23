@@ -26,10 +26,9 @@
 package java.io;
 
 import java.util.Properties;
-
+import jdk.internal.misc.Blocker;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
-
 
 class UnixFileSystem extends FileSystem {
 
@@ -172,7 +171,12 @@ class UnixFileSystem extends FileSystem {
     @Override
     public String canonicalize(String path) throws IOException {
         if (!useCanonCaches) {
-            return canonicalize0(path);
+            long comp = Blocker.begin();
+            try {
+                return canonicalize0(path);
+            } finally {
+                Blocker.end(comp);
+            }
         } else {
             String res = cache.get(path);
             if (res == null) {
@@ -194,7 +198,12 @@ class UnixFileSystem extends FileSystem {
                     }
                 }
                 if (res == null) {
-                    res = canonicalize0(path);
+                    long comp = Blocker.begin();
+                    try {
+                        res = canonicalize0(path);
+                    } finally {
+                        Blocker.end(comp);
+                    }
                     cache.put(path, res);
                     if (useCanonPrefixCache &&
                         dir != null && dir.startsWith(javaHome)) {
@@ -261,17 +270,29 @@ class UnixFileSystem extends FileSystem {
 
     /* -- Attribute accessors -- */
 
-    public native int getBooleanAttributes0(File f);
+    private native int getBooleanAttributes0(File f);
 
     @Override
     public int getBooleanAttributes(File f) {
-        int rv = getBooleanAttributes0(f);
+        int rv;
+        long comp = Blocker.begin();
+        try {
+            rv = getBooleanAttributes0(f);
+        } finally {
+            Blocker.end(comp);
+        }
         return rv | isHidden(f);
     }
 
     @Override
     public boolean hasBooleanAttributes(File f, int attributes) {
-        int rv = getBooleanAttributes0(f);
+        int rv;
+        long comp = Blocker.begin();
+        try {
+            rv = getBooleanAttributes0(f);
+        } finally {
+            Blocker.end(comp);
+        }
         if ((attributes & BA_HIDDEN) != 0) {
             rv |= isHidden(f);
         }
@@ -283,22 +304,61 @@ class UnixFileSystem extends FileSystem {
     }
 
     @Override
-    public native boolean checkAccess(File f, int access);
+    public boolean checkAccess(File f, int access) {
+        long comp = Blocker.begin();
+        try {
+            return checkAccess0(f, access);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean checkAccess0(File f, int access);
 
     @Override
-    public native long getLastModifiedTime(File f);
+    public long getLastModifiedTime(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLastModifiedTime0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLastModifiedTime0(File f);
 
     @Override
-    public native long getLength(File f);
+    public long getLength(File f) {
+        long comp = Blocker.begin();
+        try {
+            return getLength0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getLength0(File f);
 
     @Override
-    public native boolean setPermission(File f, int access, boolean enable, boolean owneronly);
+    public boolean setPermission(File f, int access, boolean enable, boolean owneronly) {
+        long comp = Blocker.begin();
+        try {
+            return setPermission0(f, access, enable, owneronly);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setPermission0(File f, int access, boolean enable, boolean owneronly);
 
     /* -- File operations -- */
 
     @Override
-    public native boolean createFileExclusively(String path)
-        throws IOException;
+    public boolean createFileExclusively(String path) throws IOException {
+        long comp = Blocker.begin();
+        try {
+            return createFileExclusively0(path);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createFileExclusively0(String path) throws IOException;
 
     @Override
     public boolean delete(File f) {
@@ -313,15 +373,36 @@ class UnixFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             javaHomePrefixCache.clear();
         }
-        return delete0(f);
+        long comp = Blocker.begin();
+        try {
+            return delete0(f);
+        } finally {
+            Blocker.end(comp);
+        }
     }
     private native boolean delete0(File f);
 
     @Override
-    public native String[] list(File f);
+    public String[] list(File f) {
+        long comp = Blocker.begin();
+        try {
+            return list0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native String[] list0(File f);
 
     @Override
-    public native boolean createDirectory(File f);
+    public boolean createDirectory(File f) {
+        long comp = Blocker.begin();
+        try {
+            return createDirectory0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean createDirectory0(File f);
 
     @Override
     public boolean rename(File f1, File f2) {
@@ -336,15 +417,36 @@ class UnixFileSystem extends FileSystem {
         if (useCanonPrefixCache) {
             javaHomePrefixCache.clear();
         }
-        return rename0(f1, f2);
+        long comp = Blocker.begin();
+        try {
+            return rename0(f1, f2);
+        } finally {
+            Blocker.end(comp);
+        }
     }
     private native boolean rename0(File f1, File f2);
 
     @Override
-    public native boolean setLastModifiedTime(File f, long time);
+    public boolean setLastModifiedTime(File f, long time) {
+        long comp = Blocker.begin();
+        try {
+            return setLastModifiedTime0(f, time);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setLastModifiedTime0(File f, long time);
 
     @Override
-    public native boolean setReadOnly(File f);
+    public boolean setReadOnly(File f) {
+        long comp = Blocker.begin();
+        try {
+            return setReadOnly0(f);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native boolean setReadOnly0(File f);
 
     /* -- Filesystem interface -- */
 
@@ -365,7 +467,15 @@ class UnixFileSystem extends FileSystem {
     /* -- Disk usage -- */
 
     @Override
-    public native long getSpace(File f, int t);
+    public long getSpace(File f, int t) {
+        long comp = Blocker.begin();
+        try {
+            return getSpace0(f, t);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private native long getSpace0(File f, int t);
 
     /* -- Basic infrastructure -- */
 

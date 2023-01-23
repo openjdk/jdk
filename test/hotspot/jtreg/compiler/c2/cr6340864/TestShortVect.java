@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,6 +441,10 @@ public class TestShortVect {
       test_srav_and(a0, a1, BIT_MASK);
       for (int i=0; i<ARRLEN; i++) {
         errn += verify("test_srav_and: ", i, a0[i], (short)(((short)(ADD_INIT+i) & BIT_MASK)>>VALUE));
+      }
+      test_reverse_bytes(a0, a1);
+      for (int i=0; i<ARRLEN; i++) {
+        errn += verify("test_reverse_bytes: ", i, a0[i], Short.reverseBytes(a1[i]));
       }
 
       test_pack2(p2, a1);
@@ -915,7 +919,13 @@ public class TestShortVect {
       test_srav_and(a0, a1, BIT_MASK);
     }
     end = System.currentTimeMillis();
-    System.out.println("test_srav_and: " + (end - start));
+
+    start = System.currentTimeMillis();
+    for (int i=0; i<ITERS; i++) {
+      test_reverse_bytes(a0, a1);
+    }
+    end = System.currentTimeMillis();
+    System.out.println("test_reverse_bytes: " + (end - start));
 
     start = System.currentTimeMillis();
     for (int i=0; i<ITERS; i++) {
@@ -1237,7 +1247,11 @@ public class TestShortVect {
       a0[i] = (short)((a1[i] & b)>>VALUE);
     }
   }
-
+  static void test_reverse_bytes(short[] a0, short[] a1) {
+    for(int i = 0; i < a0.length; i+=1) {
+      a0[i] = Short.reverseBytes(a1[i]);
+    }
+  }
   static void test_pack2(int[] p2, short[] a1) {
     if (p2.length*2 > a1.length) return;
     for (int i = 0; i < p2.length; i+=1) {

@@ -205,9 +205,7 @@ class Bundle {
         // parentsMap contains resources from id's parents.
         Map<String, Object> parentsMap = new HashMap<>();
         for (int i = cldrBundles.length - 1; i > index; i--) {
-            if (!("no".equals(cldrBundles[i]) || cldrBundles[i].startsWith("no_"))) {
-                parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
-            }
+            parentsMap.putAll(CLDRConverter.getCLDRBundle(cldrBundles[i]));
         }
         // Duplicate myMap as parentsMap for "root" so that the
         // fallback works. This is a hack, though.
@@ -732,7 +730,7 @@ class Bundle {
                 // this is a workaround in which 'B' character
                 // appearing in CLDR date-time pattern is replaced
                 // with 'a' character and hence resolved with am/pm strings.
-                // This workaround is based on the the fallback mechanism
+                // This workaround is based on the fallback mechanism
                 // specified in LDML spec for 'B' character, when a locale
                 // does not have data for day period ('B')
                 appendN('a', count, sb);

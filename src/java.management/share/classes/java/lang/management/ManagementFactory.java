@@ -24,6 +24,7 @@
  */
 
 package java.lang.management;
+
 import java.io.FilePermission;
 import java.io.IOException;
 import javax.management.DynamicMBean;
@@ -632,7 +633,7 @@ public class ManagementFactory {
     // using newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class)
     // even though the underlying MXBean no longer implements
     // java.util.logging.LoggingMXBean.
-    // Altough java.util.logging.LoggingMXBean is deprecated, an application
+    // Although java.util.logging.LoggingMXBean is deprecated, an application
     // that uses newPlatformMXBeanProxy(mbs, on, LoggingMXBean.class) will
     // continue to work.
     //
@@ -926,7 +927,7 @@ public class ManagementFactory {
             // get all providers
             @SuppressWarnings("removal")
             List<PlatformMBeanProvider> providers = AccessController.doPrivileged(
-                new PrivilegedAction<List<PlatformMBeanProvider>>() {
+                new PrivilegedAction<>() {
                     @Override
                     public List<PlatformMBeanProvider> run() {
                         List<PlatformMBeanProvider> all = new ArrayList<>();

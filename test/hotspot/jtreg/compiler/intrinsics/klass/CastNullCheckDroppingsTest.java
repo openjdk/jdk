@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,13 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xmixed -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:CompileThreshold=1000
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:-StressReflectiveCode
+ *                   -XX:+UncommonNullCast -XX:-StressMethodHandleLinkerInlining -XX:TypeProfileLevel=0
+ *                   -XX:-AlwaysIncrementalInline
  *                   -XX:CompileCommand=exclude,compiler.intrinsics.klass.CastNullCheckDroppingsTest::runTest
  *                   compiler.intrinsics.klass.CastNullCheckDroppingsTest
  */
@@ -46,8 +49,8 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Platform;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
-import sun.hotspot.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
@@ -129,7 +132,7 @@ public class CastNullCheckDroppingsTest {
         t.runTest(methodClassCastNull, false, svalue);
         t.runTest(methodNullClassCast, false, svalue);
         t.runTest(methodClassCastObj,  false, svalue);
-        t.runTest(methodObjClassCast,  true,  svalue);
+        t.runTest(methodObjClassCast,  false,  svalue);
         t.runTest(methodClassCastInt,  false, svalue);
         t.runTest(methodIntClassCast,  true,  svalue);
         t.runTest(methodClassCastint,  false, svalue);
@@ -356,7 +359,7 @@ public class CastNullCheckDroppingsTest {
         if (exist != mustExist) {
             System.err.println("events:");
             System.err.println(events);
-            throw new AssertionError("compilation must " + (mustExist ? "" : " not ") + " got deoptimized");
+            throw new AssertionError("compilation must " + (mustExist ? "" : " not ") + " get deoptimized");
         }
 
         if (mustExist && events.stream()

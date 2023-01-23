@@ -50,7 +50,7 @@
  * 18.05.2001
  *
  * This module contains the native functions of the Java to PKCS#11 interface
- * which are platform dependent. This includes loading a dynamic link libary,
+ * which are platform dependent. This includes loading a dynamic link library,
  * retrieving the function list and unloading the dynamic link library.
  *
  * @author Karl Scheibelhofer <Karl.Scheibelhofer@iaik.at>

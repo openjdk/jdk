@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/globalCounter.inline.hpp"
@@ -38,7 +38,7 @@
 class BufferNode::TestSupport : AllStatic {
 public:
   static bool try_transfer_pending(Allocator* allocator) {
-    return allocator->flush_free_list();
+    return allocator->_free_list.try_transfer_pending();
   }
 
   class CompletedList;
@@ -85,13 +85,6 @@ TEST_VM(PtrQueueBufferAllocatorTest, test) {
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(&allocator));
   ASSERT_EQ(node_count, allocator.free_count());
-
-  // Destroy some nodes in the free list.
-  // We don't have a way to verify destruction, but we can at
-  // least verify we don't crash along the way.
-  size_t count = allocator.free_count();
-  ASSERT_EQ(count, allocator.reduce_free_list(count));
-  // destroy allocator.
 }
 
 // Stress test with lock-free allocator and completed buffer list.

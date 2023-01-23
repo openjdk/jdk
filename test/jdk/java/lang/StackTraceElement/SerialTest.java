@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6479237
+ * @bug 6479237 8291641
  * @summary Test the format of StackTraceElement::toString and its serial form
  * @modules java.logging
  *

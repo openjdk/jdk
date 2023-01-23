@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
@@ -1788,7 +1789,7 @@ class StubGenerator: public StubCodeGenerator {
   //     'count' must not be less then the returned value
   //     'to' must be aligned by bytes_per_count but must not be aligned by wordSize
   //     shifts 'to' by the number of written bytes (so that it becomes the bound of memory to be written)
-  //     decreases 'count' by the the number of elements written
+  //     decreases 'count' by the number of elements written
   //     Rval's MSBs or LSBs remain to be written further by generate_{forward,backward}_shifted_copy_loop
   int align_dst(Register to, Register count, Register Rval, Register tmp,
                                         int to_remainder, int bytes_per_count, bool forward) {
@@ -2905,6 +2906,53 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    // No need to save PC on Arm
+    __ set_last_Java_frame(SP, FP, false, Rtemp);
+
+    __ enter();
+
+    __ add(Rtemp, SP, wordSize);  // Rtemp points to the saved lr
+    __ sub(SP, SP, 4 * wordSize); // four words for the returned {sp, fp, lr, pc}
+
+    const RegisterSet saved_regs = RegisterSet(R0, R10);
+    __ push(saved_regs);
+    __ fpush(FloatRegisterSet(D0, 16));
+
+    __ mov(c_rarg0, Rtemp);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), c_rarg0);
+
+    __ reset_last_Java_frame(Rtemp);
+
+    __ mov(Rtemp, R0);
+
+    __ fpop(FloatRegisterSet(D0, 16));
+    __ pop(saved_regs);
+
+    __ cbnz(Rtemp, deoptimize_label);
+
+    __ leave();
+    __ bx(LR);
+
+    __ BIND(deoptimize_label);
+
+    __ ldr(Rtemp, Address(SP, 0));
+    __ ldr(FP, Address(SP, wordSize));
+    __ ldr(LR, Address(SP, wordSize * 2));
+    __ ldr(R5, Address(SP, wordSize * 3));
+    __ mov(SP, Rtemp);
+    __ bx(R5);
+
+    return start;
+  }
+
 #define COMPILE_CRYPTO
 #include "stubRoutinesCrypto_arm.cpp"
 
@@ -2959,6 +3007,73 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
+  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw() {
+    return generate_cont_thaw("Cont thaw", Continuation::thaw_top);
+  }
+
+  address generate_cont_returnBarrier() {
+    return generate_cont_thaw("Cont thaw return barrier", Continuation::thaw_return_barrier);
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
+  }
+
+#if INCLUDE_JFR
+
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  static RuntimeStub* generate_jfr_write_checkpoint() {
+    enum layout {
+      r1_off,
+      r2_off,
+      return_off,
+      framesize // inclusive of return address
+    };
+
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    MacroAssembler* masm = new MacroAssembler(&code);
+
+    address start = __ pc();
+    __ raw_push(R1, R2, LR);
+    address the_pc = __ pc();
+
+    int frame_complete = the_pc - start;
+
+    __ set_last_Java_frame(SP, FP, true, Rtemp);
+    __ mov(c_rarg0, Rthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
+    __ reset_last_Java_frame(Rtemp);
+
+    // R0 is jobject handle result, unpack and process it through a barrier.
+    __ resolve_global_jobject(R0, Rtemp, R1);
+
+    __ raw_pop(R1, R2, LR);
+    __ ret();
+
+    OopMapSet* oop_maps = new OopMapSet();
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(frame_complete, map);
+
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps,
+                                    false);
+    return stub;
+  }
+
+#endif // INCLUDE_JFR
+
   //---------------------------------------------------------------------------
   // Initialization
 
@@ -2991,6 +3106,15 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  void generate_phase1() {
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  }
 
   void generate_all() {
     // Generates all stubs and initializes the entry points
@@ -3015,6 +3139,11 @@ class StubGenerator: public StubCodeGenerator {
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+    }
+
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code
     if (UseAESIntrinsics) {
@@ -3029,19 +3158,21 @@ class StubGenerator: public StubCodeGenerator {
 
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1();
+    } else {
+      generate_all();
     }
   }
 }; // end class declaration
 
 #define UCM_TABLE_MAX_ENTRIES 32
-void StubGenerator_generate(CodeBuffer* code, bool all) {
+void StubGenerator_generate(CodeBuffer* code, int phase) {
   if (UnsafeCopyMemory::_table == NULL) {
     UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
   }
-  StubGenerator g(code, all);
+  StubGenerator g(code, phase);
 }

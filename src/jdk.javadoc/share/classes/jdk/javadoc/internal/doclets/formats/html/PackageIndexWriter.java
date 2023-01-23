@@ -85,7 +85,7 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
                 = configuration.group.groupPackages(packages);
 
         if (!groupPackageMap.keySet().isEmpty()) {
-            Table table =  new Table(HtmlStyle.summaryTable)
+            var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                     .setHeader(getPackageTableHeader())
                     .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
                     .setId(HtmlIds.ALL_PACKAGES_TABLE)
@@ -109,10 +109,6 @@ public class PackageIndexWriter extends AbstractOverviewIndexWriter {
             }
 
             target.add(table);
-
-            if (table.needsScript()) {
-                getMainBodyScript().append(table.getScript());
-            }
         }
     }
 }

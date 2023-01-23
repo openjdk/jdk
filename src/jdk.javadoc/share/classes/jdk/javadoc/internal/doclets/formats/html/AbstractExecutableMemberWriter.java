@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,15 +42,14 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.EXECUTABLE_MEMBER_PARAM;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.MEMBER_TYPE_PARAMS;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.RECEIVER_TYPE;
-import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.THROWS_TYPE;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.PLAIN;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_PREVIEW;
+import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS;
 
 /**
  * Print method and constructor info.
@@ -73,7 +72,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the type parameters.
      */
     protected Content getTypeParameters(ExecutableElement member) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, MEMBER_TYPE_PARAMS, member);
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member);
+        linkInfo.addLineBreaksInTypeParameters = true;
+        linkInfo.showTypeParameterAnnotations = true;
         return writer.getTypeParameterLinks(linkInfo);
     }
 
@@ -91,7 +92,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         }
         content.add(signature);
 
-        return writer.getDocLink(MEMBER_DEPRECATED_PREVIEW, utils.getEnclosingTypeElement(member),
+        return writer.getDocLink(SHOW_PREVIEW, utils.getEnclosingTypeElement(member),
                 member, content, null, false);
     }
 
@@ -107,7 +108,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
-        target.add(writer.getDocLink(MEMBER, te, member, name(member)));
+        target.add(writer.getDocLink(PLAIN, te, member, name(member)));
     }
 
     /**
@@ -120,8 +121,10 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
                             Content target) {
-        Content link = writer.getLink(new HtmlLinkInfo(configuration, EXECUTABLE_MEMBER_PARAM,
-                paramType).varargs(isVarArg));
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS,
+                paramType).varargs(isVarArg);
+        linkInfo.showTypeParameterAnnotations = true;
+        Content link = writer.getLink(linkInfo);
         target.add(link);
         if(name(param).length() > 0) {
             target.add(Entity.NO_BREAK_SPACE);
@@ -139,7 +142,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @param target the content to which the information will be added.
      */
     protected void addReceiver(ExecutableElement member, TypeMirror rcvrType, Content target) {
-        var info = new HtmlLinkInfo(configuration, RECEIVER_TYPE, rcvrType);
+        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType);
         info.linkToSelf = false;
         target.add(writer.getLink(info));
         target.add(Entity.NO_BREAK_SPACE);
@@ -211,7 +214,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         TypeMirror rcvrType = member.getReceiverType();
         if (includeAnnotations && rcvrType != null && isAnnotatedReceiver(rcvrType)) {
             addReceiver(member, rcvrType, result);
-            sep = "," + DocletConstants.NL + " ";
+            sep = "," + Text.NL + " ";
         }
         int paramstart;
         ExecutableType instMeth = utils.asInstantiatedMethodType(typeElement, member);
@@ -225,7 +228,7 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
                     Content annotationInfo = writer.getAnnotationInfo(param, false);
                     if (!annotationInfo.isEmpty()) {
                         result.add(annotationInfo)
-                                .add(DocletConstants.NL)
+                                .add(Text.NL)
                                 .add(" ");
                     }
                 }
@@ -237,14 +240,14 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
 
         for (int i = paramstart + 1; i < parameters.size(); i++) {
             result.add(",");
-            result.add(DocletConstants.NL);
+            result.add(Text.NL);
             result.add(" ");
 
             if (includeAnnotations) {
                 Content annotationInfo = writer.getAnnotationInfo(parameters.get(i), false);
                 if (!annotationInfo.isEmpty()) {
                     result.add(annotationInfo)
-                            .add(DocletConstants.NL)
+                            .add(Text.NL)
                             .add(" ");
                 }
             }
@@ -268,9 +271,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
         for (TypeMirror t : exceptions) {
             if (!result.isEmpty()) {
                 result.add(",");
-                result.add(DocletConstants.NL);
+                result.add(Text.NL);
             }
-            Content link = writer.getLink(new HtmlLinkInfo(configuration, THROWS_TYPE, t));
+            Content link = writer.getLink(new HtmlLinkInfo(configuration, PLAIN, t));
             result.add(link);
         }
         return result;

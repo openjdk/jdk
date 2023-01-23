@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import sun.security.util.SecurityConstants;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -95,8 +96,8 @@ public final class LoggerFinderLoader {
     // Whether multiple provider should be considered as an error.
     // This is further submitted to the configuration error policy.
     private static boolean ensureSingletonProvider() {
-        return Boolean.parseBoolean(
-                GetPropertyAction.privilegedGetProperty("jdk.logger.finder.singleton"));
+        return GetBooleanAction.privilegedGetProperty
+            ("jdk.logger.finder.singleton");
     }
 
     @SuppressWarnings("removal")

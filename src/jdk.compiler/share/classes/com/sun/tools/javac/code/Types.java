@@ -92,8 +92,6 @@ public class Types {
     final Symtab syms;
     final JavacMessages messages;
     final Names names;
-    final boolean allowDefaultMethods;
-    final boolean mapCapturesToBounds;
     final Check chk;
     final Enter enter;
     JCDiagnostic.Factory diags;
@@ -115,14 +113,13 @@ public class Types {
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
-        allowDefaultMethods = Feature.DEFAULT_METHODS.allowedInSource(source);
-        mapCapturesToBounds = Feature.MAP_CAPTURES_TO_BOUNDS.allowedInSource(source);
         chk = Check.instance(context);
         enter = Enter.instance(context);
         capturedName = names.fromString("<captured wildcard>");
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         noWarnings = new Warner(null);
+        qualifiedSymbolCache = new HashMap<>();
     }
     // </editor-fold>
 
@@ -1856,7 +1853,7 @@ public class Types {
                     if (elemtype(t).isPrimitive() || elemtype(s).isPrimitive()) {
                         return elemtype(t).hasTag(elemtype(s).getTag());
                     } else {
-                        return visit(elemtype(t), elemtype(s));
+                        return isCastable(elemtype(t), elemtype(s), warnStack.head);
                     }
                 default:
                     return false;
@@ -2524,7 +2521,7 @@ public class Types {
 
             public Type visitType(Type t, Void ignored) {
                 // A note on wildcards: there is no good way to
-                // determine a supertype for a super bounded wildcard.
+                // determine a supertype for a lower-bounded wildcard.
                 return Type.noType;
             }
 
@@ -2786,24 +2783,20 @@ public class Types {
         };
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="sub signature / override equivalence">
+    // <editor-fold defaultstate="collapsed" desc="subsignature / override equivalence">
     /**
-     * Returns true iff the first signature is a <em>sub
-     * signature</em> of the other.  This is <b>not</b> an equivalence
+     * Returns true iff the first signature is a <em>subsignature</em>
+     * of the other.  This is <b>not</b> an equivalence
      * relation.
      *
      * @jls 8.4.2 Method Signature
      * @see #overrideEquivalent(Type t, Type s)
      * @param t first signature (possibly raw).
      * @param s second signature (could be subjected to erasure).
-     * @return true if t is a sub signature of s.
+     * @return true if t is a subsignature of s.
      */
     public boolean isSubSignature(Type t, Type s) {
-        return isSubSignature(t, s, true);
-    }
-
-    public boolean isSubSignature(Type t, Type s, boolean strict) {
-        return hasSameArgs(t, s, strict) || hasSameArgs(t, erasure(s), strict);
+        return hasSameArgs(t, s, true) || hasSameArgs(t, erasure(s), true);
     }
 
     /**
@@ -2817,7 +2810,7 @@ public class Types {
      * erasure).
      * @param s a signature (possible raw, could be subjected to
      * erasure).
-     * @return true if either argument is a sub signature of the other.
+     * @return true if either argument is a subsignature of the other.
      */
     public boolean overrideEquivalent(Type t, Type s) {
         return hasSameArgs(t, s) ||
@@ -3126,11 +3119,9 @@ public class Types {
                         MethodSymbol implmeth = absmeth.implementation(impl, this, true);
                         if (implmeth == null || implmeth == absmeth) {
                             //look for default implementations
-                            if (allowDefaultMethods) {
-                                MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
-                                if (prov != null && prov.overrides(absmeth, impl, this, true)) {
-                                    implmeth = prov;
-                                }
+                            MethodSymbol prov = interfaceCandidates(impl.type, absmeth).head;
+                            if (prov != null && prov.overrides(absmeth, impl, this, true)) {
+                                implmeth = prov;
                             }
                         }
                         if (implmeth == null || implmeth == absmeth) {
@@ -3626,6 +3617,56 @@ public class Types {
         }
     }
     // </editor-fold>
+
+    /** Cache the symbol to reflect the qualifying type.
+     *  key: corresponding type
+     *  value: qualified symbol
+     */
+    private Map<Type, Symbol> qualifiedSymbolCache;
+
+    public void clearQualifiedSymbolCache() {
+        qualifiedSymbolCache.clear();
+    }
+
+    /** Construct a symbol to reflect the qualifying type that should
+     *  appear in the byte code as per JLS 13.1.
+     *
+     *  For {@literal target >= 1.2}: Clone a method with the qualifier as owner (except
+     *  for those cases where we need to work around VM bugs).
+     *
+     *  For {@literal target <= 1.1}: If qualified variable or method is defined in a
+     *  non-accessible class, clone it with the qualifier class as owner.
+     *
+     *  @param sym    The accessed symbol
+     *  @param site   The qualifier's type.
+     */
+    public Symbol binaryQualifier(Symbol sym, Type site) {
+
+        if (site.hasTag(ARRAY)) {
+            if (sym == syms.lengthVar ||
+                    sym.owner != syms.arrayClass)
+                return sym;
+            // array clone can be qualified by the array type in later targets
+            Symbol qualifier;
+            if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
+                qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
+                qualifiedSymbolCache.put(site, qualifier);
+            }
+            return sym.clone(qualifier);
+        }
+
+        if (sym.owner == site.tsym ||
+                (sym.flags() & (STATIC | SYNTHETIC)) == (STATIC | SYNTHETIC)) {
+            return sym;
+        }
+
+        // leave alone methods inherited from Object
+        // JLS 13.1.
+        if (sym.owner == syms.objectType.tsym)
+            return sym;
+
+        return sym.clone(site.tsym);
+    }
 
     /**
      * Helper method for generating a string representation of a given type

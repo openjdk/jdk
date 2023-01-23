@@ -26,6 +26,8 @@
 package java.nio.channels;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
@@ -38,6 +40,7 @@ import java.nio.file.spi.FileSystemProvider;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
@@ -143,7 +146,9 @@ import java.util.Collections;
  * operation first advances the position to the end of the file and then writes
  * the requested data.  Whether the advancement of the position and the writing
  * of the data are done in a single atomic operation is system-dependent and
- * therefore unspecified.
+ * therefore unspecified.  In this mode the behavior of the method to
+ * {@linkplain #write(ByteBuffer,long) write at a given position} is also
+ * system-dependent.
  *
  * @see java.io.FileInputStream#getChannel()
  * @see java.io.FileOutputStream#getChannel()
@@ -190,7 +195,9 @@ public abstract class FileChannel
      *     the position to the end of the file and then writes the requested
      *     data. Whether the advancement of the position and the writing of the
      *     data are done in a single atomic operation is system-dependent and
-     *     therefore unspecified. This option may not be used in conjunction
+     *     therefore unspecified. The effect of {@linkplain
+     *     #write(ByteBuffer,long) writing at a given position} with this option
+     *     present is unspecified. This option may not be used in conjunction
      *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
      * </tr>
      * <tr>
@@ -369,6 +376,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ReadableByteChannel} interface. </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract int read(ByteBuffer dst) throws IOException;
 
@@ -380,6 +392,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public abstract long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException;
@@ -391,6 +408,11 @@ public abstract class FileChannel
      * then the file position is updated with the number of bytes actually
      * read.  Otherwise this method behaves exactly as specified in the {@link
      * ScatteringByteChannel} interface.  </p>
+     *
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonReadableChannelException {@inheritDoc}
      */
     public final long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
@@ -407,8 +429,10 @@ public abstract class FileChannel
      * behaves exactly as specified by the {@link WritableByteChannel}
      * interface. </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract int write(ByteBuffer src) throws IOException;
 
@@ -424,8 +448,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public abstract long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException;
@@ -441,8 +467,10 @@ public abstract class FileChannel
      * behaves exactly as specified in the {@link GatheringByteChannel}
      * interface.  </p>
      *
-     * @throws  NonWritableChannelException
-     *          If this channel was not opened for writing
+     * @throws  ClosedChannelException      {@inheritDoc}
+     * @throws  AsynchronousCloseException  {@inheritDoc}
+     * @throws  ClosedByInterruptException  {@inheritDoc}
+     * @throws  NonWritableChannelException {@inheritDoc}
      */
     public final long write(ByteBuffer[] srcs) throws IOException {
         return write(srcs, 0, srcs.length);
@@ -782,6 +810,9 @@ public abstract class FileChannel
      * grown to accommodate the new bytes; the values of any bytes between the
      * previous end-of-file and the newly-written bytes are unspecified.  </p>
      *
+     * <p> If the file is open in <a href="#append-mode">append mode</a>, then
+     * the effect of invoking this method is unspecified.
+     *
      * @param  src
      *         The buffer from which bytes are to be transferred
      *
@@ -939,17 +970,17 @@ public abstract class FileChannel
      *         The size of the region to be mapped; must be non-negative and
      *         no greater than {@link java.lang.Integer#MAX_VALUE}
      *
-     * @return  The mapped byte buffer
+     * @return The mapped byte buffer
      *
      * @throws NonReadableChannelException
      *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
-     *         an implementation specific map mode requiring read access
+     *         an implementation specific map mode requiring read access,
      *         but this channel was not opened for reading
      *
      * @throws NonWritableChannelException
-     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE}.
+     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *         {@link MapMode#PRIVATE PRIVATE} or an implementation specific
-     *         map mode requiring write access but this channel was not
+     *         map mode requiring write access, but this channel was not
      *         opened for both reading and writing
      *
      * @throws IllegalArgumentException
@@ -967,6 +998,96 @@ public abstract class FileChannel
     public abstract MappedByteBuffer map(MapMode mode, long position, long size)
         throws IOException;
 
+    /**
+     * Maps a region of this channel's file into a new mapped memory segment,
+     * with the given offset, size and memory session.
+     * The {@linkplain MemorySegment#address() address} of the returned memory
+     * segment is the starting address of the mapped off-heap region backing
+     * the segment.
+     *
+     * <p> If the specified mapping mode is
+     * {@linkplain FileChannel.MapMode#READ_ONLY READ_ONLY}, the resulting
+     * segment will be read-only (see {@link MemorySegment#isReadOnly()}).
+     *
+     * <p> The content of a mapped memory segment can change at any time, for
+     * example if the content of the corresponding region of the mapped file is
+     * changed by this (or another) program.  Whether such changes occur, and
+     * when they occur, is operating-system dependent and therefore unspecified.
+     *
+     * <p> All or part of a mapped memory segment may become inaccessible at any
+     * time, for example if the backing mapped file is truncated. An attempt to
+     * access an inaccessible region of a mapped memory segment will not change
+     * the segment's content and will cause an unspecified exception to be
+     * thrown either at the time of the access or at some later time. It is
+     * therefore strongly recommended that appropriate precautions be taken to
+     * avoid the manipulation of a mapped file by this (or another) program,
+     * except to read or write the file's content.
+     *
+     * @implNote When obtaining a mapped segment from a newly created file
+     *           channel, the initialization state of the contents of the block
+     *           of mapped memory associated with the returned mapped memory
+     *           segment is unspecified and should not be relied upon.
+     *
+     * @implSpec The default implementation of this method throws
+     *           {@code UnsupportedOperationException}.
+     *
+     * @param   mode
+     *          The file mapping mode, see
+     *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
+     *          the mapping mode might affect the behavior of the returned
+     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *
+     * @param   offset
+     *          The offset (expressed in bytes) within the file at which the
+     *          mapped segment is to start.
+     *
+     * @param   size
+     *          The size (in bytes) of the mapped memory backing the memory
+     *          segment.
+     *
+     * @param   session
+     *          The segment memory session.
+     *
+     * @return  A new mapped memory segment.
+     *
+     * @throws  IllegalArgumentException
+     *          If {@code offset < 0}, {@code size < 0} or
+     *          {@code offset + size} overflows the range of {@code long}.
+     *
+     * @throws  IllegalStateException
+     *          If the {@code session} is not
+     *          {@linkplain SegmentScope#isAlive() alive}.
+     *
+     * @throws  WrongThreadException
+     *          If this method is called from a thread other than the thread
+     *          {@linkplain SegmentScope#isAccessibleBy(Thread) owning} the
+     *          {@code session}.
+     *
+     * @throws  NonReadableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
+     *          an implementation specific map mode requiring read access,
+     *          but this channel was not opened for reading.
+     *
+     * @throws  NonWritableChannelException
+     *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
+     *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
+     *          map mode requiring write access, but this channel was not
+     *          opened for both reading and writing.
+     *
+     * @throws  IOException
+     *          If some other I/O error occurs.
+     *
+     * @throws  UnsupportedOperationException
+     *          If an unsupported map mode is specified.
+     *
+     * @since   19
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    public MemorySegment map(MapMode mode, long offset, long size, SegmentScope session)
+        throws IOException
+    {
+        throw new UnsupportedOperationException();
+    }
 
     // -- Locks --
 

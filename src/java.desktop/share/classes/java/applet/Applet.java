@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class Applet extends Panel {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
      * @since 1.4
      */
@@ -313,7 +313,9 @@ public class Applet extends Panel {
      */
     public Image getImage(URL url, String name) {
         try {
-            return getImage(new URL(url, name));
+            @SuppressWarnings("deprecation")
+            var u = new URL(url, name);
+            return getImage(u);
         } catch (MalformedURLException e) {
             return null;
         }
@@ -363,7 +365,9 @@ public class Applet extends Panel {
      */
     public AudioClip getAudioClip(URL url, String name) {
         try {
-            return getAudioClip(new URL(url, name));
+            @SuppressWarnings("deprecation")
+            var u = new URL(url, name);
+            return getAudioClip(u);
         } catch (MalformedURLException e) {
             return null;
         }

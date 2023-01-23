@@ -30,6 +30,7 @@ import javax.sound.sampled.TargetDataLine;
 
 /**
  * @test
+ * @key sound
  * @bug 4794104
  * @summary mixers are always present, independent of available soundcards
  * @run main/manual PhantomMixers

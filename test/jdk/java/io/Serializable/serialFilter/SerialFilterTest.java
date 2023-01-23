@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -710,7 +710,7 @@ public class SerialFilterTest implements Serializable {
     }
 
     /**
-     * Generate an an object that will be serialized to some number of bytes.
+     * Generate an object that will be serialized to some number of bytes.
      * Or 1 greater if allowed is false.
      * It returns a two element Object array holding a byte array sized
      * to achieve the desired total size.

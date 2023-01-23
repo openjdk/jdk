@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,9 @@ public class ReleaseOption {
     }
 
     void run() {
-        doRunTest(ERROR, out -> out.contains("compiler.err.doesnt.exist: java.util.stream"), "--release", "7");
         doRunTest(OK, out -> !out.contains("compiler.err.doesnt.exist: java.util.stream"), "--release", "8");
-        doRunTest(CMDERR, out -> true, "--release", "7", "-source", "7");
-        doRunTest(CMDERR, out -> true, "--release", "7", "-bootclasspath", "any");
+        doRunTest(CMDERR, out -> true, "--release", "8", "-source", "8");
+        doRunTest(CMDERR, out -> true, "--release", "8", "-bootclasspath", "any");
     }
 
     void doRunTest(Result expectedResult, Predicate<String> validate, String... args) {

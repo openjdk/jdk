@@ -1378,7 +1378,7 @@ public class CheckMethodAdapter extends MethodVisitor {
     }
 
     /**
-      * Checks that a the given substring is a valid type descriptor.
+      * Checks that the given substring is a valid type descriptor.
       *
       * @param version the class version.
       * @param descriptor the string to be checked.

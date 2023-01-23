@@ -72,7 +72,7 @@ public final class ECKeyFactory extends KeyFactorySpi {
     }
 
     /**
-     * Static method to convert Key into a useable instance of
+     * Static method to convert Key into a usable instance of
      * ECPublicKey or ECPrivateKey. Check the key and convert it
      * to a Sun key if necessary. If the key is not an EC key
      * or cannot be used, throw an InvalidKeyException.

@@ -170,8 +170,7 @@ public class RSAUtil {
      * Encode the digest, return the to-be-signed data.
      * Also used by the PKCS#11 provider.
      */
-    public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest)
-            throws IOException {
+    public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest) {
         DerOutputStream out = new DerOutputStream();
         new AlgorithmId(oid).encode(out);
         out.putOctetString(digest);
@@ -193,14 +192,16 @@ public class RSAUtil {
             throw new IOException("SEQUENCE length error");
         }
         AlgorithmId algId = AlgorithmId.parse(values[0]);
-        if (algId.getOID().equals(oid) == false) {
+        if (!algId.getOID().equals(oid)) {
             throw new IOException("ObjectIdentifier mismatch: "
                 + algId.getOID());
         }
         if (algId.getEncodedParams() != null) {
             throw new IOException("Unexpected AlgorithmId parameters");
         }
-        byte[] digest = values[1].getOctetString();
-        return digest;
+        if (values[1].isConstructed()) {
+            throw new IOException("Unexpected constructed digest value");
+        }
+        return values[1].getOctetString();
     }
 }

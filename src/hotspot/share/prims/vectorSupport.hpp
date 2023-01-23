@@ -25,8 +25,8 @@
 #ifndef SHARE_PRIMS_VECTORSUPPORT_HPP
 #define SHARE_PRIMS_VECTORSUPPORT_HPP
 
-#include "jni.h"
 #include "code/debugInfo.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/registerMap.hpp"
@@ -54,6 +54,7 @@ class VectorSupport : AllStatic {
     VECTOR_OP_ABS     = 0,
     VECTOR_OP_NEG     = 1,
     VECTOR_OP_SQRT    = 2,
+    VECTOR_OP_BIT_COUNT = 3,
 
     // Binary
     VECTOR_OP_ADD     = 4,
@@ -88,6 +89,17 @@ class VectorSupport : AllStatic {
     // Rotate operations
     VECTOR_OP_LROTATE = 24,
     VECTOR_OP_RROTATE = 25,
+
+    VECTOR_OP_COMPRESS = 26,
+    VECTOR_OP_EXPAND = 27,
+    VECTOR_OP_MASK_COMPRESS = 28,
+
+    VECTOR_OP_TZ_COUNT = 29,
+    VECTOR_OP_LZ_COUNT = 30,
+    VECTOR_OP_REVERSE  = 31,
+    VECTOR_OP_REVERSE_BYTES = 32,
+    VECTOR_OP_COMPRESS_BITS = 33,
+    VECTOR_OP_EXPAND_BITS = 34,
 
     // Vector Math Library
     VECTOR_OP_TAN   = 101,

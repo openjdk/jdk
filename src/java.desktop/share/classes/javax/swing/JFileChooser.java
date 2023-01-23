@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,7 +234,7 @@ public class JFileChooser extends JComponent implements Accessible {
     public static final String ACCESSORY_CHANGED_PROPERTY = "AccessoryChangedProperty";
 
     /**
-     * Identifies whether a the AcceptAllFileFilter is used or not.
+     * Identifies whether the AcceptAllFileFilter is used or not.
      */
     public static final String ACCEPT_ALL_FILE_FILTER_USED_CHANGED_PROPERTY = "acceptAllFileFilterUsedChanged";
 
@@ -784,7 +784,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Creates and returns a new <code>JDialog</code> wrapping
      * <code>this</code> centered on the <code>parent</code>
      * in the <code>parent</code>'s frame.
-     * This method can be overriden to further manipulate the dialog,
+     * This method can be overridden to further manipulate the dialog,
      * to disable resizing, set the location, etc. Example:
      * <pre>
      *     class MyFileChooser extends JFileChooser {

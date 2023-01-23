@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @summary Vectorization test on array copy
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -40,9 +40,11 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class ArrayCopyTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private   byte[] bytes;
     private  short[] shorts;
@@ -73,6 +75,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
 
     // ---------------- Simple Copy ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public byte[] copyByteArray() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -82,6 +86,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] copyShortArray() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -91,6 +97,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] copyCharArray() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -100,6 +108,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] copyIntArray() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -109,6 +119,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public long[] copyLongArray() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -118,6 +130,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] copyFloatArray() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -127,6 +141,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public double[] copyDoubleArray() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -137,6 +153,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
 
     // ---------------- Multiple Copies ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public float[] chainedCopy() {
         float[] res1 = new float[SIZE];
         float[] res2 = new float[SIZE];
@@ -147,6 +165,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] copy2ArraysSameSize() {
         int[] res1 = new int[SIZE];
         float[] res2 = new float[SIZE];
@@ -158,6 +178,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public double[] copy2ArraysDifferentSizes() {
         int[] res1 = new int[SIZE];
         double[] res2 = new double[SIZE];
@@ -170,6 +192,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
 
     // ---------------- Copy Between Signed & Unsigned ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public char[] copyFromSignedToUnsigned() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -179,6 +203,8 @@ public class ArrayCopyTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public short[] copyFromUnsignedToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -187,4 +213,3 @@ public class ArrayCopyTest extends VectorizationTestRunner {
         return res;
     }
 }
-

@@ -30,13 +30,14 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 /*
  * @test
  * @bug 8259610
+ * @enablePreview
  * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on sve.
  * @requires vm.cpu.features ~= ".*sve.*"
  * @library /test/lib /
- * @run driver compiler.vectorapi.reshape.TestVectorCastSVE
+ * @run main compiler.vectorapi.reshape.TestVectorCastSVE
  */
 public class TestVectorCastSVE {
     public static void main(String[] args) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@ import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.NotDirectoryException;
 import java.nio.file.Path;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
@@ -51,6 +51,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 
 /**
  * Simple WatchService implementation that uses periodic tasks to poll
@@ -61,6 +62,9 @@ import java.util.concurrent.TimeUnit;
 class PollingWatchService
     extends AbstractWatchService
 {
+    // default polling interval in seconds
+    private static final int DEFAULT_POLLING_INTERVAL = 2;
+
     // map of registrations
     private final Map<Object, PollingWatchKey> map = new HashMap<>();
 
@@ -90,7 +94,7 @@ class PollingWatchService
          throws IOException
     {
         // check events - CCE will be thrown if there are invalid elements
-        final Set<WatchEvent.Kind<?>> eventSet = new HashSet<>(events.length);
+        final Set<WatchEvent.Kind<?>> eventSet = HashSet.newHashSet(events.length);
         for (WatchEvent.Kind<?> event: events) {
             // standard events
             if (event == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -115,21 +119,19 @@ class PollingWatchService
             throw new IllegalArgumentException("No events to register");
 
         // Extended modifiers may be used to specify the sensitivity level
-        int sensitivity = 10;
-        if (modifiers.length > 0) {
-            for (WatchEvent.Modifier modifier: modifiers) {
-                if (modifier == null)
-                    throw new NullPointerException();
+        int sensitivity = DEFAULT_POLLING_INTERVAL;
+        for (WatchEvent.Modifier modifier : modifiers) {
+            if (modifier == null)
+                throw new NullPointerException();
 
-                if (ExtendedOptions.SENSITIVITY_HIGH.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_HIGH.parameter();
-                } else if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_MEDIUM.parameter();
-                } else if (ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
-                    sensitivity = ExtendedOptions.SENSITIVITY_LOW.parameter();
-                } else {
-                    throw new UnsupportedOperationException("Modifier not supported");
-                }
+            if (ExtendedOptions.SENSITIVITY_HIGH.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_HIGH.parameter();
+            } else if (ExtendedOptions.SENSITIVITY_MEDIUM.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_MEDIUM.parameter();
+            } else if (ExtendedOptions.SENSITIVITY_LOW.matches(modifier)) {
+                sensitivity = ExtendedOptions.SENSITIVITY_LOW.parameter();
+            } else {
+                throw new UnsupportedOperationException("Modifier not supported");
             }
         }
 
@@ -219,10 +221,10 @@ class PollingWatchService
      * Entry in directory cache to record file last-modified-time and tick-count
      */
     private static class CacheEntry {
-        private long lastModified;
+        private FileTime lastModified;
         private int lastTickCount;
 
-        CacheEntry(long lastModified, int lastTickCount) {
+        CacheEntry(FileTime lastModified, int lastTickCount) {
             this.lastModified = lastModified;
             this.lastTickCount = lastTickCount;
         }
@@ -231,11 +233,11 @@ class PollingWatchService
             return lastTickCount;
         }
 
-        long lastModified() {
+        FileTime lastModified() {
             return lastModified;
         }
 
-        void update(long lastModified, int tickCount) {
+        void update(FileTime lastModified, int tickCount) {
             this.lastModified = lastModified;
             this.lastTickCount = tickCount;
         }
@@ -277,8 +279,7 @@ class PollingWatchService
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
                 for (Path entry: stream) {
                     // don't follow links
-                    long lastModified =
-                        Files.getLastModifiedTime(entry, LinkOption.NOFOLLOW_LINKS).toMillis();
+                    FileTime lastModified = Files.getLastModifiedTime(entry, NOFOLLOW_LINKS);
                     entries.put(entry.getFileName(), new CacheEntry(lastModified, tickCount));
                 }
             } catch (DirectoryIteratorException e) {
@@ -305,7 +306,7 @@ class PollingWatchService
                 // update the events
                 this.events = events;
 
-                // create the periodic task
+                // create the periodic task to poll directories
                 Runnable thunk = new Runnable() { public void run() { poll(); }};
                 this.poller = scheduledExecutor
                     .scheduleAtFixedRate(thunk, period, period, TimeUnit.SECONDS);
@@ -355,10 +356,9 @@ class PollingWatchService
             // iterate over all entries in directory
             try {
                 for (Path entry: stream) {
-                    long lastModified = 0L;
+                    FileTime lastModified;
                     try {
-                        lastModified =
-                            Files.getLastModifiedTime(entry, LinkOption.NOFOLLOW_LINKS).toMillis();
+                        lastModified = Files.getLastModifiedTime(entry, NOFOLLOW_LINKS);
                     } catch (IOException x) {
                         // unable to get attributes of entry. If file has just
                         // been deleted then we'll report it as deleted on the
@@ -370,8 +370,7 @@ class PollingWatchService
                     CacheEntry e = entries.get(entry.getFileName());
                     if (e == null) {
                         // new file found
-                        entries.put(entry.getFileName(),
-                                     new CacheEntry(lastModified, tickCount));
+                        entries.put(entry.getFileName(), new CacheEntry(lastModified, tickCount));
 
                         // queue ENTRY_CREATE if event enabled
                         if (events.contains(StandardWatchEventKinds.ENTRY_CREATE)) {
@@ -390,7 +389,7 @@ class PollingWatchService
                     }
 
                     // check if file has changed
-                    if (e.lastModified != lastModified) {
+                    if (!e.lastModified().equals(lastModified)) {
                         if (events.contains(StandardWatchEventKinds.ENTRY_MODIFY)) {
                             signalEvent(StandardWatchEventKinds.ENTRY_MODIFY,
                                         entry.getFileName());

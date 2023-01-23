@@ -62,7 +62,7 @@ struct LegacyGCLogging {
 // PathString is used as:
 //  - the underlying value for a SystemProperty
 //  - the path portion of an --patch-module module/path pair
-//  - the string that represents the system boot class path, Arguments::_system_boot_class_path.
+//  - the string that represents the boot class path, Arguments::_boot_class_path.
 class PathString : public CHeapObj<mtArguments> {
  protected:
   char* _value;
@@ -86,7 +86,6 @@ public:
   ModulePatchPath(const char* module_name, const char* path);
   ~ModulePatchPath();
 
-  inline void set_path(const char* path) { _path->set_value(path); }
   inline const char* module_name() const { return _module_name; }
   inline char* path_string() const { return _path->value(); }
 };
@@ -174,7 +173,6 @@ public:
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
-  void set_invalid()                        { _state = agent_invalid; }
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,
@@ -305,10 +303,10 @@ class Arguments : AllStatic {
   // calls to AddToBootstrapClassLoaderSearch.  This is the
   // final form before ClassLoader::setup_bootstrap_search().
   // Note: since --patch-module is a module name/path pair, the
-  // system boot class path string no longer contains the "prefix"
+  // boot class path string no longer contains the "prefix"
   // to the boot class path base piece as it did when
   // -Xbootclasspath/p was supported.
-  static PathString *_system_boot_class_path;
+  static PathString* _boot_class_path;
 
   // Set if a modular java runtime image is present vs. a build with exploded modules
   static bool _has_jimage;
@@ -479,6 +477,10 @@ class Arguments : AllStatic {
                                          char** base_archive_path,
                                          char** top_archive_path) NOT_CDS_RETURN;
 
+  // Helpers for parse_malloc_limits
+  static bool parse_malloc_limit_size(const char* s, size_t* out);
+  static void parse_single_category_limit(char* expression, size_t limits[mt_number_of_types]);
+
  public:
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
   // Parses the arguments, first phase
@@ -588,8 +590,6 @@ class Arguments : AllStatic {
   static const char* PropertyList_get_readable_value(SystemProperty* plist, const char* key);
   static int  PropertyList_count(SystemProperty* pl);
   static int  PropertyList_readable_count(SystemProperty* pl);
-  static const char* PropertyList_get_key_at(SystemProperty* pl,int index);
-  static char* PropertyList_get_value_at(SystemProperty* pl,int index);
 
   static bool is_internal_module_property(const char* option);
 
@@ -599,27 +599,25 @@ class Arguments : AllStatic {
   static void set_library_path(const char *value) { _java_library_path->set_value(value); }
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
 
-  // Set up the underlying pieces of the system boot class path
+  // Set up the underlying pieces of the boot class path
   static void add_patch_mod_prefix(const char *module_name, const char *path, bool* patch_mod_javabase);
-  static void set_sysclasspath(const char *value, bool has_jimage) {
+  static void set_boot_class_path(const char *value, bool has_jimage) {
     // During start up, set by os::set_boot_path()
-    assert(get_sysclasspath() == NULL, "System boot class path previously set");
-    _system_boot_class_path->set_value(value);
+    assert(get_boot_class_path() == NULL, "Boot class path previously set");
+    _boot_class_path->set_value(value);
     _has_jimage = has_jimage;
   }
   static void append_sysclasspath(const char *value) {
-    _system_boot_class_path->append_value(value);
+    _boot_class_path->append_value(value);
     _jdk_boot_class_path_append->append_value(value);
   }
 
   static GrowableArray<ModulePatchPath*>* get_patch_mod_prefix() { return _patch_mod_prefix; }
-  static char* get_sysclasspath() { return _system_boot_class_path->value(); }
-  static char* get_jdk_boot_class_path_append() { return _jdk_boot_class_path_append->value(); }
+  static char* get_boot_class_path() { return _boot_class_path->value(); }
   static bool has_jimage() { return _has_jimage; }
 
   static char* get_java_home()    { return _java_home->value(); }
   static char* get_dll_dir()      { return _sun_boot_library_path->value(); }
-  static char* get_ext_dirs()     { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
@@ -652,6 +650,16 @@ class Arguments : AllStatic {
   static void assert_is_dumping_archive() {
     assert(Arguments::is_dumping_archive(), "dump time only");
   }
+
+  // Parse diagnostic NMT switch "MallocLimit" and return the found limits.
+  // 1) If option is not given, it will set all limits to 0 (aka "no limit").
+  // 2) If option is given in the global form (-XX:MallocLimit=<size>), it
+  //    will return the size in *total_limit.
+  // 3) If option is given in its per-NMT-category form (-XX:MallocLimit=<category>:<size>[,<category>:<size>]),
+  //    it will return all found limits in the limits array.
+  // 4) If option is malformed, it will exit the VM.
+  // For (2) and (3), limits not affected by the switch will be set to 0.
+  static void parse_malloc_limits(size_t* total_limit, size_t limits[mt_number_of_types]);
 
   DEBUG_ONLY(static bool verify_special_jvm_flags(bool check_globals);)
 };

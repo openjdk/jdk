@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.SchemaFactory;
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXException;
@@ -39,13 +39,86 @@ import org.xml.sax.SAXParseException;
 
 /*
  * @test
- * @bug 8149915 8222991
+ * @bug 8149915 8222991 8282280 8144117
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm validation.SchemaTest
- * @summary Test Schema creation
+ * @summary Tests schemas and Schema creation.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class SchemaTest {
+    private static final String XSD_8144117 = "<?xml version='1.0'?>\n" +
+        "<xs:schema xmlns:xs='http://www.w3.org/2001/XMLSchema'>\n" +
+        "\n" +
+        "  <xs:simpleType name='mjtype1'>\n" +
+        "    <xs:restriction base='xs:string'>\n" +
+        "      <xs:minLength value='3'/>\n" +
+        "    </xs:restriction>\n" +
+        "  </xs:simpleType>\n" +
+        "\n" +
+        "  <xs:simpleType name='mjtype2'>\n" +
+        "    <xs:restriction base='mjtype1'>\n" +
+        "      <xs:minLength value='3'/>\n" +
+        "      <xs:length value='4'/>\n" +
+        "    </xs:restriction>\n" +
+        "  </xs:simpleType>\n" +
+        "\n" +
+        "  <xs:element name='top' type='mjtype2'/>\n" +
+        "\n" +
+        "</xs:schema>";
+
+    /*
+     * DataProvider: valid xsd strings.
+     */
+    @DataProvider(name = "xsd")
+    Object[][] getXSDString() {
+        return new Object[][]{
+            {XSD_8144117},
+        };
+    }
+
+    /*
+     * DataProvider: valid external xsd files.
+     */
+    @DataProvider(name = "xsdFile")
+    Object[][] getXSDFile() {
+        return new Object[][]{
+            /*
+             * Refer to the related JCK issue. The following tests match the rules
+             * specified in:
+             * XML Schema Part 2: Datatypes (https://www.w3.org/TR/xmlschema-2/)
+             * 4.3.1.4 Constraints on length Schema Components
+             * and are therefore valid.
+             */
+            {"NMTOKENS_length006.xsd"},
+            {"IDREFS_length006.xsd"},
+        };
+    }
+
+    /**
+     * @bug 8144117 fix by 8282280
+     * Verifies that the schema is valid.
+     *
+     * @param xsd the schema
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "xsd")
+    public void testSchema1(String xsd) throws Exception {
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        factory.newSchema(new StreamSource(new StringReader(xsd)));
+    }
+
+    /**
+     * @bug 8282280
+     * Verifies that the schema is valid.
+     *
+     * @param xsd the schema file
+     * @throws Exception if the test fails
+     */
+    @Test(dataProvider = "xsdFile")
+    public void testSchema2(String xsd) throws Exception {
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        factory.newSchema(new File(getClass().getResource(xsd).getFile()));
+    }
+
     /**
      * Verifies that an over-the-limit value of an enumeration is caught as a
      * warning.

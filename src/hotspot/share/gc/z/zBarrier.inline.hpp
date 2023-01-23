@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 
 #include "gc/z/zBarrier.hpp"
 
+#include "code/codeCache.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 
 // A self heal must always "upgrade" the address metadata bits in
 // accordance with the metadata bits state machine, which has the
@@ -330,22 +332,26 @@ inline bool ZBarrier::is_alive_barrier_on_phantom_oop(oop o) {
 // Keep alive barrier
 //
 inline void ZBarrier::keep_alive_barrier_on_weak_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const oop o = Atomic::load(p);
   barrier<is_good_or_null_fast_path, keep_alive_barrier_on_weak_oop_slow_path>(p, o);
 }
 
 inline void ZBarrier::keep_alive_barrier_on_phantom_oop_field(volatile oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  assert(ZResurrection::is_blocked(), "This operation is only valid when resurrection is blocked");
   const oop o = Atomic::load(p);
   barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
 }
 
 inline void ZBarrier::keep_alive_barrier_on_phantom_root_oop_field(oop* p) {
-  // This operation is only valid when resurrection is blocked.
-  assert(ZResurrection::is_blocked(), "Invalid phase");
+  // The keep alive operation is only valid when resurrection is blocked.
+  //
+  // Except with Loom, where we intentionally trigger arms nmethods after
+  // unlinking, to get a sense of what nmethods are alive. This will trigger
+  // the keep alive barriers, but the oops are healed and the slow-paths
+  // will not trigger. We have stronger checks in the slow-paths.
+  assert(ZResurrection::is_blocked() || (CodeCache::contains((void*)p)),
+         "This operation is only valid when resurrection is blocked");
   const oop o = *p;
   root_barrier<is_good_or_null_fast_path, keep_alive_barrier_on_phantom_oop_slow_path>(p, o);
 }

@@ -45,6 +45,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import jdk.internal.javac.PreviewFeature;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -235,6 +236,43 @@ public class Executors {
                                       60L, TimeUnit.SECONDS,
                                       new SynchronousQueue<Runnable>(),
                                       threadFactory);
+    }
+
+    /**
+     * Creates an Executor that starts a new Thread for each task.
+     * The number of threads created by the Executor is unbounded.
+     *
+     * <p> Invoking {@link Future#cancel(boolean) cancel(true)} on a {@link
+     * Future Future} representing the pending result of a task submitted to
+     * the Executor will {@link Thread#interrupt() interrupt} the thread
+     * executing the task.
+     *
+     * @param threadFactory the factory to use when creating new threads
+     * @return a new executor that creates a new Thread for each task
+     * @throws NullPointerException if threadFactory is null
+     * @since 19
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    public static ExecutorService newThreadPerTaskExecutor(ThreadFactory threadFactory) {
+        return ThreadPerTaskExecutor.create(threadFactory);
+    }
+
+    /**
+     * Creates an Executor that starts a new virtual Thread for each task.
+     * The number of threads created by the Executor is unbounded.
+     *
+     * <p> This method is equivalent to invoking
+     * {@link #newThreadPerTaskExecutor(ThreadFactory)} with a thread factory
+     * that creates virtual threads.
+     *
+     * @return a new executor that creates a new virtual Thread for each task
+     * @throws UnsupportedOperationException if preview features are not enabled
+     * @since 19
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.VIRTUAL_THREADS)
+    public static ExecutorService newVirtualThreadPerTaskExecutor() {
+        ThreadFactory factory = Thread.ofVirtual().factory();
+        return newThreadPerTaskExecutor(factory);
     }
 
     /**

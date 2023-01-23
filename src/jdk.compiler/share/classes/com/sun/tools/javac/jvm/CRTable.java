@@ -293,7 +293,7 @@ implements CRTFlags {
 
         public void visitForeachLoop(JCEnhancedForLoop tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
-            sr.mergeWith(csp(tree.var));
+            sr.mergeWith(csp(tree.varOrRecordPattern));
             sr.mergeWith(csp(tree.expr));
             sr.mergeWith(csp(tree.body));
             result = sr;
@@ -330,6 +330,21 @@ implements CRTFlags {
         @Override
         public void visitDefaultCaseLabel(JCTree.JCDefaultCaseLabel that) {
             result = null;
+        }
+
+        @Override
+        public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.expr));
+            result = sr;
+        }
+
+        @Override
+        public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.pat));
+            sr.mergeWith(csp(tree.guard));
+            result = sr;
         }
 
         public void visitSynchronized(JCSynchronized tree) {

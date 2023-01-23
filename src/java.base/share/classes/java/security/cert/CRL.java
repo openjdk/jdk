@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ package java.security.cert;
  * This class is an abstraction of certificate revocation lists (CRLs) that
  * have different formats but important common uses. For example, all CRLs
  * share the functionality of listing revoked certificates, and can be queried
- * on whether or not they list a given certificate.
+ * on whether they list a given certificate.
  * <p>
  * Specialized CRL types can be defined by subclassing off of this abstract
  * class.
@@ -46,7 +46,7 @@ package java.security.cert;
 public abstract class CRL {
 
     // the CRL type
-    private String type;
+    private final String type;
 
     /**
      * Creates a CRL of the specified type.

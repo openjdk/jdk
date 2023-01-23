@@ -34,7 +34,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"

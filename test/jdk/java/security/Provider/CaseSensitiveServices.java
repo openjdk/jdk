@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5097015 8130181 8279222
+ * @bug 5097015 8130181 8279222 8292739
  * @summary make sure we correctly treat Provider string entries as case insensitive
  * @author Andreas Sterbenz
  */
@@ -42,15 +42,23 @@ public class CaseSensitiveServices extends Provider {
         put("MESSAGEDIGEST.BAZ", "com.Baz");
         // reassign the DEF alias to algorithm Bar
         put("ALg.aliaS.MESSAGEdigest.DEF", "Bar");
+        // invalid entry since it misses the corresponding impl class info
+        // e.g. put("MessageDigest.Invalid", "implClass");
+        put("MessageDigest.Invalid xYz", "aBc");
     }
 
     public static void main(String[] args) throws Exception {
         Provider p = new CaseSensitiveServices();
-        System.out.println(p.getServices());
+
+        System.out.println("Services: " + p.getServices());
+
         if (p.getServices().size() != 3) {
             throw new Exception("services.size() should be 3");
         }
 
+        if (p.getService("MessageDigest", "Invalid") != null) {
+            throw new Exception("Invalid service returned");
+        }
         Service s = testService(p, "MessageDigest", "fOO");
         String val = s.getAttribute("Xyz");
         if ("aBc".equals(val) == false) {
@@ -70,7 +78,8 @@ public class CaseSensitiveServices extends Provider {
         System.out.println("OK");
     }
 
-    private static Service testService(Provider p, String type, String alg) throws Exception {
+    private static Service testService(Provider p, String type, String alg)
+            throws Exception {
         System.out.println("Getting " + type + "." + alg + "...");
         Service s = p.getService(type, alg);
         System.out.println(s);

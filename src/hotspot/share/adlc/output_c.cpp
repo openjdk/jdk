@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 
 #include "adlc.hpp"
 
+#define remaining_buflen(buffer, position) (sizeof(buffer) - (position - buffer))
+
 // Utilities to characterize effect statements
 static bool is_def(int usedef) {
   switch(usedef) {
@@ -33,6 +35,16 @@ static bool is_def(int usedef) {
   case Component::USE_DEF: return true; break;
   }
   return false;
+}
+
+int snprintf_checked(char* buf, size_t len, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  int result = vsnprintf(buf, len, fmt, args);
+  va_end(args);
+  assert(result >= 0, "snprintf error");
+  assert(static_cast<size_t>(result) < len, "snprintf truncated");
+  return result;
 }
 
 // Define  an array containing the machine register names, strings.
@@ -197,7 +209,8 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
     return -1;
   }
 
-  char *operand_stages = new char [templen];
+  const size_t operand_stages_size = templen;
+  char *operand_stages = new char [operand_stages_size];
   operand_stages[0] = 0;
   int i = 0;
   templen = 0;
@@ -211,7 +224,7 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
   while ( (paramname = pipeclass->_parameters.iter()) != NULL ) {
     const PipeClassOperandForm *tmppipeopnd =
         (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
-    templen += sprintf(&operand_stages[templen], "  stage_%s%c\n",
+    templen += snprintf_checked(&operand_stages[templen], operand_stages_size - templen, "  stage_%s%c\n",
       tmppipeopnd ? tmppipeopnd->_stage : "undefined",
       (++i < paramcount ? ',' : ' ') );
   }
@@ -278,6 +291,7 @@ static int pipeline_res_stages_initializer(
   int templen = 1 + commentlen + pipeline->_rescount * (max_stage + 14);
 
   // Allocate space for the resource list
+  const size_t resource_stages_size = templen;
   char * resource_stages = new char [templen];
 
   templen = 0;
@@ -285,7 +299,7 @@ static int pipeline_res_stages_initializer(
     const char * const resname =
       res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i]-1);
 
-    templen += sprintf(&resource_stages[templen], "  stage_%s%-*s // %s\n",
+    templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen, "  stage_%s%-*s // %s\n",
       resname, max_stage - (int)strlen(resname) + 1,
       (i < pipeline->_rescount-1) ? "," : "",
       pipeline->_reslist.name(i));
@@ -344,7 +358,7 @@ static int pipeline_res_cycles_initializer(
   for (i = 0; i < pipeline->_rescount; i++) {
     if (max_cycles < res_cycles[i])
       max_cycles = res_cycles[i];
-    templen = sprintf(temp, "%d", res_cycles[i]);
+    templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
     if (cyclelen < templen)
       cyclelen = templen;
     commentlen += (int)strlen(pipeline->_reslist.name(i));
@@ -353,12 +367,13 @@ static int pipeline_res_cycles_initializer(
   templen = 1 + commentlen + (cyclelen + 8) * pipeline->_rescount;
 
   // Allocate space for the resource list
-  char * resource_cycles = new char [templen];
+  const size_t resource_cycles_size = templen;
+  char * resource_cycles = new char [resource_cycles_size];
 
   templen = 0;
 
   for (i = 0; i < pipeline->_rescount; i++) {
-    templen += sprintf(&resource_cycles[templen], "  %*d%c // %s\n",
+    templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
       cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', pipeline->_reslist.name(i));
   }
 
@@ -397,7 +412,7 @@ static int pipeline_res_mask_initializer(
   const uint cyclemasksize = (maxcycleused + 31) >> 5;
 
   int i, j;
-  int element_count = 0;
+  uint element_count = 0;
   uint *res_mask = new uint [cyclemasksize];
   uint resources_used             = 0;
   uint resources_used_exclusively = 0;
@@ -431,7 +446,8 @@ static int pipeline_res_mask_initializer(
      (cyclemasksize * 12) + masklen + (cycledigit * 2) + 30) * element_count;
 
   // Allocate space for the resource list
-  char * resource_mask = new char [templen];
+  const size_t resource_mask_size = templen;
+  char * resource_mask = new char [resource_mask_size];
   char * last_comma = NULL;
 
   templen = 0;
@@ -456,7 +472,7 @@ static int pipeline_res_mask_initializer(
     }
 
     int formatlen =
-      sprintf(&resource_mask[templen], "  %s(0x%0*x, %*d, %*d, %s %s(",
+      snprintf_checked(&resource_mask[templen], resource_mask_size - templen, "  %s(0x%0*x, %*d, %*d, %s %s(",
         pipeline_use_element,
         masklen, used_mask,
         cycledigit, lb, cycledigit, ub,
@@ -496,7 +512,7 @@ static int pipeline_res_mask_initializer(
 
     for (j = cyclemasksize-1; j >= 0; j--) {
       formatlen =
-        sprintf(&resource_mask[templen], "0x%08x%s", res_mask[j], j > 0 ? ", " : "");
+        snprintf_checked(&resource_mask[templen], resource_mask_size - templen, "0x%08x%s", res_mask[j], j > 0 ? ", " : "");
       templen += formatlen;
     }
 
@@ -524,12 +540,11 @@ static int pipeline_res_mask_initializer(
       fprintf(fp_cpp, "static const Pipeline_Use_Element pipeline_res_mask_%03d[%d] = {\n%s};\n\n",
         ndx+1, element_count, resource_mask);
 
-    char* args = new char [9 + 2*masklen + maskdigit];
+    // "0x012345678, 0x012345678, 4294967295"
+    char* args = new char [36 + 1];
 
-    sprintf(args, "0x%0*x, 0x%0*x, %*d",
-      masklen, resources_used,
-      masklen, resources_used_exclusively,
-      maskdigit, element_count);
+    snprintf_checked(args, 36 + 1, "0x%x, 0x%x, %u",
+        resources_used, resources_used_exclusively, element_count);
 
     pipeline_res_args.addName(args);
   }
@@ -1066,9 +1081,9 @@ static void build_instruction_index_mapping( FILE *fp, FormDict &globals, PeepMa
       InstructForm *inst = globals[inst_name]->is_instruction();
       if( inst != NULL ) {
         char inst_prefix[]  = "instXXXX_";
-        sprintf(inst_prefix, "inst%d_",   inst_position);
+        snprintf_checked(inst_prefix, sizeof(inst_prefix), "inst%d_",   inst_position);
         char receiver[]     = "instXXXX->";
-        sprintf(receiver,    "inst%d->", inst_position);
+        snprintf_checked(receiver, sizeof(receiver), "inst%d->", inst_position);
         inst->index_temps( fp, globals, inst_prefix, receiver );
       }
     }
@@ -1159,11 +1174,10 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
       case Form::register_interface: {
         // Check that they are allocated to the same register
         // Need parameter for index position if not result operand
-        char left_reg_index[] = ",instXXXX_idxXXXX";
+        char left_reg_index[] = ",inst4294967295_idx4294967295";
         if( left_op_index != 0 ) {
-          assert( (left_index <= 9999) && (left_op_index <= 9999), "exceed string size");
           // Must have index into operands
-          sprintf(left_reg_index,",inst%d_idx%d", (int)left_index, left_op_index);
+          snprintf_checked(left_reg_index, sizeof(left_reg_index), ",inst%u_idx%u", (unsigned)left_index, (unsigned)left_op_index);
         } else {
           strcpy(left_reg_index, "");
         }
@@ -1172,11 +1186,10 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
         fprintf(fp, " == ");
 
         if( right_index != -1 ) {
-          char right_reg_index[18] = ",instXXXX_idxXXXX";
+          char right_reg_index[] = ",inst4294967295_idx4294967295";
           if( right_op_index != 0 ) {
-            assert( (right_index <= 9999) && (right_op_index <= 9999), "exceed string size");
             // Must have index into operands
-            sprintf(right_reg_index,",inst%d_idx%d", (int)right_index, right_op_index);
+            snprintf_checked(right_reg_index, sizeof(right_reg_index), ",inst%u_idx%u", (unsigned)right_index, (unsigned)right_op_index);
           } else {
             strcpy(right_reg_index, "");
           }
@@ -1267,7 +1280,8 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
 // }
 
 // Construct the new sub-tree
-static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch, PeepConstraint *pconstraint, PeepReplace *preplace, int max_position ) {
+static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_number, PeepMatch *pmatch,
+                                  PeepConstraint *pconstraint, PeepReplace *preplace, int max_position ) {
   fprintf(fp, "      // IF instructions and constraints matched\n");
   fprintf(fp, "      if( matches ) {\n");
   fprintf(fp, "        // generate the new sub-tree\n");
@@ -1316,7 +1330,6 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
           fprintf(fp, "        root->_bottom_type = inst%d->bottom_type();\n", inst_num);
         }
         // Define result register and result operand
-        fprintf(fp, "        ra_->add_reference(root, inst%d);\n", inst_num);
         fprintf(fp, "        ra_->set_oop (root, ra_->is_oop(inst%d));\n", inst_num);
         fprintf(fp, "        ra_->set_pair(root->_idx, ra_->get_reg_second(inst%d), ra_->get_reg_first(inst%d));\n", inst_num, inst_num);
         fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
@@ -1342,12 +1355,20 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
     assert( false, "ShouldNotReachHere();");
   }
 
+  // Set output of the new node
+  fprintf(fp, "        inst0->replace_by(root);\n");
+  // Mark the node as removed because peephole does not remove nodes from the graph
   for (int i = 0; i <= max_position; i++) {
     fprintf(fp, "        inst%d->set_removed();\n", i);
+    fprintf(fp, "        cfg_->map_node_to_block(inst%d, nullptr);\n", i);
   }
-  // Return the new sub-tree
-  fprintf(fp, "        deleted = %d;\n", max_position+1 /*zero to one based*/);
-  fprintf(fp, "        return root;  // return new root;\n");
+  for (int i = 0; i <= max_position; i++) {
+    fprintf(fp, "        block->remove_node(block_index - %d);\n", i);
+  }
+  fprintf(fp, "        block->insert_node(root, block_index - %d);\n", max_position);
+  fprintf(fp, "        cfg_->map_node_to_block(root, block);\n");
+  // Return the peephole index
+  fprintf(fp, "        return %d;  // return the peephole index;\n", peephole_number);
   fprintf(fp, "      }\n");
 }
 
@@ -1355,7 +1376,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, PeepMatch *pmatch
 // Define the Peephole method for an instruction node
 void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Generate Peephole function header
-  fprintf(fp, "MachNode *%sNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {\n", node->_ident);
+  fprintf(fp, "int %sNode::peephole(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_) {\n", node->_ident);
   fprintf(fp, "  bool  matches = true;\n");
 
   // Identify the maximum instruction position,
@@ -1368,6 +1389,9 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   int max_position = 0;
   Peephole *peep;
   for( peep = node->peepholes(); peep != NULL; peep = peep->next() ) {
+    if (peep->procedure() != NULL) {
+      continue;
+    }
     PeepMatch *pmatch = peep->match();
     assert( pmatch != NULL, "fatal(), missing peepmatch rule");
     if( max_position < pmatch->max_position() )  max_position = pmatch->max_position();
@@ -1386,7 +1410,9 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   //   If these match, Generate the new subtree
   for( peep = node->peepholes(); peep != NULL; peep = peep->next() ) {
     int         peephole_number = peep->peephole_number();
+    PeepPredicate  *ppredicate  = peep->predicate();
     PeepMatch      *pmatch      = peep->match();
+    PeepProcedure  *pprocedure  = peep->procedure();
     PeepConstraint *pconstraint = peep->constraints();
     PeepReplace    *preplace    = peep->replacement();
 
@@ -1395,29 +1421,58 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
             "root of PeepMatch does not match instruction");
 
     // Make each peephole rule individually selectable
-    fprintf(fp, "  if( (OptoPeepholeAt == -1) || (OptoPeepholeAt==%d) ) {\n", peephole_number);
-    fprintf(fp, "    matches = true;\n");
-    // Scan the peepmatch and output a test for each instruction
-    check_peepmatch_instruction_sequence( fp, pmatch, pconstraint );
+    fprintf(fp, "  if( ((OptoPeepholeAt == -1) || (OptoPeepholeAt==%d)) && ( %s ) ) {\n",
+            peephole_number, ppredicate != NULL ? ppredicate->rule() : "true");
+    if (pprocedure == NULL) {
+      fprintf(fp, "    matches = true;\n");
+      // Scan the peepmatch and output a test for each instruction
+      check_peepmatch_instruction_sequence( fp, pmatch, pconstraint );
 
-    // Check constraints and build replacement inside scope
-    fprintf(fp, "    // If instruction subtree matches\n");
-    fprintf(fp, "    if( matches ) {\n");
+      // Check constraints and build replacement inside scope
+      fprintf(fp, "    // If instruction subtree matches\n");
+      fprintf(fp, "    if( matches ) {\n");
 
-    // Generate tests for the constraints
-    check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
+      // Generate tests for the constraints
+      check_peepconstraints( fp, _globalNames, pmatch, pconstraint );
 
-    // Construct the new sub-tree
-    generate_peepreplace( fp, _globalNames, pmatch, pconstraint, preplace, max_position );
+      // Construct the new sub-tree
+      generate_peepreplace( fp, _globalNames, peephole_number, pmatch, pconstraint, preplace, max_position );
 
-    // End of scope for this peephole's constraints
-    fprintf(fp, "    }\n");
+      // End of scope for this peephole's constraints
+      fprintf(fp, "    }\n");
+    } else {
+      const char* replace_inst = NULL;
+      preplace->next_instruction(replace_inst);
+      // Generate the target instruction
+      fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+
+      // Call the precedure
+      fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, cfg_, ra_, replacing", pprocedure->name());
+
+      int         parent        = -1;
+      int         inst_position = 0;
+      const char* inst_name     = NULL;
+      int         input         = 0;
+      pmatch->reset();
+      for (pmatch->next_instruction(parent, inst_position, inst_name, input);
+           inst_name != NULL;
+           pmatch->next_instruction(parent, inst_position, inst_name, input)) {
+        fprintf(fp, ", %s_rule", inst_name);
+      }
+      fprintf(fp, ");\n");
+
+      // If substitution succeeded, return the new node
+      fprintf(fp, "    if (replacement) {\n");
+      fprintf(fp, "      return %d;\n", peephole_number);
+      fprintf(fp, "    }\n");
+    }
+
     // Closing brace '}' to make each peephole rule individually selectable
     fprintf(fp, "  } // end of peephole rule #%d\n", peephole_number);
     fprintf(fp, "\n");
   }
 
-  fprintf(fp, "  return NULL;  // No peephole rules matched\n");
+  fprintf(fp, "  return -1;  // No peephole rules matched\n");
   fprintf(fp, "}\n");
   fprintf(fp, "\n");
 }
@@ -2277,6 +2332,9 @@ private:
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
 #endif
+#if defined(AARCH64)
+    if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
+#endif
     return NULL;
   }
 
@@ -2520,19 +2578,19 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     const char* arg_name = ins_encode->rep_var_name(inst, param_no);
     int idx = inst.operand_position_format(arg_name);
     if (strcmp(arg_name, "constanttablebase") == 0) {
-      ib += sprintf(ib, "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
+      ib += snprintf_checked(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = mach_constant_base_node_input(); \t// %s, \t%s\n",
                     name, type, arg_name);
-      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      nb += snprintf_checked(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
       // There is no operand for the constanttablebase.
     } else if (inst.is_noninput_operand(idx)) {
       globalAD->syntax_err(inst._linenum,
                            "In %s: you can not pass the non-input %s to a postalloc expand encoding.\n",
                            inst._ident, arg_name);
     } else {
-      ib += sprintf(ib, "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
+      ib += snprintf_checked(ib, remaining_buflen(idxbuf, ib), "  unsigned idx_%-5s = idx%d; \t// %s, \t%s\n",
                     name, idx, type, arg_name);
-      nb += sprintf(nb, "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
-      ob += sprintf(ob, "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
+      nb += snprintf_checked(nb, remaining_buflen(nbuf, nb), "  Node    *n_%-7s = lookup(idx_%s);\n", name, name);
+      ob += snprintf_checked(ob, remaining_buflen(opbuf, ob), "  %sOper *op_%s = (%sOper *)opnd_array(%d);\n", type, name, type, idx);
     }
     param_no++;
   }

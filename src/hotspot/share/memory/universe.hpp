@@ -95,6 +95,9 @@ class Universe: AllStatic {
   // Known classes in the VM
   static Klass* _typeArrayKlassObjs[T_LONG+1];
   static Klass* _objectArrayKlassObj;
+  // Special int-Array that represents filler objects that are used by GC to overwrite
+  // dead objects. References to them are generally an error.
+  static Klass* _fillerArrayKlassObj;
 
   // Known objects in the VM
   static OopHandle    _main_thread_group;             // Reference to the main thread group object
@@ -193,6 +196,16 @@ class Universe: AllStatic {
   static uintptr_t _verify_oop_mask;
   static uintptr_t _verify_oop_bits;
 
+  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
+  // but including T_VOID, hence the index including T_VOID
+  static OopHandle _basic_type_mirrors[T_VOID+1];
+
+#if INCLUDE_CDS_JAVA_HEAP
+  // Each slot i stores an index that can be used to restore _basic_type_mirrors[i]
+  // from the archive heap using HeapShared::get_root(int)
+  static int _archived_basic_type_mirror_indices[T_VOID+1];
+#endif
+
  public:
   static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
 
@@ -207,6 +220,8 @@ class Universe: AllStatic {
   static Klass* doubleArrayKlassObj()               { return typeArrayKlassObj(T_DOUBLE); }
 
   static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
+
+  static Klass* fillerArrayKlassObj()               { return _fillerArrayKlassObj; }
 
   static Klass* typeArrayKlassObj(BasicType t) {
     assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
@@ -226,12 +241,12 @@ class Universe: AllStatic {
   static oop short_mirror();
   static oop void_mirror();
 
-  // Table of primitive type mirrors, excluding T_OBJECT and T_ARRAY
-  // but including T_VOID, hence the index including T_VOID
-  static OopHandle _mirrors[T_VOID+1];
-
   static oop java_mirror(BasicType t);
-  static void replace_mirror(BasicType t, oop obj);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static void set_archived_basic_type_mirror_index(BasicType t, int index);
+  static void update_archived_basic_type_mirrors();
+#endif
 
   static oop      main_thread_group();
   static void set_main_thread_group(oop group);
@@ -354,7 +369,7 @@ class Universe: AllStatic {
   static bool should_verify_subset(uint subset);
   static void verify(VerifyOption option, const char* prefix);
   static void verify(const char* prefix) {
-    verify(VerifyOption_Default, prefix);
+    verify(VerifyOption::Default, prefix);
   }
   static void verify() {
     verify("");

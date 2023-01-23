@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -667,9 +667,9 @@ public class ProxyGraphics extends Graphics {
      * 1&nbsp;&le;&nbsp;<i>i</i>&nbsp;&le;&nbsp;{@code nPoints}.
      * The figure is automatically closed by drawing a line connecting
      * the final point to the first point, if those points are different.
-     * @param        xPoints   a an array of {@code x} coordinates.
-     * @param        yPoints   a an array of {@code y} coordinates.
-     * @param        nPoints   a the total number of points.
+     * @param        xPoints   an array of {@code x} coordinates.
+     * @param        yPoints   an array of {@code y} coordinates.
+     * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
@@ -704,9 +704,9 @@ public class ProxyGraphics extends Graphics {
      * <p>
      * The area inside the polygon is defined using an
      * even-odd fill rule, also known as the alternating rule.
-     * @param        xPoints   a an array of {@code x} coordinates.
-     * @param        yPoints   a an array of {@code y} coordinates.
-     * @param        nPoints   a the total number of points.
+     * @param        xPoints   an array of {@code x} coordinates.
+     * @param        yPoints   an array of {@code y} coordinates.
+     * @param        nPoints   the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
     public void fillPolygon(int[] xPoints, int[] yPoints,

@@ -169,7 +169,7 @@ import java.util.Optional;
  * The tools allows to:
  *  * convert the .sym.txt into class/sig files for ct.sym
  *  * in cooperation with the adjacent history Probe, construct .sym.txt files for previous platforms
- *  * enhance existing .sym.txt files with a a new set .sym.txt for the current platform
+ *  * enhance existing .sym.txt files with a new set .sym.txt for the current platform
  *
  * To convert the .sym.txt files to class/sig files from ct.sym, run:
  *     java build.tool.symbolgenerator.CreateSymbols build-ctsym <platform-description-file> <target-directory>

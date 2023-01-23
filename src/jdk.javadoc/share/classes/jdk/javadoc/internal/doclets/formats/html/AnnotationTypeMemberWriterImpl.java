@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,8 +214,8 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
-        return new Table(HtmlStyle.summaryTable)
+    protected Table<Element> createSummaryTable() {
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -248,7 +248,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     @Override
     protected Content getSummaryLink(Element member) {
         String name = utils.getFullyQualifiedName(member) + "." + member.getSimpleName();
-        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member, name);
+        return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
     }
 
     protected Comment selectComment(Comment c1, Comment c2) {
@@ -270,7 +270,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
             if (value != null) {
                 var dl = HtmlTree.DL(HtmlStyle.notes);
                 dl.add(HtmlTree.DT(contents.default_));
-                dl.add(HtmlTree.DD(Text.of(value.toString())));
+                dl.add(HtmlTree.DD(HtmlTree.CODE(Text.of(value.toString()))));
                 annotationContent.add(dl);
             }
         }

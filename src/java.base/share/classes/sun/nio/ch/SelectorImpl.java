@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.IllegalSelectorException;
 import java.nio.channels.SelectableChannel;
@@ -195,7 +196,7 @@ public abstract class SelectorImpl
                     selectedKeys.remove(ski);
                     i.remove();
                 }
-                assert selectedKeys.isEmpty() && keys.isEmpty();
+                assert selectedKeys.isEmpty();
             }
         }
     }
@@ -225,6 +226,8 @@ public abstract class SelectorImpl
             keys.remove(k);
             k.cancel();
             throw e;
+        } catch (CancelledKeyException e) {
+            // key observed and cancelled. Okay to return a cancelled key.
         }
         return k;
     }

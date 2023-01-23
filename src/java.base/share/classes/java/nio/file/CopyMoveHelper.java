@@ -110,13 +110,21 @@ class CopyMoveHelper {
             Files.getFileAttributeView(source, PosixFileAttributeView.class);
 
         // attributes of source file
-        BasicFileAttributes sourceAttrs = sourcePosixView != null ?
-            Files.readAttributes(source,
-                                 PosixFileAttributes.class,
-                                 linkOptions) :
-            Files.readAttributes(source,
-                                 BasicFileAttributes.class,
-                                 linkOptions);
+        BasicFileAttributes sourceAttrs = null;
+        if (sourcePosixView != null) {
+            try {
+                sourceAttrs = Files.readAttributes(source,
+                                                   PosixFileAttributes.class,
+                                                   linkOptions);
+            } catch (SecurityException ignored) {
+                // okay to continue if RuntimePermission("accessUserInformation") not granted
+            }
+        }
+        if (sourceAttrs == null)
+            sourceAttrs = Files.readAttributes(source,
+                                               BasicFileAttributes.class,
+                                               linkOptions);
+        assert sourceAttrs != null;
 
         if (sourceAttrs.isSymbolicLink())
             throw new IOException("Copying of symbolic links not supported");
@@ -157,7 +165,11 @@ class CopyMoveHelper {
 
                 if (sourceAttrs instanceof PosixFileAttributes sourcePosixAttrs &&
                     targetView instanceof PosixFileAttributeView targetPosixView) {
-                    targetPosixView.setPermissions(sourcePosixAttrs.permissions());
+                    try {
+                        targetPosixView.setPermissions(sourcePosixAttrs.permissions());
+                    } catch (SecurityException ignored) {
+                        // okay to continue if RuntimePermission("accessUserInformation") not granted
+                    }
                 }
             } catch (Throwable x) {
                 // rollback

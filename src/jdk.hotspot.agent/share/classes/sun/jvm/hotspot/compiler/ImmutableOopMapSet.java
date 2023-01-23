@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,8 +92,8 @@ public class ImmutableOopMapSet extends VMObject {
     if (!VM.getVM().isCore()) {
       REG_COUNT = db.lookupIntConstant("REG_COUNT").intValue();
       if (VM.getVM().isServerCompiler()) {
-        SAVED_ON_ENTRY_REG_COUNT = (int) db.lookupIntConstant("SAVED_ON_ENTRY_REG_COUNT").intValue();
-        C_SAVED_ON_ENTRY_REG_COUNT = (int) db.lookupIntConstant("C_SAVED_ON_ENTRY_REG_COUNT").intValue();
+        SAVED_ON_ENTRY_REG_COUNT = db.lookupIntConstant("SAVED_ON_ENTRY_REG_COUNT").intValue();
+        C_SAVED_ON_ENTRY_REG_COUNT = db.lookupIntConstant("C_SAVED_ON_ENTRY_REG_COUNT").intValue();
       }
     }
   }

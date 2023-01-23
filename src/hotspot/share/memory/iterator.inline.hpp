@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "memory/iterator.hpp"
 
 #include "classfile/classLoaderData.hpp"
+#include "code/nmethod.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -35,6 +36,7 @@
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceRefKlass.inline.hpp"
+#include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
@@ -52,121 +54,13 @@ inline void ClaimMetadataVisitingOopIterateClosure::do_klass(Klass* k) {
   ClaimMetadataVisitingOopIterateClosure::do_cld(cld);
 }
 
-// Implementation of the non-virtual do_oop dispatch.
-//
-// The same implementation is used for do_metadata, do_klass, and do_cld.
-//
-// Preconditions:
-//  - Base has a pure virtual do_oop
-//  - Only one of the classes in the inheritance chain from OopClosureType to
-//    Base implements do_oop.
-//
-// Given the preconditions:
-//  - If &OopClosureType::do_oop is resolved to &Base::do_oop, then there is no
-//    implementation of do_oop between Base and OopClosureType. However, there
-//    must be one implementation in one of the subclasses of OopClosureType.
-//    In this case we take the virtual call.
-//
-//  - Conversely, if &OopClosureType::do_oop is not resolved to &Base::do_oop,
-//    then we've found the one and only concrete implementation. In this case we
-//    take a non-virtual call.
-//
-// Because of this it's clear when we should call the virtual call and
-//   when the non-virtual call should be made.
-//
-// The way we find if &OopClosureType::do_oop is resolved to &Base::do_oop is to
-//   check if the resulting type of the class of a member-function pointer to
-//   &OopClosureType::do_oop is equal to the type of the class of a
-//   &Base::do_oop member-function pointer. Template parameter deduction is used
-//   to find these types, and then the IsSame trait is used to check if they are
-//   equal. Finally, SFINAE is used to select the appropriate implementation.
-//
-// Template parameters:
-//   T              - narrowOop or oop
-//   Receiver       - the resolved type of the class of the
-//                    &OopClosureType::do_oop member-function pointer. That is,
-//                    the klass with the do_oop member function.
-//   Base           - klass with the pure virtual do_oop member function.
-//   OopClosureType - The dynamic closure type
-//
-// Parameters:
-//   closure - The closure to call
-//   p       - The oop (or narrowOop) field to pass to the closure
-
-template <typename T, typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
-call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
-  closure->do_oop(p);
+inline void ClaimMetadataVisitingOopIterateClosure::do_nmethod(nmethod* nm) {
+  nm->follow_nmethod(this);
 }
 
-template <typename T, typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
-call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
-  // Sanity check
-  STATIC_ASSERT((!IsSame<OopClosureType, OopIterateClosure>::value));
-  closure->OopClosureType::do_oop(p);
-}
-
-template <typename OopClosureType, typename T>
-inline void Devirtualizer::do_oop(OopClosureType* closure, T* p) {
-  call_do_oop<T>(&OopClosureType::do_oop, &OopClosure::do_oop, closure, p);
-}
-
-// Implementation of the non-virtual do_metadata dispatch.
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, bool>::type
-call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
-  return closure->do_metadata();
-}
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, bool>::type
-call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
-  return closure->OopClosureType::do_metadata();
-}
-
-template <typename OopClosureType>
-inline bool Devirtualizer::do_metadata(OopClosureType* closure) {
-  return call_do_metadata(&OopClosureType::do_metadata, &OopIterateClosure::do_metadata, closure);
-}
-
-// Implementation of the non-virtual do_klass dispatch.
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
-call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
-  closure->do_klass(k);
-}
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
-call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
-  closure->OopClosureType::do_klass(k);
-}
-
-template <typename OopClosureType>
-inline void Devirtualizer::do_klass(OopClosureType* closure, Klass* k) {
-  call_do_klass(&OopClosureType::do_klass, &OopIterateClosure::do_klass, closure, k);
-}
-
-// Implementation of the non-virtual do_cld dispatch.
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<IsSame<Receiver, Base>::value, void>::type
-call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
-  closure->do_cld(cld);
-}
-
-template <typename Receiver, typename Base, typename OopClosureType>
-static typename EnableIf<!IsSame<Receiver, Base>::value, void>::type
-call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
-  closure->OopClosureType::do_cld(cld);
-}
-
-template <typename OopClosureType>
-void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
-  call_do_cld(&OopClosureType::do_cld, &OopIterateClosure::do_cld, closure, cld);
+inline void ClaimMetadataVisitingOopIterateClosure::do_method(Method* m) {
+  // Mark interpreted frames for class redefinition
+  m->record_gc_epoch();
 }
 
 // Dispatch table implementation for *Klass::oop_oop_iterate
@@ -252,6 +146,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
@@ -314,6 +209,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
@@ -376,6 +272,7 @@ private:
       set_init_function<InstanceRefKlass>();
       set_init_function<InstanceMirrorKlass>();
       set_init_function<InstanceClassLoaderKlass>();
+      set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }

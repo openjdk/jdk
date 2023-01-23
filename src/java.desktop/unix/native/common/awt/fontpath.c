@@ -305,7 +305,7 @@ static char* mergePaths(char **p1, char **p2, char **p3, jboolean noType1) {
  * a set of "known" locations and with the X11 font path, if running in
  * a local X11 environment.
  * The hardwired paths are built into the JDK binary so as new font locations
- * are created on a host plaform for them to be located by the JRE they will
+ * are created on a host platform for them to be located by the JRE they will
  * need to be added ito the host's font configuration database, typically
  * /etc/fonts/local.conf, and to ensure that directory contains a fonts.dir
  * NB: Fontconfig also depends heavily for performance on the host O/S
@@ -523,6 +523,7 @@ typedef FcFontSet* (*FcFontSortFuncType)(FcConfig *config,
                                          FcResult *result);
 typedef FcCharSet* (*FcCharSetUnionFuncType)(const FcCharSet *a,
                                              const FcCharSet *b);
+typedef FcCharSet* (*FcCharSetDestroyFuncType)(FcCharSet *fcs);
 typedef FcChar32 (*FcCharSetSubtractCountFuncType)(const FcCharSet *a,
                                                    const FcCharSet *b);
 
@@ -808,6 +809,7 @@ Java_sun_font_FontConfigManager_getFontConfig
     FcFontSortFuncType FcFontSort;
     FcFontSetDestroyFuncType FcFontSetDestroy;
     FcCharSetUnionFuncType FcCharSetUnion;
+    FcCharSetDestroyFuncType FcCharSetDestroy;
     FcCharSetSubtractCountFuncType FcCharSetSubtractCount;
     FcGetVersionFuncType FcGetVersion;
     FcConfigGetCacheDirsFuncType FcConfigGetCacheDirs;
@@ -887,6 +889,8 @@ Java_sun_font_FontConfigManager_getFontConfig
         (FcFontSetDestroyFuncType)dlsym(libfontconfig, "FcFontSetDestroy");
     FcCharSetUnion =
         (FcCharSetUnionFuncType)dlsym(libfontconfig, "FcCharSetUnion");
+    FcCharSetDestroy =
+        (FcCharSetDestroyFuncType)dlsym(libfontconfig, "FcCharSetDestroy");
     FcCharSetSubtractCount =
         (FcCharSetSubtractCountFuncType)dlsym(libfontconfig,
                                               "FcCharSetSubtractCount");
@@ -902,6 +906,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcPatternGetCharSet  == NULL ||
         FcFontSetDestroy     == NULL ||
         FcCharSetUnion       == NULL ||
+        FcCharSetDestroy     == NULL ||
         FcGetVersion         == NULL ||
         FcCharSetSubtractCount == NULL) {/* problem with the library: return.*/
         closeFontConfig(libfontconfig, JNI_FALSE);
@@ -967,6 +972,7 @@ Java_sun_font_FontConfigManager_getFontConfig
         FcChar8 **family, **styleStr, **fullname, **file;
         jarray fcFontArr = NULL;
         FcCharSet *unionCharset = NULL;
+        FcCharSet *prevUnionCharset = NULL;
 
         fcCompFontObj = (*env)->GetObjectArrayElement(env, fcCompFontArray, i);
         fcNameStr =
@@ -1010,7 +1016,7 @@ Java_sun_font_FontConfigManager_getFontConfig
 
         /* fontconfig returned us "nfonts". If we are just getting the
          * first font, we set nfont to zero. Otherwise we use "nfonts".
-         * Next create separate C arrrays of length nfonts for family file etc.
+         * Next create separate C arrays of length nfonts for family file etc.
          * Inspect the returned fonts and the ones we like (adds enough glyphs)
          * are added to the arrays and we increment 'fontCount'.
          */
@@ -1080,6 +1086,9 @@ Java_sun_font_FontConfigManager_getFontConfig
                 free(file);
                 (*FcPatternDestroy)(pattern);
                 (*FcFontSetDestroy)(fontset);
+                if (prevUnionCharset != NULL) {
+                    (*FcCharSetDestroy)(prevUnionCharset);
+                }
                 closeFontConfig(libfontconfig, JNI_FALSE);
                 if (locale) {
                     (*env)->ReleaseStringUTFChars(env, localeStr, (const char*)locale);
@@ -1101,6 +1110,10 @@ Java_sun_font_FontConfigManager_getFontConfig
                 if ((*FcCharSetSubtractCount)(charset, unionCharset)
                     > minGlyphs) {
                     unionCharset = (* FcCharSetUnion)(unionCharset, charset);
+                    if (prevUnionCharset != NULL) {
+                      (*FcCharSetDestroy)(prevUnionCharset);
+                    }
+                    prevUnionCharset = unionCharset;
                 } else {
                     continue;
                 }
@@ -1117,6 +1130,11 @@ Java_sun_font_FontConfigManager_getFontConfig
             if (fontCount == 254) {
                 break; // CompositeFont will only use up to 254 slots from here.
             }
+        }
+
+        // Release last instance of CharSet union
+        if (prevUnionCharset != NULL) {
+          (*FcCharSetDestroy)(prevUnionCharset);
         }
 
         /* Once we get here 'fontCount' is the number of returned fonts

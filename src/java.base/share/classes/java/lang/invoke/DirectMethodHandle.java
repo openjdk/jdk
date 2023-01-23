@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
-import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
 import java.util.Arrays;
@@ -171,8 +170,8 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
-    String internalProperties() {
-        return "\n& DMH.MN="+internalMemberName();
+    String internalProperties(int indentLevel) {
+        return "\n" + debugPrefix(indentLevel) + "& DMH.MN=" + internalMemberName();
     }
 
     //// Implementation methods.
@@ -298,7 +297,7 @@ sealed class DirectMethodHandle extends MethodHandle {
             result = NEW_OBJ;
         }
         names[LINKER_CALL] = new Name(linker, outArgs);
-        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, result, kind);
+        LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, result, kind);
 
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
@@ -601,7 +600,7 @@ sealed class DirectMethodHandle extends MethodHandle {
     }
 
     Object checkCast(Object obj) {
-        return member.getReturnType().cast(obj);
+        return member.getMethodType().returnType().cast(obj);
     }
 
     // Caching machinery for field accessors:
@@ -629,12 +628,14 @@ sealed class DirectMethodHandle extends MethodHandle {
     private static final LambdaForm[] ACCESSOR_FORMS
             = new LambdaForm[afIndex(AF_LIMIT, false, 0)];
     static int ftypeKind(Class<?> ftype) {
-        if (ftype.isPrimitive())
+        if (ftype.isPrimitive()) {
             return Wrapper.forPrimitiveType(ftype).ordinal();
-        else if (VerifyType.isNullReferenceConversion(Object.class, ftype))
+        } else if (ftype.isInterface() || ftype.isAssignableFrom(Object.class)) {
+            // retyping can be done without a cast
             return FT_UNCHECKED_REF;
-        else
+        } else {
             return FT_CHECKED_REF;
+        }
     }
 
     /**
@@ -813,9 +814,9 @@ sealed class DirectMethodHandle extends MethodHandle {
         LambdaForm form;
         if (needsCast || needsInit) {
             // can't use the pre-generated form when casting and/or initializing
-            form = new LambdaForm(ARG_LIMIT, names, RESULT);
+            form = LambdaForm.create(ARG_LIMIT, names, RESULT);
         } else {
-            form = new LambdaForm(ARG_LIMIT, names, RESULT, kind);
+            form = LambdaForm.create(ARG_LIMIT, names, RESULT, kind);
         }
 
         if (LambdaForm.debugNames()) {

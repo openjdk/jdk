@@ -27,9 +27,8 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.NativeEntryPoint;
+import jdk.internal.foreign.abi.NativeEntryPoint;
 import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -323,7 +322,7 @@ abstract class MethodHandleImpl {
                 for (int pos : positions) {
                     ptypes[pos - 1] = newType;
                 }
-                midType = MethodType.makeImpl(midType.rtype(), ptypes, true);
+                midType = MethodType.methodType(midType.rtype(), ptypes, true);
             }
             LambdaForm form2;
             if (positions.length > 1) {
@@ -837,7 +836,7 @@ abstract class MethodHandleImpl {
         invokeArgs[0] = names[SELECT_ALT];
         names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, /*forceInline=*/true, Kind.GUARD);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
@@ -913,7 +912,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.GUARD_WITH_CATCH);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
     }
@@ -974,7 +973,7 @@ abstract class MethodHandleImpl {
         int arity = type.parameterCount();
         if (arity > 1) {
             MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
-            mh = MethodHandles.dropArguments(mh, 1, Arrays.copyOfRange(type.parameterArray(), 1, arity));
+            mh = MethodHandles.dropArgumentsTrusted(mh, 1, Arrays.copyOfRange(type.ptypes(), 1, arity));
             return mh;
         }
         return makePairwiseConvert(getFunction(NF_throwException).resolvedHandle(), type, false, true);
@@ -1006,7 +1005,8 @@ abstract class MethodHandleImpl {
     }
     static MethodHandle fakeVarHandleInvoke(MemberName method) {
         // TODO caching, is it necessary?
-        MethodType type = MethodType.methodType(method.getReturnType(), UnsupportedOperationException.class,
+        MethodType type = MethodType.methodType(method.getMethodType().returnType(),
+                                                UnsupportedOperationException.class,
                                                 VarHandle.class, Object[].class);
         MethodHandle mh = throwException(type);
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke VarHandle"));
@@ -1581,19 +1581,13 @@ abstract class MethodHandleImpl {
             }
 
             @Override
-            public void ensureCustomized(MethodHandle mh) {
-                mh.customize();
+            public VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask, ByteOrder order) {
+                return VarHandles.memorySegmentViewHandle(carrier, alignmentMask, order);
             }
 
             @Override
-            public VarHandle memoryAccessVarHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
-                                                   ByteOrder order) {
-                return VarHandles.makeMemoryAddressViewHandle(carrier, skipAlignmentMaskCheck, alignmentMask, order);
-            }
-
-            @Override
-            public MethodHandle nativeMethodHandle(NativeEntryPoint nep, MethodHandle fallback) {
-                return NativeMethodHandle.make(nep, fallback);
+            public MethodHandle nativeMethodHandle(NativeEntryPoint nep) {
+                return NativeMethodHandle.make(nep);
             }
 
             @Override
@@ -1804,7 +1798,7 @@ abstract class MethodHandleImpl {
             names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_LOOP,
-                    new LambdaForm(lambdaType.parameterCount(), names, Kind.LOOP));
+                    LambdaForm.create(lambdaType.parameterCount(), names, Kind.LOOP));
         }
 
         // BOXED_ARGS is the index into the names array where the loop idiom starts
@@ -1948,7 +1942,7 @@ abstract class MethodHandleImpl {
      *
      * @return a handle on the constructed {@code try-finally} block.
      */
-    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, List<Class<?>> argTypes) {
+    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> rtype, Class<?>[] argTypes) {
         MethodType type = MethodType.methodType(rtype, argTypes);
         LambdaForm form = makeTryFinallyForm(type.basicType());
 
@@ -2038,7 +2032,7 @@ abstract class MethodHandleImpl {
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_FINALLY]};
         names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.TRY_FINALLY);
 
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_TF, lform);
     }
@@ -2133,7 +2127,7 @@ abstract class MethodHandleImpl {
                     names[CALL_NEW_ARRAY], storeIndex, names[argCursor]);
         }
 
-        LambdaForm lform = new LambdaForm(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
+        LambdaForm lform = LambdaForm.create(lambdaType.parameterCount(), names, CALL_NEW_ARRAY, Kind.COLLECTOR);
         if (isSharedLambdaForm) {
             lform = basicType.form().setCachedLambdaForm(MethodTypeForm.LF_COLLECTOR, lform);
         }
@@ -2258,7 +2252,7 @@ abstract class MethodHandleImpl {
             names[UNBOXED_RESULT] = new Name(invokeBasic, unboxArgs);
         }
 
-        lform = new LambdaForm(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
+        lform = LambdaForm.create(lambdaType.parameterCount(), names, Kind.TABLE_SWITCH);
         LambdaForm prev = TableSwitchCacheKey.CACHE.putIfAbsent(key, lform);
         return prev != null ? prev : lform;
     }

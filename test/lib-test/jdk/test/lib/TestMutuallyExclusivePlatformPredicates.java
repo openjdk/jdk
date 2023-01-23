@@ -50,7 +50,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         OS("isAix", "isLinux", "isOSX", "isWindows"),
         VM_TYPE("isClient", "isServer", "isMinimal", "isZero", "isEmbedded"),
         MODE("isInt", "isMixed", "isComp"),
-        IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild",
+        IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild", "isMusl",
                 "isSlowDebugBuild", "hasSA", "isRoot", "isTieredSupported",
                 "areCustomLoadersSupportedForCDS", "isDefaultCDSArchiveSupported",
                 "isHardenedOSX");

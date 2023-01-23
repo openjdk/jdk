@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -449,7 +449,7 @@ address TemplateInterpreterGenerator::generate_currentThread() {
 
   address entry_point = __ pc();
 
-  __ movptr(rax, Address(r15_thread, JavaThread::threadObj_offset()));
+  __ movptr(rax, Address(r15_thread, JavaThread::vthread_offset()));
 
   __ resolve_oop_handle(rax, rscratch1);
 

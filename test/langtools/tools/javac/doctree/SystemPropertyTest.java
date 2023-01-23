@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 5076751 8273244
+ * @bug 5076751 8273244 8284908
  * @summary System properties documentation needed in javadocs
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -59,7 +59,7 @@ DocComment[DOC_COMMENT, pos:1
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 3
     Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Erroneous[ERRONEOUS, pos:5, prefPos:26
       code: compiler.err.dc.unexpected.content
       body: {@systemProperty_xyz_q
     ]
@@ -77,7 +77,7 @@ DocComment[DOC_COMMENT, pos:1
 DocComment[DOC_COMMENT, pos:1
   firstSentence: 3
     Text[TEXT, pos:1, abc_]
-    Erroneous[ERRONEOUS, pos:5
+    Erroneous[ERRONEOUS, pos:5, prefPos:20
       code: compiler.err.dc.no.content
       body: {@systemProperty
     ]

@@ -4587,6 +4587,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * {@link #newKeySet() newKeySet()},
      * {@link #newKeySet(int) newKeySet(int)}.
      *
+     * @param <K> the type of keys
+     * @param <V> the type of values in the backing map
+     *
      * @since 1.8
      */
     public static final class KeySetView<K,V> extends CollectionView<K,V,K>
@@ -6373,7 +6376,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
 
         // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.java.net/browse/JDK-8074773
+        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
         Class<?> ensureLoaded = LockSupport.class;
 
         // Eager class load observed to help JIT during startup

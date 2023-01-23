@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 import com.sun.source.doctree.SinceTree;
 import com.sun.source.doctree.SnippetTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
@@ -337,6 +338,15 @@ public interface DocTreeFactory {
     SnippetTree newSnippetTree(List<? extends DocTree> attributes, TextTree text);
 
     /**
+     * Creates a new {@code SpecTree} object, to represent an {@code @spec} tag.
+     * @param url    the url
+     * @param title  the title
+     * @return a {@code SpecTree} object
+     * @since 20
+     */
+    SpecTree newSpecTree(TextTree url, List<? extends DocTree> title);
+
+    /**
      * Creates a new {@code StartElementTree} object, to represent the start of an HTML element.
      * @param name the name of the HTML element
      * @param attrs the attributes
@@ -412,6 +422,19 @@ public interface DocTreeFactory {
      * @return a {@code ValueTree} object
      */
     ValueTree newValueTree(ReferenceTree ref);
+
+    /**
+     * Creates a new {@code ValueTree} object, to represent a {@code {@value }} tag.
+     * @param format a format string for the value
+     * @param ref a reference to the value
+     * @return a {@code ValueTree} object
+     *
+     * @implSpec This implementation calls {@link #newValueTree(ReferenceTree) newValueTree(ref)}.
+     * @since 20
+     */
+    default ValueTree newValueTree(TextTree format, ReferenceTree ref) {
+        return newValueTree(ref);
+    }
 
     /**
      * Creates a new {@code VersionTree} object, to represent a {@code {@version }} tag.

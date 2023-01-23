@@ -39,6 +39,7 @@
 #include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/locknode.hpp"
@@ -217,79 +218,13 @@ public:
 
 };
 
-volatile int C2SafepointPollStubTable::_stub_size = 0;
-
-Label& C2SafepointPollStubTable::add_safepoint(uintptr_t safepoint_offset) {
-  C2SafepointPollStub* entry = new (Compile::current()->comp_arena()) C2SafepointPollStub(safepoint_offset);
-  _safepoints.append(entry);
-  return entry->_stub_label;
-}
-
-void C2SafepointPollStubTable::emit(CodeBuffer& cb) {
-  MacroAssembler masm(&cb);
-  for (int i = _safepoints.length() - 1; i >= 0; i--) {
-    // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
-
-    C2SafepointPollStub* entry = _safepoints.at(i);
-    emit_stub(masm, entry);
-  }
-}
-
-int C2SafepointPollStubTable::stub_size_lazy() const {
-  int size = Atomic::load(&_stub_size);
-
-  if (size != 0) {
-    return size;
-  }
-
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
-  MacroAssembler masm(&cb);
-  C2SafepointPollStub* entry = _safepoints.at(0);
-  emit_stub(masm, entry);
-  size += cb.insts_size();
-
-  Atomic::store(&_stub_size, size);
-
-  return size;
-}
-
-int C2SafepointPollStubTable::estimate_stub_size() const {
-  if (_safepoints.length() == 0) {
-    return 0;
-  }
-
-  int result = stub_size_lazy() * _safepoints.length();
-
-#ifdef ASSERT
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  int size = 0;
-
-  for (int i = _safepoints.length() - 1; i >= 0; i--) {
-    CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
-    MacroAssembler masm(&cb);
-    C2SafepointPollStub* entry = _safepoints.at(i);
-    emit_stub(masm, entry);
-    size += cb.insts_size();
-  }
-  assert(size == result, "stubs should not have variable size");
-#endif
-
-  return result;
-}
-
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),
     _first_block_size(0),
     _handler_table(),
     _inc_table(),
+    _stub_list(),
     _oop_map_set(NULL),
     _scratch_buffer_blob(NULL),
     _scratch_locs_memory(NULL),
@@ -325,7 +260,7 @@ void PhaseOutput::perform_mach_node_analysis() {
 
   pd_perform_mach_node_analysis();
 
-  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
+  C->print_method(CompilerPhaseType::PHASE_MACH_ANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -816,7 +751,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
 
     ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == NULL) {
-      ciKlass* cik = t->is_oopptr()->klass();
+      ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
              cik->is_array_klass(), "Not supported allocation.");
       sv = new ObjectValue(spobj->_idx,
@@ -860,7 +795,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
       array->append(new ConstantIntValue((jint)0));
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     } else if ( t->base() == Type::RawPtr ) {
-      // jsr/ret return address which must be restored into a the full
+      // jsr/ret return address which must be restored into the full
       // width 64-bit stack slot.
       array->append(new_loc_value( C->regalloc(), regnum, Location::lng ));
     }
@@ -890,8 +825,16 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
+    } else if (C->regalloc()->is_oop(local)) {
+      assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
+             t->base() == Type::AryPtr,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::oop ));
     } else {
-      array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
+      assert(t->base() == Type::Int || t->base() == Type::Half ||
+             t->base() == Type::FloatCon || t->base() == Type::FloatBot,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::normal ));
     }
     return;
   }
@@ -996,7 +939,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
-  bool is_opt_native = false;
   bool return_oop = false;
   bool has_ea_local_in_scope = sfn->_has_ea_local_in_scope;
   bool arg_escape = false;
@@ -1015,8 +957,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         is_method_handle_invoke = true;
       }
       arg_escape = mcall->as_MachCallJava()->_arg_escape;
-    } else if (mcall->is_MachCallNative()) {
-      is_opt_native = true;
     }
 
     // Check if a call returns an object.
@@ -1089,7 +1029,7 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = PhaseOutput::sv_for_node_id(objs, spobj->_idx);
         if (scval == NULL) {
           const Type *t = spobj->bottom_type();
-          ciKlass* cik = t->is_oopptr()->klass();
+          ciKlass* cik = t->is_oopptr()->exact_klass();
           assert(cik->is_instance_klass() ||
                  cik->is_array_klass(), "Not supported allocation.");
           ObjectValue* sv = new ObjectValue(spobj->_idx,
@@ -1145,7 +1085,6 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
       jvms->should_reexecute(),
       rethrow_exception,
       is_method_handle_invoke,
-      is_opt_native,
       return_oop,
       has_ea_local_in_scope,
       arg_escape,
@@ -1305,7 +1244,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
-  stub_req += safepoint_poll_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1435,7 +1373,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     if (!block->is_connector()) {
       stringStream st;
       block->dump_head(C->cfg(), &st);
-      MacroAssembler(cb).block_comment(st.as_string());
+      MacroAssembler(cb).block_comment(st.freeze());
     }
     jmp_target[i] = 0;
     jmp_offset[i] = 0;
@@ -1812,8 +1750,8 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   bs->emit_stubs(*cb);
   if (C->failing())  return;
 
-  // Fill in stubs for calling the runtime from safepoint polls.
-  safepoint_poll_table()->emit(*cb);
+  // Fill in stubs.
+  _stub_list.emit(*cb);
   if (C->failing())  return;
 
 #ifndef PRODUCT
@@ -1862,6 +1800,19 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   if (C->print_assembly()) {
     ttyLocker ttyl;  // keep the following output all in one block
     if (!VMThread::should_terminate()) {  // test this under the tty lock
+      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
+      // We call them first and write to a stringStream, then we retake the lock to
+      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+      ResourceMark rm;
+      stringStream method_metadata_str;
+      if (C->method() != NULL) {
+        C->method()->print_metadata(&method_metadata_str);
+      }
+      stringStream dump_asm_str;
+      dump_asm_on(&dump_asm_str, node_offsets, node_offset_limit);
+
+      NoSafepointVerifier nsv;
+      ttyLocker ttyl2;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
@@ -1871,19 +1822,15 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        C->method()->print_metadata();
+        tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      dump_asm(node_offsets, node_offset_limit);
+      tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
-        // print_metadata and dump_asm above may safepoint which makes us loose the ttylock.
-        // Retake lock too make sure the end tag is coherent, and that xmlStream->pop_tag is done
-        // thread safe
-        ttyLocker ttyl2;
         xtty->tail("opto_assembly");
       }
     }
@@ -3353,8 +3300,9 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      compiler,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
-                                     C->rtm_state(),
-                                     C->native_invokers());
+                                     C->has_monitors(),
+                                     0,
+                                     C->rtm_state());
 
     if (C->log() != NULL) { // Print code cache state into compiler log
       C->log()->code_cache_state();

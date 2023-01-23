@@ -50,7 +50,7 @@
  */
 
 /*
- * platoform.h
+ * platform.h
  * 10.12.2001
  *
  * declaration of all platform dependent functions used by pkcs11wrapper.c
@@ -69,7 +69,7 @@
 #define CK_PTR *
 #define CK_DEFINE_FUNCTION(returnType, name) returnType __declspec(dllexport) name
 #define CK_DECLARE_FUNCTION(returnType, name) returnType __declspec(dllimport) name
-#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType __declspec(dllimport) (* name)
+#define CK_DECLARE_FUNCTION_POINTER(returnType, name) returnType (* name)
 #define CK_CALLBACK_FUNCTION(returnType, name) returnType (* name)
 #ifndef NULL_PTR
 #define NULL_PTR 0

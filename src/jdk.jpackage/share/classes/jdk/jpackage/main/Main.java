@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.jpackage.main;
 
+import jdk.internal.opt.CommandLine;
 import jdk.jpackage.internal.Arguments;
 import jdk.jpackage.internal.Log;
 import jdk.jpackage.internal.CLIHelp;
@@ -36,7 +37,7 @@ import java.text.MessageFormat;
 
 public class Main {
 
-    private static final ResourceBundle I18N = ResourceBundle.getBundle(
+    public static final ResourceBundle I18N = ResourceBundle.getBundle(
             "jdk.jpackage.internal.resources.MainResources");
 
     /**

@@ -84,6 +84,9 @@ typedef struct {
     volatile jboolean vmDead; /* Once VM is dead it stays that way - don't put in init */
     jboolean assertOn;
     jboolean assertFatal;
+    jboolean vthreadsSupported; /* If true, debugging support for vthreads is enabled. */
+    jboolean includeVThreads;   /* If true, VM.AllThreads includes vthreads. */
+    jboolean rememberVThreadsWhenDisconnected;
     jboolean doerrorexit;
     jboolean modifiedUtf8;
     jboolean quiet;
@@ -104,7 +107,6 @@ typedef struct {
     jclass              systemClass;
     jmethodID           threadConstructor;
     jmethodID           threadSetDaemon;
-    jmethodID           threadResume;
     jmethodID           systemGetProperty;
     jmethodID           setProperty;
     jthreadGroup        systemThreadGroup;
@@ -137,7 +139,7 @@ typedef struct {
     /* Indication that the agent has been loaded */
     jboolean isLoaded;
 
-    /* Indication that VM_DEATH has been recieved and the JVMTI callbacks have been cleared. */
+    /* Indication that VM_DEATH has been received and the JVMTI callbacks have been cleared. */
     volatile jboolean jvmtiCallBacksCleared;
 
 } BackendGlobalData;
@@ -158,7 +160,7 @@ typedef enum {
         EI_THREAD_START         =  5,
         EI_THREAD_END           =  6,
         EI_CLASS_PREPARE        =  7,
-        EI_GC_FINISH            =  8,
+        EI_CLASS_UNLOAD         =  8,
         EI_CLASS_LOAD           =  9,
         EI_FIELD_ACCESS         = 10,
         EI_FIELD_MODIFICATION   = 11,
@@ -171,7 +173,10 @@ typedef enum {
         EI_MONITOR_WAITED       = 18,
         EI_VM_INIT              = 19,
         EI_VM_DEATH             = 20,
-        EI_max                  = 20
+        EI_VIRTUAL_THREAD_START = 21,
+        EI_VIRTUAL_THREAD_END   = 22,
+
+        EI_max                  = 22
 } EventIndex;
 
 /* Agent errors that might be in a jvmtiError for JDWP or internal.
@@ -212,6 +217,7 @@ typedef struct {
 
     EventIndex  ei;
     jthread     thread;
+    jboolean    is_vthread;
     jclass      clazz;
     jmethodID   method;
     jlocation   location;
@@ -272,7 +278,7 @@ typedef struct ObjectBatch {
 #define MOD_FINAL        0x0010     /* no further subclassing, overriding */
 #define MOD_SYNCHRONIZED 0x0020     /* wrap method call in monitor lock */
 #define MOD_VOLATILE     0x0040     /* can cache in registers */
-#define MOD_TRANSIENT    0x0080     /* not persistant */
+#define MOD_TRANSIENT    0x0080     /* not persistent */
 #define MOD_NATIVE       0x0100     /* implemented in C */
 #define MOD_INTERFACE    0x0200     /* class is an interface */
 #define MOD_ABSTRACT     0x0400     /* no definition provided */
@@ -328,6 +334,7 @@ jvmtiError classLoader(jclass, jobject *);
  */
 JNIEnv *getEnv(void);
 jboolean isClass(jobject object);
+jboolean isVThread(jobject object);
 jboolean isThread(jobject object);
 jboolean isThreadGroup(jobject object);
 jboolean isString(jobject object);

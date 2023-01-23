@@ -74,15 +74,14 @@ public class PrintLatinCJKTest implements Printable {
             });
             frame.getContentPane().add(b, BorderLayout.SOUTH);
             frame.pack();
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
 
             // add the test frame to dispose
-            PassFailJFrame.addTestFrame(frame);
+            PassFailJFrame.addTestWindow(frame);
 
             // Arrange the test instruction frame and test frame side by side
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
         });
     }
 
@@ -100,7 +99,7 @@ public class PrintLatinCJKTest implements Printable {
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
         PassFailJFrame passFailJFrame = new PassFailJFrame("Test Instruction" +
-                "Frame", info, 10, 40, 5);
+                "Frame", info, 10, 10, 45);
         showFrame();
         passFailJFrame.awaitAndCheck();
     }

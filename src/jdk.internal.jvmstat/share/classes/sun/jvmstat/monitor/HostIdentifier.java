@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,7 @@ import java.net.*;
  *          (protocol) dependent. These components are ignored by the
  *          default local protocol, <em>local:</em>. For the default remote
  *          protocol, <em>rmi</em>, the Path component is interpreted as
- *          the name of the RMI remote object. The Query component may
- *          contain an access mode specifier <em>?mode=</em> specifying
- *          <em>"r"</em> or <em>"rw"</em> access (write access currently
- *          ignored). The Fragment part is ignored.
+ *          the name of the RMI remote object. The Fragment part is ignored.
  *       </p></li>
  * </ul>
  * <p>
@@ -495,26 +492,6 @@ public class HostIdentifier {
      */
     public String getFragment() {
         return uri.getFragment();
-    }
-
-    /**
-     * Return the mode indicated in this HostIdentifier.
-     *
-     * @return String - the mode string. If no mode is specified, then "r"
-     *                  is returned. otherwise, the specified mode is returned.
-     */
-    public String getMode() {
-        String query = getQuery();
-        if (query != null) {
-            String[] queryArgs = query.split("\\+");
-            for (String queryArg : queryArgs) {
-                if (queryArg.startsWith("mode=")) {
-                    int index = queryArg.indexOf('=');
-                    return queryArg.substring(index + 1);
-                }
-            }
-        }
-        return "r";
     }
 
     /**

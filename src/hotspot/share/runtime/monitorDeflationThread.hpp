@@ -25,7 +25,7 @@
 #ifndef SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
 #define SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP
 
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 // A hidden from external view JavaThread for deflating idle monitors.
 
@@ -41,7 +41,6 @@ class MonitorDeflationThread : public JavaThread {
 
   // Hide this thread from external view.
   bool is_hidden_from_external_view() const { return true; }
-  bool is_monitor_deflation_thread() const { return true; }
 };
 
 #endif // SHARE_RUNTIME_MONITORDEFLATIONTHREAD_HPP

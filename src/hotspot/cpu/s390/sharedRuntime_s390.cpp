@@ -29,6 +29,7 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -920,8 +921,11 @@ static void gen_special_dispatch(MacroAssembler *masm,
     member_arg_pos = total_args_passed - 1;  // trailing MemberName argument
     member_reg = Z_R9;                       // Known to be free at this point.
     has_receiver = MethodHandles::ref_kind_has_receiver(ref_kind);
+  } else if (special_dispatch == vmIntrinsics::_linkToNative) {
+    member_arg_pos = total_args_passed - 1;  // trailing NativeEntryPoint argument
+    member_reg = Z_R9;  // known to be free at this point
   } else {
-    guarantee(special_dispatch == vmIntrinsics::_invokeBasic || special_dispatch == vmIntrinsics::_linkToNative,
+    guarantee(special_dispatch == vmIntrinsics::_invokeBasic,
               "special_dispatch=%d", vmIntrinsics::as_int(special_dispatch));
     has_receiver = true;
   }
@@ -1537,6 +1541,9 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ resize_frame(-frame_size_in_bytes, Z_R0_scratch);    // No new frame for the wrapper.
                                                           // Just resize the existing one.
 #endif
+
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(masm);
 
   wrapper_FrameDone = __ offset();
 
@@ -2998,7 +3005,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // get the returned method
   __ get_vm_result_2(Z_method);
 
-  // We are back the the original state on entry and ready to go.
+  // We are back to the original state on entry and ready to go.
   __ z_br(Z_R1_scratch);
 
   // Pending exception after the safepoint
@@ -3278,13 +3285,3 @@ extern "C"
 int SpinPause() {
   return 0;
 }
-
-#ifdef COMPILER2
-RuntimeStub* SharedRuntime::make_native_invoker(address call_target,
-                                                int shadow_space_bytes,
-                                                const GrowableArray<VMReg>& input_registers,
-                                                const GrowableArray<VMReg>& output_registers) {
-  Unimplemented();
-  return nullptr;
-}
-#endif

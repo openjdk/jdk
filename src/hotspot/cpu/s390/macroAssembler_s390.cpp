@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3858,7 +3858,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type,
@@ -3877,7 +3877,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
   assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type,
@@ -4484,7 +4484,7 @@ intptr_t MacroAssembler::get_const_from_toc(address pc) {
   if (is_load_const_from_toc_pcrelative(pc)) {
     dataLoc = pc + offset;
   } else {
-    CodeBlob* cb = CodeCache::find_blob_unsafe(pc);   // Else we get assertion if nmethod is zombie.
+    CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb && cb->is_nmethod(), "sanity");
     nmethod* nm = (nmethod*)cb;
     dataLoc = nm->ctable_begin() + offset;
@@ -4664,6 +4664,22 @@ void MacroAssembler::kmc(Register dstBuff, Register srcBuff) {
   Label retry;
   bind(retry);
   Assembler::z_kmc(dstBuff, srcBuff);
+  Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
+}
+
+void MacroAssembler::kmctr(Register dstBuff, Register ctrBuff, Register srcBuff) {
+  // DstBuff and srcBuff are allowed to be the same register (encryption in-place).
+  // DstBuff and srcBuff storage must not overlap destructively, and neither must overlap the parameter block.
+  assert(srcBuff->encoding()     != 0, "src buffer address can't be in Z_R0");
+  assert(dstBuff->encoding()     != 0, "dst buffer address can't be in Z_R0");
+  assert(ctrBuff->encoding()     != 0, "ctr buffer address can't be in Z_R0");
+  assert(ctrBuff->encoding() % 2 == 0, "ctr buffer addr must be an even register");
+  assert(dstBuff->encoding() % 2 == 0, "dst buffer addr must be an even register");
+  assert(srcBuff->encoding() % 2 == 0, "src buffer addr/len must be an even/odd register pair");
+
+  Label retry;
+  bind(retry);
+  Assembler::z_kmctr(dstBuff, ctrBuff, srcBuff);
   Assembler::z_brc(Assembler::bcondOverflow /* CC==3 (iterate) */, retry);
 }
 

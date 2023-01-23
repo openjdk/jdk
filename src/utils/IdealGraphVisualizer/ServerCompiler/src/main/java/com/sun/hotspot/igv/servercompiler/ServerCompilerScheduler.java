@@ -24,6 +24,9 @@
  */
 package com.sun.hotspot.igv.servercompiler;
 
+import com.ibm.wala.util.graph.Graph;
+import com.ibm.wala.util.graph.dominators.Dominators;
+import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
 import com.sun.hotspot.igv.data.InputBlock;
 import com.sun.hotspot.igv.data.InputEdge;
 import com.sun.hotspot.igv.data.InputGraph;
@@ -33,9 +36,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import org.openide.ErrorManager;
 import org.openide.util.lookup.ServiceProvider;
-import com.ibm.wala.util.graph.Graph;
-import com.ibm.wala.util.graph.impl.SlowSparseNumberedGraph;
-import com.ibm.wala.util.graph.dominators.Dominators;
 
 /**
  *
@@ -46,14 +46,32 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static class Node {
 
+        public static final String WARNING_BLOCK_PROJECTION_WITH_MULTIPLE_SUCCS = "Block projection with multiple successors";
+        public static final String WARNING_REGION_WITH_MULTIPLE_SUCCS = "Region with multiple successors";
+        public static final String WARNING_PHI_INPUT_WITHOUT_REGION = "Phi input without associated region";
+        public static final String WARNING_REGION_WITHOUT_CONTROL_INPUT = "Region without control input";
+        public static final String WARNING_PHI_WITH_REGIONLESS_INPUTS = "Phi node with input nodes without associated region";
+        public static final String WARNING_NOT_MARKED_WITH_BLOCK_START = "Region not marked with is_block_start";
+        public static final String WARNING_CFG_AND_INPUT_TO_PHI = "CFG node is a phi input";
+        public static final String WARNING_PHI_NON_DOMINATING_INPUTS = "Phi input that does not dominate the phi's input block";
+        public static final String WARNING_CONTROL_UNREACHABLE_CFG = "Control-unreachable CFG node";
+        public static final String WARNING_CFG_WITHOUT_SUCCESSORS = "CFG node without control successors";
+
         public InputNode inputNode;
         public Set<Node> succs = new HashSet<>();
         public List<Node> preds = new ArrayList<>();
+        // Index of each predecessor.
+        public List<Character> predIndices = new ArrayList<>();
+        public List<String> warnings;
         public InputBlock block;
         public boolean isBlockProjection;
         public boolean isBlockStart;
         public boolean isCFG;
         public int rank; // Rank for local scheduling priority.
+
+        // Empty constructor for creating dummy CFG nodes without associated
+        // input nodes.
+        public Node() {}
 
         public Node(InputNode n) {
             inputNode = n;
@@ -81,8 +99,18 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
+        public void addWarning(String msg) {
+            if (warnings == null) {
+                warnings = new ArrayList<>();
+            }
+            warnings.add(msg);
+        }
+
         @Override
         public String toString() {
+            if (inputNode == null) {
+                return "(dummy node)";
+            }
             return inputNode.getProperties().get("idx") + " " + inputNode.getProperties().get("name");
         }
     }
@@ -90,14 +118,11 @@ public class ServerCompilerScheduler implements Scheduler {
     private Collection<Node> nodes;
     private Map<InputNode, Node> inputNodeToNode;
     private Vector<InputBlock> blocks;
+    // CFG successors of each CFG node, excluding self edges.
+    Map<Node, List<Node>> controlSuccs = new HashMap<>();
+    // Nodes reachable in backward traversal from root.
     private Map<InputBlock, InputBlock> dominatorMap;
-    private static final Comparator<InputEdge> edgeComparator = new Comparator<InputEdge>() {
-
-        @Override
-        public int compare(InputEdge o1, InputEdge o2) {
-            return o1.getToIndex() - o2.getToIndex();
-        }
-    };
+    private static final Comparator<InputEdge> edgeComparator = Comparator.comparingInt(InputEdge::getToIndex);
 
     public void buildBlocks() {
 
@@ -110,8 +135,6 @@ public class ServerCompilerScheduler implements Scheduler {
         Stack<Node> stack = new Stack<>();
         Set<Node> visited = new HashSet<>();
         Map<InputBlock, Set<Node>> terminators = new HashMap<>();
-        // Pre-compute control successors of each node, excluding self edges.
-        Map<Node, List<Node>> controlSuccs = new HashMap<>();
         for (Node n : nodes) {
             if (n.isCFG) {
                 List<Node> nControlSuccs = new ArrayList<>();
@@ -144,7 +167,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 rootBlock = block;
             }
             blockCount++;
-            Set<Node> blockTerminators = new HashSet<Node>();
+            Set<Node> blockTerminators = new HashSet<>();
             // Move forwards until a terminator node is found, assigning all
             // visited nodes to the current block.
             while (true) {
@@ -157,8 +180,10 @@ public class ServerCompilerScheduler implements Scheduler {
                 } else if (controlSuccs.get(n).size() == 1) {
                     // One successor: end the block if it is a block start node.
                     Node s = controlSuccs.get(n).iterator().next();
-                    if (s.isBlockStart) {
-                        // Block start: end the block.
+                    if (s.isBlockStart || isDummy(n)) {
+                        // Block start or n is a dummy node: end the block. The
+                        // second condition handles ill-formed graphs where join
+                        // Region nodes are not marked as block starts.
                         blockTerminators.add(n);
                         stack.push(s);
                         break;
@@ -179,7 +204,22 @@ public class ServerCompilerScheduler implements Scheduler {
                             // (dead) 'Safepoint' nodes.
                             s.block = block;
                             blockTerminators.add(s);
-                            for (Node ps : controlSuccs.get(s)) {
+                            List<Node> projSuccs = controlSuccs.get(s);
+                            if (projSuccs.size() > 1) {
+                                s.addWarning(Node.WARNING_BLOCK_PROJECTION_WITH_MULTIPLE_SUCCS);
+                            }
+                            // If s has only one CFG successor ss (regular
+                            // case), there is a node pinned to s, and ss has
+                            // multiple CFG predecessors, insert a block between
+                            // s and ss. This is done by adding a dummy CFG node
+                            // that has no correspondence in the input graph.
+                            if (projSuccs.size() == 1 &&
+                                s.succs.stream().anyMatch(ss -> pinnedNode(ss) == s) &&
+                                projSuccs.get(0).preds.stream().filter(ssp -> ssp.isCFG).count() > 1) {
+                                stack.push(insertDummyCFGNode(s, projSuccs.get(0)));
+                                continue;
+                            }
+                            for (Node ps : projSuccs) {
                                 stack.push(ps);
                             }
                         } else {
@@ -230,6 +270,24 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    // Create a dummy CFG node (without correspondence in the input graph) and
+    // insert it between p and s.
+    private Node insertDummyCFGNode(Node p, Node s) {
+        // Create in-between node.
+        Node n = new Node();
+        n.preds.add(p);
+        n.succs.add(s);
+        controlSuccs.put(n, Collections.singletonList(s));
+        n.isCFG = true;
+        // Update predecessor node p.
+        p.succs.remove(s);
+        p.succs.add(n);
+        controlSuccs.put(p, Collections.singletonList(n));
+        // Update successor node s.
+        Collections.replaceAll(s.preds, p, n);
+        return n;
+    }
+
     private String getBlockName(InputNode n) {
         return n.getProperties().get("block");
     }
@@ -263,25 +321,13 @@ public class ServerCompilerScheduler implements Scheduler {
             }
             buildUpGraph();
             markCFGNodes();
-            connectOrphansAndWidows();
             buildBlocks();
+            schedulePinned();
             buildDominators();
             scheduleLatest();
-
-            InputBlock noBlock = null;
-            for (InputNode n : graph.getNodes()) {
-                if (graph.getBlock(n) == null) {
-                    if (noBlock == null) {
-                        noBlock = graph.addArtificialBlock();
-                        blocks.add(noBlock);
-                    }
-
-                    graph.setBlock(n, noBlock);
-                }
-                assert graph.getBlock(n) != null;
-            }
-
             scheduleLocal();
+            check();
+            reportWarnings();
 
             return blocks;
         }
@@ -321,30 +367,27 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    private static final Comparator<Node> schedulePriority = new Comparator<Node>(){
-            @Override
-            public int compare(Node n1, Node n2) {
-                // Order by rank, then idx.
-                int r1 = n1.rank, r2 = n2.rank;
-                int o1, o2;
-                if (r1 != r2) { // Different rank.
-                    o1 = r1;
-                    o2 = r2;
-                } else { // Same rank, order by idx.
-                    o1 = Integer.parseInt(n1.inputNode.getProperties().get("idx"));
-                    o2 = Integer.parseInt(n2.inputNode.getProperties().get("idx"));
-                }
-                return Integer.compare(o1, o2);
-            };
-        };
+    private static final Comparator<Node> schedulePriority = (n1, n2) -> {
+        // Order by rank, then idx.
+        int r1 = n1.rank, r2 = n2.rank;
+        int o1, o2;
+        if (r1 != r2) { // Different rank.
+            o1 = r1;
+            o2 = r2;
+        } else { // Same rank, order by idx.
+            o1 = Integer.parseInt(n1.inputNode.getProperties().get("idx"));
+            o2 = Integer.parseInt(n2.inputNode.getProperties().get("idx"));
+        }
+        return Integer.compare(o1, o2);
+    };
 
     private List<InputNode> scheduleBlock(Collection<Node> nodes) {
-        List<InputNode> schedule = new ArrayList<InputNode>();
+        List<InputNode> schedule = new ArrayList<>();
 
         // Initialize ready priority queue with nodes without predecessors.
-        Queue<Node> ready = new PriorityQueue<Node>(schedulePriority);
+        Queue<Node> ready = new PriorityQueue<>(schedulePriority);
         // Set of nodes that have been enqueued.
-        Set<Node> visited = new HashSet<Node>(nodes.size());
+        Set<Node> visited = new HashSet<>(nodes.size());
         for (Node n : nodes) {
             if (n.preds.isEmpty()) {
                 ready.add(n);
@@ -379,31 +422,48 @@ public class ServerCompilerScheduler implements Scheduler {
         return schedule;
     }
 
-    private void scheduleLatest() {
-        Node root = findRoot();
-        if(root == null) {
-            assert false : "No root found!";
-            return;
-        }
-
-        // Mark all nodes reachable in backward traversal from root
-        Set<Node> reachable = new HashSet<>();
-        reachable.add(root);
-        Stack<Node> stack = new Stack<>();
-        stack.push(root);
-        while (!stack.isEmpty()) {
-            Node cur = stack.pop();
-            for (Node n : cur.preds) {
-                if (!reachable.contains(n)) {
-                    reachable.add(n);
-                    stack.push(n);
+    // Return latest block that dominates all successors of n, or null if any
+    // successor is not yet scheduled.
+    private InputBlock commonDominatorOfSuccessors(Node n, Set<Node> reachable) {
+        InputBlock block = null;
+        for (Node s : n.succs) {
+            if (!reachable.contains(s)) {
+                // Unreachable successors should not affect the schedule.
+                continue;
+            }
+            if (s.block == null) {
+                // Successor is not yet scheduled, wait for it.
+                return null;
+            } else if (isPhi(s)) {
+                // Move inputs above their source blocks.
+                boolean foundSourceBlock = false;
+                for (InputBlock srcBlock : sourceBlocks(n, s)) {
+                    foundSourceBlock = true;
+                    block = getCommonDominator(block, srcBlock);
                 }
+                if (!foundSourceBlock) {
+                    // Can happen due to inconsistent phi-region pairs.
+                    block = s.block;
+                    n.addWarning(Node.WARNING_PHI_INPUT_WITHOUT_REGION);
+                }
+            } else {
+                // Common case, update current block to also dominate s.
+                block = getCommonDominator(block, s.block);
             }
         }
+        return block;
+    }
 
+    private void scheduleLatest() {
+
+        // Mark all nodes reachable in backward traversal from root
+        Set<Node> reachable = reachableNodes();
+        // Schedule non-CFG, reachable nodes without block. CFG nodes should
+        // have been all scheduled by buildBlocks, otherwise it means they are
+        // control-unreachable and they should remain unscheduled.
         Set<Node> unscheduled = new HashSet<>();
         for (Node n : this.nodes) {
-            if (n.block == null && reachable.contains(n)) {
+            if (n.block == null && reachable.contains(n) && !n.isCFG) {
                 unscheduled.add(n);
             }
         }
@@ -413,28 +473,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
             Set<Node> newUnscheduled = new HashSet<>();
             for (Node n : unscheduled) {
-
-                InputBlock block = null;
-                if (this.isPhi(n) && n.preds.get(0) != null) {
-                    // Phi nodes in same block as region nodes
-                    block = n.preds.get(0).block;
-                } else {
-                    for (Node s : n.succs) {
-                        if (reachable.contains(s)) {
-                            if (s.block == null) {
-                                block = null;
-                                break;
-                            } else {
-                                if (block == null) {
-                                    block = s.block;
-                                } else {
-                                    block = getCommonDominator(block, s.block);
-                                }
-                            }
-                        }
-                    }
-                }
-
+                InputBlock block = commonDominatorOfSuccessors(n, reachable);
                 if (block != null) {
                     n.block = block;
                     block.addNode(n.inputNode.getId());
@@ -451,51 +490,50 @@ public class ServerCompilerScheduler implements Scheduler {
             }
         }
 
-        Set<Node> curReachable = new HashSet<>(reachable);
-        for (Node n : curReachable) {
-            if (n.block != null) {
-                for (Node s : n.succs) {
-                    if (!reachable.contains(s)) {
-                        markWithBlock(s, n.block, reachable);
-                    }
-                }
-            }
-        }
-
     }
 
-    private void markWithBlock(Node n, InputBlock b, Set<Node> reachable) {
-        assert !reachable.contains(n);
-        Stack<Node> stack = new Stack<>();
-        stack.push(n);
-        n.block = b;
-        b.addNode(n.inputNode.getId());
-        reachable.add(n);
+    // Recompute the input array of the given node, including empty slots.
+    private Node[] inputArray(Node n) {
+        Node[] inputs = new Node[Collections.max(n.predIndices) + 1];
+        for (int i = 0; i < n.preds.size(); i++) {
+            inputs[n.predIndices.get(i)] = n.preds.get(i);
+        }
+        return inputs;
+    }
 
-        while (!stack.isEmpty()) {
-            Node cur = stack.pop();
-            for (Node s : cur.succs) {
-                if (!reachable.contains(s)) {
-                    reachable.add(s);
-                    s.block = b;
-                    b.addNode(s.inputNode.getId());
-                    stack.push(s);
-                }
-            }
+    // Find the blocks from which node 'in' flows into 'phi'.
+    private Set<InputBlock> sourceBlocks(Node in, Node phi) {
+        Node reg = phi.preds.get(0);
+        assert (reg != null);
+        // Reconstruct the positional input arrays of phi-region pairs.
+        Node[] phiInputs = inputArray(phi);
+        Node[] regInputs = inputArray(reg);
 
-            for (Node s : cur.preds) {
-                if (!reachable.contains(s)) {
-                    reachable.add(s);
-                    s.block = b;
-                    b.addNode(s.inputNode.getId());
-                    stack.push(s);
+        Set<InputBlock> srcBlocks = new HashSet<>();
+        for (int i = 0; i < Math.min(phiInputs.length, regInputs.length); i++) {
+            if (phiInputs[i] == in) {
+                if (regInputs[i] != null) {
+                    if (regInputs[i].isCFG) {
+                        srcBlocks.add(regInputs[i].block);
+                    } else {
+                        reg.addWarning(Node.WARNING_REGION_WITHOUT_CONTROL_INPUT);
+                    }
+                } else {
+                    phi.addWarning(Node.WARNING_PHI_WITH_REGIONLESS_INPUTS);
                 }
             }
         }
+        return srcBlocks;
     }
 
     public InputBlock getCommonDominator(InputBlock ba, InputBlock bb) {
         if (ba == bb) {
+            return ba;
+        }
+        if (ba == null) {
+            return bb;
+        }
+        if (bb == null) {
             return ba;
         }
         Set<InputBlock> visited = new HashSet<>();
@@ -513,6 +551,51 @@ public class ServerCompilerScheduler implements Scheduler {
 
         assert false;
         return null;
+    }
+
+    // Schedule nodes pinned to region-like nodes in the same block. Schedule
+    // nodes pinned to block projections s in their successor block ss.
+    // buildBlocks() guarantees that s is the only predecessor of ss.
+    public void schedulePinned() {
+        Set<Node> reachable = reachableNodes();
+        for (Node n : nodes) {
+            if (!reachable.contains(n) ||
+                n.block != null) {
+                continue;
+            }
+            Node ctrlIn = pinnedNode(n);
+            if (ctrlIn == null) {
+                continue;
+            }
+            InputBlock block = ctrlIn.block;
+            if (ctrlIn.isBlockProjection) {
+                // Block projections should not have successors in their block:
+                // if n is pinned to a block projection, push it downwards.
+                if (controlSuccs.get(ctrlIn).size() == 1) {
+                    block = controlSuccs.get(ctrlIn).get(0).block;
+                }
+            }
+            if (block == null) {
+                // This can happen for blockless CFG nodes that are not
+                // control-reachable from the root even after connecting orphans
+                // and widows (e.g. in disconnected control cycles).
+                continue;
+            }
+            n.block = block;
+            block.addNode(n.inputNode.getId());
+        }
+    }
+
+    // Return the control node to which 'n' is pinned, or null if none.
+    public Node pinnedNode(Node n) {
+        if (n.preds.isEmpty()) {
+            return null;
+        }
+        Node ctrlIn = n.preds.get(0);
+        if (!isControl(ctrlIn)) {
+            return null;
+        }
+        return ctrlIn;
     }
 
     public void buildDominators() {
@@ -560,6 +643,10 @@ public class ServerCompilerScheduler implements Scheduler {
         return hasName(n, "Parm");
     }
 
+    private static boolean isRegion(Node n) {
+        return hasName(n, "Region");
+    }
+
     private static boolean hasName(Node n, String name) {
         String nodeName = n.inputNode.getProperties().get("name");
         if (nodeName == null) {
@@ -570,6 +657,22 @@ public class ServerCompilerScheduler implements Scheduler {
 
     private static boolean isControl(Node n) {
         return n.inputNode.getProperties().get("category").equals("control");
+    }
+
+    private static boolean isDummy(Node n) {
+        return n.inputNode == null;
+    }
+
+    // Whether b1 dominates b2. Used only for checking the schedule.
+    private boolean dominates(InputBlock b1, InputBlock b2) {
+        InputBlock bi = b2;
+        do {
+            if (bi.equals(b1)) {
+                return true;
+            }
+            bi = dominatorMap.get(bi);
+        } while (bi != null);
+        return false;
     }
 
     private Node findRoot() {
@@ -597,6 +700,26 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
+    // Find all nodes reachable in backward traversal from root.
+    private Set<Node> reachableNodes() {
+        Node root = findRoot();
+        assert root != null : "No root found!";
+        Set<Node> reachable = new HashSet<>();
+        reachable.add(root);
+        Stack<Node> stack = new Stack<>();
+        stack.push(root);
+        while (!stack.isEmpty()) {
+            Node cur = stack.pop();
+            for (Node n : cur.preds) {
+                if (!reachable.contains(n)) {
+                    reachable.add(n);
+                    stack.push(n);
+                }
+            }
+        }
+        return reachable;
+    }
+
     public boolean hasCategoryInformation() {
         for (InputNode n : graph.getNodes()) {
             if (n.getProperties().get("category") == null) {
@@ -619,7 +742,7 @@ public class ServerCompilerScheduler implements Scheduler {
 
             int to = e.getTo();
             if (!edgeMap.containsKey(to)) {
-                edgeMap.put(to, new ArrayList<InputEdge>());
+                edgeMap.put(to, new ArrayList<>());
             }
 
 
@@ -643,6 +766,7 @@ public class ServerCompilerScheduler implements Scheduler {
                 Node fromNode = inputNodeToNode.get(fromInputNode);
                 fromNode.succs.add(toNode);
                 toNode.preds.add(fromNode);
+                toNode.predIndices.add(e.getToIndex());
             }
         }
     }
@@ -671,40 +795,79 @@ public class ServerCompilerScheduler implements Scheduler {
         }
     }
 
-    // Fix ill-formed graphs with orphan/widow control-flow nodes by adding
-    // edges from/to the Root node. Such edges are assumed by different parts of
-    // the scheduling algorithm, but are not always present, e.g. for certain
-    // 'Safepoint' nodes in the 'Before RemoveUseless' phase.
-    public void connectOrphansAndWidows() {
-        Node root = findRoot();
-        if (root == null) {
-            return;
-        }
+    // Check invariants in the input graph and in the output schedule, and add
+    // warnings to nodes where the invariants do not hold.
+    public void check() {
+        Set<Node> reachable = reachableNodes();
         for (Node n : nodes) {
-            if (n.isCFG) {
-                boolean orphan = true;
-                for (Node p : n.preds) {
-                    if (p != n && p.isCFG) {
-                        orphan = false;
+            // Check that region nodes are well-formed.
+            if (isRegion(n) && !n.isBlockStart) {
+                n.addWarning(Node.WARNING_NOT_MARKED_WITH_BLOCK_START);
+            }
+            if (isRegion(n) && controlSuccs.get(n).size() > 1) {
+                n.addWarning(Node.WARNING_REGION_WITH_MULTIPLE_SUCCS);
+            }
+            if (n.isCFG && controlSuccs.get(n).isEmpty()) {
+                n.addWarning(Node.WARNING_CFG_WITHOUT_SUCCESSORS);
+            }
+            if (n.isCFG && n.block == null) {
+                n.addWarning(Node.WARNING_CONTROL_UNREACHABLE_CFG);
+            }
+            if (!isPhi(n)) {
+                continue;
+            }
+            if (!reachable.contains(n)) { // Dead phi.
+                continue;
+            }
+            // Check that phi nodes and their inputs are well-formed.
+            for (int i = 1; i < n.preds.size(); i++) {
+                Node in = n.preds.get(i);
+                if (in.isCFG) {
+                    // This can happen for nodes misclassified as CFG, for
+                    // example x64's 'rep_stos'.
+                    in.addWarning(Node.WARNING_CFG_AND_INPUT_TO_PHI);
+                    continue;
+                }
+                for (InputBlock b : sourceBlocks(in, n)) {
+                    if (!dominates(graph.getBlock(in.inputNode), b)) {
+                        in.addWarning(Node.WARNING_PHI_NON_DOMINATING_INPUTS);
                     }
-                }
-                if (orphan) {
-                    // Add edge from root to this node.
-                    root.succs.add(n);
-                    n.preds.add(0, root);
-                }
-                boolean widow = true;
-                for (Node s : n.succs) {
-                    if (s != n && s.isCFG) {
-                        widow = false;
-                    }
-                }
-                if (widow) {
-                    // Add edge from this node to root.
-                    root.preds.add(n);
-                    n.succs.add(root);
                 }
             }
         }
     }
+
+    // Report potential and actual innacuracies in the schedule approximation.
+    // IGV tries to warn, rather than crashing, for robustness: an inaccuracy in
+    // the schedule approximation or an inconsistency in the input graph should
+    // not disable all IGV functionality, and debugging inconsistent graphs is a
+    // key use case of IGV. Warns are reported visually for each node (if the
+    // corresponding filter is active) and textually in the IGV log.
+    public void reportWarnings() {
+        Map<String, Set<Node>> nodesPerWarning = new HashMap<>();
+        for (Node n : nodes) {
+            if (n.warnings == null || n.warnings.isEmpty()) {
+                continue;
+            }
+            for (String warning : n.warnings) {
+                if (!nodesPerWarning.containsKey(warning)) {
+                    nodesPerWarning.put(warning, new HashSet<>());
+                }
+                nodesPerWarning.get(warning).add(n);
+            }
+            // Attach warnings to each node as a property to be shown in the
+            // graph views.
+            String nodeWarnings = String.join("; ", n.warnings);
+            n.inputNode.getProperties().setProperty("warnings", nodeWarnings);
+        }
+        // Report warnings textually.
+        for (Map.Entry<String, Set<Node>> entry : nodesPerWarning.entrySet()) {
+            String warning = entry.getKey();
+            Set<Node> nodes = entry.getValue();
+            String nodeList = nodes.toString().replace("[", "(").replace("]", ")");
+            String message = warning + " " + nodeList;
+            ErrorManager.getDefault().log(ErrorManager.WARNING, message);
+        }
+    }
+
 }

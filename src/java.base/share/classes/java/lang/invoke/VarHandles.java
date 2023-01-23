@@ -118,48 +118,48 @@ final class VarHandles {
             long foffset = MethodHandleNatives.staticFieldOffset(f);
             if (!type.isPrimitive()) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleReferences.FieldStaticReadOnly(base, foffset, type)
-                       : new VarHandleReferences.FieldStaticReadWrite(base, foffset, type));
+                       ? new VarHandleReferences.FieldStaticReadOnly(refc, base, foffset, type)
+                       : new VarHandleReferences.FieldStaticReadWrite(refc, base, foffset, type));
             }
             else if (type == boolean.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBooleans.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBooleans.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleBooleans.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleBooleans.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == byte.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBytes.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleBytes.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleBytes.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleBytes.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == short.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleShorts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleShorts.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleShorts.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleShorts.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == char.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleChars.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleChars.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleChars.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleChars.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == int.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleInts.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleInts.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleInts.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleInts.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == long.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleLongs.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleLongs.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleLongs.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleLongs.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == float.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleFloats.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleFloats.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleFloats.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleFloats.FieldStaticReadWrite(refc, base, foffset));
             }
             else if (type == double.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleDoubles.FieldStaticReadOnly(base, foffset)
-                       : new VarHandleDoubles.FieldStaticReadWrite(base, foffset));
+                       ? new VarHandleDoubles.FieldStaticReadOnly(refc, base, foffset)
+                       : new VarHandleDoubles.FieldStaticReadWrite(refc, base, foffset));
             }
             else {
                 throw new UnsupportedOperationException();
@@ -183,11 +183,9 @@ final class VarHandles {
     }
 
     // Required by instance static field handles
-    static Field getStaticFieldFromBaseAndOffset(Object base,
+    static Field getStaticFieldFromBaseAndOffset(Class<?> receiverType,
                                                  long offset,
                                                  Class<?> fieldType) {
-        // @@@ This is a little fragile assuming the base is the class
-        Class<?> receiverType = (Class<?>) base;
         for (Field f : receiverType.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) continue;
 
@@ -300,23 +298,18 @@ final class VarHandles {
     }
 
     /**
-     * Creates a memory access VarHandle.
+     * Creates a memory segment view var handle.
      *
-     * Resulting VarHandle will take a memory address as first argument,
-     * and a certain number of coordinate {@code long} parameters, depending on the length
-     * of the {@code strides} argument array.
-     *
-     * Coordinates are multiplied with corresponding scale factors ({@code strides}) and added
-     * to a single fixed offset to compute an effective offset from the given MemoryAddress for the access.
+     * The resulting var handle will take a memory segment as first argument (the segment to be dereferenced),
+     * and a {@code long} as second argument (the offset into the segment).
      *
      * @param carrier the Java carrier type.
-     * @param skipAlignmentMaskCheck if true, only the base part of the address will be checked for alignment.
      * @param alignmentMask alignment requirement to be checked upon access. In bytes. Expressed as a mask.
      * @param byteOrder the byte order.
      * @return the created VarHandle.
      */
-    static VarHandle makeMemoryAddressViewHandle(Class<?> carrier, boolean skipAlignmentMaskCheck, long alignmentMask,
-                                                 ByteOrder byteOrder) {
+    static VarHandle memorySegmentViewHandle(Class<?> carrier, long alignmentMask,
+                                             ByteOrder byteOrder) {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
@@ -325,19 +318,19 @@ final class VarHandles {
         boolean exact = false;
 
         if (carrier == byte.class) {
-            return maybeAdapt(new MemoryAccessVarHandleByteHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsBytes(be, size, alignmentMask, exact));
         } else if (carrier == char.class) {
-            return maybeAdapt(new MemoryAccessVarHandleCharHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsChars(be, size, alignmentMask, exact));
         } else if (carrier == short.class) {
-            return maybeAdapt(new MemoryAccessVarHandleShortHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsShorts(be, size, alignmentMask, exact));
         } else if (carrier == int.class) {
-            return maybeAdapt(new MemoryAccessVarHandleIntHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsInts(be, size, alignmentMask, exact));
         } else if (carrier == float.class) {
-            return maybeAdapt(new MemoryAccessVarHandleFloatHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsFloats(be, size, alignmentMask, exact));
         } else if (carrier == long.class) {
-            return maybeAdapt(new MemoryAccessVarHandleLongHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsLongs(be, size, alignmentMask, exact));
         } else if (carrier == double.class) {
-            return maybeAdapt(new MemoryAccessVarHandleDoubleHelper(skipAlignmentMaskCheck, be, size, alignmentMask, exact));
+            return maybeAdapt(new VarHandleSegmentAsDoubles(be, size, alignmentMask, exact));
         } else {
             throw new IllegalStateException("Cannot get here");
         }

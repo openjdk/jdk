@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public final class EventFactory {
 
         List<AnnotationElement> sanitizedAnnotation = Utils.sanitizeNullFreeList(annotationElements, AnnotationElement.class);
         List<ValueDescriptor> sanitizedFields = Utils.sanitizeNullFreeList(fields, ValueDescriptor.class);
-        Set<String> nameSet = new HashSet<>();
+        Set<String> nameSet = HashSet.newHashSet(sanitizedFields.size());
         for (ValueDescriptor v : sanitizedFields) {
             String name = v.getName();
             if (v.isArray()) {
@@ -150,9 +150,9 @@ public final class EventFactory {
         try {
             return new EventFactory(eventClass, sanitizedAnnotation, sanitizedFields);
         } catch (IllegalAccessException e) {
-            throw new IllegalAccessError("Could not access constructor of generated event handler, " + e.getMessage());
+            throw new IllegalAccessError("Could not access constructor of generated event class, " + e.getMessage());
         } catch (NoSuchMethodException e) {
-            throw new InternalError("Could not find constructor in generated event handler, " + e.getMessage());
+            throw new InternalError("Could not find constructor in generated event class, " + e.getMessage());
         }
     }
 
@@ -226,5 +226,4 @@ public final class EventFactory {
     public void unregister() {
         MetadataRepository.getInstance().unregister(eventClass);
     }
-
 }

@@ -31,6 +31,9 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public class VectorShiftRight {
     @Param({"1024"})
     public int SIZE;
@@ -86,9 +89,23 @@ public class VectorShiftRight {
     }
 
     @Benchmark
+    public void urShiftImmByte() {
+        for (int i = 0; i < SIZE; i++) {
+            bytesB[i] = (byte) (bytesA[i] >>> 3);
+        }
+    }
+
+    @Benchmark
     public void rShiftShort() {
         for (int i = 0; i < SIZE; i++) {
             shortsB[i] = (short) (shortsA[i] >> shiftCount);
+        }
+    }
+
+    @Benchmark
+    public void urShiftImmShort() {
+        for (int i = 0; i < SIZE; i++) {
+            shortsB[i] = (short) (shortsA[i] >>> 3);
         }
     }
 

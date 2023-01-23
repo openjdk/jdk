@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
@@ -53,7 +53,7 @@ void check_ThreadShadow() {
 
 
 void ThreadShadow::set_pending_exception(oop exception, const char* file, int line) {
-  assert(exception != NULL && oopDesc::is_oop(exception), "invalid exception oop");
+  assert(exception != nullptr && oopDesc::is_oop(exception), "invalid exception oop");
   _pending_exception = exception;
   _exception_file    = file;
   _exception_line    = line;
@@ -61,21 +61,20 @@ void ThreadShadow::set_pending_exception(oop exception, const char* file, int li
 
 void ThreadShadow::clear_pending_exception() {
   LogTarget(Debug, exceptions) lt;
-  if (_pending_exception != NULL && lt.is_enabled()) {
+  if (_pending_exception != nullptr && lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("Thread::clear_pending_exception: cleared exception:");
     _pending_exception->print_on(&ls);
   }
-  _pending_exception = NULL;
-  _exception_file    = NULL;
+  _pending_exception = nullptr;
+  _exception_file    = nullptr;
   _exception_line    = 0;
 }
 
 void ThreadShadow::clear_pending_nonasync_exception() {
   // Do not clear probable async exceptions.
-  if (!_pending_exception->is_a(vmClasses::ThreadDeath_klass()) &&
-      (_pending_exception->klass() != vmClasses::InternalError_klass() ||
+  if ((_pending_exception->klass() != vmClasses::InternalError_klass() ||
        java_lang_InternalError::during_unsafe_access(_pending_exception) != JNI_TRUE)) {
     clear_pending_exception();
   }
@@ -115,7 +114,7 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 bool Exceptions::special_exception(JavaThread* thread, const char* file, int line, Symbol* h_name, const char* message) {
   // bootstrapping check
   if (!Universe::is_fully_initialized()) {
-    if (h_name == NULL) {
+    if (h_name == nullptr) {
       // at least an informative message.
       vm_exit_during_initialization("Exception", message);
     } else {
@@ -136,19 +135,19 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 // This method should only be called from generated code,
 // therefore the exception oop should be in the oopmap.
 void Exceptions::_throw_oop(JavaThread* thread, const char* file, int line, oop exception) {
-  assert(exception != NULL, "exception should not be NULL");
+  assert(exception != nullptr, "exception should not be nullptr");
   Handle h_exception(thread, exception);
   _throw(thread, file, line, h_exception);
 }
 
 void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h_exception, const char* message) {
   ResourceMark rm(thread);
-  assert(h_exception() != NULL, "exception should not be NULL");
+  assert(h_exception() != nullptr, "exception should not be nullptr");
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%s%s%s> (" INTPTR_FORMAT ") \n"
-                       "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
+  log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
+                       "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
                        h_exception->print_value_string(),
                        message ? ": " : "", message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
@@ -161,8 +160,14 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
     return;
   }
 
-  if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
-    count_out_of_memory_exceptions(h_exception);
+  if (h_exception->is_a(vmClasses::VirtualMachineError_klass())) {
+    // Remove the ScopedValue bindings in case we got a virtual machine
+    // Error while we were trying to manipulate ScopedValue bindings.
+    thread->clear_scopedValueBindings();
+
+    if (h_exception->is_a(vmClasses::OutOfMemoryError_klass())) {
+      count_out_of_memory_exceptions(h_exception);
+    }
   }
 
   if (h_exception->is_a(vmClasses::LinkageError_klass())) {
@@ -184,7 +189,7 @@ void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symb
   // Check for special boot-strapping/compiler-thread handling
   if (special_exception(thread, file, line, name, message)) return;
   // Create and throw exception
-  Handle h_cause(thread, NULL);
+  Handle h_cause(thread, nullptr);
   Handle h_exception = new_exception(thread, name, message, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, message);
 }
@@ -204,15 +209,15 @@ void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Sy
   if (special_exception(thread, file, line, h_cause)) return;
   // Create and throw exception
   Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
-  _throw(thread, file, line, h_exception, NULL);
+  _throw(thread, file, line, h_exception, nullptr);
 }
 
 void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Symbol* name, Symbol* signature, JavaCallArguments *args) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, name, NULL)) return;
+  if (special_exception(thread, file, line, name, nullptr)) return;
   // Create and throw exception
-  Handle h_loader(thread, NULL);
-  Handle h_prot(thread, NULL);
+  Handle h_loader(thread, nullptr);
+  Handle h_prot(thread, nullptr);
   Handle exception = new_exception(thread, name, signature, args, h_loader, h_prot);
   _throw(thread, file, line, exception);
 }
@@ -221,13 +226,13 @@ void Exceptions::_throw_args(JavaThread* thread, const char* file, int line, Sym
 // Methods for default parameters.
 // NOTE: These must be here (and not in the header file) because of include circularities.
 void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line, Symbol* name, const char* message, Handle h_cause) {
-  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle(thread, NULL), Handle(thread, NULL));
+  _throw_msg_cause(thread, file, line, name, message, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
 }
 void Exceptions::_throw_msg(JavaThread* thread, const char* file, int line, Symbol* name, const char* message) {
-  _throw_msg(thread, file, line, name, message, Handle(thread, NULL), Handle(thread, NULL));
+  _throw_msg(thread, file, line, name, message, Handle(thread, nullptr), Handle(thread, nullptr));
 }
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause) {
-  _throw_cause(thread, file, line, name, h_cause, Handle(thread, NULL), Handle(thread, NULL));
+  _throw_cause(thread, file, line, name, h_cause, Handle(thread, nullptr), Handle(thread, nullptr));
 }
 
 
@@ -276,7 +281,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
   Klass* klass = SystemDictionary::resolve_or_fail(name, h_loader, h_protection_domain, true, thread);
 
   if (!thread->has_pending_exception()) {
-    assert(klass != NULL, "klass must exist");
+    assert(klass != nullptr, "klass must exist");
     h_exception = JavaCalls::construct_new_instance(InstanceKlass::cast(klass),
                                 signature,
                                 args,
@@ -330,7 +335,7 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_loader, Handle h_protection_domain,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
-  Symbol* signature = NULL;
+  Symbol* signature = nullptr;
   if (h_cause.is_null()) {
     signature = vmSymbols::void_method_signature();
   } else {
@@ -347,21 +352,18 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  Handle h_loader, Handle h_protection_domain,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
   JavaCallArguments args;
-  Symbol* signature = NULL;
-  if (message == NULL) {
+  Symbol* signature = nullptr;
+  if (message == nullptr) {
     signature = vmSymbols::void_method_signature();
   } else {
-    // We want to allocate storage, but we can't do that if there's
-    // a pending exception, so we preserve any pending exception
-    // around the allocation.
-    // If we get an exception from the allocation, prefer that to
-    // the exception we are trying to build, or the pending exception.
-    // This is sort of like what PreserveExceptionMark does, except
-    // for the preferencing and the early returns.
-    Handle incoming_exception(thread, NULL);
+    // There should be no pending exception. The caller is responsible for not calling
+    // this with a pending exception.
+    Handle incoming_exception;
     if (thread->has_pending_exception()) {
       incoming_exception = Handle(thread, thread->pending_exception());
       thread->clear_pending_exception();
+      ResourceMark rm(thread);
+      assert(incoming_exception.is_null(), "Pending exception while throwing %s %s", name->as_C_string(), message);
     }
     Handle msg;
     if (to_utf8_safe == safe_to_utf8) {
@@ -371,6 +373,8 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
       // Make a java string keeping the encoding scheme of the original string.
       msg = java_lang_String::create_from_platform_dependent_str(message, thread);
     }
+    // If we get an exception from the allocation, prefer that to
+    // the exception we are trying to build, or the pending exception (in product mode)
     if (thread->has_pending_exception()) {
       Handle exception(thread, thread->pending_exception());
       thread->clear_pending_exception();
@@ -397,9 +401,9 @@ Handle Exceptions::new_exception(JavaThread* thread, Symbol* name,
                                  const char* message,
                                  ExceptionMsgToUtf8Mode to_utf8_safe) {
 
-  Handle       h_loader(thread, NULL);
-  Handle       h_prot(thread, NULL);
-  Handle       h_cause(thread, NULL);
+  Handle       h_loader(thread, nullptr);
+  Handle       h_prot(thread, nullptr);
+  Handle       h_cause(thread, nullptr);
   return Exceptions::new_exception(thread, name, message, h_cause, h_loader,
                                    h_prot, to_utf8_safe);
 }
@@ -416,7 +420,7 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
     bool log_condy = log_is_enabled(Debug, methodhandles, condy) && !is_indy;
     LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
     LogStreamHandle(Debug, methodhandles, condy) lsh_condy;
-    LogStream* ls = NULL;
+    LogStream* ls = nullptr;
     if (log_indy) {
       ls = &lsh_indy;
     } else if (log_condy) {
@@ -428,17 +432,17 @@ void Exceptions::wrap_dynamic_exception(bool is_indy, JavaThread* THREAD) {
     // in JVMS 6.5.
     if (exception->is_a(vmClasses::Error_klass())) {
       // Pass through an Error, including BootstrapMethodError, any other form
-      // of linkage error, or say ThreadDeath/OutOfMemoryError
-      if (ls != NULL) {
-        ls->print_cr("bootstrap method invocation wraps BSME around " INTPTR_FORMAT, p2i((void *)exception));
+      // of linkage error, or say OutOfMemoryError
+      if (ls != nullptr) {
+        ls->print_cr("bootstrap method invocation wraps BSME around " PTR_FORMAT, p2i(exception));
         exception->print_on(ls);
       }
       return;
     }
 
     // Otherwise wrap the exception in a BootstrapMethodError
-    if (ls != NULL) {
-      ls->print_cr("%s throws BSME for " INTPTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i((void *)exception));
+    if (ls != nullptr) {
+      ls->print_cr("%s throws BSME for " PTR_FORMAT, is_indy ? "invokedynamic" : "dynamic constant", p2i(exception));
       exception->print_on(ls);
     }
     Handle nested_exception(THREAD, exception);
@@ -528,11 +532,11 @@ ExceptionMark::~ExceptionMark() {
 
 // caller frees value_string if necessary
 void Exceptions::debug_check_abort(const char *value_string, const char* message) {
-  if (AbortVMOnException != NULL && value_string != NULL &&
+  if (AbortVMOnException != nullptr && value_string != nullptr &&
       strstr(value_string, AbortVMOnException)) {
-    if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
+    if (AbortVMOnExceptionMessage == nullptr || (message != nullptr &&
         strstr(message, AbortVMOnExceptionMessage))) {
-      if (message == NULL) {
+      if (message == nullptr) {
         fatal("Saw %s, aborting", value_string);
       } else {
         fatal("Saw %s: %s, aborting", value_string, message);
@@ -542,16 +546,16 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
 }
 
 void Exceptions::debug_check_abort(Handle exception, const char* message) {
-  if (AbortVMOnException != NULL) {
+  if (AbortVMOnException != nullptr) {
     debug_check_abort_helper(exception, message);
   }
 }
 
 void Exceptions::debug_check_abort_helper(Handle exception, const char* message) {
   ResourceMark rm;
-  if (message == NULL && exception->is_a(vmClasses::Throwable_klass())) {
+  if (message == nullptr && exception->is_a(vmClasses::Throwable_klass())) {
     oop msg = java_lang_Throwable::message(exception());
-    if (msg != NULL) {
+    if (msg != nullptr) {
       message = java_lang_String::as_utf8_string(msg);
     }
   }
@@ -562,7 +566,7 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
 void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
   Symbol* detail_message = java_lang_Throwable::detail_message(exception());
-  if (detail_message != NULL) {
+  if (detail_message != nullptr) {
     log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
                          exception->print_value_string(),
                          detail_message->as_C_string(),

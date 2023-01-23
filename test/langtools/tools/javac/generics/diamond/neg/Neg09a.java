@@ -4,8 +4,7 @@
  *
  * @summary  Check that diamond is not allowed with anonymous inner class expressions at source < 9
  * @author Maurizio Cimadamore
- * @compile/fail/ref=Neg09a.out Neg09a.java -source 8 -XDrawDiagnostics -Xlint:-options
- *
+ * @compile/fail/ref=Neg09a.out Neg09a.java --release 8 -XDrawDiagnostics -Xlint:-options
  */
 
 class Neg09a {

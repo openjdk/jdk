@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,11 @@ import java.net.URL;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.Reader;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import javax.print.CancelablePrintJob;
 import javax.print.Doc;
 import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
 import javax.print.PrintService;
 import javax.print.PrintException;
 import javax.print.event.PrintJobEvent;
@@ -42,7 +41,6 @@ import javax.print.event.PrintJobListener;
 import javax.print.event.PrintJobAttributeListener;
 
 import javax.print.attribute.Attribute;
-import javax.print.attribute.AttributeSet;
 import javax.print.attribute.AttributeSetUtilities;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashPrintJobAttributeSet;
@@ -66,9 +64,9 @@ import java.awt.print.*;
 
 public class PSStreamPrintJob implements CancelablePrintJob {
 
-    private transient Vector<PrintJobListener> jobListeners;
-    private transient Vector<PrintJobAttributeListener> attrListeners;
-    private transient Vector<PrintJobAttributeSet> listenedAttributeSets;
+    private transient ArrayList<PrintJobListener> jobListeners;
+    private transient ArrayList<PrintJobAttributeListener> attrListeners;
+    private transient ArrayList<PrintJobAttributeSet> listenedAttributeSets;
 
     private PSStreamPrintService service;
     private boolean fidelity;
@@ -117,7 +115,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 return;
             }
             if (jobListeners == null) {
-                jobListeners = new Vector<>();
+                jobListeners = new ArrayList<>();
             }
             jobListeners.add(listener);
         }
@@ -191,7 +189,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 PrintJobListener listener;
                 PrintJobEvent event = new PrintJobEvent(this, reason);
                 for (int i = 0; i < jobListeners.size(); i++) {
-                    listener = jobListeners.elementAt(i);
+                    listener = jobListeners.get(i);
                     switch (reason) {
 
                         case PrintJobEvent.JOB_CANCELED :
@@ -230,8 +228,8 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 return;
             }
             if (attrListeners == null) {
-                attrListeners = new Vector<>();
-                listenedAttributeSets = new Vector<>();
+                attrListeners = new ArrayList<>();
+                listenedAttributeSets = new ArrayList<>();
             }
             attrListeners.add(listener);
             if (attributes == null) {
@@ -304,12 +302,9 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 instream = doc.getStreamForBytes();
                 printableJob(new ImagePrinter(instream), reqAttrSet);
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (flavor.equals(DocFlavor.URL.GIF) ||
                    flavor.equals(DocFlavor.URL.JPEG) ||
@@ -325,23 +320,17 @@ public class PSStreamPrintJob implements CancelablePrintJob {
             try {
                 pageableJob((Pageable)doc.getPrintData(), reqAttrSet);
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else if (repClassName.equals("java.awt.print.Printable")) {
             try {
                 printableJob((Printable)doc.getPrintData(), reqAttrSet);
                 return;
-            } catch (ClassCastException cce) {
+            } catch (ClassCastException | IOException e) {
                 notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(cce);
-            } catch (IOException ioe) {
-                notifyEvent(PrintJobEvent.JOB_FAILED);
-                throw new PrintException(ioe);
+                throw new PrintException(e);
             }
         } else {
             notifyEvent(PrintJobEvent.JOB_FAILED);

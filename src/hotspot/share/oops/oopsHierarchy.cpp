@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #ifdef CHECK_UNHANDLED_OOPS

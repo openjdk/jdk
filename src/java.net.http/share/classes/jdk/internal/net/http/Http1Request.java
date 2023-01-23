@@ -291,21 +291,19 @@ class Http1Request {
         if (uri != null) {
             systemHeadersBuilder.setHeader("Host", hostString());
         }
-        if (requestPublisher == null) {
-            // Not a user request, or maybe a method, e.g. GET, with no body.
-            contentLength = 0;
-        } else {
-            contentLength = requestPublisher.contentLength();
-        }
 
-        if (contentLength == 0) {
-            systemHeadersBuilder.setHeader("Content-Length", "0");
-        } else if (contentLength > 0) {
-            systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
-            streaming = false;
-        } else {
-            streaming = true;
-            systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+        // GET, HEAD and DELETE with no request body should not set the Content-Length header
+        if (requestPublisher != null) {
+            contentLength = requestPublisher.contentLength();
+            if (contentLength == 0) {
+                systemHeadersBuilder.setHeader("Content-Length", "0");
+            } else if (contentLength > 0) {
+                systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
+                streaming = false;
+            } else {
+                streaming = true;
+                systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
+            }
         }
         collectHeaders0(sb);
         String hs = sb.toString();
@@ -338,6 +336,7 @@ class Http1Request {
             if (isSubscribed()) {
                 Throwable t = new IllegalStateException("already subscribed");
                 http1Exchange.appendToOutgoing(t);
+                subscription.cancel();
             } else {
                 setSubscription(subscription);
             }
@@ -402,6 +401,7 @@ class Http1Request {
             if (isSubscribed()) {
                 Throwable t = new IllegalStateException("already subscribed");
                 http1Exchange.appendToOutgoing(t);
+                subscription.cancel();
             } else {
                 setSubscription(subscription);
             }

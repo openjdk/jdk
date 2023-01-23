@@ -24,6 +24,8 @@ package org.openjdk.bench.java.math;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -31,6 +33,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.math.BigInteger;
@@ -40,15 +43,15 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
+@Fork(value = 3)
 public class BigIntegers {
 
-    private BigInteger[] hugeArray, largeArray, smallArray, shiftArray, smallShiftArray;
+    private BigInteger[] hugeArray, largeArray, smallArray, shiftArray;
     public String[] dummyStringArray;
     public Object[] dummyArr;
     private static final int TESTSIZE = 1000;
-
-    @Param({"32", "64", "96", "128", "160", "192", "224", "256"})
-    private int maxNumbits;
 
     @Setup
     public void setup() {
@@ -72,9 +75,6 @@ public class BigIntegers {
          * Each array entry is atmost 16k bits
          * in size
          */
-        smallShiftArray = new BigInteger[TESTSIZE]; /*
-        * Small numbers, bits count in range [maxNumbits - 31, maxNumbits]
-        */
 
         dummyStringArray = new String[TESTSIZE];
         dummyArr = new Object[TESTSIZE];
@@ -87,7 +87,6 @@ public class BigIntegers {
             largeArray[i] = new BigInteger("" + ((long) value + (long) Integer.MAX_VALUE));
             smallArray[i] = new BigInteger("" + ((long) value / 1000));
             shiftArray[i] = new BigInteger(numbits, r);
-            smallShiftArray[i] = new BigInteger(Math.max(maxNumbits - value % 32, 0), r);
         }
     }
 
@@ -182,32 +181,6 @@ public class BigIntegers {
         bh.consume(tmp);
     }
 
-    /** Invokes the shiftLeft method of small BigInteger with different values. */
-    @Benchmark
-    @OperationsPerInvocation(TESTSIZE)
-    public void testSmallLeftShift(Blackhole bh) {
-        Random rand = new Random();
-        int shift = rand.nextInt(30) + 1;
-        BigInteger tmp = null;
-        for (BigInteger s : smallShiftArray) {
-            tmp = s.shiftLeft(shift);
-            bh.consume(tmp);
-        }
-    }
-
-    /** Invokes the shiftRight method of small BigInteger with different values. */
-    @Benchmark
-    @OperationsPerInvocation(TESTSIZE)
-    public void testSmallRightShift(Blackhole bh) {
-        Random rand = new Random();
-        int shift = rand.nextInt(30) + 1;
-        BigInteger tmp = null;
-        for (BigInteger s : smallShiftArray) {
-            tmp = s.shiftRight(shift);
-            bh.consume(tmp);
-        }
-    }
-
     /** Invokes the gcd method of BigInteger with different values. */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
@@ -216,6 +189,54 @@ public class BigIntegers {
             BigInteger i1 = shiftArray[TESTSIZE - i - 1];
             BigInteger i2 = shiftArray[i];
             bh.consume(i2.gcd(i1));
+        }
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Thread)
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(value = 3)
+    public static class SmallShifts {
+
+        @Param({"32", "128", "256"})
+        private int maxNumbits;
+
+        /*
+         * Small numbers, bits count in range [maxNumbits - 31, maxNumbits]
+         */
+        BigInteger[] smallShiftArray = new BigInteger[TESTSIZE];
+
+        @Setup
+        public void setup() {
+            Random r = new Random(1123);
+            for (int i = 0; i < TESTSIZE; i++) {
+                int value = Math.abs(r.nextInt());
+                smallShiftArray[i] = new BigInteger(Math.max(maxNumbits - value % 32, 0), r);
+            }
+        }
+
+        /** Invokes the shiftLeft method of small BigInteger with different values. */
+        @Benchmark
+        @OperationsPerInvocation(TESTSIZE)
+        public void testLeftShift(Blackhole bh) {
+            Random rand = new Random();
+            int shift = rand.nextInt(30) + 1;
+            for (BigInteger s : smallShiftArray) {
+                bh.consume(s.shiftLeft(shift));
+            }
+        }
+
+        /** Invokes the shiftRight method of small BigInteger with different values. */
+        @Benchmark
+        @OperationsPerInvocation(TESTSIZE)
+        public void testRightShift(Blackhole bh) {
+            Random rand = new Random();
+            int shift = rand.nextInt(30) + 1;
+            for (BigInteger s : smallShiftArray) {
+                bh.consume(s.shiftRight(shift));
+            }
         }
     }
 }

@@ -187,11 +187,8 @@ class MimeTypesFileTypeDetector extends AbstractFileTypeDetector {
     }
 
     private void putIfAbsent(String key, String value) {
-        if (key != null && !key.isEmpty() &&
-            value != null && !value.isEmpty() &&
-            !mimeTypeMap.containsKey(key))
-        {
-            mimeTypeMap.put(key, value);
+        if (!key.isEmpty() && !value.isEmpty()) {
+            mimeTypeMap.putIfAbsent(key, value);
         }
     }
 }

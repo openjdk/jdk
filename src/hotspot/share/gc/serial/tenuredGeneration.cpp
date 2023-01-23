@@ -24,15 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/genMarkSweep.hpp"
+#include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
@@ -486,7 +486,7 @@ void TenuredGeneration::object_iterate(ObjectClosure* blk) {
 
 void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
   // Create the BOT for the archive space.
-  TenuredSpace* space = (TenuredSpace*)_the_space;
+  TenuredSpace* space = _the_space;
   space->initialize_threshold();
   HeapWord* start = archive_space.start();
   while (start < archive_space.end()) {
@@ -498,10 +498,6 @@ void TenuredGeneration::complete_loaded_archive_space(MemRegion archive_space) {
 
 void TenuredGeneration::save_marks() {
   _the_space->set_saved_mark();
-}
-
-void TenuredGeneration::reset_saved_marks() {
-  _the_space->reset_saved_mark();
 }
 
 bool TenuredGeneration::no_allocs_since_save_marks() {

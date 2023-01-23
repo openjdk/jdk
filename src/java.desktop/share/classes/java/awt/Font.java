@@ -1941,7 +1941,7 @@ public class Font implements java.io.Serializable
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
-     * @serial
+     *
      * @see #writeObject(java.io.ObjectOutputStream)
      */
     @Serial

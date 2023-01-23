@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -38,7 +38,6 @@
 #include "oops/oop.inline.hpp"
 #include "os_linux.inline.hpp"
 #include "os_posix.inline.hpp"
-#include "os_share_linux.hpp"
 #include "osContainer_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -46,19 +45,21 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_version.hpp"
@@ -72,6 +73,7 @@
 #include "utilities/events.hpp"
 #include "utilities/elfFile.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
@@ -161,15 +163,43 @@ uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
 int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 pthread_t os::Linux::_main_thread;
-int os::Linux::_page_size = -1;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = NULL;
 const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
-os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+// We want to be buildable and runnable on older and newer glibcs, so resolve both
+// mallinfo and mallinfo2 dynamically.
+struct old_mallinfo {
+  int arena;
+  int ordblks;
+  int smblks;
+  int hblks;
+  int hblkhd;
+  int usmblks;
+  int fsmblks;
+  int uordblks;
+  int fordblks;
+  int keepcost;
+};
+typedef struct old_mallinfo (*mallinfo_func_t)(void);
+static mallinfo_func_t g_mallinfo = NULL;
+
+struct new_mallinfo {
+  size_t arena;
+  size_t ordblks;
+  size_t smblks;
+  size_t hblks;
+  size_t hblkhd;
+  size_t usmblks;
+  size_t fsmblks;
+  size_t uordblks;
+  size_t fordblks;
+  size_t keepcost;
+};
+typedef struct new_mallinfo (*mallinfo2_func_t)(void);
+static mallinfo2_func_t g_mallinfo2 = NULL;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -193,15 +223,12 @@ julong os::Linux::available_memory() {
   julong avail_mem;
 
   if (OSContainer::is_containerized()) {
-    jlong mem_limit, mem_usage;
-    if ((mem_limit = OSContainer::memory_limit_in_bytes()) < 1) {
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
-                             mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
-    }
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    jlong mem_usage;
     if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
       log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
     }
-    if (mem_limit > 0 && mem_usage > 0 ) {
+    if (mem_limit > 0 && mem_usage > 0) {
       avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
       log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
       return avail_mem;
@@ -222,8 +249,6 @@ julong os::physical_memory() {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
       return mem_limit;
     }
-    log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value",
-                            mem_limit == OSCONTAINER_ERROR ? "failed" : "unlimited", mem_limit);
   }
 
   phys_mem = Linux::physical_memory();
@@ -337,6 +362,14 @@ pid_t os::Linux::gettid() {
   int rslt = syscall(SYS_gettid);
   assert(rslt != -1, "must be."); // old linuxthreads implementation?
   return (pid_t)rslt;
+}
+
+// Returns the amount of swap currently configured, in bytes.
+// This can change at any time.
+julong os::Linux::host_swap() {
+  struct sysinfo si;
+  sysinfo(&si);
+  return (julong)si.totalswap;
 }
 
 // Most versions of linux have a bug where the number of processors are
@@ -604,8 +637,8 @@ static void NOINLINE _expand_stack_to(address bottom) {
 
   // Adjust bottom to point to the largest address within the same page, it
   // gives us a one-page buffer if alloca() allocates slightly more memory.
-  bottom = (address)align_down((uintptr_t)bottom, os::Linux::page_size());
-  bottom += os::Linux::page_size() - 1;
+  bottom = (address)align_down((uintptr_t)bottom, os::vm_page_size());
+  bottom += os::vm_page_size() - 1;
 
   // sp might be slightly above current stack pointer; if that's the case, we
   // will alloca() a little more space than necessary, which is OK. Don't use
@@ -965,8 +998,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) pthread_self());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) pthread_self(),
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -1075,8 +1110,8 @@ void os::Linux::capture_initial_stack(size_t max_size) {
   //   lower end of primordial stack; reduce ulimit -s value a little bit
   //   so we won't install guard page on ld.so's data section.
   //   But ensure we don't underflow the stack size - allow 1 page spare
-  if (stack_size >= (size_t)(3 * page_size())) {
-    stack_size -= 2 * page_size();
+  if (stack_size >= (size_t)(3 * os::vm_page_size())) {
+    stack_size -= 2 * os::vm_page_size();
   }
 
   // Try to figure out where the stack base (top) is. This is harder.
@@ -1232,11 +1267,11 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // stack top, use it as stack top, and reduce stack size so we won't put
     // guard page outside stack.
     stack_top = stack_start;
-    stack_size -= 16 * page_size();
+    stack_size -= 16 * os::vm_page_size();
   }
 
   // stack_top could be partially down the page so align it
-  stack_top = align_up(stack_top, page_size());
+  stack_top = align_up(stack_top, os::vm_page_size());
 
   // Allowed stack value is minimum of max_size and what we derived from rlimit
   if (max_size > 0) {
@@ -1246,7 +1281,7 @@ void os::Linux::capture_initial_stack(size_t max_size) {
     // clamp it at 8MB as we do on Solaris
     _initial_thread_stack_size = MIN2(stack_size, 8*M);
   }
-  _initial_thread_stack_size = align_down(_initial_thread_stack_size, page_size());
+  _initial_thread_stack_size = align_down(_initial_thread_stack_size, os::vm_page_size());
   _initial_thread_stack_bottom = (address)stack_top - _initial_thread_stack_size;
 
   assert(_initial_thread_stack_bottom < (address)stack_top, "overflow!");
@@ -1310,8 +1345,6 @@ int os::current_process_id() {
 
 // DLL functions
 
-const char* os::dll_file_extension() { return ".so"; }
-
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
@@ -1366,93 +1399,25 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   return false;
 }
 
-struct _address_to_library_name {
-  address addr;          // input : memory address
-  size_t  buflen;        //         size of fname
-  char*   fname;         // output: library name
-  address base;          //         library base addr
-};
-
-static int address_to_library_name_callback(struct dl_phdr_info *info,
-                                            size_t size, void *data) {
-  int i;
-  bool found = false;
-  address libbase = NULL;
-  struct _address_to_library_name * d = (struct _address_to_library_name *)data;
-
-  // iterate through all loadable segments
-  for (i = 0; i < info->dlpi_phnum; i++) {
-    address segbase = (address)(info->dlpi_addr + info->dlpi_phdr[i].p_vaddr);
-    if (info->dlpi_phdr[i].p_type == PT_LOAD) {
-      // base address of a library is the lowest address of its loaded
-      // segments.
-      if (libbase == NULL || libbase > segbase) {
-        libbase = segbase;
-      }
-      // see if 'addr' is within current segment
-      if (segbase <= d->addr &&
-          d->addr < segbase + info->dlpi_phdr[i].p_memsz) {
-        found = true;
-      }
-    }
-  }
-
-  // dlpi_name is NULL or empty if the ELF file is executable, return 0
-  // so dll_address_to_library_name() can fall through to use dladdr() which
-  // can figure out executable name from argv[0].
-  if (found && info->dlpi_name && info->dlpi_name[0]) {
-    d->base = libbase;
-    if (d->fname) {
-      jio_snprintf(d->fname, d->buflen, "%s", info->dlpi_name);
-    }
-    return 1;
-  }
-  return 0;
-}
-
 bool os::dll_address_to_library_name(address addr, char* buf,
                                      int buflen, int* offset) {
   // buf is not optional, but offset is optional
-  assert(buf != NULL, "sanity check");
+  assert(buf != nullptr, "sanity check");
 
   Dl_info dlinfo;
-  struct _address_to_library_name data;
-
-  // There is a bug in old glibc dladdr() implementation that it could resolve
-  // to wrong library name if the .so file has a base address != NULL. Here
-  // we iterate through the program headers of all loaded libraries to find
-  // out which library 'addr' really belongs to. This workaround can be
-  // removed once the minimum requirement for glibc is moved to 2.3.x.
-  data.addr = addr;
-  data.fname = buf;
-  data.buflen = buflen;
-  data.base = NULL;
-  int rslt = dl_iterate_phdr(address_to_library_name_callback, (void *)&data);
-
-  if (rslt) {
-    // buf already contains library name
-    if (offset) *offset = addr - data.base;
-    return true;
-  }
   if (dladdr((void*)addr, &dlinfo) != 0) {
-    if (dlinfo.dli_fname != NULL) {
+    if (dlinfo.dli_fname != nullptr) {
       jio_snprintf(buf, buflen, "%s", dlinfo.dli_fname);
     }
-    if (dlinfo.dli_fbase != NULL && offset != NULL) {
+    if (dlinfo.dli_fbase != nullptr && offset != nullptr) {
       *offset = addr - (address)dlinfo.dli_fbase;
     }
     return true;
   }
-
   buf[0] = '\0';
   if (offset) *offset = -1;
   return false;
 }
-
-// Loads .dll/.so and
-// in case of error it checks if .dll/.so was built for the
-// same architecture as Hotspot is running on
-
 
 // Remember the stack's state. The Linux dynamic linker will change
 // the stack to 'executable' at most once, so we must safepoint only once.
@@ -1628,7 +1593,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_PARISC,      EM_PARISC,  ELFCLASS32, ELFDATA2MSB, (char*)"PARISC"},
     {EM_68K,         EM_68K,     ELFCLASS32, ELFDATA2MSB, (char*)"M68k"},
     {EM_AARCH64,     EM_AARCH64, ELFCLASS64, ELFDATA2LSB, (char*)"AARCH64"},
-    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISC-V"},
+#ifdef _LP64
+    {EM_RISCV,       EM_RISCV,   ELFCLASS64, ELFDATA2LSB, (char*)"RISCV64"},
+#else
+    {EM_RISCV,       EM_RISCV,   ELFCLASS32, ELFDATA2LSB, (char*)"RISCV32"},
+#endif
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
@@ -1743,10 +1712,10 @@ void * os::Linux::dlopen_helper(const char *filename, char *ebuf,
       ::strncpy(ebuf, error_report, ebuflen-1);
       ebuf[ebuflen-1]='\0';
     }
-    Events::log(NULL, "Loading shared library %s failed, %s", filename, error_report);
+    Events::log_dll_message(NULL, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
   } else {
-    Events::log(NULL, "Loaded shared library %s", filename);
+    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
     log_info(os)("shared library load of %s was successful", filename);
   }
   return result;
@@ -1780,6 +1749,18 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
   }
 
   return result;
+}
+
+const char* os::Linux::dll_path(void* lib) {
+  struct link_map *lmap;
+  const char* l_path = NULL;
+  assert(lib != NULL, "dll_path parameter must not be NULL");
+
+  int res_dli = ::dlinfo(lib, RTLD_DI_LINKMAP, &lmap);
+  if (res_dli == 0) {
+    l_path = lmap->l_name;
+  }
+  return l_path;
 }
 
 static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
@@ -2148,25 +2129,19 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   // - Print glibc tunables
 #ifdef __GLIBC__
   size_t total_allocated = 0;
+  size_t free_retained = 0;
   bool might_have_wrapped = false;
-  if (_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = _mallinfo2();
-    total_allocated = mi.uordblks;
-  } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
-    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
-    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
-    // and the numbers are reliable.
-    struct glibc_mallinfo mi = _mallinfo();
-    total_allocated = (size_t)(unsigned)mi.uordblks;
-    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-    might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
-  }
-  if (_mallinfo2 != NULL || _mallinfo != NULL) {
-    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K%s",
-                 total_allocated / K,
-                 might_have_wrapped ? " (may have wrapped)" : "");
-  }
+  glibc_mallinfo mi;
+  os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+  total_allocated = mi.uordblks + mi.hblkhd;
+  free_retained = mi.fordblks;
+#ifdef _LP64
+  // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
+  might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
+#endif
+  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+               total_allocated / K, free_retained / K,
+               might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
   print_glibc_malloc_tunables(st);
   st->cr();
@@ -2182,19 +2157,6 @@ void os::Linux::print_uptime_info(outputStream* st) {
   int ret = sysinfo(&sinfo);
   if (ret == 0) {
     os::print_dhm(st, "OS uptime:", (long) sinfo.uptime);
-  }
-}
-
-static void print_container_helper(outputStream* st, jlong j, const char* metrics) {
-  st->print("%s: ", metrics);
-  if (j > 0) {
-    if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
-    } else {
-      st->print_cr(UINT64_FORMAT, uint64_t(j));
-    }
-  } else {
-    st->print_cr("%s", j == OSCONTAINER_ERROR ? "not supported" : "unlimited");
   }
 }
 
@@ -2253,11 +2215,13 @@ bool os::Linux::print_container_info(outputStream* st) {
     st->print_cr("%s", i == OSCONTAINER_ERROR ? "not supported" : "no shares");
   }
 
-  print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
-  print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
-  print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_limit_in_bytes(), "memory_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_and_swap_limit_in_bytes(), "memory_and_swap_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_soft_limit_in_bytes(), "memory_soft_limit_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_usage_in_bytes(), "memory_usage_in_bytes");
+  OSContainer::print_container_helper(st, OSContainer::memory_max_usage_in_bytes(), "memory_max_usage_in_bytes");
+
+  OSContainer::print_version_specific_info(st);
 
   jlong j = OSContainer::pids_max();
   st->print("maximum number of tasks: ");
@@ -2360,7 +2324,7 @@ static bool print_model_name_and_flags(outputStream* st, char* buf, size_t bufle
 }
 
 // additional information about CPU e.g. available frequency ranges
-static void print_sys_devices_cpu_info(outputStream* st, char* buf, size_t buflen) {
+static void print_sys_devices_cpu_info(outputStream* st) {
   _print_ascii_file_h("Online cpus", "/sys/devices/system/cpu/online", st);
   _print_ascii_file_h("Offline cpus", "/sys/devices/system/cpu/offline", st);
 
@@ -2413,7 +2377,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
     _print_ascii_file_h("/proc/cpuinfo", "/proc/cpuinfo", st, false);
   }
   st->cr();
-  print_sys_devices_cpu_info(st, buf, buflen);
+  print_sys_devices_cpu_info(st);
 }
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
@@ -2476,7 +2440,7 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
 #elif defined(PPC)
   strncpy(cpuinfo, "PPC64", length);
 #elif defined(RISCV)
-  strncpy(cpuinfo, "RISCV64", length);
+  strncpy(cpuinfo, LP64_ONLY("RISCV64") NOT_LP64("RISCV32"), length);
 #elif defined(S390)
   strncpy(cpuinfo, "S390", length);
 #elif defined(SPARC)
@@ -2580,28 +2544,8 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[MAXPATHLEN - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
-
-int os::vm_page_size() {
-  // Seems redundant as all get out
-  assert(os::Linux::page_size() != -1, "must call os::init");
-  return os::Linux::page_size();
-}
-
-// Solaris allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Linux::page_size() != -1, "must call os::init");
-  return os::Linux::page_size();
-}
 
 // Rationale behind this function:
 //  current (Mon Apr 25 20:12:18 MSD 2005) oprofile drops samples without executable
@@ -2833,6 +2777,11 @@ int os::numa_get_group_id_for_address(const void* address) {
   return id;
 }
 
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
+  void** pages = const_cast<void**>(addresses);
+  return os::Linux::numa_move_pages(0, count, pages, NULL, lgrp_ids, 0) == 0;
+}
+
 int os::Linux::get_existing_num_nodes() {
   int node;
   int highest_node_number = Linux::numa_max_node();
@@ -2861,10 +2810,6 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     }
   }
   return i;
-}
-
-bool os::get_page_info(char *start, page_info* info) {
-  return false;
 }
 
 char *os::scan_pages(char *start, char* end, page_info* page_expected,
@@ -2993,10 +2938,10 @@ bool os::Linux::libnuma_init() {
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         // Create an index -> node mapping, since nodes are not always consecutive
-        _nindex_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_cpu_to_node_map();
         return true;
       }
@@ -3009,7 +2954,7 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
   // Creating guard page is very expensive. Java thread has HotSpot
   // guard pages, only enable glibc guard page for non-Java threads.
   // (Remember: compiler thread is a Java thread, too!)
-  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : page_size());
+  return ((thr_type == java_thread || thr_type == compiler_thread) ? 0 : os::vm_page_size());
 }
 
 void os::Linux::rebuild_nindex_to_node_map() {
@@ -3420,7 +3365,7 @@ extern char* g_assert_poison; // assertion poison page address
 
 static bool linux_mprotect(char* addr, size_t size, int prot) {
   // Linux wants the mprotect address argument to be page aligned.
-  char* bottom = (char*)align_down((intptr_t)addr, os::Linux::page_size());
+  char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
 
   // According to SUSv3, mprotect() should only be used with mappings
   // established by mmap(), and mmap() always maps whole pages. Unaligned
@@ -3429,7 +3374,7 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   // caller if you hit this assert.
   assert(addr == bottom, "sanity check");
 
-  size = align_up(pointer_delta(addr, bottom, 1) + size, os::Linux::page_size());
+  size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   // Don't log anything if we're executing in the poison page signal handling
   // context. It can lead to reentrant use of other parts of the VM code.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -4157,13 +4102,6 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return NULL;
 }
 
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
-}
-
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;
@@ -4319,15 +4257,15 @@ extern void report_error(char* file_name, int line_no, char* title,
 static void check_pax(void) {
   // Zero doesn't generate code dynamically, so no need to perform the PaX check
 #ifndef ZERO
-  size_t size = os::Linux::page_size();
+  size_t size = os::vm_page_size();
 
-  void* p = ::mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void* p = ::mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
     log_debug(os)("os_linux.cpp: check_pax: mmap failed (%s)" , os::strerror(errno));
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for PaX check.");
   }
 
-  int res = ::mprotect(p, size, PROT_WRITE|PROT_EXEC);
+  int res = ::mprotect(p, size, PROT_READ|PROT_WRITE|PROT_EXEC);
   if (res == -1) {
     log_debug(os)("os_linux.cpp: check_pax: mprotect failed (%s)" , os::strerror(errno));
     vm_exit_during_initialization(
@@ -4344,18 +4282,20 @@ void os::init(void) {
 
   clock_tics_per_sec = sysconf(_SC_CLK_TCK);
 
-  Linux::set_page_size(sysconf(_SC_PAGESIZE));
-  if (Linux::page_size() == -1) {
+  int page_size = sysconf(_SC_PAGESIZE);
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+  if (os::vm_page_size() <= 0) {
     fatal("os_linux.cpp: os::init: sysconf failed (%s)",
           os::strerror(errno));
   }
-  _page_sizes.add(Linux::page_size());
+  _page_sizes.add(os::vm_page_size());
 
   Linux::initialize_system_info();
 
 #ifdef __GLIBC__
-  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
-  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -4459,6 +4399,89 @@ void os::Linux::numa_init() {
   }
 }
 
+#if defined(IA32) && !defined(ZERO)
+/*
+ * Work-around (execute code at a high address) for broken NX emulation using CS limit,
+ * Red Hat patch "Exec-Shield" (IA32 only).
+ *
+ * Map and execute at a high VA to prevent CS lazy updates race with SMP MM
+ * invalidation.Further code generation by the JVM will no longer cause CS limit
+ * updates.
+ *
+ * Affects IA32: RHEL 5 & 6, Ubuntu 10.04 (LTS), 10.10, 11.04, 11.10, 12.04.
+ * @see JDK-8023956
+ */
+static void workaround_expand_exec_shield_cs_limit() {
+  assert(os::Linux::initial_thread_stack_bottom() != NULL, "sanity");
+  size_t page_size = os::vm_page_size();
+
+  /*
+   * JDK-8197429
+   *
+   * Expand the stack mapping to the end of the initial stack before
+   * attempting to install the codebuf.  This is needed because newer
+   * Linux kernels impose a distance of a megabyte between stack
+   * memory and other memory regions.  If we try to install the
+   * codebuf before expanding the stack the installation will appear
+   * to succeed but we'll get a segfault later if we expand the stack
+   * in Java code.
+   *
+   */
+  if (os::is_primordial_thread()) {
+    address limit = os::Linux::initial_thread_stack_bottom();
+    if (! DisablePrimordialThreadGuardPages) {
+      limit += StackOverflow::stack_red_zone_size() +
+               StackOverflow::stack_yellow_zone_size();
+    }
+    os::Linux::expand_stack_to(limit);
+  }
+
+  /*
+   * Take the highest VA the OS will give us and exec
+   *
+   * Although using -(pagesz) as mmap hint works on newer kernel as you would
+   * think, older variants affected by this work-around don't (search forward only).
+   *
+   * On the affected distributions, we understand the memory layout to be:
+   *
+   *   TASK_LIMIT= 3G, main stack base close to TASK_LIMT.
+   *
+   * A few pages south main stack will do it.
+   *
+   * If we are embedded in an app other than launcher (initial != main stack),
+   * we don't have much control or understanding of the address space, just let it slide.
+   */
+  char* hint = (char*)(os::Linux::initial_thread_stack_bottom() -
+                       (StackOverflow::stack_guard_zone_size() + page_size));
+  char* codebuf = os::attempt_reserve_memory_at(hint, page_size);
+
+  if (codebuf == NULL) {
+    // JDK-8197429: There may be a stack gap of one megabyte between
+    // the limit of the stack and the nearest memory region: this is a
+    // Linux kernel workaround for CVE-2017-1000364.  If we failed to
+    // map our codebuf, try again at an address one megabyte lower.
+    hint -= 1 * M;
+    codebuf = os::attempt_reserve_memory_at(hint, page_size);
+  }
+
+  if ((codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true))) {
+    return; // No matter, we tried, best effort.
+  }
+
+  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+
+  log_info(os)("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
+
+  // Some code to exec: the 'ret' instruction
+  codebuf[0] = 0xC3;
+
+  // Call the code in the codebuf
+  __asm__ volatile("call *%0" : : "r"(codebuf));
+
+  // keep the page mapped so CS limit isn't reduced.
+}
+#endif // defined(IA32) && !defined(ZERO)
+
 // this is called _after_ the global arguments have been parsed
 jint os::init_2(void) {
 
@@ -4479,7 +4502,7 @@ jint os::init_2(void) {
   }
 
   // Check and sets minimum stack sizes against command line options
-  if (Posix::set_minimum_stack_sizes() == JNI_ERR) {
+  if (set_minimum_stack_sizes() == JNI_ERR) {
     return JNI_ERR;
   }
 
@@ -4589,7 +4612,8 @@ static int _cpu_count(const cpu_set_t* cpus) {
 // dynamic check - see 6515172 for details.
 // If anything goes wrong we fallback to returning the number of online
 // processors - which can be greater than the number available to the process.
-int os::Linux::active_processor_count() {
+static int get_active_processor_count() {
+  // Note: keep this function, with its CPU_xx macros, *outside* the os namespace (see JDK-8289477).
   cpu_set_t cpus;  // can represent at most 1024 (CPU_SETSIZE) processors
   cpu_set_t* cpus_p = &cpus;
   int cpus_size = sizeof(cpu_set_t);
@@ -4659,6 +4683,10 @@ int os::Linux::active_processor_count() {
 
   assert(cpu_count > 0 && cpu_count <= os::processor_count(), "sanity check");
   return cpu_count;
+}
+
+int os::Linux::active_processor_count() {
+  return get_active_processor_count();
 }
 
 // Determine the active processor count from one of
@@ -4803,47 +4831,6 @@ os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& me
   f(value, method, args, thread);
 }
 
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
-}
-
-// Is a (classpath) directory empty?
-bool os::dir_is_empty(const char* path) {
-  DIR *dir = NULL;
-  struct dirent *ptr;
-
-  dir = opendir(path);
-  if (dir == NULL) return true;
-
-  // Scan the directory
-  bool result = true;
-  while (result && (ptr = readdir(dir)) != NULL) {
-    if (strcmp(ptr->d_name, ".") != 0 && strcmp(ptr->d_name, "..") != 0) {
-      result = false;
-    }
-  }
-  closedir(dir);
-  return result;
-}
-
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
@@ -4938,35 +4925,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek64(fd, (off64_t)offset, SEEK_SET);
-}
-
-// This code originates from JDK's sysAvailable
-// from src/solaris/hpi/src/native_threads/src/sys_api_td.c
-
-int os::available(int fd, jlong *bytes) {
-  jlong cur, end;
-  int mode;
-  struct stat64 buf64;
-
-  if (::fstat64(fd, &buf64) >= 0) {
-    mode = buf64.st_mode;
-    if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      int n;
-      if (::ioctl(fd, FIONREAD, &n) >= 0) {
-        *bytes = n;
-        return 1;
-      }
-    }
-  }
-  if ((cur = ::lseek64(fd, 0L, SEEK_CUR)) == -1) {
-    return 0;
-  } else if ((end = ::lseek64(fd, 0L, SEEK_END)) == -1) {
-    return 0;
-  } else if (::lseek64(fd, cur, SEEK_SET) == -1) {
-    return 0;
-  }
-  *bytes = end - cur;
-  return 1;
 }
 
 // Map a block of memory.
@@ -5139,27 +5097,6 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
-}
-
-void os::pause() {
-  char filename[MAX_PATH];
-  if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
-  } else {
-    jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
-  }
-
-  int fd = ::open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-  if (fd != -1) {
-    struct stat buf;
-    ::close(fd);
-    while (::stat(filename, &buf) == 0) {
-      (void)::poll(NULL, 0, 100);
-    }
-  } else {
-    jio_fprintf(stderr,
-                "Could not open pause file '%s', continuing immediately.\n", filename);
-  }
 }
 
 // Get the default path to the core file
@@ -5414,4 +5351,69 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     st->cr();
   }
+}
+
+#ifdef __GLIBC__
+void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
+  if (g_mallinfo2) {
+    new_mallinfo mi = g_mallinfo2();
+    out->arena = mi.arena;
+    out->ordblks = mi.ordblks;
+    out->smblks = mi.smblks;
+    out->hblks = mi.hblks;
+    out->hblkhd = mi.hblkhd;
+    out->usmblks = mi.usmblks;
+    out->fsmblks = mi.fsmblks;
+    out->uordblks = mi.uordblks;
+    out->fordblks = mi.fordblks;
+    out->keepcost =  mi.keepcost;
+    *might_have_wrapped = false;
+  } else if (g_mallinfo) {
+    old_mallinfo mi = g_mallinfo();
+    // glibc reports unsigned 32-bit sizes in int form. First make unsigned, then extend.
+    out->arena = (size_t)(unsigned)mi.arena;
+    out->ordblks = (size_t)(unsigned)mi.ordblks;
+    out->smblks = (size_t)(unsigned)mi.smblks;
+    out->hblks = (size_t)(unsigned)mi.hblks;
+    out->hblkhd = (size_t)(unsigned)mi.hblkhd;
+    out->usmblks = (size_t)(unsigned)mi.usmblks;
+    out->fsmblks = (size_t)(unsigned)mi.fsmblks;
+    out->uordblks = (size_t)(unsigned)mi.uordblks;
+    out->fordblks = (size_t)(unsigned)mi.fordblks;
+    out->keepcost = (size_t)(unsigned)mi.keepcost;
+    *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
+  } else {
+    // We should have either mallinfo or mallinfo2
+    ShouldNotReachHere();
+  }
+}
+#endif // __GLIBC__
+
+bool os::trim_native_heap(os::size_change_t* rss_change) {
+#ifdef __GLIBC__
+  os::Linux::meminfo_t info1;
+  os::Linux::meminfo_t info2;
+
+  bool have_info1 = rss_change != nullptr &&
+                    os::Linux::query_process_memory_info(&info1);
+  ::malloc_trim(0);
+  bool have_info2 = rss_change != nullptr && have_info1 &&
+                    os::Linux::query_process_memory_info(&info2);
+  ssize_t delta = (ssize_t) -1;
+  if (rss_change != nullptr) {
+    if (have_info1 && have_info2 &&
+        info1.vmrss != -1 && info2.vmrss != -1 &&
+        info1.vmswap != -1 && info2.vmswap != -1) {
+      // Note: query_process_memory_info returns values in K
+      rss_change->before = (info1.vmrss + info1.vmswap) * K;
+      rss_change->after = (info2.vmrss + info2.vmswap) * K;
+    } else {
+      rss_change->after = rss_change->before = SIZE_MAX;
+    }
+  }
+
+  return true;
+#else
+  return false; // musl
+#endif
 }

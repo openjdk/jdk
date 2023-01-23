@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +233,7 @@ bool ConnectionGraph::compute_escape() {
 
   if (non_escaped_allocs_worklist.length() == 0) {
     _collecting = false;
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false; // Nothing to do.
   }
   // Add final simple edges to graph.
@@ -262,7 +263,10 @@ bool ConnectionGraph::compute_escape() {
   // processing, calls to CI to resolve symbols (types, fields, methods)
   // referenced in bytecode. During symbol resolution VM may throw
   // an exception which CI cleans and converts to compilation failure.
-  if (C->failing())  return false;
+  if (C->failing()) {
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
+    return false;
+  }
 
   // 2. Finish Graph construction by propagating references to all
   //    java objects through graph.
@@ -270,13 +274,16 @@ bool ConnectionGraph::compute_escape() {
                                  java_objects_worklist, oop_fields_worklist)) {
     // All objects escaped or hit time or iterations limits.
     _collecting = false;
+    NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
     return false;
   }
 
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
   //    in split_unique_types().
+  GrowableArray<JavaObjectNode*> jobj_worklist;
   int non_escaped_length = non_escaped_allocs_worklist.length();
+  bool found_nsr_alloc = false;
   for (int next = 0; next < non_escaped_length; next++) {
     JavaObjectNode* ptn = non_escaped_allocs_worklist.at(next);
     bool noescape = (ptn->escape_state() == PointsToNode::NoEscape);
@@ -287,8 +294,22 @@ bool ConnectionGraph::compute_escape() {
     if (noescape && ptn->scalar_replaceable()) {
       adjust_scalar_replaceable_state(ptn);
       if (ptn->scalar_replaceable()) {
-        alloc_worklist.append(ptn->ideal_node());
+        jobj_worklist.push(ptn);
+      } else {
+        found_nsr_alloc = true;
       }
+    }
+  }
+
+  // Propagate NSR (Not Scalar Replaceable) state.
+  if (found_nsr_alloc) {
+    find_scalar_replaceable_allocs(jobj_worklist);
+  }
+
+  for (int next = 0; next < jobj_worklist.length(); ++next) {
+    JavaObjectNode* jobj = jobj_worklist.at(next);
+    if (jobj->scalar_replaceable()) {
+      alloc_worklist.append(jobj->ideal_node());
     }
   }
 
@@ -334,12 +355,15 @@ bool ConnectionGraph::compute_escape() {
 
   // 5. Separate memory graph for scalar replaceable allcations.
   bool has_scalar_replaceable_candidates = (alloc_worklist.length() > 0);
-  if (has_scalar_replaceable_candidates &&
-      C->AliasLevel() >= 3 && EliminateAllocations) {
+  if (has_scalar_replaceable_candidates && EliminateAllocations) {
+    assert(C->do_aliasing(), "Aliasing should be enabled");
     // Now use the escape information to create unique types for
     // scalar replaceable objects.
     split_unique_types(alloc_worklist, arraycopy_worklist, mergemem_worklist);
-    if (C->failing())  return false;
+    if (C->failing()) {
+      NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
+      return false;
+    }
     C->print_method(PHASE_AFTER_EA, 2);
 
 #ifdef ASSERT
@@ -350,8 +374,6 @@ bool ConnectionGraph::compute_escape() {
       tty->print(" since EliminateAllocations is off ===");
     } else if(!has_scalar_replaceable_candidates) {
       tty->print(" since there are no scalar replaceable candidates ===");
-    } else if(C->AliasLevel() < 3) {
-      tty->print(" since AliasLevel < 3 ===");
     }
     tty->cr();
 #endif
@@ -375,6 +397,7 @@ bool ConnectionGraph::compute_escape() {
     }
   }
 
+  NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
 }
 
@@ -572,8 +595,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_LoadP:
-    case Op_LoadN:
-    case Op_LoadPLocked: {
+    case Op_LoadN: {
       add_objload_to_connection_graph(n, delayed_worklist);
       break;
     }
@@ -626,7 +648,6 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StoreP:
     case Op_StoreN:
     case Op_StoreNKlass:
-    case Op_StorePConditional:
     case Op_WeakCompareAndSwapP:
     case Op_WeakCompareAndSwapN:
     case Op_CompareAndSwapP:
@@ -649,6 +670,24 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     }
     case Op_ThreadLocal: {
       add_java_object(n, PointsToNode::ArgEscape);
+      break;
+    }
+    case Op_Blackhole: {
+      // All blackhole pointer arguments are globally escaping.
+      // Only do this if there is at least one pointer argument.
+      // Do not add edges during first iteration because some could be
+      // not defined yet, defer to final step.
+      for (uint i = 0; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in != nullptr) {
+          const Type* at = _igvn->type(in);
+          if (!at->isa_ptr()) continue;
+
+          add_local_var(n, PointsToNode::GlobalEscape);
+          delayed_worklist->push(n);
+          break;
+        }
+      }
       break;
     }
     default:
@@ -711,8 +750,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
       break;
     }
     case Op_LoadP:
-    case Op_LoadN:
-    case Op_LoadPLocked: {
+    case Op_LoadN: {
       // Using isa_ptr() instead of isa_oopptr() for LoadP and Phi because
       // ThreadLocal has RawPtr type.
       assert(_igvn->type(n)->make_ptr() != NULL, "Unexpected node type");
@@ -767,11 +805,11 @@ void ConnectionGraph::add_final_edges(Node *n) {
     case Op_WeakCompareAndSwapN:
     case Op_StoreP:
     case Op_StoreN:
-    case Op_StoreNKlass:
-    case Op_StorePConditional:{
+    case Op_StoreNKlass:{
       add_final_edges_unsafe_access(n, opcode);
       break;
     }
+    case Op_VectorizedHashCode:
     case Op_AryEq:
     case Op_CountPositives:
     case Op_StrComp:
@@ -795,6 +833,26 @@ void ConnectionGraph::add_final_edges(Node *n) {
           }
           PointsToNode* ptn = ptnode_adr(adr->_idx);
           assert(ptn != NULL, "node should be registered");
+          add_edge(n_ptn, ptn);
+        }
+      }
+      break;
+    }
+    case Op_Blackhole: {
+      // All blackhole pointer arguments are globally escaping.
+      for (uint i = 0; i < n->req(); i++) {
+        Node* in = n->in(i);
+        if (in != nullptr) {
+          const Type* at = _igvn->type(in);
+          if (!at->isa_ptr()) continue;
+
+          if (in->is_AddP()) {
+            in = get_addp_base(in);
+          }
+
+          PointsToNode* ptn = ptnode_adr(in->_idx);
+          assert(ptn != nullptr, "should be defined already");
+          set_escape_state(ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA "blackhole"));
           add_edge(n_ptn, ptn);
         }
       }
@@ -903,12 +961,11 @@ void ConnectionGraph::add_call_node(CallNode* call) {
     Node* k = call->in(AllocateNode::KlassNode);
     const TypeKlassPtr* kt = k->bottom_type()->isa_klassptr();
     assert(kt != NULL, "TypeKlassPtr  required.");
-    ciKlass* cik = kt->klass();
     PointsToNode::EscapeState es = PointsToNode::NoEscape;
     bool scalar_replaceable = true;
     NOT_PRODUCT(const char* nsr_reason = "");
     if (call->is_AllocateArray()) {
-      if (!cik->is_array_klass()) { // StressReflectiveCode
+      if (!kt->isa_aryklassptr()) { // StressReflectiveCode
         es = PointsToNode::GlobalEscape;
       } else {
         int length = call->in(AllocateNode::ALength)->find_int_con(-1);
@@ -923,18 +980,23 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         }
       }
     } else {  // Allocate instance
-      if (cik->is_subclass_of(_compile->env()->Thread_klass()) ||
-          cik->is_subclass_of(_compile->env()->Reference_klass()) ||
-         !cik->is_instance_klass() || // StressReflectiveCode
-         !cik->as_instance_klass()->can_be_instantiated() ||
-          cik->as_instance_klass()->has_finalizer()) {
+      if (!kt->isa_instklassptr()) { // StressReflectiveCode
         es = PointsToNode::GlobalEscape;
       } else {
-        int nfields = cik->as_instance_klass()->nof_nonstatic_fields();
-        if (nfields > EliminateAllocationFieldsLimit) {
-          // Not scalar replaceable if there are too many fields.
-          scalar_replaceable = false;
-          NOT_PRODUCT(nsr_reason = "has too many fields");
+        const TypeInstKlassPtr* ikt = kt->is_instklassptr();
+        ciInstanceKlass* ik = ikt->klass_is_exact() ? ikt->exact_klass()->as_instance_klass() : ikt->instance_klass();
+        if (ik->is_subclass_of(_compile->env()->Thread_klass()) ||
+            ik->is_subclass_of(_compile->env()->Reference_klass()) ||
+            !ik->can_be_instantiated() ||
+            ik->has_finalizer()) {
+          es = PointsToNode::GlobalEscape;
+        } else {
+          int nfields = ik->as_instance_klass()->nof_nonstatic_fields();
+          if (nfields > EliminateAllocationFieldsLimit) {
+            // Not scalar replaceable if there are too many fields.
+            scalar_replaceable = false;
+            NOT_PRODUCT(nsr_reason = "has too many fields");
+          }
         }
       }
     }
@@ -1075,8 +1137,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
           assert(aat == Type::TOP || aat == TypePtr::NULL_PTR ||
                  aat->isa_ptr() != NULL, "expecting an Ptr");
           bool arg_has_oops = aat->isa_oopptr() &&
-                              (aat->isa_oopptr()->klass() == NULL || aat->isa_instptr() ||
-                               (aat->isa_aryptr() && aat->isa_aryptr()->klass()->is_obj_array_klass()));
+                              (aat->isa_instptr() ||
+                               (aat->isa_aryptr() && (aat->isa_aryptr()->elem() == Type::BOTTOM || aat->isa_aryptr()->elem()->make_oopptr() != NULL)));
           if (i == TypeFunc::Parms) {
             src_has_oops = arg_has_oops;
           }
@@ -1105,7 +1167,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "electronicCodeBook_decryptAESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "counterMode_AESCrypt") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "galoisCounterMode_AESCrypt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "poly1305_processBlocks") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "ghash_processBlocks") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "chacha20Block") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "encodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "decodeBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "md5_implCompress") == 0 ||
@@ -1814,15 +1878,19 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored at unknown offset"));
         return;
       }
-      // 2. An object is not scalar replaceable if the field into which it is
-      // stored has multiple bases one of which is null.
-      if (field->base_count() > 1) {
-        for (BaseIterator i(field); i.has_next(); i.next()) {
-          PointsToNode* base = i.get();
-          if (base == null_obj) {
-            set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with potentially null base"));
-            return;
-          }
+      for (BaseIterator i(field); i.has_next(); i.next()) {
+        PointsToNode* base = i.get();
+        // 2. An object is not scalar replaceable if the field into which it is
+        // stored has multiple bases one of which is null.
+        if ((base == null_obj) && (field->base_count() > 1)) {
+          set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with potentially null base"));
+          return;
+        }
+        // 2.5. An object is not scalar replaceable if the field into which it is
+        // stored has NSR base.
+        if (!base->scalar_replaceable()) {
+          set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with NSR base"));
+          return;
         }
       }
     }
@@ -1906,6 +1974,36 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
           // Mark all bases.
           set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "may point to more than one object"));
           set_not_scalar_replaceable(base NOT_PRODUCT(COMMA "may point to more than one object"));
+        }
+      }
+    }
+  }
+}
+
+// Propagate NSR (Not scalar replaceable) state.
+void ConnectionGraph::find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist) {
+  int jobj_length = jobj_worklist.length();
+  bool found_nsr_alloc = true;
+  while (found_nsr_alloc) {
+    found_nsr_alloc = false;
+    for (int next = 0; next < jobj_length; ++next) {
+      JavaObjectNode* jobj = jobj_worklist.at(next);
+      for (UseIterator i(jobj); (jobj->scalar_replaceable() && i.has_next()); i.next()) {
+        PointsToNode* use = i.get();
+        if (use->is_Field()) {
+          FieldNode* field = use->as_Field();
+          assert(field->is_oop() && field->scalar_replaceable(), "sanity");
+          assert(field->offset() != Type::OffsetBot, "sanity");
+          for (BaseIterator i(field); i.has_next(); i.next()) {
+            PointsToNode* base = i.get();
+            // An object is not scalar replaceable if the field into which
+            // it is stored has NSR base.
+            if ((base != null_obj) && !base->scalar_replaceable()) {
+              set_not_scalar_replaceable(jobj NOT_PRODUCT(COMMA "is stored into field with NSR base"));
+              found_nsr_alloc = true;
+              break;
+            }
+          }
         }
       }
     }
@@ -2198,8 +2296,8 @@ bool ConnectionGraph::is_oop_field(Node* n, int offset, bool* unsafe) {
   if (offset == Type::OffsetBot) {
     // Check only oop fields.
     if (!adr_type->isa_aryptr() ||
-        (adr_type->isa_aryptr()->klass() == NULL) ||
-         adr_type->isa_aryptr()->klass()->is_obj_array_klass()) {
+        adr_type->isa_aryptr()->elem() == Type::BOTTOM ||
+        adr_type->isa_aryptr()->elem()->make_oopptr() != NULL) {
       // OffsetBot is used to reference array's element. Ignore first AddP.
       if (find_second_addp(n, n->in(AddPNode::Base)) == NULL) {
         bt = T_OBJECT;
@@ -2590,7 +2688,7 @@ bool ConnectionGraph::split_AddP(Node *addp, Node *base) {
   // this code branch will go away.
   //
   if (!t->is_known_instance() &&
-      !base_t->klass()->is_subtype_of(t->klass())) {
+      !base_t->maybe_java_subtype_of(t)) {
      return false; // bail out
   }
   const TypeOopPtr *tinst = base_t->add_offset(t->offset())->is_oopptr();
@@ -2756,8 +2854,8 @@ Node* ConnectionGraph::step_through_mergemem(MergeMemNode *mmem, int alias_idx, 
   // means an array I have not precisely typed yet.  Do not do any
   // alias stuff with it any time soon.
   if (toop->base() != Type::AnyPtr &&
-      !(toop->klass() != NULL &&
-        toop->klass()->is_java_lang_Object() &&
+      !(toop->isa_instptr() &&
+        toop->is_instptr()->instance_klass()->is_java_lang_Object() &&
         toop->offset() == Type::OffsetBot)) {
     mem = mmem->memory_at(alias_idx);
     // Update input if it is progress over what we have now
@@ -3274,7 +3372,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         } else {
           tn_t = tn_type->isa_oopptr();
         }
-        if (tn_t != NULL && tinst->klass()->is_subtype_of(tn_t->klass())) {
+        if (tn_t != NULL && tinst->maybe_java_subtype_of(tn_t)) {
           if (tn_type->isa_narrowoop()) {
             tn_type = tinst->make_narrowoop();
           } else {
@@ -3287,7 +3385,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           record_for_optimizer(n);
         } else {
           assert(tn_type == TypePtr::NULL_PTR ||
-                 tn_t != NULL && !tinst->klass()->is_subtype_of(tn_t->klass()),
+                 tn_t != NULL && !tinst->maybe_java_subtype_of(tn_t),
                  "unexpected type");
           continue; // Skip dead path with different type
         }
@@ -3344,10 +3442,11 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X || op == Op_StoreCM ||
-              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp ||
-              op == Op_CountPositives ||
+              op == Op_FastLock || op == Op_AryEq ||
+              op == Op_StrComp || op == Op_CountPositives ||
               op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+              op == Op_StrEquals || op == Op_VectorizedHashCode ||
+              op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
               op == Op_SubTypeCheck ||
               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use))) {
           n->dump();
@@ -3490,7 +3589,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
   //  Phase 3:  Process MergeMem nodes from mergemem_worklist.
   //            Walk each memory slice moving the first node encountered of each
-  //            instance type to the the input corresponding to its alias index.
+  //            instance type to the input corresponding to its alias index.
   uint length = mergemem_worklist.length();
   for( uint next = 0; next < length; ++next ) {
     MergeMemNode* nmm = mergemem_worklist.at(next);
@@ -3631,6 +3730,10 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 }
 
 #ifndef PRODUCT
+int ConnectionGraph::_no_escape_counter = 0;
+int ConnectionGraph::_arg_escape_counter = 0;
+int ConnectionGraph::_global_escape_counter = 0;
+
 static const char *node_type_names[] = {
   "UnknownType",
   "JavaObject",
@@ -3735,6 +3838,30 @@ void ConnectionGraph::dump(GrowableArray<PointsToNode*>& ptnodes_worklist) {
         }
       }
       tty->cr();
+    }
+  }
+}
+
+void ConnectionGraph::print_statistics() {
+  tty->print_cr("No escape = %d, Arg escape = %d, Global escape = %d", Atomic::load(&_no_escape_counter), Atomic::load(&_arg_escape_counter), Atomic::load(&_global_escape_counter));
+}
+
+void ConnectionGraph::escape_state_statistics(GrowableArray<JavaObjectNode*>& java_objects_worklist) {
+  if (!PrintOptoStatistics || (_invocation > 0)) { // Collect data only for the first invocation
+    return;
+  }
+  for (int next = 0; next < java_objects_worklist.length(); ++next) {
+    JavaObjectNode* ptn = java_objects_worklist.at(next);
+    if (ptn->ideal_node()->is_Allocate()) {
+      if (ptn->escape_state() == PointsToNode::NoEscape) {
+        Atomic::inc(&ConnectionGraph::_no_escape_counter);
+      } else if (ptn->escape_state() == PointsToNode::ArgEscape) {
+        Atomic::inc(&ConnectionGraph::_arg_escape_counter);
+      } else if (ptn->escape_state() == PointsToNode::GlobalEscape) {
+        Atomic::inc(&ConnectionGraph::_global_escape_counter);
+      } else {
+        assert(false, "Unexpected Escape State");
+      }
     }
   }
 }

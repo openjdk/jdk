@@ -134,10 +134,7 @@ public class GSSCredentialImpl implements GSSCredential {
 
     public void dispose() throws GSSException {
         if (!destroyed) {
-            GSSCredentialSpi element;
-            Enumeration<GSSCredentialSpi> values = hashtable.elements();
-            while (values.hasMoreElements()) {
-                element = values.nextElement();
+            for (GSSCredentialSpi element : hashtable.values()) {
                 element.dispose();
             }
             destroyed = true;
@@ -172,8 +169,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey key = null;
-        GSSCredentialSpi element = null;
+        SearchKey key;
+        GSSCredentialSpi element;
 
         if (mech == null) mech = ProviderList.DEFAULT_MECH_OID;
 
@@ -211,14 +208,11 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey tempKey;
         GSSCredentialSpi tempCred;
-        int tempLife = 0, tempInitLife = 0, tempAcceptLife = 0;
+        int tempLife, tempInitLife, tempAcceptLife;
         int min = INDEFINITE_LIFETIME;
 
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                        e.hasMoreElements(); ) {
-            tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             tempCred = hashtable.get(tempKey);
             if (tempKey.getUsage() == INITIATE_ONLY)
                 tempLife = tempCred.getInitLifetime();
@@ -227,9 +221,7 @@ public class GSSCredentialImpl implements GSSCredential {
             else {
                 tempInitLife = tempCred.getInitLifetime();
                 tempAcceptLife = tempCred.getAcceptLifetime();
-                tempLife = (tempInitLife < tempAcceptLife ?
-                            tempInitLife:
-                            tempAcceptLife);
+                tempLife = (Math.min(tempInitLife, tempAcceptLife));
             }
             if (min > tempLife)
                 min = tempLife;
@@ -245,8 +237,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean found = false;
         int max = 0;
 
@@ -285,8 +277,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean found = false;
         int max = 0;
 
@@ -331,13 +323,10 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        SearchKey tempKey;
         boolean initiate = false;
         boolean accept = false;
 
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                        e.hasMoreElements(); ) {
-            tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             if (tempKey.getUsage() == INITIATE_ONLY)
                 initiate = true;
             else if (tempKey.getUsage() == ACCEPT_ONLY)
@@ -361,8 +350,8 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
-        SearchKey key = null;
+        GSSCredentialSpi element;
+        SearchKey key;
         boolean initiate = false;
         boolean accept = false;
 
@@ -408,10 +397,7 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
         ArrayList<Oid> result = new ArrayList<Oid>(hashtable.size());
-
-        for (Enumeration<SearchKey> e = hashtable.keys();
-                                                e.hasMoreElements(); ) {
-            SearchKey tempKey = e.nextElement();
+        for (SearchKey tempKey : hashtable.keySet()) {
             result.add(tempKey.getMech());
         }
         return result.toArray(new Oid[0]);
@@ -617,14 +603,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     Set<GSSCredentialSpi> getElements() {
-        HashSet<GSSCredentialSpi> retVal =
-                        new HashSet<GSSCredentialSpi>(hashtable.size());
-        Enumeration<GSSCredentialSpi> values = hashtable.elements();
-        while (values.hasMoreElements()) {
-            GSSCredentialSpi o = values.nextElement();
-            retVal.add(o);
-        }
-        return retVal;
+        return new HashSet<>(hashtable.values());
     }
 
     private static String getElementStr(Oid mechOid, int usage) {
@@ -649,7 +628,7 @@ public class GSSCredentialImpl implements GSSCredential {
                                         "no longer valid");
         }
 
-        GSSCredentialSpi element = null;
+        GSSCredentialSpi element;
         StringBuilder sb = new StringBuilder("[GSSCredential: ");
         Object[] elements = hashtable.entrySet().toArray();
         for (int i = 0; i < elements.length; i++) {
@@ -676,7 +655,7 @@ public class GSSCredentialImpl implements GSSCredential {
     }
 
     static class SearchKey {
-        private Oid mechOid = null;
+        private final Oid mechOid;
         private int usage = GSSCredential.INITIATE_AND_ACCEPT;
         public SearchKey(Oid mechOid, int usage) {
 
@@ -690,9 +669,8 @@ public class GSSCredentialImpl implements GSSCredential {
             return usage;
         }
         public boolean equals(Object other) {
-            if (! (other instanceof SearchKey))
+            if (! (other instanceof SearchKey that))
                 return false;
-            SearchKey that = (SearchKey) other;
             return ((this.mechOid.equals(that.mechOid)) &&
                     (this.usage == that.usage));
         }

@@ -55,10 +55,10 @@ import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
-import jdk.internal.misc.VM;
-
 import jdk.internal.access.JavaNetInetAddressAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Blocker;
+import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
 import sun.net.ResolverProviderConfiguration;
 import sun.security.action.*;
@@ -223,6 +223,7 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * @see     java.net.InetAddress#getByName(java.lang.String)
  * @see     java.net.InetAddress#getLocalHost()
  * @since 1.0
+ * @sealedGraph
  */
 public sealed class InetAddress implements Serializable permits Inet4Address, Inet6Address {
 
@@ -972,6 +973,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
     // in cache when the result is obtained
     private static final class NameServiceAddresses implements Addresses {
         private final String host;
+        private final ReentrantLock lookupLock = new ReentrantLock();
 
         NameServiceAddresses(String host) {
             this.host = host;
@@ -982,7 +984,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             Addresses addresses;
             // only one thread is doing lookup to name service
             // for particular host at any time.
-            synchronized (this) {
+            lookupLock.lock();
+            try {
                 // re-check that we are still us + re-install us if slot empty
                 addresses = cache.putIfAbsent(host, this);
                 if (addresses == null) {
@@ -1030,6 +1033,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     return inetAddresses;
                 }
                 // else addresses != this
+            } finally {
+                lookupLock.unlock();
             }
             // delegate to different addresses when we are already replaced
             // but outside of synchronized block to avoid any chance of dead-locking
@@ -1049,16 +1054,27 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
-            return Arrays.stream(impl.lookupAllHostAddr(host, policy));
+            InetAddress[] addrs;
+            long comp = Blocker.begin();
+            try {
+                addrs = impl.lookupAllHostAddr(host, policy);
+            } finally {
+                Blocker.end(comp);
+            }
+            return Arrays.stream(addrs);
         }
 
-        public String lookupByAddress(byte[] addr)
-                throws UnknownHostException {
+        public String lookupByAddress(byte[] addr) throws UnknownHostException {
             Objects.requireNonNull(addr);
             if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
                 throw new IllegalArgumentException("Invalid address length");
             }
-            return impl.getHostByAddr(addr);
+            long comp = Blocker.begin();
+            try {
+                return impl.getHostByAddr(addr);
+            } finally {
+                Blocker.end(comp);
+            }
         }
     }
 
@@ -1239,7 +1255,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         private byte [] createAddressByteArray(String addrStr) {
             byte[] addrArray;
             // check if IPV4 address - most likely
-            addrArray = IPAddressUtil.textToNumericFormatV4(addrStr);
+            try {
+                addrArray = IPAddressUtil.validateNumericFormatV4(addrStr);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
             if (addrArray == null) {
                 addrArray = IPAddressUtil.textToNumericFormatV6(addrStr);
             }
@@ -1455,13 +1475,19 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
 
         // if host is an IP address, we won't do further lookup
-        if (Character.digit(host.charAt(0), 16) != -1
+        if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr = null;
+            byte[] addr;
             int numericZone = -1;
             String ifname = null;
             // see if it is IPv4 address
-            addr = IPAddressUtil.textToNumericFormatV4(host);
+            try {
+                addr = IPAddressUtil.validateNumericFormatV4(host);
+            } catch (IllegalArgumentException iae) {
+                var uhe = new UnknownHostException(host);
+                uhe.initCause(iae);
+                throw uhe;
+            }
             if (addr == null) {
                 // This is supposed to be an IPv6 literal
                 // Check if a numeric or string zone id is present
@@ -1482,6 +1508,10 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             InetAddress[] ret = new InetAddress[1];
             if(addr != null) {
                 if (addr.length == Inet4Address.INADDRSZ) {
+                    if (numericZone != -1 || ifname != null) {
+                        // IPv4-mapped address must not contain zone-id
+                        throw new UnknownHostException(host + ": invalid IPv4-mapped address");
+                    }
                     ret[0] = new Inet4Address(null, addr);
                 } else {
                     if (ifname != null) {
@@ -1526,22 +1556,23 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         int percent = s.indexOf ('%');
         int slen = s.length();
         int digit, zone=0;
+        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
         if (percent == -1) {
             return -1;
         }
         for (int i=percent+1; i<slen; i++) {
             char c = s.charAt(i);
-            if (c == ']') {
-                if (i == percent+1) {
-                    /* empty per-cent field */
-                    return -1;
-                }
-                break;
+            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
+                return -1;
             }
-            if ((digit = Character.digit (c, 10)) < 0) {
+            if (zone > multmax) {
                 return -1;
             }
             zone = (zone * 10) + digit;
+            if (zone < 0) {
+                return -1;
+            }
+
         }
         return zone;
     }

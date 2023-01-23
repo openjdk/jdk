@@ -35,6 +35,7 @@
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "oops/access.inline.hpp"
@@ -67,6 +68,8 @@ inline bool G1FullGCMarker::mark_object(oop obj) {
     _string_dedup_requests.add(obj);
   }
 
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
   // Collect live words.
   _mark_stats_cache.add_live_words(obj);
 
@@ -98,7 +101,7 @@ inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
 }
 
 inline void G1FullGCMarker::follow_array(objArrayOop array) {
-  follow_klass(array->klass());
+  mark_closure()->do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     push_objarray(array, 0);
@@ -188,15 +191,6 @@ void G1FullGCMarker::follow_marking_stacks() {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());
-}
-
-inline void G1FullGCMarker::follow_klass(Klass* k) {
-  oop op = k->class_loader_data()->holder_no_keepalive();
-  mark_and_push(&op);
-}
-
-inline void G1FullGCMarker::follow_cld(ClassLoaderData* cld) {
-  _cld_closure.do_cld(cld);
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

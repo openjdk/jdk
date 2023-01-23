@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,9 +280,8 @@ public class AnnotationParser {
                 skipMemberValue(buf);
             } else {
                 Object value = parseMemberValue(memberType, buf, constPool, container);
-                if (value instanceof AnnotationTypeMismatchExceptionProxy)
-                    ((AnnotationTypeMismatchExceptionProxy) value).
-                        setMember(type.members().get(memberName));
+                if (value instanceof AnnotationTypeMismatchExceptionProxy exceptProxy)
+                    exceptProxy.setMember(type.members().get(memberName));
                 memberValues.put(memberName, value);
             }
         }
@@ -443,9 +442,8 @@ public class AnnotationParser {
         return toClass(result);
     }
     static Class<?> toClass(Type o) {
-        if (o instanceof GenericArrayType)
-            return Array.newInstance(toClass(((GenericArrayType)o).getGenericComponentType()),
-                                     0)
+        if (o instanceof GenericArrayType gat)
+            return Array.newInstance(toClass(gat.getGenericComponentType()), 0)
                 .getClass();
         return (Class)o;
     }
@@ -744,8 +742,9 @@ public class AnnotationParser {
             int tag = buf.get();
             if (tag == expectedTag) {
                 Object value = parseElement.get();
-                if (value instanceof ExceptionProxy) {
-                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
+                if (value instanceof ExceptionProxy proxyValue) {
+                    if (exceptionProxy == null)
+                        exceptionProxy = proxyValue;
                 } else {
                     result[i] = value;
                 }

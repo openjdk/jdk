@@ -86,7 +86,7 @@ public class KeyTab implements KeyTabConstants {
     /**
      * Constructs a KeyTab object.
      *
-     * If there is any I/O error or format errot during the loading, the
+     * If there is any I/O error or format error during the loading, the
      * isValid flag is set to false, and all half-read entries are dismissed.
      * @param filename path name for the keytab file, must not be null
      */

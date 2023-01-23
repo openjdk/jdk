@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ import java.security.PublicKey;
 public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
     implements CertPathBuilderResult {
 
-    private CertPath certPath;
+    private final CertPath certPath;
 
     /**
      * Creates an instance of {@code PKIXCertPathBuilderResult}
@@ -107,13 +107,11 @@ public class PKIXCertPathBuilderResult extends PKIXCertPathValidatorResult
      *         {@code PKIXCertPathBuilderResult}
      */
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("PKIXCertPathBuilderResult: [\n");
-        sb.append("  Certification Path: " + certPath + "\n");
-        sb.append("  Trust Anchor: " + getTrustAnchor() + "\n");
-        sb.append("  Policy Tree: " + getPolicyTree() + "\n");
-        sb.append("  Subject Public Key: " + getPublicKey() + "\n");
-        sb.append("]");
-        return sb.toString();
+        return "PKIXCertPathBuilderResult: [\n" +
+                "  Certification Path: " + certPath + "\n" +
+                "  Trust Anchor: " + getTrustAnchor() + "\n" +
+                "  Policy Tree: " + getPolicyTree() + "\n" +
+                "  Subject Public Key: " + getPublicKey() + "\n" +
+                "]";
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,6 +351,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             }
             directoryComboBoxModel.addItem(currentDirectory);
             directoryListModel.directoryChanged();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            getChangeToParentDirectoryAction().setEnabled(!fsv.isFileSystemRoot(currentDirectory));
         }
         super.doDirectoryChanged(e);
     }
@@ -382,9 +384,12 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     protected void doMultiSelectionChanged(PropertyChangeEvent e) {
         if (getFileChooser().isMultiSelectionEnabled()) {
             fileList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         } else {
             fileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             fileList.clearSelection();
+            directoryList.clearSelection();
         }
 
         super.doMultiSelectionChanged(e);
@@ -488,7 +493,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (chooser.getFileSelectionMode() != JFileChooser.DIRECTORIES_ONLY
+                            && (chooser.getFileSelectionMode() == JFileChooser.FILES_ONLY
                                 || !chooser.getFileSystemView().isFileSystem(((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
@@ -562,6 +567,12 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.setLayout(new BorderLayout());
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+
+        /*
+         * MultiSelection is enabled by default to mimic native filechooser
+         * behavior where multiple files or folders can be selected.
+         */
+        fc.setMultiSelectionEnabled(true);
 
         // Top row of buttons
         JPanel topButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
@@ -936,6 +947,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         directoryList = new JList<>();
         directoryList.setName("GTKFileChooser.directoryList");
         directoryList.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, foldersLabelText);
+        if (getFileChooser().isMultiSelectionEnabled()) {
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        } else {
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        }
         align(directoryList);
 
         directoryList.setCellRenderer(new DirectoryCellRenderer());
@@ -979,6 +995,26 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             } else {
                 v.sort(Comparator.comparing(fsv::getSystemDisplayName));
             }
+        }
+
+        @Override
+        public Vector<File> getDirectories() {
+            Vector<File> files = super.getDirectories();
+
+            /*
+             * Delete the "/.." file entry from file chooser directory list in
+             * GTK LAF if current directory is root and files vector contains
+             * "/.." entry.
+             *
+             * It is not possible to go beyond root directory.
+             */
+            File crntDir = getFileChooser().getCurrentDirectory();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            if (crntDir != null && fsv.isFileSystemRoot(crntDir) &&
+                files.contains(new File("/.."))) {
+                    files.removeElementAt(0);
+            }
+            return files;
         }
     }
 
@@ -1363,7 +1399,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
         public String getName() {
             // As SynthComboBoxRenderer's are asked for a size BEFORE they
-            // are parented getName is overriden to force the name to be
+            // are parented getName is overridden to force the name to be
             // ComboBox.renderer if it isn't set. If we didn't do this the
             // wrong style could be used for size calculations.
             String name = super.getName();

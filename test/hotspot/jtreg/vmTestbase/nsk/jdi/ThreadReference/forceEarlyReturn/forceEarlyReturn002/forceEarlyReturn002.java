@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,17 +147,30 @@ public class forceEarlyReturn002 extends ForceEarlyReturnDebugger {
 
         // get value for early return
         ObjectReference returnValue = (ObjectReference) referenceType.getValue(referenceType.fieldByName("expectedValue"));
-
+        boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
         try {
-            // don't expect any exception
+            // don't expect any exception, except for vthreads expect OpaqueFrameException
             threadReference.forceEarlyReturn(returnValue);
+            if (vthreadMode) {
+                setSuccess(false);
+                log.complain("Expected OpaqueFrameException");
+            }
         } catch (Exception e) {
-            setSuccess(false);
-            log.complain("Unexpected exception: " + e);
-            e.printStackTrace(log.getOutStream());
+            if (vthreadMode && (e instanceof OpaqueFrameException)) {
+                // pass
+            } else {
+                setSuccess(false);
+                log.complain("Unexpected exception: " + e);
+                e.printStackTrace(log.getOutStream());
+            }
         }
 
-        testMethodExitEvent(threadReference, ClassUsingTestClass.breakpointMethodName);
+        if (vthreadMode) {
+            // MethodExit event won't be as expected if using vthreads, so just resume
+            threadReference.resume();
+        } else {
+            testMethodExitEvent(threadReference, ClassUsingTestClass.breakpointMethodName);
+        }
 
         if (!isDebuggeeReady())
             return;

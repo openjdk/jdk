@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package javax.swing.text;
 
-import javax.swing.event.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditListener;
 
 /**
  * <p>
@@ -174,7 +175,7 @@ import javax.swing.event.*;
  * <p>In the Swing text API's document model, the interface Element defines a structural piece of a Document,
  * like a paragraph, a line of text, or a list item in an HTML document.
  * <p>Every Element is either a <i>branch</i> or a <i>leaf</i>. If an element is a branch,
- * the <code>isLeaf()</code> method returns false. If an element is a a leaf, <code>isLeaf()</code> returns true.
+ * the <code>isLeaf()</code> method returns false. If an element is a leaf, <code>isLeaf()</code> returns true.
  * <p>Branches can have any number of children. Leaves do not have children.
  * To determine how many children a branch has, you can call <code>getElementCount()</code>.
  * To determine the parent of an Element, you can call <code>getParentElement()</code>.
@@ -277,7 +278,7 @@ import javax.swing.event.*;
  * <p>Removing text from a DefaultStyledDocument is similar to removing text from
  * a PlainDocument. The only difference is the extra level of Elements.
  * Consider what would happen if you deleted two characters at Offset 1
- * from Figure 10, above. Since the the second Element of Paragraph 1 is
+ * from Figure 10, above. Since the second Element of Paragraph 1 is
  * completely contained in the deleted region, it would be removed.
  * Assuming the attributes of Paragraph 1's first child matched those of
  * Paragraph2's first child, the results would be those shown in <u>Figure 11</u>.
@@ -534,7 +535,7 @@ public interface Document {
      * &nbsp; text.setPartialReturn(true);
      * &nbsp; while (nleft &gt; 0) {
      * &nbsp;     doc.getText(offs, nleft, text);
-     * &nbsp;     // do someting with text
+     * &nbsp;     // do something with text
      * &nbsp;     nleft -= text.count;
      * &nbsp;     offs += text.count;
      * &nbsp; }

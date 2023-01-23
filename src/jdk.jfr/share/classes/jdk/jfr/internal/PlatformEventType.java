@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public final class PlatformEventType extends Type {
         return false;
     }
 
-    private static boolean isUsingHandler(String name) {
+    private static boolean isUsingConfiguration(String name) {
         switch (name) {
             case Type.EVENT_NAME_PREFIX + "SocketRead"  :
             case Type.EVENT_NAME_PREFIX + "SocketWrite" :
@@ -102,11 +102,11 @@ public final class PlatformEventType extends Type {
             if (isExceptionEvent(name)) {
                 return 4;
             }
-            if (isUsingHandler(name)) {
+            if (isUsingConfiguration(name)) {
                 return 3;
             }
         }
-        return 4;
+        return 3;
     }
 
     public void add(SettingDescriptor settingDescriptor) {
@@ -206,7 +206,7 @@ public final class PlatformEventType extends Type {
         if (isJVM) {
             if (isMethodSampling) {
                 long p = enabled ? period : 0;
-                JVM.getJVM().setMethodSamplingInterval(getId(), p);
+                JVM.getJVM().setMethodSamplingPeriod(getId(), p);
             } else {
                 JVM.getJVM().setEnabled(getId(), enabled);
             }
@@ -216,7 +216,7 @@ public final class PlatformEventType extends Type {
     public void setPeriod(long periodMillis, boolean beginChunk, boolean endChunk) {
         if (isMethodSampling) {
             long p = enabled ? periodMillis : 0;
-            JVM.getJVM().setMethodSamplingInterval(getId(), p);
+            JVM.getJVM().setMethodSamplingPeriod(getId(), p);
         }
         this.beginChunk = beginChunk;
         this.endChunk = endChunk;
@@ -237,7 +237,11 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public boolean isEveryChunk() {
+    /**
+     * Returns true if "beginChunk", "endChunk" or "everyChunk" have
+     * been set.
+     */
+    public boolean isChunkTime() {
         return period == 0;
     }
 
@@ -326,5 +330,9 @@ public final class PlatformEventType extends Type {
 
     public void setLargeSize() {
         largeSize = true;
+    }
+
+    public boolean isMethodSampling() {
+        return isMethodSampling;
     }
 }

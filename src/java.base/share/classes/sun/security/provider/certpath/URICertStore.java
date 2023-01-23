@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class URICertStore extends CertStoreSpi {
     private long lastModified;
 
     // the URI of this CertStore
-    private URI uri;
+    private final URI uri;
 
     // true if URI is ldap
     private boolean ldap = false;
@@ -284,9 +284,8 @@ class URICertStore extends CertStoreSpi {
                             debug.println("Not modified, using cached copy");
                         }
                         return getMatchingCerts(certs, selector);
-                    } else if (connection instanceof HttpURLConnection) {
+                    } else if (connection instanceof HttpURLConnection hconn) {
                         // some proxy servers omit last modified
-                        HttpURLConnection hconn = (HttpURLConnection)connection;
                         if (hconn.getResponseCode()
                                     == HttpURLConnection.HTTP_NOT_MODIFIED) {
                             if (debug != null) {
@@ -390,9 +389,8 @@ class URICertStore extends CertStoreSpi {
                             debug.println("Not modified, using cached copy");
                         }
                         return getMatchingCRLs(crl, selector);
-                    } else if (connection instanceof HttpURLConnection) {
+                    } else if (connection instanceof HttpURLConnection hconn) {
                         // some proxy servers omit last modified
-                        HttpURLConnection hconn = (HttpURLConnection)connection;
                         if (hconn.getResponseCode()
                                     == HttpURLConnection.HTTP_NOT_MODIFIED) {
                             if (debug != null) {

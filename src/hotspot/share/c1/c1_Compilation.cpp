@@ -362,6 +362,7 @@ int Compilation::emit_code_body() {
   }
 #endif /* PRODUCT */
 
+  _immediate_oops_patched = lir_asm.nr_immediate_oops_patched();
   return frame_map()->framesize();
 }
 
@@ -379,6 +380,10 @@ int Compilation::compile_java_method() {
 
   if (is_profiling() && !method()->ensure_method_data()) {
     BAILOUT_("mdo allocation failed", no_frame_size);
+  }
+
+  if (method()->is_synchronized()) {
+    set_has_monitors(true);
   }
 
   {
@@ -425,7 +430,9 @@ void Compilation::install_code(int frame_size) {
     implicit_exception_table(),
     compiler(),
     has_unsafe_access(),
-    SharedRuntime::is_wide_vector(max_vector_size())
+    SharedRuntime::is_wide_vector(max_vector_size()),
+    has_monitors(),
+    _immediate_oops_patched
   );
 }
 
@@ -563,6 +570,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
+, _has_monitors(false)
 , _install_code(install_code)
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
@@ -570,6 +578,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _code(buffer_blob)
 , _has_access_indexed(false)
 , _interpreter_frame_size(0)
+, _immediate_oops_patched(0)
 , _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
@@ -701,29 +710,10 @@ void Compilation::print_timers() {
 
 
 #ifndef PRODUCT
-void Compilation::compile_only_this_method() {
-  ResourceMark rm;
-  fileStream stream(os::fopen("c1_compile_only", "wt"));
-  stream.print_cr("# c1 compile only directives");
-  compile_only_this_scope(&stream, hir()->top_scope());
-}
+void CompilationResourceObj::print() const       { print_on(tty); }
 
-void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
-  st->print("CompileOnly=");
-  scope->method()->holder()->name()->print_symbol_on(st);
-  st->print(".");
-  scope->method()->name()->print_symbol_on(st);
-  st->cr();
-}
-
-void Compilation::exclude_this_method() {
-  fileStream stream(os::fopen(".hotspot_compiler", "at"));
-  stream.print("exclude ");
-  method()->holder()->name()->print_symbol_on(&stream);
-  stream.print(" ");
-  method()->name()->print_symbol_on(&stream);
-  stream.cr();
-  stream.cr();
+void CompilationResourceObj::print_on(outputStream* st) const {
+  st->print_cr("CompilationResourceObj(" INTPTR_FORMAT ")", p2i(this));
 }
 
 // Called from debugger to get the interval with 'reg_num' during register allocation.

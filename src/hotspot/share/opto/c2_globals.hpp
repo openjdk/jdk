@@ -82,6 +82,11 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, SuperWordMaxVectorSize, 64, DIAGNOSTIC,                     \
+          "Vector size limit in bytes for superword, "                      \
+          "superword vector size limit in bytes")                           \
+          range(0, max_jint)                                                \
+                                                                            \
   product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
           "Partial inline size used for small array operations"             \
           "(e.g. copy,cmp) acceleration.")                                  \
@@ -111,10 +116,6 @@
                                                                             \
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
-                                                                            \
-  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
-          "A depth threshold of ideal graph. Indentation is disabled "      \
-          "when users attempt to dump an ideal graph deeper than it.")      \
                                                                             \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \
@@ -411,6 +412,9 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
+                                                                            \
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
@@ -629,13 +633,6 @@
           "Scaling factor for branch frequencies (deprecated)")             \
           range(1, max_intx)                                                \
                                                                             \
-  product(intx, AliasLevel,     3,                                          \
-          "(Deprecated) 0 for no aliasing, "                                \
-          "1 for oop/field/static/array split, "                            \
-          "2 for class split, 3 for unique instances")                      \
-          range(0, 3)                                                       \
-          constraint(AliasLevelConstraintFunc,AfterErgo)                    \
-                                                                            \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
@@ -765,6 +762,14 @@
           "to stress handling of long counted loops: run inner loop"        \
           "for at most jint_max / StressLongCountedLoop")                   \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, DuplicateBackedge, true, DIAGNOSTIC,                        \
+          "Transform loop with a merge point into 2 loops if inner loop is" \
+          "expected to optimize better")                                    \
+                                                                            \
+  develop(bool, StressDuplicateBackedge, false,                             \
+          "Run DuplicateBackedge whenever possible ignoring benefit"        \
+          "analysis")                                                       \
                                                                             \
   product(bool, VerifyReceiverTypes, trueInDebug, DIAGNOSTIC,               \
           "Verify receiver types at runtime")                               \

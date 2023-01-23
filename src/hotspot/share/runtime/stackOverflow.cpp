@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/stackOverflow.hpp"
-#include "runtime/thread.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -211,20 +211,6 @@ void StackOverflow::disable_stack_yellow_reserved_zone() {
     _stack_guard_state = stack_guard_yellow_reserved_disabled;
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
-  }
-}
-
-void StackOverflow::enable_stack_red_zone() {
-  // The base notation is from the stacks point of view, growing downward.
-  // We need to adjust it to work correctly with guard_memory()
-  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
-  address base = stack_red_zone_base() - stack_red_zone_size();
-
-  guarantee(base < stack_base(), "Error calculating stack red zone");
-  guarantee(base < os::current_stack_pointer(), "Error calculating stack red zone");
-
-  if (!os::guard_memory((char *) base, stack_red_zone_size())) {
-    warning("Attempt to guard stack red zone failed.");
   }
 }
 

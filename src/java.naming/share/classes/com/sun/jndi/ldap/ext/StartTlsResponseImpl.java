@@ -426,7 +426,7 @@ public final class StartTlsResponseImpl extends StartTlsResponse {
              * hostname verification is not done for anonymous ciphers
              */
             String cipher = session.getCipherSuite();
-            if (cipher != null && (cipher.indexOf("_anon_") != -1)) {
+            if (cipher != null && cipher.contains("_anon_")) {
                 return true;
             }
             throw e;

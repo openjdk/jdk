@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ public final class SNIHostName extends SNIServerName {
      *     "type=host_name (0), value={@literal <hostname>}"
      * </pre>
      * The "{@literal <hostname>}" is an ASCII representation of the hostname,
-     * which may contains A-labels.  For example, a returned value of an pseudo
+     * which may contain A-labels.  For example, a returned value of a pseudo
      * hostname may look like:
      * <pre>
      *     "type=host_name (0), value=www.example.com"
@@ -291,9 +291,7 @@ public final class SNIHostName extends SNIServerName {
      * </pre>
      * will accept hostnames "www.example.com" and "www.example.org".
      *
-     * @param  regex
-     *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
-     *         regular expression pattern</a>
+     * @param  regex the {@linkplain Pattern##sum regular expression pattern}
      *         representing the hostname(s) to match
      * @return a {@code SNIMatcher} object for {@code SNIHostName}s
      * @throws NullPointerException if {@code regex} is
@@ -331,9 +329,7 @@ public final class SNIHostName extends SNIServerName {
         /**
          * Creates an SNIHostNameMatcher object.
          *
-         * @param  regex
-         *         the <a href="{@docRoot}/java.base/java/util/regex/Pattern.html#sum">
-         *         regular expression pattern</a>
+         * @param  regex the {@linkplain Pattern##sum regular expression pattern}
          *         representing the hostname(s) to match
          * @throws NullPointerException if {@code regex} is
          *         {@code null}

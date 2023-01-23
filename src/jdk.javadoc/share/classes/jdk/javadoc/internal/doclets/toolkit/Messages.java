@@ -123,6 +123,17 @@ public class Messages {
         report(ERROR, fo, start, pos, end, resources.getText(key, args));
     }
 
+    /**
+     * Reports an error message to the doclet's reporter.
+     *
+     * @param e    an element identifying the position to be included with the message
+     * @param key  the name of a resource containing the message to be printed
+     * @param args optional arguments to be replaced in the message
+     */
+    public void error(Element e, String key, Object... args) {
+        report(ERROR, e, resources.getText(key, args));
+    }
+
     // ***** Warnings *****
 
     /**
@@ -143,9 +154,7 @@ public class Messages {
      * @param args optional arguments to be replaced in the message
      */
     public void warning(DocTreePath path, String key, Object... args) {
-        if (configuration.showMessage(path, key)) {
-            report(WARNING, path, resources.getText(key, args));
-        }
+        report(WARNING, path, resources.getText(key, args));
     }
 
     /**
@@ -170,9 +179,7 @@ public class Messages {
      * @param args optional arguments to be replaced in the message
      */
     public void warning(Element e, String key, Object... args) {
-        if (configuration.showMessage(e, key)) {
-            report(WARNING, e, resources.getText(key, args));
-        }
+        report(WARNING, e, resources.getText(key, args));
     }
 
     /**

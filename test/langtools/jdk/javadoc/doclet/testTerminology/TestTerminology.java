@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import toolbox.ToolBox;
 
 public class TestTerminology extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestTerminology tester = new TestTerminology();
-        tester.runTests(m -> new Object[]{Path.of(m.getName())});
+        var tester = new TestTerminology();
+        tester.runTests();
     }
 
     private final ToolBox tb = new ToolBox();
@@ -143,11 +143,11 @@ public class TestTerminology extends JavadocTester {
 
         checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) < 0,
                 """
-                        var catTypes = "Types";""" //
+                        types: "Types","""
         );
         checkOutput("search.js", sv.compareTo(SourceVersion.RELEASE_16) >= 0,
                 """
-                        var catTypes = "Classes and Interfaces";"""
+                        types: "Classes and Interfaces","""
         );
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,26 +31,20 @@ import java.util.Map;
 import java.util.Optional;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEY_USER;
-import static jdk.jpackage.internal.MacAppImageBuilder.APP_STORE;
+import static jdk.jpackage.internal.StandardBundlerParam.APP_STORE;
 import static jdk.jpackage.internal.StandardBundlerParam.MAIN_CLASS;
-import static jdk.jpackage.internal.StandardBundlerParam.VERBOSE;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
 import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
-        setAppImageSupplier(MacAppImageBuilder::new);
+        setAppImageSupplier(imageOutDir -> {
+            return new MacAppImageBuilder(imageOutDir, isDependentTask());
+        });
         setParamsValidator(MacAppBundler::doValidate);
     }
 
     private static final String TEMPLATE_BUNDLE_ICON = "JavaApp.icns";
-
-    public static final BundlerParamInfo<String> MAC_CF_BUNDLE_NAME =
-            new StandardBundlerParam<>(
-                    Arguments.CLIOptions.MAC_BUNDLE_NAME.getId(),
-                    String.class,
-                    params -> null,
-                    (s, p) -> s);
 
     public static final BundlerParamInfo<String> DEFAULT_ICNS_ICON =
             new StandardBundlerParam<>(
@@ -113,16 +107,21 @@ public class MacAppBundler extends AppImageBundler {
             throws ConfigException {
 
         if (StandardBundlerParam.getPredefinedAppImage(params) != null) {
-            return;
-        }
-
-        // validate short version
-        try {
-            String version = VERSION.fetchFrom(params);
-            CFBundleVersion.of(version);
-        } catch (IllegalArgumentException ex) {
-            throw new ConfigException(ex.getMessage(), I18N.getString(
-                    "error.invalid-cfbundle-version.advice"), ex);
+            if (!Optional.ofNullable(
+                    SIGN_BUNDLE.fetchFrom(params)).orElse(Boolean.FALSE)) {
+                throw new ConfigException(
+                        I18N.getString("error.app-image.mac-sign.required"),
+                        null);
+            }
+        } else {
+            // validate short version
+            try {
+                String version = VERSION.fetchFrom(params);
+                CFBundleVersion.of(version);
+            } catch (IllegalArgumentException ex) {
+                throw new ConfigException(ex.getMessage(), I18N.getString(
+                        "error.invalid-cfbundle-version.advice"), ex);
+            }
         }
 
         // reject explicitly set sign to true and no valid signature key

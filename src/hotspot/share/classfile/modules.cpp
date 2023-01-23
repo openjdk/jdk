@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileParser.hpp"
 #include "classfile/classLoader.hpp"
@@ -40,10 +39,12 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
@@ -213,8 +214,8 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
       // loop through and add any new packages for java.base
       for (int x = 0; x < pkg_list->length(); x++) {
         // Some of java.base's packages were added early in bootstrapping, ignore duplicates.
-        package_table->locked_create_entry_if_not_exist(pkg_list->at(x),
-                                                        ModuleEntryTable::javabase_moduleEntry());
+        package_table->locked_create_entry_if_absent(pkg_list->at(x),
+                                                     ModuleEntryTable::javabase_moduleEntry());
         assert(package_table->locked_lookup_only(pkg_list->at(x)) != NULL,
                "Unable to create a " JAVA_BASE_NAME " package entry");
         // Unable to have a GrowableArray of TempNewSymbol.  Must decrement the refcount of
@@ -236,7 +237,7 @@ static void define_javabase_module(Handle module_handle, jstring version, jstrin
   // so no locking is needed.
 
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(module_handle);
+  ModuleEntryTable::patch_javabase_entries(THREAD, module_handle);
 
   log_info(module, load)(JAVA_BASE_NAME " location: %s",
                          location_symbol != NULL ? location_symbol->as_C_string() : "NULL");
@@ -447,7 +448,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   // If the module is defined to the boot loader and an exploded build is being
-  // used, prepend <java.home>/modules/modules_name to the system boot class path.
+  // used, prepend <java.home>/modules/modules_name to the boot class path.
   if (h_loader.is_null() && !ClassLoader::has_jrt_entry()) {
     ClassLoader::add_to_exploded_build_list(THREAD, module_symbol);
   }
@@ -476,6 +477,88 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
+static bool _seen_platform_unnamed_module = false;
+static bool _seen_system_unnamed_module = false;
+
+// Validate the states of an java.lang.Module oop to be archived.
+//
+// Returns true iff the oop has an archived ModuleEntry.
+bool Modules::check_module_oop(oop orig_module_obj) {
+  assert(DumpSharedSpaces, "must be");
+  assert(MetaspaceShared::use_full_module_graph(), "must be");
+  assert(java_lang_Module::is_instance(orig_module_obj), "must be");
+
+  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
+  if (orig_module_ent == nullptr) {
+    // These special java.lang.Module oops are created in Java code. They are not
+    // defined via Modules::define_module(), so they don't have a ModuleEntry:
+    //     java.lang.Module::ALL_UNNAMED_MODULE
+    //     java.lang.Module::EVERYONE_MODULE
+    //     jdk.internal.loader.ClassLoaders$BootClassLoader::unnamedModule
+    log_info(cds, module)("Archived java.lang.Module oop " PTR_FORMAT " with no ModuleEntry*", p2i(orig_module_obj));
+    assert(java_lang_Module::name(orig_module_obj) == nullptr, "must be unnamed");
+    return false;
+  } else {
+    // This java.lang.Module oop has an ModuleEntry*. Check if the latter is archived.
+    if (log_is_enabled(Info, cds, module)) {
+      ResourceMark rm;
+      LogStream ls(Log(cds, module)::info());
+      ls.print("Archived java.lang.Module oop " PTR_FORMAT " for ", p2i(orig_module_obj));
+      orig_module_ent->print(&ls);
+    }
+
+    // We only archive the default module graph, which should contain only java.lang.Module oops
+    // for the 3 built-in loaders (boot/platform/system)
+    ClassLoaderData* loader_data = orig_module_ent->loader_data();
+    assert(loader_data->is_builtin_class_loader_data(), "must be");
+
+    if (orig_module_ent->name() != nullptr) {
+      // For each named module, we archive both the java.lang.Module oop and the ModuleEntry.
+      assert(orig_module_ent->has_been_archived(), "sanity");
+      return true;
+    } else {
+      // We only archive two unnamed module oops (for platform and system loaders). These do NOT have an archived
+      // ModuleEntry.
+      //
+      // At runtime, these oops are fetched from java_lang_ClassLoader::unnamedModule(loader) and
+      // are initialized in ClassLoaderData::ClassLoaderData() => ModuleEntry::create_unnamed_module(), where
+      // a new ModuleEntry is allocated.
+      assert(!loader_data->is_boot_class_loader_data(), "unnamed module for boot loader should be not archived");
+      assert(!orig_module_ent->has_been_archived(), "sanity");
+
+      if (SystemDictionary::is_platform_class_loader(loader_data->class_loader())) {
+        assert(!_seen_platform_unnamed_module, "only once");
+        _seen_platform_unnamed_module = true;
+      } else if (SystemDictionary::is_system_class_loader(loader_data->class_loader())) {
+        assert(!_seen_system_unnamed_module, "only once");
+        _seen_system_unnamed_module = true;
+      } else {
+        // The java.lang.Module oop and ModuleEntry of the unnamed module of the boot loader are
+        // not in the archived module graph. These are always allocated at runtime.
+        ShouldNotReachHere();
+      }
+      return false;
+    }
+  }
+}
+
+void Modules::update_oops_in_archived_module(oop orig_module_obj, int archived_module_root_index) {
+  // This java.lang.Module oop must have an archived ModuleEntry
+  assert(check_module_oop(orig_module_obj) == true, "sanity");
+
+  // We remember the oop inside the ModuleEntry::_archived_module_index. At runtime, we use
+  // this index to reinitialize the ModuleEntry inside ModuleEntry::restore_archived_oops().
+  //
+  // ModuleEntry::verify_archived_module_entries(), called below, ensures that every archived
+  // ModuleEntry has been assigned an _archived_module_index.
+  ModuleEntry* orig_module_ent = java_lang_Module::module_entry_raw(orig_module_obj);
+  ModuleEntry::get_archived_entry(orig_module_ent)->update_oops_in_archived_module(archived_module_root_index);
+}
+
+void Modules::verify_archived_modules() {
+  ModuleEntry::verify_archived_module_entries();
+}
+
 void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_loader, TRAPS) {
   assert(UseSharedSpaces && MetaspaceShared::use_full_module_graph(), "must be");
 
@@ -488,7 +571,7 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
 
   Handle java_base_module(THREAD, ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data());
   // Patch any previously loaded class's module field with java.base's java.lang.Module.
-  ModuleEntryTable::patch_javabase_entries(java_base_module);
+  ModuleEntryTable::patch_javabase_entries(THREAD, java_base_module);
 
   if (h_platform_loader.is_null()) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null platform loader object");
@@ -499,9 +582,16 @@ void Modules::define_archived_modules(Handle h_platform_loader, Handle h_system_
   }
 
   ClassLoaderData* platform_loader_data = SystemDictionary::register_loader(h_platform_loader);
+  SystemDictionary::set_platform_loader(platform_loader_data);
   ClassLoaderDataShared::restore_java_platform_loader_from_archive(platform_loader_data);
 
   ClassLoaderData* system_loader_data = SystemDictionary::register_loader(h_system_loader);
+  SystemDictionary::set_system_loader(system_loader_data);
+  // system_loader_data here is always an instance of jdk.internal.loader.ClassLoader$AppClassLoader.
+  // However, if -Djava.system.class.loader=xxx is specified, java_platform_loader() would
+  // be an instance of a user-defined class, so make sure this never happens.
+  assert(Arguments::get_property("java.system.class.loader") == NULL,
+           "archived full module should have been disabled if -Djava.system.class.loader is specified");
   ClassLoaderDataShared::restore_java_system_loader_from_archive(system_loader_data);
 }
 

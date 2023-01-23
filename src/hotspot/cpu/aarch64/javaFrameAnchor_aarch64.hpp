@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,8 +65,8 @@ public:
   }
 
   bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
-  void make_walkable(JavaThread* thread);
-  void capture_last_Java_pc(void);
+
+  void make_walkable();
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 
@@ -81,5 +81,7 @@ public:
   void set_last_Java_sp(intptr_t* sp)            { _last_Java_sp = sp; OrderAccess::release(); }
 
   intptr_t*   last_Java_fp(void)                 { return _last_Java_fp; }
+
+  void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
 
 #endif // CPU_AARCH64_JAVAFRAMEANCHOR_AARCH64_HPP

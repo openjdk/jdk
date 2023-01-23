@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package sun.management;
+
 import java.lang.management.MemoryUsage;
 import java.lang.management.MemoryNotificationInfo;
 import java.lang.management.MonitorInfo;
@@ -616,14 +617,14 @@ public abstract class MappedMXBeanType {
 
             // check if a static from method exists
             try {
-                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
+                fromMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                         public Method run() throws NoSuchMethodException {
                             return javaClass.getMethod("from", COMPOSITE_DATA_CLASS);
                         }
                     });
             } catch (PrivilegedActionException e) {
                 // ignore NoSuchMethodException since we allow classes
-                // that has no from method to be embeded in another class.
+                // that has no from method to be embedded in another class.
             }
 
             if (COMPOSITE_DATA_CLASS.isAssignableFrom(c)) {
@@ -637,7 +638,7 @@ public abstract class MappedMXBeanType {
 
                 // Make a CompositeData containing all the getters
                 final Method[] methods =
-                    AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                    AccessController.doPrivileged(new PrivilegedAction<>() {
                             public Method[] run() {
                                 return javaClass.getMethods();
                             }

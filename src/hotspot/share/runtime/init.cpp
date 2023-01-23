@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,19 +28,15 @@
 #include "code/icBuffer.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
 #include "interpreter/bytecodes.hpp"
-#include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
-#include "logging/logTag.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/universalNativeInvoker.hpp"
+#include "prims/downcallLinker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
@@ -49,7 +45,9 @@
 #include "runtime/sharedRuntime.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
-
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();
@@ -67,6 +65,7 @@ void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void stubRoutines_init1();
+void stubRoutines_initContinuationStubs();
 jint universe_init();          // depends on codeCache_init and stubRoutines_init
 // depends on universe_init, must be before interpreter_init (currently only on SPARC)
 void gc_barrier_stubs_init();
@@ -90,6 +89,8 @@ void dependencies_init();
 bool universe_post_init();  // must happen after compiler_init
 void javaClasses_init();  // must happen after vtable initialization
 void stubRoutines_init2(); // note: StubRoutines need 2-phase init
+
+void continuations_init(); // depends on flags (UseCompressedOops) and barrier sets
 
 // Do not disable thread-local-storage, as it is important for some
 // JNI/JVM/JVMTI functions and signal handlers to work properly
@@ -124,6 +125,8 @@ jint init_globals() {
 
   AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
+  continuations_init(); // must precede continuation stub generation
+  stubRoutines_initContinuationStubs(); // depends on continuations_init
   interpreter_init_stub();  // before methods get loaded
   accessFlags_init();
   InterfaceSupport_init();

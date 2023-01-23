@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2015, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_HPP
 
 #include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/javaThread.hpp"
 
 enum StringDedupMode {
   NO_DEDUP,      // Do not do anything for String deduplication
@@ -57,6 +58,11 @@ public:
 
   void set_weak(bool weak) {
     _weak = weak;
+  }
+
+  virtual void do_nmethod(nmethod* nm) {
+    assert(!is_weak(), "Can't handle weak marking of nmethods");
+    nm->run_nmethod_entry_barrier();
   }
 };
 
@@ -86,23 +92,7 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return false; }
 };
-
-class ShenandoahMarkUpdateRefsMetadataClosure : public ShenandoahMarkUpdateRefsSuperClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p)     { work<T>(p); }
-
-public:
-  ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkUpdateRefsSuperClosure(q, rp) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return true; }
-};
-
 
 class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
@@ -115,25 +105,10 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return false; }
 };
 
 
-class ShenandoahMarkRefsMetadataClosure : public ShenandoahMarkRefsSuperClosure {
-private:
-  template <class T>
-  inline void do_oop_work(T* p)     { work<T>(p); }
-
-public:
-  ShenandoahMarkRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
-    ShenandoahMarkRefsSuperClosure(q, rp) {};
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p)       { do_oop_work(p); }
-  virtual bool do_metadata()        { return true; }
-};
-
-class ShenandoahUpdateRefsSuperClosure : public BasicOopIterateClosure {
+class ShenandoahUpdateRefsSuperClosure : public ShenandoahOopClosureBase {
 protected:
   ShenandoahHeap* _heap;
 

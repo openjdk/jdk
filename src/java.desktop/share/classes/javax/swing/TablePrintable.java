@@ -282,6 +282,9 @@ class TablePrintable implements Printable {
         // dictated by the previous two assertions
         assert sf > 0;
 
+        Rectangle bounds = table.getBounds();
+        bounds.x = bounds.y = 0;
+
         // This is in a loop for two reasons:
         // First, it allows us to catch up in case we're called starting
         // with a non-zero pageIndex. Second, we know that we can be called
@@ -303,16 +306,17 @@ class TablePrintable implements Printable {
             // calculate the area of the table to be printed for this page
             findNextClip(scaledWidth, scaledHeight);
 
-            if (!((table.getBounds()).intersects(clip))) {
+            if (!(bounds.intersects(clip))) {
                 return NO_SUCH_PAGE;
             }
+
             last++;
         }
 
         // create a copy of the graphics so we don't affect the one given to us
         Graphics2D g2d = (Graphics2D)graphics.create();
 
-        // translate into the co-ordinate system of the pageFormat
+        // translate into the coordinate system of the pageFormat
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 
         // to save and store the transform
@@ -395,8 +399,6 @@ class TablePrintable implements Printable {
         // draw a box around the table
         g2d.setColor(Color.BLACK);
 
-        Rectangle bounds = table.getBounds();
-        bounds.x = bounds.y = 0;
 
         // compute the visible portion of table and draw the rect around it
         Rectangle visibleBounds = clip.intersection(bounds);

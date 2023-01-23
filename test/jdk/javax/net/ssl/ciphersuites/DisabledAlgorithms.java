@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8076221 8211883 8163327
+ * @bug 8076221 8211883 8163327 8279164
  * @summary Check if weak cipher suites are disabled
  * @modules jdk.crypto.ec
  * @run main/othervm DisabledAlgorithms default
@@ -60,9 +60,8 @@ public class DisabledAlgorithms {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + trustStoreFile;
 
-    // supported 3DES, DES, RC4, NULL, and anon cipher suites
-    // it does not contain KRB5 cipher suites because they need a KDC
-    private static final String[] desede_des_rc4_null_anon_ciphersuites
+    // disabled 3DES, DES, RC4, NULL, anon, and ECDH cipher suites
+    private static final String[] disabled_ciphersuites
         = new String[] {
         "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
         "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
@@ -109,7 +108,19 @@ public class DisabledAlgorithms {
         "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
         "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
         "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
-        "SSL_RSA_WITH_3DES_EDE_CBC_SHA"
+        "SSL_RSA_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+        "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+        "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
+        "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+        "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA"
     };
 
     public static void main(String[] args) throws Exception {
@@ -128,9 +139,8 @@ public class DisabledAlgorithms {
                 System.out.println("jdk.tls.disabledAlgorithms = "
                         + Security.getProperty("jdk.tls.disabledAlgorithms"));
 
-                // check if 3DES, DES, RC4, NULL, and anon cipher suites
-                // can't be used by default
-                checkFailure(desede_des_rc4_null_anon_ciphersuites);
+                // check that disabled cipher suites can't be used by default
+                checkFailure(disabled_ciphersuites);
                 break;
             case "empty":
                 // reset jdk.tls.disabledAlgorithms
@@ -144,9 +154,9 @@ public class DisabledAlgorithms {
                 System.out.println("jdk.certpath.disabledAlgorithms = "
                     + Security.getProperty("jdk.certpath.disabledAlgorithms"));
 
-                // check if 3DES, DES, RC4, NULL, and anon cipher suites
-                // can be used if jdk.{tls,certpath}.disabledAlgorithms is empty
-                checkSuccess(desede_des_rc4_null_anon_ciphersuites);
+                // check that disabled cipher suites can be used if
+                // jdk.{tls,certpath}.disabledAlgorithms is empty
+                checkSuccess(disabled_ciphersuites);
                 break;
             default:
                 throw new RuntimeException("Wrong parameter: " + args[0]);
@@ -172,11 +182,12 @@ public class DisabledAlgorithms {
                     throw new RuntimeException("Expected SSLHandshakeException "
                             + "not thrown");
                 } catch (SSLHandshakeException e) {
-                    System.out.println("Expected exception on client side: "
+                    System.out.println("Got expected exception on client side: "
                             + e);
                 }
             }
 
+            server.stop();
             while (server.isRunning()) {
                 sleep();
             }
@@ -272,7 +283,6 @@ public class DisabledAlgorithms {
                 } catch (SSLHandshakeException e) {
                     System.out.println("Server: run: " + e);
                     sslError = true;
-                    stopped = true;
                 } catch (IOException e) {
                     if (!stopped) {
                         System.out.println("Server: run: unexpected exception: "

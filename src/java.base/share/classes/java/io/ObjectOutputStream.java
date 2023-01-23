@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,32 +66,29 @@ import sun.reflect.misc.ReflectUtil;
  * written.
  *
  * <p>For example to write an object that can be read by the example in
- * ObjectInputStream:
- * <br>
- * <pre>
- *      FileOutputStream fos = new FileOutputStream("t.tmp");
- *      ObjectOutputStream oos = new ObjectOutputStream(fos);
- *
- *      oos.writeInt(12345);
- *      oos.writeObject("Today");
- *      oos.writeObject(new Date());
- *
- *      oos.close();
- * </pre>
+ * {@link ObjectInputStream}:
+ * {@snippet lang="java":
+ *      try (FileOutputStream fos = new FileOutputStream("t.tmp");
+ *           ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+ *          oos.writeObject("Today");
+ *          oos.writeObject(LocalDateTime.now());
+ *      } catch (Exception ex) {
+ *          // handle exception
+ *      }
+ * }
  *
  * <p>Serializable classes that require special handling during the
  * serialization and deserialization process should implement methods
  * with the following signatures:
  *
- * <br>
- * <pre>
- * private void readObject(java.io.ObjectInputStream stream)
- *     throws IOException, ClassNotFoundException;
- * private void writeObject(java.io.ObjectOutputStream stream)
- *     throws IOException
- * private void readObjectNoData()
- *     throws ObjectStreamException;
- * </pre>
+ * {@snippet lang="java":
+ *     private void readObject(java.io.ObjectInputStream stream)
+ *         throws IOException, ClassNotFoundException;
+ *     private void writeObject(java.io.ObjectOutputStream stream)
+ *         throws IOException;
+ *     private void readObjectNoData()
+ *         throws ObjectStreamException;
+ * }
  *
  * <p>The method name, modifiers, return type, and number and type of
  * parameters must match exactly for the method to be used by
@@ -689,6 +686,7 @@ public class ObjectOutputStream
      * @param   val the byte to be written to the stream
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void write(int val) throws IOException {
         bout.write(val);
     }
@@ -700,6 +698,7 @@ public class ObjectOutputStream
      * @param   buf the data to be written
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void write(byte[] buf) throws IOException {
         bout.write(buf, 0, buf.length, false);
     }
@@ -710,8 +709,10 @@ public class ObjectOutputStream
      * @param   buf the data to be written
      * @param   off the start offset in the data
      * @param   len the number of bytes that are written
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
+     * @throws  IndexOutOfBoundsException {@inheritDoc}
      */
+    @Override
     public void write(byte[] buf, int off, int len) throws IOException {
         if (buf == null) {
             throw new NullPointerException();
@@ -724,8 +725,9 @@ public class ObjectOutputStream
      * Flushes the stream. This will write any buffered output bytes and flush
      * through to the underlying stream.
      *
-     * @throws  IOException If an I/O error has occurred.
+     * @throws  IOException {@inheritDoc}
      */
+    @Override
     public void flush() throws IOException {
         bout.flush();
     }
@@ -747,6 +749,7 @@ public class ObjectOutputStream
      *
      * @throws  IOException If an I/O error has occurred.
      */
+    @Override
     public void close() throws IOException {
         flush();
         clear();
@@ -765,7 +768,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes an 8 bit byte.
+     * Writes an 8-bit byte.
      *
      * @param   val the byte value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -776,7 +779,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit short.
+     * Writes a 16-bit short.
      *
      * @param   val the short value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -787,7 +790,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit char.
+     * Writes a 16-bit char.
      *
      * @param   val the char value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -798,7 +801,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit int.
+     * Writes a 32-bit int.
      *
      * @param   val the integer value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -809,7 +812,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit long.
+     * Writes a 64-bit long.
      *
      * @param   val the long value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -820,7 +823,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit float.
+     * Writes a 32-bit float.
      *
      * @param   val the float value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -831,7 +834,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit double.
+     * Writes a 64-bit double.
      *
      * @param   val the double value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -1751,7 +1754,7 @@ public class ObjectOutputStream
      * bracketed by block data markers (see object serialization specification
      * for details).
      */
-    private static class BlockDataOutputStream
+    private static final class BlockDataOutputStream
         extends OutputStream implements DataOutput
     {
         /** maximum data block length */
@@ -2257,7 +2260,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to integer handles,
      * assigned in ascending order.
      */
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* number of mappings in table/next available handle */
         private int size;
@@ -2382,7 +2385,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to replacement
      * objects.
      */
-    private static class ReplaceTable {
+    private static final class ReplaceTable {
 
         /* maps object -> index */
         private final HandleTable htab;
@@ -2446,7 +2449,7 @@ public class ObjectOutputStream
      * Stack to keep debug information about the state of the
      * serialization process, for embedding in exception messages.
      */
-    private static class DebugTraceInfoStack {
+    private static final class DebugTraceInfoStack {
         private final List<String> stack;
 
         DebugTraceInfoStack() {

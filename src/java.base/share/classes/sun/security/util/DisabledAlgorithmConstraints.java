@@ -27,6 +27,7 @@ package sun.security.util;
 
 import sun.security.validator.Validator;
 
+import java.lang.ref.SoftReference;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
@@ -45,7 +46,6 @@ import java.time.ZonedDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Collection;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -101,6 +102,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
     private final Set<String> disabledAlgorithms;
     private final Constraints algorithmConstraints;
+    private volatile SoftReference<Map<String, Boolean>> cacheRef =
+            new SoftReference<>(null);
 
     public static DisabledAlgorithmConstraints certPathConstraints() {
         return CertPathHolder.CONSTRAINTS;
@@ -157,8 +160,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             throw new IllegalArgumentException("The primitives cannot be null" +
                     " or empty.");
         }
+        if (algorithm == null || algorithm.isEmpty()) {
+            throw new IllegalArgumentException("No algorithm name specified");
+        }
 
-        if (!checkAlgorithm(disabledAlgorithms, algorithm, decomposer)) {
+        if (!cachedCheckAlgorithm(algorithm)) {
             return false;
         }
 
@@ -241,7 +247,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
                 for (String curve : getNamedCurveFromKey(key)) {
-                    if (!checkAlgorithm(disabledAlgorithms, curve, decomposer)) {
+                    if (!cachedCheckAlgorithm(curve)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
                                     "algorithm: " + curve,
@@ -317,7 +323,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * disallowed.
      */
     private static class Constraints {
-        private Map<String, List<Constraint>> constraintsMap = new HashMap<>();
+        private final Map<String, List<Constraint>> constraintsMap = new HashMap<>();
 
         private static class Holder {
             private static final Pattern DENY_AFTER_PATTERN = Pattern.compile(
@@ -352,7 +358,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                             alias.toUpperCase(Locale.ENGLISH), constraintList);
                 }
 
-                // If there is no whitespace, it is a algorithm name; however,
+                // If there is no whitespace, it is an algorithm name; however,
                 // if there is a whitespace, could be a multi-word EC curve too.
                 if (space <= 0 || CurveDB.lookup(constraintEntry) != null) {
                     constraintList.add(new DisabledConstraint(algorithm));
@@ -417,7 +423,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
                                 day);
                         denyAfterLimit = true;
                     } else if (entry.startsWith("usage")) {
-                        String s[] = (entry.substring(5)).trim().split(" ");
+                        String[] s = (entry.substring(5)).trim().split(" ");
                         c = new UsageConstraint(algorithm, s);
                         if (debug != null) {
                             debug.println("Constraints usage length is " + s.length);
@@ -583,7 +589,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
          *
          * @param parameters the cryptographic parameters
          * @return 'true' if the cryptographic parameters is allowed,
-         *         'false' ortherwise.
+         *         'false' otherwise.
          */
         public boolean permits(AlgorithmParameters parameters) {
             return true;
@@ -688,8 +694,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      * timezone.
      */
     private static class DenyAfterConstraint extends Constraint {
-        private ZonedDateTime zdt;
-        private Instant denyAfterDate;
+        private final ZonedDateTime zdt;
+        private final Instant denyAfterDate;
 
         DenyAfterConstraint(String algo, int year, int month, int day) {
 
@@ -825,8 +831,8 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
      */
     private static class KeySizeConstraint extends Constraint {
 
-        private int minSize;            // the minimal available key size
-        private int maxSize;            // the maximal available key size
+        private final int minSize;          // the minimal available key size
+        private final int maxSize;          // the maximal available key size
         private int prohibitedSize = -1;    // unavailable key sizes
 
         public KeySizeConstraint(String algo, Operator operator, int length) {
@@ -945,6 +951,25 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
 
             return true;
         }
+    }
+
+    private boolean cachedCheckAlgorithm(String algorithm) {
+        Map<String, Boolean> cache;
+        if ((cache = cacheRef.get()) == null) {
+            synchronized (this) {
+                if ((cache = cacheRef.get()) == null) {
+                    cache = new ConcurrentHashMap<>();
+                    cacheRef = new SoftReference<>(cache);
+                }
+            }
+        }
+        Boolean result = cache.get(algorithm);
+        if (result != null) {
+            return result;
+        }
+        result = checkAlgorithm(disabledAlgorithms, algorithm, decomposer);
+        cache.put(algorithm, result);
+        return result;
     }
 
     /*

@@ -150,8 +150,9 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     }
 
     private static boolean getSwapEnabled(CgroupV1MemorySubSystemController controller) {
-         long retval = getLongValue(controller, "memory.memsw.limit_in_bytes");
-         return retval > 0;
+        long memswBytes = getLongValue(controller, "memory.memsw.limit_in_bytes");
+        long swappiness = getLongValue(controller, "memory.swappiness");
+        return (memswBytes > 0 && swappiness > 0);
      }
 
 

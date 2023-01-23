@@ -67,9 +67,12 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   set_last_Java_frame(sp, fp, retaddr, t0);
 
   // do the call
-  int32_t off = 0;
-  la_patchable(t0, RuntimeAddress(entry), off);
-  jalr(x1, t0, off);
+  RuntimeAddress target(entry);
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(t0, target, offset);
+    jalr(x1, t0, offset);
+  });
   bind(retaddr);
   int call_offset = offset();
   // verify callee-saved register
@@ -567,9 +570,12 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   Label retaddr;
   __ set_last_Java_frame(sp, fp, retaddr, t0);
   // do the call
-  int32_t off = 0;
-  __ la_patchable(t0, RuntimeAddress(target), off);
-  __ jalr(x1, t0, off);
+  RuntimeAddress addr(target);
+  __ relocate(addr.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, addr, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
   OopMapSet* oop_maps = new OopMapSet();
   assert_cond(oop_maps != NULL);
@@ -668,66 +674,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            !UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Label slow_path;
-          Register obj_size   = x12;
-          Register tmp1       = x9;
-          Register tmp2       = x14;
-          assert_different_registers(klass, obj, obj_size, tmp1, tmp2);
-
-          const int sp_offset = 2;
-          const int x9_offset = 1;
-          const int zr_offset = 0;
-          __ addi(sp, sp, -(sp_offset * wordSize));
-          __ sd(x9, Address(sp, x9_offset * wordSize));
-          __ sd(zr, Address(sp, zr_offset * wordSize));
-
-          if (id == fast_new_instance_init_check_id) {
-            // make sure the klass is initialized
-            __ lbu(t0, Address(klass, InstanceKlass::init_state_offset()));
-            __ mv(t1, InstanceKlass::fully_initialized);
-            __ bne(t0, t1, slow_path);
-          }
-
-#ifdef ASSERT
-          // assert object can be fast path allocated
-          {
-            Label ok, not_ok;
-            __ lw(obj_size, Address(klass, Klass::layout_helper_offset()));
-            // make sure it's an instance. For instances, layout helper is a positive number.
-            // For arrays, layout helper is a negative number
-            __ blez(obj_size, not_ok);
-            __ andi(t0, obj_size, Klass::_lh_instance_slow_path_bit);
-            __ beqz(t0, ok);
-            __ bind(not_ok);
-            __ stop("assert(can be fast path allocated)");
-            __ should_not_reach_here();
-            __ bind(ok);
-          }
-#endif // ASSERT
-
-          // get the instance size
-          __ lwu(obj_size, Address(klass, Klass::layout_helper_offset()));
-
-          __ eden_allocate(obj, obj_size, 0, tmp1, slow_path);
-
-          __ initialize_object(obj, klass, obj_size, 0, tmp1, tmp2, /* is_tlab_allocated */ false);
-          __ verify_oop(obj);
-          __ ld(x9, Address(sp, x9_offset * wordSize));
-          __ ld(zr, Address(sp, zr_offset * wordSize));
-          __ addi(sp, sp, sp_offset * wordSize);
-          __ ret();
-
-          __ bind(slow_path);
-          __ ld(x9, Address(sp, x9_offset * wordSize));
-          __ ld(zr, Address(sp, zr_offset * wordSize));
-          __ addi(sp, sp, sp_offset * wordSize);
-        }
-
         __ enter();
         OopMap* map = save_live_registers(sasm);
         assert_cond(map != NULL);
@@ -797,52 +743,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ bind(ok);
         }
 #endif // ASSERT
-
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Register arr_size   = x14;
-          Register tmp1       = x12;
-          Register tmp2       = x15;
-          Label slow_path;
-          assert_different_registers(length, klass, obj, arr_size, tmp1, tmp2);
-
-          // check that array length is small enough for fast path.
-          __ mv(t0, C1_MacroAssembler::max_array_allocation_length);
-          __ bgtu(length, t0, slow_path);
-
-          // get the allocation size: round_up(hdr + length << (layout_helper & 0x1F))
-          __ lwu(tmp1, Address(klass, Klass::layout_helper_offset()));
-          __ andi(t0, tmp1, 0x1f);
-          __ sll(arr_size, length, t0);
-          int lh_header_size_width = exact_log2(Klass::_lh_header_size_mask + 1);
-          int lh_header_size_msb = Klass::_lh_header_size_shift + lh_header_size_width;
-          __ slli(tmp1, tmp1, XLEN - lh_header_size_msb);
-          __ srli(tmp1, tmp1, XLEN - lh_header_size_width);
-          __ add(arr_size, arr_size, tmp1);
-          __ addi(arr_size, arr_size, MinObjAlignmentInBytesMask); // align up
-          __ andi(arr_size, arr_size, ~(uint)MinObjAlignmentInBytesMask);
-
-          __ eden_allocate(obj, arr_size, 0, tmp1, slow_path); // preserves arr_size
-
-          __ initialize_header(obj, klass, length, tmp1, tmp2);
-          __ lbu(tmp1, Address(klass,
-                               in_bytes(Klass::layout_helper_offset()) +
-                               (Klass::_lh_header_size_shift / BitsPerByte)));
-          assert(Klass::_lh_header_size_shift % BitsPerByte == 0, "bytewise");
-          assert(Klass::_lh_header_size_mask <= 0xFF, "bytewise");
-          __ andi(tmp1, tmp1, Klass::_lh_header_size_mask);
-          __ sub(arr_size, arr_size, tmp1); // body length
-          __ add(tmp1, tmp1, obj);       // body start
-          __ initialize_body(tmp1, arr_size, 0, tmp2);
-          __ membar(MacroAssembler::StoreStore);
-          __ verify_oop(obj);
-
-          __ ret();
-
-          __ bind(slow_path);
-        }
 
         __ enter();
         OopMap* map = save_live_registers(sasm);
@@ -967,7 +867,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ check_klass_subtype_slow_path(x14, x10, x12, x15, NULL, &miss);
 
         // fallthrough on success:
-        __ li(t0, 1);
+        __ mv(t0, 1);
         __ sd(t0, Address(sp, (result_off) * VMRegImpl::stack_slot_size)); // result
         __ pop_reg(RegSet::of(x10, x12, x14, x15), sp);
         __ ret();
@@ -1157,7 +1057,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     default:
       {
         StubFrame f(sasm, "unimplemented entry", dont_gc_arguments, does_not_return);
-        __ li(x10, (int) id);
+        __ mv(x10, (int)id);
         __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), x10);
         __ should_not_reach_here();
       }

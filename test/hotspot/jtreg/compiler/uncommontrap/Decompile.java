@@ -27,12 +27,16 @@
  * @summary Quick test for the new WhiteBox methods of JDK-8275908
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
+ *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:PerBytecodeTrapLimit=4
+ *                   -XX:TypeProfileLevel=0
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-AlwaysIncrementalInline
  *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.Decompile::uncommonTrap
  *                   -XX:CompileCommand=inline,compiler.uncommontrap.Decompile*::foo
  *                   compiler.uncommontrap.Decompile

@@ -51,12 +51,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
 
   HeapRegion* _hr;
 
-  // When splitting addresses into region and card within that region, the logical
-  // shift value to get the region.
-  static uint _split_card_shift;
-  // When splitting addresses into region and card within that region, the mask
-  // to get the offset within the region.
-  static size_t _split_card_mask;
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
@@ -95,6 +89,8 @@ public:
   // Coarsening statistics since VM start.
   static G1CardSetCoarsenStats coarsen_stats() { return G1CardSet::coarsen_stats(); }
 
+  inline uintptr_t to_card(OopOrNarrowOopStar from) const;
+
 private:
   enum RemSetState {
     Untracked,
@@ -126,7 +122,9 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
-  G1SegmentedArrayMemoryStats card_set_memory_stats() const;
+  void reset_table_scanner();
+
+  G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
@@ -136,14 +134,14 @@ public:
            + code_roots_mem_size();
   }
 
-  size_t wasted_mem_size() {
-    return _card_set.wasted_mem_size();
+  size_t unused_mem_size() {
+    return _card_set.unused_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
+    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);

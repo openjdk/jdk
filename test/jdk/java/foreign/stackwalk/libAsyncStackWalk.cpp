@@ -22,7 +22,7 @@
  *
  */
 
-#include <thread>
+#include "testlib_threads.h"
 
 #ifdef _WIN64
 #define EXPORT __declspec(dllexport)
@@ -30,15 +30,17 @@
 #define EXPORT
 #endif
 
-static void start(void (*cb)(void)) {
+typedef void (*CB_t)(void);
+
+static void start(void* ctxt) {
+    CB_t cb = (CB_t) ctxt;
     for (int i = 0; i < 25000; i++) {
         cb();
     }
 }
 
 extern "C" {
-EXPORT void asyncStackWalk(void (*cb)(void)) {
-    std::thread thrd(start, cb);
-    thrd.join();
+EXPORT void asyncStackWalk(CB_t cb) {
+    run_in_new_thread_and_join(start, (void*) cb);
 }
 }

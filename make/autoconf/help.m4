@@ -278,6 +278,11 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
     printf "using default settings.\n"
   fi
 
+  if test "x$REAL_CONFIGURE_COMMAND_EXEC_FULL" != x; then
+    printf "\n"
+    printf "The original configure invocation was '$REAL_CONFIGURE_COMMAND_EXEC_SHORT $REAL_CONFIGURE_COMMAND_LINE'.\n"
+  fi
+
   printf "\n"
   printf "Configuration summary:\n"
   printf "* Name:           $CONF_NAME\n"
@@ -311,6 +316,13 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   fi
   printf "* Boot JDK:       $BOOT_JDK_VERSION (at $BOOT_JDK)\n"
   printf "* Toolchain:      $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)\n"
+  if test "x$DEVKIT_NAME" != x; then
+    printf "* Devkit:         $DEVKIT_NAME ($DEVKIT_ROOT)\n"
+  elif test "x$DEVKIT_ROOT" != x; then
+    printf "* Devkit:         $DEVKIT_ROOT\n"
+  elif test "x$SYSROOT" != x; then
+    printf "* Sysroot:        $SYSROOT\n"
+  fi
   printf "* C Compiler:     Version $CC_VERSION_NUMBER (at ${CC#"$FIXPATH "})\n"
   printf "* C++ Compiler:   Version $CXX_VERSION_NUMBER (at ${CXX#"$FIXPATH "})\n"
 

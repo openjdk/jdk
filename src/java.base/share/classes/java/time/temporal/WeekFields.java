@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.format.ResolverStyle;
@@ -330,8 +331,10 @@ public final class WeekFields implements Serializable {
         WeekFields rules = CACHE.get(key);
         if (rules == null) {
             rules = new WeekFields(firstDayOfWeek, minimalDaysInFirstWeek);
-            CACHE.putIfAbsent(key, rules);
-            rules = CACHE.get(key);
+            WeekFields prev = CACHE.putIfAbsent(key, rules);
+            if (prev != null) {
+                rules = prev;
+            }
         }
         return rules;
     }
@@ -1029,7 +1032,7 @@ public final class WeekFields implements Serializable {
                 long weeks = Math.subtractExact(wowby, 1);
                 date = date.plus(weeks, WEEKS);
             } else {
-                int wowby = weekDef.weekOfWeekBasedYear.range().checkValidIntValue(
+                int wowby = weekDef.weekOfWeekBasedYear.rangeRefinedBy(LocalDate.of(yowby, 7, 2)).checkValidIntValue(
                         fieldValues.get(weekDef.weekOfWeekBasedYear), weekDef.weekOfWeekBasedYear);  // validate
                 date = ofWeekBasedYear(chrono, yowby, wowby, localDow);
                 if (resolverStyle == ResolverStyle.STRICT && localizedWeekBasedYear(date) != yowby) {

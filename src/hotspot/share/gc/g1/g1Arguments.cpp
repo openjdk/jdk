@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,7 +137,7 @@ void G1Arguments::initialize_card_set_configuration() {
   if (FLAG_IS_DEFAULT(G1RemSetArrayOfCardsEntries)) {
     uint max_cards_in_inline_ptr = G1CardSetConfiguration::max_cards_in_inline_ptr(HeapRegion::LogOfHRGrainBytes - CardTable::card_shift());
     FLAG_SET_ERGO(G1RemSetArrayOfCardsEntries, MAX2(max_cards_in_inline_ptr * 2,
-                                                    G1RemSetArrayOfCardsEntriesBase * (1u << (region_size_log_mb + 1))));
+                                                    G1RemSetArrayOfCardsEntriesBase << region_size_log_mb));
   }
 
   // Round to next 8 byte boundary for array to maximize space usage.
@@ -177,7 +177,13 @@ void G1Arguments::initialize() {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
-  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+  if (!G1UseConcRefinement) {
+    if (!FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+      log_warning(gc, ergo)("Ignoring -XX:G1ConcRefinementThreads "
+                            "because of -XX:-G1UseConcRefinement");
+    }
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
+  } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
     FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 

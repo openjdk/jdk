@@ -124,6 +124,11 @@ void StreamWriterHost<Adapter, AP>::flush() {
 }
 
 template <typename Adapter, typename AP>
+void StreamWriterHost<Adapter, AP>::write_buffered(const void* buf, intptr_t len) {
+  this->write_bytes(this->current_pos(), (const u1*)buf, len);
+}
+
+template <typename Adapter, typename AP>
 void StreamWriterHost<Adapter, AP>::write_unbuffered(const void* buf, intptr_t len) {
   this->flush();
   assert(0 == this->used_offset(), "can only seek from beginning");

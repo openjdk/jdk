@@ -39,7 +39,7 @@ import jdk.jfr.internal.Type;
 public final class FileWriteEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
-    // EventHandler::write(..., String, long)
+    // commit(..., String, long)
 
     @Label("Path")
     @Description("Full path of the file, or N/A if a file descriptor was used to create the stream, for example System.out and System.err")
@@ -49,4 +49,8 @@ public final class FileWriteEvent extends AbstractJDKEvent {
     @Description("Number of bytes written to the file")
     @DataAmount
     public long bytesWritten;
+
+    public static void commit(long start, long duration, String path, long bytesWritten) {
+        // Generated
+    }
 }

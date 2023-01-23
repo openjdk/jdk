@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +67,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
      */
     /* V4 of the credentials cache format allows for header tags */
 
-    private static boolean DEBUG = Krb5.DEBUG;
+    private static final boolean DEBUG = Krb5.DEBUG;
 
     public CCacheInputStream(InputStream is){
         super(is);
@@ -109,8 +110,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
      */
     // made public for KinitOptions to call directly
     public PrincipalName readPrincipal(int version) throws IOException, RealmException {
-        int type, length, namelength, kret;
-        String[] pname = null;
+        int type, length, namelength;
         String realm;
         /* Read principal type */
         if (version == KRB5_FCC_FVNO_1) {
@@ -119,7 +119,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             type = read(4);
         }
         length = readLength4();
-        List<String> result = new ArrayList<String>();
+        List<String> result = new ArrayList<>();
         /*
          * DCE includes the principal's realm in the count; the new format
          * does not.
@@ -141,13 +141,13 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             }
             return new PrincipalName(
                     type,
-                    result.toArray(new String[result.size()]),
+                    result.toArray(new String[0]),
                     new Realm(realm));
         }
         try {
             return new PrincipalName(
                     type,
-                    result.toArray(new String[result.size()]),
+                    result.toArray(new String[0]),
                     Realm.getDefault());
         } catch (RealmException re) {
             return null;
@@ -200,10 +200,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
     }
 
     boolean readskey() throws IOException {
-        if (read() == 0) {
-            return false;
-        }
-        else return true;
+        return read() != 0;
     }
 
     HostAddress[] readAddr() throws IOException, KrbApErrException {
@@ -225,7 +222,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
                     result[j] = (byte)read(1);
                 addrs.add(new HostAddress(addrType, result));
             }
-            return addrs.toArray(new HostAddress[addrs.size()]);
+            return addrs.toArray(new HostAddress[0]);
         }
         return null;
     }
@@ -235,14 +232,14 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         num = readLength4();
         if (num > 0) {
             List<AuthorizationDataEntry> auData = new ArrayList<>();
-            byte[] data = null;
+            byte[] data;
             for (int i = 0; i < num; i++) {
                 adtype = read(2);
                 adlength = readLength4();
                 data = IOUtils.readExactlyNBytes(this, adlength);
                 auData.add(new AuthorizationDataEntry(adtype, data));
             }
-            return auData.toArray(new AuthorizationDataEntry[auData.size()]);
+            return auData.toArray(new AuthorizationDataEntry[0]);
         }
         else return null;
     }
@@ -329,9 +326,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
      * @return the next cred or config entry, null if data unparseable.
      *
      * When data is unparseable, this method makes sure the correct number of
-     * bytes are consumed so it's safe to start reading the next element.
+     * bytes are consumed, so it's safe to start reading the next element.
      */
-    Object readCred(int version) throws IOException,RealmException, KrbApErrException, Asn1Exception {
+    Object readCred(int version) throws IOException, RealmException, KrbApErrException, Asn1Exception {
         PrincipalName cpname = null;
         try {
             cpname = readPrincipal(version);

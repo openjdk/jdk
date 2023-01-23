@@ -85,8 +85,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (result == null)
             throw new IncompleteAnnotationException(type, member);
 
-        if (result instanceof ExceptionProxy)
-            throw ((ExceptionProxy) result).generateException();
+        if (result instanceof ExceptionProxy exceptProxy)
+            throw exceptProxy.generateException();
 
         if (result.getClass().isArray() && Array.getLength(result) != 0)
             result = cloneArray(result);
@@ -410,8 +410,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private AnnotationInvocationHandler asOneOfUs(Object o) {
         if (Proxy.isProxyClass(o.getClass())) {
             InvocationHandler handler = Proxy.getInvocationHandler(o);
-            if (handler instanceof AnnotationInvocationHandler)
-                return (AnnotationInvocationHandler) handler;
+            if (handler instanceof AnnotationInvocationHandler annotationHandler)
+                return annotationHandler;
         }
         return null;
     }
@@ -666,7 +666,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 if (!(memberType.isInstance(value) ||
                       value instanceof ExceptionProxy)) {
                     value = new AnnotationTypeMismatchExceptionProxy(
-                                objectToString(value))
+                                Objects.toIdentityString(value))
                         .setMember(annotationType.members().get(name));
                 }
             }
@@ -675,15 +675,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         UnsafeAccessor.setType(this, t);
         UnsafeAccessor.setMemberValues(this, mv);
-    }
-
-    /*
-     * Create a textual representation of the argument without calling
-     * any overridable methods of the argument.
-     */
-    private static String objectToString(Object value) {
-        return value.getClass().getName() + "@" +
-            Integer.toHexString(System.identityHashCode(value));
     }
 
     private static class UnsafeAccessor {

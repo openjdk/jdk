@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/hashtable.hpp"
 
 //** Dependencies represent assertions (approximate invariants) within
 // the runtime system, e.g. class hierarchy changes.  An example is an
@@ -204,17 +203,17 @@ class Dependencies: public ResourceObj {
 
    public:
     DepValue() : _id(0) {}
-    DepValue(OopRecorder* rec, Metadata* metadata, DepValue* candidate = NULL) {
-      assert(candidate == NULL || candidate->is_metadata(), "oops");
-      if (candidate != NULL && candidate->as_metadata(rec) == metadata) {
+    DepValue(OopRecorder* rec, Metadata* metadata, DepValue* candidate = nullptr) {
+      assert(candidate == nullptr || candidate->is_metadata(), "oops");
+      if (candidate != nullptr && candidate->as_metadata(rec) == metadata) {
         _id = candidate->_id;
       } else {
         _id = rec->find_index(metadata) + 1;
       }
     }
-    DepValue(OopRecorder* rec, jobject obj, DepValue* candidate = NULL) {
-      assert(candidate == NULL || candidate->is_object(), "oops");
-      if (candidate != NULL && candidate->as_object(rec) == obj) {
+    DepValue(OopRecorder* rec, jobject obj, DepValue* candidate = nullptr) {
+      assert(candidate == nullptr || candidate->is_object(), "oops");
+      if (candidate != nullptr && candidate->as_object(rec) == obj) {
         _id = candidate->_id;
       } else {
         _id = -(rec->find_index(obj) + 1);
@@ -234,13 +233,13 @@ class Dependencies: public ResourceObj {
     Metadata*  as_metadata(OopRecorder* rec) const    { assert(is_metadata(), "oops"); return rec->metadata_at(index()); }
     Klass*     as_klass(OopRecorder* rec) const {
       Metadata* m = as_metadata(rec);
-      assert(m != NULL, "as_metadata returned NULL");
+      assert(m != nullptr, "as_metadata returned nullptr");
       assert(m->is_klass(), "oops");
       return (Klass*) m;
     }
     Method*    as_method(OopRecorder* rec) const {
       Metadata* m = as_metadata(rec);
-      assert(m != NULL, "as_metadata returned NULL");
+      assert(m != nullptr, "as_metadata returned nullptr");
       assert(m->is_method(), "oops");
       return (Method*) m;
     }
@@ -267,7 +266,7 @@ class Dependencies: public ResourceObj {
   bool note_dep_seen(int dept, ciBaseObject* x) {
     assert(dept < BitsPerInt, "oob");
     int x_id = x->ident();
-    assert(_dep_seen != NULL, "deps must be writable");
+    assert(_dep_seen != nullptr, "deps must be writable");
     int seen = _dep_seen->at_grow(x_id, 0);
     _dep_seen->at_put(x_id, seen | (1<<dept));
     // return true if we've already seen dept/x
@@ -279,7 +278,7 @@ class Dependencies: public ResourceObj {
     assert(dept < BitsPerInt, "oops");
     // place metadata deps at even indexes, object deps at odd indexes
     int x_id = x.is_metadata() ? x.index() * 2 : (x.index() * 2) + 1;
-    assert(_dep_seen != NULL, "deps must be writable");
+    assert(_dep_seen != nullptr, "deps must be writable");
     int seen = _dep_seen->at_grow(x_id, 0);
     _dep_seen->at_put(x_id, seen | (1<<dept));
     // return true if we've already seen dept/x
@@ -392,7 +391,7 @@ class Dependencies: public ResourceObj {
   static Klass* find_finalizable_subclass(InstanceKlass* ik);
 
   static bool is_concrete_root_method(Method* uniqm, InstanceKlass* ctxk);
-  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = NULL);
+  static Klass* find_witness_AME(InstanceKlass* ctxk, Method* m, KlassDepChange* changes = nullptr);
 
   // These versions of the concreteness queries work through the CI.
   // The CI versions are allowed to skew sometimes from the VM
@@ -419,17 +418,17 @@ class Dependencies: public ResourceObj {
   // Checking old assertions at run-time (in the VM only):
   static Klass* check_evol_method(Method* m);
   static Klass* check_leaf_type(InstanceKlass* ctxk);
-  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = NULL);
-  static Klass* check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = NULL);
-  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = NULL);
-  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = NULL);
-  static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
-  // A returned Klass* is NULL if the dependency assertion is still
-  // valid.  A non-NULL Klass* is a 'witness' to the assertion
+  static Klass* check_abstract_with_unique_concrete_subtype(InstanceKlass* ctxk, Klass* conck, NewKlassDepChange* changes = nullptr);
+  static Klass* check_unique_implementor(InstanceKlass* ctxk, Klass* uniqk, NewKlassDepChange* changes = nullptr);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, NewKlassDepChange* changes = nullptr);
+  static Klass* check_unique_concrete_method(InstanceKlass* ctxk, Method* uniqm, Klass* resolved_klass, Method* resolved_method, KlassDepChange* changes = nullptr);
+  static Klass* check_has_no_finalizable_subclasses(InstanceKlass* ctxk, NewKlassDepChange* changes = nullptr);
+  static Klass* check_call_site_target_value(oop call_site, oop method_handle, CallSiteDepChange* changes = nullptr);
+  // A returned Klass* is nullptr if the dependency assertion is still
+  // valid.  A non-nullptr Klass* is a 'witness' to the assertion
   // failure, a point in the class hierarchy where the assertion has
   // been proven false.  For example, if check_leaf_type returns
-  // non-NULL, the value is a subtype of the supposed leaf type.  This
+  // non-nullptr, the value is a subtype of the supposed leaf type.  This
   // witness value may be useful for logging the dependency failure.
   // Note that, when a dependency fails, there may be several possible
   // witnesses to the failure.  The value returned from the check_foo
@@ -442,7 +441,7 @@ class Dependencies: public ResourceObj {
   // Detecting possible new assertions:
   static Klass*  find_unique_concrete_subtype(InstanceKlass* ctxk);
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m,
-                                             Klass** participant = NULL); // out parameter
+                                             Klass** participant = nullptr); // out parameter
   static Method* find_unique_concrete_method(InstanceKlass* ctxk, Method* m, Klass* resolved_klass, Method* resolved_method);
 
 #ifdef ASSERT
@@ -453,11 +452,11 @@ class Dependencies: public ResourceObj {
   void encode_content_bytes();
 
   address content_bytes() {
-    assert(_content_bytes != NULL, "encode it first");
+    assert(_content_bytes != nullptr, "encode it first");
     return _content_bytes;
   }
   size_t size_in_bytes() {
-    assert(_content_bytes != NULL, "encode it first");
+    assert(_content_bytes != nullptr, "encode it first");
     return _size_in_bytes;
   }
 
@@ -466,7 +465,7 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
-  DepType validate_dependencies(CompileTask* task, char** failure_detail = NULL);
+  DepType validate_dependencies(CompileTask* task, char** failure_detail = nullptr);
 
   void log_all_dependencies();
 
@@ -480,25 +479,25 @@ class Dependencies: public ResourceObj {
 
   void log_dependency(DepType dept,
                       ciBaseObject* x0,
-                      ciBaseObject* x1 = NULL,
-                      ciBaseObject* x2 = NULL,
-                      ciBaseObject* x3 = NULL) {
-    if (log() == NULL) {
+                      ciBaseObject* x1 = nullptr,
+                      ciBaseObject* x2 = nullptr,
+                      ciBaseObject* x3 = nullptr) {
+    if (log() == nullptr) {
       return;
     }
     ResourceMark rm;
     GrowableArray<ciBaseObject*>* ciargs =
                 new GrowableArray<ciBaseObject*>(dep_args(dept));
-    assert (x0 != NULL, "no log x0");
+    assert (x0 != nullptr, "no log x0");
     ciargs->push(x0);
 
-    if (x1 != NULL) {
+    if (x1 != nullptr) {
       ciargs->push(x1);
     }
-    if (x2 != NULL) {
+    if (x2 != nullptr) {
       ciargs->push(x2);
     }
-    if (x3 != NULL) {
+    if (x3 != nullptr) {
       ciargs->push(x3);
     }
     assert(ciargs->length() == dep_args(dept), "");
@@ -511,11 +510,11 @@ class Dependencies: public ResourceObj {
     bool  _valid;
     void* _value;
    public:
-    DepArgument() : _is_oop(false), _valid(false), _value(NULL) {}
+    DepArgument() : _is_oop(false), _valid(false), _value(nullptr) {}
     DepArgument(oop v): _is_oop(true), _valid(true), _value(v) {}
     DepArgument(Metadata* v): _is_oop(false), _valid(true), _value(v) {}
 
-    bool is_null() const               { return _value == NULL; }
+    bool is_null() const               { return _value == nullptr; }
     bool is_oop() const                { return _is_oop; }
     bool is_metadata() const           { return !_is_oop; }
     bool is_klass() const              { return is_metadata() && metadata_value()->is_klass(); }
@@ -527,7 +526,7 @@ class Dependencies: public ResourceObj {
 
   static void print_dependency(DepType dept,
                                GrowableArray<DepArgument>* args,
-                               Klass* witness = NULL, outputStream* st = tty);
+                               Klass* witness = nullptr, outputStream* st = tty);
 
  private:
   // helper for encoding common context types as zero:
@@ -538,15 +537,15 @@ class Dependencies: public ResourceObj {
   static void write_dependency_to(CompileLog* log,
                                   DepType dept,
                                   GrowableArray<ciBaseObject*>* args,
-                                  Klass* witness = NULL);
+                                  Klass* witness = nullptr);
   static void write_dependency_to(CompileLog* log,
                                   DepType dept,
                                   GrowableArray<DepArgument>* args,
-                                  Klass* witness = NULL);
+                                  Klass* witness = nullptr);
   static void write_dependency_to(xmlStream* xtty,
                                   DepType dept,
                                   GrowableArray<DepArgument>* args,
-                                  Klass* witness = NULL);
+                                  Klass* witness = nullptr);
  public:
   // Use this to iterate over an nmethod's dependency set.
   // Works on new and old dependency sets.
@@ -586,7 +585,7 @@ class Dependencies: public ResourceObj {
 
   public:
     DepStream(Dependencies* deps)
-      : _code(NULL),
+      : _code(nullptr),
         _deps(deps),
         _bytes(deps->content_bytes())
     {
@@ -594,7 +593,7 @@ class Dependencies: public ResourceObj {
     }
     DepStream(nmethod* code)
       : _code(code),
-        _deps(NULL),
+        _deps(nullptr),
         _bytes(code->dependencies_begin())
     {
       initial_asserts(code->dependencies_size());
@@ -628,9 +627,9 @@ class Dependencies: public ResourceObj {
 
     // The point of the whole exercise:  Is this dep still OK?
     Klass* check_dependency() {
-      Klass* result = check_klass_dependency(NULL);
-      if (result != NULL)  return result;
-      return check_call_site_dependency(NULL);
+      Klass* result = check_klass_dependency(nullptr);
+      if (result != nullptr)  return result;
+      return check_call_site_dependency(nullptr);
     }
 
     // A lighter version:  Checks only around recent changes in a class
@@ -638,10 +637,10 @@ class Dependencies: public ResourceObj {
     Klass* spot_check_dependency_at(DepChange& changes);
 
     // Log the current dependency to xtty or compilation log.
-    void log_dependency(Klass* witness = NULL);
+    void log_dependency(Klass* witness = nullptr);
 
     // Print the current dependency to tty.
-    void print_dependency(Klass* witness = NULL, bool verbose = false, outputStream* st = tty);
+    void print_dependency(Klass* witness = nullptr, bool verbose = false, outputStream* st = tty);
   };
   friend class Dependencies::DepStream;
 

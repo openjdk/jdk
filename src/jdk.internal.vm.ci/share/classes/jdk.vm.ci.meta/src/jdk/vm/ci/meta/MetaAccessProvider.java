@@ -83,9 +83,7 @@ public interface MetaAccessProvider {
     long getMemorySize(JavaConstant constant);
 
     /**
-     * Parses a
-     * <a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.3.3">method
-     * descriptor</a> into a {@link Signature}.
+     * Parses a method descriptor ({@jvms 4.3.3}) into a {@link Signature}.
      *
      * @throws IllegalArgumentException if the method descriptor is not well formed
      */

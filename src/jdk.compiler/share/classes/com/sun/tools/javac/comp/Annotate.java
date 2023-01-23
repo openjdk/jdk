@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,6 @@ public class Annotate {
     private final Types types;
 
     private final Attribute theUnfinishedDefaultValue;
-    private final boolean allowRepeatedAnnos;
     private final String sourceName;
 
     protected Annotate(Context context) {
@@ -124,7 +123,6 @@ public class Annotate {
         theUnfinishedDefaultValue =  new Attribute.Error(syms.errType);
 
         Source source = Source.instance(context);
-        allowRepeatedAnnos = Feature.REPEATED_ANNOTATIONS.allowedInSource(source);
         sourceName = source.name;
 
         blockCount = 1;
@@ -347,9 +345,6 @@ public class Annotate {
 
             if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
-                    if (!allowRepeatedAnnos) {
-                        log.error(DiagnosticFlag.SOURCE_LEVEL, a.pos(), Feature.REPEATED_ANNOTATIONS.error(sourceName));
-                    }
                     ListBuffer<T> l = annotated.get(a.type.tsym);
                     l = l.append(c);
                     annotated.put(a.type.tsym, l);
@@ -442,7 +437,7 @@ public class Annotate {
      *
      * @param a the tree representing an annotation
      * @param expectedAnnotationType the expected (super)type of the annotation
-     * @param env the the current env in where the annotation instance is found
+     * @param env the current env in where the annotation instance is found
      */
     public Attribute.TypeCompound attributeTypeAnnotation(JCAnnotation a, Type expectedAnnotationType,
                                                           Env<AttrContext> env)

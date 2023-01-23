@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import sun.security.util.DerValue;
  */
 class KeyImpl implements SecretKey, Destroyable, Serializable {
 
+    @Serial
     private static final long serialVersionUID = -7889313790214321193L;
 
     private transient byte[] keyBytes;
@@ -75,7 +76,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @param principal the principal from which to derive the salt
      * @param password the password that should be used to compute the
      * key.
-     * @param algorithm the name for the algorithm that this key wil be
+     * @param algorithm the name for the algorithm that this key will be
      * used for. This parameter may be null in which case "DES" will be
      * assumed.
      */
@@ -189,6 +190,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @throws IOException if an I/O error occurs
      * }
      */
+    @Serial
     private void writeObject(ObjectOutputStream oos)
                 throws IOException {
         if (destroyed) {
@@ -209,6 +211,7 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
+    @Serial
     private void readObject(ObjectInputStream ois)
                 throws IOException, ClassNotFoundException {
         try {
@@ -247,20 +250,15 @@ class KeyImpl implements SecretKey, Destroyable, Serializable {
         if (other == this)
             return true;
 
-        if (! (other instanceof KeyImpl)) {
+        if (! (other instanceof KeyImpl otherKey)) {
             return false;
         }
 
-        KeyImpl otherKey = ((KeyImpl) other);
         if (isDestroyed() || otherKey.isDestroyed()) {
             return false;
         }
 
-        if(keyType != otherKey.getKeyType() ||
-                !Arrays.equals(keyBytes, otherKey.getEncoded())) {
-            return false;
-        }
-
-        return true;
+        return keyType == otherKey.getKeyType() &&
+                Arrays.equals(keyBytes, otherKey.getEncoded());
     }
 }

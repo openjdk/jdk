@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class Incubating implements Taglet {
     }
 
     private static final String MESSAGE =
-        "<BR><b><a href=\"http://openjdk.java.net/jeps/11\">Incubating Feature.</a>"
+        "<BR><b><a href=\"https://openjdk.org/jeps/11\">Incubating Feature.</a>"
                 + " Will be removed in a future release.</b>";
 
     @Override

@@ -104,6 +104,10 @@ public class Messages {
         stats.setEnabled(b);
     }
 
+    boolean isEnabled(Group group, Env.AccessKind ak) {
+        return options.isEnabled(group, ak);
+    }
+
     void reportStats(PrintWriter out) {
         stats.report(out);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,35 +78,35 @@ extern bool signature_constants_sane();
 void basic_types_init() {
 #ifdef ASSERT
 #ifdef _LP64
-  assert(min_intx ==  (intx)CONST64(0x8000000000000000), "correct constant");
-  assert(max_intx ==  CONST64(0x7FFFFFFFFFFFFFFF), "correct constant");
-  assert(max_uintx == CONST64(0xFFFFFFFFFFFFFFFF), "correct constant");
-  assert( 8 == sizeof( intx),      "wrong size for basic type");
-  assert( 8 == sizeof( jobject),   "wrong size for basic type");
+  static_assert(min_intx ==  (intx)CONST64(0x8000000000000000), "correct constant");
+  static_assert(max_intx ==  CONST64(0x7FFFFFFFFFFFFFFF), "correct constant");
+  static_assert(max_uintx == CONST64(0xFFFFFFFFFFFFFFFF), "correct constant");
+  static_assert( 8 == sizeof( intx),      "wrong size for basic type");
+  static_assert( 8 == sizeof( jobject),   "wrong size for basic type");
 #else
-  assert(min_intx ==  (intx)0x80000000,  "correct constant");
-  assert(max_intx ==  0x7FFFFFFF,  "correct constant");
-  assert(max_uintx == 0xFFFFFFFF,  "correct constant");
-  assert( 4 == sizeof( intx),      "wrong size for basic type");
-  assert( 4 == sizeof( jobject),   "wrong size for basic type");
+  static_assert(min_intx ==  (intx)0x80000000,  "correct constant");
+  static_assert(max_intx ==  0x7FFFFFFF,  "correct constant");
+  static_assert(max_uintx == 0xFFFFFFFF,  "correct constant");
+  static_assert( 4 == sizeof( intx),      "wrong size for basic type");
+  static_assert( 4 == sizeof( jobject),   "wrong size for basic type");
 #endif
-  assert( (~max_juint) == 0,  "max_juint has all its bits");
-  assert( (~max_uintx) == 0,  "max_uintx has all its bits");
-  assert( (~max_julong) == 0, "max_julong has all its bits");
-  assert( 1 == sizeof( jbyte),     "wrong size for basic type");
-  assert( 2 == sizeof( jchar),     "wrong size for basic type");
-  assert( 2 == sizeof( jshort),    "wrong size for basic type");
-  assert( 4 == sizeof( juint),     "wrong size for basic type");
-  assert( 4 == sizeof( jint),      "wrong size for basic type");
-  assert( 1 == sizeof( jboolean),  "wrong size for basic type");
-  assert( 8 == sizeof( jlong),     "wrong size for basic type");
-  assert( 4 == sizeof( jfloat),    "wrong size for basic type");
-  assert( 8 == sizeof( jdouble),   "wrong size for basic type");
-  assert( 1 == sizeof( u1),        "wrong size for basic type");
-  assert( 2 == sizeof( u2),        "wrong size for basic type");
-  assert( 4 == sizeof( u4),        "wrong size for basic type");
-  assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
-  assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
+  static_assert( (~max_juint) == 0,  "max_juint has all its bits");
+  static_assert( (~max_uintx) == 0,  "max_uintx has all its bits");
+  static_assert( (~max_julong) == 0, "max_julong has all its bits");
+  static_assert( 1 == sizeof( jbyte),     "wrong size for basic type");
+  static_assert( 2 == sizeof( jchar),     "wrong size for basic type");
+  static_assert( 2 == sizeof( jshort),    "wrong size for basic type");
+  static_assert( 4 == sizeof( juint),     "wrong size for basic type");
+  static_assert( 4 == sizeof( jint),      "wrong size for basic type");
+  static_assert( 1 == sizeof( jboolean),  "wrong size for basic type");
+  static_assert( 8 == sizeof( jlong),     "wrong size for basic type");
+  static_assert( 4 == sizeof( jfloat),    "wrong size for basic type");
+  static_assert( 8 == sizeof( jdouble),   "wrong size for basic type");
+  static_assert( 1 == sizeof( u1),        "wrong size for basic type");
+  static_assert( 2 == sizeof( u2),        "wrong size for basic type");
+  static_assert( 4 == sizeof( u4),        "wrong size for basic type");
+  static_assert(wordSize == BytesPerWord, "should be the same since they're used interchangeably");
+  static_assert(wordSize == HeapWordSize, "should be the same since they're also used interchangeably");
 
   assert(signature_constants_sane(), "");
 
@@ -155,11 +155,11 @@ void basic_types_init() {
     }
   }
   // These are assumed, e.g., when filling HeapWords with juints.
-  assert(is_power_of_2(sizeof(juint)), "juint must be power of 2");
-  assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
-  assert((size_t)HeapWordSize >= sizeof(juint),
-         "HeapWord should be at least as large as juint");
-  assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
+  static_assert(is_power_of_2(sizeof(juint)), "juint must be power of 2");
+  static_assert(is_power_of_2(HeapWordSize), "HeapWordSize must be power of 2");
+  static_assert((size_t)HeapWordSize >= sizeof(juint),
+                "HeapWord should be at least as large as juint");
+  static_assert(sizeof(NULL) == sizeof(char*), "NULL must be same size as pointer");
 #endif
 
   if( JavaPriority1_To_OSPriority != -1 )
@@ -218,7 +218,7 @@ char type2char_tab[T_CONFLICT+1] = {
 
 // Map BasicType to Java type name
 const char* type2name_tab[T_CONFLICT+1] = {
-  NULL, NULL, NULL, NULL,
+  nullptr, nullptr, nullptr, nullptr,
   "boolean",
   "char",
   "float",
@@ -236,12 +236,23 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "*narrowklass*",
   "*conflict*"
 };
+const char* type2name(BasicType t) {
+  if (t < ARRAY_SIZE(type2name_tab)) {
+    return type2name_tab[t];
+  } else if (t == T_ILLEGAL) {
+    return "*illegal*";
+  } else {
+    fatal("invalid type %d", t);
+    return "invalid type";
+  }
+}
+
 
 
 BasicType name2type(const char* name) {
   for (int i = T_BOOLEAN; i <= T_VOID; i++) {
     BasicType t = (BasicType)i;
-    if (type2name_tab[t] != NULL && 0 == strcmp(type2name_tab[t], name))
+    if (type2name_tab[t] != nullptr && 0 == strcmp(type2name_tab[t], name))
       return t;
   }
   return T_ILLEGAL;
@@ -323,7 +334,7 @@ int _type2aelembytes[T_CONFLICT+1] = {
 
 #ifdef ASSERT
 int type2aelembytes(BasicType t, bool allow_address) {
-  assert(allow_address || t != T_ADDRESS, " ");
+  assert((allow_address || t != T_ADDRESS) && t <= T_CONFLICT, "unexpected basic type");
   return _type2aelembytes[t];
 }
 #endif

@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * bug 8281322
  * @summary check counted loop is properly constructed with/without safepoint
  * @library /test/lib /
+ * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestCountedLoopSafepoint
  */
 
@@ -41,10 +42,10 @@ public class TestCountedLoopSafepoint {
     }
 
     @Test
-    @IR(counts = { IRNode.COUNTEDLOOP, "1" })
-    @IR(applyIf = { "LoopStripMiningIter", "0" }, failOn = { IRNode.SAFEPOINT, IRNode.OUTERSTRIPMINEDLOOP })
-    @IR(applyIf = { "LoopStripMiningIter", "1" }, counts = { IRNode.SAFEPOINT, "1" }, failOn = { IRNode.OUTERSTRIPMINEDLOOP })
-    @IR(applyIf = { "LoopStripMiningIter", "> 1" }, counts = { IRNode.SAFEPOINT, "1", IRNode.OUTERSTRIPMINEDLOOP, "1" })
+    @IR(counts = {IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIf = { "LoopStripMiningIter", "0" }, failOn = { IRNode.SAFEPOINT, IRNode.OUTER_STRIP_MINED_LOOP})
+    @IR(applyIf = { "LoopStripMiningIter", "1" }, counts = { IRNode.SAFEPOINT, "1" }, failOn = { IRNode.OUTER_STRIP_MINED_LOOP})
+    @IR(applyIf = { "LoopStripMiningIter", "> 1" }, counts = {IRNode.SAFEPOINT, "1", IRNode.OUTER_STRIP_MINED_LOOP, "1" })
     public static float test(int start, int stop) {
         float v = 1;
         for (int i = start; i < stop; i++) {

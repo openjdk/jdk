@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "ci/ciMethod.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "memory/allocation.inline.hpp"
@@ -33,7 +34,7 @@
 #include "opto/phasetype.hpp"
 #include "runtime/globals_extension.hpp"
 
-CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
+CompilerDirectives::CompilerDirectives() : _next(nullptr), _match(nullptr), _ref_count(0) {
   _c1_store = new DirectiveSet(this);
   _c1_store->init_control_intrinsic();
   _c2_store = new DirectiveSet(this);
@@ -41,16 +42,16 @@ CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count
 };
 
 CompilerDirectives::~CompilerDirectives() {
-  if (_c1_store != NULL) {
+  if (_c1_store != nullptr) {
     delete _c1_store;
   }
-  if (_c2_store != NULL) {
+  if (_c2_store != nullptr) {
     delete _c2_store;
   }
 
   // remove all linked method matchers
   BasicMatcher* tmp = _match;
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     BasicMatcher* next = tmp->next();
     delete tmp;
     tmp = next;
@@ -59,7 +60,7 @@ CompilerDirectives::~CompilerDirectives() {
 
 void CompilerDirectives::print(outputStream* st) {
   assert(DirectivesStack_lock->owned_by_self(), "");
-  if (_match != NULL) {
+  if (_match != nullptr) {
     st->cr();
     st->print("Directive:");
     if (is_default_directive()) {
@@ -70,7 +71,7 @@ void CompilerDirectives::print(outputStream* st) {
     st->print(" matching: ");
     _match->print(st);
     BasicMatcher* tmp = _match->next();
-    while (tmp != NULL) {
+    while (tmp != nullptr) {
       st->print(", ");
       tmp->print(st);
       tmp = tmp->next();
@@ -80,11 +81,11 @@ void CompilerDirectives::print(outputStream* st) {
     assert(0, "There should always be a match");
   }
 
-  if (_c1_store != NULL) {
+  if (_c1_store != nullptr) {
     st->print_cr(" c1 directives:");
     _c1_store->print(st);
   }
-  if (_c2_store != NULL) {
+  if (_c2_store != nullptr) {
     st->cr();
     st->print_cr(" c2 directives:");
     _c2_store->print(st);
@@ -93,28 +94,36 @@ void CompilerDirectives::print(outputStream* st) {
 }
 
 void CompilerDirectives::finalize(outputStream* st) {
-  if (_c1_store != NULL) {
+  if (_c1_store != nullptr) {
     _c1_store->finalize(st);
   }
-  if (_c2_store != NULL) {
+  if (_c2_store != nullptr) {
     _c2_store->finalize(st);
   }
 }
 
 void DirectiveSet::finalize(outputStream* st) {
-  // Check LogOption and warn
+  const char* level;
+  if (is_c1(this->directive())) {
+    level = "c1";
+  } else if (is_c2(this->directive())) {
+    level = "c2";
+  } else {
+    ShouldNotReachHere();
+  }
+
   if (LogOption && !LogCompilation) {
-    st->print_cr("Warning:  +LogCompilation must be set to enable compilation logging from directives");
+    st->print_cr("Warning: %s: +LogCompilation must be set to enable compilation logging from directives", level);
   }
   if (PrintAssemblyOption && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
-    warning("printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output");
+    warning("%s: printing of assembly code is enabled; turning on DebugNonSafepoints to gain additional output", level);
     DebugNonSafepoints = true;
   }
 
   // if any flag has been modified - set directive as enabled
   // unless it already has been explicitly set.
   if (!_modified[EnableIndex]) {
-    if (_inlinematchers != NULL) {
+    if (_inlinematchers != nullptr) {
       EnableOption = true;
       return;
     }
@@ -136,7 +145,7 @@ bool CompilerDirectives::match(const methodHandle& method) {
   if (is_default_directive()) {
     return true;
   }
-  if (method == NULL) {
+  if (method == nullptr) {
     return false;
   }
   if (_match->match(method)) {
@@ -147,8 +156,8 @@ bool CompilerDirectives::match(const methodHandle& method) {
 
 bool CompilerDirectives::add_match(char* str, const char*& error_msg) {
   BasicMatcher* bm = BasicMatcher::parse_method_pattern(str, error_msg, false);
-  if (bm == NULL) {
-    assert(error_msg != NULL, "Must have error message");
+  if (bm == nullptr) {
+    assert(error_msg != nullptr, "Must have error message");
     return false;
   } else {
     bm->set_next(_match);
@@ -174,7 +183,7 @@ int CompilerDirectives::refcount() {
 
 DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
   assert(DirectivesStack_lock->owned_by_self(), "");
-  if (comp == NULL) { // Xint
+  if (comp == nullptr) { // Xint
     return _c1_store;
   } else  if (comp->is_c2()) {
     return _c2_store;
@@ -183,6 +192,14 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
     assert(comp->is_c1() || comp->is_jvmci(), "");
     return _c1_store;
   }
+}
+
+bool DirectiveSet::is_c1(CompilerDirectives* directive) const {
+  return this == directive->_c1_store;
+}
+
+bool DirectiveSet::is_c2(CompilerDirectives* directive) const {
+  return this == directive->_c2_store;
 }
 
 // In the list of Control/disabled intrinsics, the ID of the control intrinsics can separated:
@@ -224,7 +241,7 @@ ControlIntrinsicIter::~ControlIntrinsicIter() {
 
 // pre-increment
 ControlIntrinsicIter& ControlIntrinsicIter::operator++() {
-  _token = strtok_r(NULL, ",", &_saved_ptr);
+  _token = strtok_r(nullptr, ",", &_saved_ptr);
   next_token();
   return *this;
 }
@@ -243,7 +260,7 @@ void ControlIntrinsicIter::next_token() {
 }
 
 void DirectiveSet::init_control_intrinsic() {
-  for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
+  for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != nullptr; ++iter) {
     vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
     if (id != vmIntrinsics::_none) {
@@ -252,7 +269,7 @@ void DirectiveSet::init_control_intrinsic() {
   }
 
   // Order matters, DisableIntrinsic can overwrite ControlIntrinsic
-  for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != NULL; ++iter) {
+  for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != nullptr; ++iter) {
     vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
     if (id != vmIntrinsics::_none) {
@@ -261,7 +278,7 @@ void DirectiveSet::init_control_intrinsic() {
   }
 }
 
-DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _directive(d) {
+DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(nullptr), _directive(d) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   _ideal_phase_name_mask = 0;
   compilerdirectives_common_flags(init_defaults_definition)
@@ -274,7 +291,7 @@ DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _direc
 DirectiveSet::~DirectiveSet() {
   // remove all linked methodmatchers
   InlineMatcher* tmp = _inlinematchers;
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     InlineMatcher* next = tmp->next();
     delete tmp;
     tmp = next;
@@ -298,7 +315,7 @@ class DirectiveSetPtr {
 
  public:
   DirectiveSetPtr(DirectiveSet* origin): _origin(origin), _clone(nullptr) {
-    assert(origin != nullptr, "DirectiveSetPtr cannot be initialized with a NULL pointer.");
+    assert(origin != nullptr, "DirectiveSetPtr cannot be initialized with a nullptr pointer.");
   }
 
   DirectiveSet const* operator->() {
@@ -414,7 +431,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
         need_reset = false;
       }
 
-      while (*iter != NULL) {
+      while (*iter != nullptr) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
           set.cloned()->_intrinsic_control_words[vmIntrinsics::as_int(id)] = iter.is_enabled();
@@ -434,7 +451,7 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
         need_reset = false;
       }
 
-      while (*iter != NULL) {
+      while (*iter != nullptr) {
         vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
         if (id != vmIntrinsics::_none) {
           set.cloned()->_intrinsic_control_words[vmIntrinsics::as_int(id)] = false;
@@ -451,12 +468,12 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(const methodHandle
 }
 
 CompilerDirectives* DirectiveSet::directive() {
-  assert(_directive != NULL, "Must have been initialized");
+  assert(_directive != nullptr, "Must have been initialized");
   return _directive;
 }
 
 bool DirectiveSet::matches_inline(const methodHandle& method, int inline_action) {
-  if (_inlinematchers != NULL) {
+  if (_inlinematchers != nullptr) {
     if (_inlinematchers->match(method, inline_action)) {
       return true;
     }
@@ -469,7 +486,7 @@ bool DirectiveSet::should_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (_inlinematchers != NULL) {
+  if (_inlinematchers != nullptr) {
     return matches_inline(mh, InlineMatcher::force_inline);
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
@@ -483,7 +500,7 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (_inlinematchers != NULL) {
+  if (_inlinematchers != nullptr) {
     return matches_inline(mh, InlineMatcher::dont_inline);
   }
   if (!CompilerDirectivesIgnoreCompileCommandsOption) {
@@ -494,36 +511,36 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
 
 bool DirectiveSet::parse_and_add_inline(char* str, const char*& error_msg) {
   InlineMatcher* m = InlineMatcher::parse_inline_pattern(str, error_msg);
-  if (m != NULL) {
+  if (m != nullptr) {
     // add matcher last in chain - the order is significant
     append_inline(m);
     return true;
   } else {
-    assert(error_msg != NULL, "Error message must be set");
+    assert(error_msg != nullptr, "Error message must be set");
     return false;
   }
 }
 
 void DirectiveSet::append_inline(InlineMatcher* m) {
-  if (_inlinematchers == NULL) {
+  if (_inlinematchers == nullptr) {
     _inlinematchers = m;
     return;
   }
   InlineMatcher* tmp = _inlinematchers;
-  while (tmp->next() != NULL) {
+  while (tmp->next() != nullptr) {
     tmp = tmp->next();
   }
   tmp->set_next(m);
 }
 
 void DirectiveSet::print_inline(outputStream* st) {
-  if (_inlinematchers == NULL) {
+  if (_inlinematchers == nullptr) {
     st->print_cr("  inline: -");
   } else {
     st->print("  inline: ");
     _inlinematchers->print(st);
     InlineMatcher* tmp = _inlinematchers->next();
-    while (tmp != NULL) {
+    while (tmp != nullptr) {
       st->print(", ");
       tmp->print(st);
       tmp = tmp->next();
@@ -545,7 +562,7 @@ bool DirectiveSet::is_intrinsic_disabled(const methodHandle& method) {
 }
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
-  DirectiveSet* set = new DirectiveSet(NULL);
+  DirectiveSet* set = new DirectiveSet(nullptr);
   // Ordinary allocations of DirectiveSet would call init_control_intrinsic()
   // immediately to create a new copy for set->Control/DisableIntrinsicOption.
   // However, here it does not need to because the code below creates
@@ -555,7 +572,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
   memcpy(set->_modified, src->_modified, sizeof(src->_modified));
 
   InlineMatcher* tmp = src->_inlinematchers;
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     set->append_inline(tmp->clone());
     tmp = tmp->next();
   }
@@ -566,6 +583,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
     compilerdirectives_c1_flags(copy_members_definition)
 
   set->_intrinsic_control_words = src->_intrinsic_control_words;
+  set->_ideal_phase_name_mask = src->_ideal_phase_name_mask;
   return set;
 }
 
@@ -573,7 +591,7 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
 void DirectivesStack::init() {
   CompilerDirectives* _default_directives = new CompilerDirectives();
   char str[] = "*.*";
-  const char* error_msg = NULL;
+  const char* error_msg = nullptr;
   _default_directives->add_match(str, error_msg);
 #if defined(COMPILER1) || INCLUDE_JVMCI
   _default_directives->_c1_store->EnableOption = true;
@@ -583,14 +601,14 @@ void DirectivesStack::init() {
     _default_directives->_c2_store->EnableOption = true;
   }
 #endif
-  assert(error_msg == NULL, "Must succeed.");
+  assert(error_msg == nullptr, "Must succeed.");
   push(_default_directives);
 }
 
 DirectiveSet* DirectivesStack::getDefaultDirective(AbstractCompiler* comp) {
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
 
-  assert(_bottom != NULL, "Must never be empty");
+  assert(_bottom != nullptr, "Must never be empty");
   _bottom->inc_refcount();
   return _bottom->get_for(comp);
 }
@@ -599,8 +617,8 @@ void DirectivesStack::push(CompilerDirectives* directive) {
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
 
   directive->inc_refcount();
-  if (_top == NULL) {
-    assert(_bottom == NULL, "There can only be one default directive");
+  if (_top == nullptr) {
+    assert(_bottom == nullptr, "There can only be one default directive");
     _bottom = directive; // default directive, can never be removed.
   }
 
@@ -620,7 +638,7 @@ void DirectivesStack::pop(int count) {
 void DirectivesStack::pop_inner() {
   assert(DirectivesStack_lock->owned_by_self(), "");
 
-  if (_top->next() == NULL) {
+  if (_top->next() == nullptr) {
     return; // Do nothing - don't allow an empty stack
   }
   CompilerDirectives* tmp = _top;
@@ -641,7 +659,7 @@ bool DirectivesStack::check_capacity(int request_size, outputStream* st) {
 void DirectivesStack::clear() {
   // holding the lock during the whole operation ensuring consistent result
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
-  while (_top->next() != NULL) {
+  while (_top->next() != nullptr) {
     pop_inner();
   }
 }
@@ -649,7 +667,7 @@ void DirectivesStack::clear() {
 void DirectivesStack::print(outputStream* st) {
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
   CompilerDirectives* tmp = _top;
-  while (tmp != NULL) {
+  while (tmp != nullptr) {
     tmp->print(st);
     tmp = tmp->next();
     st->cr();
@@ -657,13 +675,13 @@ void DirectivesStack::print(outputStream* st) {
 }
 
 void DirectivesStack::release(DirectiveSet* set) {
-  assert(set != NULL, "Never NULL");
+  assert(set != nullptr, "Never nullptr");
   MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
   if (set->is_exclusive_copy()) {
     // Old CompilecCmmands forced us to create an exclusive copy
     delete set;
   } else {
-    assert(set->directive() != NULL, "Never NULL");
+    assert(set->directive() != nullptr, "Never nullptr");
     release(set->directive());
   }
 }
@@ -680,17 +698,17 @@ void DirectivesStack::release(CompilerDirectives* dir) {
 DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, AbstractCompiler *comp) {
   assert(_depth > 0, "Must never be empty");
 
-  DirectiveSet* match = NULL;
+  DirectiveSet* match = nullptr;
   {
     MutexLocker locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
 
     CompilerDirectives* dir = _top;
-    assert(dir != NULL, "Must be initialized");
+    assert(dir != nullptr, "Must be initialized");
 
-    while (dir != NULL) {
+    while (dir != nullptr) {
       if (dir->is_default_directive() || dir->match(method)) {
         match = dir->get_for(comp);
-        assert(match != NULL, "Consistency");
+        assert(match != nullptr, "Consistency");
         if (match->EnableOption) {
           // The directiveSet for this compile is also enabled -> success
           dir->inc_refcount();
@@ -700,7 +718,7 @@ DirectiveSet* DirectivesStack::getMatchingDirective(const methodHandle& method, 
       dir = dir->next();
     }
   }
-  guarantee(match != NULL, "There should always be a default directive that matches");
+  guarantee(match != nullptr, "There should always be a default directive that matches");
 
   // Check for legacy compile commands update, without DirectivesStack_lock
   return match->compilecommand_compatibility_init(method);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,7 +547,13 @@ bool GenerateOopMap::jump_targets_do(BytecodeStream *bcs, jmpFct_t jmpFct, int *
     case Bytecodes::_ifnull:
     case Bytecodes::_ifnonnull:
       (*jmpFct)(this, bcs->dest(), data);
-      (*jmpFct)(this, bci + 3, data);
+      // Class files verified by the old verifier can have a conditional branch
+      // as their last bytecode, provided the conditional branch is unreachable
+      // during execution.  Check if this instruction is the method's last bytecode
+      // and, if so, don't call the jmpFct.
+      if (bci + 3 < method()->code_size()) {
+        (*jmpFct)(this, bci + 3, data);
+      }
       break;
 
     case Bytecodes::_goto:
@@ -1726,7 +1732,7 @@ void GenerateOopMap::ppop(CellTypeState *out) {
 }
 
 void GenerateOopMap::ppush1(CellTypeState in) {
-  assert(in.is_reference() | in.is_value(), "sanity check");
+  assert(in.is_reference() || in.is_value(), "sanity check");
   push(in);
 }
 

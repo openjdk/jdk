@@ -25,15 +25,14 @@
 
 package jdk.jfr.internal;
 
+import static java.util.concurrent.TimeUnit.DAYS;
+import static java.util.concurrent.TimeUnit.HOURS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Repeatable;
@@ -55,14 +54,11 @@ import java.util.Map;
 import java.util.Objects;
 
 import jdk.internal.module.Checks;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
-import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
-import jdk.jfr.internal.handlers.EventHandler;
+import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
@@ -74,12 +70,10 @@ public final class Utils {
     private static final String OFF = "off";
     public static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
     public static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
-    public static final String HANDLERS_PACKAGE_NAME = "jdk.jfr.internal.handlers";
+    public static final String EVENT_PACKAGE_NAME = "jdk.jfr.internal.event";
     public static final String REGISTER_EVENT = "registerEvent";
     public static final String ACCESS_FLIGHT_RECORDER = "accessFlightRecorder";
     private static final String LEGACY_EVENT_NAME_PREFIX = "com.oracle.jdk.";
-
-    private static Boolean SAVE_GENERATED;
 
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
@@ -96,7 +90,6 @@ public final class Utils {
      * This field will be lazily initialized and the access is not synchronized.
      * The possible data race is benign and is worth of not introducing any contention here.
      */
-    private static Metrics[] metrics;
     private static Instant lastTimestamp;
 
     public static void checkAccessFlightRecorder() throws SecurityException {
@@ -313,22 +306,22 @@ public final class Utils {
             return Long.parseLong(s.substring(0, s.length() - 2).trim());
         }
         if (s.endsWith("us")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 2).trim()), MICROSECONDS);
+            return MICROSECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
         }
         if (s.endsWith("ms")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 2).trim()), MILLISECONDS);
+            return MILLISECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
         }
         if (s.endsWith("s")) {
-            return NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return SECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("m")) {
-            return 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return MINUTES.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("h")) {
-            return 60 * 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return HOURS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
         if (s.endsWith("d")) {
-            return 24 * 60 * 60 * NANOSECONDS.convert(Long.parseLong(s.substring(0, s.length() - 1).trim()), SECONDS);
+            return DAYS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
         }
 
         try {
@@ -445,24 +438,24 @@ public final class Utils {
         return (long) (nanos * JVM.getJVM().getTimeConversionFactor());
     }
 
-    public static synchronized EventHandler getHandler(Class<? extends jdk.internal.event.Event> eventClass) {
+    public static synchronized EventConfiguration getConfiguration(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
-        Object handler = JVM.getJVM().getHandler(eventClass);
-        if (handler == null || handler instanceof EventHandler) {
-            return (EventHandler) handler;
+        Object configuration = JVM.getJVM().getConfiguration(eventClass);
+        if (configuration == null || configuration instanceof EventConfiguration) {
+            return (EventConfiguration) configuration;
         }
-        throw new InternalError("Could not access event handler");
+        throw new InternalError("Could not get configuration object on event class " + eventClass.getName());
     }
 
-    static synchronized void setHandler(Class<? extends jdk.internal.event.Event> eventClass, EventHandler handler) {
+    static synchronized void setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration) {
         Utils.ensureValidEventSubclass(eventClass);
-        if (!JVM.getJVM().setHandler(eventClass, handler)) {
-            throw new InternalError("Could not set event handler");
+        if (!JVM.getJVM().setConfiguration(eventClass, configuration)) {
+            throw new InternalError("Could not set configuration object on event class " + eventClass.getName());
         }
     }
 
     public static Map<String, String> sanitizeNullFreeStringMap(Map<String, String> settings) {
-        HashMap<String, String> map = new HashMap<>(settings.size());
+        HashMap<String, String> map = HashMap.newHashMap(settings.size());
         for (Map.Entry<String, String> e : settings.entrySet()) {
             String key = e.getKey();
             if (key == null) {
@@ -511,30 +504,6 @@ public final class Utils {
         }
         if (eventClass == Event.class || eventClass == jdk.internal.event.Event.class || !jdk.internal.event.Event.class.isAssignableFrom(eventClass)) {
             throw new IllegalArgumentException("Must be a subclass to " + Event.class.getName());
-        }
-    }
-
-    public static void writeGeneratedASM(String className, byte[] bytes) {
-        if (SAVE_GENERATED == null) {
-            // We can't calculate value statically because it will force
-            // initialization of SecuritySupport, which cause
-            // UnsatisfiedLinkedError on JDK 8 or non-Oracle JDKs
-            SAVE_GENERATED = SecuritySupport.getBooleanProperty("jfr.save.generated.asm");
-        }
-        if (SAVE_GENERATED) {
-            try {
-                try (FileOutputStream fos = new FileOutputStream(className + ".class")) {
-                    fos.write(bytes);
-                }
-
-                try (FileWriter fw = new FileWriter(className + ".asm"); PrintWriter pw = new PrintWriter(fw)) {
-                    ClassReader cr = new ClassReader(bytes);
-                    CheckClassAdapter.verify(cr, true, pw);
-                }
-                Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.INFO, "Instrumented code saved to " + className + ".class and .asm");
-            } catch (IOException e) {
-                Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.INFO, "Could not save instrumented code, for " + className + ".class and .asm");
-            }
         }
     }
 
@@ -724,18 +693,15 @@ public final class Utils {
         }
     }
 
-    public static boolean shouldSkipBytecode(String eventName, Class<?> superClass) {
-        if (superClass.getClassLoader() != null || !superClass.getName().equals("jdk.jfr.events.AbstractJDKEvent")) {
-            return false;
+    public static boolean shouldInstrument(boolean isJDK, String name) {
+        if (!isJDK) {
+            return true;
         }
-        return eventName.startsWith("jdk.Container") && getMetrics() == null;
-    }
-
-    private static Metrics getMetrics() {
-        if (metrics == null) {
-            metrics = new Metrics[]{Metrics.systemMetrics()};
+        if (!name.contains(".Container")) {
+            // Didn't match @Name("jdk.jfr.Container*") or class name "jdk.jfr.events.Container*"
+            return true;
         }
-        return metrics[0];
+        return JVM.getJVM().isContainerized();
     }
 
     private static String formatPositiveDuration(Duration d){

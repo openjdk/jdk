@@ -41,7 +41,7 @@ import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
 
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 // This class performs operations on shared archive file
 public class CDSArchiveUtils {
@@ -53,6 +53,7 @@ public class CDSArchiveUtils {
     private static int offsetCrc;                  // offset of GenericCDSFileMapHeader::_crc
     private static int offsetVersion;              // offset of GenericCDSFileMapHeader::_version
     private static int offsetHeaderSize;           // offset of GenericCDSFileMapHeader::_header_size
+    private static int offsetCommonAppClasspathPrefixSize;// offset of GenericCDSFileMapHeader::_common_app_classpath_size
     private static int offsetBaseArchiveNameOffset;// offset of GenericCDSFileMapHeader::_base_archive_name_offset
     private static int offsetBaseArchiveNameSize;  // offset of GenericCDSFileMapHeader::_base_archive_name_size
     private static int offsetJvmIdent;             // offset of FileMapHeader::_jvm_ident
@@ -93,12 +94,13 @@ public class CDSArchiveUtils {
             offsetCrc = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_crc");
             offsetVersion = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_version");
             offsetHeaderSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_header_size");
+            offsetCommonAppClasspathPrefixSize = wb.getCDSOffsetForName("FileMapHeader::_common_app_classpath_prefix_size");
             offsetBaseArchiveNameOffset = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_offset");
             offsetBaseArchiveNameSize = wb.getCDSOffsetForName("GenericCDSFileMapHeader::_base_archive_name_size");
             offsetJvmIdent = wb.getCDSOffsetForName("FileMapHeader::_jvm_ident");
             spOffsetCrc = wb.getCDSOffsetForName("CDSFileMapRegion::_crc");
             spUsedOffset = wb.getCDSOffsetForName("CDSFileMapRegion::_used") - spOffsetCrc;
-            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_space[0]") - offsetMagic;
+            spOffset = wb.getCDSOffsetForName("CDSFileMapHeaderBase::_regions[0]") - offsetMagic;
             // constants
             staticMagic = wb.getCDSConstantForName("static_magic");
             dynamicMagic = wb.getCDSConstantForName("dynamic_magic");
@@ -131,6 +133,7 @@ public class CDSArchiveUtils {
     public static int offsetCrc()                   { return offsetCrc;                   }
     public static int offsetVersion()               { return offsetVersion;               }
     public static int offsetHeaderSize()            { return offsetHeaderSize;            }
+    public static int offsetCommonAppClasspathPrefixSize() { return offsetCommonAppClasspathPrefixSize; }
     public static int offsetBaseArchiveNameOffset() { return offsetBaseArchiveNameOffset; }
     public static int offsetBaseArchiveNameSize()   { return offsetBaseArchiveNameSize;   }
     public static int offsetJvmIdent()              { return offsetJvmIdent;              }
@@ -156,6 +159,10 @@ public class CDSArchiveUtils {
     public static long fileHeaderSizeAligned(File jsaFile) throws Exception {
         long size = fileHeaderSize(jsaFile);
         return alignUpWithAlignment(size);
+    }
+
+    public static int commonAppClasspathPrefixSize(File jsaFile) throws Exception {
+        return (int)readInt(jsaFile, offsetCommonAppClasspathPrefixSize, 4);
     }
 
     public static int baseArchiveNameOffset(File jsaFile) throws Exception {
@@ -409,18 +416,41 @@ public class CDSArchiveUtils {
          }
     }
 
-    // dstFile will keep original size so will remove corresponding bytes.length bytes at end of file
-    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName, byte[] bytes) throws Exception {
-        long offset = fileHeaderSize(orgFile) + getRandomBetween(0L, 4096L);
+    // Helper method for calling FileChannel.transferFrom and checking the
+    // return value.
+    private static void transferFrom(FileChannel inputChannel,
+                                     FileChannel outputChannel,
+                                     long offset,
+                                     long length) throws Exception {
+        long position = offset;
+        long count = length;
+        while (count > 0 && inputChannel.position() < inputChannel.size()) {
+            long n = outputChannel.transferFrom(inputChannel, position, count);
+            if (n < 0 || n > count) {
+                throw new RuntimeException("Incorrect transfer length n = " + n
+                                           + " (expected 0 <= n <= " + length + ")");
+            }
+            position += n;
+            count -= n;
+        }
+    }
+
+    // dstFile will keep original size
+    public static File insertBytesRandomlyAfterHeader(File orgFile, String newFileName) throws Exception {
+        long headerSize = fileHeaderSize(orgFile);
+        long dupSize = getRandomBetween(0L, headerSize);
         File dstFile = new File(newFileName);
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
-            outputChannel.position(offset);
-            outputChannel.write(ByteBuffer.wrap(bytes));
-            outputChannel.transferFrom(inputChannel, offset + bytes.length, orgSize - bytes.length);
-        }
+            // Copy the header
+            transferFrom(inputChannel, outputChannel, 0, headerSize);
+            // Copy dupSize bytes from the end of the header. Then, copy the rest
+            // of the input such that the new file will have the same size as
+            // the old file.
+            inputChannel.position(headerSize - dupSize);
+            transferFrom(inputChannel, outputChannel, headerSize, orgSize - headerSize);
+            }
         return dstFile;
     }
 
@@ -431,9 +461,38 @@ public class CDSArchiveUtils {
         try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
              FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
             long orgSize = inputChannel.size();
-            outputChannel.transferFrom(inputChannel, 0, offset);
+            transferFrom(inputChannel, outputChannel, 0, offset);
             inputChannel.position(offset + nBytes);
-            outputChannel.transferFrom(inputChannel, offset, orgSize - nBytes);
+            transferFrom(inputChannel, outputChannel, offset, orgSize - nBytes);
+        }
+        return dstFile;
+    }
+
+    // returns the size of the last region with used bytes > 0.
+    private static long getLastUsedRegionSize(File jsaFile) throws Exception {
+        int i = num_regions - 1;
+        long regionSize = 0;
+        while (i >= 0) {
+            regionSize = usedRegionSizeAligned(jsaFile, i);
+            if (regionSize > 0) {
+                break;
+            }
+            i--;
+        }
+        return regionSize;
+    }
+
+    // delete last regions's used bytes at the end, so new file will be smaller than the original
+    public static File deleteBytesAtTheEnd(File orgFile, String newFileName) throws Exception {
+        long offset = fileHeaderSize(orgFile);
+        long bytesToDelete = getLastUsedRegionSize(orgFile);
+        File dstFile = new File(newFileName);
+        try (FileChannel inputChannel = new FileInputStream(orgFile).getChannel();
+             FileChannel outputChannel = new FileOutputStream(dstFile).getChannel()) {
+            long orgSize = inputChannel.size();
+            transferFrom(inputChannel, outputChannel, 0, offset);
+            inputChannel.position(offset);
+            transferFrom(inputChannel, outputChannel, offset, orgSize - bytesToDelete);
         }
         return dstFile;
     }

@@ -25,11 +25,11 @@
 
 package java.nio;
 
-import jdk.internal.misc.Unsafe;
-
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import jdk.internal.misc.Blocker;
+import jdk.internal.misc.Unsafe;
 
 /* package */ class MappedMemoryUtils {
 
@@ -96,10 +96,15 @@ import java.io.UncheckedIOException;
         } else {
             // force writeback via file descriptor
             long offset = mappingOffset(address, index);
+            long mappingAddress = mappingAddress(address, offset, index);
+            long mappingLength = mappingLength(offset, length);
+            long comp = Blocker.begin();
             try {
-                force0(fd, mappingAddress(address, offset, index), mappingLength(offset, length));
+                force0(fd, mappingAddress, mappingLength);
             } catch (IOException cause) {
                 throw new UncheckedIOException(cause);
+            } finally {
+                Blocker.end(comp);
             }
         }
     }

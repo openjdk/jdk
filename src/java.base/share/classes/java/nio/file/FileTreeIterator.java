@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package java.nio.file;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.nio.file.FileTreeWalker.Event;
 
@@ -67,7 +67,7 @@ class FileTreeIterator implements Iterator<Event>, Closeable {
     FileTreeIterator(Path start, int maxDepth, FileVisitOption... options)
         throws IOException
     {
-        this.walker = new FileTreeWalker(Arrays.asList(options), maxDepth);
+        this.walker = new FileTreeWalker(List.of(options), maxDepth);
         this.next = walker.walk(start);
         assert next.type() == FileTreeWalker.EventType.ENTRY ||
                next.type() == FileTreeWalker.EventType.START_DIRECTORY;

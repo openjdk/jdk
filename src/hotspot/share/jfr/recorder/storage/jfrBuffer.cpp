@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "runtime/thread.inline.hpp"
+#include "runtime/javaThread.hpp"
 
 static const u1* const TOP_CRITICAL_SECTION = NULL;
 
@@ -35,32 +35,25 @@ JfrBuffer::JfrBuffer() : _next(NULL),
                          _size(0),
                          _header_size(0),
                          _flags(0),
-                         _context(0) {}
+                         _context(0)
+                         LP64_ONLY(COMMA _pad(0)) {}
 
-bool JfrBuffer::initialize(size_t header_size, size_t size) {
+void JfrBuffer::initialize(size_t header_size, size_t size) {
   assert(_next == NULL, "invariant");
   assert(_identity == NULL, "invariant");
-  _header_size = (u2)header_size;
-  _size = (u4)(size / BytesPerWord);
+  assert(header_size <= max_jushort, "invariant");
+  _header_size = static_cast<u2>(header_size);
+  _size = size;
   set_pos(start());
   set_top(start());
   assert(free_size() == size, "invariant");
   assert(!transient(), "invariant");
   assert(!lease(), "invariant");
   assert(!retired(), "invariant");
-  return true;
 }
 
-void JfrBuffer::reinitialize(bool exclusion /* false */) {
+void JfrBuffer::reinitialize() {
   acquire_critical_section_top();
-  if (exclusion != excluded()) {
-    // update
-    if (exclusion) {
-      set_excluded();
-    } else {
-      clear_excluded();
-    }
-  }
   set_pos(start());
   release_critical_section_top(start());
   clear_retired();
@@ -181,8 +174,7 @@ size_t JfrBuffer::unflushed_size() const {
 enum FLAG {
   RETIRED = 1,
   TRANSIENT = 2,
-  LEASE = 4,
-  EXCLUDED = 8
+  LEASE = 4
 };
 
 inline u1 load(const volatile u1* dest) {
@@ -240,24 +232,6 @@ void JfrBuffer::clear_lease() {
     clear(&_flags, LEASE);
   }
   assert(!lease(), "invariant");
-}
-
-bool JfrBuffer::excluded() const {
-  return test(&_flags, EXCLUDED);
-}
-
-void JfrBuffer::set_excluded() {
-  assert(acquired_by_self(), "invariant");
-  set(&_flags, EXCLUDED);
-  assert(excluded(), "invariant");
-}
-
-void JfrBuffer::clear_excluded() {
-  if (excluded()) {
-    assert(identity() != NULL, "invariant");
-    clear(&_flags, EXCLUDED);
-  }
-  assert(!excluded(), "invariant");
 }
 
 bool JfrBuffer::retired() const {

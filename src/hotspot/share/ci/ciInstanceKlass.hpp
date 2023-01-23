@@ -59,6 +59,7 @@ private:
   bool                   _has_nonstatic_concrete_methods;
   bool                   _is_hidden;
   bool                   _is_record;
+  bool                   _has_trusted_loader;
 
   ciFlags                _flags;
 
@@ -75,9 +76,11 @@ private:
   //   A ciInstanceKlass that's not itself: one implementor.
   //   Itself: more than one implementor.
   ciInstanceKlass*       _implementor;
+  GrowableArray<ciInstanceKlass*>* _transitive_interfaces;
 
   void compute_injected_fields();
   bool compute_injected_fields_helper();
+  void compute_transitive_interfaces();
 
 protected:
   ciInstanceKlass(Klass* k);
@@ -107,6 +110,7 @@ protected:
   bool compute_shared_has_subklass();
   int  compute_nonstatic_fields();
   GrowableArray<ciField*>* compute_nonstatic_fields_impl(GrowableArray<ciField*>* super_fields);
+  bool compute_has_trusted_loader();
 
   // Update the init_state for shared klasses
   void update_if_shared(InstanceKlass::ClassState expected) {
@@ -286,6 +290,11 @@ public:
     assert(is_loaded(), "must be loaded");
     return !is_interface() && !is_abstract();
   }
+
+  bool has_trusted_loader() const {
+    return _has_trusted_loader;
+  }
+  GrowableArray<ciInstanceKlass*>* transitive_interfaces() const;
 
   // Replay support
 

@@ -88,18 +88,15 @@ public abstract class SSLSocketFactory extends SocketFactory {
 
     @SuppressWarnings("removal")
     static String getSecurityProperty(final String name) {
-        return AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public String run() {
-                String s = java.security.Security.getProperty(name);
-                if (s != null) {
-                    s = s.trim();
-                    if (s.isEmpty()) {
-                        s = null;
-                    }
+        return AccessController.doPrivileged((PrivilegedAction<String>) () -> {
+            String s = Security.getProperty(name);
+            if (s != null) {
+                s = s.trim();
+                if (s.isEmpty()) {
+                    s = null;
                 }
-                return s;
             }
+            return s;
         });
     }
 
@@ -175,7 +172,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
      * underlying {@link InputStream} should be loaded into the
      * {@code consumed} stream before this method is called, perhaps
      * using a {@link java.io.ByteArrayInputStream}.  When this
-     * {@link Socket} begins handshaking, it will read all of the data in
+     * {@link Socket} begins handshaking, it will read all the data in
      * {@code consumed} until it reaches {@code EOF}, then all further
      * data is read from the underlying {@link InputStream} as
      * usual.
@@ -256,7 +253,7 @@ public abstract class SSLSocketFactory extends SocketFactory {
 // file private
 class DefaultSSLSocketFactory extends SSLSocketFactory
 {
-    private Exception reason;
+    private final Exception reason;
 
     DefaultSSLSocketFactory(Exception reason) {
         this.reason = reason;

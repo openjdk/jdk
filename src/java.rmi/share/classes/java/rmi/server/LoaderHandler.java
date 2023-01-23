@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public interface LoaderHandler {
      * @param name      the name of the class to load
      * @return the <code>Class</code> object representing the loaded class
      * @throws MalformedURLException
-     *         if the <code>codebase</code> paramater
+     *         if the <code>codebase</code> parameter
      *         contains an invalid URL
      * @throws ClassNotFoundException
      *         if a definition for the class could not

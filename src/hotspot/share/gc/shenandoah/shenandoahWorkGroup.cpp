@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
 #include "logging/log.hpp"
+#include "runtime/threads.hpp"
 
 ShenandoahWorkerScope::ShenandoahWorkerScope(WorkerThreads* workers, uint nworkers, const char* msg, bool check) :
   _workers(workers) {

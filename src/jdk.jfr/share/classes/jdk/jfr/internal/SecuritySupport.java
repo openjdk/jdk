@@ -54,7 +54,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.PropertyPermission;
@@ -82,7 +81,7 @@ public final class SecuritySupport {
     static {
         // ensure module java.base can read module jdk.jfr as early as possible
         addReadEdge(Object.class);
-        addHandlerExport(Object.class);
+        addInternalEventExport(Object.class);
         addEventsExport(Object.class);
         addInstrumentExport(Object.class);
     }
@@ -290,11 +289,11 @@ public final class SecuritySupport {
     }
 
     /**
-     * Adds a qualified export of the internal.jdk.jfr.internal.handlers package
-     * (for EventHandler)
+     * Adds a qualified export of the internal.jdk.jfr.internal.event package
+     * (for EventConfiguration and EventWriter)
      */
-    static void addHandlerExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, Utils.HANDLERS_PACKAGE_NAME, clazz.getModule());
+    static void addInternalEventExport(Class<?> clazz) {
+        Modules.addExports(JFR_MODULE, Utils.EVENT_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addEventsExport(Class<?> clazz) {

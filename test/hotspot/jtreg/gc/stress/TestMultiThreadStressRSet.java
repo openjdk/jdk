@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Utils;
 
 /*
@@ -41,8 +41,8 @@ import jdk.test.lib.Utils;
  * @summary Stress G1 Remembered Set using multiple threads
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+UseG1GC -XX:G1SummarizeRSetStatsPeriod=1 -Xlog:gc
  *   -Xmx500m -XX:G1HeapRegionSize=1m -XX:MaxGCPauseMillis=1000 gc.stress.TestMultiThreadStressRSet 10 4
@@ -270,6 +270,9 @@ public class TestMultiThreadStressRSet {
      */
     private static class Shifter extends Thread {
 
+        // Only one thread at a time can be controlling concurrent GC.
+        static final Object concGCMonitor = new Object();
+        static Shifter concGCController = null;
         final TestMultiThreadStressRSet boss;
         final int sleepTime;
         final int shift;
@@ -292,9 +295,28 @@ public class TestMultiThreadStressRSet {
                             objs[j] = null;
                         }
                     }
-                    if (!WB.g1InConcurrentMark()) {
+                    // If no currently controlling thread and no concurrent GC
+                    // in progress, then claim control.
+                    synchronized (concGCMonitor) {
+                        if ((concGCController == null) && !WB.g1InConcurrentMark()) {
+                            concGCController = this;
+                        }
+                    }
+                    if (concGCController == this) {
+                        // If we've claimed control then take control, start a
+                        // concurrent GC, and release control and the claim,
+                        // letting the GC run to completion while we continue
+                        // doing work.
                         System.out.println("%% start CMC");
-                        WB.g1StartConcMarkCycle();
+                        WB.concurrentGCAcquireControl();
+                        try {
+                            WB.concurrentGCRunTo(WB.AFTER_MARKING_STARTED, false);
+                        } finally {
+                            WB.concurrentGCReleaseControl();
+                            synchronized (concGCMonitor) {
+                                concGCController = null;
+                            }
+                        }
                     } else {
                         System.out.println("%% CMC is already in progress");
                     }

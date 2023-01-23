@@ -32,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import java.util.function.Function;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr.Role;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocletConstants;
 
 /**
  * A tree node representing an HTML element, containing the name of the element,
@@ -81,12 +79,6 @@ public class HtmlTree extends Content {
      * The items in this list are never {@code null}.
      */
     private List<Content> content = List.of();
-
-    /**
-     * A sentinel value to explicitly indicate empty content.
-     * The '==' identity of this object is significant.
-     */
-    public static final Content EMPTY = Text.of("");
 
     /**
      * Creates an {@code HTMLTree} object representing an HTML element
@@ -168,15 +160,36 @@ public class HtmlTree extends Content {
     /**
      * Adds additional content for the HTML element.
      *
+     * @implSpec In order to facilitate creation of succinct output this method
+     * silently drops discardable content as determined by {@link #isDiscardable()}.
+     * Use {@link #addUnchecked(Content)} to add content unconditionally.
+     *
      * @param content the content
+     * @return this HTML tree
      */
     @Override
     public HtmlTree add(Content content) {
         if (content instanceof ContentBuilder cb) {
             cb.contents.forEach(this::add);
+        } else if (!content.isDiscardable()) {
+            // quietly avoid adding empty or invalid nodes
+            if (this.content.isEmpty())
+                this.content = new ArrayList<>();
+            this.content.add(content);
         }
-        else if (content == HtmlTree.EMPTY || content.isValid()) {
-            // quietly avoid adding empty or invalid nodes (except EMPTY)
+        return this;
+    }
+
+    /**
+     * Adds content to this HTML tree without checking whether it is discardable.
+     *
+     * @param content the content to add
+     * @return this HTML tree
+     */
+    public HtmlTree addUnchecked(Content content) {
+        if (content instanceof ContentBuilder cb) {
+            cb.contents.forEach(this::addUnchecked);
+        } else {
             if (this.content.isEmpty())
                 this.content = new ArrayList<>();
             this.content.add(content);
@@ -372,6 +385,15 @@ public class HtmlTree extends Content {
     public static HtmlTree DD(Content body) {
         return new HtmlTree(TagName.DD)
                 .add(body);
+    }
+
+    /**
+     * Creates an HTML {@code DETAILS} element.
+     *
+     * @return the element
+     */
+    public static HtmlTree DETAILS() {
+        return new HtmlTree(TagName.DETAILS);
     }
 
     /**
@@ -790,6 +812,17 @@ public class HtmlTree extends Content {
     }
 
     /**
+     * Creates an HTML {@code SPAN} element with the given style.
+     *
+     * @param styleClass the style
+     * @return the element
+     */
+    public static HtmlTree SPAN(HtmlStyle styleClass) {
+        return new HtmlTree(TagName.SPAN)
+                .setStyle(styleClass);
+    }
+
+    /**
      * Creates an HTML {@code SPAN} element with the given style and some content.
      *
      * @param styleClass the style
@@ -981,37 +1014,19 @@ public class HtmlTree extends Content {
     }
 
     /**
-     * Returns true if the HTML tree is valid. This check is more specific to
-     * standard doclet and not exactly similar to W3C specifications. But it
-     * ensures HTML validation.
+     * Returns {@code true} if the HTML tree does not affect the output and can be discarded.
+     * This implementation considers non-void elements without content or {@code id} attribute
+     * as discardable, with the exception of {@code SCRIPT} which can sometimes be used without
+     * content.
      *
-     * @return true if the HTML tree is valid
+     * @return true if the HTML tree can be discarded without affecting the output
      */
     @Override
-    public boolean isValid() {
-        return switch (tagName) {
-            case A ->
-                    hasAttr(HtmlAttr.ID) || (hasAttr(HtmlAttr.HREF) && hasContent());
-            case BR ->
-                    !hasContent() && (!hasAttrs() || hasAttr(HtmlAttr.CLEAR));
-            case HR, INPUT ->
-                    !hasContent();
-            case IMG ->
-                    hasAttr(HtmlAttr.SRC) && hasAttr(HtmlAttr.ALT) && !hasContent();
-            case LINK ->
-                    hasAttr(HtmlAttr.HREF) && !hasContent();
-            case META ->
-                    hasAttr(HtmlAttr.CONTENT) && !hasContent();
-            case SCRIPT ->
-                    (hasAttr(HtmlAttr.TYPE) && hasAttr(HtmlAttr.SRC) && !hasContent())
-                            || (hasAttr(HtmlAttr.TYPE) && hasContent());
-            case SPAN ->
-                    hasAttr(HtmlAttr.ID) || hasContent();
-            case WBR ->
-                    !hasContent();
-            default ->
-                    hasContent();
-        };
+    public boolean isDiscardable() {
+        return !isVoid()
+            && !hasContent()
+            && !hasAttr(HtmlAttr.ID)
+            && tagName != TagName.SCRIPT;
     }
 
     /**
@@ -1043,19 +1058,17 @@ public class HtmlTree extends Content {
     }
 
     @Override
-    public boolean write(Writer out, boolean atNewline) throws IOException {
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
         boolean isInline = isInline();
-        if (!isInline && !atNewline)
-            out.write(DocletConstants.NL);
+        if (!isInline && !atNewline) {
+            out.write(newline);
+        }
         String tagString = tagName.toString();
         out.write("<");
         out.write(tagString);
-        Iterator<HtmlAttr> iterator = attrs.keySet().iterator();
-        HtmlAttr key;
-        String value;
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            value = attrs.get(key);
+        for (var attr : attrs.entrySet()) {
+            var key = attr.getKey();
+            var value = attr.getValue();
             out.write(" ");
             out.write(key.toString());
             if (!value.isEmpty()) {
@@ -1066,15 +1079,16 @@ public class HtmlTree extends Content {
         }
         out.write(">");
         boolean nl = false;
-        for (Content c : content)
-            nl = c.write(out, nl);
+        for (Content c : content) {
+            nl = c.write(out, newline, nl);
+        }
         if (!isVoid()) {
             out.write("</");
             out.write(tagString);
             out.write(">");
         }
         if (!isInline) {
-            out.write(DocletConstants.NL);
+            out.write(newline);
             return true;
         } else {
             return false;

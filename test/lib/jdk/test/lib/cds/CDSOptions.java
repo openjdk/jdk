@@ -32,6 +32,8 @@ public class CDSOptions {
     public ArrayList<String> prefix = new ArrayList<String>();
     public ArrayList<String> suffix = new ArrayList<String>();
     public boolean useSystemArchive = false;
+    public String appJar;
+    public String appJarDir;
 
     // classes to be archived
     public String[] classList;
@@ -105,13 +107,24 @@ public class CDSOptions {
         return this;
     }
 
+    // AppCDS methods
+    public CDSOptions setAppJar(String appJar) {
+        this.appJar = appJar;
+        return this;
+    }
+
+    public CDSOptions setAppJarDir(String appJarDir) {
+        this.appJarDir = appJarDir;
+        return this;
+    }
+
     // Call by CDSTestUtils.runWithArchive() and TestCommon.runWithArchive().
     //
     // Example:
     //  - The dumping will be done with the default G1GC so we can generate
     //    the archived heap.
     //  - The runtime execution will be done with the EpsilonGC, to test its
-    //    ability to load the the archived heap.
+    //    ability to load the archived heap.
     //
     // jtreg -vmoptions:-Dtest.cds.runtime.options=-XX:+UnlockExperimentalVMOptions,-XX:+UseEpsilonGC \
     //       test/hotspot/jtreg/runtime/cds

@@ -593,7 +593,7 @@ jobject BuildAddressList(JNIEnv *env, krb5_address **addresses) {
         if (address == NULL) {
             return (jobject) NULL;
         }
-        // Add the HostAddress to the arrray.
+        // Add the HostAddress to the array.
         (*env)->SetObjectArrayElement(env, address_list, index, address);
 
         if ((*env)->ExceptionCheck(env)) {

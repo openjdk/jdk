@@ -59,7 +59,7 @@ static const char* reference_type_name(ReferenceType type) {
 
   default:
     ShouldNotReachHere();
-    return NULL;
+    return "Unknown";
   }
 }
 
@@ -72,7 +72,7 @@ static oop reference_referent(oop reference) {
 }
 
 static void reference_clear_referent(oop reference) {
-  java_lang_ref_Reference::clear_referent(reference);
+  java_lang_ref_Reference::clear_referent_raw(reference);
 }
 
 static oop* reference_discovered_addr(oop reference) {

@@ -300,7 +300,6 @@ class StackOverflow {
   void disable_stack_reserved_zone();
   void enable_stack_yellow_reserved_zone();
   void disable_stack_yellow_reserved_zone();
-  void enable_stack_red_zone();
   void disable_stack_red_zone();
 
   bool stack_guard_zone_unused() const { return _stack_guard_state == stack_guard_unused; }
@@ -353,6 +352,8 @@ class StackOverflow {
     _shadow_zone_growth_watermark =
       stack_base();
   }
+
+  address stack_overflow_limit() const { return _stack_overflow_limit; }
 };
 
 #endif // SHARE_RUNTIME_STACKOVERFLOW_HPP

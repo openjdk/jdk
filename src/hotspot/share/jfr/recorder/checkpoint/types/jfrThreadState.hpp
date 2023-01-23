@@ -37,15 +37,15 @@ class JfrThreadState : public AllStatic {
 
 class JfrThreadId : public AllStatic {
 public:
-  static traceid id(const Thread* t);
+  static traceid id(const Thread* t, oop vthread = NULL);
   static traceid os_id(const Thread* t);
-  static traceid jfr_id(const Thread* t);
+  static traceid jfr_id(const Thread* t, traceid tid = 0);
 };
 
 class JfrThreadName : public AllStatic {
  public:
   // Requires a ResourceMark for get_thread_name/as_utf8
-  static const char* name(const Thread* t);
+  static const char* name(const Thread* t, int& length, oop vthread = NULL);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_JFRTHREADSTATE_HPP

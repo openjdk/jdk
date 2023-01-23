@@ -28,12 +28,12 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseOnStackReplacement -XX:-TieredCompilation -XX:-BackgroundCompilation EqvUncastStepOverBarrier
  */
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import java.lang.reflect.Method;
 
 public class EqvUncastStepOverBarrier {

@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
+import jdk.internal.misc.Blocker;
 import sun.security.action.GetPropertyAction;
 
 /* This class is for the exclusive use of ProcessBuilder.start() to
@@ -563,10 +564,15 @@ final class ProcessImpl extends Process {
     private static native int getExitCodeProcess(long handle);
 
     public int waitFor() throws InterruptedException {
-        waitForInterruptibly(handle);
+        long comp = Blocker.begin();
+        try {
+            waitForInterruptibly(handle);
+        } finally {
+            Blocker.end(comp);
+        }
         if (Thread.interrupted())
             throw new InterruptedException();
-        return exitValue();
+        return getExitCodeProcess(handle);
     }
 
     private static native void waitForInterruptibly(long handle);
@@ -587,7 +593,12 @@ final class ProcessImpl extends Process {
                 // if wraps around then wait a long while
                 msTimeout = Integer.MAX_VALUE;
             }
-            waitForTimeoutInterruptibly(handle, msTimeout);
+            long comp = Blocker.begin();
+            try {
+                waitForTimeoutInterruptibly(handle, msTimeout);
+            } finally {
+                Blocker.end(comp);
+            }
             if (Thread.interrupted())
                 throw new InterruptedException();
             if (getExitCodeProcess(handle) != STILL_ACTIVE) {

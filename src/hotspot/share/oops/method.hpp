@@ -84,14 +84,16 @@ class Method : public Metadata {
 
   // Flags
   enum Flags {
-    _caller_sensitive      = 1 << 0,
-    _force_inline          = 1 << 1,
-    _dont_inline           = 1 << 2,
-    _hidden                = 1 << 3,
-    _has_injected_profile  = 1 << 4,
-    _intrinsic_candidate   = 1 << 5,
-    _reserved_stack_access = 1 << 6,
-    _scoped                = 1 << 7
+    _caller_sensitive       = 1 << 0,
+    _force_inline           = 1 << 1,
+    _dont_inline            = 1 << 2,
+    _hidden                 = 1 << 3,
+    _has_injected_profile   = 1 << 4,
+    _intrinsic_candidate    = 1 << 5,
+    _reserved_stack_access  = 1 << 6,
+    _scoped                 = 1 << 7,
+    _changes_current_thread = 1 << 8,
+    _jvmti_mount_transition = 1 << 9,
   };
   mutable u2 _flags;
 
@@ -132,7 +134,10 @@ class Method : public Metadata {
 
   virtual bool is_method() const { return true; }
 
+#if INCLUDE_CDS
+  void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+#endif
 
   // accessors for instance variables
 
@@ -142,7 +147,6 @@ class Method : public Metadata {
 
   static address make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_entry_no_trampoline() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -402,21 +406,13 @@ class Method : public Metadata {
     }
   }
 
-  int nmethod_age() const {
-    if (method_counters() == NULL) {
-      return INT_MAX;
-    } else {
-      return method_counters()->nmethod_age();
-    }
-  }
-
   int invocation_count() const;
   int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
-  static void build_interpreter_method_data(const methodHandle& method, TRAPS);
+  static void build_profiling_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
@@ -429,10 +425,6 @@ class Method : public Metadata {
   // for PrintMethodData in a product build
   int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
-
-  // Clear (non-shared space) pointers which could not be relevant
-  // if this (shared) method were mapped into another JVM.
-  void remove_unshareable_info();
 
   // nmethod/verified compiler entry
   address verified_code_entry();
@@ -468,6 +460,9 @@ public:
   void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
+
+  // the number of argument reg slots that the compiled method uses on the stack.
+  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -533,9 +528,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const;
-  void print_codes_on(int from, int to, outputStream* st) const;
+  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
+  void print_codes_on(outputStream* st, int flags = 0) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -727,6 +722,15 @@ public:
   static methodHandle make_method_handle_intrinsic(vmIntrinsicID iid, // _invokeBasic, _linkToVirtual
                                                    Symbol* signature, //anything at all
                                                    TRAPS);
+  // Some special methods don't need to be findable by nmethod iterators and are permanent.
+  bool can_be_allocated_in_NonNMethod_space() const { return is_method_handle_intrinsic(); }
+
+  // Continuation
+  inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_continuation_yield_intrinsic() const;
+  inline bool is_continuation_native_intrinsic() const;
+  inline bool is_special_native_intrinsic() const;
+
   static Klass* check_non_bcp_klass(Klass* klass);
 
   enum {
@@ -751,6 +755,8 @@ public:
   bool on_stack() const                             { return access_flags().on_stack(); }
   void set_on_stack(const bool value);
 
+  void record_gc_epoch();
+
   // see the definition in Method*.cpp for the gory details
   bool should_not_be_cached() const;
 
@@ -768,13 +774,13 @@ public:
   // however, can be GC'ed away if the class is unloaded or if the method is
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to NULL (as is the case for any weak reference).
-  static jmethodID make_jmethod_id(ClassLoaderData* loader_data, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* loader_data, jmethodID mid);
+  static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
+  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
   // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity);
+  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
 
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;
@@ -833,6 +839,20 @@ public:
   }
   void set_dont_inline(bool x) {
     _flags = x ? (_flags | _dont_inline) : (_flags & ~_dont_inline);
+  }
+
+  bool changes_current_thread() {
+    return (_flags & _changes_current_thread) != 0;
+  }
+  void set_changes_current_thread(bool x) {
+    _flags = x ? (_flags | _changes_current_thread) : (_flags & ~_changes_current_thread);
+  }
+
+  bool jvmti_mount_transition() {
+    return (_flags & _jvmti_mount_transition) != 0;
+  }
+  void set_jvmti_mount_transition(bool x) {
+    _flags = x ? (_flags | _jvmti_mount_transition) : (_flags & ~_jvmti_mount_transition);
   }
 
   bool is_hidden() const {
@@ -945,15 +965,12 @@ public:
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);
 
-  // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
-
   // Printing
-  void print_short_name(outputStream* st = tty); // prints as klassname::methodname; Exposed so field engineers can debug VM
+  void print_short_name(outputStream* st = tty) const; // prints as klassname::methodname; Exposed so field engineers can debug VM
 #if INCLUDE_JVMTI
-  void print_name(outputStream* st = tty); // prints as "virtual void foo(int)"; exposed for -Xlog:redefine+class
+  void print_name(outputStream* st = tty) const; // prints as "virtual void foo(int)"; exposed for -Xlog:redefine+class
 #else
-  void print_name(outputStream* st = tty)        PRODUCT_RETURN; // prints as "virtual void foo(int)"
+  void print_name(outputStream* st = tty) const  PRODUCT_RETURN; // prints as "virtual void foo(int)"
 #endif
 
   typedef int (*method_comparator_func)(Method* a, Method* b);
@@ -997,6 +1014,8 @@ public:
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }
   address* signature_handler_addr() const        { return native_function_addr() + 1; }
+
+  void set_num_stack_arg_slots(int n) { constMethod()->set_num_stack_arg_slots(n); }
 };
 
 

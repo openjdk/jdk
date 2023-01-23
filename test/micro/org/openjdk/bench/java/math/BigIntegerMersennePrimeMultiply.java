@@ -207,7 +207,7 @@ public class BigIntegerMersennePrimeMultiply implements ForkJoinPool.ForkJoinWor
                 .stream()
                 .peek(entry -> {
                     long timeInMs = (counterExtractorMap.get(timeMap)
-                            .applyAsLong(entry.getKey().getId())
+                            .applyAsLong(entry.getKey().threadId())
                             - entry.getValue().get());
                     entry.getValue().set(timeInMs);
                 })
@@ -229,7 +229,7 @@ public class BigIntegerMersennePrimeMultiply implements ForkJoinPool.ForkJoinWor
 
     private static void add(Map<Thread, AtomicLong> time, Thread thread,
                             LongUnaryOperator timeExtractor) {
-        time.put(thread, new AtomicLong(timeExtractor.applyAsLong(thread.getId())));
+        time.put(thread, new AtomicLong(timeExtractor.applyAsLong(thread.threadId())));
     }
 
     private static void resetAllCounters() {
@@ -238,7 +238,7 @@ public class BigIntegerMersennePrimeMultiply implements ForkJoinPool.ForkJoinWor
 
     private static void resetTimes(Map<Thread, AtomicLong> timeMap, LongUnaryOperator timeMethod) {
         timeMap.forEach((thread, time) ->
-                time.set(timeMethod.applyAsLong(thread.getId())));
+                time.set(timeMethod.applyAsLong(thread.threadId())));
     }
 
     private static final Map<Thread, AtomicLong> userTime =

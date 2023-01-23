@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ import static java.nio.charset.StandardCharsets.ISO_8859_1;
  * loaded asynchronously if loaded using <code>JEditorPane.setPage</code>.
  * This is controlled by a property on the document.  The method
  * {@link #createDefaultDocument createDefaultDocument} can
- * be overriden to change this.  The batching of work is done
+ * be overridden to change this.  The batching of work is done
  * by the <code>HTMLDocument.HTMLReader</code> class.  The actual
  * work is done by the <code>DefaultStyledDocument</code> and
  * <code>AbstractDocument</code> classes in the text package.
@@ -969,7 +969,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             URL u;
             try {
                 URL base = hdoc.getBase();
-                u = new URL(base, href);
+                @SuppressWarnings("deprecation")
+                var _unused = u = new URL(base, href);
                 // Following is a workaround for 1.2, in which
                 // new URL("file://...", "#...") causes the filename to
                 // be lost.
@@ -979,7 +980,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                     String newFile = u.getFile();
                     if (baseFile != null && newFile != null &&
                         !newFile.startsWith(baseFile)) {
-                        u = new URL(base, baseFile + href);
+                        @SuppressWarnings("deprecation")
+                        var _unused2 = u = new URL(base, baseFile + href);
                     }
                 }
             } catch (MalformedURLException m) {
@@ -1013,7 +1015,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an exited event on the old link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), this.href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), this.href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1026,7 +1029,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 // fire an entered event on the new link
                 URL u;
                 try {
-                    u = new URL(doc.getBase(), href);
+                    @SuppressWarnings("deprecation")
+                    var _unused = u = new URL(doc.getBase(), href);
                 } catch (MalformedURLException m) {
                     u = null;
                 }
@@ -1299,6 +1303,29 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      *     <td>FrameView
      * </tbody>
      * </table>
+     *
+     * @implNote
+     * Parsed tags that are unrecognized or are recognized but unsupported are
+     * handled differently by the editor.
+     *
+     * <ul>
+     * <li>When the container is editable:
+     *     <ul>
+     *         <li>The tags will be displayed as editable text fields with the
+     *         tag name.</li>
+     *         <li>The content within the tags will be handled by the editor as
+     *         regular text.</li>
+     *     </ul>
+     * </li>
+     * <li>When the container is not editable:
+     *     <ul>
+     *         <li>If the tag is recognized but not supported, such as script tags,
+     *         the tag and its contents will be hidden.</li>
+     *         <li>If the tag is unknown, the tag will be hidden but its contents
+     *         will display as regular text.</li>
+     *     </ul>
+     * </li>
+     * </ul>
      */
     public static class HTMLFactory implements ViewFactory {
         /**
@@ -1393,7 +1420,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 } else if (kind == HTML.Tag.HEAD) {
                     // Make the head never visible, and never load its
                     // children. For Cursor positioning,
-                    // getNextVisualPositionFrom is overriden to always return
+                    // getNextVisualPositionFrom is overridden to always return
                     // the end offset of the element.
                     return new BlockView(elem, View.X_AXIS) {
                         public float getPreferredSpan(int axis) {
@@ -1881,10 +1908,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
                 getHTMLEditorKit(editor).insertHTML(doc, offset, html,
                                                     popDepth, pushDepth,
                                                     addTag);
-            } catch (IOException ioe) {
-                throw new RuntimeException("Unable to insert: " + ioe);
-            } catch (BadLocationException ble) {
-                throw new RuntimeException("Unable to insert: " + ble);
+            } catch (IOException | BadLocationException e) {
+                throw new RuntimeException("Unable to insert: " + e);
             }
         }
 
@@ -2371,6 +2396,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
             try {
                 URL page =
                     (URL)doc.getProperty(Document.StreamDescriptionProperty);
+                @SuppressWarnings("deprecation")
                 URL url = new URL(page, href);
                 HyperlinkEvent linkEvent = new HyperlinkEvent
                     (editor, HyperlinkEvent.EventType.
@@ -2438,7 +2464,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
         /*
          * If possible acquires a lock on the Document.  If a lock has been
-         * obtained a key will be retured that should be passed to
+         * obtained a key will be returned that should be passed to
          * <code>unlock</code>.
          */
         private Object lock(JEditorPane editor) {

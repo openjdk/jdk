@@ -47,6 +47,7 @@ class       PCTableNode;
 class         JumpNode;
 class         CatchNode;
 class       NeverBranchNode;
+class     BlackholeNode;
 class   ProjNode;
 class     CProjNode;
 class       IfTrueNode;
@@ -90,6 +91,10 @@ public:
   PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
+#ifdef ASSERT
+  bool is_in_infinite_subgraph();
+  static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
+#endif //ASSERT
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
   virtual bool pinned() const { return (const Node*)in(0) == this; }
@@ -224,7 +229,6 @@ public:
   virtual const RegMask &out_RegMask() const;
   virtual const RegMask &in_RegMask(uint) const;
 #ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
   virtual void dump_spec(outputStream *st) const;
 #endif
 #ifdef ASSERT
@@ -250,10 +254,6 @@ public:
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual const RegMask &out_RegMask() const;
-
-#ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 //------------------------------CProjNode--------------------------------------
@@ -406,7 +406,6 @@ public:
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
-  virtual void related(GrowableArray <Node *> *in_rel, GrowableArray <Node *> *out_rel, bool compact) const;
 #endif
 };
 
@@ -432,11 +431,6 @@ public:
 protected:
   // Type of If input when this branch is always taken
   virtual bool always_taken(const TypeTuple* t) const = 0;
-
-#ifndef PRODUCT
-public:
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 class IfTrueNode : public IfProjNode {
@@ -504,9 +498,6 @@ public:
   virtual int   Opcode() const;
   virtual const RegMask& out_RegMask() const;
   virtual const Node* is_block_proj() const { return this; }
-#ifndef PRODUCT
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-#endif
 };
 
 class JumpProjNode : public JProjNode {
@@ -532,7 +523,6 @@ class JumpProjNode : public JProjNode {
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -605,7 +595,10 @@ public:
 // empty.
 class NeverBranchNode : public MultiBranchNode {
 public:
-  NeverBranchNode( Node *ctrl ) : MultiBranchNode(1) { init_req(0,ctrl); }
+  NeverBranchNode(Node* ctrl) : MultiBranchNode(1) {
+    init_req(0, ctrl);
+    init_class_id(Class_NeverBranch);
+  }
   virtual int Opcode() const;
   virtual bool pinned() const { return true; };
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }
@@ -618,5 +611,29 @@ public:
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
 #endif
 };
+
+//------------------------------BlackholeNode----------------------------
+// Blackhole all arguments. This node would survive through the compiler
+// the effects on its arguments, and would be finally matched to nothing.
+class BlackholeNode : public MultiNode {
+public:
+  BlackholeNode(Node* ctrl) : MultiNode(1) {
+    init_req(TypeFunc::Control, ctrl);
+  }
+  virtual int   Opcode() const;
+  virtual uint ideal_reg() const { return 0; } // not matched in the AD file
+  virtual const Type* bottom_type() const { return TypeTuple::MEMBAR; }
+
+  const RegMask &in_RegMask(uint idx) const {
+    // Fake the incoming arguments mask for blackholes: accept all registers
+    // and all stack slots. This would avoid any redundant register moves
+    // for blackhole inputs.
+    return RegMask::All;
+  }
+#ifndef PRODUCT
+  virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
+#endif
+};
+
 
 #endif // SHARE_OPTO_CFGNODE_HPP

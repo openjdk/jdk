@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.vm.ci.code;
 import java.util.Arrays;
 import java.util.Objects;
 
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -176,14 +177,28 @@ public final class BytecodeFrame extends BytecodePosition {
     }
 
     /**
-     * Creates a new frame object.
+     * Creates a new frame object. A well formed frame has the following invariants:
+     * <ul>
+     * <li>{@code values != null}</li>
+     * <li>{@code slotKinds != null}</li>
+     * <li>{@code numLocals + numStack + numLocks == values.length}</li>
+     * <li>{@code numLocals + numStack + numLocks == values.length}</li>
+     * <li>{@code numLocals + numStack == slotKinds.length}</li>
+     * <li>all entries in {@code values} starting at index {@code numLocals + numStack} must be of
+     * type {@link StackLockValue}</li>
+     * <li>for each index {@code i} between 0 (inclusive) and {@code numLocals + numStack}
+     * (exclusive), if {@code slotKinds[i].needsTwoSlots()} then
+     * {@code values[i + 1] == Value.ILLEGAL}.</li>
+     * </ul>
+     *
+     * These invariants are not checked in this constructor but by {@link #verifyInvariants()}.
      *
      * @param caller the caller frame (which may be {@code null})
      * @param method the method
      * @param bci a BCI within the method
      * @param rethrowException specifies if the VM should re-throw the pending exception when
      *            deopt'ing using this frame
-     * @param values the frame state {@link #values}.
+     * @param values the frame state {@link #values}
      * @param slotKinds the kinds in {@code values}. This array is now owned by this object and must
      *            not be mutated by the caller.
      * @param numLocals the number of local variables
@@ -191,7 +206,15 @@ public final class BytecodeFrame extends BytecodePosition {
      * @param numLocks the number of locked objects
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP2", justification = "caller transfers ownership of `slotKinds`")
-    public BytecodeFrame(BytecodeFrame caller, ResolvedJavaMethod method, int bci, boolean rethrowException, boolean duringCall, JavaValue[] values, JavaKind[] slotKinds, int numLocals, int numStack,
+    public BytecodeFrame(BytecodeFrame caller,
+                    ResolvedJavaMethod method,
+                    int bci,
+                    boolean rethrowException,
+                    boolean duringCall,
+                    JavaValue[] values,
+                    JavaKind[] slotKinds,
+                    int numLocals,
+                    int numStack,
                     int numLocks) {
         super(caller, method, bci);
         assert values != null;
@@ -203,6 +226,38 @@ public final class BytecodeFrame extends BytecodePosition {
         this.numStack = numStack;
         this.numLocks = numLocks;
         assert !rethrowException || numStack == 1 : "must have exception on top of the stack";
+    }
+
+    /**
+     * Checks the invariants described in {@link #BytecodeFrame}.
+     *
+     * @throws NullPointerException if {@code values == null || slotKinds == null} or any of the
+     *             entries in {@code values} is null
+     * @throws JVMCIError if any of the other invariants are violated
+     */
+    public void verifyInvariants() {
+        if (values.length != numLocals + numStack + numLocks) {
+            throw new JVMCIError("unexpected values length %d in frame (%d locals, %d stack slots, %d locks)", values.length, numLocals, numStack, numLocks);
+        }
+        if (slotKinds.length != numLocals + numStack) {
+            throw new JVMCIError("unexpected slotKinds length %d in frame (%d locals, %d stack slots)", values.length, numLocals, numStack);
+        }
+        for (int i = 0; i < slotKinds.length; i++) {
+            Objects.requireNonNull(values[i]);
+            JavaKind kind = slotKinds[i];
+            if (kind.needsTwoSlots()) {
+                if (i + 1 >= values.length || values[i + 1] != Value.ILLEGAL) {
+                    throw new JVMCIError("2 slot value at index %d not followed by Value.ILLEGAL", i);
+                }
+            }
+        }
+        for (int i = slotKinds.length; i < values.length; i++) {
+            JavaValue lock = values[i];
+            Objects.requireNonNull(lock);
+            if (!(lock instanceof StackLockValue)) {
+                throw new JVMCIError("Lock at %d must be of type StackLockValue, got %s", i, lock.getClass().getName());
+            }
+        }
     }
 
     /**
@@ -297,7 +352,14 @@ public final class BytecodeFrame extends BytecodePosition {
 
     @Override
     public int hashCode() {
-        return (numLocals + 1) ^ (numStack + 11) ^ (numLocks + 7);
+        return Objects.hash(super.hashCode(),
+                        duringCall,
+                        numLocals,
+                        numLocks,
+                        numStack,
+                        rethrowException,
+                        Arrays.hashCode(slotKinds),
+                        Arrays.hashCode(values));
     }
 
     @Override
@@ -305,21 +367,20 @@ public final class BytecodeFrame extends BytecodePosition {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BytecodeFrame && super.equals(obj)) {
-            BytecodeFrame that = (BytecodeFrame) obj;
-            // @formatter:off
-            if (this.duringCall == that.duringCall &&
-                this.rethrowException == that.rethrowException &&
-                this.numLocals == that.numLocals &&
-                this.numLocks == that.numLocks &&
-                this.numStack == that.numStack &&
-                Arrays.equals(this.values, that.values)) {
-                return true;
-            }
-            // @formatter:off
-            return true;
+        if (!super.equals(obj)) {
+            return false;
         }
-        return false;
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        BytecodeFrame that = (BytecodeFrame) obj;
+        return duringCall == that.duringCall &&
+                        numLocals == that.numLocals &&
+                        numLocks == that.numLocks &&
+                        numStack == that.numStack &&
+                        rethrowException == that.rethrowException &&
+                        Arrays.equals(slotKinds, that.slotKinds) &&
+                        Arrays.equals(values, that.values);
     }
 
     @Override

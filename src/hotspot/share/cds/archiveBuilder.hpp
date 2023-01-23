@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 #include "utilities/resizeableResourceHash.hpp"
 #include "utilities/resourceHash.hpp"
 
-struct ArchiveHeapOopmapInfo;
+struct ArchiveHeapBitmapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -61,6 +61,34 @@ const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
 // [4] Copy symbol table, dictionary, etc, into the ro region
 // [5] Relocate all the pointers in rw/ro, so that the archive can be mapped to
 //     the "requested" location without runtime relocation. See relocate_to_requested()
+//
+// "source" vs "buffered" vs "requested"
+//
+// The ArchiveBuilder deals with three types of addresses.
+//
+// "source":    These are the addresses of objects created in step [1] above. They are the actual
+//              InstanceKlass*, Method*, etc, of the Java classes that are loaded for executing
+//              Java bytecodes in the JVM process that's dumping the CDS archive.
+//
+//              It may be necessary to contiue Java execution after ArchiveBuilder is finished.
+//              Therefore, we don't modify any of the "source" objects.
+//
+// "buffered":  The "source" objects that are deemed archivable are copied into a temporary buffer.
+//              Objects in the buffer are modified in steps [2, 3, 4] (e.g., unshareable info is
+//              removed, pointers are relocated, etc) to prepare them to be loaded at runtime.
+//
+// "requested": These are the addreses where the "buffered" objects should be loaded at runtime.
+//              When the "buffered" objects are written into the archive file, their addresses
+//              are adjusted in step [5] such that the lowest of these objects would be mapped
+//              at SharedBaseAddress.
+//
+// Translation between "source" and "buffered" addresses is done with two hashtables:
+//     _src_obj_table          : "source"   -> "buffered"
+//     _buffered_to_src_table  : "buffered" -> "source"
+//
+// Translation between "buffered" and "requested" addresses is done with a simple shift:
+//    buffered_address + _buffer_to_requested_delta == requested_address
+//
 class ArchiveBuilder : public StackObj {
 protected:
   DumpRegion* _current_dump_space;
@@ -112,37 +140,36 @@ private:
   };
 
   class SourceObjInfo {
-    MetaspaceClosure::Ref* _ref;
+    MetaspaceClosure::Ref* _ref; // The object that's copied into the buffer
     uintx _ptrmap_start;     // The bit-offset of the start of this object (inclusive)
     uintx _ptrmap_end;       // The bit-offset of the end   of this object (exclusive)
     bool _read_only;
     FollowMode _follow_mode;
     int _size_in_bytes;
     MetaspaceObj::Type _msotype;
-    address _dumped_addr;    // Address this->obj(), as used by the dumped archive.
-    address _orig_obj;       // The value of the original object (_ref->obj()) when this
+    address _source_addr;    // The value of the source object (_ref->obj()) when this
                              // SourceObjInfo was created. Note that _ref->obj() may change
                              // later if _ref is relocated.
-
+    address _buffered_addr;  // The copy of _ref->obj() insider the buffer.
   public:
     SourceObjInfo(MetaspaceClosure::Ref* ref, bool read_only, FollowMode follow_mode) :
       _ref(ref), _ptrmap_start(0), _ptrmap_end(0), _read_only(read_only), _follow_mode(follow_mode),
       _size_in_bytes(ref->size() * BytesPerWord), _msotype(ref->msotype()),
-      _orig_obj(ref->obj()) {
+      _source_addr(ref->obj()) {
       if (follow_mode == point_to_it) {
-        _dumped_addr = ref->obj();
+        _buffered_addr = ref->obj();
       } else {
-        _dumped_addr = NULL;
+        _buffered_addr = nullptr;
       }
     }
 
     bool should_copy() const { return _follow_mode == make_a_copy; }
     MetaspaceClosure::Ref* ref() const { return  _ref; }
-    void set_dumped_addr(address dumped_addr)  {
+    void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
-      assert(_dumped_addr == NULL, "cannot be copied twice");
-      assert(dumped_addr != NULL, "must be a valid copy");
-      _dumped_addr = dumped_addr;
+      assert(_buffered_addr == nullptr, "cannot be copied twice");
+      assert(addr != nullptr, "must be a valid copy");
+      _buffered_addr = addr;
     }
     void set_ptrmap_start(uintx v) { _ptrmap_start = v;    }
     void set_ptrmap_end(uintx v)   { _ptrmap_end = v;      }
@@ -150,8 +177,8 @@ private:
     uintx ptrmap_end()    const    { return _ptrmap_end;   } // exclusive
     bool read_only()      const    { return _read_only;    }
     int size_in_bytes()   const    { return _size_in_bytes; }
-    address orig_obj()    const    { return _orig_obj; }
-    address dumped_addr() const    { return _dumped_addr; }
+    address source_addr() const    { return _source_addr; }
+    address buffered_addr() const  { return _buffered_addr; }
     MetaspaceObj::Type msotype() const { return _msotype; }
 
     // convenience accessor
@@ -199,7 +226,8 @@ private:
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
-  ResizeableResourceHashtable<address, SourceObjInfo, ResourceObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableResourceHashtable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   GrowableArray<SpecialRefInfo>* _special_refs;
@@ -378,24 +406,28 @@ public:
   void write_archive(FileMapInfo* mapinfo,
                      GrowableArray<MemRegion>* closed_heap_regions,
                      GrowableArray<MemRegion>* open_heap_regions,
-                     GrowableArray<ArchiveHeapOopmapInfo>* closed_heap_oopmaps,
-                     GrowableArray<ArchiveHeapOopmapInfo>* open_heap_oopmaps);
+                     GrowableArray<ArchiveHeapBitmapInfo>* closed_heap_oopmaps,
+                     GrowableArray<ArchiveHeapBitmapInfo>* open_heap_oopmaps);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
-  address get_dumped_addr(address src_obj) const;
+  address get_buffered_addr(address src_addr) const;
+  address get_source_addr(address buffered_addr) const;
+  template <typename T> T get_source_addr(T buffered_addr) const {
+    return (T)get_source_addr((address)buffered_addr);
+  }
 
   // All klasses and symbols that will be copied into the archive
   GrowableArray<Klass*>*  klasses() const { return _klasses; }
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
 
   static bool is_active() {
-    return (_current != NULL);
+    return (_current != nullptr);
   }
 
   static ArchiveBuilder* current() {
     assert_is_vm_thread();
-    assert(_current != NULL, "ArchiveBuilder must be active");
+    assert(_current != nullptr, "ArchiveBuilder must be active");
     return _current;
   }
 
@@ -411,16 +443,16 @@ public:
     return alloc_stats()->string_stats();
   }
 
-  void relocate_klass_ptr(oop o);
+  void relocate_klass_ptr_of_oop(oop o);
 
-  static Klass* get_relocated_klass(Klass* orig_klass) {
-    Klass* klass = (Klass*)current()->get_dumped_addr((address)orig_klass);
-    assert(klass != NULL && klass->is_klass(), "must be");
+  static Klass* get_buffered_klass(Klass* src_klass) {
+    Klass* klass = (Klass*)current()->get_buffered_addr((address)src_klass);
+    assert(klass != nullptr && klass->is_klass(), "must be");
     return klass;
   }
 
-  static Symbol* get_relocated_symbol(Symbol* orig_symbol) {
-    return (Symbol*)current()->get_dumped_addr((address)orig_symbol);
+  static Symbol* get_buffered_symbol(Symbol* src_symbol) {
+    return (Symbol*)current()->get_buffered_addr((address)src_symbol);
   }
 
   void print_stats();

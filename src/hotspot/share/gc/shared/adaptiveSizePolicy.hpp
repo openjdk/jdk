@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   //   increase the tenuring threshold because of the total major GC cost
   //   is greater than the total minor GC cost
   bool _increment_tenuring_threshold_for_gc_cost;
-  //   decrease the tenuring threshold because of the the total minor GC
+  //   decrease the tenuring threshold because of the total minor GC
   //   cost is greater than the total major GC cost
   bool _decrement_tenuring_threshold_for_gc_cost;
   //   decrease due to survivor size limit

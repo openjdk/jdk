@@ -52,8 +52,8 @@
   // the cpu only look at the lower 5/6 bits anyway?
   static const bool need_masked_shift_count = false;
 
-  // No support for generic vector operands.
-  static const bool supports_generic_vector_operands = false;
+  // aarch64 supports generic vector operands: vReg.
+  static const bool supports_generic_vector_operands = true;
 
   static constexpr bool isSimpleConstant64(jlong value) {
     // Will one (StoreL ConL) be cheaper than two (StoreI ConI)?.
@@ -163,10 +163,35 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = true;
 
-  // Returns pre-selection estimated size of a vector operation.
-  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
-    return 0;
+  // An all-set mask is used for the alltrue vector test with SVE
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return is_predicate && is_alltrue;
   }
 
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    return is_alltrue ? BoolTest::eq : BoolTest::ne;
+  }
+
+  // Returns pre-selection estimated size of a vector operation.
+  static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 15;
+      }
+    }
+  }
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 15;
+      }
+    }
+  }
 
 #endif // CPU_AARCH64_MATCHER_AARCH64_HPP

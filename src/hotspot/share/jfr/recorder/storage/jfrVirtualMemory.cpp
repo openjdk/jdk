@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,7 @@ bool JfrVirtualMemoryManager::expand_by(size_t block_size_request_words, size_t 
   assert(is_aligned(reservation_size_request_words * BytesPerWord, os::vm_page_size()), "invariant");
   assert(is_aligned(reservation_size_request_words * BytesPerWord, os::vm_allocation_granularity()), "invariant");
   assert(block_size_request_words <= reservation_size_request_words, "invariant");
-  // Attempt to commit more memory from the the current virtual space reservation.
+  // Attempt to commit more memory from the current virtual space reservation.
   if (expand_segment_by(current(), block_size_request_words)) {
     return true;
   }

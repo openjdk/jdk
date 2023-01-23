@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,9 +150,13 @@ public class monitor001 extends JdbTest {
 
         grep = new Paragrep(reply);
 
-        // check 'threads'
+        // check 'threads', searching for "java.lang.Thread" followed by the main thread name.
         v.add("java.lang.Thread");
-        v.add("main");
+        if (System.getProperty("main.wrapper") != null) {
+            v.add(nsk.share.MainWrapper.OLD_MAIN_THREAD_NAME);
+        } else {
+            v.add("main");
+        }
         if ((count = grep.find(v)) != 1) {
             log.complain("Wrong number of execution of monitored command: " + CHECKED_COMMANDS[0]);
             log.complain("    Expected: 1; found: " + count);

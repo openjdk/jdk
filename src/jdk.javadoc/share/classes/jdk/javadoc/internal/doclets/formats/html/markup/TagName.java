@@ -48,6 +48,7 @@ public enum TagName {
     DT,
     EM,
     FOOTER,
+    FORM,
     H1,
     H2,
     H3,

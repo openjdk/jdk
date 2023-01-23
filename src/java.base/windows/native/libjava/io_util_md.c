@@ -100,7 +100,6 @@ currentDirLength(const WCHAR* ps, int pathlen) {
         static int curDirLenCached = -1;
         //relative to both drive and directory
         if (curDirLenCached == -1) {
-            int dirlen = -1;
             dir = _wgetcwd(NULL, MAX_PATH);
             if (dir != NULL) {
                 curDirLenCached = (int)wcslen(dir);
@@ -180,7 +179,6 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
                    (therefore allocate the sufficient memory block) before calling
                    _wfullpath(), we have to get the length of "current" dir first.
                 */
-                WCHAR *abpath = NULL;
                 int dirlen = currentDirLength(ps, pathlen);
                 if (dirlen + pathlen + 1 > max_path - 1) {
                     pathbuf = prefixAbpath(ps, pathlen, dirlen + pathlen);

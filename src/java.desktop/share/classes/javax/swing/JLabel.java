@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -593,7 +593,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *
      * @param key the property value to check
      * @param message the IllegalArgumentException detail message
-     * @return the key value if {@code key} is a a legal value for the
+     * @return the key value if {@code key} is a legal value for the
      *         horizontalAlignment properties
      * @throws IllegalArgumentException if key isn't LEFT, CENTER, RIGHT,
      * LEADING or TRAILING.
@@ -874,8 +874,18 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
 
 
     /**
-     * This is overridden to return false if the current Icon's Image is
-     * not equal to the passed in Image <code>img</code>.
+     * If the component is not showing or either the icon or disabled
+     * icon is not an {@code ImageIcon} with an {@code Image}
+     * equal to the passed in {@code Image}, return {@code false};
+     * otherwise it will delegate to the super-class.
+     *
+     * @param img   the {@code Image} to be compared
+     * @param infoflags flags used to repaint the label when the image
+     *           is updated and which determine how much is to be painted
+     * @param x   the x coordinate
+     * @param y   the y coordinate
+     * @param w   the width
+     * @param h   the height
      *
      * @see     java.awt.image.ImageObserver
      * @see     java.awt.Component#imageUpdate(java.awt.Image, int, int, int, int, int)
@@ -1233,7 +1243,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
         }
 
         /**
-         * Return the number of characters (valid indicies)
+         * Return the number of characters (valid indices)
          *
          * @return the number of characters
          * @since 1.3

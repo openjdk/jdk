@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "ci/ciMethodData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilationPolicy.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -657,6 +658,7 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
 // a method.
 
 MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS) {
+  assert(!THREAD->owns_locks(), "Should not own any locks");
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, MetaspaceObj::MethodDataType, THREAD)
@@ -1245,7 +1247,9 @@ void MethodData::initialize() {
   int extra_size = extra_data_count * DataLayout::compute_size_in_bytes(0);
 
   // Let's zero the space for the extra data
-  Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  if (extra_size > 0) {
+    Copy::zero_to_bytes(((address)_data) + data_size, extra_size);
+  }
 
   // Add a cell to record information about modified arguments.
   // Set up _args_modified array after traps cells so that
@@ -1591,7 +1595,7 @@ int MethodData::profile_arguments_flag() {
 }
 
 bool MethodData::profile_arguments() {
-  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all && TypeProfileArgsLimit > 0;
 }
 
 bool MethodData::profile_arguments_jsr292_only() {
@@ -1816,4 +1820,14 @@ void MethodData::clean_weak_method_links() {
   CleanExtraDataMethodClosure cl;
   clean_extra_data(&cl);
   verify_extra_data_clean(&cl);
+}
+
+void MethodData::deallocate_contents(ClassLoaderData* loader_data) {
+  release_C_heap_structures();
+}
+
+void MethodData::release_C_heap_structures() {
+#if INCLUDE_JVMCI
+  FailedSpeculation::free_failed_speculations(get_failed_speculations_address());
+#endif
 }

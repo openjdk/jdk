@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
  */
 
 package sun.nio.fs;
+
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.vm.Continuation;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;
@@ -102,6 +105,10 @@ class WindowsSecurity {
         final boolean stopImpersontating = impersontating;
         final boolean needToRevert = elevated;
 
+        // prevent yielding with privileges
+        if (PreviewFeatures.isEnabled())
+            Continuation.pin();
+
         return () -> {
             try {
                 if (token != 0L) {
@@ -119,6 +126,8 @@ class WindowsSecurity {
                 }
             } finally {
                 LocalFree(pLuid);
+                if (PreviewFeatures.isEnabled())
+                    Continuation.unpin();
             }
         };
     }

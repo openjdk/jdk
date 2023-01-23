@@ -89,10 +89,8 @@ public class MultipleLogins {
             Security.removeProvider(providers[i].getName());
             providers[i] = null;
 
-            ForceGC gc = new ForceGC();
             int finalI = i;
-            gc.await(() -> weakRef[finalI].get() == null);
-            if (!weakRef[i].refersTo(null)) {
+            if (!ForceGC.wait(() -> weakRef[finalI].refersTo(null))) {
                 throw new RuntimeException("Expected SunPKCS11 Provider to be GC'ed..");
             }
         }

@@ -117,11 +117,8 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     report(false, scale_unit);
   } else if (_baseline.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
-    if (!baseline.baseline(MemTracker::tracking_level() != NMT_detail)) {
-      output()->print_cr("Baseline failed");
-    } else {
-      output()->print_cr("Baseline succeeded");
-    }
+    baseline.baseline(MemTracker::tracking_level() != NMT_detail);
+    output()->print_cr("Baseline taken");
   } else if (_summary_diff.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
     if (baseline.baseline_type() >= MemBaseline::Summary_baselined) {
@@ -151,14 +148,13 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
 
 void NMTDCmd::report(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
-  if (baseline.baseline(summaryOnly)) {
-    if (summaryOnly) {
-      MemSummaryReporter rpt(baseline, output(), scale_unit);
-      rpt.report();
-    } else {
-      MemDetailReporter rpt(baseline, output(), scale_unit);
-      rpt.report();
-    }
+  baseline.baseline(summaryOnly);
+  if (summaryOnly) {
+    MemSummaryReporter rpt(baseline, output(), scale_unit);
+    rpt.report();
+  } else {
+    MemDetailReporter rpt(baseline, output(), scale_unit);
+    rpt.report();
   }
 }
 
@@ -170,25 +166,20 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
     "Not a detail baseline");
 
   MemBaseline baseline;
-  if (baseline.baseline(summaryOnly)) {
-    if (summaryOnly) {
-      MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
-      rpt.report_diff();
-    } else {
-      MemDetailDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
-      rpt.report_diff();
-    }
+  baseline.baseline(summaryOnly);
+  if (summaryOnly) {
+    MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+    rpt.report_diff();
+  } else {
+    MemDetailDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
+    rpt.report_diff();
   }
 }
 
 bool NMTDCmd::check_detail_tracking_level(outputStream* out) {
-  if (MemTracker::tracking_level() == NMT_detail) {
-    return true;
-  } else if (MemTracker::cmdline_tracking_level() == NMT_detail) {
-    out->print_cr("Tracking level has been downgraded due to lack of resources");
-    return false;
-  } else {
+  if (MemTracker::tracking_level() != NMT_detail) {
     out->print_cr("Detail tracking is not enabled");
     return false;
   }
+  return true;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,19 +75,19 @@ import java.util.Objects;
 public class AlgorithmParameters {
 
     // The provider
-    private Provider provider;
+    private final Provider provider;
 
     // The provider implementation (delegate)
-    private AlgorithmParametersSpi paramSpi;
+    private final AlgorithmParametersSpi paramSpi;
 
     // The algorithm
-    private String algorithm;
+    private final String algorithm;
 
     // Has this object been initialized?
     private boolean initialized = false;
 
     /**
-     * Creates an AlgorithmParameters object.
+     * Creates an {@code AlgorithmParameters} object.
      *
      * @param paramSpi the delegate
      * @param provider the provider
@@ -113,11 +113,11 @@ public class AlgorithmParameters {
     /**
      * Returns a parameter object for the specified algorithm.
      *
-     * <p> This method traverses the list of registered security Providers,
-     * starting with the most preferred Provider.
-     * A new AlgorithmParameters object encapsulating the
-     * AlgorithmParametersSpi implementation from the first
-     * Provider that supports the specified algorithm is returned.
+     * <p> This method traverses the list of registered security providers,
+     * starting with the most preferred provider.
+     * A new {@code AlgorithmParameters} object encapsulating the
+     * {@code AlgorithmParametersSpi} implementation from the first
+     * provider that supports the specified algorithm is returned.
      *
      * <p> Note that the list of registered providers may be retrieved via
      * the {@link Security#getProviders() Security.getProviders()} method.
@@ -131,7 +131,7 @@ public class AlgorithmParameters {
      * {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
-     * may be different than the order of providers returned by
+     * may be different from the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the algorithm requested.
@@ -167,8 +167,8 @@ public class AlgorithmParameters {
     /**
      * Returns a parameter object for the specified algorithm.
      *
-     * <p> A new AlgorithmParameters object encapsulating the
-     * AlgorithmParametersSpi implementation from the specified provider
+     * <p> A new {@code AlgorithmParameters} object encapsulating the
+     * {@code AlgorithmParametersSpi} implementation from the specified provider
      * is returned.  The specified provider must be registered
      * in the security provider list.
      *
@@ -220,9 +220,9 @@ public class AlgorithmParameters {
     /**
      * Returns a parameter object for the specified algorithm.
      *
-     * <p> A new AlgorithmParameters object encapsulating the
-     * AlgorithmParametersSpi implementation from the specified Provider
-     * object is returned.  Note that the specified Provider object
+     * <p> A new {@code AlgorithmParameters} object encapsulating the
+     * {@code AlgorithmParametersSpi} implementation from the specified
+     * provider is returned.  Note that the specified provider
      * does not have to be registered in the provider list.
      *
      * <p>The returned parameter object must be initialized via a call to
@@ -315,7 +315,7 @@ public class AlgorithmParameters {
     /**
      * Imports the parameters from {@code params} and decodes them
      * according to the specified decoding scheme.
-     * If {@code format} is null, the
+     * If {@code format} is {@code null}, the
      * primary decoding format for parameters is used. The primary decoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.
@@ -342,7 +342,7 @@ public class AlgorithmParameters {
      * parameters should be returned in an instance of the
      * {@code DSAParameterSpec} class.
      *
-     * @param <T> the type of the parameter specification to be returrned
+     * @param <T> the type of the parameter specification to be returned
      * @param paramSpec the specification class in which
      * the parameters should be returned.
      *
@@ -356,7 +356,7 @@ public class AlgorithmParameters {
         T getParameterSpec(Class<T> paramSpec)
         throws InvalidParameterSpecException
     {
-        if (this.initialized == false) {
+        if (!this.initialized) {
             throw new InvalidParameterSpecException("not initialized");
         }
         return paramSpi.engineGetParameterSpec(paramSpec);
@@ -374,7 +374,7 @@ public class AlgorithmParameters {
      */
     public final byte[] getEncoded() throws IOException
     {
-        if (this.initialized == false) {
+        if (!this.initialized) {
             throw new IOException("not initialized");
         }
         return paramSpi.engineGetEncoded();
@@ -382,7 +382,7 @@ public class AlgorithmParameters {
 
     /**
      * Returns the parameters encoded in the specified scheme.
-     * If {@code format} is null, the
+     * If {@code format} is {@code null}, the
      * primary encoding format for parameters is used. The primary encoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.
@@ -396,7 +396,7 @@ public class AlgorithmParameters {
      */
     public final byte[] getEncoded(String format) throws IOException
     {
-        if (this.initialized == false) {
+        if (!this.initialized) {
             throw new IOException("not initialized");
         }
         return paramSpi.engineGetEncoded(format);
@@ -405,11 +405,11 @@ public class AlgorithmParameters {
     /**
      * Returns a formatted string describing the parameters.
      *
-     * @return a formatted string describing the parameters, or null if this
-     * parameter object has not been initialized.
+     * @return a formatted string describing the parameters, or {@code null}
+     * if this parameter object has not been initialized.
      */
     public final String toString() {
-        if (this.initialized == false) {
+        if (!this.initialized) {
             return null;
         }
         return paramSpi.engineToString();

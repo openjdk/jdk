@@ -36,18 +36,21 @@ public class T6587786 {
     }
 
     public void run() throws IOException {
-        javap("com.sun.javadoc.Doc", "com.sun.crypto.provider.ai");
-        javap("com.sun.crypto.provider.ai", "com.sun.javadoc.ClassDoc");
+        javap("jdk.javadoc.doclet.Doclet", "java.util.List");
+        javap("java.util.List", "jdk.javadoc.doclet.StandardDoclet");
     }
 
     void javap(String... args) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
         //sun.tools.javap.Main.entry(args);
-        int rc = com.sun.tools.javap.Main.run(args, out);
-        if (rc != 0)
-            throw new Error("javap failed. rc=" + rc);
-        out.close();
-        System.out.println(sw.toString());
+        try {
+            int rc = com.sun.tools.javap.Main.run(args, out);
+            if (rc != 0)
+                throw new Error("javap failed. rc=" + rc);
+        } finally {
+            out.close();
+            System.out.println(sw.toString());
+        }
     }
 }

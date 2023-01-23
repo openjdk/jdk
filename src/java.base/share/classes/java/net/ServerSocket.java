@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.net;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Objects;
 import java.util.Set;
@@ -77,18 +78,23 @@ import sun.net.PlatformSocketImpl;
  * @since   1.0
  */
 public class ServerSocket implements java.io.Closeable {
-    /**
-     * The underlying SocketImpl
-     */
+    // the underlying SocketImpl
     private final SocketImpl impl;
 
-    /**
-     * Various states of this socket, need stateLock to change.
-     */
+    // various states
     private volatile boolean created;   // impl.create(boolean) called
     private volatile boolean bound;
     private volatile boolean closed;
-    private final Object stateLock = new Object();
+
+    // used to coordinate creating and closing underlying socket
+    private final Object socketLock = new Object();
+
+    /**
+     * Creates a server socket with the given {@code SocketImpl}.
+     */
+    private ServerSocket(Void unused, SocketImpl impl) {
+        this.impl = Objects.requireNonNull(impl);
+    }
 
     /**
      * Creates a server socket with a user-specified {@code SocketImpl}.
@@ -103,9 +109,7 @@ public class ServerSocket implements java.io.Closeable {
      * @since 12
      */
     protected ServerSocket(SocketImpl impl) {
-        Objects.requireNonNull(impl);
-        checkPermission();
-        this.impl = impl;
+        this(checkPermission(), impl);
     }
 
     private static Void checkPermission() {
@@ -279,16 +283,26 @@ public class ServerSocket implements java.io.Closeable {
     }
 
     /**
-     * Get the {@code SocketImpl} attached to this socket, creating
-     * it if necessary.
-     *
-     * @return  the {@code SocketImpl} attached to that ServerSocket.
-     * @throws SocketException if creation fails.
-     * @since 1.4
+     * Create a SocketImpl for a server socket. The SocketImpl is created
+     * without an underlying socket.
+     */
+    private static SocketImpl createImpl() {
+        SocketImplFactory factory = ServerSocket.factory;
+        if (factory != null) {
+            return factory.createSocketImpl();
+        } else {
+            return SocketImpl.createPlatformSocketImpl(true);
+        }
+    }
+
+    /**
+     * Returns the {@code SocketImpl} for this ServerSocket, creating the
+     * underlying socket if required.
+     * @throws SocketException if creating the underlying socket fails
      */
     private SocketImpl getImpl() throws SocketException {
         if (!created) {
-            synchronized (stateLock) {
+            synchronized (socketLock) {
                 if (!created) {
                     if (closed) {
                         throw new SocketException("Socket is closed");
@@ -298,25 +312,13 @@ public class ServerSocket implements java.io.Closeable {
                     } catch (SocketException e) {
                         throw e;
                     } catch (IOException e) {
-                        throw new SocketException(e.getMessage());
+                        throw new SocketException(e.getMessage(), e);
                     }
                     created = true;
                 }
             }
         }
         return impl;
-    }
-
-    /**
-     * Create a SocketImpl for a server socket.
-     */
-    private static SocketImpl createImpl() {
-        SocketImplFactory factory = ServerSocket.factory;
-        if (factory != null) {
-            return factory.createSocketImpl();
-        } else {
-            return SocketImpl.createPlatformSocketImpl(true);
-        }
     }
 
     /**
@@ -384,15 +386,11 @@ public class ServerSocket implements java.io.Closeable {
         if (security != null)
             security.checkListen(epoint.getPort());
 
-        synchronized (stateLock) {
-            if (closed)
-                throw new SocketException("Socket is closed");
-            if (bound)
-                throw new SocketException("Already bound");
-            getImpl().bind(epoint.getAddress(), epoint.getPort());
-            getImpl().listen(backlog);
-            bound = true;
-        }
+        // SocketImpl bind+listen throw if already bound or closed
+        SocketImpl impl = getImpl();
+        impl.bind(epoint.getAddress(), epoint.getPort());
+        impl.listen(backlog);
+        bound = true;
     }
 
     /**
@@ -481,7 +479,6 @@ public class ServerSocket implements java.io.Closeable {
      * @see SecurityManager#checkConnect
      * @since 1.4
      */
-
     public SocketAddress getLocalSocketAddress() {
         if (!isBound())
             return null;
@@ -492,7 +489,23 @@ public class ServerSocket implements java.io.Closeable {
      * Listens for a connection to be made to this socket and accepts
      * it. The method blocks until a connection is made.
      *
-     * <p>A new Socket {@code s} is created and, if there
+     * <p> This method is {@linkplain Thread#interrupt() interruptible} in the
+     * following circumstances:
+     * <ol>
+     *   <li> The socket is {@linkplain ServerSocketChannel#socket() associated}
+     *        with a {@link ServerSocketChannel ServerSocketChannel}. In that
+     *        case, interrupting a thread accepting a connection will close the
+     *        underlying channel and cause this method to throw {@link
+     *        java.nio.channels.ClosedByInterruptException} with the interrupt
+     *        status set.
+     *   <li> The socket uses the system-default socket implementation and a
+     *        {@linkplain Thread#isVirtual() virtual thread} is accepting a
+     *        connection. In that case, interrupting the virtual thread will
+     *        cause it to wakeup and close the socket. This method will then throw
+     *        {@code SocketException} with the interrupt status set.
+     * </ol>
+     *
+     * <p> A new Socket {@code s} is created and, if there
      * is a security manager,
      * the security manager's {@code checkAccept} method is called
      * with {@code s.getInetAddress().getHostAddress()} and
@@ -565,19 +578,24 @@ public class ServerSocket implements java.io.Closeable {
      * @revised 1.4
      */
     protected final void implAccept(Socket s) throws IOException {
-        SocketImpl si = s.impl;
+        SocketImpl si = s.impl();
 
         // Socket has no SocketImpl
         if (si == null) {
             si = implAccept();
-            s.setImpl(si);
-            s.postAccept();
+            try {
+                s.setConnectedImpl(si);
+            } catch (SocketException e) {
+                // s has been closed so newly accepted connection needs to be closed
+                si.closeQuietly();
+                throw e;
+            }
             return;
         }
 
         // Socket has a SOCKS or HTTP SocketImpl, need delegate
-        if (si instanceof DelegatingSocketImpl) {
-            si = ((DelegatingSocketImpl) si).delegate();
+        if (si instanceof DelegatingSocketImpl dsi) {
+            si = dsi.delegate();
             assert si instanceof PlatformSocketImpl;
         }
 
@@ -593,17 +611,23 @@ public class ServerSocket implements java.io.Closeable {
         if (impl instanceof PlatformSocketImpl) {
             SocketImpl psi = platformImplAccept();
             si.copyOptionsTo(psi);
-            s.setImpl(psi);
-            si.closeQuietly();
+            try {
+                s.setConnectedImpl(psi);
+            } catch (SocketException e) {
+                // s has been closed so newly accepted connection needs to be closed
+                psi.closeQuietly();
+                throw e;
+            }
         } else {
-            s.impl = null; // temporarily break connection to impl
+            s.setImpl(null);    // temporarily break connection to impl
             try {
                 customImplAccept(si);
             } finally {
-                s.impl = si;  // restore connection to impl
+                s.setImpl(si);  // restore connection to impl
             }
+            s.setConnected();
         }
-        s.postAccept();
+
     }
 
     /**
@@ -670,7 +694,18 @@ public class ServerSocket implements java.io.Closeable {
         assert !(si instanceof DelegatingSocketImpl);
 
         // accept a connection
-        impl.accept(si);
+        try {
+            impl.accept(si);
+        } catch (SocketTimeoutException e) {
+            throw e;
+        } catch (InterruptedIOException e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isVirtual() && thread.isInterrupted()) {
+                close();
+                throw new SocketException("Closed by interrupt");
+            }
+            throw e;
+        }
 
         // check permission, close SocketImpl/connection if denied
         @SuppressWarnings("removal")
@@ -709,7 +744,7 @@ public class ServerSocket implements java.io.Closeable {
      * @revised 1.4
      */
     public void close() throws IOException {
-        synchronized (stateLock) {
+        synchronized (socketLock) {
             if (!closed) {
                 closed = true;
 
@@ -803,8 +838,8 @@ public class ServerSocket implements java.io.Closeable {
             throw new SocketException("Socket is closed");
         Object o = getImpl().getOption(SocketOptions.SO_TIMEOUT);
         /* extra type safety */
-        if (o instanceof Integer) {
-            return ((Integer) o).intValue();
+        if (o instanceof Integer i) {
+            return i.intValue();
         } else {
             return 0;
         }
@@ -983,10 +1018,9 @@ public class ServerSocket implements java.io.Closeable {
      * @since 1.4
      * @see #getReceiveBufferSize
      */
-     public void setReceiveBufferSize (int size) throws SocketException {
-        if (!(size > 0)) {
+    public void setReceiveBufferSize(int size) throws SocketException {
+        if (size <= 0)
             throw new IllegalArgumentException("negative receive size");
-        }
         if (isClosed())
             throw new SocketException("Socket is closed");
         getImpl().setOption(SocketOptions.SO_RCVBUF, size);

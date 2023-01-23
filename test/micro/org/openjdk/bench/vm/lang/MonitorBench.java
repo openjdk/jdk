@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
@@ -34,17 +36,18 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
 @Threads(Threads.MAX)
+@Warmup(iterations = 4, time = 2)
+@Measurement(iterations = 4, time = 2)
+@Fork(value = 3)
 public class MonitorBench {
 
-    @Param({"100", "250"})
-    int consumeUnlocked;
-
-    @Param({"100", "250"})
-    int consumeLocked;
+    @Param({"50" /* , "250" */})
+    int consumeTime;
 
     @Param({"0", "1"})
     int throwThreshold;
@@ -67,11 +70,11 @@ public class MonitorBench {
 
     int update2(int sharedIndex) throws Exception {
         synchronized (sharedLocks[sharedIndex]) {
-            Blackhole.consumeCPU(consumeLocked);
+            Blackhole.consumeCPU(consumeTime);
             if (ThreadLocalRandom.current().nextInt(range) < throwThreshold) {
                 throw new Exception("Update failed");
             } else {
-                Blackhole.consumeCPU(consumeLocked);
+                Blackhole.consumeCPU(consumeTime);
                 return 0;
             }
         }
@@ -79,7 +82,7 @@ public class MonitorBench {
 
     int update1(int sharedIndex) throws Exception {
         synchronized (sharedLocks[sharedIndex]) {
-            Blackhole.consumeCPU(consumeLocked);
+            Blackhole.consumeCPU(consumeTime);
             return update2(sharedIndex);
         }
     }
@@ -88,7 +91,7 @@ public class MonitorBench {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public int action() throws InterruptedException {
-        Blackhole.consumeCPU(consumeUnlocked);
+        Blackhole.consumeCPU(consumeTime);
         int sharedLockIndex = ThreadLocalRandom.current().nextInt(locksSize);
         Object sharedLock = sharedLocks[sharedLockIndex];
         synchronized (sharedLock) {

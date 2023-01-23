@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ static bool is_vector(ciKlass* klass) {
 static bool check_vbox(const TypeInstPtr* vbox_type) {
   assert(vbox_type->klass_is_exact(), "");
 
-  ciInstanceKlass* ik = vbox_type->klass()->as_instance_klass();
+  ciInstanceKlass* ik = vbox_type->instance_klass();
   assert(is_vector(ik), "not a vector");
 
   ciField* fd1 = ik->get_field_by_name(ciSymbols::ETYPE_name(), ciSymbols::class_signature(), /* is_static */ true);
@@ -80,9 +80,12 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
   }
 
   if (is_supported) {
-    // Check whether mask unboxing is supported.
+    // Check if mask unboxing is supported, this is a two step process which first loads the contents
+    // of boolean array into vector followed by either lane expansion to match the lane size of masked
+    // vector operation or populate the predicate register.
     if ((mask_use_type & VecMaskUseLoad) != 0) {
-      if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, elem_bt)) {
+      if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, elem_bt) ||
+          !Matcher::match_rule_supported_vector(Op_LoadVector, num_elem, T_BOOLEAN)) {
       #ifndef PRODUCT
         if (C->print_intrinsics()) {
           tty->print_cr("  ** Rejected vector mask loading (%s,%s,%d) because architecture does not support it",
@@ -125,8 +128,7 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
       lshiftopc = Op_LShiftL;
       rshiftopc = Op_URShiftL;
       break;
-    default:
-      assert(false, "Unexpected type");
+    default: fatal("Unexpected type: %s", type2name(elem_bt));
   }
   int lshiftvopc = VectorNode::opcode(lshiftopc, elem_bt);
   int rshiftvopc = VectorNode::opcode(rshiftopc, elem_bt);
@@ -153,7 +155,7 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
   Node* ret = gvn().transform(new ProjNode(alloc, TypeFunc::Parms));
 
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   VectorBoxNode* vbox = new VectorBoxNode(C, ret, vector, vbox_type, vt);
   return gvn().transform(vbox);
 }
@@ -161,14 +163,14 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
   const TypeInstPtr* vbox_type_v = gvn().type(v)->is_instptr();
-  if (vbox_type->klass() != vbox_type_v->klass()) {
+  if (vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return NULL; // arguments don't agree on vector shapes
   }
   if (vbox_type_v->maybe_null()) {
     return NULL; // no nulls are allowed
   }
   assert(check_vbox(vbox_type), "");
-  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->klass()));
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
   Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory(), shuffle_to_vector));
   return unbox;
 }
@@ -260,9 +262,12 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     return false;
   }
 
-  // Check whether mask unboxing is supported.
+  // Check if mask unboxing is supported, this is a two step process which first loads the contents
+  // of boolean array into vector followed by either lane expansion to match the lane size of masked
+  // vector operation or populate the predicate register.
   if ((mask_use_type & VecMaskUseLoad) != 0) {
-    if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, type)) {
+    if (!Matcher::match_rule_supported_vector(Op_VectorLoadMask, num_elem, type) ||
+        !Matcher::match_rule_supported_vector(Op_LoadVector, num_elem, T_BOOLEAN)) {
     #ifndef PRODUCT
       if (C->print_intrinsics()) {
         tty->print_cr("  ** Rejected vector mask loading (%s,%s,%d) because architecture does not support it",
@@ -273,9 +278,12 @@ bool LibraryCallKit::arch_supports_vector(int sopc, int num_elem, BasicType type
     }
   }
 
-  // Check whether mask boxing is supported.
+  // Check if mask boxing is supported, this is a two step process which first stores the contents
+  // of mask vector / predicate register into a boolean vector followed by vector store operation to
+  // transfer the contents to underlined storage of mask boxes which is a boolean array.
   if ((mask_use_type & VecMaskUseStore) != 0) {
-    if (!Matcher::match_rule_supported_vector(Op_VectorStoreMask, num_elem, type)) {
+    if (!Matcher::match_rule_supported_vector(Op_VectorStoreMask, num_elem, type) ||
+        !Matcher::match_rule_supported_vector(Op_StoreVector, num_elem, T_BOOLEAN)) {
     #ifndef PRODUCT
       if (C->print_intrinsics()) {
         tty->print_cr("Rejected vector mask storing (%s,%s,%d) because architecture does not support it",
@@ -560,6 +568,7 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
       operation->add_req(mask);
       operation->add_flag(Node::Flag_is_predicated_vector);
     } else {
+      operation->add_flag(Node::Flag_is_predicated_using_blend);
       operation = gvn().transform(operation);
       operation = new VectorBlendNode(opd1, operation, mask);
     }
@@ -695,16 +704,8 @@ bool LibraryCallKit::inline_vector_mask_operation() {
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType elem_bt = elem_type->basic_type();
 
-  if (!arch_supports_vector(Op_LoadVector, num_elem, T_BOOLEAN, VecMaskNotUsed)) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
-                    Op_LoadVector, num_elem, type2name(T_BOOLEAN));
-    }
-    return false; // not supported
-  }
-
   int mopc = VectorSupport::vop2ideal(oper->get_con(), elem_bt);
-  if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskNotUsed)) {
+  if (!arch_supports_vector(mopc, num_elem, elem_bt, VecMaskUseLoad)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
                     mopc, num_elem, type2name(elem_bt));
@@ -773,7 +774,7 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
     return false;
   }
 
-  int cast_vopc = VectorCastNode::opcode(T_BYTE); // from shuffle of type T_BYTE
+  int cast_vopc = VectorCastNode::opcode(-1, T_BYTE); // from shuffle of type T_BYTE
   // Make sure that cast is implemented to particular type/size combination.
   if (!arch_supports_vector(cast_vopc, num_elem, elem_bt, VecMaskNotUsed)) {
     if (C->print_intrinsics()) {
@@ -937,7 +938,7 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 //  S extends VectorSpecies<E>>
 // VM load(Class<? extends VM> vmClass, Class<E> elementType, int length,
 //         Object base, long offset,    // Unsafe addressing
-//         C container, int index, S s,     // Arguments for default implementation
+//         C container, long index, S s,     // Arguments for default implementation
 //         LoadOperation<C, VM, E, S> defaultImpl)
 //
 // public static
@@ -946,7 +947,7 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
 // void store(Class<?> vectorClass, Class<?> elementType, int length,
 //            Object base, long offset,    // Unsafe addressing
 //            V v,
-//            C container, int index,      // Arguments for default implementation
+//            C container, long index,      // Arguments for default implementation
 //            StoreVectorOperation<C, V> defaultImpl)
 
 bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
@@ -1049,16 +1050,6 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     }
   }
   if (is_mask) {
-    if (!arch_supports_vector(Op_LoadVector, num_elem, T_BOOLEAN, VecMaskNotUsed)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=%d op=%s/mask vlen=%d etype=bit ismask=no",
-                      is_store, is_store ? "store" : "load",
-                      num_elem);
-      }
-      set_map(old_map);
-      set_sp(old_sp);
-      return false; // not supported
-    }
     if (!is_store) {
       if (!arch_supports_vector(Op_LoadVector, num_elem, elem_bt, VecMaskUseLoad)) {
         set_map(old_map);
@@ -1096,7 +1087,9 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
       const TypeVect* to_vect_type = TypeVect::make(T_BYTE, store_num_elem);
       val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->is_vect(), to_vect_type));
     }
-
+    if (is_mask) {
+      val = gvn().transform(VectorStoreMaskNode::make(gvn(), val, elem_bt, num_elem));
+    }
     Node* vstore = gvn().transform(StoreVectorNode::make(0, control(), memory(addr), addr, addr_type, val, store_num_elem));
     set_memory(vstore, addr_type);
   } else {
@@ -1137,8 +1130,8 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 //  S extends VectorSpecies<E>,
 //  M extends VectorMask<E>>
 // V loadMasked(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//              int length, Object base, long offset, M m,
-//              C container, int index, S s,  // Arguments for default implementation
+//              int length, Object base, long offset, M m, int offsetInRange,
+//              C container, long index, S s,  // Arguments for default implementation
 //              LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
 //
 // public static
@@ -1149,7 +1142,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 // void storeMasked(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
 //                  int length, Object base, long offset,
 //                  V v, M m,
-//                  C container, int index,  // Arguments for default implementation
+//                  C container, long index,  // Arguments for default implementation
 //                  StoreVectorMaskedOperation<C, V, M, E> defaultImpl) {
 //
 bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
@@ -1222,24 +1215,46 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
   int mem_num_elem = using_byte_array ? num_elem * type2aelembytes(elem_bt) : num_elem;
   BasicType mem_elem_bt = using_byte_array ? T_BYTE : elem_bt;
-  bool use_predicate = arch_supports_vector(is_store ? Op_StoreVectorMasked : Op_LoadVectorMasked,
-                                            mem_num_elem, mem_elem_bt,
-                                            (VectorMaskUseType) (VecMaskUseLoad | VecMaskUsePred));
-  // Masked vector store operation needs the architecture predicate feature. We need to check
-  // whether the predicated vector operation is supported by backend.
-  if (is_store && !use_predicate) {
-    if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: op=storeMasked vlen=%d etype=%s using_byte_array=%d",
-                    num_elem, type2name(elem_bt), using_byte_array ? 1 : 0);
+  bool supports_predicate = arch_supports_vector(is_store ? Op_StoreVectorMasked : Op_LoadVectorMasked,
+                                                mem_num_elem, mem_elem_bt, VecMaskUseLoad);
+
+  // If current arch does not support the predicated operations, we have to bail
+  // out when current case uses the predicate feature.
+  if (!supports_predicate) {
+    bool needs_predicate = false;
+    if (is_store) {
+      // Masked vector store always uses the predicated store.
+      needs_predicate = true;
+    } else {
+      // Masked vector load with IOOBE always uses the predicated load.
+      const TypeInt* offset_in_range = gvn().type(argument(8))->isa_int();
+      if (!offset_in_range->is_con()) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** missing constant: offsetInRange=%s",
+                        NodeClassNames[argument(8)->Opcode()]);
+        }
+        set_map(old_map);
+        set_sp(old_sp);
+        return false;
+      }
+      needs_predicate = (offset_in_range->get_con() == 0);
     }
-    set_map(old_map);
-    set_sp(old_sp);
-    return false;
+
+    if (needs_predicate) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: op=%s vlen=%d etype=%s using_byte_array=%d",
+                      is_store ? "storeMasked" : "loadMasked",
+                      num_elem, type2name(elem_bt), using_byte_array ? 1 : 0);
+      }
+      set_map(old_map);
+      set_sp(old_sp);
+      return false;
+    }
   }
 
   // This only happens for masked vector load. If predicate is not supported, then check whether
   // the normal vector load and blend operations are supported by backend.
-  if (!use_predicate && (!arch_supports_vector(Op_LoadVector, mem_num_elem, mem_elem_bt, VecMaskNotUsed) ||
+  if (!supports_predicate && (!arch_supports_vector(Op_LoadVector, mem_num_elem, mem_elem_bt, VecMaskNotUsed) ||
       !arch_supports_vector(Op_VectorBlend, mem_num_elem, mem_elem_bt, VecMaskUseLoad))) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: op=loadMasked vlen=%d etype=%s using_byte_array=%d",
@@ -1336,7 +1351,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       mask = gvn().transform(new VectorReinterpretNode(mask, from_mask_type, to_mask_type));
     }
 
-    if (use_predicate) {
+    if (supports_predicate) {
       // Generate masked load vector node if predicate feature is supported.
       const TypeVect* vt = TypeVect::make(mem_elem_bt, mem_num_elem);
       vload = gvn().transform(new LoadVectorMaskedNode(control(), memory(addr), addr, addr_type, vt, mask));
@@ -1783,14 +1798,24 @@ bool LibraryCallKit::inline_vector_test() {
   }
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
-  Node* opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* opd2;
+  if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
+                                                opd1->bottom_type()->isa_vectmask())) {
+    opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  } else {
+    opd2 = opd1;
+  }
   if (opd1 == NULL || opd2 == NULL) {
     return false; // operand unboxing failed
   }
-  Node* test = new VectorTestNode(opd1, opd2, booltest);
-  test = gvn().transform(test);
 
-  set_result(test);
+  Node* cmp = gvn().transform(new VectorTestNode(opd1, opd2, booltest));
+  BoolTest::mask test = Matcher::vectortest_mask(booltest == BoolTest::overflow,
+                                                 opd1->bottom_type()->isa_vectmask(), num_elem);
+  Node* bol = gvn().transform(new BoolNode(cmp, test));
+  Node* res = gvn().transform(new CMoveINode(bol, gvn().intcon(0), gvn().intcon(1), TypeInt::BOOL));
+
+  set_result(res);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
@@ -2472,18 +2497,15 @@ bool LibraryCallKit::inline_vector_convert() {
 
   Node* op = opd1;
   if (is_cast) {
-    BasicType new_elem_bt_to = elem_bt_to;
-    BasicType new_elem_bt_from = elem_bt_from;
-    if (is_mask && is_floating_point_type(elem_bt_from)) {
-      new_elem_bt_from = elem_bt_from == T_FLOAT ? T_INT : T_LONG;
-    }
-    int cast_vopc = VectorCastNode::opcode(new_elem_bt_from, !is_ucast);
-    // Make sure that cast is implemented to particular type/size combination.
-    if (!arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
+    assert(!is_mask || num_elem_from == num_elem_to, "vector mask cast needs the same elem num");
+    int cast_vopc = VectorCastNode::opcode(-1, elem_bt_from, !is_ucast);
+
+    // Make sure that vector cast is implemented to particular type/size combination if it is
+    // not a mask casting.
+    if (!is_mask && !arch_supports_vector(cast_vopc, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s ismask=%d",
-                      cast_vopc,
-                      num_elem_to, type2name(elem_bt_to), is_mask);
+                      cast_vopc, num_elem_to, type2name(elem_bt_to), is_mask);
       }
       return false;
     }
@@ -2508,8 +2530,8 @@ bool LibraryCallKit::inline_vector_convert() {
       // Now ensure that the destination gets properly resized to needed size.
       op = gvn().transform(new VectorReinterpretNode(op, op->bottom_type()->is_vect(), dst_type));
     } else if (num_elem_from > num_elem_to) {
-      // Since number elements from input is larger than output, simply reduce size of input (we are supposed to
-      // drop top elements anyway).
+      // Since number of elements from input is larger than output, simply reduce size of input
+      // (we are supposed to drop top elements anyway).
       int num_elem_for_resize = num_elem_to;
 
       // It is possible that arch does not support this intermediate vector size
@@ -2525,19 +2547,20 @@ bool LibraryCallKit::inline_vector_convert() {
         return false;
       }
 
-      op = gvn().transform(new VectorReinterpretNode(op,
-                                                     src_type,
-                                                     TypeVect::make(elem_bt_from,
-                                                                    num_elem_for_resize)));
+      const TypeVect* resize_type = TypeVect::make(elem_bt_from, num_elem_for_resize);
+      op = gvn().transform(new VectorReinterpretNode(op, src_type, resize_type));
       op = gvn().transform(VectorCastNode::make(cast_vopc, op, elem_bt_to, num_elem_to));
-    } else {
+    } else { // num_elem_from == num_elem_to
       if (is_mask) {
-        if ((dst_type->isa_vectmask() && src_type->isa_vectmask()) ||
-            (type2aelembytes(elem_bt_from) == type2aelembytes(elem_bt_to))) {
-          op = gvn().transform(new VectorMaskCastNode(op, dst_type));
-        } else {
-          op = VectorMaskCastNode::makeCastNode(&gvn(), op, dst_type);
+        // Make sure that cast for vector mask is implemented to particular type/size combination.
+        if (!arch_supports_vector(Op_VectorMaskCast, num_elem_to, elem_bt_to, VecMaskNotUsed)) {
+          if (C->print_intrinsics()) {
+            tty->print_cr("  ** not supported: arity=1 op=maskcast vlen2=%d etype2=%s ismask=%d",
+                          num_elem_to, type2name(elem_bt_to), is_mask);
+          }
+          return false;
         }
+        op = gvn().transform(new VectorMaskCastNode(op, dst_type));
       } else {
         // Since input and output number of elements match, and since we know this vector size is
         // supported, simply do a cast with no resize needed.
@@ -2736,3 +2759,249 @@ bool LibraryCallKit::inline_vector_extract() {
   return true;
 }
 
+// public static
+// <V extends Vector<E>,
+//  M extends VectorMask<E>,
+//  E>
+//  V compressExpandOp(int opr,
+//                    Class<? extends V> vClass, Class<? extends M> mClass, Class<E> eClass,
+//                    int length, V v, M m,
+//                    CompressExpandOperation<V, M> defaultImpl)
+bool LibraryCallKit::inline_vector_compress_expand() {
+  const TypeInt*     opr          = gvn().type(argument(0))->isa_int();
+  const TypeInstPtr* vector_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInstPtr* mask_klass   = gvn().type(argument(2))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(3))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(4))->isa_int();
+
+  if (vector_klass == NULL || elem_klass == NULL || mask_klass == NULL || vlen == NULL ||
+      vector_klass->const_oop() == NULL || mask_klass->const_oop() == NULL ||
+      elem_klass->const_oop() == NULL || !vlen->is_con() || !opr->is_con()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** missing constant: opr=%s vclass=%s mclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(3)->Opcode()],
+                    NodeClassNames[argument(4)->Opcode()]);
+    }
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass) || !is_klass_initialized(mask_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+    }
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
+  int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
+
+  if (!arch_supports_vector(opc, num_elem, elem_bt, VecMaskUseLoad)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
+                    opc, num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+
+  Node* opd1 = NULL;
+  const TypeInstPtr* vbox_type = NULL;
+  if (opc != Op_CompressM) {
+    ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+    vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+    opd1 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+    if (opd1 == NULL) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** unbox failed vector=%s",
+                      NodeClassNames[argument(5)->Opcode()]);
+      }
+      return false;
+    }
+  }
+
+  ciKlass* mbox_klass = mask_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  assert(is_vector_mask(mbox_klass), "argument(6) should be a mask class");
+  const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
+
+  Node* mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
+  if (mask == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** unbox failed mask=%s",
+                    NodeClassNames[argument(6)->Opcode()]);
+    }
+    return false;
+  }
+
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem, opc == Op_CompressM);
+  Node* operation = gvn().transform(VectorNode::make(opc, opd1, mask, vt));
+
+  // Wrap it up in VectorBox to keep object type information.
+  const TypeInstPtr* box_type = opc == Op_CompressM ? mbox_type : vbox_type;
+  Node* vbox = box_vector(operation, box_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
+// public static
+// <V extends Vector<E>,
+//  E,
+//  S extends VectorSpecies<E>>
+//  V indexVector(Class<? extends V> vClass, Class<E> eClass,
+//                int length,
+//                V v, int step, S s,
+//                IndexOperation<V, S> defaultImpl)
+bool LibraryCallKit::inline_index_vector() {
+  const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+
+  if (vector_klass == NULL || elem_klass == NULL || vlen == NULL ||
+      vector_klass->const_oop() == NULL || !vlen->is_con() ||
+      elem_klass->const_oop() == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()]);
+    }
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** klass argument not initialized");
+    }
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not a primitive bt=%d", elem_type->basic_type());
+    }
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
+
+  // Check whether the iota index generation op is supported by the current hardware
+  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+    }
+    return false; // not supported
+  }
+
+  int mul_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_MUL, elem_bt);
+  int vmul_op = VectorNode::opcode(mul_op, elem_bt);
+  bool needs_mul = true;
+  Node* scale = argument(4);
+  const TypeInt* scale_type = gvn().type(scale)->isa_int();
+  // Multiply is not needed if the scale is a constant "1".
+  if (scale_type && scale_type->is_con() && scale_type->get_con() == 1) {
+    needs_mul = false;
+  } else {
+    // Check whether the vector multiply op is supported by the current hardware
+    if (!arch_supports_vector(vmul_op, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+
+    // Check whether the scalar cast op is supported by the current hardware
+    if (is_floating_point_type(elem_bt) || elem_bt == T_LONG) {
+      int cast_op = elem_bt == T_LONG ? Op_ConvI2L :
+                    elem_bt == T_FLOAT? Op_ConvI2F : Op_ConvI2D;
+      if (!Matcher::match_rule_supported(cast_op)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** Rejected op (%s) because architecture does not support it",
+                        NodeClassNames[cast_op]);
+        }
+        return false; // not supported
+      }
+    }
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+  Node* opd = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  if (opd == NULL) {
+    if (C->print_intrinsics()) {
+      tty->print_cr("  ** unbox failed vector=%s",
+                    NodeClassNames[argument(3)->Opcode()]);
+    }
+    return false;
+  }
+
+  int add_op = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_ADD, elem_bt);
+  int vadd_op = VectorNode::opcode(add_op, elem_bt);
+  bool needs_add = true;
+  // The addition is not needed if all the element values of "opd" are zero
+  if (VectorNode::is_all_zeros_vector(opd)) {
+    needs_add = false;
+  } else {
+    // Check whether the vector addition op is supported by the current hardware
+    if (!arch_supports_vector(vadd_op, num_elem, elem_bt, VecMaskNotUsed)) {
+      if (C->print_intrinsics()) {
+        tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));
+      }
+      return false; // not supported
+    }
+  }
+
+  // Compute the iota indice vector
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  Node* index = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+
+  // Broadcast the "scale" to a vector, and multiply the "scale" with iota indice vector.
+  if (needs_mul) {
+    switch (elem_bt) {
+      case T_BOOLEAN: // fall-through
+      case T_BYTE:    // fall-through
+      case T_SHORT:   // fall-through
+      case T_CHAR:    // fall-through
+      case T_INT: {
+        // no conversion needed
+        break;
+      }
+      case T_LONG: {
+        scale = gvn().transform(new ConvI2LNode(scale));
+        break;
+      }
+      case T_FLOAT: {
+        scale = gvn().transform(new ConvI2FNode(scale));
+        break;
+      }
+      case T_DOUBLE: {
+        scale = gvn().transform(new ConvI2DNode(scale));
+        break;
+      }
+      default: fatal("%s", type2name(elem_bt));
+    }
+    scale = gvn().transform(VectorNode::scalar2vector(scale, num_elem, Type::get_const_basic_type(elem_bt)));
+    index = gvn().transform(VectorNode::make(vmul_op, index, scale, vt));
+  }
+
+  // Add "opd" if addition is needed.
+  if (needs_add) {
+    index = gvn().transform(VectorNode::make(vadd_op, opd, index, vt));
+  }
+  Node* vbox = box_vector(index, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}

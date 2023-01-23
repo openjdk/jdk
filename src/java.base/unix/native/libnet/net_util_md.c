@@ -70,11 +70,6 @@ NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
 }
 
 void
-NET_ThrowCurrent(JNIEnv *env, char *msg) {
-    NET_ThrowNew(env, errno, msg);
-}
-
-void
 NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
     char fullMsg[512];
     if (!msg) {
@@ -93,15 +88,6 @@ NET_ThrowNew(JNIEnv *env, int errorNumber, char *msg) {
         JNU_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException", msg);
         break;
     }
-}
-
-
-jfieldID
-NET_GetFileDescriptorID(JNIEnv *env)
-{
-    jclass cls = (*env)->FindClass(env, "java/io/FileDescriptor");
-    CHECK_NULL_RETURN(cls, NULL);
-    return (*env)->GetFieldID(env, cls, "fd", "I");
 }
 
 jint  IPv4_supported()
@@ -137,18 +123,7 @@ jint  IPv6_supported()
          */
         return JNI_FALSE;
     }
-
-    /*
-     * If fd 0 is a socket it means we may have been launched from inetd or
-     * xinetd. If it's a socket then check the family - if it's an
-     * IPv4 socket then we need to disable IPv6.
-     */
-    if (getsockname(0, &sa.sa, &sa_len) == 0) {
-        if (sa.sa.sa_family == AF_INET) {
-            close(fd);
-            return JNI_FALSE;
-        }
-    }
+    close(fd);
 
     /**
      * Linux - check if any interface has an IPv6 address.
@@ -161,13 +136,11 @@ jint  IPv6_supported()
         char *bufP;
 
         if (fP == NULL) {
-            close(fd);
             return JNI_FALSE;
         }
         bufP = fgets(buf, sizeof(buf), fP);
         fclose(fP);
         if (bufP == NULL) {
-            close(fd);
             return JNI_FALSE;
         }
     }
@@ -178,7 +151,6 @@ jint  IPv6_supported()
      *  we should also check if the APIs are available.
      */
     ipv6_fn = JVM_FindLibraryEntry(RTLD_DEFAULT, "inet_pton");
-    close(fd);
     if (ipv6_fn == NULL ) {
         return JNI_FALSE;
     } else {
@@ -187,12 +159,16 @@ jint  IPv6_supported()
 }
 #endif /* DONT_ENABLE_IPV6 */
 
-jint reuseport_supported()
+jint reuseport_supported(int ipv6_available)
 {
     /* Do a simple dummy call, and try to figure out from that */
     int one = 1;
     int rv, s;
-    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (ipv6_available) {
+        s = socket(PF_INET6, SOCK_STREAM, 0);
+    } else {
+        s = socket(PF_INET, SOCK_STREAM, 0);
+    }
     if (s < 0) {
         return JNI_FALSE;
     }
@@ -233,21 +209,6 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
         free(buf);
     }
 }
-
-#if defined(_AIX)
-
-/* Initialize stubs for blocking I/O workarounds (see src/solaris/native/java/net/linux_close.c) */
-extern void aix_close_init();
-
-void platformInit () {
-    aix_close_init();
-}
-
-#else
-
-void platformInit () {}
-
-#endif
 
 JNIEXPORT jint JNICALL
 NET_EnableFastTcpLoopback(int fd) {
@@ -322,13 +283,6 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port,
         }
     }
     return 0;
-}
-
-void
-NET_SetTrafficClass(SOCKETADDRESS *sa, int trafficClass) {
-    if (sa->sa.sa_family == AF_INET6) {
-        sa->sa6.sin6_flowinfo = htonl((trafficClass & 0xff) << 20);
-    }
 }
 
 int
@@ -680,7 +634,6 @@ int
 NET_Bind(int fd, SOCKETADDRESS *sa, int len)
 {
     int rv;
-    int arg, alen;
 
 #ifdef __linux__
     /*
@@ -733,7 +686,7 @@ NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout)
           pfd.events |= POLLOUT;
 
         errno = 0;
-        read_rv = NET_Poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
+        read_rv = poll(&pfd, 1, nanoTimeout / NET_NSEC_PER_MSEC);
 
         newNanoTime = JVM_NanoTime(env, 0);
         nanoTimeout -= (newNanoTime - prevNanoTime);

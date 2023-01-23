@@ -54,6 +54,7 @@
 #define TRANSIENT_BIT                             (TRANSIENT_META_BIT << META_SHIFT)
 #define SERIALIZED_META_BIT                       (BIT << 4)
 #define SERIALIZED_BIT                            (SERIALIZED_META_BIT << META_SHIFT)
+#define BLESSED_METHOD_BIT                        (JDK_JFR_EVENT_SUBKLASS)
 #define TRACE_ID_SHIFT                            16
 #define METHOD_ID_NUM_MASK                        ((1 << TRACE_ID_SHIFT) - 1)
 #define META_BITS                                 (SERIALIZED_BIT | TRANSIENT_BIT | LEAKP_BIT | EPOCH_1_CLEARED_BIT | EPOCH_0_CLEARED_BIT)
@@ -104,6 +105,7 @@
 #define METHOD_FLAG_USED_THIS_EPOCH(method)       (METHOD_FLAG_PREDICATE(method, (THIS_EPOCH_METHOD_FLAG_BIT)))
 #define METHOD_FLAG_NOT_USED_THIS_EPOCH(method)   (!(METHOD_FLAG_USED_THIS_EPOCH(method)))
 #define METHOD_FLAG_USED_PREVIOUS_EPOCH(method)   (METHOD_FLAG_PREDICATE(method, (PREVIOUS_EPOCH_METHOD_FLAG_BIT)))
+#define IS_METHOD_BLESSED(method)                 (METHOD_FLAG_PREDICATE(method, BLESSED_METHOD_BIT))
 
 // setters
 #define SET_USED_THIS_EPOCH(ptr)                  (TRACE_ID_TAG(ptr, THIS_EPOCH_BIT))
@@ -112,6 +114,7 @@
 #define PREVIOUS_EPOCH_METHOD_AND_CLASS_BIT_MASK  (~(PREVIOUS_EPOCH_METHOD_BIT | PREVIOUS_EPOCH_BIT))
 #define CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(kls) (TRACE_ID_MASK_CLEAR(kls, PREVIOUS_EPOCH_METHOD_AND_CLASS_BIT_MASK))
 #define CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method)  (METHOD_FLAG_CLEAR(method, PREVIOUS_EPOCH_METHOD_FLAG_BIT))
+#define BLESS_METHOD(method)                      (METHOD_FLAG_TAG(method, BLESSED_METHOD_BIT))
 
 // types
 #define IS_JDK_JFR_EVENT_KLASS(kls)               (TRACE_ID_PREDICATE(kls, JDK_JFR_EVENT_KLASS))
@@ -120,6 +123,8 @@
 #define IS_EVENT_HOST_KLASS(kls)                  (TRACE_ID_PREDICATE(kls, EVENT_HOST_KLASS))
 #define SET_JDK_JFR_EVENT_KLASS(kls)              (TRACE_ID_TAG(kls, JDK_JFR_EVENT_KLASS))
 #define SET_JDK_JFR_EVENT_SUBKLASS(kls)           (TRACE_ID_TAG(kls, JDK_JFR_EVENT_SUBKLASS))
+#define JDK_JFR_EVENT_SUBKLASS_MASK               (~(JDK_JFR_EVENT_SUBKLASS))
+#define CLEAR_JDK_JFR_EVENT_SUBKLASS(kls)         (TRACE_ID_MASK_CLEAR(kls, JDK_JFR_EVENT_SUBKLASS_MASK))
 #define SET_EVENT_HOST_KLASS(kls)                 (TRACE_ID_TAG(kls, EVENT_HOST_KLASS))
 #define EVENT_KLASS_MASK(kls)                     (TRACE_ID_RAW(kls) & EVENT_BITS)
 

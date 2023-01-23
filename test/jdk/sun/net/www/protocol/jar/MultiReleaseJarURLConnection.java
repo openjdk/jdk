@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,7 +209,7 @@ public class MultiReleaseJarURLConnection {
             String fragment = vclsUrl.getRef();
             Assert.assertNull(fragment);
 
-            // and verify that the the url is a reified pointer to the runtime entry
+            // and verify that the url is a reified pointer to the runtime entry
             String rep = vclsUrl.toString();
             //System.out.println("    getResource(\"/version/Version.class\") returned: " + rep);
             if (style.equals("http")) {

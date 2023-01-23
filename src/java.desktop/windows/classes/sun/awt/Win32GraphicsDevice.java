@@ -46,6 +46,8 @@ import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.windows.WindowsFlags;
 
+import static java.awt.peer.ComponentPeer.SET_BOUNDS;
+
 import static sun.awt.Win32GraphicsEnvironment.debugScaleX;
 import static sun.awt.Win32GraphicsEnvironment.debugScaleY;
 
@@ -441,6 +443,21 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     protected native void enterFullScreenExclusive(int screen, WindowPeer w);
     protected native void exitFullScreenExclusive(int screen, WindowPeer w);
 
+    /**
+     * Reapplies the size of this graphics device to
+     * the given full-screen window.
+     * @param w a Window that needs resizing
+     * @param b new full-screen window bounds
+     */
+    private static void resizeFSWindow(final Window w, final Rectangle b) {
+        if (w != null) {
+            WindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
+            if (peer != null) {
+                peer.setBounds(b.x, b.y, b.width, b.height, SET_BOUNDS);
+            }
+        }
+    }
+
     @Override
     public boolean isDisplayChangeSupported() {
         return (isFullScreenSupported() && getFullScreenWindow() != null);
@@ -463,13 +480,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
             WWindowPeer peer = AWTAccessor.getComponentAccessor().getPeer(w);
             configDisplayMode(screen, peer, dm.getWidth(), dm.getHeight(),
                 dm.getBitDepth(), dm.getRefreshRate());
-            // resize the fullscreen window to the dimensions of the new
-            // display mode
-            Rectangle screenBounds = getDefaultConfiguration().getBounds();
-            w.setBounds(screenBounds.x, screenBounds.y,
-                        screenBounds.width, screenBounds.height);
-            // Note: no call to replaceSurfaceData is required here since
-            // replacement will be caused by an upcoming display change event
+            // Note: the full-screen window will get resized to the dimensions of the new
+            // display mode in the upcoming display change event, when the DPI scales
+            // would already be correctly set etc.
         } else {
             throw new IllegalStateException("Must be in fullscreen mode " +
                                             "in order to set display mode");
@@ -529,6 +542,10 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         defaultConfig = null;
         configs = null;
         initScaleFactors();
+
+        Rectangle screenBounds = getDefaultConfiguration().getBounds();
+        resizeFSWindow(getFullScreenWindow(), screenBounds);
+
         // pass on to all top-level windows on this display
         topLevels.notifyListeners();
     }

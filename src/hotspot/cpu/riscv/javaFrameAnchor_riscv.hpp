@@ -66,8 +66,8 @@ public:
   }
 
   bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
-  void make_walkable(JavaThread* thread);
-  void capture_last_Java_pc(void);
+
+  void make_walkable();
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }
 
@@ -82,5 +82,7 @@ public:
   void set_last_Java_sp(intptr_t* java_sp)       { _last_Java_sp = java_sp; OrderAccess::release(); }
 
   intptr_t* last_Java_fp(void)                   { return _last_Java_fp; }
+
+  void set_last_Java_fp(intptr_t* fp)            { _last_Java_fp = fp; }
 
 #endif // CPU_RISCV_JAVAFRAMEANCHOR_RISCV_HPP

@@ -170,14 +170,6 @@ public class Pretty extends JCTree.Visitor {
      * Traversal methods
      *************************************************************************/
 
-    /** Exception to propagate IOException through visitXYZ methods */
-    private static class UncheckedIOException extends Error {
-        static final long serialVersionUID = -4032692679158424751L;
-        UncheckedIOException(IOException e) {
-            super(e.getMessage(), e);
-        }
-    }
-
     /** Visitor argument: the current precedence level.
      */
     int prec;
@@ -194,7 +186,7 @@ public class Pretty extends JCTree.Visitor {
                 tree.accept(this);
             }
         } catch (UncheckedIOException ex) {
-            throw new IOException(ex.getMessage(), ex);
+            throw ex.getCause();
         } finally {
             this.prec = prevPrec;
         }
@@ -809,7 +801,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.var);
+            printExpr(tree.varOrRecordPattern);
             print(" : ");
             printExpr(tree.expr);
             print(") ");
@@ -885,6 +877,28 @@ public class Pretty extends JCTree.Visitor {
         }
     }
 
+    @Override
+    public void visitConstantCaseLabel(JCConstantCaseLabel tree) {
+        try {
+            print(tree.expr);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
+        try {
+            print(tree.pat);
+            if (tree.guard != null) {
+                print(" when ");
+                print(tree.guard);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     public void visitSwitchExpression(JCSwitchExpression tree) {
         try {
             print("switch ");
@@ -925,11 +939,12 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitGuardPattern(JCGuardPattern patt) {
+    public void visitRecordPattern(JCRecordPattern tree) {
         try {
-            printExpr(patt.patt);
-            print(" && ");
-            printExpr(patt.expr);
+            printExpr(tree.deconstructor);
+            print("(");
+            printExprs(tree.nested);
+            print(")");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

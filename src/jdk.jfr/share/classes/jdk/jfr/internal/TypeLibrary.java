@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public final class TypeLibrary {
 
     private static TypeLibrary instance;
     private static boolean implicitFieldTypes;
-    private static final Map<Long, Type> types = new LinkedHashMap<>(100);
+    private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
@@ -301,7 +301,7 @@ public final class TypeLibrary {
     }
 
     private static void addUserFields(Class<?> clazz, Type type, List<ValueDescriptor> dynamicFields) {
-        Map<String, ValueDescriptor> dynamicFieldSet = new HashMap<>();
+        Map<String, ValueDescriptor> dynamicFieldSet = HashMap.newHashMap(dynamicFields.size());
         for (ValueDescriptor dynamicField : dynamicFields) {
             dynamicFieldSet.put(dynamicField.getName(), dynamicField);
         }
@@ -401,8 +401,8 @@ public final class TypeLibrary {
                     Class<?> ct = returnType.getComponentType();
                     if (Annotation.class.isAssignableFrom(ct) && ct.getAnnotation(Repeatable.class) != null) {
                         Object res = m.invoke(a, new Object[0]);
-                        if (res != null && Annotation[].class.isAssignableFrom(res.getClass())) {
-                            for (Annotation rep : (Annotation[]) m.invoke(a, new Object[0])) {
+                        if (res instanceof Annotation[] anns) {
+                            for (Annotation rep : anns) {
                                 annos.add(rep);
                             }
                             repeated = true;

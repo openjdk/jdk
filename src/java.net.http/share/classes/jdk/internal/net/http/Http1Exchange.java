@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
+import java.util.concurrent.Flow.Subscription;
 
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
@@ -148,13 +149,26 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         final void setSubscription(Flow.Subscription subscription) {
-            this.subscription = subscription;
-            whenSubscribed.complete(subscription);
+            Flow.Subscription sub;
+            synchronized (this) {
+                if ((sub = this.subscription) == null) {
+                    this.subscription = sub = subscription;
+                }
+            }
+            if (sub == subscription) {
+                whenSubscribed.complete(subscription);
+            } else subscription.cancel();
         }
 
         final void cancelSubscription() {
             try {
-                subscription.cancel();
+                Flow.Subscription sub;
+                synchronized (this) {
+                    if ((sub = this.subscription) == null) {
+                        this.subscription = sub = HttpBodySubscriberWrapper.NOP;
+                    }
+                }
+                sub.cancel();
             } catch(Throwable t) {
                 String msg = "Ignoring exception raised when canceling BodyPublisher subscription";
                 if (debug.on()) debug.log("%s: %s", msg, t);
@@ -195,12 +209,25 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
 
         @Override
+        protected void onSubscribed() {
+            exchange.registerResponseSubscriber(this);
+        }
+
+        @Override
         protected void complete(Throwable t) {
             try {
-                exchange.responseSubscriberCompleted(this);
+                exchange.unregisterResponseSubscriber(this);
             } finally {
                 super.complete(t);
             }
+        }
+
+        @Override
+        protected void onCancel() {
+            // If the subscription is cancelled the
+            // subscriber may or may not get completed.
+            // Therefore we need to unregister it
+            exchange.unregisterResponseSubscriber(this);
         }
     }
 
@@ -251,7 +278,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     // The Http1ResponseBodySubscriber is registered with the HttpClient
     // to ensure that it gets completed if the SelectorManager aborts due
     // to unexpected exceptions.
-    void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+    private void registerResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
         Throwable failed = null;
         synchronized (lock) {
             failed = this.failed;
@@ -266,8 +293,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
     }
 
-    void responseSubscriberCompleted(HttpBodySubscriberWrapper<T> subscriber) {
-        client.subscriberCompleted(subscriber);
+    private void unregisterResponseSubscriber(Http1ResponseBodySubscriber<T> subscriber) {
+        client.unregisterSubscriber(subscriber);
     }
 
     @Override
@@ -437,7 +464,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         BodySubscriber<T> subscriber = handler.apply(response);
         Http1ResponseBodySubscriber<T> bs =
                 new Http1ResponseBodySubscriber<T>(subscriber, this);
-        registerResponseSubscriber(bs);
         return bs;
     }
 
@@ -486,6 +512,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
      */
     @Override
     void cancel(IOException cause) {
+        cancelImpl(cause);
+    }
+
+    @Override
+    void onProtocolError(final IOException cause) {
+        if (debug.on()) {
+            debug.log("cancelling exchange due to protocol error: %s", cause.getMessage());
+        }
+        Log.logError("cancelling exchange due to protocol error: {0}\n", cause);
         cancelImpl(cause);
     }
 
@@ -770,9 +805,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     return;
                 }
 
-                if (debug.on()) debug.log(() -> "hasOutgoing = " + hasOutgoing());
+                if (debug.on()) debug.log(() -> "hasOutgoing = " + hasOutgoing() + ", demand = " + demand.get());
                 while (hasOutgoing() && demand.tryDecrement()) {
                     DataPair dp = getOutgoing();
+                    if (debug.on()) debug.log("outgoing: " + dp);
                     if (dp == null)
                         break;
 
@@ -794,7 +830,10 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                             // The next Subscriber will eventually take over.
 
                         } else {
-                            if (checkRequestCancelled()) return;
+                            if (checkRequestCancelled()) {
+                                if (debug.on()) debug.log("Request cancelled!");
+                                return;
+                            }
                             if (debug.on())
                                 debug.log("onNext with " + Utils.remaining(data) + " bytes");
                             subscriber.onNext(data);
@@ -834,5 +873,15 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     String dbgString() {
         return "Http1Exchange";
+    }
+
+    @Override
+    void expectContinueFailed(int rcode) {
+        var response = this.response;
+        if (response != null) {
+            // Sets a flag which closes the connection locally when
+            // onFinished() is called
+            response.closeWhenFinished();
+        }
     }
 }

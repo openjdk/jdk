@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,6 +217,12 @@
           "do not start profiling in the interpreter")                      \
           range(0, max_jint)                                                \
                                                                             \
+  product(intx, TieredOldPercentage, 1000, DIAGNOSTIC,                      \
+          "Percentage over tier 3 thresholds after which a method is "      \
+          "considered old (turns off parts of prioritization based on "     \
+          "compile queue length)")                                          \
+          range(0, max_jint)                                                \
+                                                                            \
   product(intx, Tier3DelayOn, 5,                                            \
           "If C2 queue size grows over this amount per compiler thread "    \
           "stop compiling at tier 3 and start compiling at tier 2")         \
@@ -248,8 +254,7 @@
                                                                             \
   product(intx, Tier0ProfilingStartPercentage, 200,                         \
           "Start profiling in interpreter if the counters exceed the "      \
-          "specified percentage of tier 3 thresholds (tier 4 thresholds "   \
-          "with CompilationMode=high-only|high-only-quick-internal)")       \
+          "specified percentage of tier 3 thresholds")                      \
           range(0, max_jint)                                                \
                                                                             \
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
@@ -291,27 +296,30 @@
   product(ccstrlist, CompileOnly, "",                                       \
           "List of methods (pkg/class.name) to restrict compilation to")    \
                                                                             \
-  product(ccstr, CompileCommandFile, NULL,                                  \
+  product(ccstr, CompileCommandFile, nullptr,                               \
           "Read compiler commands from this file [.hotspot_compiler]")      \
                                                                             \
-  product(ccstr, CompilerDirectivesFile, NULL, DIAGNOSTIC,                  \
+  product(ccstr, CompilerDirectivesFile, nullptr, DIAGNOSTIC,               \
           "Read compiler directives from this file")                        \
                                                                             \
   product(ccstrlist, CompileCommand, "",                                    \
           "Prepend to .hotspot_compiler; e.g. log,java/lang/String.<init>") \
                                                                             \
-  develop(bool, ReplayCompiles, false,                                      \
+  product(bool, ReplayCompiles, false, DIAGNOSTIC,                          \
           "Enable replay of compilations from ReplayDataFile")              \
                                                                             \
-  product(ccstr, ReplayDataFile, NULL,                                      \
+  product(bool, ReplayReduce, false, EXPERIMENTAL,                          \
+          "Enable features to facilitate replay file reduction")            \
+                                                                            \
+  product(ccstr, ReplayDataFile, nullptr,                                   \
           "File containing compilation replay information"                  \
           "[default: ./replay_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  product(ccstr, InlineDataFile, NULL,                                      \
+  product(ccstr, InlineDataFile, nullptr,                                   \
           "File containing inlining replay information"                     \
           "[default: ./inline_pid%p.log] (%p replaced with pid)")           \
                                                                             \
-  develop(intx, ReplaySuppressInitializers, 2,                              \
+  product(intx, ReplaySuppressInitializers, 2, DIAGNOSTIC,                  \
           "Control handling of class initialization during replay: "        \
           "0 - don't do anything special; "                                 \
           "1 - treat all class initializers as empty; "                     \
@@ -320,7 +328,7 @@
           "    pretend they are empty after starting replay")               \
           range(0, 3)                                                       \
                                                                             \
-  develop(bool, ReplayIgnoreInitErrors, false,                              \
+  product(bool, ReplayIgnoreInitErrors, false, DIAGNOSTIC,                  \
           "Ignore exceptions thrown during initialization for replay")      \
                                                                             \
   product(bool, DumpReplayDataOnError, true,                                \

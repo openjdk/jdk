@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ public class LoginContext {
     private boolean subjectProvided = false;
     private boolean loginSucceeded = false;
     private CallbackHandler callbackHandler;
-    private Map<String,?> state = new HashMap<String,Object>();
+    private final Map<String,?> state = new HashMap<>();
 
     private Configuration config;
     @SuppressWarnings("removal")
@@ -658,8 +658,7 @@ public class LoginContext {
         clearState();
 
         // throw the exception
-        LoginException error = (originalError != null) ? originalError : le;
-        throw error;
+        throw (originalError != null) ? originalError : le;
     }
 
     /**
@@ -691,13 +690,13 @@ public class LoginContext {
         // - this can only be non-zero if methodName is LOGIN_METHOD
 
         for (int i = moduleIndex; i < moduleStack.length; i++, moduleIndex++) {
+            String name = moduleStack[i].entry.getLoginModuleName();
             try {
 
                 if (moduleStack[i].module == null) {
 
                     // locate and instantiate the LoginModule
                     //
-                    String name = moduleStack[i].entry.getLoginModuleName();
                     Set<Provider<LoginModule>> lmProviders;
                     synchronized(providersCache){
                         lmProviders = providersCache.get(contextClassLoader);
@@ -767,7 +766,7 @@ public class LoginContext {
                         throw new AssertionError("Unknown method " + methodName);
                 }
 
-                if (status == true) {
+                if (status) {
 
                     // if SUFFICIENT, return if no prior REQUIRED errors
                     if (!methodName.equals(ABORT_METHOD) &&
@@ -780,16 +779,16 @@ public class LoginContext {
                         clearState();
 
                         if (debug != null)
-                            debug.println(methodName + " SUFFICIENT success");
+                            debug.println(name + " " + methodName + " SUFFICIENT success");
                         return;
                     }
 
                     if (debug != null)
-                        debug.println(methodName + " success");
+                        debug.println(name + " " + methodName + " success");
                     success = true;
                 } else {
                     if (debug != null)
-                        debug.println(methodName + " ignored");
+                        debug.println(name + " " + methodName + " ignored");
                 }
             } catch (Exception ite) {
 
@@ -854,7 +853,7 @@ public class LoginContext {
                     AppConfigurationEntry.LoginModuleControlFlag.REQUISITE) {
 
                     if (debug != null)
-                        debug.println(methodName + " REQUISITE failure");
+                        debug.println(name + " " + methodName + " REQUISITE failure");
 
                     // if REQUISITE, then immediately throw an exception
                     if (methodName.equals(ABORT_METHOD) ||
@@ -869,16 +868,17 @@ public class LoginContext {
                     AppConfigurationEntry.LoginModuleControlFlag.REQUIRED) {
 
                     if (debug != null)
-                        debug.println(methodName + " REQUIRED failure");
+                        debug.println(name + " " + methodName + " REQUIRED failure");
 
                     // mark down that a REQUIRED module failed
                     if (firstRequiredError == null)
                         firstRequiredError = le;
 
                 } else {
-
-                    if (debug != null)
-                        debug.println(methodName + " OPTIONAL failure");
+                    if (debug != null) {
+                        debug.println(name + " " + methodName + " OPTIONAL failure");
+                        le.printStackTrace();
+                    }
 
                     // mark down that an OPTIONAL module failed
                     if (firstError == null)
@@ -887,14 +887,14 @@ public class LoginContext {
             }
         }
 
-        // we went thru all the LoginModules.
+        // we went through all the LoginModules.
         if (firstRequiredError != null) {
             // a REQUIRED module failed -- return the error
             throwException(firstRequiredError, null);
-        } else if (success == false && firstError != null) {
+        } else if (!success && firstError != null) {
             // no module succeeded -- return the first error
             throwException(firstError, null);
-        } else if (success == false) {
+        } else if (!success) {
             // no module succeeded -- all modules were IGNORED
             throwException(new LoginException
                 (ResourcesMgr.getString("Login.Failure.all.modules.ignored")),
@@ -903,7 +903,6 @@ public class LoginContext {
             // success
 
             clearState();
-            return;
         }
     }
 
@@ -948,7 +947,7 @@ public class LoginContext {
 
     /**
      * LoginModule information -
-     *          incapsulates Configuration info and actual module instances
+     *          encapsulates Configuration info and actual module instances
      */
     private static class ModuleInfo {
         AppConfigurationEntry entry;

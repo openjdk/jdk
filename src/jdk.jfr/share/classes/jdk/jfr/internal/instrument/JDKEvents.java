@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package jdk.jfr.internal.instrument;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Properties;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
@@ -45,11 +46,18 @@ import jdk.jfr.events.FileForceEvent;
 import jdk.jfr.events.FileReadEvent;
 import jdk.jfr.events.FileWriteEvent;
 import jdk.jfr.events.DeserializationEvent;
+import jdk.jfr.events.InitialSecurityPropertyEvent;
 import jdk.jfr.events.ProcessStartEvent;
 import jdk.jfr.events.SecurityPropertyModificationEvent;
+import jdk.jfr.events.SecurityProviderServiceEvent;
 import jdk.jfr.events.SocketReadEvent;
 import jdk.jfr.events.SocketWriteEvent;
 import jdk.jfr.events.TLSHandshakeEvent;
+import jdk.jfr.events.ThreadSleepEvent;
+import jdk.jfr.events.VirtualThreadStartEvent;
+import jdk.jfr.events.VirtualThreadEndEvent;
+import jdk.jfr.events.VirtualThreadPinnedEvent;
+import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
 import jdk.jfr.internal.JVM;
@@ -67,7 +75,13 @@ public final class JDKEvents {
         DeserializationEvent.class,
         ProcessStartEvent.class,
         SecurityPropertyModificationEvent.class,
+        SecurityProviderServiceEvent.class,
+        ThreadSleepEvent.class,
         TLSHandshakeEvent.class,
+        VirtualThreadStartEvent.class,
+        VirtualThreadEndEvent.class,
+        VirtualThreadPinnedEvent.class,
+        VirtualThreadSubmitFailedEvent.class,
         X509CertificateEvent.class,
         X509ValidationEvent.class
     };
@@ -86,11 +100,18 @@ public final class JDKEvents {
         jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.ProcessStartEvent.class,
         jdk.internal.event.SecurityPropertyModificationEvent.class,
+        jdk.internal.event.SecurityProviderServiceEvent.class,
+        jdk.internal.event.ThreadSleepEvent.class,
         jdk.internal.event.TLSHandshakeEvent.class,
+        jdk.internal.event.VirtualThreadStartEvent.class,
+        jdk.internal.event.VirtualThreadEndEvent.class,
+        jdk.internal.event.VirtualThreadPinnedEvent.class,
+        jdk.internal.event.VirtualThreadSubmitFailedEvent.class,
         jdk.internal.event.X509CertificateEvent.class,
         jdk.internal.event.X509ValidationEvent.class,
 
-        DirectBufferStatisticsEvent.class
+        DirectBufferStatisticsEvent.class,
+        InitialSecurityPropertyEvent.class,
     };
 
     // This is a list of the classes with instrumentation code that should be applied.
@@ -113,6 +134,7 @@ public final class JDKEvents {
     private static final Runnable emitContainerCPUThrottling = JDKEvents::emitContainerCPUThrottling;
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
+    private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -129,6 +151,7 @@ public final class JDKEvents {
 
                 RequestEngine.addTrustedJDKHook(ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 RequestEngine.addTrustedJDKHook(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
+                RequestEngine.addTrustedJDKHook(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
 
                 initializeContainerEvents();
                 initializationTriggered = true;
@@ -159,7 +182,15 @@ public final class JDKEvents {
     }
 
     private static void initializeContainerEvents() {
-        containerMetrics = Container.metrics();
+        if (JVM.getJVM().isContainerized() ) {
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "JVM is containerized");
+            containerMetrics = Container.metrics();
+            if (containerMetrics != null) {
+                Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Container metrics are available");
+            }
+        }
+        // The registration of events and hooks are needed to provide metadata,
+        // even when not running in a container
         SecuritySupport.registerEvent(ContainerConfigurationEvent.class);
         SecuritySupport.registerEvent(ContainerCPUUsageEvent.class);
         SecuritySupport.registerEvent(ContainerCPUThrottlingEvent.class);
@@ -190,6 +221,7 @@ public final class JDKEvents {
             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
+            t.hostTotalMemory = JVM.getJVM().hostTotalMemory();
             t.commit();
         }
     }
@@ -263,6 +295,7 @@ public final class JDKEvents {
     public static void remove() {
         RequestEngine.removeHook(emitExceptionStatistics);
         RequestEngine.removeHook(emitDirectBufferStatistics);
+        RequestEngine.removeHook(emitInitialSecurityProperties);
 
         RequestEngine.removeHook(emitContainerConfiguration);
         RequestEngine.removeHook(emitContainerCPUUsage);
@@ -274,5 +307,17 @@ public final class JDKEvents {
     private static void emitDirectBufferStatistics() {
         DirectBufferStatisticsEvent e = new DirectBufferStatisticsEvent();
         e.commit();
+    }
+
+    private static void emitInitialSecurityProperties() {
+        Properties p = SharedSecrets.getJavaSecurityPropertiesAccess().getInitialProperties();
+        if (p != null) {
+            for (String key : p.stringPropertyNames()) {
+                InitialSecurityPropertyEvent e = new InitialSecurityPropertyEvent();
+                e.key = key;
+                e.value = p.getProperty(key);
+                e.commit();
+            }
+        }
     }
 }

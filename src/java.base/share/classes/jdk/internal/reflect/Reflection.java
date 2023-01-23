@@ -30,8 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -108,11 +110,12 @@ public class Reflection {
     }
 
     @ForceInline
-    public static void ensureNativeAccess(Class<?> currentClass) {
-        Module module = currentClass.getModule();
-        if (!SharedSecrets.getJavaLangAccess().isEnableNativeAccess(module)) {
-            throw new IllegalCallerException("Illegal native access from: " + module);
-        }
+    public static void ensureNativeAccess(Class<?> currentClass, Class<?> owner, String methodName) {
+        // if there is no caller class, act as if the call came from unnamed module of system class loader
+        Module module = currentClass != null ?
+                currentClass.getModule() :
+                ClassLoader.getSystemClassLoader().getUnnamedModule();
+        SharedSecrets.getJavaLangAccess().ensureNativeAccess(module, owner, methodName);
     }
 
     /**

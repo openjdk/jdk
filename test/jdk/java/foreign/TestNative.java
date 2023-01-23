@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,18 @@
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
- * @modules jdk.incubator.foreign/jdk.internal.foreign
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
  */
 
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
-import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
-import jdk.incubator.foreign.SequenceLayout;
-import jdk.incubator.foreign.ValueLayout;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.foreign.SegmentScope;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.ValueLayout;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -54,7 +54,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static jdk.incubator.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestNative extends NativeTestHelper {
@@ -96,7 +96,7 @@ public class TestNative extends NativeTestHelper {
     static VarHandle doubleHandle = doubles.varHandle(PathElement.sequenceElement());
 
     static void initBytes(MemorySegment base, SequenceLayout seq, BiConsumer<MemorySegment, Long> handleSetter) {
-        for (long i = 0; i < seq.elementCount().getAsLong() ; i++) {
+        for (long i = 0; i < seq.elementCount() ; i++) {
             handleSetter.accept(base, i);
         }
     }
@@ -106,13 +106,13 @@ public class TestNative extends NativeTestHelper {
                                               Function<ByteBuffer, Z> bufferFactory,
                                               BiFunction<Z, Integer, Object> nativeBufferExtractor,
                                               BiFunction<Long, Integer, Object> nativeRawExtractor) {
-        long nelems = layout.elementCount().getAsLong();
+        long nelems = layout.elementCount();
         ByteBuffer bb = base.asByteBuffer();
         Z z = bufferFactory.apply(bb);
         for (long i = 0 ; i < nelems ; i++) {
             Object handleValue = handleExtractor.apply(base, i);
             Object bufferValue = nativeBufferExtractor.apply(z, (int)i);
-            Object rawValue = nativeRawExtractor.apply(base.address().toRawLongValue(), (int)i);
+            Object rawValue = nativeRawExtractor.apply(base.address(), (int)i);
             if (handleValue instanceof Number) {
                 assertEquals(((Number)handleValue).longValue(), i);
                 assertEquals(((Number)bufferValue).longValue(), i);
@@ -145,8 +145,8 @@ public class TestNative extends NativeTestHelper {
 
     @Test(dataProvider="nativeAccessOps")
     public void testNativeAccess(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(seq, scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, arena.scope());;
             initializer.accept(segment);
             checker.accept(segment);
         }
@@ -155,8 +155,8 @@ public class TestNative extends NativeTestHelper {
     @Test(dataProvider="buffers")
     public void testNativeCapacity(Function<ByteBuffer, Buffer> bufferFunction, int elemSize) {
         int capacity = (int)doubles.byteSize();
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(doubles, scope);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(doubles, arena.scope());;
             ByteBuffer bb = segment.asByteBuffer();
             Buffer buf = bufferFunction.apply(bb);
             int expected = capacity / elemSize;
@@ -167,21 +167,21 @@ public class TestNative extends NativeTestHelper {
 
     @Test
     public void testDefaultAccessModes() {
-        MemoryAddress addr = allocateMemory(12);
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            scope.addCloseAction(() -> freeMemory(addr));
-            MemorySegment mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
+        MemorySegment addr = allocateMemory(12);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment mallocSegment = MemorySegment.ofAddress(addr.address(), 12,
+                    arena.scope(), () -> freeMemory(addr));
             assertFalse(mallocSegment.isReadOnly());
         }
     }
 
     @Test
     public void testMallocSegment() {
-        MemoryAddress addr = allocateMemory(12);
+        MemorySegment addr = allocateMemory(12);
         MemorySegment mallocSegment = null;
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            scope.addCloseAction(() -> freeMemory(addr));
-            mallocSegment = MemorySegment.ofAddress(addr, 12, scope);
+        try (Arena arena = Arena.openConfined()) {
+            mallocSegment = MemorySegment.ofAddress(addr.address(), 12,
+                    arena.scope(), () -> freeMemory(addr));
             assertEquals(mallocSegment.byteSize(), 12);
             //free here
         }
@@ -190,7 +190,7 @@ public class TestNative extends NativeTestHelper {
 
     @Test
     public void testAddressAccess() {
-        MemoryAddress addr = allocateMemory(4);
+        MemorySegment addr = allocateMemory(4);
         addr.set(JAVA_INT, 0, 42);
         assertEquals(addr.get(JAVA_INT, 0), 42);
         freeMemory(addr);
@@ -198,9 +198,9 @@ public class TestNative extends NativeTestHelper {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadResize() {
-        try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-            MemorySegment segment = MemorySegment.allocateNative(4, 1, scope);
-            MemorySegment.ofAddress(segment.address(), 0, ResourceScope.globalScope());
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(4, 1, arena.scope());;
+            MemorySegment.ofAddress(segment.address(), -1, SegmentScope.global());
         }
     }
 

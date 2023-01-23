@@ -243,7 +243,8 @@ BitMap::get_next_one_offset_aligned_right(idx_t l_offset, idx_t r_offset) const 
   return get_next_bit_impl<find_ones_flip, true>(l_offset, r_offset);
 }
 
-inline bool BitMap::iterate(BitMapClosure* cl, idx_t beg, idx_t end) {
+template <typename BitMapClosureType>
+inline bool BitMap::iterate(BitMapClosureType* cl, idx_t beg, idx_t end) {
   for (idx_t index = beg; true; ++index) {
     index = get_next_one_offset(index, end);
     if (index >= end) {
@@ -254,7 +255,8 @@ inline bool BitMap::iterate(BitMapClosure* cl, idx_t beg, idx_t end) {
   }
 }
 
-inline bool BitMap::iterate(BitMapClosure* cl) {
+template <typename BitMapClosureType>
+inline bool BitMap::iterate(BitMapClosureType* cl) {
   return iterate(cl, 0, size());
 }
 

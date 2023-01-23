@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ final class MergeCollation {
      * before & and <
      */
     public String getPattern(boolean withWhiteSpace) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         PatternEntry tmp = null;
         ArrayList<PatternEntry> extList = null;
         int i;
@@ -101,18 +101,18 @@ final class MergeCollation {
                     PatternEntry last = findLastWithNoExtension(i-1);
                     for (int j = extList.size() - 1; j >= 0 ; j--) {
                         tmp = extList.get(j);
-                        tmp.addToBuffer(result, false, withWhiteSpace, last);
+                        tmp.addToBuilder(result, false, withWhiteSpace, last);
                     }
                     extList = null;
                 }
-                entry.addToBuffer(result, false, withWhiteSpace, null);
+                entry.addToBuilder(result, false, withWhiteSpace, null);
             }
         }
         if (extList != null) {
             PatternEntry last = findLastWithNoExtension(i-1);
             for (int j = extList.size() - 1; j >= 0 ; j--) {
                 tmp = extList.get(j);
-                tmp.addToBuffer(result, false, withWhiteSpace, last);
+                tmp.addToBuilder(result, false, withWhiteSpace, last);
             }
             extList = null;
         }
@@ -146,12 +146,12 @@ final class MergeCollation {
      * builder.
      */
     public String emitPattern(boolean withWhiteSpace) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < patterns.size(); ++i)
         {
             PatternEntry entry = patterns.get(i);
             if (entry != null) {
-                entry.addToBuffer(result, true, withWhiteSpace, null);
+                entry.addToBuilder(result, true, withWhiteSpace, null);
             }
         }
         return result.toString();
@@ -211,7 +211,7 @@ final class MergeCollation {
 
     // This is really used as a local variable inside fixEntry, but we cache
     // it here to avoid newing it up every time the method is called.
-    private transient StringBuffer excess = new StringBuffer();
+    private transient StringBuilder excess = new StringBuilder();
 
     //
     // When building a MergeCollation, we need to do lots of searches to see
@@ -300,7 +300,7 @@ final class MergeCollation {
     }
 
     private final int findLastEntry(PatternEntry entry,
-                              StringBuffer excessChars) throws ParseException
+                              StringBuilder excessChars) throws ParseException
     {
         if (entry == null)
             return 0;

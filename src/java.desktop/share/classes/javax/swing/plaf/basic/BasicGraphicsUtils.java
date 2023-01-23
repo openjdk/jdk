@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
  */
 package javax.swing.plaf.basic;
 
-import javax.swing.*;
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -36,6 +35,11 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+
+import javax.swing.AbstractButton;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 
 import sun.swing.SwingUtilities2;
 
@@ -431,7 +435,7 @@ public class BasicGraphicsUtils
      * @param c the component that will display the string, may be null
      * @param g the graphics context, must not be null
      * @param string the string to display, may be null
-     * @param underlinedIndex index of a a char value (Unicode code unit)
+     * @param underlinedIndex index of a char value (Unicode code unit)
      *        in the string to underline
      * @param x the x coordinate to draw the text at
      * @param y the y coordinate to draw the text at

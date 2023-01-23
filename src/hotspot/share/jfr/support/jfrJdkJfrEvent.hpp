@@ -59,6 +59,7 @@ class JdkJfrEvent : AllStatic {
   // jdk.jfr.Event hierarchy
   static bool is_a(const Klass* k);
   static bool is_a(const jclass jc);
+  static void remove(const Klass* k);
 
   // klasses that host a jdk.jfr.Event
   static bool is_host(const Klass* k);
@@ -69,6 +70,7 @@ class JdkJfrEvent : AllStatic {
   // in the set of classes made visible to java
   static bool is_visible(const Klass* k);
   static bool is_visible(const jclass jc);
+  static bool is_excluded(const jclass jc);
 
   // all klasses in the hierarchy
   static jobject get_all_klasses(TRAPS);

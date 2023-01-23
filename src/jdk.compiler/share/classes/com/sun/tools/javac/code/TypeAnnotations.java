@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.CapturedType;
@@ -84,6 +85,7 @@ import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 
+import static com.sun.tools.javac.code.Flags.RECORD;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 /**
@@ -1084,7 +1086,11 @@ public class TypeAnnotations {
                                         newPath, currentLambda,
                                         outer_type_index, location);
                 }
-
+                case DECONSTRUCTION_PATTERN: {
+                    // TODO: Treat case labels as full type contexts for complete type annotation support in Record Patterns
+                    //    https://bugs.openjdk.org/browse/JDK-8298154
+                    return TypeAnnotationPosition.unknown;
+                }
                 default:
                     throw new AssertionError("Unresolved frame: " + frame +
                                              " of kind: " + frame.getKind() +
@@ -1302,6 +1308,16 @@ public class TypeAnnotations {
             if (!sigOnly) {
                 scan(tree.init);
             }
+
+            // Now that type and declaration annotations have been segregated into their own buckets ...
+            if (sigOnly) {
+                if (tree.sym != null && tree.sym.getKind() == ElementKind.FIELD && (tree.sym.flags_field & RECORD) != 0) {
+                    RecordComponent rc = ((ClassSymbol)tree.sym.owner).getRecordComponent(tree.sym);
+                    rc.setTypeAttributes(tree.sym.getRawTypeAttributes());
+                    // to get all the type annotations applied to the type
+                    rc.type = tree.sym.type;
+                }
+            }
         }
 
         @Override
@@ -1362,7 +1378,7 @@ public class TypeAnnotations {
             scan(tree.typeargs);
             if (tree.def == null) {
                 scan(tree.clazz);
-            } // else super type will already have been scanned in the context of the anonymous class.
+            } // else supertype will already have been scanned in the context of the anonymous class.
             scan(tree.args);
 
             // The class body will already be scanned.

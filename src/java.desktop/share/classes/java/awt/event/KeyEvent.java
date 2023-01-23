@@ -2006,7 +2006,6 @@ public non-sealed class KeyEvent extends InputEvent {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
-     * @serial
      */
     @Serial
     @SuppressWarnings("deprecation")

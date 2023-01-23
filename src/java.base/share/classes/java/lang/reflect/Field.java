@@ -37,6 +37,7 @@ import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.scope.ClassScope;
 import java.lang.annotation.Annotation;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import sun.reflect.annotation.AnnotationParser;
 import sun.reflect.annotation.AnnotationSupport;
@@ -202,11 +203,24 @@ class Field extends AccessibleObject implements Member {
      * be used to decode the modifiers.
      *
      * @see Modifier
+     * @see #accessFlags()
      * @jls 8.3 Field Declarations
      * @jls 9.3 Field (Constant) Declarations
      */
     public int getModifiers() {
         return modifiers;
+    }
+
+    /**
+     * {@return an unmodifiable set of the {@linkplain AccessFlag
+     * access flags} for this field, possibly empty}
+     * @see #getModifiers()
+     * @jvms 4.5 Fields
+     * @since 20
+     */
+    @Override
+    public Set<AccessFlag> accessFlags() {
+        return AccessFlag.maskToAccessFlags(getModifiers(), AccessFlag.Location.FIELD);
     }
 
     /**

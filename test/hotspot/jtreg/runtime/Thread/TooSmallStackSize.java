@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ public class TooSmallStackSize {
     static final String ThreadStackSizeString = "Java thread stack size";
     static final String VMThreadStackSizeString = "VMThreadStackSize";
 
+    static String testShadowSize = null;
+
     /*
      * Returns the minimum stack size this platform will allowed based on the
      * contents of the error message the JVM outputs when too small of a
@@ -90,6 +92,25 @@ public class TooSmallStackSize {
         throw new RuntimeException("test fails");
     }
 
+    static ProcessBuilder createProcessWithOptions(String stackOption, String stackSize) throws Exception {
+        if (testShadowSize == null) {
+            return ProcessTools.createJavaProcessBuilder(
+                stackOption + stackSize,
+                // Uncomment the following to get log output
+                // that shows actual thread creation sizes.
+                // "-Xlog:os+thread",
+                "-version");
+        } else {
+            return ProcessTools.createJavaProcessBuilder(
+                stackOption + stackSize,
+                // Uncomment the following to get log output
+                // that shows actual thread creation sizes.
+                // "-Xlog:os+thread",
+                "-XX:StackShadowPages=" + testShadowSize,
+                "-version");
+        }
+    }
+
     /*
      * Run the JVM with the specified stack size.
      *
@@ -101,13 +122,7 @@ public class TooSmallStackSize {
 
         System.out.println("*** Testing " + stackOption + stackSize);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            stackOption + stackSize,
-            // Uncomment the following to get log output
-            // that shows actual thread creation sizes.
-            // "-Xlog:os+thread",
-            "-version");
-
+        ProcessBuilder pb = createProcessWithOptions(stackOption, stackSize);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (verbose) {
@@ -144,20 +159,14 @@ public class TooSmallStackSize {
     static void checkMinStackAllowed(String stackOption, String optionMesg, String stackSize) throws Exception {
         System.out.println("*** Testing " + stackOption + stackSize);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            stackOption + stackSize,
-            // Uncomment the following to get log output
-            // that shows actual thread creation sizes.
-            // "-Xlog:os+thread",
-            "-version");
-
+        ProcessBuilder pb = createProcessWithOptions(stackOption, stackSize);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
         System.out.println("PASSED: VM launched with " + stackOption + stackSize);
     }
 
-    public static void main(String... args) throws Exception {
+    public static void test(String... args) throws Exception {
         /*
          * The result of a 16k stack size should be a quick exit with a complaint
          * that the stack size is too small. However, for some win32 builds, the
@@ -177,7 +186,7 @@ public class TooSmallStackSize {
         String min_stack_allowed = checkStack("-XX:ThreadStackSize=", ThreadStackSizeString, "64");
 
         /*
-         * Try again with a the minimum stack size that was given in the error message
+         * Try again with the minimum stack size that was given in the error message
          */
         checkMinStackAllowed("-XX:ThreadStackSize=", ThreadStackSizeString, min_stack_allowed);
 
@@ -208,5 +217,14 @@ public class TooSmallStackSize {
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, min_stack_allowed);
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "513");
         checkMinStackAllowed("-XX:VMThreadStackSize=", VMThreadStackSizeString, "0");
+    }
+
+    // aarch64 StackShadowPage size range is 25-55
+    static String shadowSizes[] = { null, "30" };
+    public static void main(java.lang.String[] unused) throws Exception {
+        for (String sz : shadowSizes) {
+            testShadowSize = sz;
+            test();
+        }
     }
 }

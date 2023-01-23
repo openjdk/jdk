@@ -58,6 +58,7 @@ public final class Token {
     static final String DIV = "div";
     static final String MOD = "mod";
     static final String QUO = "quo";
+    static final String DOT_STR = ".";
     static final String DDOT = "..";
     static final String DCOLON = "::";
     static final String ATTR = "attribute";

@@ -27,6 +27,7 @@
  * @summary Record null_check traps for calls and array_check traps in the interpreter
  *
  * @requires vm.compiler2.enabled & vm.compMode != "Xcomp"
+ * @requires vm.opt.DeoptimizeALot != true
  *
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -111,13 +112,10 @@ public class OptimizeImplicitExceptions {
         return null;
     }
 
-    // Completely unload (i.e. make "not-entrant"->"zombie"->"unload/free") a JIT-compiled
+    // Completely unload (i.e. make "not-entrant"->free) a JIT-compiled
     // version of a method and clear the method's profiling counters.
     private static void unloadAndClean(Method m) {
         WB.deoptimizeMethod(m);  // Makes the nmethod "not entrant".
-        WB.forceNMethodSweep();  // Makes all "not entrant" nmethods "zombie". This requires
-        WB.forceNMethodSweep();  // two sweeps, see 'nmethod::can_convert_to_zombie()' for why.
-        WB.forceNMethodSweep();  // Need third sweep to actually unload/free all "zombie" nmethods.
         System.gc();
         WB.clearMethodState(m);
     }
@@ -194,6 +192,11 @@ public class OptimizeImplicitExceptions {
             // The fast-throw optimzation only works if we're running with -XX:+ProfileTraps
             return;
         }
+
+        // The following options are both develop, or nops in product build.
+        // If they are set, disable them for test stability. It's fine because we use /othervm above.
+        WB.setBooleanVMFlag("DeoptimizeALot", false);
+        WB.setBooleanVMFlag("DeoptimizeRandom", false);
 
         // Initialize global deopt counts to zero.
         for (ImplicitException impExcp : ImplicitException.values()) {

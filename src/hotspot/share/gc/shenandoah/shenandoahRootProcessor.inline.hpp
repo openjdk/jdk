@@ -152,7 +152,7 @@ public:
 //      we risk executing that code cache blob, and crashing.
 template <typename T>
 void ShenandoahSTWRootScanner::roots_do(T* oops, uint worker_id) {
-  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure blobs_cl(oops, !CodeBlobToOopClosure::FixRelocations, true /*FIXME*/);
   CLDToOopClosure clds(oops, ClassLoaderData::_claim_strong);
   ResourceMark rm;
 

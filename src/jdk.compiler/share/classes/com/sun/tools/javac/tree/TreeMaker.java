@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,8 +273,8 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCEnhancedForLoop ForeachLoop(JCVariableDecl var, JCExpression expr, JCStatement body) {
-        JCEnhancedForLoop tree = new JCEnhancedForLoop(var, expr, body);
+    public JCEnhancedForLoop ForeachLoop(JCTree varOrRecordPattern, JCExpression expr, JCStatement body) {
+        JCEnhancedForLoop tree = new JCEnhancedForLoop(varOrRecordPattern, expr, body);
         tree.pos = pos;
         return tree;
     }
@@ -494,14 +494,26 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
+    public JCConstantCaseLabel ConstantCaseLabel(JCExpression expr) {
+        JCConstantCaseLabel tree = new JCConstantCaseLabel(expr);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public JCPatternCaseLabel PatternCaseLabel(JCPattern pat, JCExpression guard) {
+        JCPatternCaseLabel tree = new JCPatternCaseLabel(pat, guard);
+        tree.pos = pos;
+        return tree;
+    }
+
     public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
         JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
         tree.pos = pos;
         return tree;
     }
 
-    public JCGuardPattern GuardPattern(JCPattern guardedPattern, JCExpression expr) {
-        JCGuardPattern tree = new JCGuardPattern(guardedPattern, expr);
+    public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
+        JCRecordPattern tree = new JCRecordPattern(deconstructor, nested);
         tree.pos = pos;
         return tree;
     }
@@ -1052,8 +1064,8 @@ public class TreeMaker implements JCTree.Factory {
         return VarDef(new VarSymbol(PARAMETER, name, argtype, owner), null);
     }
 
-    /** Create a a list of value parameter trees x0, ..., xn from a list of
-     *  their types and an their owner.
+    /** Create a list of value parameter trees x0, ..., xn from a list of
+     *  their types and their owner.
      */
     public List<JCVariableDecl> Params(List<Type> argtypes, Symbol owner) {
         ListBuffer<JCVariableDecl> params = new ListBuffer<>();

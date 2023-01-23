@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@ package gc.g1;
  * @summary Test the VerifyGCType flag to ensure basic functionality.
  * @requires vm.gc.G1
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver gc.g1.TestVerifyGCType
  */
 
@@ -40,7 +40,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 public class TestVerifyGCType {
     public static final String VERIFY_TAG    = "[gc,verify]";
@@ -125,8 +125,7 @@ public class TestVerifyGCType {
                                           new String[] {"-XX:+G1EvacuationFailureALot",
                                                         "-XX:G1EvacuationFailureALotCount=100",
                                                         "-XX:G1EvacuationFailureALotInterval=1",
-                                                        "-XX:+UnlockDiagnosticVMOptions",
-                                                        "-XX:-G1UsePreventiveGC"});
+                                                        "-XX:+UnlockDiagnosticVMOptions"});
         output.shouldHaveExitValue(0);
 
         verifyCollection("Pause Young (Normal)", false, false, true, output.getStdout());
@@ -190,18 +189,18 @@ public class TestVerifyGCType {
         Asserts.assertTrue(ci != null, "Expected GC not found: " + name + "\n" + data);
 
         // Verify Before
-        verifyType(ci, expectBefore, VERIFY_BEFORE);
+        verifyType(ci, expectBefore, VERIFY_BEFORE, data);
         // Verify During
-        verifyType(ci, expectDuring, VERIFY_DURING);
+        verifyType(ci, expectDuring, VERIFY_DURING, data);
         // Verify After
-        verifyType(ci, expectAfter, VERIFY_AFTER);
+        verifyType(ci, expectAfter, VERIFY_AFTER, data);
     }
 
-    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern) {
+    private static void verifyType(CollectionInfo ci, boolean shouldExist, String pattern, String data) {
         if (shouldExist) {
-            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertTrue(ci.containsVerification(pattern), "Missing expected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         } else {
-            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName());
+            Asserts.assertFalse(ci.containsVerification(pattern), "Found unexpected verification pattern " + pattern + " for: " + ci.getName() + "\n" + data);
         }
     }
 
@@ -273,22 +272,26 @@ public class TestVerifyGCType {
             partialFree(used);
 
             used = alloc1M();
-            wb.g1StartConcMarkCycle(); // concurrent-start, remark and cleanup
-            partialFree(used);
 
-            // Sleep to make sure concurrent cycle is done
-            while (wb.g1InConcurrentMark()) {
-                Thread.sleep(1000);
+            wb.concurrentGCAcquireControl();
+            try {
+                wb.concurrentGCRunTo(wb.AFTER_MARKING_STARTED);
+                partialFree(used);
+
+                wb.concurrentGCRunToIdle();
+
+                // Trigger two young GCs while preventing a new concurrent GC.
+                // First will be young-prepare-mixed, second will be mixed.
+                used = alloc1M();
+                wb.youngGC(); // young-prepare-mixed
+                partialFree(used);
+
+                used = alloc1M();
+                wb.youngGC(); // mixed
+                partialFree(used);
+            } finally {
+                wb.concurrentGCReleaseControl();
             }
-
-            // Trigger two young GCs, first will be young-prepare-mixed, second will be mixed.
-            used = alloc1M();
-            wb.youngGC(); // young-prepare-mixed
-            partialFree(used);
-
-            used = alloc1M();
-            wb.youngGC(); // mixed
-            partialFree(used);
         }
 
         private static Object[] alloc1M() {

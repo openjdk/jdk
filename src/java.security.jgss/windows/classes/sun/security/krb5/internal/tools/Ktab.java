@@ -469,7 +469,7 @@ public class Ktab {
                 + "    kvno. If \"all\" is specified, delete all keys. If \"old\" is specified,\n"
                 + "    delete all keys except those with the highest kvno. Default action\n"
                 + "    is \"all\". If <etype> is specified, only keys of this encryption type\n"
-                + "    are deleted. <etype> should be specified as the numberic value etype\n"
+                + "    are deleted. <etype> should be specified as the numeric value etype\n"
                 + "    defined in RFC 3961, section 8. A prompt to confirm the deletion is\n"
                 + "    displayed unless -f is specified.");
         System.out.println();

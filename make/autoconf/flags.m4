@@ -295,7 +295,7 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # FIXME: Don't really know how to do with this, but this was the old behavior
   GLOBAL_CPPFLAGS="$SYSROOT_CFLAGS"
 
-  # FIXME: For compatilibity, export this as EXTRA_CFLAGS for now.
+  # FIXME: For compatibility, export this as EXTRA_CFLAGS for now.
   EXTRA_CFLAGS="$MACHINE_FLAG $USER_CFLAGS"
   EXTRA_CXXFLAGS="$MACHINE_FLAG $USER_CXXFLAGS"
   EXTRA_LDFLAGS="$MACHINE_FLAG $USER_LDFLAGS"
@@ -342,6 +342,7 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
       AC_MSG_CHECKING([if @file is supported by gcc])
       # Extra empty "" to prevent ECHO from interpreting '--version' as argument
       $ECHO "" "--version" > command.file
+      # Redirect stderr and stdout to config.log (AS_MESSAGE_LOG_FD) via merge
       if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
         AC_MSG_RESULT(yes)
         COMPILER_COMMAND_FILE_FLAG="@"
@@ -502,14 +503,14 @@ UTIL_DEFUN_NAMED([FLAGS_CXX_COMPILER_CHECK_ARGUMENTS],
 UTIL_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
     [*ARGUMENT IF_TRUE IF_FALSE PREFIX], [$@],
 [
-  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [C_COMP_SUPPORTS="yes"],
       IF_FALSE: [C_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
-  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+      PREFIX: ARG_PREFIX)
+  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: ARG_ARGUMENT,
       IF_TRUE: [CXX_COMP_SUPPORTS="yes"],
       IF_FALSE: [CXX_COMP_SUPPORTS="no"],
-      PREFIX: [ARG_PREFIX])
+      PREFIX: ARG_PREFIX)
 
   AC_MSG_CHECKING([if both ARG_PREFIX[CC] and ARG_PREFIX[CXX] support "ARG_ARGUMENT"])
   supports=no

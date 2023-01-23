@@ -155,9 +155,35 @@
   // Implements a variant of EncodeISOArrayNode that encode ASCII only
   static const bool supports_encode_ascii_array = false;
 
-  // Returns pre-selection estimated cost of a vector operation.
+  // Some architecture needs a helper to check for alltrue vector
+  static constexpr bool vectortest_needs_second_argument(bool is_alltrue, bool is_predicate) {
+    return false;
+  }
+
+  // BoolTest mask for vector test intrinsics
+  static constexpr BoolTest::mask vectortest_mask(bool is_alltrue, bool is_predicate, int vlen) {
+    return BoolTest::illegal;
+  }
+
+  // Returns pre-selection estimated size of a vector operation.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
-    return 0;
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundVF: // fall through
+      case Op_RoundVD: {
+        return 30;
+      }
+    }
+  }
+  // Returns pre-selection estimated size of a scalar operation.
+  static int scalar_op_pre_select_sz_estimate(int vopc, BasicType ety) {
+    switch(vopc) {
+      default: return 0;
+      case Op_RoundF: // fall through
+      case Op_RoundD: {
+        return 30;
+      }
+    }
   }
 
 #endif // CPU_ARM_MATCHER_ARM_HPP

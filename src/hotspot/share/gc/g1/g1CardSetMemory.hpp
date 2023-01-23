@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetContainers.hpp"
-#include "gc/g1/g1SegmentedArray.hpp"
-#include "gc/g1/g1SegmentedArrayFreePool.hpp"
+#include "gc/g1/g1MonotonicArena.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/shared/freeListAllocator.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
@@ -37,8 +37,8 @@ class G1CardSetConfiguration;
 class outputStream;
 
 // Collects G1CardSetAllocator options/heuristics. Called by G1CardSetAllocator
-// to determine the next size of the allocated G1CardSetSegment.
-class G1CardSetAllocOptions : public G1SegmentedArrayAllocOptions {
+// to determine the next size of the allocated memory Segment.
+class G1CardSetAllocOptions : public G1MonotonicArena::AllocOptions {
   static const uint MinimumNumSlots = 8;
   static const uint MaximumNumSlots = UINT_MAX / 2;
 
@@ -50,7 +50,7 @@ public:
   static const uint SlotAlignment = 8;
 
   G1CardSetAllocOptions(uint slot_size, uint initial_num_slots = MinimumNumSlots, uint max_num_slots = MaximumNumSlots) :
-    G1SegmentedArrayAllocOptions(mtGCCardSet, slot_size, initial_num_slots, max_num_slots, SlotAlignment) {
+    G1MonotonicArena::AllocOptions(mtGCCardSet, slot_size, initial_num_slots, max_num_slots, SlotAlignment) {
   }
 
   virtual uint next_num_slots(uint prev_num_slots) const override {
@@ -58,22 +58,20 @@ public:
   }
 };
 
-using G1CardSetSegment = G1SegmentedArraySegment;
-
-using G1CardSetFreeList = G1SegmentedArrayFreeList;
-
 // Arena-like allocator for (card set) heap memory objects.
 //
 // Allocation occurs from an internal free list of objects first. If the free list is
-// empty then tries to allocate from the G1SegmentedArray.
+// empty then tries to allocate from the G1MonotonicArena.
 class G1CardSetAllocator {
-  G1SegmentedArray _segmented_array;
+  using Segment = G1MonotonicArena::Segment;
+  using SegmentFreeList = G1MonotonicArena::SegmentFreeList;
+  G1MonotonicArena _arena;
   FreeListAllocator _free_slots_list;
 
 public:
   G1CardSetAllocator(const char* name,
                      const G1CardSetAllocOptions* alloc_options,
-                     G1CardSetFreeList* free_segment_list);
+                     SegmentFreeList* segment_free_list);
   ~G1CardSetAllocator();
 
   void* allocate();
@@ -83,16 +81,15 @@ public:
   // be called in a globally synchronized area.
   void drop_all();
 
+  // Total memory allocated.
   size_t mem_size() const;
 
-  size_t wasted_mem_size() const;
+  size_t unused_mem_size() const;
 
   uint num_segments() const;
-
-  void print(outputStream* os);
 };
 
-using G1CardSetFreePool = G1SegmentedArrayFreePool;
+using G1CardSetFreePool = G1MonotonicArenaFreePool;
 
 class G1CardSetMemoryManager : public CHeapObj<mtGCCardSet> {
   G1CardSetConfiguration* _config;
@@ -116,12 +113,10 @@ public:
 
   void flush();
 
-  void print(outputStream* os);
-
   size_t mem_size() const;
-  size_t wasted_mem_size() const;
+  size_t unused_mem_size() const;
 
-  G1SegmentedArrayMemoryStats memory_stats() const;
+  G1MonotonicArenaMemoryStats memory_stats() const;
 };
 
 #endif // SHARE_GC_G1_G1CARDSETMEMORY_HPP

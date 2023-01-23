@@ -128,6 +128,40 @@ public class CommentUtils {
         return treeFactory.newTextTree(resources.getText(key));
     }
 
+
+    /**
+     * Parses a string, looking for simple embedded HTML.
+     * @param s the string
+     * @return the list of parsed {@code DocTree} nodes
+     */
+    private List<DocTree> parse(String s) {
+        List<DocTree> list = null;
+        Pattern p = Pattern.compile("(?i)<(/)?([a-z0-9]+)(/)?>");
+        Matcher m = p.matcher(s);
+        int start = 0;
+        while (m.find()) {
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+            if (m.start() > 0) {
+                list.add(treeFactory.newTextTree(s.substring(start, m.start())));
+            }
+            Name name = elementUtils.getName(m.group(2));
+            list.add(m.group(1) == null
+                    ? treeFactory.newStartElementTree(name, List.of(), m.group(3) != null)
+                    : treeFactory.newEndElementTree(name));
+            start = m.end();
+        }
+        if (list == null) {
+            return List.of(treeFactory.newTextTree(s));
+        } else {
+            if (start < s.length()) {
+                list.add(treeFactory.newTextTree(s.substring(start, s.length())));
+            }
+            return list;
+        }
+    }
+
     public void setEnumValuesTree(ExecutableElement ee) {
         List<DocTree> fullBody = new ArrayList<>();
         fullBody.add(treeFactory.newTextTree(resources.getText("doclet.enum_values_doc.fullbody")));
@@ -142,8 +176,7 @@ public class CommentUtils {
     }
 
     public void setEnumValueOfTree(ExecutableElement ee) {
-        List<DocTree> fullBody = new ArrayList<>();
-        fullBody.add(treeFactory.newTextTree(resources.getText("doclet.enum_valueof_doc.fullbody")));
+        List<DocTree> fullBody = parse(resources.getText("doclet.enum_valueof_doc.fullbody"));
 
         List<DocTree> tags = new ArrayList<>();
 
@@ -242,15 +275,15 @@ public class CommentUtils {
         int start = 0;
         while (m.find(start)) {
             if (m.start() > start) {
-                contents.add(treeFactory.newTextTree(body.substring(start, m.start())));
+                contents.addAll(parse(body.substring(start, m.start())));
             }
             ReferenceTree refTree = treeFactory.newReferenceTree(m.group(1));
-            List<DocTree> descr = List.of(treeFactory.newTextTree(m.group(2).trim())) ;
+            List<DocTree> descr = parse(m.group(2).trim());
             contents.add(treeFactory.newLinkTree(refTree, descr));
             start = m.end();
         }
         if (start < body.length()) {
-            contents.add(treeFactory.newTextTree(body.substring(start)));
+            contents.addAll(parse(body.substring(start)));
         }
     }
 
@@ -485,16 +518,16 @@ public class CommentUtils {
         String text = resources.getText(key);
         int index = text.indexOf("{0}");
         if (index == -1) {
-            return List.of(treeFactory.newTextTree(text));
+            return parse(text);
         } else {
             Name CODE = elementUtils.getName("code");
-            return List.of(
-                    treeFactory.newTextTree(text.substring(0, index)),
-                    treeFactory.newStartElementTree(CODE, List.of(), false),
-                    treeFactory.newTextTree(name.toString()),
-                    treeFactory.newEndElementTree(CODE),
-                    treeFactory.newTextTree(text.substring(index + 3))
-            );
+            var list = new ArrayList<DocTree>();
+            list.addAll(parse(text.substring(0, index)));
+            list.add(treeFactory.newStartElementTree(CODE, List.of(), false));
+            list.add(treeFactory.newTextTree(name.toString()))   ;
+            list.add(treeFactory.newEndElementTree(CODE));
+            list.addAll(parse(text.substring(index + 3)));
+            return list;
         }
     }
 

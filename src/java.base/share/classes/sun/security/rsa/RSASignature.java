@@ -144,7 +144,7 @@ abstract class RSASignature extends SignatureSpi {
      * Reset the message digest if it is not already reset.
      */
     private void resetDigest() {
-        if (digestReset == false) {
+        if (!digestReset) {
             md.reset();
             digestReset = true;
         }
@@ -190,12 +190,9 @@ abstract class RSASignature extends SignatureSpi {
         try {
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
-            byte[] encrypted = RSACore.rsa(padded, privateKey, true);
-            return encrypted;
+            return RSACore.rsa(padded, privateKey, true);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
-        } catch (IOException e) {
-            throw new SignatureException("Could not encode data", e);
         }
     }
 
@@ -215,6 +212,10 @@ abstract class RSASignature extends SignatureSpi {
             byte[] digest = getDigestValue();
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
             byte[] unpadded = padding.unpad(decrypted);
+            // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
+            // Step 4 suggests comparing the encoded message instead of the
+            // decoded, but some vendors might omit the NULL params in
+            // digest algorithm identifier.
             byte[] decodedDigest = RSAUtil.decodeSignature(digestOID, unpadded);
             return MessageDigest.isEqual(digest, decodedDigest);
         } catch (javax.crypto.BadPaddingException e) {

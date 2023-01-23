@@ -30,13 +30,16 @@
 #include "jfr/utilities/jfrTypes.hpp"
 #include "oops/method.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
-#include "runtime/thread.inline.hpp"
 
 bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& first_frame) {
   assert(top_frame.cb() != NULL, "invariant");
-  RegisterMap map(_thread, false, false);
+  RegisterMap map(_thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
   frame candidate = top_frame;
   for (u4 i = 0; i < MAX_STACK_DEPTH * 2; ++i) {
     if (candidate.is_entry_frame()) {

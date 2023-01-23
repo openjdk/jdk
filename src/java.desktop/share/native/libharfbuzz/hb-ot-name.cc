@@ -52,7 +52,7 @@
  * array is owned by the @face and should not be modified.  It can be
  * used as long as @face is alive.
  *
- * Returns: (out) (transfer none) (array length=num_entries): Array of available name entries.
+ * Returns: (transfer none) (array length=num_entries): Array of available name entries.
  * Since: 2.1.0
  **/
 const hb_ot_name_entry_t *
@@ -156,7 +156,8 @@ hb_ot_name_get_utf (hb_face_t       *face,
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-8 encoding.
+ * Returns string in UTF-8 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0
@@ -183,7 +184,8 @@ hb_ot_name_get_utf8 (hb_face_t       *face,
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-16 encoding.
+ * Returns string in UTF-16 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0
@@ -209,7 +211,8 @@ hb_ot_name_get_utf16 (hb_face_t       *face,
  *
  * Fetches a font name from the OpenType 'name' table.
  * If @language is #HB_LANGUAGE_INVALID, English ("en") is assumed.
- * Returns string in UTF-32 encoding.
+ * Returns string in UTF-32 encoding. A NUL terminator is always written
+ * for convenience, and isn't included in the output @text_size.
  *
  * Returns: full length of the requested string, or 0 if not found.
  * Since: 2.1.0

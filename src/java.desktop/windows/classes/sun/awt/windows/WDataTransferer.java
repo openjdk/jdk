@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,10 +194,10 @@ final class WDataTransferer extends DataTransferer {
             } else if (contents.isDataFlavorSupported(DataFlavor.allHtmlFlavor)) {
                 // if we cannot get data represented by the
                 // DataFlavor.selectionHtmlFlavor format
-                // but the DataFlavor.allHtmlFlavor format is avialable
-                // we belive that the user knows how to represent
+                // but the DataFlavor.allHtmlFlavor format is available
+                // we believe that the user knows how to represent
                 // the data and how to mark up selection in a
-                // system specific manner. Therefor, we use this data
+                // system specific manner. Therefore, we use this data
                 bytes = super.translateTransferable(contents,
                         DataFlavor.allHtmlFlavor,
                         format);
@@ -241,7 +241,7 @@ final class WDataTransferer extends DataTransferer {
             if (bytes == null || !DataFlavor.javaFileListFlavor.equals(flavor)) {
                 throw new IOException("data translation failed");
             }
-            String st = new String(bytes, 0, bytes.length, UTF_16LE);
+            String st = new String(bytes, UTF_16LE);
             String[] filenames = st.split("\0");
             if( 0 == filenames.length ){
                 return null;
@@ -271,7 +271,9 @@ final class WDataTransferer extends DataTransferer {
                 } catch (UnsupportedFlavorException cannotHappen) {
                 }
             }
-            return new URL(new String(bytes, charset));
+            @SuppressWarnings("deprecation")
+            var result = new URL(new String(bytes, charset));
+            return result;
         }
 
         return super.translateBytes(bytes , flavor, format,
@@ -585,7 +587,7 @@ class HTMLCodec extends InputStream {
      * EndFragment:000000694\r\n      -- shift in array before start  <!--EndFragment-->
      * StartSelection:000000398\r\n   -- shift in array of the first char in copied selection
      * EndSelection:000000692\r\n     -- shift in array of the last char in copied selection
-     * SourceURL:http://sun.com/\r\n  -- base URL for related referenses
+     * SourceURL:http://sun.com/\r\n  -- base URL for related references
      * <HTML>...<BODY>...<!--StartFragment-->.....................<!--EndFragment-->...</BODY><HTML>
      * ^                                     ^ ^                ^^                                 ^
      * \ StartHTML                           | \-StartSelection | \EndFragment              EndHTML/
@@ -612,8 +614,8 @@ class HTMLCodec extends InputStream {
                 if (!stUpContext.contains("<BODY")) {
                     htmlPrefix = htmlPrefix +"<BODY>";
                     htmlSuffix = "</BODY>" + htmlSuffix;
-                };
-            };
+                }
+            }
         }
 
         String stBaseUrl = DEF_SOURCE_URL;
@@ -704,7 +706,7 @@ class HTMLCodec extends InputStream {
             iFragEnd,  // EndFragment -- shift in array before start <!--EndFragment-->
             iSelStart, // StartSelection -- shift in array of the first char in copied selection
             iSelEnd;   // EndSelection -- shift in array of the last char in copied selection
-    private String stBaseURL; // SourceURL -- base URL for related referenses
+    private String stBaseURL; // SourceURL -- base URL for related references
     private String stVersion; // Version -- current supported version
 
     //Stream reader markers:
@@ -819,7 +821,7 @@ class HTMLCodec extends InputStream {
                             case 7:
                                 stBaseURL = stValue;
                                 break;
-                        };
+                        }
                     } catch ( NumberFormatException e ) {
                         throw new IOException(FAILURE_MSG + astEntries[iEntry]+ " value " + e + INVALID_MSG);
                     }

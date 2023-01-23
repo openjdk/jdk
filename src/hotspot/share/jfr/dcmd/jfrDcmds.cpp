@@ -30,6 +30,7 @@
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
 #include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logMessage.hpp"
@@ -55,10 +56,6 @@ bool register_jfr_dcmds() {
   return true;
 }
 
-static bool is_module_available(outputStream* output, TRAPS) {
-  return JfrJavaSupport::is_jdk_jfr_module_available(output, THREAD);
-}
-
 static bool is_disabled(outputStream* output) {
   if (Jfr::is_disabled()) {
     if (output != NULL) {
@@ -71,7 +68,28 @@ static bool is_disabled(outputStream* output) {
 
 static bool invalid_state(outputStream* out, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  return is_disabled(out) || !is_module_available(out, THREAD);
+  if (is_disabled(out)) {
+    return true;
+  }
+  if (!JfrJavaSupport::is_jdk_jfr_module_available()) {
+    JfrJavaSupport::load_jdk_jfr_module(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      // Log exception here, but let is_jdk_jfr_module_available(out, THREAD)
+      // handle output to the user.
+      ResourceMark rm(THREAD);
+      oop throwable = PENDING_EXCEPTION;
+      assert(throwable != nullptr, "invariant");
+      oop msg = java_lang_Throwable::message(throwable);
+      if (msg != nullptr) {
+        char* text = java_lang_String::as_utf8_string(msg);
+        if (text != nullptr) {
+          log_debug(jfr, startup)("Flight Recorder can not be enabled. %s", text);
+        }
+      }
+      CLEAR_PENDING_EXCEPTION;
+    }
+  }
+  return !JfrJavaSupport::is_jdk_jfr_module_available(out, THREAD);
 }
 
 static void handle_pending_exception(outputStream* output, bool startup, oop throwable) {
@@ -238,7 +256,7 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
                                                         false,
                                                         true, // a DcmdFramework "option"
                                                         false);
-  for (int i = 0; i < array->max_length(); ++i) {
+  for (int i = 0; i < array->capacity(); ++i) {
     array->append(dummy);
   }
 }
@@ -247,12 +265,10 @@ static void initialize_dummy_descriptors(GrowableArray<DCmdArgumentInfo*>* array
 // we keep them in a thread local arena. The arena is reset between invocations.
 static THREAD_LOCAL Arena* dcmd_arena = NULL;
 
-static void prepare_dcmd_string_arena() {
-  if (dcmd_arena == NULL) {
-    dcmd_arena = new (mtTracing) Arena(mtTracing);
-  } else {
-    dcmd_arena->destruct_contents(); // will grow on next allocation
-  }
+static void prepare_dcmd_string_arena(JavaThread* jt) {
+  dcmd_arena = JfrThreadLocal::dcmd_arena(jt);
+  assert(dcmd_arena != nullptr, "invariant");
+  dcmd_arena->destruct_contents(); // will grow on next allocation
 }
 
 static char* dcmd_arena_allocate(size_t size) {
@@ -260,7 +276,7 @@ static char* dcmd_arena_allocate(size_t size) {
   return (char*)dcmd_arena->Amalloc(size);
 }
 
-static const char* get_as_dcmd_arena_string(oop string, JavaThread* t) {
+static const char* get_as_dcmd_arena_string(oop string) {
   char* str = NULL;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != NULL) {
@@ -281,7 +297,7 @@ static const char* read_string_field(oop argument, const char* field_name, TRAPS
   args.set_receiver(argument);
   JfrJavaSupport::get_field(&args, THREAD);
   const oop string_oop = result.get_oop();
-  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop, (JavaThread*)THREAD) : NULL;
+  return string_oop != NULL ? get_as_dcmd_arena_string(string_oop) : NULL;
 }
 
 static bool read_boolean_field(oop argument, const char* field_name, TRAPS) {
@@ -330,7 +346,7 @@ GrowableArray<DCmdArgumentInfo*>* JfrDCmd::argument_info_array() const {
   assert(arguments->is_array(), "must be array");
   const int num_arguments = arguments->length();
   assert(num_arguments == _num_arguments, "invariant");
-  prepare_dcmd_string_arena();
+  prepare_dcmd_string_arena(thread);
   for (int i = 0; i < num_arguments; ++i) {
     DCmdArgumentInfo* const dai = create_info(arguments->obj_at(i), thread);
     assert(dai != NULL, "invariant");

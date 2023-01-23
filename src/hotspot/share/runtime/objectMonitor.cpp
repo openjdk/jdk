@@ -41,6 +41,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
@@ -50,7 +51,6 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/thread.inline.hpp"
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
@@ -668,7 +668,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   } else {
     // We report NULL instead of DEFLATER_MARKER here because is_busy()
     // ignores DEFLATER_MARKER values.
-    ss->print("owner=" INTPTR_FORMAT, NULL);
+    ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
   }
   ss->print(", cxq=" INTPTR_FORMAT ", EntryList=" INTPTR_FORMAT, p2i(_cxq),
             p2i(_EntryList));
@@ -1416,6 +1416,12 @@ bool ObjectMonitor::check_owner(TRAPS) {
              "current thread is not owner", false);
 }
 
+static inline bool is_excluded(const Klass* monitor_klass) {
+  assert(monitor_klass != nullptr, "invariant");
+  NOT_JFR_RETURN_(false);
+  JFR_ONLY(return vmSymbols::jfr_chunk_rotation_monitor() == monitor_klass->name());
+}
+
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     ObjectMonitor* monitor,
                                     uint64_t notifier_tid,
@@ -1423,7 +1429,11 @@ static void post_monitor_wait_event(EventJavaMonitorWait* event,
                                     bool timedout) {
   assert(event != NULL, "invariant");
   assert(monitor != NULL, "invariant");
-  event->set_monitorClass(monitor->object()->klass());
+  const Klass* monitor_klass = monitor->object()->klass();
+  if (is_excluded(monitor_klass)) {
+    return;
+  }
+  event->set_monitorClass(monitor_klass);
   event->set_timeout(timeout);
   // Set an address that is 'unique enough', such that events close in
   // time and with the same address are likely (but not guaranteed) to
@@ -1486,7 +1496,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Enter the waiting queue, which is a circular doubly linked list in this case
   // but it could be a priority queue or any data structure.
   // _WaitSetLock protects the wait queue.  Normally the wait queue is accessed only
-  // by the the owner of the monitor *except* in the case where park()
+  // by the owner of the monitor *except* in the case where park()
   // returns because of a timeout of interrupt.  Contention is exceptionally rare
   // so we use a simple spin-lock instead of a heavier-weight blocking lock.
 
@@ -1631,8 +1641,10 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   current->set_current_waiting_monitor(NULL);
 
   guarantee(_recursions == 0, "invariant");
-  _recursions = save      // restore the old recursion count
-                + JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current); //  increased by the deferred relock count
+  int relock_count = JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current);
+  _recursions =   save          // restore the old recursion count
+                + relock_count; //  increased by the deferred relock count
+  current->inc_held_monitor_count(relock_count); // Deopt never entered these counts.
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions
@@ -1867,7 +1879,7 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
   ctr = _SpinDuration;
   if (ctr <= 0) return 0;
 
-  if (NotRunnable(current, (JavaThread*) owner_raw())) {
+  if (NotRunnable(current, static_cast<JavaThread*>(owner_raw()))) {
     return 0;
   }
 
@@ -1916,9 +1928,9 @@ int ObjectMonitor::TrySpin(JavaThread* current) {
     // the spin without prejudice or apply a "penalty" to the
     // spin count-down variable "ctr", reducing it by 100, say.
 
-    JavaThread* ox = (JavaThread*) owner_raw();
+    JavaThread* ox = static_cast<JavaThread*>(owner_raw());
     if (ox == NULL) {
-      ox = (JavaThread*)try_set_owner_from(NULL, current);
+      ox = static_cast<JavaThread*>(try_set_owner_from(NULL, current));
       if (ox == NULL) {
         // The CAS succeeded -- this thread acquired ownership
         // Take care of some bookkeeping to exit spin state.

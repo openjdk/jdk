@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ import javax.swing.tree.TreeModel;
 
 /**
  * TreeTableModel is the model used by a JTreeTable. It extends TreeModel
- * to add methods for getting inforamtion about the set of columns each
+ * to add methods for getting information about the set of columns each
  * node in the TreeTableModel may have. Each column, like a column in
  * a TableModel, has a name and a type associated with it. Each node in
  * the TreeTableModel can return a value for each of the columns and
@@ -40,7 +40,7 @@ import javax.swing.tree.TreeModel;
 public interface TreeTableModel extends TreeModel
 {
     /**
-     * Returns the number ofs availible column.
+     * Returns the number of available columns.
      */
     public int getColumnCount();
 
@@ -61,7 +61,7 @@ public interface TreeTableModel extends TreeModel
     public Object getValueAt(Object node, int column);
 
     /**
-     * Indicates whether the the value for node <code>node</code>,
+     * Indicates whether the value for node <code>node</code>,
      * at column number <code>column</code> is editable.
      */
     public boolean isCellEditable(Object node, int column);

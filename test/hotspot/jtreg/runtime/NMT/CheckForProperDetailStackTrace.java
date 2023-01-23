@@ -62,19 +62,8 @@ public class CheckForProperDetailStackTrace {
        to make sure it matches even if the symbol is not unmangled.
     */
     private static String stackTraceDefault =
-        ".*Hashtable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
-
-    /* Alternate stacktrace that we check if the default fails, because
-       new_entry may be inlined.
-    */
-    private static String stackTraceAlternate =
-        ".*Hashtable.*new_entry.*\n" +
-        ".*ModuleEntryTable.*locked_create_entry.*\n" +
-        ".*Modules.*define_module.*\n" +
-        ".*JVM_DefineModule.*\n";
 
     /* The stack trace we look for on AIX and Windows slowdebug builds.
        ALWAYSINLINE is only a hint and is ignored for AllocateHeap on the
@@ -83,7 +72,6 @@ public class CheckForProperDetailStackTrace {
     */
     private static String stackTraceAllocateHeap =
         ".*AllocateHeap.*\n" +
-        ".*ModuleEntryTable.*new_entry.*\n" +
         ".*ModuleEntryTable.*locked_create_entry.*\n" +
         ".*Modules.*define_module.*\n";
 
@@ -149,13 +137,7 @@ public class CheckForProperDetailStackTrace {
             }
         } else {
             System.out.print(stackTraceDefault);
-            if (!stackTraceMatches(stackTraceDefault, output)) {
-                System.out.println("Looking for alternate stack matching:");
-                System.out.print(stackTraceAlternate);
-                if (stackTraceMatches(stackTraceAlternate, output)) {
-                    return;
-                }
-            } else {
+            if (stackTraceMatches(stackTraceDefault, output)) {
                 return;
             }
         }

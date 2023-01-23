@@ -35,6 +35,21 @@
  *      HeapByteBufferTest
  */
 
+/**
+ * @test
+ * @bug 8282555
+ * @summary intermittent, check that spilling MoveF2I etc produce memory edge
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ *
+ * @run main/othervm -Djdk.test.lib.random.seed=42
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
+ *      HeapByteBufferTest
+ * @run main/othervm
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:+OptoScheduling
+ *      HeapByteBufferTest
+ */
+
 public class HeapByteBufferTest extends ByteBufferTest {
 
     public HeapByteBufferTest(long iterations, boolean direct) {
@@ -44,7 +59,7 @@ public class HeapByteBufferTest extends ByteBufferTest {
     public static void main(String[] args) {
         // The number of iterations is high to ensure that tiered
         // compilation kicks in all the way up to C2.
-        long iterations = 100000;
+        long iterations = 5000;
         if (args.length > 0)
             iterations = Long.parseLong(args[0]);
 

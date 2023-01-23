@@ -24,11 +24,14 @@ package jdk.jpackage.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -225,10 +228,14 @@ public final class MacHelper {
         pkg.uninstallHandler = cmd -> {
             cmd.verifyIsOfType(PackageType.MAC_PKG);
 
-            Executor.of("sudo", "rm", "-rf")
-                    .addArgument(cmd.appInstallationDirectory())
-                    .execute();
-
+            if (Files.exists(getUninstallCommand(cmd))) {
+                Executor.of("sudo", "/bin/sh",
+                        getUninstallCommand(cmd).toString()).execute();
+            } else {
+                Executor.of("sudo", "rm", "-rf")
+                        .addArgument(cmd.appInstallationDirectory())
+                        .execute();
+            }
         };
 
         return pkg;
@@ -247,8 +254,32 @@ public final class MacHelper {
                         cmd.name() + (cmd.isRuntime() ? "" : ".app"));
     }
 
+    static Path getUninstallCommand(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        return cmd.pathToUnpackedPackageFile(Path.of(
+                "/Library/Application Support", getPackageName(cmd),
+                "uninstall.command"));
+    }
+
+    static Path getServicePlistFilePath(JPackageCommand cmd, String launcherName) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        return cmd.pathToUnpackedPackageFile(
+                Path.of("/Library/LaunchDaemons").resolve(
+                        getServicePListFileName(getPackageId(cmd),
+                                Optional.ofNullable(launcherName).orElseGet(
+                                        cmd::name))));
+    }
+
     private static String getPackageName(JPackageCommand cmd) {
         return cmd.getArgumentValue("--mac-package-name", cmd::installerName);
+    }
+
+    private static String getPackageId(JPackageCommand cmd) {
+        return cmd.getArgumentValue("--mac-package-identifier", () -> {
+            return cmd.getArgumentValue("--main-class", cmd::name, className -> {
+                return JavaAppDesc.parse(className).packageName();
+            });
+        });
     }
 
     public static final class PListWrapper {
@@ -314,6 +345,34 @@ public final class MacHelper {
         return dbf.newDocumentBuilder();
     }
 
+    private static String getServicePListFileName(String packageName,
+            String launcherName) {
+        try {
+            return getServicePListFileName.invoke(null, packageName,
+                    launcherName).toString();
+        } catch (InvocationTargetException | IllegalAccessException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static Method initGetServicePListFileName() {
+        try {
+            return Class.forName(
+                    "jdk.jpackage.internal.MacLaunchersAsServices").getMethod(
+                            "getServicePListFileName", String.class, String.class);
+        } catch (ClassNotFoundException ex) {
+            if (TKit.isOSX()) {
+                throw new RuntimeException(ex);
+            } else {
+                return null;
+            }
+        } catch (NoSuchMethodException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
+
+    private final static Method getServicePListFileName = initGetServicePListFileName();
 }

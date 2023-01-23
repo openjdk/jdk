@@ -447,7 +447,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @throws IOException if an I/O error occurs
      * @throws HeadlessException if {@code GraphicsEnvironment.isHeadless()}
      *         returns {@code true}
-     * @serial
+     *
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     @SuppressWarnings("removal")

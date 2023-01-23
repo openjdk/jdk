@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -67,28 +67,29 @@ public class Versions {
     }
 
     public static final Set<String> RETIRED_SOURCES =
-        Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
+        Set.of("1.2", "1.3", "1.4", "1.5", "1.6", "1.7");
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19");
+        Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
+               "15", "16", "17", "18", "19", "20", "21");
 
-    public static final String LATEST_MAJOR_VERSION = "63.0";
+    public static final String LATEST_MAJOR_VERSION = "65.0";
 
     static enum SourceTarget {
-        SEVEN(true,   "51.0",  "7", Versions::checksrc7),
-        EIGHT(true,   "52.0",  "8", Versions::checksrc8),
-        NINE(true,    "53.0",  "9", Versions::checksrc9),
-        TEN(true,     "54.0", "10", Versions::checksrc10),
-        ELEVEN(false, "55.0", "11", Versions::checksrc11),
-        TWELVE(false, "56.0", "12", Versions::checksrc12),
-        THIRTEEN(false, "57.0", "13", Versions::checksrc13),
-        FOURTEEN(false, "58.0", "14", Versions::checksrc14),
-        FIFTEEN(false,  "59.0", "15", Versions::checksrc15),
-        SIXTEEN(false,  "60.0", "16", Versions::checksrc16),
+        EIGHT(true,      "52.0",  "8", Versions::checksrc8),
+        NINE(true,       "53.0",  "9", Versions::checksrc9),
+        TEN(true,        "54.0", "10", Versions::checksrc10),
+        ELEVEN(false,    "55.0", "11", Versions::checksrc11),
+        TWELVE(false,    "56.0", "12", Versions::checksrc12),
+        THIRTEEN(false,  "57.0", "13", Versions::checksrc13),
+        FOURTEEN(false,  "58.0", "14", Versions::checksrc14),
+        FIFTEEN(false,   "59.0", "15", Versions::checksrc15),
+        SIXTEEN(false,   "60.0", "16", Versions::checksrc16),
         SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
         EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
-        NINETEEN(false,  "63.0", "19", Versions::checksrc19);
+        NINETEEN(false,  "63.0", "19", Versions::checksrc19),
+        TWENTY(false,    "64.0", "20", Versions::checksrc20),
+        TWENTY_ONE(false,"65.0", "21", Versions::checksrc20);
 
         private final boolean dotOne;
         private final String classFileVer;
@@ -244,12 +245,6 @@ public class Versions {
         }
     }
 
-    protected void checksrc7(List<String> args) {
-        printargs("checksrc7", args);
-        expectedPass(args, List.of("New7.java"));
-        expectedFail(args, List.of("New8.java"));
-    }
-
     protected void checksrc8(List<String> args) {
         printargs("checksrc8", args);
         expectedPass(args, List.of("New7.java", "New8.java"));
@@ -323,6 +318,13 @@ public class Versions {
 
    protected void checksrc19(List<String> args) {
        printargs("checksrc19", args);
+       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
+                                  "New14.java", "New15.java", "New16.java", "New17.java"));
+       // Add expectedFail after new language features added in a later release.
+    }
+
+   protected void checksrc20(List<String> args) {
+       printargs("checksrc20", args);
        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
                                   "New14.java", "New15.java", "New16.java", "New17.java"));
        // Add expectedFail after new language features added in a later release.

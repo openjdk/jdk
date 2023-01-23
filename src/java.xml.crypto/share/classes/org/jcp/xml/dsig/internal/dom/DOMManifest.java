@@ -104,7 +104,7 @@ public final class DOMManifest extends DOMStructure implements Manifest {
             }
             refs.add(new DOMReference(refElem, context, provider));
             if (secVal && Policy.restrictNumReferences(refs.size())) {
-                String error = "A maxiumum of " + Policy.maxReferences()
+                String error = "A maximum of " + Policy.maxReferences()
                     + " references per Manifest are allowed when"
                     + " secure validation is enabled";
                 throw new MarshalException(error);

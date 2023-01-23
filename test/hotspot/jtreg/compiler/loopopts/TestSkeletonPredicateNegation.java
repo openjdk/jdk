@@ -26,6 +26,7 @@
  * @test
  * @bug 8273277
  * @summary Skeleton predicates sometimes need to be negated
+ * @requires vm.compiler2.enabled
  * @run main compiler.loopopts.TestSkeletonPredicateNegation
  *
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u5DF2\u751F\u6210{0}\u5BC6\u94A5"}, //-genseckey
         {"Generated.keysize.bit.keyAlgName.secret.key",
                 "\u5DF2\u751F\u6210 {0} \u4F4D{1}\u5BC6\u94A5"}, //-genseckey
+        {"key.algorithm.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002"},
+        {"key.size.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002"},
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "\u4ECE JDK 1.1.x \u6837\u5F0F\u7684\u8EAB\u4EFD\u6570\u636E\u5E93\u5BFC\u5165\u6761\u76EE"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
@@ -369,6 +371,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Enter.alias.name.", "\u8F93\u5165\u522B\u540D:  "},
         {".RETURN.if.same.as.for.otherAlias.",
                 "\t(\u5982\u679C\u548C <{0}> \u76F8\u540C, \u5219\u6309\u56DE\u8F66)"},
+        {"enter.dname.components",
+                "\u8F93\u5165\u552F\u4E00\u5224\u522B\u540D\u3002\u63D0\u4F9B\u5355\u4E2A\u70B9 (.) \u4EE5\u5C06\u5B50\u7EC4\u4EF6\u7559\u7A7A\uFF0C\u6216\u6309 ENTER \u4EE5\u4F7F\u7528\u5927\u62EC\u53F7\u4E2D\u7684\u9ED8\u8BA4\u503C\u3002"},
         {"What.is.your.first.and.last.name.",
                 "\u60A8\u7684\u540D\u5B57\u4E0E\u59D3\u6C0F\u662F\u4EC0\u4E48?"},
         {"What.is.the.name.of.your.organizational.unit.",
@@ -381,6 +385,8 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "\u60A8\u6240\u5728\u7684\u7701/\u5E02/\u81EA\u6CBB\u533A\u540D\u79F0\u662F\u4EC0\u4E48?"},
         {"What.is.the.two.letter.country.code.for.this.unit.",
                 "\u8BE5\u5355\u4F4D\u7684\u53CC\u5B57\u6BCD\u56FD\u5BB6/\u5730\u533A\u4EE3\u7801\u662F\u4EC0\u4E48?"},
+        {"no.field.in.dname",
+                "\u5FC5\u987B\u81F3\u5C11\u63D0\u4F9B\u4E00\u4E2A\u5B57\u6BB5\u3002\u8BF7\u518D\u6B21\u8F93\u5165\u3002"},
         {"Is.name.correct.", "{0}\u662F\u5426\u6B63\u786E?"},
         {"no", "\u5426"},
         {"yes", "\u662F"},
@@ -449,6 +455,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         // generating cert/cert req using weak algorithms
         {"the.certificate.request", "\u8BC1\u4E66\u8BF7\u6C42"},
         {"the.issuer", "\u53D1\u5E03\u8005"},
+        {"the.generated.secretkey", "\u751F\u6210\u7684\u5BC6\u94A5"},
         {"the.generated.certificate", "\u751F\u6210\u7684\u8BC1\u4E66"},
         {"the.generated.crl", "\u751F\u6210\u7684 CRL"},
         {"the.generated.certificate.request", "\u751F\u6210\u7684\u8BC1\u4E66\u8BF7\u6C42"},
@@ -475,7 +482,9 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
                 "PKCS #10 \u8BC1\u4E66\u8BF7\u6C42 (\u7248\u672C 1.0)\n\u4E3B\u4F53: %1$s\n\u683C\u5F0F: %2$s\n\u516C\u5171\u5BC6\u94A5: %3$s\n\u7B7E\u540D\u7B97\u6CD5: %4$s\n"},
         {"verified.by.s.in.s.weak", "\u7531 %2$s \u4E2D\u7684 %1$s \u4EE5 %3$s \u9A8C\u8BC1"},
         {"whose.sigalg.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
-        {"whose.sigalg.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u7B97\u6CD5\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},
+        {"whose.sigalg.usagesignedjar", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\uFF0C\u65E0\u6CD5\u7528\u4E8E\u5728 %3$s \u540E\u5BF9 JAR \u8FDB\u884C\u7B7E\u540D\u3002"},
+        {"Unable.to.parse.denyAfter.string.in.exception.message", "\u65E0\u6CD5\u89E3\u6790\u5F02\u5E38\u9519\u8BEF\u6D88\u606F\u4E2D\u7684 denyAfter \u65E5\u671F\u5B57\u7B26\u4E32"},
+        {"whose.sigalg.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u7B7E\u540D\u7B97\u6CD5\u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002"},
         {"whose.key.disabled", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u800C\u4E14\u88AB\u7981\u7528\u3002"},
         {"whose.key.weak", "%1$s \u4F7F\u7528\u7684 %2$s \u88AB\u89C6\u4E3A\u5B58\u5728\u5B89\u5168\u98CE\u9669\u3002\u6B64\u5BC6\u94A5\u5927\u5C0F\u5C06\u5728\u672A\u6765\u7684\u66F4\u65B0\u4E2D\u88AB\u7981\u7528\u3002"},
         {"jks.storetype.warning", "%1$s \u5BC6\u94A5\u5E93\u4F7F\u7528\u4E13\u7528\u683C\u5F0F\u3002\u5EFA\u8BAE\u4F7F\u7528 \"keytool -importkeystore -srckeystore %2$s -destkeystore %2$s -deststoretype pkcs12\" \u8FC1\u79FB\u5230\u884C\u4E1A\u6807\u51C6\u683C\u5F0F PKCS12\u3002"},

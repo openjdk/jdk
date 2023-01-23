@@ -44,7 +44,9 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     private static final BigInteger MODULUS
         = TWO.pow(POWER).subtract(BigInteger.valueOf(SUBTRAHEND));
 
-    public IntegerPolynomial1305() {
+    public static final IntegerPolynomial1305 ONE = new IntegerPolynomial1305();
+
+    private IntegerPolynomial1305() {
         super(BITS_PER_LIMB, NUM_LIMBS, 1, MODULUS);
     }
 
@@ -125,6 +127,8 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     @Override
     protected void encode(ByteBuffer buf, int length, byte highByte,
                           long[] result) {
+        ByteOrder currOrder = buf.order();
+        buf.order(ByteOrder.LITTLE_ENDIAN);
         if (length == 16) {
             long low = buf.getLong();
             long high = buf.getLong();
@@ -132,6 +136,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
         } else {
             super.encode(buf, length, highByte, result);
         }
+        buf.order(currOrder);
     }
 
     protected void encode(long high, long low, byte highByte, long[] result) {

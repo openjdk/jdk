@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psVMOperations.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/gcInitLogger.hpp"
@@ -229,6 +229,10 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
 
 bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   return young_gen()->is_in_reserved(p) || old_gen()->is_in_reserved(p);
+}
+
+bool ParallelScavengeHeap::requires_barriers(stackChunkOop p) const {
+  return !is_in_young(p);
 }
 
 // There are two levels of allocation policy here.
@@ -838,10 +842,6 @@ void ParallelScavengeHeap::verify_nmethod(nmethod* nm) {
   ScavengableNMethods::verify_nmethod(nm);
 }
 
-void ParallelScavengeHeap::flush_nmethod(nmethod* nm) {
-  // nothing particular
-}
-
 void ParallelScavengeHeap::prune_scavengable_nmethods() {
   ScavengableNMethods::prune_nmethods();
 }
@@ -859,4 +859,12 @@ GrowableArray<MemoryPool*> ParallelScavengeHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
+}
+
+void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }

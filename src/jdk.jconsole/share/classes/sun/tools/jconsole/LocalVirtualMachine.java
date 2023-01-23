@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ public class LocalVirtualMachine {
             // Check if the VM is attachable but not included in the list
             // if it's running with a different security context.
             // For example, Windows services running
-            // local SYSTEM account are attachable if you have Adminstrator
+            // local SYSTEM account are attachable if you have Administrator
             // privileges.
             boolean attachable = false;
             String address = null;

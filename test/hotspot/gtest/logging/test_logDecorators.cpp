@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
+#include "runtime/os.hpp"
 #include "unittest.hpp"
 
 static LogDecorators::Decorator decorator_array[] = {
@@ -79,10 +80,10 @@ TEST(LogDecorators, from_and_to_name) {
     EXPECT_EQ(decorator, decorator2);
 
     // Test case insensitivity
-    char* name_cpy = strdup(name);
+    char* name_cpy = os::strdup(name, mtTest);
     name_cpy[0] = toupper(name_cpy[0]);
     decorator2 = LogDecorators::from_string(name_cpy);
-    free(name_cpy);
+    os::free(name_cpy);
     EXPECT_EQ(decorator, decorator2);
   }
 }
@@ -99,10 +100,10 @@ TEST(LogDecorators, from_and_to_abbr) {
     ASSERT_EQ(decorator, decorator2);
 
     // Test case insensitivity
-    char* abbr_cpy = strdup(abbr);
+    char* abbr_cpy = os::strdup(abbr);
     abbr_cpy[0] = toupper(abbr_cpy[0]);
     decorator2 = LogDecorators::from_string(abbr_cpy);
-    free(abbr_cpy);
+    os::free(abbr_cpy);
     EXPECT_EQ(decorator, decorator2);
   }
 }
@@ -173,7 +174,7 @@ TEST(LogDecorators, combine_with) {
 
   // Select first and third decorator for dec1
   char input[64];
-  sprintf(input, "%s,%s", decorator_name_array[0], decorator_name_array[3]);
+  os::snprintf_checked(input, sizeof(input), "%s,%s", decorator_name_array[0], decorator_name_array[3]);
   dec1.parse(input);
   EXPECT_TRUE(dec1.is_decorator(decorator_array[0]));
   EXPECT_TRUE(dec1.is_decorator(decorator_array[3]));

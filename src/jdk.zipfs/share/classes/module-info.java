@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ import java.util.Set;
  *   {@link java.lang.String}</td>
  *   <td>null/unset</td>
  *   <td>
- *       Override the the default group for entries in the Zip file system.<br>
+ *       Override the default group for entries in the Zip file system.<br>
  *       The value can be a GroupPrincipal or a String value that is used as the GroupPrincipal's name.
  *   </td>
  * </tr>

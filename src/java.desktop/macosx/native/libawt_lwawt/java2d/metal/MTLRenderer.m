@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ void MTLRenderer_FillSpans(MTLContext *mtlc, BMTLSDOps * dstOps, jint spanCount,
     // MTLRenderCommandEncoder setVertexBytes usage is recommended if the data is of 4KB.
 
     // We use a buffer that closely matches the 4KB limit size
-    // This buffer is resued multiple times to encode draw calls of a triangle list
+    // This buffer is reused multiple times to encode draw calls of a triangle list
     // NOTE : Due to nature of *spans data - it is not possible to use triangle strip.
     // We use triangle list to draw spans
 
@@ -464,7 +464,7 @@ void MTLRenderer_FillSpans(MTLContext *mtlc, BMTLSDOps * dstOps, jint spanCount,
         return;
     }
 
-    // This is the max no of vertices (of struct Vertex - 8 bytes) we can accomodate in 4KB
+    // This is the max no of vertices (of struct Vertex - 8 bytes) we can accommodate in 4KB
     const int TOTAL_VERTICES_IN_BLOCK = 510;
     struct Vertex vertexList[TOTAL_VERTICES_IN_BLOCK]; // a total of 170 triangles ==> 85 spans
 
@@ -561,7 +561,7 @@ MTLRenderer_FillParallelogram(MTLContext *mtlc, BMTLSDOps * dstOps,
         }};
 
     // Encode render command.
-    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];;
+    id<MTLRenderCommandEncoder> mtlEncoder = [mtlc.encoderManager getRenderEncoder:dstOps];
 
     if (mtlEncoder == nil) {
         J2dRlsTraceLn(J2D_TRACE_ERROR, "MTLRenderer_FillParallelogram: error creating MTLRenderCommandEncoder.");

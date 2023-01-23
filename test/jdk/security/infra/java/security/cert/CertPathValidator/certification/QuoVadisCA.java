@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8189131 8207059
- * @summary Interoperability tests with QuoVadis Root CA1, CA2, and CA3 CAs
+ * @key intermittent
+ * @summary Interoperability tests with QuoVadis Root CA1, CA2, and CA3 G3 CAs
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath QuoVadisCA OCSP
  * @run main/othervm -Djava.security.debug=certpath QuoVadisCA CRL
@@ -94,25 +95,26 @@ class RootCA1G3 {
             "73bpxSkjPrYbmKo9mGEAMhW1ZxY=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-1-g3.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Owner: CN=quovadis-root-ca-1-g3.chain-demos.digicert.com, O="DigiCert, Inc.",
+    //        L=Lehi, ST=Utah, C=US
     // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert, Inc", C=US
-    // Serial number: 2b9bf892d8abbde06c26d764263bfa8
-    // Valid from: Tue Jan 19 16:00:00 PST 2021 until: Sun Feb 20 15:59:59 PST 2022
+    // Serial number: a94cc08600f5fe5d3f0659bfcfec6f0
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIGhjCCBW6gAwIBAgIQArm/iS2Ku94Gwm12QmO/qDANBgkqhkiG9w0BAQsFADBZ\n" +
+            "MIIG/DCCBeSgAwIBAgIQCpTMCGAPX+XT8GWb/P7G8DANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
-            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDEgRzMwHhcNMjEw\n" +
-            "MTIwMDAwMDAwWhcNMjIwMjIwMjM1OTU5WjB9MQswCQYDVQQGEwJVUzENMAsGA1UE\n" +
+            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDEgRzMwHhcNMjIw\n" +
+            "MzA1MDAwMDAwWhcNMjMwNDA1MjM1OTU5WjB9MQswCQYDVQQGEwJVUzENMAsGA1UE\n" +
             "CBMEVXRhaDENMAsGA1UEBxMETGVoaTEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4x\n" +
             "NzA1BgNVBAMTLnF1b3ZhZGlzLXJvb3QtY2EtMS1nMy5jaGFpbi1kZW1vcy5kaWdp\n" +
-            "Y2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDUqAk3cOpq\n" +
-            "E+70B1WMI5R3QEqbrF4TE9jpXFIy2HQV60HSyxrsh2xDpU/zD0BF2mwOGZvQKc1F\n" +
-            "JcVpwWXJ4vjS/lqDvZBNlzDejr4sQbzZVGFkqP6wu+KrAa+Eu7Lvayke3vi99Ba3\n" +
-            "MmcauuHQsLwh/A+nLzUZIL56HKREDA6YmvF2Bkz6La+f3y4BhiFcQLWQOSr4LgvD\n" +
-            "7qqdtd550sT4agIh6G1C3CDgUU2OYX8d70YOokO+msZXppD2le5HJDAUwrEKXB/L\n" +
-            "3+jxA2wxgxmGzWigkRFl7UlsuLezUZKIHj8YoQu/0LGLZZUcW0OEHj5sspifmQJ7\n" +
-            "DccQrGWyqU6XAgMBAAGjggMkMIIDIDAfBgNVHSMEGDAWgBSZEX3psK0tYlpw0zyN\n" +
-            "hyCt2touQTAdBgNVHQ4EFgQUDBReNH49ishzOagWgVaxd7nSyrgwOQYDVR0RBDIw\n" +
+            "Y2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC3HrwaCagg\n" +
+            "6bxmgEC+neLN/ShfNYuOMQ2Slk5q/zDUhQRpNQnh3nUwoRSWRvwGxDFsRj++LECF\n" +
+            "TMdfzIu+0rlFzGqd3B5mlRsJrcycy/+ILwGNtIooUSU7pvJAVgLZ5N1SSVZoY+i3\n" +
+            "bqLiMmv2/JfouT1SQB3U0tGmS+QKyBtVyKPVeuAhnLdyw90UiB7Gu9qXQpCawac8\n" +
+            "pXPQLFzyEP7VJO0wDXanXvi6YPuIhh4m+j2YVCd9d2zI3y3kOrkuaUY5UCBvMG/b\n" +
+            "Pc7/5pBsqf+E+7RHF24JAR2aqXzARWt2MzRiwpE/DJDfu097IUtR5aEdCRIKw/b4\n" +
+            "GcHEbVaE3c8RAgMBAAGjggOaMIIDljAfBgNVHSMEGDAWgBSZEX3psK0tYlpw0zyN\n" +
+            "hyCt2touQTAdBgNVHQ4EFgQUsG1/1d7ATEocqm82IRByZD/1qQIwOQYDVR0RBDIw\n" +
             "MIIucXVvdmFkaXMtcm9vdC1jYS0xLWczLmNoYWluLWRlbW9zLmRpZ2ljZXJ0LmNv\n" +
             "bTAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC\n" +
             "MIGXBgNVHR8EgY8wgYwwRKBCoECGPmh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9E\n" +
@@ -122,62 +124,67 @@ class RootCA1G3 {
             "dHRwOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMwgYMGCCsGAQUFBwEBBHcwdTAkBggr\n" +
             "BgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tME0GCCsGAQUFBzAChkFo\n" +
             "dHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRRdW9WYWRpc1RMU0lD\n" +
-            "QVFWUm9vdENBMUczLmNydDAMBgNVHRMBAf8EAjAAMIIBBAYKKwYBBAHWeQIEAgSB\n" +
-            "9QSB8gDwAHUAKXm+8J45OSHwVnOfY6V35b5XfZxgCvj5TV0mXCVdx4QAAAF3IHgp\n" +
-            "NQAABAMARjBEAiBNOisRzreFHgpQYJmdzN8pKAGcerQHCWfeWeWyDDD8hQIgP2sh\n" +
-            "8KGW4sOt/BqEUNhGdD+ZAbv2+xrT57aSRONrG/UAdwAiRUUHWVUkVpY/oS/x922G\n" +
-            "4CMmY63AS39dxoNcbuIPAgAAAXcgeCmLAAAEAwBIMEYCIQCKVxPY+JbJX4IMcbVc\n" +
-            "HypoqNyozayPjzuHPZXsr5sZfAIhAIdS8wHmUZz6w5Frqa/CTUSugoNgx9H0K9dN\n" +
-            "Cl6gsvdcMA0GCSqGSIb3DQEBCwUAA4IBAQB35ONSVAMAhFpTwQl6HEFEmhh++JaF\n" +
-            "3WLMUODAa79N/GXe0JMvPuTbLsB/H1WXP/27D9ImvWlqLQU3EgqRp0fTdWCnnP4q\n" +
-            "8FKsKslnKPoiqNyTjpKHWk+gugFAyAAUXEFP4QYSMgye7kBNQZoX9MX4LhPBtqTa\n" +
-            "cPXLprb/gZMrNbbf9FdOGQXQgpFoaGnvyGw2oGU1Spb+Tx1QbK8NUWCdc8KNo1WB\n" +
-            "XH37EY8XJJxdjjoocLlFxRBUothYEUk+HdE5MGNqF3egtFKVvDk2OC8redCQ6dDC\n" +
-            "MKkGc7Avhn43gkRpzuush9Ph79aT1lf4Mm4Rs0FSYm8e62bQspH8UTdh\n" +
+            "QVFWUm9vdENBMUczLmNydDAJBgNVHRMEAjAAMIIBfQYKKwYBBAHWeQIEAgSCAW0E\n" +
+            "ggFpAWcAdgCt9776fP8QyIudPZwePhhqtGcpXc+xDCTKhYY069yCigAAAX9cPNEg\n" +
+            "AAAEAwBHMEUCIEcb3zz7lhKT26HkZpFPF9e7AsHY4HR3pO5LJ5+b2iDGAiEAjEHh\n" +
+            "4H3Vl+j95X65uBdkODnqjlxRc6OrqCRor71nKTYAdQA1zxkbv7FsV78PrUxtQsu7\n" +
+            "ticgJlHqP+Eq76gDwzvWTAAAAX9cPNEMAAAEAwBGMEQCIBbRZ9t9oUODHhZfa7n3\n" +
+            "0lGGmEpnZP9dZw375SuVX6OjAiBbfpZesx7GgSNygEF+zkBAXx+AFJF5GoGiOjFX\n" +
+            "0ykjDAB2ALNzdwfhhFD4Y4bWBancEQlKeS2xZwwLh9zwAw55NqWaAAABf1w80SoA\n" +
+            "AAQDAEcwRQIgfSXjtjuKjFiVYwdlitFNgTTSc7uP9hyazlrCKO9GsaYCIQCKimXl\n" +
+            "j4LjJ4BlG9H1J+V747tuf7ONnAzkCPsa2ymOuzANBgkqhkiG9w0BAQsFAAOCAQEA\n" +
+            "b9havJS9egan+4dgMhI6gDt6rjdWRniyi7kXv7/vWJXOxR1xl2d/WYDLsfp3BbqW\n" +
+            "YuKQwB5tTH1hEoNhQIyGnuE1Y1ZgtX24rSVfTCkU/3dnTZaIhaZgFHyftAum7xSI\n" +
+            "Qzu7pwih+PXrGNXupsnZ+VUE7a7zHyRDajixhSp7dZS4zLoDTxeyKX0MDmo4e8Mi\n" +
+            "HNYVASYcrdld90jVJaeI/V3EkJAX7/Eyo9JqzivEwGM0e0JhCLekcVSzhjGoAlbQ\n" +
+            "tIzCIaeVUlWKKiNXSKr1WD4oCD3ky4Y5VekTGzyUf/0LYzV+Y7p8epc5vTWKwYx/\n" +
+            "vQwJ4RsgFit+c84mSg4qug==\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Owner: CN=quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com,
+    //        O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
     // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 1 G3, O="DigiCert, Inc", C=US
-    // Serial number: 8fb833dd0472302df1ddc134d36840d
-    // Valid from: Tue Jan 19 16:00:00 PST 2021 until: Sun Feb 20 15:59:59 PST 2022
+    // Serial number: e7eff4cdd14ebed1daa7bb7e07300ed
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIG1TCCBb2gAwIBAgIQCPuDPdBHIwLfHdwTTTaEDTANBgkqhkiG9w0BAQsFADBZ\n" +
+            "MIIHDjCCBfagAwIBAgIQDn7/TN0U6+0dqnu34HMA7TANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
-            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDEgRzMwHhcNMjEw\n" +
-            "MTIwMDAwMDAwWhcNMjIwMjIwMjM1OTU5WjCBhTELMAkGA1UEBhMCVVMxDTALBgNV\n" +
+            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDEgRzMwHhcNMjIw\n" +
+            "MzA1MDAwMDAwWhcNMjMwNDA1MjM1OTU5WjCBhTELMAkGA1UEBhMCVVMxDTALBgNV\n" +
             "BAgTBFV0YWgxDTALBgNVBAcTBExlaGkxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMu\n" +
             "MT8wPQYDVQQDEzZxdW92YWRpcy1yb290LWNhLTEtZzMtcmV2b2tlZC5jaGFpbi1k\n" +
             "ZW1vcy5kaWdpY2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB\n" +
-            "AQC/YHOKNPYW2a/aji68VN4EYwz5ANxRuCSHXOe6mg8pYaelrnky3hmNT3Ro86wc\n" +
-            "3UaXE07+fVGjXbbe4eRF5zj1pWsMe81n7NySoLud5C9CU/3okywv6SEPc/RiFKJk\n" +
-            "ic/BpRTE2pMtFfGsqWALjyDhM+W7SvM5eAXqcVVnqHgO5oToe2Cd0IqhgTgOUDdm\n" +
-            "+JuY/kY8gRmFyzfs4Oqe8nkgrdsvsyvRtQt1ldc9XKb+C/gnl8ZMiuLpuKWqezce\n" +
-            "2ED0SW4bVDbaDIhf97CNFeuMHHyZzI7Z0DH29WDcACOVBqVhGJl56T89COM3ISle\n" +
-            "WpYCOUgyzlPVODisfq/1zgepAgMBAAGjggNqMIIDZjAfBgNVHSMEGDAWgBSZEX3p\n" +
-            "sK0tYlpw0zyNhyCt2touQTAdBgNVHQ4EFgQUdZf0H3+QjsIMtfpwZUf3YNaVBQ0w\n" +
-            "fQYDVR0RBHYwdII2cXVvdmFkaXMtcm9vdC1jYS0xLWczLXJldm9rZWQuY2hhaW4t\n" +
-            "ZGVtb3MuZGlnaWNlcnQuY29tgjp3d3cucXVvdmFkaXMtcm9vdC1jYS0xLWczLXJl\n" +
-            "dm9rZWQuY2hhaW4tZGVtb3MuZGlnaWNlcnQuY29tMA4GA1UdDwEB/wQEAwIFoDAd\n" +
-            "BgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwgZcGA1UdHwSBjzCBjDBEoEKg\n" +
-            "QIY+aHR0cDovL2NybDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0UXVvVmFkaXNUTFNJ\n" +
-            "Q0FRVlJvb3RDQTFHMy5jcmwwRKBCoECGPmh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNv\n" +
-            "bS9EaWdpQ2VydFF1b1ZhZGlzVExTSUNBUVZSb290Q0ExRzMuY3JsMD4GA1UdIAQ3\n" +
-            "MDUwMwYGZ4EMAQICMCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cuZGlnaWNlcnQu\n" +
-            "Y29tL0NQUzCBgwYIKwYBBQUHAQEEdzB1MCQGCCsGAQUFBzABhhhodHRwOi8vb2Nz\n" +
-            "cC5kaWdpY2VydC5jb20wTQYIKwYBBQUHMAKGQWh0dHA6Ly9jYWNlcnRzLmRpZ2lj\n" +
-            "ZXJ0LmNvbS9EaWdpQ2VydFF1b1ZhZGlzVExTSUNBUVZSb290Q0ExRzMuY3J0MAwG\n" +
-            "A1UdEwEB/wQCMAAwggEGBgorBgEEAdZ5AgQCBIH3BIH0APIAdwApeb7wnjk5IfBW\n" +
-            "c59jpXflvld9nGAK+PlNXSZcJV3HhAAAAXcgeVnsAAAEAwBIMEYCIQCBIKm+1buq\n" +
-            "Ws6nDYt1OMGxHa7yaxwQu5yaWCq6wk3kXQIhAL0ImrZZWp0Uq2i3QhDVjAfsP9lF\n" +
-            "LRf2f0qbqJUXzTV7AHcAIkVFB1lVJFaWP6Ev8fdthuAjJmOtwEt/XcaDXG7iDwIA\n" +
-            "AAF3IHlaMwAABAMASDBGAiEAm+RVoIBHAiMN+m/fuo65CLCwTRa/YVrP8wjUT4pM\n" +
-            "5toCIQDhV6pbmxbwGl9rM56ypsKZLJeB4LeCWqJmb7yf61E9WzANBgkqhkiG9w0B\n" +
-            "AQsFAAOCAQEAh82J/F2rBZ6GUFmOdIS8mhzO/ItkpAX+bta5lyPasCgP3JEmHONr\n" +
-            "HBX1UIvKYo7/McgFBt1V90ncQXfuutIyh0hPXSbTqK/b7XCVarh9J0ZXp8gLstQ5\n" +
-            "39DiuiS+qWBSc8C14VIOjeTblTBM6hjvkdnYhTZt2ip3aKYu8sHyC+3DpAYuD2og\n" +
-            "Lzs8Q7wvPwvBE2HMsr6c8dFjC9S8HZvrfJTwuh/7QhafueuwPEfr6a2/TExF/3B1\n" +
-            "QXxgYPg7pQ2gPUqucO47FcEhr5GHzTwNoGAropkFj3g0byEt0i+EwLMjdAlDABzP\n" +
-            "CFww1aRfNklbdRBZ/rr7QzmGtn39JzZKMQ==\n" +
+            "AQDCQQ2S25TEDDGHa/zvFUex4mD7pUAS7g80g8mQVII2v9Cg6F2tIEbay/IDhV3D\n" +
+            "NtxJcaqiMpT9oMA5jhMSOqcoq8QFzdqugtIvxQ3obrIZysxjjluB2b1T5UhlnND1\n" +
+            "ShXlSWRhwkCN8qfO+VJ8wrpVH45mj+DsiSLWrY8Vw4q+gcJgoUV0Vj87m1H93JTf\n" +
+            "pF68NjljUOOTTXZSzsvTRpDsnOizbVeyZoRawRP8D4UbxA8P28Q5W7a/uZSnUkfo\n" +
+            "1U1QFDd/ii/PCt6TVGYCNUehb8eSrEyjAtIZ/ricIVkKxcqzQ3Tuq7HefH/KiAqD\n" +
+            "GWr0NfO1JhX5ILmDZcosdsW1AgMBAAGjggOjMIIDnzAfBgNVHSMEGDAWgBSZEX3p\n" +
+            "sK0tYlpw0zyNhyCt2touQTAdBgNVHQ4EFgQUK6amWfyhRxRpr+fT1tpYV14n2wgw\n" +
+            "QQYDVR0RBDowOII2cXVvdmFkaXMtcm9vdC1jYS0xLWczLXJldm9rZWQuY2hhaW4t\n" +
+            "ZGVtb3MuZGlnaWNlcnQuY29tMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggr\n" +
+            "BgEFBQcDAQYIKwYBBQUHAwIwgZcGA1UdHwSBjzCBjDBEoEKgQIY+aHR0cDovL2Ny\n" +
+            "bDMuZGlnaWNlcnQuY29tL0RpZ2lDZXJ0UXVvVmFkaXNUTFNJQ0FRVlJvb3RDQTFH\n" +
+            "My5jcmwwRKBCoECGPmh0dHA6Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydFF1\n" +
+            "b1ZhZGlzVExTSUNBUVZSb290Q0ExRzMuY3JsMD4GA1UdIAQ3MDUwMwYGZ4EMAQIC\n" +
+            "MCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzCBgwYI\n" +
+            "KwYBBQUHAQEEdzB1MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5j\n" +
+            "b20wTQYIKwYBBQUHMAKGQWh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdp\n" +
+            "Q2VydFF1b1ZhZGlzVExTSUNBUVZSb290Q0ExRzMuY3J0MAkGA1UdEwQCMAAwggF+\n" +
+            "BgorBgEEAdZ5AgQCBIIBbgSCAWoBaAB3AOg+0No+9QY1MudXKLyJa8kD08vREWvs\n" +
+            "62nhd31tBr1uAAABf1xeMeAAAAQDAEgwRgIhALuEk3mDbnEEkboc95mrKMgibE0K\n" +
+            "0QAWMu1gI/teH06xAiEA7dbuLv66ScQkOq0zbfnUM8ih1Bw+Wb29jQRyTEXCaxEA\n" +
+            "dgA1zxkbv7FsV78PrUxtQsu7ticgJlHqP+Eq76gDwzvWTAAAAX9cXjIwAAAEAwBH\n" +
+            "MEUCIBvEfG23Yewp6oXQJExXQ+Am7z4i0X5NqSz8ohAXT3NiAiEAhDjy2H2Z5CV5\n" +
+            "gZ8TACTVgNyvEIH0cS4DjH6/ILknLDEAdQCzc3cH4YRQ+GOG1gWp3BEJSnktsWcM\n" +
+            "C4fc8AMOeTalmgAAAX9cXjJBAAAEAwBGMEQCIGuxWoTPcFYQlVF9q/F1JbaZj/VT\n" +
+            "O6Oa8ionxCC/8aqrAiAUCUoDcwphZ25ZFC+xGiP0kUiWgUwuQH7lBpTgoZp/BjAN\n" +
+            "BgkqhkiG9w0BAQsFAAOCAQEAFrVjcQxq81PXEgHCf48+FOle8kUpJGxpH1n1Sp0p\n" +
+            "V95wrXj47oT1Vt9WqXPrNDfDkxwAvvXrCMXjHEg2YN0FCEanVec8GciuRRRtXrOE\n" +
+            "QOXAqGv5j+KG7bEvMNUFS90fesxfxVAQkr1zIT70nMAOKV1NOyQ/q8bZ+jehcRZB\n" +
+            "wUKrCWAzvOw4DPytrDcQmflvQN+Bw92T3uDuoYT/oBcobpVfKpfuW/+ZxxXTIp4L\n" +
+            "sixlx82SZNTo6e3LOqsgZnR6TFyRJ63sK65M+W0d55bHvleUAHRCOiGhhgqE/cby\n" +
+            "z50hDzJMLnjskMSpkxMoeSeutAS2e7oIvA//7C37LrQccQ==\n" +
             "-----END CERTIFICATE-----";
 
     public void runTest(ValidatePathWithParams pathValidator)
@@ -189,7 +196,7 @@ class RootCA1G3 {
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Wed Jan 20 07:46:23 PST 2021", System.out);
+                "Tue Mar 08 11:22:28 PST 2022", System.out);
     }
 }
 
@@ -232,17 +239,18 @@ class RootCA2G3 {
             "cy+N\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-2-g3.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US,
-    // SERIALNUMBER=5299537-0142, OID.1.3.6.1.4.1.311.60.2.1.2=Utah, OID.1.3.6.1.4.1.311.60.2.1.3=US,
-    // OID.2.5.4.15=Private Organization
+    // Owner: CN=quovadis-root-ca-2-g3.chain-demos.digicert.com, O="DigiCert,
+    //        Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142, OID.1.3.6.1.4
+    //        1.311.60.2.1.2=Utah, OID.1.3.6.1.4.1.311.60.2.1.3=US,
+    //        OID.2.5.4 .15=Private Organization
     // Issuer: CN=DigiCert QV EV TLS ICA G1, O="DigiCert, Inc.", C=US
-    // Serial number: a54e525a61f2552f65885c6dce9fe21
-    // Valid from: Mon Feb 01 16:00:00 PST 2021 until: Sat Mar 05 15:59:59 PST 2022
+    // Serial number: 9c5e9d5f169d3a59e64db208d3e849d
+    // Valid from: Wed Feb 02 16:00:00 PST 2022 until: Mon Mar 06 15:59:59 PST 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIGuzCCBaOgAwIBAgIQClTlJaYfJVL2WIXG3On+ITANBgkqhkiG9w0BAQsFADBK\n" +
+            "MIIHNDCCBhygAwIBAgIQCcXp1fFp06WeZNsgjT6EnTANBgkqhkiG9w0BAQsFADBK\n" +
             "MQswCQYDVQQGEwJVUzEXMBUGA1UECgwORGlnaUNlcnQsIEluYy4xIjAgBgNVBAMM\n" +
-            "GURpZ2lDZXJ0IFFWIEVWIFRMUyBJQ0EgRzEwHhcNMjEwMjAyMDAwMDAwWhcNMjIw\n" +
-            "MzA1MjM1OTU5WjCB3zEdMBsGA1UEDwwUUHJpdmF0ZSBPcmdhbml6YXRpb24xEzAR\n" +
+            "GURpZ2lDZXJ0IFFWIEVWIFRMUyBJQ0EgRzEwHhcNMjIwMjAzMDAwMDAwWhcNMjMw\n" +
+            "MzA2MjM1OTU5WjCB3zEdMBsGA1UEDwwUUHJpdmF0ZSBPcmdhbml6YXRpb24xEzAR\n" +
             "BgsrBgEEAYI3PAIBAxMCVVMxFTATBgsrBgEEAYI3PAIBAhMEVXRhaDEVMBMGA1UE\n" +
             "BRMMNTI5OTUzNy0wMTQyMQswCQYDVQQGEwJVUzENMAsGA1UECBMEVXRhaDENMAsG\n" +
             "A1UEBxMETGVoaTEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xNzA1BgNVBAMTLnF1\n" +
@@ -253,7 +261,7 @@ class RootCA2G3 {
             "Iuf1E1Ek70DkTWAg6OrPHMe2ER3aSz2S2rNkMSopURvZuabzPovsGaz+XEZNfE4N\n" +
             "UfkBLa0DUjFCamOMZKIfkzxpH/NhQcigGnZgxiyUb6KRhu9ydpWeOvOHwPWwR/fV\n" +
             "7WT+X1DUHojoXeCk2RtIRMihDWPd+lqiUppM8IlEW/gxWbK1wP41qioiK9j5AgMB\n" +
-            "AAGjggMFMIIDATAfBgNVHSMEGDAWgBQTL6fobnFR9uIMmEeDnn+deHk08zAdBgNV\n" +
+            "AAGjggN+MIIDejAfBgNVHSMEGDAWgBQTL6fobnFR9uIMmEeDnn+deHk08zAdBgNV\n" +
             "HQ4EFgQUtAEN4g3bzwES6MoOINihiZQrt+owOQYDVR0RBDIwMIIucXVvdmFkaXMt\n" +
             "cm9vdC1jYS0yLWczLmNoYWluLWRlbW9zLmRpZ2ljZXJ0LmNvbTAOBgNVHQ8BAf8E\n" +
             "BAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMHsGA1UdHwR0MHIw\n" +
@@ -263,43 +271,47 @@ class RootCA2G3 {
             "AQEwKTAnBggrBgEFBQcCARYbaHR0cDovL3d3dy5kaWdpY2VydC5jb20vQ1BTMHYG\n" +
             "CCsGAQUFBwEBBGowaDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQu\n" +
             "Y29tMEAGCCsGAQUFBzAChjRodHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGln\n" +
-            "aUNlcnRRVkVWVExTSUNBRzEuY3J0MAwGA1UdEwEB/wQCMAAwggEEBgorBgEEAdZ5\n" +
-            "AgQCBIH1BIHyAPAAdgApeb7wnjk5IfBWc59jpXflvld9nGAK+PlNXSZcJV3HhAAA\n" +
-            "AXdkNiYhAAAEAwBHMEUCIQDg62+lrhAGdZcklHTEzYpVIki6v6fYgsbxmkTqV6M2\n" +
-            "BgIgOcYjjM1DGT2FWFK5OO4Qs7T7V28neWwqbMPqLBZgRCoAdgAiRUUHWVUkVpY/\n" +
-            "oS/x922G4CMmY63AS39dxoNcbuIPAgAAAXdkNiaKAAAEAwBHMEUCIQC0ZH0YX6BP\n" +
-            "k4QAm22mVvXXG9EVBWIS5LP49f9VFhb67QIgfYqYV/wJt3czP5rA4NbJXBeFxZXy\n" +
-            "DVnewfs2mz7kNOIwDQYJKoZIhvcNAQELBQADggEBAHIFaq9Edv37sXl07n3H93ym\n" +
-            "AzvQKJGD1khWwHQCGBXVzpUBi2v9Il0oS2pTATGD3ZB81Clryy9X3gHgkJcHFRn0\n" +
-            "cVr88GcyEWrxE8D6sx1X4WhlQknbKXNw8eL97EpZ4zKF1nDaYmf+e/lbmjnZIcdr\n" +
-            "DRcMmWD6LZBWP8MMD+5uJvooO4eBYM/WKVRgg6jAj1HELBHi9E6Xwm5jPx3DKt6W\n" +
-            "voJqcRJg3d4TiV8U/yOs8+514iAw+1YJFtAaxg5/eUQM/22BGXki8QCJ3NaaUGrj\n" +
-            "UNASswMDevD8rVwZ5Bc2iC+c0WVIgHZepyioNC2XSVPovV9pF4Q3ppkSvEGQGSo=\n" +
+            "aUNlcnRRVkVWVExTSUNBRzEuY3J0MAwGA1UdEwEB/wQCMAAwggF9BgorBgEEAdZ5\n" +
+            "AgQCBIIBbQSCAWkBZwB2AOg+0No+9QY1MudXKLyJa8kD08vREWvs62nhd31tBr1u\n" +
+            "AAABfsHcGW0AAAQDAEcwRQIgSMSWvB5/8sf6CAZYojDI+t3bmcVHtIJT3T+Z3TcZ\n" +
+            "MFMCIQD5Qyb6jwHOAscsPeID156bUZIw+PeB652u+Q8gTU8C5gB1ADXPGRu/sWxX\n" +
+            "vw+tTG1Cy7u2JyAmUeo/4SrvqAPDO9ZMAAABfsHcGUcAAAQDAEYwRAIgL68Riq9a\n" +
+            "l17hobjQopbfzvcQi4KT1+DlqO2dAeCuF80CIAy19t3bAxcJRmbXWo9J2dGc7WuE\n" +
+            "r+bLfnQoerq9KB1bAHYAs3N3B+GEUPhjhtYFqdwRCUp5LbFnDAuH3PADDnk2pZoA\n" +
+            "AAF+wdwZZAAABAMARzBFAiEA4vYazXAaD1BfJ8MqEmrfxeTIDQ6LZkmqfh8xEnVz\n" +
+            "8VYCIF/RgfyBhOeH40wfgwpFTa+Y+t7EWg0PtjC4IaIFTKYKMA0GCSqGSIb3DQEB\n" +
+            "CwUAA4IBAQC5KLlms/+5XcCIEFBpQSwT7VoRcqnrVWlhya+9ClA98LYuDUeHcHt6\n" +
+            "lHvfjEEmy2s2GoKHK/JxXzftBau5LbDWlvQ6EF+22fnaVDsKIwNgYwbhJb+6zr8t\n" +
+            "LOFS6Y51YSlRrDUvy94S3PE7N8D3wyKq18IhXOI1WUeR0bKHLlXtl+ZjKMIMkd/l\n" +
+            "YtLnnskRCQa0P/HLwQYLUpgiNGVZJQbjrWsVzcw12mR/gza1KjR02STJRGZad7L0\n" +
+            "Oz48CRhm94iaEjFcVKT3vcDUrtCKpkmhBACcdA3NNqDq10i/SLspOeDLSESkkJKF\n" +
+            "w8w3YCqXjZn5JyV3sVHYNezNKtLdCxn4\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US,
-    // SERIALNUMBER=5299537-0142, OID.1.3.6.1.4.1.311.60.2.1.2=Utah, OID.1.3.6.1.4.1.311.60.2.1.3=US,
-    // OID.2.5.4.15=Private Organization
+    // Owner: CN=quovadis-root-ca-2-g3-revoked.chain-demos.digicert.com,
+    //           O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US, SERIALNUMBER=5299537-0142,
+    //           OID.2.5.4.15=Private Organization, OID.1.3.6.1.4.1.311.60.2.1.2=Utah,
+    //           OID.1.3.6.1.4.1.311.60.2.1.3=US
     // Issuer: CN=DigiCert QV EV TLS ICA G1, O="DigiCert, Inc.", C=US
-    // Serial number: 27c8845dc98ebf433dc5ce8618570d1
-    // Valid from: Mon Feb 01 16:00:00 PST 2021 until: Sat Mar 05 15:59:59 PST 2022
+    // Serial number: 3f84605850df3ac98fcc15adec269f8
+    // Valid from: Sun Apr 17 17:00:00 PDT 2022 until: Fri May 19 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIGzDCCBbSgAwIBAgIQAnyIRdyY6/Qz3FzoYYVw0TANBgkqhkiG9w0BAQsFADBK\n" +
+            "MIIHQDCCBiigAwIBAgIQA/hGBYUN86yY/MFa3sJp+DANBgkqhkiG9w0BAQsFADBK\n" +
             "MQswCQYDVQQGEwJVUzEXMBUGA1UECgwORGlnaUNlcnQsIEluYy4xIjAgBgNVBAMM\n" +
-            "GURpZ2lDZXJ0IFFWIEVWIFRMUyBJQ0EgRzEwHhcNMjEwMjAyMDAwMDAwWhcNMjIw\n" +
-            "MzA1MjM1OTU5WjCB5zEdMBsGA1UEDwwUUHJpdmF0ZSBPcmdhbml6YXRpb24xEzAR\n" +
-            "BgsrBgEEAYI3PAIBAxMCVVMxFTATBgsrBgEEAYI3PAIBAhMEVXRhaDEVMBMGA1UE\n" +
+            "GURpZ2lDZXJ0IFFWIEVWIFRMUyBJQ0EgRzEwHhcNMjIwNDE4MDAwMDAwWhcNMjMw\n" +
+            "NTE5MjM1OTU5WjCB5zETMBEGCysGAQQBgjc8AgEDEwJVUzEVMBMGCysGAQQBgjc8\n" +
+            "AgECEwRVdGFoMR0wGwYDVQQPDBRQcml2YXRlIE9yZ2FuaXphdGlvbjEVMBMGA1UE\n" +
             "BRMMNTI5OTUzNy0wMTQyMQswCQYDVQQGEwJVUzENMAsGA1UECBMEVXRhaDENMAsG\n" +
             "A1UEBxMETGVoaTEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4xPzA9BgNVBAMTNnF1\n" +
             "b3ZhZGlzLXJvb3QtY2EtMi1nMy1yZXZva2VkLmNoYWluLWRlbW9zLmRpZ2ljZXJ0\n" +
-            "LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL8H5MLxLmlUrb/C\n" +
-            "+GndqTYyAWf7dlxmqK4bRtIQf6YIAum8sZwo7M+av3lNQAqRa9PsV4ms50lUSP6u\n" +
-            "sFPAKINoOIu3ABT3qlSNb7ChxYCaZAiW3D1N4Jc9SU4Pa6tfPM3mSWc2HR7kSqj+\n" +
-            "PtdDHgB8/wjgQwvGRFXTacM/dQVtd8cSLYGMaSgPTKqV87aps7gvd0a9jvJRPmzr\n" +
-            "vJihL8K5MRiKTwXofT2s8/+/XMn0qWzWzBPe/bQuTT3Ot0Ee5u54FVPi0659rDtj\n" +
-            "hDIf1M7GmSA/kuhcxI6vGusPZhrr+BbSbX8bRyXMPyE/V2qN2rGMVqDgo8CYP9oY\n" +
-            "BXBocaECAwEAAaOCAw4wggMKMB8GA1UdIwQYMBaAFBMvp+hucVH24gyYR4Oef514\n" +
-            "eTTzMB0GA1UdDgQWBBSxl5QSK4J6HfhClE1Vq1ElwnnNDzBBBgNVHREEOjA4gjZx\n" +
+            "LmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANfUkoe8l/AFhMH5\n" +
+            "NtRR2Ztx4xVINz1celdjQE7xgjyHoQY6EMhuI+tvTpwJr9wJEFl7YBiIUFUgJZo6\n" +
+            "lCLZtXI5t6rN0PhI+F03vGj5ukOkBBcsNVuKPJjud78sHL7u4w7RL3agrQIG7sff\n" +
+            "bQK4qieUDPxiE8TO8mIzUKnIvYeNA8aJe4zxWf6Mn64WvnudsxYFgMDL4L0ryYKy\n" +
+            "Ls53Co0OweOl4qnNSne8eIGfb6UaUBQvWbnVfRSHzf+skrF1qstWlFhUsqR07HtF\n" +
+            "6BqVrAsRA8tmXisyXrMp9jTcIsG7LXVLOqxN07mAvpateExZs3WWRhfQl4Z+HpHD\n" +
+            "80WbTI0CAwEAAaOCA4IwggN+MB8GA1UdIwQYMBaAFBMvp+hucVH24gyYR4Oef514\n" +
+            "eTTzMB0GA1UdDgQWBBSTXYbD9dwCDxIH/aN5vIr02uLz5DBBBgNVHREEOjA4gjZx\n" +
             "dW92YWRpcy1yb290LWNhLTItZzMtcmV2b2tlZC5jaGFpbi1kZW1vcy5kaWdpY2Vy\n" +
             "dC5jb20wDgYDVR0PAQH/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEF\n" +
             "BQcDAjB7BgNVHR8EdDByMDegNaAzhjFodHRwOi8vY3JsMy5kaWdpY2VydC5jb20v\n" +
@@ -308,19 +320,21 @@ class RootCA2G3 {
             "YIZIAYb9bAIBMDIGBWeBDAEBMCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cuZGln\n" +
             "aWNlcnQuY29tL0NQUzB2BggrBgEFBQcBAQRqMGgwJAYIKwYBBQUHMAGGGGh0dHA6\n" +
             "Ly9vY3NwLmRpZ2ljZXJ0LmNvbTBABggrBgEFBQcwAoY0aHR0cDovL2NhY2VydHMu\n" +
-            "ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0UVZFVlRMU0lDQUcxLmNydDAMBgNVHRMBAf8E\n" +
-            "AjAAMIIBBQYKKwYBBAHWeQIEAgSB9gSB8wDxAHcAKXm+8J45OSHwVnOfY6V35b5X\n" +
-            "fZxgCvj5TV0mXCVdx4QAAAF3ZDY16wAABAMASDBGAiEAxiHgWMmElnreF1ItPryX\n" +
-            "1zHYYy8MswsWwPSLCRoNIh8CIQCoMhTfGdeb/YfgU7ADy0zo1ktLjnoWUXy57e2s\n" +
-            "syevwAB2ACJFRQdZVSRWlj+hL/H3bYbgIyZjrcBLf13Gg1xu4g8CAAABd2Q2Nh0A\n" +
-            "AAQDAEcwRQIhAIEUtUcXMIj/5+uNhqtRuzeppiC0dU9pcWuCkOqazlSsAiBeuAjH\n" +
-            "z1EyH5zDDR2dJoVJekXsihpIoXUiClDNBgCNUjANBgkqhkiG9w0BAQsFAAOCAQEA\n" +
-            "s/QeNaPZt8WftrnUqWI+neGyFlh6odWgpKxudOKVdvlGIUZ1bZlNzPcoHvdqgeVy\n" +
-            "Vys3NxfSAX812lYo+IvPM9l3CmuaHkb7l/5O8bwnEPZuLd6EExp8BVYCIwfW+9cm\n" +
-            "uyHXBJUEm1gkF2Utd8EYdf4jEcBCdDIXgNJI+DY05OlHE0E2IseQIHf9kttZzQHH\n" +
-            "QEVtowJsaa2EksksBAmDDHH6ybyee7bZl8W2xkpbzvUvb6SuK+M/XyUjS9SYtun3\n" +
-            "z82BhOhRMbpokpK2Eba6IeC7WoVX2Y8Wsqj198qTVvuyRiw2B3SdZarKV5VTySY3\n" +
-            "aqsEyxenca5EjxU7QZDAHQ==\n" +
+            "ZGlnaWNlcnQuY29tL0RpZ2lDZXJ0UVZFVlRMU0lDQUcxLmNydDAJBgNVHRMEAjAA\n" +
+            "MIIBfAYKKwYBBAHWeQIEAgSCAWwEggFoAWYAdQDoPtDaPvUGNTLnVyi8iWvJA9PL\n" +
+            "0RFr7Otp4Xd9bQa9bgAAAYA+bejFAAAEAwBGMEQCIFDhmaB4BXmOw2SKONPFBU8t\n" +
+            "qXb7DXeG6JHGcONDqITjAiAqozEj7/1ULu6t/uzfwOSgC7xEmUsLGzQVnaOF9m3s\n" +
+            "swB1ADXPGRu/sWxXvw+tTG1Cy7u2JyAmUeo/4SrvqAPDO9ZMAAABgD5t6QkAAAQD\n" +
+            "AEYwRAIgfVEs7Ph+wOpoCGl4woa3aUWH1COGx1SwvHZ8lH21xfsCIBI1IpR6goya\n" +
+            "iz47tT/Uz+26RnkHiAApYsdMOPyevkzhAHYAs3N3B+GEUPhjhtYFqdwRCUp5LbFn\n" +
+            "DAuH3PADDnk2pZoAAAGAPm3pPgAABAMARzBFAiAKBon1PVoqJAF49jMQd2c222TK\n" +
+            "sWkL5sLFqLVZj2vOugIhAODd/OUy236+9alC2U5nxl1oej9fOF4por2OZMFQfpFF\n" +
+            "MA0GCSqGSIb3DQEBCwUAA4IBAQAyrJzyOiRAETfoYddTmRmbnFNuHx4YAkkdxn2d\n" +
+            "BXdy4jPn0kTtDo4592KnbTdieSCWghmEmcEY1sQXdX6iqKwzmp408jfUDohl5evV\n" +
+            "oZrum3P3zgLRz1qswFM5a2HteWzCWWi/n6d6nKXj6PGGVAMQfk1s6PaWhYBuiaag\n" +
+            "myYss/LTPzaLGUfFzlt/HfomiD+BNuBOVa+pPrmTWhex+e02z95n6RPYCiazuZNZ\n" +
+            "xiarN83pRNu/fIjVXw2jENg7+kaC1wwLqET0x6/EJa6YI3Xa7Aumb8Pp2r2UZ5Tr\n" +
+            "7BUhmiRLkvw/9SI8ceXNSwuTTGK2fKHm2/CWqI0cS3zWk3dC\n" +
             "-----END CERTIFICATE-----";
 
     public void runTest(ValidatePathWithParams pathValidator)
@@ -332,7 +346,7 @@ class RootCA2G3 {
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Tue Feb 02 11:26:52 PST 2021", System.out);
+                "Mon Apr 18 14:07:46 PDT 2022", System.out);
     }
 }
 
@@ -375,25 +389,26 @@ class RootCA3G3 {
             "l8Sd/Kpqwde/sJkoqwDcBSJygh0=\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-3-g3.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Owner: CN=quovadis-root-ca-3-g3.chain-demos.digicert.com, O="DigiCert, Inc.",
+    //        L=Lehi, ST=Utah, C=US
     // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert, Inc", C=US
-    // Serial number: 19a05758f4ac7061ce9b3badd54d9b3
-    // Valid from: Tue Jan 19 16:00:00 PST 2021 until: Sun Feb 20 15:59:59 PST 2022
+    // Serial number: f27ee3fad1d754ae78d7866da0a4f6f
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIGhjCCBW6gAwIBAgIQAZoFdY9KxwYc6bO63VTZszANBgkqhkiG9w0BAQsFADBZ\n" +
+            "MIIG/jCCBeagAwIBAgIQDyfuP60ddUrnjXhm2gpPbzANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
-            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDMgRzMwHhcNMjEw\n" +
-            "MTIwMDAwMDAwWhcNMjIwMjIwMjM1OTU5WjB9MQswCQYDVQQGEwJVUzENMAsGA1UE\n" +
+            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDMgRzMwHhcNMjIw\n" +
+            "MzA1MDAwMDAwWhcNMjMwNDA1MjM1OTU5WjB9MQswCQYDVQQGEwJVUzENMAsGA1UE\n" +
             "CBMEVXRhaDENMAsGA1UEBxMETGVoaTEXMBUGA1UEChMORGlnaUNlcnQsIEluYy4x\n" +
             "NzA1BgNVBAMTLnF1b3ZhZGlzLXJvb3QtY2EtMy1nMy5jaGFpbi1kZW1vcy5kaWdp\n" +
-            "Y2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDCm/KON4FI\n" +
-            "zslgCHcJkdamTiryUif9w+BD1xGb7W7hCo+JuLkMzDSH+gGAdwdjYK1NY5c0gFiw\n" +
-            "Ud3OeHbNe7dZJSXhBP1oF3Xwl0f0DWIfa9nJObzQrN94PnYzDNGuFZut69dqzghO\n" +
-            "1QGG/+dVdITvzqyA/Mqy7TUsZyoaG4OALTdOXAlFmeMf5UP7EDrAEC0dlUoYJnwK\n" +
-            "0BeRNZDPYc/OsHviNa6/PnBli81C1QSrAT93STEAnWsCJrG8KlbSElYz2zwPwBZ7\n" +
-            "ye1m8vH/K7npIIL0d/vSCxLUbC1pstOUahXvZE/Wl1zIV+JyCRmZS7sxTy6s5M4+\n" +
-            "31Va8Y9jdbeBAgMBAAGjggMkMIIDIDAfBgNVHSMEGDAWgBQzZvsvkQXMs2JS7808\n" +
-            "9X4czqcXljAdBgNVHQ4EFgQUsVGPx+H0EHp+wefHsSq0rN9eOzMwOQYDVR0RBDIw\n" +
+            "Y2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDOZpBBS8yo\n" +
+            "ioVgFUQDCVcnkHTL4/PfaPKGK1owE0+mKz1AXmYX1rzFfp6gFqjbZeclhWCKoINE\n" +
+            "OrZ2+1mGp75+nCP89NgoGzPgjYLVsM97gN2Y36/jXu8TwsZdYfBw9gxL+YApvq2r\n" +
+            "NbPfxXaYfWdq8bz0RzqXRgS8BqKi1q8tKyahx5EJ3fCpozY9NPvCnipwbWXL9evF\n" +
+            "Oak3c5Ip2YME4mHh8PujrznCVBte7KGLDn2KwbOUbh5SKKBL32vzTPOERWEDMbAu\n" +
+            "3XqQh/cc4LTp32Lf/XkfnUOSbzNh+Te8ZjeDzI+SYNg9bleKpPxLSkBZyurs4mCD\n" +
+            "92L8BXPlMaGjAgMBAAGjggOcMIIDmDAfBgNVHSMEGDAWgBQzZvsvkQXMs2JS7808\n" +
+            "9X4czqcXljAdBgNVHQ4EFgQUnf71SuL2Z73DAgGKgO7UVFDBIkgwOQYDVR0RBDIw\n" +
             "MIIucXVvdmFkaXMtcm9vdC1jYS0zLWczLmNoYWluLWRlbW9zLmRpZ2ljZXJ0LmNv\n" +
             "bTAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC\n" +
             "MIGXBgNVHR8EgY8wgYwwRKBCoECGPmh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9E\n" +
@@ -403,39 +418,43 @@ class RootCA3G3 {
             "dHRwOi8vd3d3LmRpZ2ljZXJ0LmNvbS9DUFMwgYMGCCsGAQUFBwEBBHcwdTAkBggr\n" +
             "BgEFBQcwAYYYaHR0cDovL29jc3AuZGlnaWNlcnQuY29tME0GCCsGAQUFBzAChkFo\n" +
             "dHRwOi8vY2FjZXJ0cy5kaWdpY2VydC5jb20vRGlnaUNlcnRRdW9WYWRpc1RMU0lD\n" +
-            "QVFWUm9vdENBM0czLmNydDAMBgNVHRMBAf8EAjAAMIIBBAYKKwYBBAHWeQIEAgSB\n" +
-            "9QSB8gDwAHYAKXm+8J45OSHwVnOfY6V35b5XfZxgCvj5TV0mXCVdx4QAAAF3IHx1\n" +
-            "rwAABAMARzBFAiAHK4QuN606ween6tDb2EiNdYTNGhWayvJemSNKuGIELgIhAKaF\n" +
-            "1/emwlNTMJDlG+kqEhqeO/+XjtfUfhdIeT8dR7dPAHYAIkVFB1lVJFaWP6Ev8fdt\n" +
-            "huAjJmOtwEt/XcaDXG7iDwIAAAF3IHx13QAABAMARzBFAiEA7qBblGimuzeSA3S5\n" +
-            "hkE+fVi0DLn/eElclZRk/RSCcsECIDN91iQV6iQryAeD597RExuxunvz+DXn6iz7\n" +
-            "43/4LdbkMA0GCSqGSIb3DQEBCwUAA4IBAQBZl4PoBJhh6j32nW39aRpOWTEhxZt+\n" +
-            "NItfFhaQSrJWWmWkKyIQ6roKf8mDyf2x6PGiWV1+ZLEJ5iUmuFtcjlvdd6PjP2J9\n" +
-            "qEev/kWfdnBY0Ocvfo6ZYhXy/9lW/1s9RQSNiEXTAi+C3R6iTQ5RYW6w4mStynqH\n" +
-            "dDO763+aE7vxSh6BxvbZugbkDkrHpjrpoWceT0huwbS7y7U0mk94eXXnTzisBHPY\n" +
-            "zbWlJNJVmt2ut9L9TIAZfqTmdWNKVXiVd2tOB2vKwHYzKM55/LqwcX+XfSpT2FQP\n" +
-            "OQ1TllgAl+B+4PexVRfO7MNuZgKwT8LuJp1d6xZNvXiNx6dhNBnaY7eE\n" +
+            "QVFWUm9vdENBM0czLmNydDAJBgNVHRMEAjAAMIIBfwYKKwYBBAHWeQIEAgSCAW8E\n" +
+            "ggFrAWkAdwDoPtDaPvUGNTLnVyi8iWvJA9PL0RFr7Otp4Xd9bQa9bgAAAX9cGyUR\n" +
+            "AAAEAwBIMEYCIQDjpwE/uiXodkY8Cx3ecooM7gxZp+Qi3aQSIi3SWam6YwIhAPqz\n" +
+            "8AdaOw+FTZApiEiO2PXww8Y98YtivwXay8v/ZFxrAHYANc8ZG7+xbFe/D61MbULL\n" +
+            "u7YnICZR6j/hKu+oA8M71kwAAAF/XBsk5gAABAMARzBFAiEA4v9FfzFKPr8hPM1O\n" +
+            "jPSlboD96ufdyFBy9KmD8pFcI6ECIBY6pcURmWtsE/G2jQgC+qvueJqSycNP2qTM\n" +
+            "iJ3pO/U1AHYAs3N3B+GEUPhjhtYFqdwRCUp5LbFnDAuH3PADDnk2pZoAAAF/XBsl\n" +
+            "BwAABAMARzBFAiEAsHzOaXv9OIo4RvaKUEscoLpnM98C+4hc6v4Z26d41aICIC2o\n" +
+            "aTrc5JsqgDhJXp7UArQPziUqDso967W2mrLa0nLdMA0GCSqGSIb3DQEBCwUAA4IB\n" +
+            "AQC2CaUwlIb+uKsELGw5U2KV0q8uMp/nBIyFaW/HNOJUf8j1keaf31WWBAFfUQVY\n" +
+            "pzFRUnRmNTtGxCvzyY1YhoQSwswGghz8ZCSQPWCST/Tl8kKuVFas8wSUXaEV23t4\n" +
+            "G0pfIlXL2oIuJwREjzv54SK7xsQ4whco0nw8DvLt+/5us4t96u8r1EuBKkF45ngz\n" +
+            "t77MTqpa0nvWUT7q9POT7xwQNui7P0j5t7prVX/fBKm5EfK1Jdi1Toj9+VxTIWYk\n" +
+            "splUCXw7zxaA3nlrncAmnHxZEY8sQjpGY1OGY0udd+m5bldJNbRTA1Q+VoPVMiU6\n" +
+            "osdBQGUbbWrqm1fnoFW1VvUt\n" +
             "-----END CERTIFICATE-----";
 
-    // Owner: CN=quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com, O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
+    // Owner: CN=quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com,
+    //        O="DigiCert, Inc.", L=Lehi, ST=Utah, C=US
     // Issuer: CN=DigiCert QuoVadis TLS ICA QV Root CA 3 G3, O="DigiCert, Inc", C=US
-    // Serial number: 804a1f35d45fb0f799c9dd1e54f0a41
-    // Valid from: Tue Jan 19 16:00:00 PST 2021 until: Sun Feb 20 15:59:59 PST 2022
+    // Serial number: aafa7cafda91796626f5fc8bcb38702
+    // Valid from: Fri Mar 04 16:00:00 PST 2022 until: Wed Apr 05 16:59:59 PDT 2023
     private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
-            "MIIGlzCCBX+gAwIBAgIQCASh811F+w95nJ3R5U8KQTANBgkqhkiG9w0BAQsFADBZ\n" +
+            "MIIHDTCCBfWgAwIBAgIQCq+nyv2pF5Zib1/IvLOHAjANBgkqhkiG9w0BAQsFADBZ\n" +
             "MQswCQYDVQQGEwJVUzEWMBQGA1UECgwNRGlnaUNlcnQsIEluYzEyMDAGA1UEAwwp\n" +
-            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDMgRzMwHhcNMjEw\n" +
-            "MTIwMDAwMDAwWhcNMjIwMjIwMjM1OTU5WjCBhTELMAkGA1UEBhMCVVMxDTALBgNV\n" +
+            "RGlnaUNlcnQgUXVvVmFkaXMgVExTIElDQSBRViBSb290IENBIDMgRzMwHhcNMjIw\n" +
+            "MzA1MDAwMDAwWhcNMjMwNDA1MjM1OTU5WjCBhTELMAkGA1UEBhMCVVMxDTALBgNV\n" +
             "BAgTBFV0YWgxDTALBgNVBAcTBExlaGkxFzAVBgNVBAoTDkRpZ2lDZXJ0LCBJbmMu\n" +
             "MT8wPQYDVQQDEzZxdW92YWRpcy1yb290LWNhLTMtZzMtcmV2b2tlZC5jaGFpbi1k\n" +
             "ZW1vcy5kaWdpY2VydC5jb20wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB\n" +
-            "AQC1ZjOf9P8AsZUMI2utVu8I9Ap1xOfIrZ0CGh5ZT1O/+PqE27hnqwG7Ed0yuQs7\n" +
-            "OMyo0BP5d8Fg7dbW4LqaA+al3vRH+CQQoeD8zsQd1jWS6ZuitB3CQecZpCaMdzBe\n" +
-            "kQrmj0ofmyEcI5tvQTh4UeGkT66ONB0t4Urol0PCanX8Y3jQVt3FdPDdDTiIHRnl\n" +
-            "maOD1nCkkEEKGbRhxHH/8p8NCQD+i1Rn6KVMjy/hdMVEJCdFDMfKETgfcs2ZgKce\n" +
-            "A8UyPo5pfpvPEptss2Ndj80ou4X0ACV8x0nqWpOojFsml5BYIzRK8s8adAmcUUkG\n" +
-            "uukBGeJTQLd3Ygt6wa2gkeP/AgMBAAGjggMsMIIDKDAfBgNVHSMEGDAWgBQzZvsv\n" +
-            "kQXMs2JS78089X4czqcXljAdBgNVHQ4EFgQUidJlKGbvtsxFbZ+KM2iajjjrEdcw\n" +
+            "AQDofDJ1xHHWMhbWwU7e4cY3u2NjvE4ur/A0Y13UK53zoH8qDunV6ORAXQ+zSpev\n" +
+            "kPlnIbdjYOK1v5RJn2ZRgCafj8Bc/9GnfQ1uE7P9dRkC9ZQwvb6Eh6f4RT7gaOPX\n" +
+            "UXSXwtr96xdXDvtlJqWx13YQPnSGXUNNT1NH8bs2Myr9j+I5bUcUGsKsGheZoib3\n" +
+            "6IFINss+ouOhZ+HP6ganS5cQVsUGk5u6BT6oH9VgwfVMjpDqmRkwc6UJmiij/Nz4\n" +
+            "NOLOx2tivUjhk0eTPUaErUqYipGBSuwww6Linc/0IAIxGJ2k0J3Qz9PthJzG0P47\n" +
+            "J5U5ej6FimnRS6Rrk5Ywk2HNAgMBAAGjggOiMIIDnjAfBgNVHSMEGDAWgBQzZvsv\n" +
+            "kQXMs2JS78089X4czqcXljAdBgNVHQ4EFgQU9qXify+xtHlQIniZABL1pv7gcb4w\n" +
             "QQYDVR0RBDowOII2cXVvdmFkaXMtcm9vdC1jYS0zLWczLXJldm9rZWQuY2hhaW4t\n" +
             "ZGVtb3MuZGlnaWNlcnQuY29tMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggr\n" +
             "BgEFBQcDAQYIKwYBBQUHAwIwgZcGA1UdHwSBjzCBjDBEoEKgQIY+aHR0cDovL2Ny\n" +
@@ -445,19 +464,21 @@ class RootCA3G3 {
             "MCkwJwYIKwYBBQUHAgEWG2h0dHA6Ly93d3cuZGlnaWNlcnQuY29tL0NQUzCBgwYI\n" +
             "KwYBBQUHAQEEdzB1MCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5kaWdpY2VydC5j\n" +
             "b20wTQYIKwYBBQUHMAKGQWh0dHA6Ly9jYWNlcnRzLmRpZ2ljZXJ0LmNvbS9EaWdp\n" +
-            "Q2VydFF1b1ZhZGlzVExTSUNBUVZSb290Q0EzRzMuY3J0MAwGA1UdEwEB/wQCMAAw\n" +
-            "ggEEBgorBgEEAdZ5AgQCBIH1BIHyAPAAdQApeb7wnjk5IfBWc59jpXflvld9nGAK\n" +
-            "+PlNXSZcJV3HhAAAAXcgfZ+yAAAEAwBGMEQCIC/jlb+hFwAO0CDUL1hJSIQ9QZOH\n" +
-            "y0fR4gQ3dIXicm26AiAeYJl/ldEn2ojtlL5SYlkpMyf0ry6dNVP0iD8ctUNyngB3\n" +
-            "ACJFRQdZVSRWlj+hL/H3bYbgIyZjrcBLf13Gg1xu4g8CAAABdyB9oAUAAAQDAEgw\n" +
-            "RgIhAMc2AQO/4o79MHwNZAaAFicxyvLCxjKbmR2kPxmL6oSUAiEA1ue6oGS9cIoy\n" +
-            "gTYMxvrLLcETbvapKRFu49dUeger7aUwDQYJKoZIhvcNAQELBQADggEBAG9vJ2sF\n" +
-            "Q/guZdJr8tnMcHNISmZSTCXPvc20kjkVF0M0kW979sskISxEmV9pI49FJqQB1hoz\n" +
-            "4YJhtOKAg5a9PsvOlMaeM/QNtGHdIf+BKJelpH38klHZ51zMPoWJZVDs+FX1s2fZ\n" +
-            "O9kJyU6u22eKhsea2Zt726sIQpL+d4cfBqyXWdUBFp+Kapa/tYhVYW5wo3lxGdf+\n" +
-            "ZgtZMd8tRrYtqD7Zz4fxB9SQj4uqbUydb6n95CR4agO+yNH0mzkD3csoeFfTyKkU\n" +
-            "93P11+3GMBIMY+Tqtm37eDQlZiJZt8zxdjQLO8oM8MgwimKvNeOIdETvZq6dHu8L\n" +
-            "d9QqGEKe5acHUL0=\n" +
+            "Q2VydFF1b1ZhZGlzVExTSUNBUVZSb290Q0EzRzMuY3J0MAkGA1UdEwQCMAAwggF9\n" +
+            "BgorBgEEAdZ5AgQCBIIBbQSCAWkBZwB1AOg+0No+9QY1MudXKLyJa8kD08vREWvs\n" +
+            "62nhd31tBr1uAAABf1wc0LIAAAQDAEYwRAIgdmF6UFe2jgbM3FjYRMmcNaXfpleT\n" +
+            "E8hmYfmAVy5lSoUCIDPCV27IP9wpdGoxnnCMBwuekg6E4SB0lj49+o9OHHjDAHUA\n" +
+            "Nc8ZG7+xbFe/D61MbULLu7YnICZR6j/hKu+oA8M71kwAAAF/XBzQ0QAABAMARjBE\n" +
+            "AiBO6vYHFci7OWvqDHRlgTn+Q6zNG/LysZEOlrO4W8ZZ2gIgDY5+qjlar3esPN0b\n" +
+            "JUR5vfITl7UiZoqINJSm1gZ4Nm4AdwCzc3cH4YRQ+GOG1gWp3BEJSnktsWcMC4fc\n" +
+            "8AMOeTalmgAAAX9cHNDdAAAEAwBIMEYCIQCB52OPhdnYybsWzmkdSGSbgQVmS0V7\n" +
+            "ZumbThJSJwpuiwIhAP+JRx+Eu3MYRp5iyLb+xlWqghMnDnF9aCfm1VuW4aDuMA0G\n" +
+            "CSqGSIb3DQEBCwUAA4IBAQBO/4LljBpMGYYxBang12UIQ+FIjxAfKqqIklSa+du2\n" +
+            "ea0VHqaRrdfh/aTxzb0WaU++bgQN+MeHmQdvwYSgAyU/lY7mIvDTNxFOO6IG2vfR\n" +
+            "+JAUnS9iVUQ1rXHU72cxUsne5aRyLQ0W/2Zayx85O6/C9gIUJgJVRuk0dTPZ6tnq\n" +
+            "FoW1S4GwqEpzTuJU8rP5IvMYoYo8jItpjzS0W90gtDvev/XBRs1ig28Ky7ZS5AtQ\n" +
+            "S2Q6Ikg9YzegE9YNj2wqdZnEneoce0G1InysM/geY1BZ57G9RAUZkzWVTJRLJgbg\n" +
+            "2nWSqpQJ765gg9JdsRo+zqj1kUBbUYoTSlaAJG6ucrlB\n" +
             "-----END CERTIFICATE-----";
 
     public void runTest(ValidatePathWithParams pathValidator)
@@ -469,6 +490,6 @@ class RootCA3G3 {
         // Validate Revoked
         pathValidator.validate(new String[]{REVOKED, INT},
                 ValidatePathWithParams.Status.REVOKED,
-                "Wed Jan 20 07:51:03 PST 2021", System.out);
+                "Tue Mar 08 11:23:06 PST 2022", System.out);
     }
 }

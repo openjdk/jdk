@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/methodLiveness.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
@@ -72,9 +73,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   assert(h_m() != NULL, "no null method");
   assert(_holder->get_instanceKlass() == h_m->method_holder(), "");
 
-  if (LogTouchedMethods) {
-    h_m->log_touched(Thread::current());
-  }
   // These fields are always filled in in loaded methods.
   _flags = ciFlags(h_m->access_flags());
 
@@ -82,7 +80,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _max_stack          = h_m->max_stack();
   _max_locals         = h_m->max_locals();
   _code_size          = h_m->code_size();
-  _intrinsic_id       = h_m->intrinsic_id();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
   _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
@@ -101,6 +98,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _flow               = NULL;
   _bcea               = NULL;
 #endif // COMPILER2
+
+  // Check for blackhole intrinsic and then populate the intrinsic ID.
+  CompilerOracle::tag_blackhole_if_possible(h_m);
+  _intrinsic_id       = h_m->intrinsic_id();
 
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
@@ -138,7 +139,6 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   constantPoolHandle cpool(Thread::current(), h_m->constants());
   _signature = new (env->arena()) ciSignature(_holder, cpool, sig_symbol);
   _method_data = NULL;
-  _nmethod_age = h_m->nmethod_age();
   // Take a snapshot of these values, so they will be commensurate with the MDO.
   if (ProfileInterpreter || CompilerConfig::is_c1_profiling()) {
     int invcnt = h_m->interpreter_invocation_count();
@@ -151,14 +151,10 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   }
   if (_interpreter_invocation_count == 0)
     _interpreter_invocation_count = 1;
-  _instructions_size = -1;
-#ifdef ASSERT
+  _inline_instructions_size = -1;
   if (ReplayCompiles) {
     ciReplay::initialize(this);
   }
-#endif
-
-  CompilerOracle::tag_blackhole_if_possible(h_m);
 }
 
 
@@ -176,7 +172,7 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   _method_data(            NULL),
   _method_blocks(          NULL),
   _intrinsic_id(           vmIntrinsics::_none),
-  _instructions_size(-1),
+  _inline_instructions_size(-1),
   _can_be_statically_bound(false),
   _can_omit_stack_trace(true),
   _liveness(               NULL)
@@ -984,7 +980,7 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
     return true;
   }
   if (h_m()->method_data() == NULL) {
-    Method::build_interpreter_method_data(h_m, THREAD);
+    Method::build_profiling_method_data(h_m, THREAD);
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     }
@@ -1091,7 +1087,7 @@ bool ciMethod::can_be_compiled() {
 // ------------------------------------------------------------------
 // ciMethod::has_compiled_code
 bool ciMethod::has_compiled_code() {
-  return instructions_size() > 0;
+  return inline_instructions_size() > 0;
 }
 
 int ciMethod::highest_osr_comp_level() {
@@ -1114,25 +1110,28 @@ int ciMethod::code_size_for_inlining() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::instructions_size
+// ciMethod::inline_instructions_size
 //
 // This is a rough metric for "fat" methods, compared before inlining
 // with InlineSmallCode.  The CodeBlob::code_size accessor includes
 // junk like exception handler, stubs, and constant table, which are
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
-int ciMethod::instructions_size() {
-  if (_instructions_size == -1) {
+// Also some instructions inside the code are excluded from inline
+// heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
+int ciMethod::inline_instructions_size() {
+  if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
-                     CompiledMethod* code = get_Method()->code();
-                     if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
-                       _instructions_size = code->insts_end() - code->verified_entry_point();
-                     } else {
-                       _instructions_size = 0;
-                     }
-                     );
+      CompiledMethod* code = get_Method()->code();
+      if (code != NULL && (code->comp_level() == CompLevel_full_optimization)) {
+        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
+        _inline_instructions_size = isize > 0 ? isize : 0;
+      } else {
+        _inline_instructions_size = 0;
+      }
+    );
   }
-  return _instructions_size;
+  return _inline_instructions_size;
 }
 
 // ------------------------------------------------------------------
@@ -1165,17 +1164,12 @@ bool ciMethod::was_executed_more_than(int times) {
 // ------------------------------------------------------------------
 // ciMethod::has_unloaded_classes_in_signature
 bool ciMethod::has_unloaded_classes_in_signature() {
-  VM_ENTRY_MARK;
-  {
-    ExceptionMark em(THREAD);
-    methodHandle m(THREAD, get_Method());
-    bool has_unloaded = Method::has_unloaded_classes_in_signature(m, thread);
-    if( HAS_PENDING_EXCEPTION ) {
-      CLEAR_PENDING_EXCEPTION;
-      return true;     // Declare that we may have unloaded classes
-    }
-    return has_unloaded;
-  }
+  // ciSignature is resolved against some accessing class and
+  // signature classes aren't required to be local. As a benefit,
+  // it makes signature classes visible through loader constraints.
+  // So, encountering an unloaded class signals it is absent both in
+  // the callee (local) and caller contexts.
+  return signature()->has_unloaded_classes();
 }
 
 // ------------------------------------------------------------------
@@ -1207,15 +1201,6 @@ bool ciMethod::check_call(int refinfo_index, bool is_static) const {
     }
   }
   return false;
-}
-
-// ------------------------------------------------------------------
-// ciMethod::profile_aging
-//
-// Should the method be compiled with an age counter?
-bool ciMethod::profile_aging() const {
-  return UseCodeAging && (!MethodCounters::is_nmethod_hot(nmethod_age()) &&
-                          !MethodCounters::is_nmethod_age_unset(nmethod_age()));
 }
 // ------------------------------------------------------------------
 // ciMethod::print_codes
@@ -1333,7 +1318,7 @@ void ciMethod::dump_replay_data(outputStream* st) {
                mcs == NULL ? 0 : mcs->backedge_counter()->raw_counter(),
                interpreter_invocation_count(),
                interpreter_throwout_count(),
-               _instructions_size);
+               _inline_instructions_size);
 }
 
 // ------------------------------------------------------------------

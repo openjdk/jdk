@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
@@ -38,9 +38,8 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/stackValue.hpp"
-
 #ifdef COMPILER2
-#include "opto/matcher.hpp" // Matcher::max_vector_size(BasicType)
+#include "opto/matcher.hpp"
 #endif // COMPILER2
 
 #ifdef COMPILER2
@@ -182,7 +181,7 @@ Handle VectorSupport::allocate_vector_payload(InstanceKlass* ik, frame* fr, Regi
   } else if (!payload->is_object() && !payload->is_constant_oop()) {
     stringStream ss;
     payload->print_on(&ss);
-    assert(false, "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.as_string());
+    assert(false, "expected 'object' value for scalar-replaced boxed vector but got: %s", ss.freeze());
 #endif
   }
   return Handle(THREAD, nullptr);
@@ -443,6 +442,114 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_EXPAND: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_ExpandV;
+        default: fatal("EXPAND: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_COMPRESS: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_CompressV;
+        default: fatal("COMPRESS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_MASK_COMPRESS: {
+      switch (bt) {
+        case T_BYTE:  // fall-through
+        case T_SHORT: // fall-through
+        case T_INT:   // fall-through
+        case T_LONG:  // fall-through
+        case T_FLOAT: // fall-through
+        case T_DOUBLE: return Op_CompressM;
+        default: fatal("MASK_COMPRESS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_BIT_COUNT: {
+      switch (bt) {
+        case T_BYTE:  // Returning Op_PopCountI
+        case T_SHORT: // for byte and short types temporarily
+        case T_INT:   return Op_PopCountI;
+        case T_LONG:  return Op_PopCountL;
+        default: fatal("BIT_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_TZ_COUNT: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:   return Op_CountTrailingZerosI;
+        case T_LONG:  return Op_CountTrailingZerosL;
+        default: fatal("TZ_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_LZ_COUNT: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:   return Op_CountLeadingZerosI;
+        case T_LONG:  return Op_CountLeadingZerosL;
+        default: fatal("LZ_COUNT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_REVERSE: {
+      switch (bt) {
+        case T_BYTE:  // Temporarily returning
+        case T_SHORT: // Op_ReverseI for byte and short
+        case T_INT:   return Op_ReverseI;
+        case T_LONG:  return Op_ReverseL;
+        default: fatal("REVERSE: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_REVERSE_BYTES: {
+      switch (bt) {
+        case T_SHORT: return Op_ReverseBytesS;
+        // Superword requires type consistency between the ReverseBytes*
+        // node and the data. But there's no ReverseBytesB node because
+        // no reverseBytes() method in Java Byte class. T_BYTE can only
+        // appear in VectorAPI calls. We reuse Op_ReverseBytesI for this
+        // to ensure vector intrinsification succeeds.
+        case T_BYTE:  // Intentionally fall-through
+        case T_INT:   return Op_ReverseBytesI;
+        case T_LONG:  return Op_ReverseBytesL;
+        default: fatal("REVERSE_BYTES: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_COMPRESS_BITS: {
+      switch (bt) {
+        case T_INT:
+        case T_LONG: return Op_CompressBits;
+        default: fatal("COMPRESS_BITS: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_EXPAND_BITS: {
+      switch (bt) {
+        case T_INT:
+        case T_LONG: return Op_ExpandBits;
+        default: fatal("EXPAND_BITS: %s", type2name(bt));
+      }
+      break;
+    }
+
     case VECTOR_OP_TAN:
     case VECTOR_OP_TANH:
     case VECTOR_OP_SIN:

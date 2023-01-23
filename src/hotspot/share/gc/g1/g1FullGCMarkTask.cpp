@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
@@ -37,15 +36,13 @@ G1FullGCMarkTask::G1FullGCMarkTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Parallel Marking Task", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
     _terminator(collector->workers(), collector->array_queue_set()) {
-  // Need cleared claim bits for the roots processing
-  ClassLoaderDataGraph::clear_claimed_marks();
 }
 
 void G1FullGCMarkTask::work(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
   G1FullGCMarker* marker = collector()->marker(worker_id);
-  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations);
+  MarkingCodeBlobClosure code_closure(marker->mark_closure(), !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */);
 
   if (ClassUnloading) {
     _root_processor.process_strong_roots(marker->mark_closure(),

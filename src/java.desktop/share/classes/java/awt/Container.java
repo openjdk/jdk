@@ -3723,7 +3723,7 @@ public class Container extends Component {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
-     * @serial
+     *
      * @see #addContainerListener
      * @see #writeObject(ObjectOutputStream)
      */
@@ -4119,7 +4119,7 @@ public class Container extends Component {
     }
 
     /*
-     * This method is overriden to handle opaque children in non-opaque
+     * This method is overridden to handle opaque children in non-opaque
      * containers.
      */
     @Override

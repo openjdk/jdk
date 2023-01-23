@@ -163,8 +163,8 @@ public final class RecordingFile implements Closeable {
     List<Type> readTypes() throws IOException  {
         ensureOpen();
         MetadataDescriptor previous = null;
-        List<Type> types = new ArrayList<>();
-        HashSet<Long> foundIds = new HashSet<>();
+        List<Type> types = new ArrayList<>(200);
+        HashSet<Long> foundIds = HashSet.newHashSet(types.size());
         try (RecordingInput ri = new RecordingInput(file, FileAccess.UNPRIVILEGED)) {
             ChunkHeader ch = new ChunkHeader(ri);
             ch.awaitFinished();
@@ -231,6 +231,8 @@ public final class RecordingFile implements Closeable {
      * @throws SecurityException if a security manager exists and its
      *                           {@code checkWrite} method denies write access to the
      *                           file
+     *
+     * @since 19
      */
     public void write(Path destination, Predicate<RecordedEvent> filter) throws IOException {
         Objects.requireNonNull(destination, "destination");

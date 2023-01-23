@@ -24,18 +24,19 @@
 
 #ifndef SHARED_CDS_SHAREDCLASSINFO_HPP
 #define SHARED_CDS_SHAREDCLASSINFO_HPP
-#include "classfile/compactHashtable.hpp"
-#include "classfile/javaClasses.hpp"
-#include "classfile/systemDictionaryShared.hpp"
+
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/compactHashtable.hpp"
+#include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/instanceKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
 
+class DumpTimeClassInfo;
 class Method;
 class Symbol;
 
@@ -46,7 +47,7 @@ public:
     int _clsfile_crc32;
   };
 
-  // This is different than  DumpTimeClassInfo::DTVerifierConstraint. We use
+  // This is different than DumpTimeClassInfo::DTVerifierConstraint. We use
   // u4 instead of Symbol* to save space on 64-bit CPU.
   struct RTVerifierConstraint {
     u4 _name;

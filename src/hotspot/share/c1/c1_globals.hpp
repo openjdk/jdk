@@ -203,9 +203,6 @@
   develop_pd(bool, CSEArrayLength,                                          \
           "Create separate nodes for length in array accesses")             \
                                                                             \
-  develop_pd(bool, TwoOperandLIRForm,                                       \
-          "true if LIR requires src1 and dst to match in binary LIR ops")   \
-                                                                            \
   develop(intx, TraceLinearScanLevel, 0,                                    \
           "Debug levels for the linear scan allocator")                     \
           range(0, 4)                                                       \
@@ -314,7 +311,7 @@
           "Use CHA and exact type results at call sites when updating MDOs")\
                                                                             \
   product(bool, C1UpdateMethodData, true,                                   \
-          "Update MethodData*s in Tier1-generated code")                    \
+          "Update MethodData*s in Tier 3 C1 generated code")                \
                                                                             \
   develop(bool, PrintCFGToFile, false,                                      \
           "print control flow graph to a separate file during compilation")

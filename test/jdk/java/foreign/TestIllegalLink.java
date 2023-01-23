@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,17 @@
 
 /*
  * @test
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @enablePreview
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestIllegalLink
  */
 
-import jdk.incubator.foreign.CLinker;
-import jdk.incubator.foreign.FunctionDescriptor;
-import jdk.incubator.foreign.MemoryAddress;
-import jdk.incubator.foreign.MemoryLayout;
-import jdk.incubator.foreign.NativeSymbol;
-import jdk.incubator.foreign.ResourceScope;
+import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.nio.ByteOrder;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -42,8 +43,8 @@ import static org.testng.Assert.fail;
 
 public class TestIllegalLink extends NativeTestHelper {
 
-    private static final NativeSymbol DUMMY_TARGET = NativeSymbol.ofAddress("dummy", MemoryAddress.ofLong(1), ResourceScope.globalScope());
-    private static final CLinker ABI = CLinker.systemCLinker();
+    private static final MemorySegment DUMMY_TARGET = MemorySegment.ofAddress(1);
+    private static final Linker ABI = Linker.nativeLinker();
 
     @Test(dataProvider = "types")
     public void testTypeMismatch(FunctionDescriptor desc, String expectedExceptionMessage) {
@@ -51,7 +52,8 @@ public class TestIllegalLink extends NativeTestHelper {
             ABI.downcallHandle(DUMMY_TARGET, desc);
             fail("Expected IllegalArgumentException was not thrown");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains(expectedExceptionMessage));
+            assertTrue(e.getMessage().contains(expectedExceptionMessage),
+                    e.getMessage() + " != " + expectedExceptionMessage);
         }
     }
 
@@ -59,20 +61,56 @@ public class TestIllegalLink extends NativeTestHelper {
     public static Object[][] types() {
         return new Object[][]{
             {
-                FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
-                "Unsupported layout: x64"
+                    FunctionDescriptor.of(MemoryLayout.paddingLayout(64)),
+                    "Unsupported layout: x64"
             },
             {
-                FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
-                "Unsupported layout: x64"
+                    FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(64)),
+                    "Unsupported layout: x64"
             },
             {
-                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(C_INT)),
-                    "Unsupported layout: [:b32]"
+                    FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
             },
             {
-                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(C_INT)),
-                    "Unsupported layout: [:b32]"
+                    FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
+                    "Unsupported layout: [2:i32]"
+            },
+            {
+                    FunctionDescriptor.ofVoid(C_INT.withBitAlignment(16)),
+                    "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(C_POINTER.withBitAlignment(16)),
+                    "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.valueLayout(char.class, ByteOrder.nativeOrder()).withBitAlignment(32)),
+                    "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            C_CHAR.withName("x").withBitAlignment(8),
+                            C_SHORT.withName("y").withBitAlignment(8),
+                            C_INT.withName("z").withBitAlignment(8)
+                            ).withBitAlignment(8)),
+                    "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.structLayout(
+                                C_CHAR.withName("x").withBitAlignment(8),
+                                C_SHORT.withName("y").withBitAlignment(8),
+                                C_INT.withName("z").withBitAlignment(8)
+                            ))),
+                    "Layout bit alignment must be natural alignment"
+            },
+            {
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            MemoryLayout.sequenceLayout(
+                                C_INT.withBitAlignment(8)
+                            ))),
+                    "Layout bit alignment must be natural alignment"
             },
         };
     }

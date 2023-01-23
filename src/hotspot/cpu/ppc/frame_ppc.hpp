@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,6 @@
 
 #ifndef CPU_PPC_FRAME_PPC_HPP
 #define CPU_PPC_FRAME_PPC_HPP
-
-#include "runtime/synchronizer.hpp"
 
   //  C frame layout on PPC-64.
   //
@@ -270,8 +268,13 @@
     ijava_state_size = sizeof(ijava_state)
   };
 
+// Byte offset relative to fp
 #define _ijava_state_neg(_component) \
         (int) (-frame::ijava_state_size + offset_of(frame::ijava_state, _component))
+
+// Frame slot index relative to fp
+#define ijava_idx(_component) \
+        (_ijava_state_neg(_component) >> LogBytesPerWord)
 
   // ENTRY_FRAME
 
@@ -358,15 +361,23 @@
 
   // The frame's stack pointer before it has been extended by a c2i adapter;
   // needed by deoptimization
-  intptr_t* _unextended_sp;
+  union {
+    intptr_t* _unextended_sp;
+    int _offset_unextended_sp; // for use in stack-chunk frames
+  };
 
-  // frame pointer for this frame
-  intptr_t* _fp;
+  union {
+    intptr_t* _fp;  // frame pointer
+    int _offset_fp; // relative frame pointer for use in stack-chunk frames
+  };
 
  public:
 
   // Accessors for fields
-  intptr_t* fp() const { return _fp; }
+  intptr_t* fp() const { assert_absolute(); return _fp; }
+  void set_fp(intptr_t* newfp)  { _fp = newfp; }
+  int offset_fp() const         { assert_offset();  return _offset_fp; }
+  void set_offset_fp(int value) { assert_on_heap(); _offset_fp = value; }
 
   // Accessors for ABIs
   inline abi_minframe* own_abi()     const { return (abi_minframe*) _sp; }
@@ -374,20 +385,20 @@
 
  private:
 
-  // Find codeblob and set deopt_state.
-  inline void find_codeblob_and_set_pc_and_deopt_state(address pc);
+  // Initialize frame members (_pc and _sp must be given)
+  inline void setup();
 
  public:
 
+  const ImmutableOopMap* get_oop_map() const;
+
   // Constructors
-  inline frame(intptr_t* sp);
-  inline frame(intptr_t* sp, address pc);
-  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp);
+  inline frame(intptr_t* sp, intptr_t* fp, address pc);
+  inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map);
+  inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
 
  private:
-
-  intptr_t* compiled_sender_sp(CodeBlob* cb) const;
-  address*  compiled_sender_pc_addr(CodeBlob* cb) const;
   address*  sender_pc_addr(void) const;
 
  public:
@@ -399,6 +410,9 @@
   inline void interpreter_frame_set_esp(intptr_t* esp);
   inline void interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp);
   inline void interpreter_frame_set_sender_sp(intptr_t* sender_sp);
+
+  template <typename RegisterMapT>
+  static void update_map_with_saved_link(RegisterMapT* map, intptr_t** link_addr);
 
   // Size of a monitor in bytes.
   static int interpreter_frame_monitor_size_in_bytes();
@@ -413,12 +427,27 @@
 
   enum {
     // normal return address is 1 bundle past PC
-    pc_return_offset = 0
+    pc_return_offset                       = 0,
+    // size, in words, of frame metadata (e.g. pc and link)
+    metadata_words                         = sizeof(abi_minframe) >> LogBytesPerWord,
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom               = 0,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                  = sizeof(abi_minframe) >> LogBytesPerWord,
+    // size, in words, of frame metadata at the frame top that needs
+    // to be reserved for callee functions in the runtime
+    frame_alignment                        = 16,
+    frame_alignment_in_words               = frame_alignment >> LogBytesPerWord,
+    // size, in words, of maximum shift in frame position due to alignment
+    align_wiggle                           =  1
   };
 
   static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
-  frame sender_raw(RegisterMap* map) const;
+  inline frame sender_raw(RegisterMap* map) const;
 
 #endif // CPU_PPC_FRAME_PPC_HPP
