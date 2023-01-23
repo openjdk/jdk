@@ -156,9 +156,6 @@ class G1CollectionSet {
   // correspond to the first x entries in the collection set candidates.
   uint _num_optional_regions;
 
-  // The number of used bytes in the collection set as evacuated.
-  size_t _bytes_used_before;
-
   enum CSetBuildType {
     Active,             // We are actively building the collection set
     Inactive            // We are not actively building the collection set
@@ -261,10 +258,6 @@ public:
                    uint worker_id) const;
 
   void iterate_optional(HeapRegionClosure* cl) const;
-
-  size_t bytes_used_before() const {
-    return _bytes_used_before;
-  }
 
   // Finalize the initial collection set consisting of all young regions potentially a
   // few old gen regions.

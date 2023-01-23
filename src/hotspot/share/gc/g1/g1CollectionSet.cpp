@@ -59,7 +59,6 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _collection_set_cur_length(0),
   _collection_set_max_length(0),
   _num_optional_regions(0),
-  _bytes_used_before(0),
   _inc_build_state(Inactive),
   _inc_part_start(0) {
 }
@@ -113,7 +112,6 @@ void G1CollectionSet::add_old_region(HeapRegion* hr) {
   assert(_collection_set_cur_length < _collection_set_max_length, "Collection set now larger than maximum size.");
   _collection_set_regions[_collection_set_cur_length++] = hr->hrm_index();
 
-  _bytes_used_before += hr->used();
   _old_region_length++;
 
   _g1h->old_set_remove(hr);
@@ -131,8 +129,6 @@ void G1CollectionSet::add_optional_region(HeapRegion* hr) {
 void G1CollectionSet::start_incremental_building() {
   assert(_collection_set_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(_inc_build_state == Inactive, "Precondition");
-
-  _bytes_used_before = 0;
 
   update_incremental_marker();
 }
@@ -198,26 +194,6 @@ void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
 void G1CollectionSet::add_young_region_common(HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == Active, "Precondition");
-
-  // This routine is used when:
-  // * adding survivor regions to the incremental cset at the end of an
-  //   evacuation pause or
-  // * adding the current allocation region to the incremental cset
-  //   when it is retired.
-  // Therefore this routine may be called at a safepoint by the
-  // VM thread, or in-between safepoints by mutator threads (when
-  // retiring the current allocation region)
-  // We need to clear and set the cached recorded/cached collection set
-  // information in the heap region here (before the region gets added
-  // to the collection set). An individual heap region's cached values
-  // are calculated, aggregated with the policy collection set info,
-  // and cached in the heap region here (initially) and (subsequently)
-  // by the Young List sampling code.
-  // Ignore calls to this due to retirement during full gc.
-
-  if (!_g1h->collector_state()->in_full_gc()) {
-    _bytes_used_before += hr->used();
-  }
 
   assert(!hr->in_collection_set(), "invariant");
   _g1h->register_young_region_with_region_attr(hr);
