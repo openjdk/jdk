@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,8 +85,8 @@ public class BufferedReader extends Reader {
     /** The skipLF flag when the mark was set */
     private boolean markedSkipLF = false;
 
-    private static int defaultCharBufferSize = 8192;
-    private static int defaultExpectedLineLength = 80;
+    private static final int DEFAULT_CHAR_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_EXPECTED_LINE_LENGTH = 80;
 
     /**
      * Creates a buffering character-input stream that uses an input buffer of
@@ -113,7 +113,7 @@ public class BufferedReader extends Reader {
      * @param  in   A Reader
      */
     public BufferedReader(Reader in) {
-        this(in, defaultCharBufferSize);
+        this(in, DEFAULT_CHAR_BUFFER_SIZE);
     }
 
     /** Checks to make sure that the stream has not been closed */
@@ -414,7 +414,7 @@ public class BufferedReader extends Reader {
             }
 
             if (s == null)
-                s = new StringBuilder(defaultExpectedLineLength);
+                s = new StringBuilder(DEFAULT_EXPECTED_LINE_LENGTH);
             s.append(cb, startChar, i - startChar);
         }
     }
