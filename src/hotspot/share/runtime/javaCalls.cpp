@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -94,8 +94,6 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
 
   debug_only(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
-
-  assert (_thread->thread_state() != _thread_in_native, "cannot set native pc to NULL");
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
 }
