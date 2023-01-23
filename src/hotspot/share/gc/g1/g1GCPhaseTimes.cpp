@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
-  _gc_par_phases[PurgeCodeRoots] = new WorkerDataArray<double>("PurgeCodeRoots", "Purge Code Roots (ms):", max_gc_threads);
 #if COMPILER2_OR_JVMCI
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
@@ -519,7 +518,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[ClearRetainedRegionBitmaps], 1);
   }
   debug_phase(_gc_par_phases[ResetHotCardCache], 1);
-  debug_phase(_gc_par_phases[PurgeCodeRoots], 1);
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
