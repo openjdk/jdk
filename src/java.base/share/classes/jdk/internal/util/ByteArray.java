@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.util.access;
+package jdk.internal.util;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -36,9 +36,9 @@ import java.nio.ByteOrder;
  * All methods in this class will throw an {@linkplain NullPointerException} if {@code null} is
  * passed in as a method parameter for a byte array.
  */
-public final class ByteArrayAccess {
+public final class ByteArray {
 
-    private ByteArrayAccess() {
+    private ByteArray() {
     }
 
     private static final VarHandle SHORT = create(short[].class);

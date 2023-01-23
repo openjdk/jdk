@@ -61,7 +61,7 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaSecurityAccess;
-import jdk.internal.util.access.ByteArrayAccess;
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -1987,14 +1987,14 @@ public final class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> ByteArrayAccess.setBoolean(buf, off, unsafe.getBoolean(obj, key));
+                    case 'Z' -> ByteArray.setBoolean(buf, off, unsafe.getBoolean(obj, key));
                     case 'B' -> buf[off] = unsafe.getByte(obj, key);
-                    case 'C' -> ByteArrayAccess.setChar(buf, off, unsafe.getChar(obj, key));
-                    case 'S' -> ByteArrayAccess.setShort(buf, off, unsafe.getShort(obj, key));
-                    case 'I' -> ByteArrayAccess.setInt(buf, off, unsafe.getInt(obj, key));
-                    case 'F' -> ByteArrayAccess.setFloat(buf, off, unsafe.getFloat(obj, key));
-                    case 'J' -> ByteArrayAccess.setLong(buf, off, unsafe.getLong(obj, key));
-                    case 'D' -> ByteArrayAccess.setDouble(buf, off, unsafe.getDouble(obj, key));
+                    case 'C' -> ByteArray.setChar(buf, off, unsafe.getChar(obj, key));
+                    case 'S' -> ByteArray.setShort(buf, off, unsafe.getShort(obj, key));
+                    case 'I' -> ByteArray.setInt(buf, off, unsafe.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloat(buf, off, unsafe.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLong(buf, off, unsafe.getLong(obj, key));
+                    case 'D' -> ByteArray.setDouble(buf, off, unsafe.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }
@@ -2016,14 +2016,14 @@ public final class ObjectStreamClass implements Serializable {
                 }
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> unsafe.putBoolean(obj, key, ByteArrayAccess.getBoolean(buf, off));
+                    case 'Z' -> unsafe.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
                     case 'B' -> unsafe.putByte(obj, key, buf[off]);
-                    case 'C' -> unsafe.putChar(obj, key, ByteArrayAccess.getChar(buf, off));
-                    case 'S' -> unsafe.putShort(obj, key, ByteArrayAccess.getShort(buf, off));
-                    case 'I' -> unsafe.putInt(obj, key, ByteArrayAccess.getInt(buf, off));
-                    case 'F' -> unsafe.putFloat(obj, key, ByteArrayAccess.getFloat(buf, off));
-                    case 'J' -> unsafe.putLong(obj, key, ByteArrayAccess.getLong(buf, off));
-                    case 'D' -> unsafe.putDouble(obj, key, ByteArrayAccess.getDouble(buf, off));
+                    case 'C' -> unsafe.putChar(obj, key, ByteArray.getChar(buf, off));
+                    case 'S' -> unsafe.putShort(obj, key, ByteArray.getShort(buf, off));
+                    case 'I' -> unsafe.putInt(obj, key, ByteArray.getInt(buf, off));
+                    case 'F' -> unsafe.putFloat(obj, key, ByteArray.getFloat(buf, off));
+                    case 'J' -> unsafe.putLong(obj, key, ByteArray.getLong(buf, off));
+                    case 'D' -> unsafe.putDouble(obj, key, ByteArray.getDouble(buf, off));
                     default  -> throw new InternalError();
                 }
             }
@@ -2474,16 +2474,16 @@ public final class ObjectStreamClass implements Serializable {
             try {
                 PRIM_VALUE_EXTRACTORS = Map.of(
                     byte.class, MethodHandles.arrayElementGetter(byte[].class),
-                    short.class, lkp.findStatic(ByteArrayAccess.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
-                    int.class, lkp.findStatic(ByteArrayAccess.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
-                    long.class, lkp.findStatic(ByteArrayAccess.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
-                    float.class, lkp.findStatic(ByteArrayAccess.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
-                    double.class, lkp.findStatic(ByteArrayAccess.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
-                    char.class, lkp.findStatic(ByteArrayAccess.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
-                    boolean.class, lkp.findStatic(ByteArrayAccess.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
+                    short.class, lkp.findStatic(ByteArray.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
+                    int.class, lkp.findStatic(ByteArray.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
+                    long.class, lkp.findStatic(ByteArray.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
+                    float.class, lkp.findStatic(ByteArray.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
+                    double.class, lkp.findStatic(ByteArray.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
+                    char.class, lkp.findStatic(ByteArray.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
+                    boolean.class, lkp.findStatic(ByteArray.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
                 );
             } catch (NoSuchMethodException | IllegalAccessException e) {
-                throw new InternalError("Can't lookup ByteArrayAccess.getXXX", e);
+                throw new InternalError("Can't lookup " + ByteArray.class.getName() + ".getXXX", e);
             }
         }
     }
