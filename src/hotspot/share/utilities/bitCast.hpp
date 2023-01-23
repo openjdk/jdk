@@ -48,8 +48,7 @@ using CanBitCastImpl = std::integral_constant<bool, (sizeof(To) == sizeof(From) 
                                                      std::is_trivially_copyable<To>::value &&
                                                      std::is_trivially_copyable<From>::value)>;
 
-// From and To are integrals of the same size. We can simply static_cast without changing the bit
-// representation.
+// From and To are integrals of the same size.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_integral<To>::value &&
@@ -68,7 +67,7 @@ ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #endif
 }
 
-// From is an integral and To is a enum. We can simply static_cast using the underlying type.
+// From is an integral and To is a enum.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_enum<To>::value &&
@@ -77,11 +76,12 @@ ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
+  // We can simply static_cast using the underlying type.
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(from));
 #endif
 }
 
-// From is an enum and To is an integral. We can simply static_cast using the underlying type.
+// From is an enum and To is an integral.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_integral<To>::value &&
@@ -90,11 +90,12 @@ ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
+  // We can simply static_cast using the underlying type.
   return bit_cast<To>(static_cast<std::underlying_type_t<From>>(from));
 #endif
 }
 
-// From is an enum and To is an enum. We can simply static_cast using the underlying type.
+// From is an enum and To is an enum.
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_enum<To>::value &&
@@ -103,6 +104,7 @@ ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
+  // We can simply static_cast using the underlying type.
   return static_cast<To>(bit_cast<std::underlying_type_t<To>>(
       static_cast<std::underlying_type_t<From>>(from)));
 #endif
