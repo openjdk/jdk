@@ -467,8 +467,13 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var, SafePointNode* map
   }
 
   Compile* C = kit->C;
+  // The entire memory state is needed for slow path of the allocation
+  // since GC and deoptimization can happened.
+  Node *mem = kit->reset_memory();
+  kit->set_all_memory(mem); // Create new memory state
+
   // clean up map/jvms before we clone a new AllocateNode.
-  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), alloc->memory(), map->i_o(),
+  AllocateNode* allocx  = new AllocateNode(C, alloc->tf(), map->control(), mem, map->i_o(),
                                            alloc->in(AllocateNode::AllocSize),
                                            alloc->in(AllocateNode::KlassNode),
                                            alloc->in(AllocateNode::InitialTest));
