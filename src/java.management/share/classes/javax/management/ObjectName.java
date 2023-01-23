@@ -2020,11 +2020,9 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
             // wildmatch domains
             // This ObjectName is the pattern
             // The other ObjectName is the string.
-            return Util.wildmatch(name._canonicalName, _canonicalName,
-                   0, name.getDomainLength(), 0, getDomainLength());
+            return Util.wildmatch(name.getDomain(),getDomain());
         }
-        return (getDomainLength() == name.getDomainLength() &&
-               _canonicalName.regionMatches(0, name._canonicalName, 0, getDomainLength()));
+        return getDomain().equals(name.getDomain());
     }
 
     private final boolean matchKeys(ObjectName name) {
