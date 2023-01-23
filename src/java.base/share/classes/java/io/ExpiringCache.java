@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
-class ExpiringCache {
+final class ExpiringCache {
     private long millisUntilExpiration;
     private Map<String,Entry> map;
     // Clear out old entries every few queries
@@ -41,7 +41,7 @@ class ExpiringCache {
     private int queryOverflow = 300;
     private int MAX_ENTRIES = 200;
 
-    static class Entry {
+    static final class Entry {
         private long   timestamp;
         private String val;
 

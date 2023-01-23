@@ -1754,7 +1754,7 @@ public class ObjectOutputStream
      * bracketed by block data markers (see object serialization specification
      * for details).
      */
-    private static class BlockDataOutputStream
+    private static final class BlockDataOutputStream
         extends OutputStream implements DataOutput
     {
         /** maximum data block length */
@@ -2260,7 +2260,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to integer handles,
      * assigned in ascending order.
      */
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* number of mappings in table/next available handle */
         private int size;
@@ -2385,7 +2385,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to replacement
      * objects.
      */
-    private static class ReplaceTable {
+    private static final class ReplaceTable {
 
         /* maps object -> index */
         private final HandleTable htab;
@@ -2449,7 +2449,7 @@ public class ObjectOutputStream
      * Stack to keep debug information about the state of the
      * serialization process, for embedding in exception messages.
      */
-    private static class DebugTraceInfoStack {
+    private static final class DebugTraceInfoStack {
         private final List<String> stack;
 
         DebugTraceInfoStack() {

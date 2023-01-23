@@ -3862,7 +3862,7 @@ public class ObjectInputStream
      * as memory conservation, it does not enforce this constraint.
      */
     // REMIND: add full description of exception propagation algorithm?
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* status codes indicating whether object has associated exception */
         private static final byte STATUS_OK = 1;
