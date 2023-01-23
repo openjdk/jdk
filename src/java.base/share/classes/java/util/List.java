@@ -586,9 +586,6 @@ public interface List<E> extends Collection<E> {
      *         is not supported by this list
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this list
-     * @throws ArrayStoreException if this list is backed by an array and
-     *         the class of the specified element prevents it from being
-     *         stored to the array
      * @throws NullPointerException if the specified element is null and
      *         this list does not permit null elements
      * @throws IllegalArgumentException if some property of the specified
