@@ -4169,7 +4169,11 @@ public class Arrays {
         @Override
         public E set(int index, E element) {
             E oldValue = a[index];
-            a[index] = element;
+            try {
+                a[index] = element;
+            } catch (ArrayStoreException e) {
+                throw new ClassCastException(e.getMessage());
+            }
             return oldValue;
         }
 
@@ -4211,7 +4215,12 @@ public class Arrays {
             Objects.requireNonNull(operator);
             E[] a = this.a;
             for (int i = 0; i < a.length; i++) {
-                a[i] = operator.apply(a[i]);
+                E result = operator.apply(a[i]);
+                try {
+                    a[i] = result;
+                } catch (ArrayStoreException e) {
+                    throw new ClassCastException(e.getMessage());
+                }
             }
         }
 
