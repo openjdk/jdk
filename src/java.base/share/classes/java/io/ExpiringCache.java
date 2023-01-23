@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,21 @@
 
 package java.io;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
 
 class ExpiringCache {
-    private long millisUntilExpiration;
-    private Map<String,Entry> map;
+
+    private static final int QUERY_OVERFLOW = 300;
+    private static final int MAX_ENTRIES = 200;
+    private final long millisUntilExpiration;
+    private final Map<String,Entry> map;
     // Clear out old entries every few queries
     private int queryCount;
-    private int queryOverflow = 300;
-    private int MAX_ENTRIES = 200;
 
     static class Entry {
-        private long   timestamp;
+        private long timestamp;
         private String val;
 
         Entry(long timestamp, String val) {
@@ -72,7 +72,7 @@ class ExpiringCache {
     }
 
     synchronized String get(String key) {
-        if (++queryCount >= queryOverflow) {
+        if (++queryCount >= QUERY_OVERFLOW) {
             cleanup();
         }
         Entry entry = entryFor(key);
@@ -83,7 +83,7 @@ class ExpiringCache {
     }
 
     synchronized void put(String key, String val) {
-        if (++queryCount >= queryOverflow) {
+        if (++queryCount >= QUERY_OVERFLOW) {
             cleanup();
         }
         Entry entry = entryFor(key);
