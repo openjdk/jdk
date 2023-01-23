@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -874,11 +874,7 @@ public final class BandedSampleModel extends ComponentSampleModel
         if (numBands <= 0) {
             throw new IllegalArgumentException("numBands must be > 0");
         }
-        int[] bandOffsets = new int[numBands];
-        for (int i=0; i < numBands; i++) {
-            bandOffsets[i] = 0;
-        }
-        return bandOffsets;
+        return new int[numBands];
     }
 
     private static int[] createIndicesArray(int numBands) {
