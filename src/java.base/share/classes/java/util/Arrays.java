@@ -4112,6 +4112,17 @@ public class Arrays {
      * {@link Collections#unmodifiableList Collections.unmodifiableList}
      * or <a href="List.html#unmodifiable">Unmodifiable Lists</a>.
      *
+     * @apiNote
+     * Modification methods of the returned list (such as {@link List#set} and
+     * {@link List#replaceAll}) will throw an {@link ArrayStoreException} when
+     * trying to set a wrong type of element into the list (and the backing
+     * array).  For example:
+     * {@snippet :
+     *   List<Object> list = Arrays.asList((Object[])new String[1]);
+     *   list.set(0, Integer.valueOf(0));    // throws ArrayStoreException
+     *   list.replaceAll(Objects::hashCode); // throws ArrayStoreException
+     * }
+     *
      * @param <T> the class of the objects in the array
      * @param a the array by which the list will be backed
      * @return a list view of the specified array
@@ -4166,14 +4177,15 @@ public class Arrays {
             return a[index];
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @throws ArrayStoreException if {@code element} cannot be stored into the array.
+         */
         @Override
         public E set(int index, E element) {
             E oldValue = a[index];
-            try {
-                a[index] = element;
-            } catch (ArrayStoreException e) {
-                throw new ClassCastException(e.getMessage());
-            }
+            a[index] = element;
             return oldValue;
         }
 
@@ -4210,17 +4222,18 @@ public class Arrays {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * 
+         * @throws ArrayStoreException if {@code operator.apply} returns an object which cannot be
+         *         stored into the array.
+         */
         @Override
         public void replaceAll(UnaryOperator<E> operator) {
             Objects.requireNonNull(operator);
             E[] a = this.a;
             for (int i = 0; i < a.length; i++) {
-                E result = operator.apply(a[i]);
-                try {
-                    a[i] = result;
-                } catch (ArrayStoreException e) {
-                    throw new ClassCastException(e.getMessage());
-                }
+                a[i] = operator.apply(a[i]);
             }
         }
 
