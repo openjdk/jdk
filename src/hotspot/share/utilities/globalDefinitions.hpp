@@ -35,6 +35,7 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 class oopDesc;
@@ -524,6 +525,13 @@ T2 checked_cast(T1 thing) {
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
+
+// Additional Java basic types
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
 
 // Unsigned byte types for os and stream.hpp
 
