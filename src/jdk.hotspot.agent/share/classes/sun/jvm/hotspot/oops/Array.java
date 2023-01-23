@@ -65,15 +65,6 @@ public class Array extends Oop {
     return headerSize;
   }
 
-  // TODO: Delete.
-  private static long headerSize(BasicType type) {
-    if (Universe.elementTypeShouldBeAligned(type)) {
-       return alignObjectSize(headerSizeInBytes())/VM.getVM().getHeapWordSize();
-    } else {
-      return headerSizeInBytes()/VM.getVM().getHeapWordSize();
-    }
-  }
-
   private static long lengthOffsetInBytes() {
     if (lengthOffsetInBytes != 0) {
       return lengthOffsetInBytes;
