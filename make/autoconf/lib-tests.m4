@@ -27,8 +27,9 @@
 # Setup libraries and functionalities needed to test the JDK.
 ################################################################################
 
-# Minimum supported version
+# Minimum supported versions
 JTREG_MINIMUM_VERSION=7.1.1
+GTEST_MINIMUM_VERSION=1.13.0
 
 ###############################################################################
 #
@@ -59,9 +60,12 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
         UTIL_FIXUP_PATH([GTEST_FRAMEWORK_SRC])
 
         # Verify that the version is the required one.
-        GTEST_VERSION_1="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
-        if test "x$GTEST_VERSION_1" != "x1.13.0"; then
-          AC_MSG_ERROR([gtest at $GTEST_FRAMEWORK_SRC does not seem to be version 1.13.0])
+        # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+        gtest_version="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
+        comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$gtest_version"`
+        comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$GTEST_MINIMUM_VERSION"`
+        if test $comparable_actual_version -lt $comparable_minimum_version ; then
+          AC_MSG_ERROR([gtest version is too old, at least version $GTEST_MINIMUM_VERSION is required])
         fi
       fi
     fi
