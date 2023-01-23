@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "utilities/bitCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -176,7 +175,7 @@ class oopDesc;
 
 // Convert pointer to intptr_t, for use in printing pointers.
 inline intptr_t p2i(const volatile void* p) {
-  return bit_cast<intptr_t>(p);
+  return (intptr_t) p;
 }
 
 #define BOOL_TO_STR(_b_) ((_b_) ? "true" : "false")
@@ -454,14 +453,14 @@ typedef uintptr_t     address_word; // unsigned integer which will hold a pointe
 //  Utility functions to "portably" (?) bit twiddle pointers
 //  Where portable means keep ANSI C++ compilers quiet
 
-inline address       set_address_bits(address x, int m)       { return bit_cast<address>(bit_cast<intptr_t>(x) | m); }
-inline address       clear_address_bits(address x, int m)     { return bit_cast<address>(bit_cast<intptr_t>(x) & ~m); }
+inline address       set_address_bits(address x, int m)       { return address(intptr_t(x) | m); }
+inline address       clear_address_bits(address x, int m)     { return address(intptr_t(x) & ~m); }
 
 //  Utility functions to "portably" make cast to/from function pointers.
 
-inline address_word  mask_address_bits(address x, int m)      { return bit_cast<address_word>(x) & m; }
-inline address_word  castable_address(address x)              { return bit_cast<address_word>(x) ; }
-inline address_word  castable_address(void* x)                { return bit_cast<address_word>(x) ; }
+inline address_word  mask_address_bits(address x, int m)      { return address_word(x) & m; }
+inline address_word  castable_address(address x)              { return address_word(x) ; }
+inline address_word  castable_address(void* x)                { return address_word(x) ; }
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -478,7 +477,7 @@ inline size_t pointer_delta(const volatile void* left,
                             const volatile void* right,
                             size_t element_size) {
   assert(left >= right, "avoid underflow - left: " PTR_FORMAT " right: " PTR_FORMAT, p2i(left), p2i(right));
-  return (bit_cast<uintptr_t>(left) - bit_cast<uintptr_t>(right)) / element_size;
+  return (((uintptr_t) left) - ((uintptr_t) right)) / element_size;
 }
 
 // A version specialized for HeapWord*'s.
@@ -662,12 +661,23 @@ inline double percent_of(T numerator, T denominator) {
 // Special casts
 // Cast floats into same-size integers and vice-versa w/o changing bit-pattern
 
-inline jint    jint_cast    (jfloat  x)  { return bit_cast<jint>(x); }
-inline jfloat  jfloat_cast  (jint    x)  { return bit_cast<jfloat>(x); }
+typedef union {
+  jfloat f;
+  jint i;
+} FloatIntConv;
 
-inline jlong   jlong_cast   (jdouble x)  { return bit_cast<jlong>(x);  }
-inline julong  julong_cast  (jdouble x)  { return bit_cast<julong>(x); }
-inline jdouble jdouble_cast (jlong   x)  { return bit_cast<jdouble>(x);  }
+typedef union {
+  jdouble d;
+  jlong l;
+  julong ul;
+} DoubleLongConv;
+
+inline jint    jint_cast    (jfloat  x)  { return ((FloatIntConv*)&x)->i; }
+inline jfloat  jfloat_cast  (jint    x)  { return ((FloatIntConv*)&x)->f; }
+
+inline jlong   jlong_cast   (jdouble x)  { return ((DoubleLongConv*)&x)->l;  }
+inline julong  julong_cast  (jdouble x)  { return ((DoubleLongConv*)&x)->ul; }
+inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
 
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
@@ -1044,7 +1054,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
-#define       badAddress        (::bit_cast<address>(::badAddressVal))
+#define       badAddress        ((address)::badAddressVal)
 #define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
 
@@ -1144,7 +1154,7 @@ static inline unsigned int uabs(int n) { return uabs((unsigned int)n); }
 
 // "to" should be greater than "from."
 inline intx byte_size(void* from, void* to) {
-  return bit_cast<address>(to) - bit_cast<address>(from);
+  return (address)to - (address)from;
 }
 
 // Pack and extract shorts to/from ints:
