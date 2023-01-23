@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -377,8 +377,8 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-  __ andi_(tmp2, value, JNIHandles::weak_tag_mask);
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
+  __ andi_(tmp2, value, JNIHandles::TypeTag::weak_global);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ beq(CCR0, not_weak);     // Test for jweak tag.

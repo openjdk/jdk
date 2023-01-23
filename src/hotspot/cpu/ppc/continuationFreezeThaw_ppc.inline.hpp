@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // There is alignment padding between vfp and f's locals array in the original
   // frame, therefore we cannot use it to relativize the locals pointer.
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *hf.addr_at(ijava_idx(locals)) = frame::metadata_words + f.interpreter_frame_method()->max_locals() - 1;
   relativize_one(vfp, hfp, ijava_idx(monitors));
   relativize_one(vfp, hfp, ijava_idx(esp));
@@ -504,11 +505,12 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp + frame::metadata_words_at_top == esp+1, " frame_sp=" PTR_FORMAT " esp=" PTR_FORMAT, p2i(frame_sp), p2i(esp));
     caller.set_sp(fp);
     frame f(frame_sp, hf.pc(), frame_sp, fp);
-    // it's set again later in set_interpreter_frame_bottom, but we need to set the locals now so that
-    // we could call ContinuationHelper::InterpretedFrame::frame_bottom
+    // we need to set the locals so that the caller of new_stack_frame() can call
+    // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(ijava_idx(locals)) + padding;
     assert((int)offset == hf.interpreter_frame_method()->max_locals() + frame::metadata_words_at_top + padding - 1, "");
-    *(intptr_t**)f.addr_at(ijava_idx(locals)) = fp + offset;
+    // set relativized locals
+    *f.addr_at(ijava_idx(locals)) = offset;
 
     return f;
   } else {
@@ -548,7 +550,9 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 }
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  *(intptr_t**)f.addr_at(ijava_idx(locals)) = bottom - 1;
+  // set relativized locals
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
+  *f.addr_at(ijava_idx(locals)) = (bottom - 1) - f.fp();
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {

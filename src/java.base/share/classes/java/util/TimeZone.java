@@ -63,9 +63,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * along with a time zone ID. For instance, the time zone ID for the
  * U.S. Pacific Time zone is "America/Los_Angeles". So, you can get a
  * U.S. Pacific Time {@code TimeZone} object with:
- * <blockquote><pre>
+ * <blockquote>
+ * {@snippet lang=java :
  * TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
- * </pre></blockquote>
+ * }
+ * </blockquote>
  * You can use the {@code getAvailableIDs} method to iterate through
  * all the supported time zone IDs. You can then choose a
  * supported ID to get a {@code TimeZone}.
@@ -309,10 +311,14 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the default locale.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG},
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     * <blockquote>
+     * {@snippet lang=java :
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG,
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY));
+     * }
+     * </blockquote>
      *
      * @return the human-readable name of this time zone in the default locale.
      * @since 1.2
@@ -330,9 +336,12 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * presentation to the user in the specified {@code locale}.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
-     * getDisplayName(false, {@link #LONG}, locale)
-     * </pre></blockquote>
+     * <blockquote>
+     * {@snippet lang=java :
+     * // @link substring="LONG" target="#LONG" :
+     * getDisplayName(false, LONG, locale);
+     * }
+     * </blockquote>
      *
      * @param locale the locale in which to supply the display name.
      * @return the human-readable name of this time zone in the given locale.
@@ -352,10 +361,13 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * Time). Otherwise, a Standard Time name is returned.
      *
      * <p>This method is equivalent to:
-     * <blockquote><pre>
+     * <blockquote>
+     * {@snippet lang=java :
      * getDisplayName(daylight, style,
-     *                Locale.getDefault({@link Locale.Category#DISPLAY}))
-     * </pre></blockquote>
+     *                // @link substring="Locale.Category.DISPLAY" target="Locale.Category#DISPLAY" :
+     *                Locale.getDefault(Locale.Category.DISPLAY));
+     * }
+     * </blockquote>
      *
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name

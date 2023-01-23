@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,15 +605,16 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String.(compareTo/equals/indexOf) and Arrays.equals use many memorys edges,
-  // but writes none
+  // String.(compareTo/equals/indexOf/hashCode) and Arrays.(equals/hashCode)
+  // use many memorys edges, but writes none
   if( _matrule && _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives" )==0 ||
-        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -896,6 +897,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 
   if( _matrule->_rChild &&
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
+        strcmp(_matrule->_rChild->_opType,"VectorizedHashCode")==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
@@ -904,7 +906,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
         strcmp(_matrule->_rChild->_opType,"StrIndexOfChar")==0 ||
         strcmp(_matrule->_rChild->_opType,"CountPositives")==0 ||
         strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
-        // String.(compareTo/equals/indexOf) and Arrays.equals
+        // String.(compareTo/equals/indexOf/hashCode) and Arrays.equals
         // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
         // take 1 control and 1 memory edges.
         // Also String.(compressedCopy/inflatedCopy).

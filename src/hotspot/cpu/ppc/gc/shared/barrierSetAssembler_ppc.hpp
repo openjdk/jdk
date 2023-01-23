@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -56,6 +56,9 @@ public:
   virtual void resolve_jobject(MacroAssembler* masm, Register value,
                                Register tmp1, Register tmp2,
                                MacroAssembler::PreservationLevel preservation_level);
+  virtual void resolve_global_jobject(MacroAssembler* masm, Register value,
+                                      Register tmp1, Register tmp2,
+                                      MacroAssembler::PreservationLevel preservation_level);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register dst, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);

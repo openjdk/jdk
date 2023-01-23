@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ ldr_s32(Rsafept_cnt, Address(Rsafepoint_counter_addr));
   __ tbnz(Rsafept_cnt, 0, slow_case);
 
-  __ bic(R1, R1, JNIHandles::weak_tag_mask);
+  __ bic(R1, R1, JNIHandles::tag_mask);
 
   if (JvmtiExport::can_post_field_access()) {
     // Using barrier to order wrt. JVMTI check and load of result.
