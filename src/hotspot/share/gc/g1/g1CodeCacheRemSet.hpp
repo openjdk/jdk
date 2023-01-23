@@ -88,9 +88,10 @@ class G1CodeRootSet {
 
   void move_to_large();
   void allocate_small_table();
+  DEBUG_ONLY(mutable Thread* _iteration_thread;)
 
  public:
-  G1CodeRootSet() : _table(nullptr) {}
+  G1CodeRootSet() : _table(nullptr) DEBUG_ONLY(COMMA _iteration_thread(nullptr)) {}
   ~G1CodeRootSet();
 
   static void purge();

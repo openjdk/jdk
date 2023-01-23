@@ -169,6 +169,7 @@ public:
   // Returns true if the code roots contains the given
   // nmethod.
   bool code_roots_list_contains(nmethod* nm) {
+    MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
     return _code_roots.contains(nm);
   }
 

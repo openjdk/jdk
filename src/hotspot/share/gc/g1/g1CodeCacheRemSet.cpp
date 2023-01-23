@@ -109,6 +109,7 @@ void G1CodeRootSetTable::purge() {
 }
 
 void G1CodeRootSet::move_to_large() {
+  assert(_iteration_thread == Thread::current() || _iteration_thread == nullptr, "should not mutate while iterating in another thread");
   G1CodeRootSetTable* temp = new G1CodeRootSetTable(LargeSize);
 
   _table->copy_to(temp);
@@ -127,6 +128,7 @@ size_t G1CodeRootSet::static_mem_size() {
 }
 
 void G1CodeRootSet::add(nmethod* method) {
+  assert(_iteration_thread == Thread::current() || _iteration_thread == nullptr, "should not mutate while iterating in another thread");
   bool added = false;
   if (is_empty()) {
     allocate_small_table();
@@ -140,6 +142,7 @@ void G1CodeRootSet::add(nmethod* method) {
 }
 
 bool G1CodeRootSet::remove(nmethod* method) {
+  assert(_iteration_thread == Thread::current() || _iteration_thread == nullptr, "should not mutate while iterating in another thread");
   bool removed = false;
   if (_table != NULL) {
     removed = _table->remove(method);
@@ -161,6 +164,7 @@ bool G1CodeRootSet::contains(nmethod* method) {
 }
 
 void G1CodeRootSet::clear() {
+  assert(_iteration_thread == Thread::current() || _iteration_thread == nullptr, "should not mutate while iterating in another thread");
   delete _table;
   _table = NULL;
 }
@@ -170,9 +174,11 @@ size_t G1CodeRootSet::mem_size() {
 }
 
 void G1CodeRootSet::nmethods_do(CodeBlobClosure* blk) const {
+  DEBUG_ONLY(_iteration_thread = Thread::current();)
   if (_table != NULL) {
     _table->nmethods_do(blk);
   }
+  DEBUG_ONLY(_iteration_thread = nullptr;)
 }
 
 class CleanCallback : public StackObj {
@@ -213,6 +219,7 @@ class CleanCallback : public StackObj {
 };
 
 void G1CodeRootSet::clean(HeapRegion* owner) {
+  assert(_iteration_thread == Thread::current() || _iteration_thread == nullptr, "should not mutate while iterating in another thread");
   CleanCallback should_clean(owner);
   if (_table != NULL) {
     _table->remove_if(should_clean);
