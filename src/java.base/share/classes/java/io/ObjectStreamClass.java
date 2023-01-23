@@ -2483,7 +2483,7 @@ public final class ObjectStreamClass implements Serializable {
                     boolean.class, lkp.findStatic(ByteArrayAccess.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
                 );
             } catch (NoSuchMethodException | IllegalAccessException e) {
-                throw new InternalError("Can't lookup BigEndian.getXXX", e);
+                throw new InternalError("Can't lookup ByteArrayAccess.getXXX", e);
             }
         }
     }

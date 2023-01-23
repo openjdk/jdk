@@ -57,16 +57,14 @@ public final class ByteArrayAccess {
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
-     * a given offsets.
+     * a given offset.
      */
 
     /**
-     * Gets a {@code boolean} from the provided {@code array} at the given {@code offset}.
+     * {@return a {@code boolean} from the provided {@code array} at the given {@code offset}}.
      *
      * @param array  to read a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code boolean} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 1]
      * @see #setBoolean(byte[], boolean)
@@ -76,15 +74,13 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code char} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code char} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code char} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #setChar(byte[], int, char)
@@ -94,15 +90,14 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code short} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code short} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
      * @return a {@code short} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #setShort(byte[], int, short)
@@ -112,15 +107,14 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets an {@code unsigned short} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return an {@code unsigned short} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
      * @return an {@code int} representing an unsigned short from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #setUnsignedShort(byte[], int, int)
@@ -130,15 +124,13 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets an {@code int} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return an {@code int} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return an {@code int} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
      * @see #setInt(byte[], int, int)
@@ -148,8 +140,8 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code float} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code float} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
      * <p>
@@ -157,8 +149,6 @@ public final class ByteArrayAccess {
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code float} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
      * @see #setFloat(byte[], int, float)
@@ -170,8 +160,8 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code float} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code float} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * Variants of {@linkplain Float#NaN } values are silently read according
      * to their bit patterns.
@@ -180,8 +170,6 @@ public final class ByteArrayAccess {
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code float} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
      * @see #setFloatRaw(byte[], int, float)
@@ -192,15 +180,13 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code long} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code long} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code long} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 8]
      * @see #setLong(byte[], int, long)
@@ -210,8 +196,8 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code double} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
      * <p>
@@ -219,7 +205,6 @@ public final class ByteArrayAccess {
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code double} from the array
      * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 8]
@@ -232,8 +217,8 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code double} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * Variants of {@linkplain Double#NaN } values are silently read according to
      * their bit patterns.
@@ -242,8 +227,6 @@ public final class ByteArrayAccess {
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @return a {@code double} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 8]
      * @see #setDoubleRaw(byte[], int, double)
@@ -259,11 +242,9 @@ public final class ByteArrayAccess {
      */
 
     /**
-     * Gets a {@code boolean} from the provided {@code array} at index 0.
+     * {@return a {@code boolean} from the provided {@code array} at index 0}.
      *
      * @param array  to read a value from.
-     * @return a {@code boolean} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 1}
      * @see #setBoolean(byte[], boolean)
      */
@@ -272,11 +253,9 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code char} from the provided {@code array} at index 0.
+     * {@return a {@code char} from the provided {@code array} at index 0}.
      *
      * @param array  to get a value from.
-     * @return a {@code char} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setChar(byte[], char)
      */
@@ -285,11 +264,9 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code short} from the provided {@code array} at index 0.
+     * {@return a {@code short} from the provided {@code array} at index 0}.
      *
      * @param array  to get a value from.
-     * @return a {@code short} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setShort(byte[], short)
      */
@@ -298,11 +275,9 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets an {@code unsigned short} from the provided {@code array} at index 0.
+     * {@return an {@code unsigned short} from the provided {@code array} at index 0}.
      *
      * @param array  to get a value from.
-     * @return an {@code int} representing an unsigned short from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 2}
      * @see #setUnsignedShort(byte[], int)
      */
@@ -311,11 +286,9 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets an {@code int} from the provided {@code array} at index 0.
+     * {@return an {@code int} from the provided {@code array} at index 0}.
      *
      * @param array  to get a value from.
-     * @return an {@code int} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setInt(byte[], int)
      */
@@ -324,15 +297,13 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code float} from the provided {@code array} at index 0.
+     * {@return a {@code float} from the provided {@code array} at index 0}.
      * <p>
      * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
      * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
-     * @return a {@code float} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setFloat(byte[], float)
      */
@@ -343,14 +314,12 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code float} from the provided {@code array} at index 0.
+     * {@return a {@code float} from the provided {@code array} at index 0}.
      * <p>
      * Variants of {@linkplain Float#NaN } values are silently read according
      * to their bit patterns.
      *
      * @param array  to get a value from.
-     * @return a {@code float} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 4}
      * @see #setFloatRaw(byte[], float)
      */
@@ -360,11 +329,9 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code long} from the provided {@code array} at index 0.
+     * {@return a {@code long} from the provided {@code array} at index 0}.
      *
      * @param array  to get a value from.
-     * @return a {@code long} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setLong(byte[], long)
      */
@@ -373,13 +340,11 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code double} from the provided {@code array} at index 0.
+     * {@return a {@code double} from the provided {@code array} at index 0}.
      * <p>
      * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
      *
      * @param array  to get a value from.
-     * @return a {@code double} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setDouble(byte[], double)
      */
@@ -390,8 +355,8 @@ public final class ByteArrayAccess {
     }
 
     /**
-     * Gets a {@code double} from the provided {@code array} at the given {@code offset}
-     * using big endian order.
+     * {@return a {@code double} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
      * <p>
      * Variants of {@linkplain Double#NaN } values are silently read according to
      * their bit patterns.
@@ -399,8 +364,6 @@ public final class ByteArrayAccess {
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
-     * @return a {@code double} from the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if {@code array.length < 8}
      * @see #setDoubleRaw(byte[], double)
      */
