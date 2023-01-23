@@ -173,6 +173,8 @@ public class VisibleMemberTable {
     private Map<Kind, List<Element>> visibleMembers;
     private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
+    // FIXME whose methods are those? Are those from superclasses only?
+    //  Because it's one-one not one-to-many.
     // Keeps track of method overrides
     private final Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
             = new LinkedHashMap<>();
@@ -533,7 +535,12 @@ public class VisibleMemberTable {
     }
 
     private void computeVisibleMethods(LocalMemberTable lmt) {
-        Set<Element> inheritedMethods = new LinkedHashSet<>();
+        // A union of visible methods from all parents. Used to compute methods
+        // inherited by this type as the difference of itself and those methods
+        // that aren't inherited.
+        Set<Element> parentMethods = new LinkedHashSet<>();
+        // - a key is a method overridden by one or more parent methods
+        // - the value is a list of parent methods that override the key
         Map<ExecutableElement, List<ExecutableElement>> overriddenByTable = new HashMap<>();
         for (VisibleMemberTable pvmt : parents) {
             // Merge the lineage overrides into local table
@@ -544,23 +551,20 @@ public class VisibleMemberTable {
                     list.add(method);
                 }
             });
-            inheritedMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
+            parentMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
         }
 
-        // Filter out inherited methods that:
-        // a. cannot be overridden (private instance members)
-        // b. are overridden and should not be visible in this type
-        // c. are hidden in the type being considered
-        // see allowInheritedMethod, which performs the above actions
+        // filter out methods that aren't inherited
+        //
         // nb. This statement has side effects that can initialize
         // members of the overriddenMethodTable field, so it must be
         // evaluated eagerly with toList().
-        List<Element> inheritedMethodsList = inheritedMethods.stream()
+        List<Element> inheritedMethods = parentMethods.stream()
                 .filter(e -> allowInheritedMethod((ExecutableElement) e, overriddenByTable, lmt))
                 .toList();
 
-        // Filter out the local methods that either do not override a method or override a method simply.
-        Predicate<ExecutableElement> isVisible = m -> {
+        // filter out "simple overrides" from local methods
+        Predicate<ExecutableElement> nonSimpleOverride = m -> {
             OverriddenMethodInfo p = overriddenMethodTable.get(m);
             return p == null || !p.simpleOverride;
         };
@@ -568,19 +572,19 @@ public class VisibleMemberTable {
         Stream<ExecutableElement> localStream = lmt.getOrderedMembers(Kind.METHODS)
                 .stream()
                 .map(m -> (ExecutableElement)m)
-                .filter(isVisible);
+                .filter(nonSimpleOverride);
 
         // Merge the above list and stream, making sure the local methods precede the others
-        // Final filtration of elements
-        List<Element> list = Stream.concat(localStream, inheritedMethodsList.stream())
+        // Final filtration of elements // FIXME why is order important?
+        List<Element> list = Stream.concat(localStream, inheritedMethods.stream())
                 .filter(this::mustDocument)
                 .toList();
 
         visibleMembers.put(Kind.METHODS, list);
 
-        // Copy over overridden tables from the lineage, and finish up.
+        // copy over overridden tables from the lineage
         for (VisibleMemberTable pvmt : parents) {
-            overriddenMethodTable.putAll(pvmt.overriddenMethodTable);
+            overriddenMethodTable.putAll(pvmt.overriddenMethodTable); // FIXME: no rules for merging, such as ordering, weird
         }
     }
 
@@ -628,7 +632,7 @@ public class VisibleMemberTable {
         for (Element le : lMethods) {
             ExecutableElement lMethod = (ExecutableElement) le;
             // Ignore private methods or those methods marked with
-            // a "hidden" tag.
+            // a "hidden" tag. // FIXME I cannot see where @hidden is ignored
             if (utils.isPrivate(lMethod))
                 continue;
 
@@ -645,6 +649,9 @@ public class VisibleMemberTable {
                 // Disallow package-private super methods to leak in
                 TypeElement encl = utils.getEnclosingTypeElement(inheritedMethod);
                 if (utils.isUndocumentedEnclosure(encl)) {
+                    // FIXME
+                    //  is simpleOverride=false here to force to be used because
+                    //  it cannot be linked to, because package-private?
                     overriddenMethodTable.computeIfAbsent(lMethod,
                             l -> new OverriddenMethodInfo(inheritedMethod, false));
                     return false;
