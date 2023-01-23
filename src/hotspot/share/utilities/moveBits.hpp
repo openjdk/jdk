@@ -25,9 +25,9 @@
 #ifndef SHARE_UTILITIES_MOVEBITS_HPP
 #define SHARE_UTILITIES_MOVEBITS_HPP
 
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 #include <type_traits>
 
 template <typename T>
@@ -38,7 +38,7 @@ class ReverseBitsImpl {
                 "unsupported size");
 
   // The unsigned integral type for calculations.
-  using I = typename Conditional<NB <= 32, uint32_t, uint64_t>::type;
+  using I = std::conditional_t<NB <= 32, uint32_t, uint64_t>;
 
   static const I rep_5555 = static_cast<I>(UCONST64(0x5555555555555555));
   static const I rep_3333 = static_cast<I>(UCONST64(0x3333333333333333));

@@ -95,6 +95,8 @@ class ChunkManager : public CHeapObj<mtMetaspace> {
   //  chunks.
   void split_chunk_and_add_splinters(Metachunk* c, chunklevel_t target_level);
 
+  Metachunk* get_chunk_locked(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words);
+
   // Return a single chunk to the freelist without doing any merging, and adjust accounting.
   void return_chunk_simple_locked(Metachunk* c);
 

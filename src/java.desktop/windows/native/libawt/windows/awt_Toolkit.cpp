@@ -1946,7 +1946,7 @@ HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
     //Note: should not exceed 10 because of the current implementation.
     static const int securityWarningIconCounter = 3;
 
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};;
+    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
     static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
     static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
 

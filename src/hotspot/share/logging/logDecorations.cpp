@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,17 @@
 #include "runtime/os.hpp"
 #include "services/management.hpp"
 
-const char* volatile LogDecorations::_host_name = NULL;
+const char* volatile LogDecorations::_host_name = nullptr;
 const int LogDecorations::_pid = os::current_process_id(); // This is safe to call during dynamic initialization.
 
 const char* LogDecorations::host_name() {
   const char* host_name = Atomic::load_acquire(&_host_name);
-  if (host_name == NULL) {
+  if (host_name == nullptr) {
     char buffer[1024];
     if (os::get_host_name(buffer, sizeof(buffer))) {
       host_name = os::strdup_check_oom(buffer);
-      const char* old_value = Atomic::cmpxchg(&_host_name, (const char*)NULL, host_name);
-      if (old_value != NULL) {
+      const char* old_value = Atomic::cmpxchg(&_host_name, (const char*)nullptr, host_name);
+      if (old_value != nullptr) {
         os::free((void *) host_name);
         host_name = old_value;
       }
