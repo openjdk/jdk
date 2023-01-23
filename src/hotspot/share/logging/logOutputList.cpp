@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,22 +53,22 @@ void LogOutputList::wait_until_no_readers() const {
 
 void LogOutputList::set_output_level(LogOutput* output, LogLevelType level) {
   LogOutputNode* node = find(output);
-  if (level == LogLevel::Off && node != NULL) {
+  if (level == LogLevel::Off && node != nullptr) {
     remove_output(node);
-  } else if (level != LogLevel::Off && node == NULL) {
+  } else if (level != LogLevel::Off && node == nullptr) {
     add_output(output, level);
-  } else if (node != NULL) {
+  } else if (node != nullptr) {
     update_output_level(node, level);
   }
 }
 
 LogOutputList::LogOutputNode* LogOutputList::find(const LogOutput* output) const {
-  for (LogOutputNode* node = _level_start[LogLevel::Last]; node != NULL; node = node->_next) {
+  for (LogOutputNode* node = _level_start[LogLevel::Last]; node != nullptr; node = node->_next) {
     if (output == node->_value) {
       return node;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 void LogOutputList::clear() {
@@ -78,12 +78,12 @@ void LogOutputList::clear() {
 
   // Clear _level_start
   for (uint level = LogLevel::First; level < LogLevel::Count; level++) {
-    _level_start[level] = NULL;
+    _level_start[level] = nullptr;
   }
 
   // Delete all nodes from the linked list
   wait_until_no_readers();
-  while (cur != NULL) {
+  while (cur != nullptr) {
     LogOutputNode* next = cur->_next;
     delete cur;
     cur = next;
@@ -91,7 +91,7 @@ void LogOutputList::clear() {
 }
 
 void LogOutputList::remove_output(LogOutputList::LogOutputNode* node) {
-  assert(node != NULL, "Node must be non-null");
+  assert(node != nullptr, "Node must be non-null");
 
   // Remove node from _level_start first
   bool found = false;
@@ -103,7 +103,7 @@ void LogOutputList::remove_output(LogOutputList::LogOutputNode* node) {
   }
 
   // Now remove it from the linked list
-  for (LogOutputNode* cur = _level_start[LogLevel::Last]; cur != NULL; cur = cur->_next) {
+  for (LogOutputNode* cur = _level_start[LogLevel::Last]; cur != nullptr; cur = cur->_next) {
     if (cur->_next == node) {
       found = true;
       cur->_next = node->_next;
@@ -123,19 +123,19 @@ void LogOutputList::add_output(LogOutput* output, LogLevelType level) {
 
   // Set the next pointer to the first node of a lower level
   for (node->_next = _level_start[level];
-       node->_next != NULL && node->_next->_level == level;
+       node->_next != nullptr && node->_next->_level == level;
        node->_next = node->_next->_next) {
   }
 
   // Update the _level_start index
   for (int l = LogLevel::Last; l >= level; l--) {
-    if (_level_start[l] == NULL || _level_start[l]->_level < level) {
+    if (_level_start[l] == nullptr || _level_start[l]->_level < level) {
       _level_start[l] = node;
     }
   }
 
   // Add the node the list
-  for (LogOutputNode* cur = _level_start[LogLevel::Last]; cur != NULL; cur = cur->_next) {
+  for (LogOutputNode* cur = _level_start[LogLevel::Last]; cur != nullptr; cur = cur->_next) {
     if (cur != node && cur->_next == node->_next) {
       cur->_next = node;
       break;

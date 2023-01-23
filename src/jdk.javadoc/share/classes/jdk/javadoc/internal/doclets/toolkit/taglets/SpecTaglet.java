@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import com.sun.source.doctree.SpecTree;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -50,7 +51,10 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
-        throw new UnsupportedOperationException("Not yet implemented");
+        CommentHelper ch = configuration.utils.getCommentHelper(owner);
+        var path = ch.getDocTreePath(tag);
+        configuration.getMessages().warning(path, "doclet.inheritDocWithinInappropriateTag");
+        return new Output(null, null, List.of(), true /* true, otherwise there will be an exception up the stack */);
     }
 
     @Override

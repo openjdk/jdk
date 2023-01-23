@@ -116,4 +116,20 @@ public class TestDisableAutoVectOpcodes {
         dresult += result;
     }
 
+    @Test
+    @IR(failOn = {IRNode.COUNTTRAILINGZEROS_VL})
+    public void testNumberOfTrailingZeros() {
+        for (int i = 0; i < SIZE; ++i) {
+            inta[i] = Long.numberOfTrailingZeros(longa[i]);
+        }
+    }
+
+    @Test
+    @IR(failOn = {IRNode.COUNTLEADINGZEROS_VL})
+    public void testNumberOfLeadingZeros() {
+        for (int i = 0; i < SIZE; ++i) {
+            inta[i] = Long.numberOfLeadingZeros(longa[i]);
+        }
+    }
+
 }

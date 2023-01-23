@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,6 @@ class frame {
   // the frame size in machine words
   inline int frame_size() const;
 
-  // the number of oops in the frame for non-interpreted frames
-  inline int num_oops() const;
-
   // the size, in words, of stack-passed arguments
   inline int compiled_frame_stack_argsize() const;
 
@@ -235,7 +232,6 @@ class frame {
   inline frame sender_for_compiled_frame(RegisterMap* map) const;
   frame sender_for_entry_frame(RegisterMap* map) const;
   frame sender_for_interpreter_frame(RegisterMap* map) const;
-  frame sender_for_native_frame(RegisterMap* map) const;
   frame sender_for_upcall_stub_frame(RegisterMap* map) const;
 
   bool is_entry_frame_valid(JavaThread* thread) const;
@@ -254,20 +250,6 @@ class frame {
   intptr_t at(int index) const                   {
     return _on_heap ? at_relative(index) : at_absolute(index);
   }
-
-  // accessors for locals
-  oop obj_at(int offset) const                   { return *obj_at_addr(offset);  }
-  void obj_at_put(int offset, oop value)         { *obj_at_addr(offset) = value; }
-
-  jint int_at(int offset) const                  { return *int_at_addr(offset);  }
-  void int_at_put(int offset, jint value)        { *int_at_addr(offset) = value; }
-
-  oop*      obj_at_addr(int offset) const        { return (oop*)     addr_at(offset); }
-
-  oop*      adjusted_obj_at_addr(Method* method, int index) { return obj_at_addr(adjust_offset(method, index)); }
-
- private:
-  jint*    int_at_addr(int offset) const         { return (jint*)    addr_at(offset); }
 
  public:
   // Link (i.e., the pointer to the previous frame)
@@ -311,9 +293,9 @@ class frame {
   // Interpreter frames:
 
  private:
-  intptr_t** interpreter_frame_locals_addr() const;
-  intptr_t*  interpreter_frame_bcp_addr() const;
-  intptr_t*  interpreter_frame_mdp_addr() const;
+  intptr_t* interpreter_frame_locals() const;
+  intptr_t* interpreter_frame_bcp_addr() const;
+  intptr_t* interpreter_frame_mdp_addr() const;
 
  public:
   // Locals
@@ -465,7 +447,6 @@ class frame {
   void oops_code_blob_do(OopClosure* f, CodeBlobClosure* cf,
                          DerivedOopClosure* df, DerivedPointerIterationMode derived_mode,
                          const RegisterMap* map) const;
-  int adjust_offset(Method* method, int index); // helper for above fn
  public:
   // Memory management
   void oops_do(OopClosure* f, CodeBlobClosure* cf, const RegisterMap* map) {

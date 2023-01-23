@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ private:
 
 public:
   DumpRegion(const char* name, uintx max_delta = 0)
-    : _name(name), _base(NULL), _top(NULL), _end(NULL),
+    : _name(name), _base(nullptr), _top(nullptr), _end(nullptr),
       _max_delta(max_delta), _is_packed(false) {}
 
   char* expand_top_to(char* newtop);
@@ -157,7 +157,7 @@ public:
   size_t used()     const { return _top - _base; }
   bool is_packed()  const { return _is_packed;   }
   bool is_allocatable() const {
-    return !is_packed() && _base != NULL;
+    return !is_packed() && _base != nullptr;
   }
 
   void print(size_t total_bytes) const;
@@ -165,7 +165,7 @@ public:
 
   void init(ReservedSpace* rs, VirtualSpace* vs);
 
-  void pack(DumpRegion* next = NULL);
+  void pack(DumpRegion* next = nullptr);
 
   bool contains(char* p) {
     return base() <= p && p < top();

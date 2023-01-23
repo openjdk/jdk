@@ -158,7 +158,7 @@ import sun.security.util.KnownOIDs;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * Cipher section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
@@ -511,7 +511,7 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -601,7 +601,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
@@ -673,7 +673,7 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *

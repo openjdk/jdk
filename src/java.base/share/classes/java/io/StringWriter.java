@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package java.io;
 
+
+import java.util.Objects;
 
 /**
  * A character stream that collects its output in a string buffer, which can
@@ -90,10 +92,8 @@ public class StringWriter extends Writer {
      *          of the given array
      */
     public void write(char[] cbuf, int off, int len) {
-        if ((off < 0) || (off > cbuf.length) || (len < 0) ||
-            ((off + len) > cbuf.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, cbuf.length);
+        if (len == 0) {
             return;
         }
         buf.append(cbuf, off, len);

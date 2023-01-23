@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class nmethod : public CompiledMethod {
   //
   // _oops_do_mark_link special values:
   //
-  //   _oops_do_mark_link == NULL: the nmethod has not been visited at all yet, i.e.
+  //   _oops_do_mark_link == nullptr: the nmethod has not been visited at all yet, i.e.
   //      is Unclaimed.
   //
   // For other values, its lowest two bits indicate the following states of the nmethod:
@@ -173,7 +173,7 @@ class nmethod : public CompiledMethod {
 
   // Attempt Unclaimed -> N|SD transition. Returns the current link.
   oops_do_mark_link* oops_do_try_claim_strong_done();
-  // Attempt N|WR -> X|WD transition. Returns NULL if successful, X otherwise.
+  // Attempt N|WR -> X|WD transition. Returns nullptr if successful, X otherwise.
   nmethod* oops_do_try_add_to_list_as_weak_done();
 
   // Attempt X|WD -> N|SR transition. Returns the current link.
@@ -260,6 +260,8 @@ class nmethod : public CompiledMethod {
   // Protected by CompiledMethod_lock
   volatile signed char _state;         // {not_installed, in_use, not_used, not_entrant}
 
+  int _skipped_instructions_size;
+
   // For native wrappers
   nmethod(Method* method,
           CompilerType type,
@@ -298,6 +300,10 @@ class nmethod : public CompiledMethod {
 
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
+  // Attention: Only allow NonNMethod space for special nmethods which don't need to be
+  // findable by nmethod iterators! In particular, they must not contain oops!
+  void* operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
@@ -337,11 +343,11 @@ class nmethod : public CompiledMethod {
                               AbstractCompiler* compiler,
                               CompLevel comp_level
 #if INCLUDE_JVMCI
-                              , char* speculations = NULL,
+                              , char* speculations = nullptr,
                               int speculations_len = 0,
                               int nmethod_mirror_index = -1,
-                              const char* nmethod_mirror_name = NULL,
-                              FailedSpeculation** failed_speculations = NULL
+                              const char* nmethod_mirror_name = nullptr,
+                              FailedSpeculation** failed_speculations = nullptr
 #endif
   );
 
@@ -374,7 +380,7 @@ class nmethod : public CompiledMethod {
   address stub_begin            () const          { return           header_begin() + _stub_offset          ; }
   address stub_end              () const          { return           header_begin() + _oops_offset          ; }
   address exception_begin       () const          { return           header_begin() + _exception_offset     ; }
-  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : NULL; }
+  address unwind_handler_begin  () const          { return _unwind_handler_offset != -1 ? (header_begin() + _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const          { return (oop*)   (header_begin() + _oops_offset)         ; }
   oop*    oops_end              () const          { return (oop*)   (header_begin() + _metadata_offset)     ; }
 
@@ -389,6 +395,9 @@ class nmethod : public CompiledMethod {
   address handler_table_begin   () const          { return           header_begin() + _handler_table_offset ; }
   address handler_table_end     () const          { return           header_begin() + _nul_chk_table_offset ; }
   address nul_chk_table_begin   () const          { return           header_begin() + _nul_chk_table_offset ; }
+
+  int skipped_instructions_size () const          { return           _skipped_instructions_size             ; }
+
 #if INCLUDE_JVMCI
   address nul_chk_table_end     () const          { return           header_begin() + _speculations_offset  ; }
   address speculations_begin    () const          { return           header_begin() + _speculations_offset  ; }
@@ -482,7 +491,7 @@ class nmethod : public CompiledMethod {
 
   // Support for meta data in scopes and relocs:
   // Note: index 0 is reserved for null.
-  Metadata*     metadata_at(int index) const      { return index == 0 ? NULL: *metadata_addr_at(index); }
+  Metadata*     metadata_at(int index) const      { return index == 0 ? nullptr: *metadata_addr_at(index); }
   Metadata**  metadata_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= metadata_count(), "must be a valid non-zero index");
@@ -499,7 +508,7 @@ private:
 
 public:
   void fix_oop_relocations(address begin, address end) { fix_oop_relocations(begin, end, false); }
-  void fix_oop_relocations()                           { fix_oop_relocations(NULL, NULL, false); }
+  void fix_oop_relocations()                           { fix_oop_relocations(nullptr, nullptr, false); }
 
   // On-stack replacement support
   int   osr_entry_bci() const                     { assert(is_osr_method(), "wrong kind of nmethod"); return _entry_bci; }
@@ -533,10 +542,10 @@ public:
   void update_speculation(JavaThread* thread);
 
   // Gets the data specific to a JVMCI compiled method.
-  // This returns a non-NULL value iff this nmethod was
+  // This returns a non-nullptr value iff this nmethod was
   // compiled by the JVMCI compiler.
   JVMCINMethodData* jvmci_nmethod_data() const {
-    return jvmci_data_size() == 0 ? NULL : (JVMCINMethodData*) jvmci_data_begin();
+    return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
 #endif
 
@@ -592,7 +601,7 @@ public:
   void post_compiled_method(CompileTask* task);
 
   // jvmti support:
-  void post_compiled_method_load_event(JvmtiThreadState* state = NULL);
+  void post_compiled_method_load_event(JvmtiThreadState* state = nullptr);
 
   // verify operations
   void verify();

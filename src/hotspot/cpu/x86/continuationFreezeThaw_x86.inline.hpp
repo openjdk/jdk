@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,12 +140,11 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
     || (f.unextended_sp() == f.sp()), "");
   assert(f.fp() > (intptr_t*)f.at(frame::interpreter_frame_initial_sp_offset), "");
 
-  // We compute the locals as below rather than relativize the value in the frame because then we can use the same
-  // code on AArch64, which has an added complication (see this method in continuation_aarch64.inline.hpp)
-
   // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
-  *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
+
+  // Make sure that locals is already relativized.
+  assert((*hf.addr_at(frame::interpreter_frame_locals_offset) == frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1), "");
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
 
@@ -199,11 +198,6 @@ inline void Thaw<ConfigT>::patch_caller_links(intptr_t* sp, intptr_t* bottom) {
   assert(!PreserveFramePointer, "Frame pointers need to be fixed");
 }
 
-void ThawBase::patch_chunk_pd(intptr_t* sp) {
-  intptr_t* fp = _cont.entryFP();
-  *(intptr_t**)(sp - frame::sender_sp_offset) = fp;
-}
-
 // Slow path
 
 inline frame ThawBase::new_entry_frame() {
@@ -227,12 +221,12 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp == unextended_sp, "");
     caller.set_sp(fp + frame::sender_sp_offset);
     frame f(frame_sp, frame_sp, fp, hf.pc());
-    // it's set again later in set_interpreter_frame_bottom, but we need to set the locals now so that
-    // we could call ContinuationHelper::InterpretedFrame::frame_bottom
+    // we need to set the locals so that the caller of new_stack_frame() can call
+    // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
     assert((int)offset == frame::sender_sp_offset + locals - 1, "");
-    // derelativize locals
-    *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = fp + offset;
+    // set relativized locals
+    *f.addr_at(frame::interpreter_frame_locals_offset) = offset;
     return f;
   } else {
     int fsize = FKind::size(hf);
@@ -292,6 +286,7 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 }
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
+  // Nothing to do. Just make sure the relativized locals is already set.
+  assert((*f.addr_at(frame::interpreter_frame_locals_offset) == (bottom - 1) - f.fp()), "");
 }
 #endif // CPU_X86_CONTINUATIONFREEZE_THAW_X86_INLINE_HPP

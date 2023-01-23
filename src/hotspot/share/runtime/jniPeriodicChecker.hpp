@@ -44,14 +44,7 @@ class JniPeriodicChecker : AllStatic {
   public:
     // Start/stop task
     static void engage();
-    static void disengage();
-
     static bool is_active() { return _task != NULL; }
-
-    static void initialize();
-    static void destroy();
 };
-
-void jniPeriodicChecker_exit();
 
 #endif // SHARE_RUNTIME_JNIPERIODICCHECKER_HPP

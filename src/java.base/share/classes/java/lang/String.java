@@ -1641,7 +1641,7 @@ public final class String
      * @param codePointOffset the offset in code points
      * @return the index within this {@code String}
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this
+     *   is negative or larger than the length of this
      *   {@code String}, or if {@code codePointOffset} is positive
      *   and the substring starting with {@code index} has fewer
      *   than {@code codePointOffset} code points,
@@ -1651,9 +1651,6 @@ public final class String
      * @since 1.5
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
-        if (index < 0 || index > length()) {
-            throw new IndexOutOfBoundsException();
-        }
         return Character.offsetByCodePoints(this, index, codePointOffset);
     }
 
@@ -4070,9 +4067,9 @@ public final class String
 
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
-     * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
-     * point</a> is passed through uninterpreted.
+     * from this sequence.  Any char which maps to a {@linkplain
+     * Character##unicode surrogate code point} is passed through
+     * uninterpreted.
      *
      * @return an IntStream of char values from this sequence
      * @since 9

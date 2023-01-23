@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.InputEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
+import javax.imageio.ImageIO;
 
 /**
  * @test
@@ -44,6 +48,7 @@ public final class ChoicePopupLocation {
 
     private static final int SIZE = 350;
     private static int frameWidth;
+    private static Rectangle bounds;
 
     public static void main(final String[] args) throws Exception {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
@@ -52,7 +57,7 @@ public final class ChoicePopupLocation {
         Point right = null;
         for (GraphicsDevice sd : sds) {
             GraphicsConfiguration gc = sd.getDefaultConfiguration();
-            Rectangle bounds = gc.getBounds();
+            bounds = gc.getBounds();
             if (left == null || left.x > bounds.x) {
                 left = new Point(bounds.x, bounds.y + bounds.height / 2);
             }
@@ -120,6 +125,8 @@ public final class ChoicePopupLocation {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
         if (choice.getSelectedIndex() == 0) {
+            BufferedImage failImage = robot.createScreenCapture(bounds);
+            ImageIO.write(failImage, "png", new File("failImage.png"));
             throw new RuntimeException();
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ CodeBlob::CodeBlob(const char* name, CompilerType type, const CodeBlobLayout& la
 
 // Creates a simple CodeBlob. Sets up the size of the different regions.
 RuntimeBlob::RuntimeBlob(const char* name, int header_size, int size, int frame_complete, int locs_size)
-  : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, NULL, false /* caller_must_gc_arguments */)
+  : CodeBlob(name, compiler_none, CodeBlobLayout((address) this, size, header_size, locs_size, size), frame_complete, 0, nullptr, false /* caller_must_gc_arguments */)
 {
   assert(is_aligned(locs_size, oopSize), "unaligned size");
 }
@@ -162,7 +162,7 @@ RuntimeBlob::RuntimeBlob(
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
-  assert(blob != NULL, "caller must check for NULL");
+  assert(blob != nullptr, "caller must check for nullptr");
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   blob->flush();
   {
@@ -175,7 +175,7 @@ void RuntimeBlob::free(RuntimeBlob* blob) {
 
 void CodeBlob::flush() {
   FREE_C_HEAP_ARRAY(unsigned char, _oop_maps);
-  _oop_maps = NULL;
+  _oop_maps = nullptr;
   NOT_PRODUCT(_asm_remarks.clear());
   NOT_PRODUCT(_dbg_strings.clear());
 }
@@ -183,10 +183,10 @@ void CodeBlob::flush() {
 void CodeBlob::set_oop_maps(OopMapSet* p) {
   // Danger Will Robinson! This method allocates a big
   // chunk of memory, its your job to free it.
-  if (p != NULL) {
+  if (p != nullptr) {
     _oop_maps = ImmutableOopMapSet::build_from(p);
   } else {
-    _oop_maps = NULL;
+    _oop_maps = nullptr;
   }
 }
 
@@ -195,7 +195,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   // Do not hold the CodeCache lock during name formatting.
   assert(!CodeCache_lock->owned_by_self(), "release CodeCache before registering the stub");
 
-  if (stub != NULL && (PrintStubCode ||
+  if (stub != nullptr && (PrintStubCode ||
                        Forte::is_enabled() ||
                        JvmtiExport::should_post_dynamic_code_generated())) {
     char stub_id[256];
@@ -207,7 +207,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
       tty->print_cr("Decoding %s " INTPTR_FORMAT, stub_id, (intptr_t) stub);
       Disassembler::decode(stub->code_begin(), stub->code_end(), tty
                            NOT_PRODUCT(COMMA &stub->asm_remarks()));
-      if ((stub->oop_maps() != NULL) && AbstractDisassembler::show_structs()) {
+      if ((stub->oop_maps() != nullptr) && AbstractDisassembler::show_structs()) {
         tty->print_cr("- - - [OOP MAPS]- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
         stub->oop_maps()->print();
       }
@@ -230,7 +230,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
 }
 
 const ImmutableOopMap* CodeBlob::oop_map_for_return_address(address return_address) const {
-  assert(_oop_maps != NULL, "nope");
+  assert(_oop_maps != nullptr, "nope");
   return _oop_maps->find_map_at_offset((intptr_t) return_address - (intptr_t) code_begin());
 }
 
@@ -250,12 +250,12 @@ BufferBlob::BufferBlob(const char* name, int size)
 BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  BufferBlob* blob = NULL;
+  BufferBlob* blob = nullptr;
   unsigned int size = sizeof(BufferBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
   size += align_up(buffer_size, oopSize);
-  assert(name != NULL, "must provide a name");
+  assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size);
@@ -268,15 +268,15 @@ BufferBlob* BufferBlob::create(const char* name, int buffer_size) {
 
 
 BufferBlob::BufferBlob(const char* name, int size, CodeBuffer* cb)
-  : RuntimeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, NULL)
+  : RuntimeBlob(name, cb, sizeof(BufferBlob), size, CodeOffsets::frame_never_safe, 0, nullptr)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  BufferBlob* blob = NULL;
+  BufferBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferBlob));
-  assert(name != NULL, "must provide a name");
+  assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) BufferBlob(name, size, cb);
@@ -309,7 +309,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb) {
 
   CodeCache::gc_on_allocation();
 
-  AdapterBlob* blob = NULL;
+  AdapterBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -338,12 +338,12 @@ VtableBlob::VtableBlob(const char* name, int size) :
 VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
   assert(JavaThread::current()->thread_state() == _thread_in_vm, "called with the wrong state");
 
-  VtableBlob* blob = NULL;
+  VtableBlob* blob = nullptr;
   unsigned int size = sizeof(VtableBlob);
   // align the size to CodeEntryAlignment
   size = align_code_offset(size);
   size += align_up(buffer_size, oopSize);
-  assert(name != NULL, "must provide a name");
+  assert(name != nullptr, "must provide a name");
   {
     if (!CodeCache_lock->try_lock()) {
       // If we can't take the CodeCache_lock, then this is a bad time to perform the ongoing
@@ -356,7 +356,7 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
       // consistently taken in the opposite order. Bailing out results in an IC transition to
       // the clean state instead, which will cause subsequent calls to retry the transitioning
       // eventually.
-      return NULL;
+      return nullptr;
     }
     blob = new (size) VtableBlob(name, size);
     CodeCache_lock->unlock();
@@ -373,7 +373,7 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
 MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
-  MethodHandlesAdapterBlob* blob = NULL;
+  MethodHandlesAdapterBlob* blob = nullptr;
   unsigned int size = sizeof(MethodHandlesAdapterBlob);
   // align the size to CodeEntryAlignment
   size = CodeBlob::align_code_offset(size);
@@ -381,7 +381,7 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     blob = new (size) MethodHandlesAdapterBlob(size);
-    if (blob == NULL) {
+    if (blob == nullptr) {
       vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CodeCache: no room for method handle adapter blob");
     }
   }
@@ -414,7 +414,7 @@ RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            OopMapSet* oop_maps,
                                            bool caller_must_gc_arguments)
 {
-  RuntimeStub* stub = NULL;
+  RuntimeStub* stub = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(RuntimeStub));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
@@ -473,7 +473,7 @@ DeoptimizationBlob* DeoptimizationBlob::create(
   int        unpack_with_reexecution_offset,
   int        frame_size)
 {
-  DeoptimizationBlob* blob = NULL;
+  DeoptimizationBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(DeoptimizationBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
@@ -512,7 +512,7 @@ UncommonTrapBlob* UncommonTrapBlob::create(
   OopMapSet*  oop_maps,
   int        frame_size)
 {
-  UncommonTrapBlob* blob = NULL;
+  UncommonTrapBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(UncommonTrapBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
@@ -548,7 +548,7 @@ ExceptionBlob* ExceptionBlob::create(
   OopMapSet*  oop_maps,
   int         frame_size)
 {
-  ExceptionBlob* blob = NULL;
+  ExceptionBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(ExceptionBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
@@ -583,7 +583,7 @@ SafepointBlob* SafepointBlob::create(
   OopMapSet*  oop_maps,
   int         frame_size)
 {
-  SafepointBlob* blob = NULL;
+  SafepointBlob* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(SafepointBlob));
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   {
@@ -615,7 +615,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
   if (is_buffer_blob()) {
     // the interpreter is generated into a buffer blob
     InterpreterCodelet* i = Interpreter::codelet_containing(addr);
-    if (i != NULL) {
+    if (i != nullptr) {
       st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an Interpreter codelet", p2i(addr), (int)(addr - i->code_begin()));
       i->print_on(st);
       return;
@@ -632,7 +632,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
     }
     // the stubroutines are generated into a buffer blob
     StubCodeDesc* d = StubCodeDesc::desc_for(addr);
-    if (d != NULL) {
+    if (d != nullptr) {
       st->print_cr(INTPTR_FORMAT " is at begin+%d in a stub", p2i(addr), (int)(addr - d->begin()));
       d->print_on(st);
       st->cr();
@@ -648,7 +648,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       return;
     }
     VtableStub* v = VtableStubs::stub_containing(addr);
-    if (v != NULL) {
+    if (v != nullptr) {
       st->print_cr(INTPTR_FORMAT " is at entry_point+%d in a vtable stub", p2i(addr), (int)(addr - v->entry_point()));
       v->print_on(st);
       st->cr();
@@ -775,7 +775,7 @@ JavaFrameAnchor* UpcallStub::jfa_for_frame(const frame& frame) const {
 }
 
 void UpcallStub::free(UpcallStub* blob) {
-  assert(blob != nullptr, "caller must check for NULL");
+  assert(blob != nullptr, "caller must check for nullptr");
   JNIHandles::destroy_global(blob->receiver());
   RuntimeBlob::free(blob);
 }
@@ -792,6 +792,7 @@ void UpcallStub::verify() {
 void UpcallStub::print_on(outputStream* st) const {
   RuntimeBlob::print_on(st);
   print_value_on(st);
+  Disassembler::decode((RuntimeBlob*)this, st);
 }
 
 void UpcallStub::print_value_on(outputStream* st) const {

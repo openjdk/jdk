@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2023" "JDK 20-ea" "JDK Commands"
+.TH "JAVA" "1" "2023" "JDK 21-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -187,7 +187,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]20\f[R]) and a limited number of previous releases, detailed in
+(\f[V]21\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -2524,6 +2524,22 @@ instructions.
 Flags that control intrinsics now require the option
 \f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
 .TP
+\f[V]-XX:+UseChaCha20Intrinsics\f[R]
+Enable ChaCha20 intrinsics.
+This option is on by default for supported platforms.
+To disable ChaCha20 intrinsics, specify
+\f[V]-XX:-UseChaCha20Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
+\f[V]-XX:+UsePoly1305Intrinsics\f[R]
+Enable Poly1305 intrinsics.
+This option is on by default for supported platforms.
+To disable Poly1305 intrinsics, specify
+\f[V]-XX:-UsePoly1305Intrinsics\f[R].
+Flags that control intrinsics now require the option
+\f[V]-XX:+UnlockDiagnosticVMOptions\f[R].
+.TP
 \f[V]-XX:+UseBASE64Intrinsics\f[R]
 Controls the use of accelerated BASE64 encoding routines for
 \f[V]java.util.Base64\f[R].
@@ -3789,6 +3805,14 @@ Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
 This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
 [https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
 403\f[R] [https://openjdk.org/jeps/403].
+.SH REMOVED JAVA OPTIONS
+.PP
+These \f[V]java\f[R] options have been removed in JDK 21 and using them
+results in an error of:
+.RS
+.PP
+\f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
+.RE
 .TP
 \f[V]-XX:+ExtendedDTraceProbes\f[R]
 \f[B]Linux and macOS:\f[R] Enables additional \f[V]dtrace\f[R] tool
@@ -3798,12 +3822,12 @@ standard probes.
 Use the combination of these flags instead:
 \f[V]-XX:+DTraceMethodProbes\f[R], \f[V]-XX:+DTraceAllocProbes\f[R],
 \f[V]-XX:+DTraceMonitorProbes\f[R].
-.SH REMOVED JAVA OPTIONS
-.PP
-No documented java options have been removed in JDK 20.
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 20\f[R]
+[https://docs.oracle.com/en/java/javase/20/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 19\f[R]
 [https://docs.oracle.com/en/java/javase/19/docs/specs/man/java.html]

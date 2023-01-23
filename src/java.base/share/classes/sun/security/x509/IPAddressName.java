@@ -401,11 +401,12 @@ public class IPAddressName implements GeneralNameInterface {
         else {
             IPAddressName otherName = (IPAddressName)inputName;
             byte[] otherAddress = otherName.address;
-            if (otherAddress.length == 4 && address.length == 4)
+            if ((otherAddress.length == 4 && address.length == 4) ||
+                    (otherAddress.length == 16 && address.length == 16)) {
                 // Two host addresses
                 constraintType = NAME_SAME_TYPE;
-            else if ((otherAddress.length == 8 && address.length == 8) ||
-                     (otherAddress.length == 32 && address.length == 32)) {
+            } else if ((otherAddress.length == 8 && address.length == 8) ||
+                       (otherAddress.length == 32 && address.length == 32)) {
                 // Two subnet addresses
                 // See if one address fully encloses the other address
                 boolean otherSubsetOfThis = true;
@@ -440,7 +441,8 @@ public class IPAddressName implements GeneralNameInterface {
                     constraintType = NAME_WIDENS;
                 else
                     constraintType = NAME_SAME_TYPE;
-            } else if (otherAddress.length == 8 || otherAddress.length == 32) {
+            } else if ((otherAddress.length == 8 && address.length == 4) ||
+                       (otherAddress.length == 32 && address.length == 16)) {
                 //Other is a subnet, this is a host address
                 int i = 0;
                 int maskOffset = otherAddress.length/2;
@@ -454,7 +456,8 @@ public class IPAddressName implements GeneralNameInterface {
                     constraintType = NAME_WIDENS;
                 else
                     constraintType = NAME_SAME_TYPE;
-            } else if (address.length == 8 || address.length == 32) {
+            } else if ((otherAddress.length == 4 && address.length == 8) ||
+                       (otherAddress.length == 16 && address.length == 32)) {
                 //This is a subnet, other is a host address
                 int i = 0;
                 int maskOffset = address.length/2;

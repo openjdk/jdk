@@ -2449,8 +2449,9 @@ public:
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodDataType; }
 
-  // Deallocation support - no metaspace pointer fields to deallocate
-  void deallocate_contents(ClassLoaderData* loader_data) {}
+  // Deallocation support
+  void deallocate_contents(ClassLoaderData* loader_data);
+  void release_C_heap_structures();
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }

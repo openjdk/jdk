@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,7 +109,7 @@ protected:
                                                  // that range. There is a similar range(s) on returns
                                                  // which we don't detect.
   int        _data_offset;                       // offset to where data region begins
-  int        _frame_size;                        // size of stack frame
+  int        _frame_size;                        // size of stack frame in words (NOT slots. On x64 these are 64bit words)
 
   bool                _caller_must_gc_arguments;
 
@@ -165,9 +165,9 @@ public:
   CompilerType compiler_type() const { return _type; }
 
   // Casting
-  nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : NULL; }
+  nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : nullptr; }
   nmethod* as_nmethod()                        { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
-  CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
+  CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : nullptr; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
   UpcallStub* as_upcall_stub() const           { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
