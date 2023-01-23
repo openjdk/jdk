@@ -48,8 +48,6 @@ BUILD_JDK_JTREG_OUTPUT_DIR := $(OUTPUTDIR)/support/test/jdk/jtreg/native
 
 BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 
-
-
 BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
