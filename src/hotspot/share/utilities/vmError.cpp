@@ -461,7 +461,7 @@ static void print_stack_location(outputStream* st, void* context, int& continuat
   const frame fr = os::fetch_frame_from_context(context);
   for (int i = continuation; i < 8; ++i) {
     // decode stack contents if possible
-    const intptr_t *slot = fr.sp() + continuation;
+    const intptr_t *slot = fr.sp() + i;
     if (is_aligned(slot, sizeof(intptr_t)) && os::is_readable_pointer(slot)) {
       st->print("stack at sp + %d slots: ", i);
       os::print_location(st, *(slot));
