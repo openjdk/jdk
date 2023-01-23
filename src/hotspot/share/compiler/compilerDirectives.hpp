@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ public:
   bool should_not_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
   DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
-  bool is_exclusive_copy() { return _directive == NULL; }
+  bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
   bool is_intrinsic_disabled(const methodHandle& method);
@@ -206,11 +206,11 @@ class ControlIntrinsicValidator {
 
  public:
   ControlIntrinsicValidator(ccstrlist option, bool disable_all) : _valid(true), _bad(nullptr) {
-    for (ControlIntrinsicIter iter(option, disable_all); *iter != NULL && _valid; ++iter) {
+    for (ControlIntrinsicIter iter(option, disable_all); *iter != nullptr && _valid; ++iter) {
       if (vmIntrinsics::_none == vmIntrinsics::find_id(*iter)) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all intrinsic names
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nullptrs.
         strncpy(_bad, *iter, len);
         _valid = false;
       }
@@ -218,7 +218,7 @@ class ControlIntrinsicValidator {
   }
 
   ~ControlIntrinsicValidator() {
-    if (_bad != NULL) {
+    if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
   }
@@ -251,7 +251,7 @@ public:
   bool add_match(char* str, const char*& error_msg);
   DirectiveSet* get_for(AbstractCompiler *comp);
   void print(outputStream* st);
-  bool is_default_directive() { return _next == NULL; }
+  bool is_default_directive() { return _next == nullptr; }
   void finalize(outputStream* st);
 
   void inc_refcount();
