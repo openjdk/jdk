@@ -26,6 +26,7 @@ package sun.jvm.hotspot.oops;
 
 import java.io.*;
 
+import sun.jvm.hotspot.code.CompressedReadStream;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.utilities.*;
 
@@ -41,22 +42,88 @@ public class Field {
   /** Constructor for fields that are named in an InstanceKlass's
       fields array (i.e., named, non-VM fields) */
   Field(InstanceKlass holder, int fieldIndex) {
-    this.holder = holder;
-    this.fieldIndex = fieldIndex;
-
-    offset               = holder.getFieldOffset(fieldIndex);
-    genericSignature     = holder.getFieldGenericSignature(fieldIndex);
-
-    name                 = holder.getFieldName(fieldIndex);
-    id          = new NamedFieldIdentifier(name.asString());
-
-    signature            = holder.getFieldSignature(fieldIndex);
-    fieldType   = new FieldType(signature);
-
-    short access         = holder.getFieldAccessFlags(fieldIndex);
-    accessFlags = new AccessFlags(access);
+    this(holder, fieldIndex, getFieldInfoValues(new CompressedReadStream(holder.getFieldInfoStream().getDataStart()), fieldIndex));
   }
 
+  private Field(InstanceKlass holder, int fieldIndex, FieldInfoValues values) {
+    this.holder = holder;
+    this.fieldIndex = fieldIndex;
+    this.values = values;
+    offset = values.offset;
+
+    name = holder.getSymbolFromIndex(values.nameIndex, isInjected());
+    signature = holder.getSymbolFromIndex(values.signatureIndex, isInjected());
+    offset = values.offset;
+    id          = new NamedFieldIdentifier(name.asString());
+    fieldType   = new FieldType(signature);
+    accessFlags = new AccessFlags(values.accessFlags);
+
+    if (isGeneric()) {
+      genericSignature = holder.getSymbolFromIndex(values.genericSignatureIndex, isInjected());
+    }
+  }
+
+  static class FieldInfoValues {
+    int nameIndex;
+    int signatureIndex;
+    int offset;
+    int accessFlags;
+    int fieldFlags;
+    int initialValueIndex;
+    int genericSignatureIndex;
+    int contendedGroup;
+  }
+
+  // The format of the stream, after decompression, is a series of
+  // integers organized like this:
+  //
+  //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
+  //   Field := name sig offset access internal Optionals(internal)
+  //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
+  //                   gsig?[i&is_generic]     // signature attr
+  //                   group?[i&is_contended]  // Contended anno (group)
+  //   End = 0
+  //
+
+  static FieldInfoValues readFieldInfoValues(CompressedReadStream crs) {
+    FieldInfoValues fieldInfoValues = new FieldInfoValues();
+    fieldInfoValues.nameIndex = crs.readInt(); // read name_index
+    fieldInfoValues.signatureIndex = crs.readInt(); // read signature index
+    fieldInfoValues.offset = crs.readInt(); // read offset
+    fieldInfoValues.accessFlags = crs.readInt(); // read access flags
+    fieldInfoValues.fieldFlags = crs.readInt();  // read internal field flags
+    // Optional reads
+    if (fieldIsInitialized(fieldInfoValues.fieldFlags)) fieldInfoValues.initialValueIndex = crs.readInt(); // read initial value index
+    if (fieldIsGeneric(fieldInfoValues.fieldFlags))     fieldInfoValues.genericSignatureIndex = crs.readInt(); // read generic signature index
+    if (fieldIsContended(fieldInfoValues.fieldFlags))   fieldInfoValues.contendedGroup = crs.readInt(); // read contended group
+    return fieldInfoValues;
+  }
+
+  private static FieldInfoValues getFieldInfoValues(CompressedReadStream crs, int fieldIndex) {
+    int javafieldsCount = crs.readInt(); // read num_java_fields
+    int VMFieldsCount = crs.readInt(); // read num_injected_fields;
+    if (fieldIndex < 0 || fieldIndex >= javafieldsCount + VMFieldsCount) throw new IndexOutOfBoundsException();
+    FieldInfoValues fieldInfoValues = null;
+    for (int i = 0; i <= fieldIndex; i++) {
+      fieldInfoValues = readFieldInfoValues(crs);
+    }
+    return fieldInfoValues;
+  }
+
+  public static Field[] getFields(InstanceKlass kls) {
+    CompressedReadStream crs = new CompressedReadStream(kls.getFieldInfoStream().getDataStart());
+    int javafieldsCount = crs.readInt(); // read num_java_fields
+    int VMFieldsCount = crs.readInt(); // read num_injected_fields;
+    int numFields = javafieldsCount + VMFieldsCount;
+    Field[] fields = new Field[numFields];
+    for (int i = 0; i < numFields; i++) {
+      FieldInfoValues values = readFieldInfoValues(crs);
+      fields[i] = new Field(kls, i, values);
+    }
+    return fields;
+  }
+
+  FieldInfoValues         values;
   private Symbol          name;
   private long            offset;
   private FieldIdentifier id;
@@ -76,6 +143,7 @@ public class Field {
   public FieldIdentifier getID() { return id; }
 
   public Symbol getName() { return name; }
+  public short getNameIndex() { return (short)values.nameIndex; }
 
   /** Indicates whether this is a VM field */
   public boolean isVMField() { return isVMField; }
@@ -111,9 +179,12 @@ public class Field {
   /** (Named, non-VM fields only) Returns the signature of this
       field. */
   public Symbol getSignature() { return signature; }
+  public short getSignatureIndex() { return (short)values.signatureIndex; }
   public Symbol getGenericSignature() { return genericSignature; }
+  public short getGenericSignatureIndex() { return (short)values.genericSignatureIndex; }
 
   public boolean hasInitialValue()           { return holder.getFieldInitialValueIndex(fieldIndex) != 0;    }
+  public short getInitialValueIndex()        { return (short)values.initialValueIndex; }
 
   //
   // Following accessors are for named, non-VM fields only
@@ -130,6 +201,19 @@ public class Field {
 
   public boolean isSynthetic()               { return accessFlags.isSynthetic(); }
   public boolean isEnumConstant()            { return accessFlags.isEnum();      }
+
+  private static boolean fieldIsInitialized(int flags) { return ((flags >> InstanceKlass.FIELD_FLAG_IS_INITIALIZED) & 1 ) != 0; }
+  private static boolean fieldIsInjected(int flags)    { return ((flags >> InstanceKlass.FIELD_FLAG_IS_INJECTED   ) & 1 ) != 0; }
+  private static boolean fieldIsGeneric(int flags)     { return ((flags >> InstanceKlass.FIELD_FLAG_IS_GENERIC    ) & 1 ) != 0; }
+  private static boolean fieldIsStable(int flags)      { return ((flags >> InstanceKlass.FIELD_FLAG_IS_STABLE     ) & 1 ) != 0; }
+  private static boolean fieldIsContended(int flags)   { return ((flags >> InstanceKlass.FIELD_FLAG_IS_CONTENDED  ) & 1 ) != 0; }
+
+
+  public boolean isInitialized()             { return fieldIsInitialized(values.fieldFlags); }
+  public boolean isInjected()                { return fieldIsInjected(values.fieldFlags); }
+  public boolean isGeneric()                 { return fieldIsGeneric(values.fieldFlags); }
+  public boolean isStable()                  { return fieldIsStable(values.fieldFlags); }
+  public boolean isContended(int internalFlags) { return fieldIsContended(values.fieldFlags); }
 
   public boolean equals(Object obj) {
      if (obj == null) {

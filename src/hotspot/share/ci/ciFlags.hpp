@@ -48,7 +48,7 @@ private:
     _flags = flags.as_int();
     _stable = is_stable;
     _intialized_final_update = is_initialized_final_update;
-    }
+  }
 
 public:
   // Java access flags

@@ -63,11 +63,11 @@ public class InstanceKlass extends Klass {
   private static short FIELDINFO_TAG_OFFSET;
 
   // internal field flags constants
-  private static int FIELD_FLAG_IS_INITIALIZED;
-  private static int FIELD_FLAG_IS_INJECTED;
-  private static int FIELD_FLAG_IS_GENERIC;
-  private static int FIELD_FLAG_IS_STABLE;
-  private static int FIELD_FLAG_IS_CONTENDED;
+  static int FIELD_FLAG_IS_INITIALIZED;
+  static int FIELD_FLAG_IS_INJECTED;
+  static int FIELD_FLAG_IS_GENERIC;
+  static int FIELD_FLAG_IS_STABLE;
+  static int FIELD_FLAG_IS_CONTENDED;
 
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
@@ -271,69 +271,21 @@ public class InstanceKlass extends Klass {
 
   public static long getHeaderSize() { return headerSize; }
 
-  // The format of the stream, after decompression, is a series of
-  // integers organized like this:
-  //
-  //   FieldInfo := j=num_java_fields k=num_internal_fields Field*[j+k] End
-  //   Field := name sig offset access internal Optionals(internal)
-  //   Optionals(i) := initval?[i&is_init]     // ConstantValue attr
-  //                   gsig?[i&is_generic]     // signature attr
-  //                   group?[i&is_contended]  // Contended anno (group)
-  //   End = 0
-  //
-
-  public static boolean fieldIsInitialized(int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_INITIALIZED) & 1 ) != 0; }
-  public static boolean fieldIsInjected   (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_INJECTED   ) & 1 ) != 0; }
-  public static boolean fieldIsGeneric    (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_GENERIC    ) & 1 ) != 0; }
-  public static boolean fieldIsStable     (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_STABLE     ) & 1 ) != 0; }
-  public static boolean fieldIsContended  (int internalFlags) { return ((internalFlags >> FIELD_FLAG_IS_CONTENDED  ) & 1 ) != 0; }
-
-  private void advanceToField(CompressedReadStream crs, int n) {
-    crs.readInt(); // read num_java_fields
-    crs.readInt(); // read num_injected_fields;
-    for (int i = 0; i < n; i++) {
-      crs.readInt(); // read name_index
-      crs.readInt(); // read signature index
-      crs.readInt(); // read offset
-      crs.readInt(); // read access flags
-      int internalFlags = crs.readInt();  // read internal field flags
-      // Optional reads
-      if (fieldIsInitialized(internalFlags)) crs.readInt(); // read initial value index
-      if (fieldIsGeneric(internalFlags))     crs.readInt(); // read generic signature index
-      if (fieldIsContended(internalFlags))   crs.readInt(); // read contended group
-    }
-  }
-
   public short getFieldAccessFlags(int index) {
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name index
-    crs.readInt(); // read signature index
-    crs.readInt(); // read offset
-    return (short)crs.readInt();
+    Field field = new Field(this, index);
+    return (short)field.getAccessFlags();
   }
 
   public short getFieldNameIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    return (short)crs.readInt();
+    Field field = new Field(this, index);
+    return (short)field.getNameIndex();
   }
 
   public Symbol getFieldName(int index) {
     // Cannot use getFieldNameIndex() because this method is also used for injected fields
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    int nameIndex = crs.readInt();
-    crs.readInt(); // read signature index
-    crs.readInt(); // read offset
-    crs.readInt(); // read access flags
-    int fieldFlags = crs.readInt();
-    if (fieldIsInjected(fieldFlags)) {
-      return vmSymbols.symbolAt(nameIndex);
-    } else {
-      return getConstants().getSymbolAt(nameIndex);
-    }
+    Field field = new Field(this, index);
+    return field.getName();
   }
 
   public Symbol getSymbolFromIndex(int cpIndex, boolean injected) {
@@ -346,69 +298,35 @@ public class InstanceKlass extends Klass {
 
   public short getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name index
-    return (short)crs.readInt();
+    Field field = new Field(this, index);
+    return (short)field.getGenericSignatureIndex();
   }
 
   public Symbol getFieldSignature(int index) {
     // Cannot use getFieldSignatureIndex() because this method is also use for injected fields
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name index
-    int signatureIndex = crs.readInt();
-    if (index < getJavaFieldsCount()) {
-      return getConstants().getSymbolAt(signatureIndex);
-    } else {
-      return vmSymbols.symbolAt(signatureIndex);
-    }
+    Field field = new Field(this, index);
+    return field.getSignature();
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name_index
-    crs.readInt(); // read signature index
-    crs.readInt(); // read offset
-    crs.readInt(); // read access flags
-    int internal_flags = crs.readInt();
-    if (fieldIsGeneric(internal_flags)) {
-      if (fieldIsInitialized(internal_flags)) crs.readInt(); // read initial value index
-      return (short) crs.readInt();
-    }
-    return 0;
+    Field field = new Field(this, index);
+    return field.getGenericSignatureIndex();
   }
 
   public Symbol getFieldGenericSignature(int index) {
-    short genericSignatureIndex = getFieldGenericSignatureIndex(index);
-    if (genericSignatureIndex != 0)  {
-      return getConstants().getSymbolAt(genericSignatureIndex);
-    }
-    return null;
+    Field field = new Field(this, index);
+    return field.getGenericSignature();
   }
 
   public short getFieldInitialValueIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name_index
-    crs.readInt(); // read signature index
-    crs.readInt(); // read offset
-    crs.readInt(); // read access flags
-    int internal_flags = crs.readInt();
-    if (fieldIsInitialized(internal_flags)) {
-      return (short) crs.readInt();
-    }
-    return 0;
+    Field field = new Field(this, index);
+    return (short)field.getInitialValueIndex();
   }
 
   public int getFieldOffset(int index) {
-    CompressedReadStream crs = new CompressedReadStream(getFieldInfoStream().getDataStart());
-    advanceToField(crs, index);
-    crs.readInt(); // read name_index
-    crs.readInt(); // read signature index
-    return crs.readInt();
+    Field field = new Field(this, index);
+    return (int)field.getOffset();
   }
 
   // Accessors for declared fields

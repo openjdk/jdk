@@ -1120,26 +1120,14 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                 buf.append(" " + kls.getName().asString() + "={");
                 int flen = ov.fieldsSize();
 
-                CompressedReadStream crs = new CompressedReadStream(kls.getFieldInfoStream().getDataStart());
-                int jfields = crs.readInt();
-                int ifields = crs.readInt();
+                sun.jvm.hotspot.oops.Field[] fields = sun.jvm.hotspot.oops.Field.getFields(kls);
                 int findex = 0;
-                for (int index = 0; index < jfields + ifields; index ++) {
-                  int nameIndex = crs.readInt(); // read name_index
-                  int sigIndex = crs.readInt(); // read signature index
-                  int offset = crs.readInt(); // read offset
-                  int accessFlags = crs.readInt(); // read access flags
-                  int internalFlags = crs.readInt();
-                  if (InstanceKlass.fieldIsInitialized(internalFlags)) crs.readInt(); // read initial value index
-                  if (InstanceKlass.fieldIsGeneric(internalFlags))     crs.readInt(); // read generic signature index
-                  if (InstanceKlass.fieldIsContended(internalFlags))   crs.readInt(); // read contended group
-                  Symbol f_name = kls.getSymbolFromIndex(nameIndex, InstanceKlass.fieldIsInjected(internalFlags));
-                  AccessFlags access = new AccessFlags(accessFlags);
-                  if (!access.isStatic()) {
+                for (int index = 0; index < fields.length; index++) {
+                  if (!fields[index].getAccessFlagsObj().isStatic()) {
                      ScopeValue svf = ov.getFieldAt(findex++);
                      String    fstr = scopeValueAsString(sd, svf);
-                     buf.append(" [" + f_name.asString() + " :"+ index + "]=(#" + fstr + ")");
-                 }
+                     buf.append(" [" + fields[index].getName().asString() + " :"+ index + "]=(#" + fstr + ")");
+                  }
                 }
                 buf.append(" }");
             } else {
@@ -1688,49 +1676,28 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
    protected String genHTMLListForFields(InstanceKlass klass) {
       Formatter buf = new Formatter(genHTML);
-      // U2Array fields = klass.getFields();
-      CompressedReadStream crs = new CompressedReadStream(klass.getFieldInfoStream().getDataStart());
-      int java_fields_count = crs.readInt();
-      int injected_fields_count = crs.readInt();
-      int numFields = java_fields_count + injected_fields_count;
+      sun.jvm.hotspot.oops.Field[] fields = sun.jvm.hotspot.oops.Field.getFields(klass);
+      int numFields = fields.length;
       if (numFields != 0) {
          buf.h3("Fields");
          buf.beginList();
          for (int f = 0; f < numFields; f++) {
-           int nameIndex = crs.readInt();
-           int signatureIndex = crs.readInt();
-           int fieldOffset = crs.readInt();
-           int accessFlags = crs.readInt();
-           int internalFlags = crs.readInt();
-           int genericSignatureIndex = 0;
-           if (klass.fieldIsInitialized(internalFlags)) crs.readInt();
-           if (klass.fieldIsGeneric(internalFlags))     genericSignatureIndex = crs.readInt();
-           if (klass.fieldIsContended(internalFlags))   crs.readInt();
-           boolean isInjected = klass.fieldIsInjected(internalFlags);
-           String f_name = klass.getSymbolFromIndex(nameIndex, isInjected).asString();
-           Symbol f_sig = klass.getSymbolFromIndex(signatureIndex, isInjected);
-           Symbol f_genSig = null;
-           if (klass.fieldIsGeneric(internalFlags)) {
-            f_genSig = klass.getSymbolFromIndex(genericSignatureIndex, isInjected);
-           }
-           AccessFlags acc = new AccessFlags(accessFlags);
-
            buf.beginListItem();
-           buf.append(genFieldModifierString(acc));
+           buf.append(genFieldModifierString(fields[f].getAccessFlagsObj()));
            buf.append(' ');
            Formatter sigBuf = new Formatter(genHTML);
-           new SignatureConverter(f_sig, sigBuf.getBuffer()).dispatchField();
+           new SignatureConverter(fields[f].getSignature(), sigBuf.getBuffer()).dispatchField();
            buf.append(sigBuf.toString().replace('/', '.'));
            buf.append(' ');
-           buf.append(f_name);
+           buf.append(fields[f].getName().asString());
            buf.append(';');
            // is it generic?
-           if (f_genSig != null) {
+           if (fields[f].isGeneric()) {
               buf.append(" [signature ");
-              buf.append(escapeHTMLSpecialChars(f_genSig.asString()));
+              buf.append(escapeHTMLSpecialChars(fields[f].getGenericSignature().asString()));
               buf.append("] ");
            }
-           buf.append(" (offset = " + fieldOffset + ")");
+           buf.append(" (offset = " + fields[f].getOffset() + ")");
            buf.endListItem();
          }
          buf.endList();
