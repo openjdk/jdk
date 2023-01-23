@@ -7077,7 +7077,7 @@ typedef uint32_t u32;
     RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r26) - r18_tls - rscratch1 - rscratch2).begin();
 
     // Arguments
-    const Register input_start = *++regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+    const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
 
     // R_n is the randomly-generated key, packed into three registers
     const Register R_0 = *++regs, R_1 = *++regs, R_2 = *++regs;
@@ -7085,18 +7085,22 @@ typedef uint32_t u32;
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
-    __ add(RR_0, R_0, R_0, Assembler::LSR, 2);
-    __ add(RR_1, R_1, R_1, Assembler::LSR, 2);
+    __ lsr(RR_0, RR_0, 2);
+    __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
+    __ lsr(RR_1, RR_1, 2);
+    __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
     pack_26(U_0, U_1, U_2, acc_start);
 
     static constexpr int BLOCK_LENGTH = 16;
-    Label DONE;
+    Label DONE, LOOP;
 
     __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-    __ br(Assembler::GE, DONE); {
+    __ br(~ Assembler::GE, DONE); {
+      __ bind(LOOP);
+
       // S_n is to be the sum of U_n and the next block of data
       const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
       __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
@@ -7106,12 +7110,10 @@ typedef uint32_t u32;
       __ add(S_2, S_2, 1);
 
       // Recycle registers U_0, U_1, U_2
-      regs = (regs.remaining() + U_0 + U_1 + U_2).begin();
-
       const Register
-        X_0 = *++regs, X_0HI = *++regs,
-        X_1 = *++regs, X_1HI = *++regs,
-        X_2 = *++regs;
+        X_0 = U_0, X_0HI = *++regs,
+        X_1 = U_1, X_1HI = *++regs,
+        X_2 = U_2;
 
       wide_mul(X_0, X_0HI, S_0, R_0);  wide_madd(X_0, X_0HI, S_1, RR_1); wide_madd(X_0, X_0HI, S_2, RR_0);
       wide_mul(X_1, X_1HI, S_0, R_1);  wide_madd(X_1, X_1HI, S_1, R_0);  wide_madd(X_0, X_0HI, S_2, RR_1);
@@ -7121,9 +7123,52 @@ typedef uint32_t u32;
       // Recycle registers S_0, S_1, S_2
       regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
 
+      // Partial reduction mod 2**130 - 5
+      __ adds(X_1, X_0HI, X_1);
+      __ adc(X_2, X_1HI, X_2);
+      // Sum now in X_2:X_1, X_0.
+      // Dead: X_0HI, X_1HI.
+
+      // X_2:X_1:X_0 += (X_1HI >> 2)
+      __ lsr(rscratch1, X_2, 2);
+      __ andr(X_2, X_2, (u8)3);
+      __ adds(X_0, X_0, rscratch1);
+      __ adcs(X_1, X_1, zr);
+      __ adc(X_2, X_2, zr);
+
+      // X_1HI:X_0HI, X_0 += (X_1HI >> 2) << 2
+      __ adds(X_0, X_0, rscratch1, Assembler::LSL, 2);
+      __ adcs(X_1, X_1, zr);
+      __ adc(X_2, X_2, zr);
+
+      __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
+      __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+      __ br(Assembler::GE, LOOP);
     }
 
+    // Fully reduce modulo 2^130 - 5
+    __ lsr(rscratch1, U_2, 2);
+    __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
+    __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
+    __ adcs(U_1, U_1, zr);
+    __ andr(U_2, U_2, (u1)3);
+    __ adc(U_2, U_2, zr);
+
+    __ ubfiz(rscratch1, U_0, 0, 26);
+    __ ubfx(rscratch2, U_0, 26, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start));
+    __ ubfx(rscratch1, U_0, 52, 12);
+    __ ubfiz(rscratch1, U_1, 12, 14);
+    __ ubfx(rscratch2, U_1, 14, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+    __ ubfx(rscratch1, U_1, 40, 24);
+    __ bfi(rscratch1, U_2, 24, 2);
+    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
     __ bind(DONE);
+    __ leave();
+    __ ret(lr);
+
     return start;
   }
 
@@ -8318,8 +8363,8 @@ typedef uint32_t u32;
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
     if (UsePoly1305Intrinsics) {
-      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
-      generate_poly1305_processBlocks1();
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks1();
+      // generate_poly1305_processBlocks1();
     }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
