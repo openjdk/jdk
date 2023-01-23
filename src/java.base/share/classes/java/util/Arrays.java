@@ -4112,7 +4112,7 @@ public class Arrays {
      * {@link Collections#unmodifiableList Collections.unmodifiableList}
      * or <a href="List.html#unmodifiable">Unmodifiable Lists</a>.
      *
-     * @apiNote
+     * @implNote
      * Modification methods of the returned list (such as {@link List#set} and
      * {@link List#replaceAll}) will throw an {@link ArrayStoreException} when
      * trying to set a wrong type of element into the list (and the backing
