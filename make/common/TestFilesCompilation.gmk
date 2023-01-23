@@ -111,7 +111,7 @@ define SetupTestFilesCompilationBody
     )) \
     $$(eval $1 += $$(BUILD_TEST_$$(name)) ) \
     $$(eval $1_BUILD_INFO_DEPS += $$(BUILD_TEST_$$(name)_BUILD_INFO_DEPS)) \
-    $$(eval $$(BUILD_TEST_$$(name)_BUILD_INFO) :| $$($1_BUILD_INFO)) \
+    $$(eval $$(BUILD_TEST_$$(name)_BUILD_INFO): | $$($1_BUILD_INFO)) \
   )
 
   # Setup rule for printing a summary of all the tests being compiled. On Warn
