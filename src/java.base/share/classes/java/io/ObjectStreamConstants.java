@@ -226,12 +226,12 @@ public interface ObjectStreamConstants {
     * A Stream Protocol Version. <p>
     *
     * This protocol is written by JVM 1.2.
-    *
+    * <p>
     * Externalizable data is written in block data mode and is
     * terminated with TC_ENDBLOCKDATA. Externalizable class descriptor
     * flags has SC_BLOCK_DATA enabled. JVM 1.1.6 and greater can
     * read this format change.
-    *
+    * <p>
     * Enables writing a nonSerializable class descriptor into the
     * stream. The serialVersionUID of a nonSerializable class is
     * set to 0L.
