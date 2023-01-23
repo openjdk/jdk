@@ -41,7 +41,7 @@ class ExpiringCache {
     // Clear out old entries every few queries
     private int queryCount;
 
-    static final class Entry {
+    static class Entry {
         private long timestamp;
         private String val;
 
