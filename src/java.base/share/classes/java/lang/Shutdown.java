@@ -155,12 +155,23 @@ class Shutdown {
     /* Invoked by Runtime.exit, which does all the security checks.
      * Also invoked by handlers for system-provided termination events,
      * which should pass a nonzero status code.
+     * <p>
+     * @implNote
+     * If the system logger {@code java.lang.Runtime} is enabled for logging level DEBUG/FINE
+     * the stack trace of the call to {@code Runtime.exit()} or {@code System.exit()}
+     * is logged.
      */
     static void exit(int status) {
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
+            System.Logger log = System.getLogger("java.lang.Runtime");
+            if (log.isLoggable(System.Logger.Level.DEBUG)) {
+                Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
+                log.log(System.Logger.Level.DEBUG, "Runtime.exit() called with status: " + status,
+                        throwable);
+            }
             beforeHalt();
             runHooks();
             halt(status);
