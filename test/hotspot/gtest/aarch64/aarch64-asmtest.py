@@ -1457,8 +1457,10 @@ generate (OneRegOp, ["br", "blr",
                      "autiza", "autizb", "autdza", "autdzb", "xpacd",
                      "braaz", "brabz", "blraaz", "blrabz"])
 
-for system_reg in ["fpsr", "dczid_el0", "ctr_el0", "nzcv"]:
+for system_reg in ["fpsr", "nzcv"]:
     generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
     generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
