@@ -333,7 +333,7 @@ import java.util.Locale;
  * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
  * String forParsing = "x, y, z";
  * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
- * // result now equals {new String("z")}
+ * // objs now equals {new String("z")}
  * }
  * </blockquote>
  *

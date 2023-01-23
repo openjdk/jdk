@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare, \
+    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
     DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
@@ -428,6 +428,7 @@ else
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
+      DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -757,6 +758,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough sign-compare unused-function, \
       DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
+      DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
@@ -829,6 +831,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion parentheses-equality, \
       DISABLED_WARNINGS_clang_MTLBlitLoops.m := pointer-arith, \
       DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_MTLRenderer.m := gnu-folding-constant, \
       DISABLED_WARNINGS_clang_MTLVertexCache.m := pointer-arith, \
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
