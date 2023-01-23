@@ -36,6 +36,7 @@
 
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 #include <cstdint>
@@ -53,7 +54,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_integral<To>::value &&
                     std::is_integral<From>::value)>
-inline constexpr To bit_cast(const From& from) {
+ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -66,7 +67,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_enum<To>::value &&
                     std::is_integral<From>::value)>
-inline constexpr To bit_cast(const From& from) {
+ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -79,7 +80,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_integral<To>::value &&
                     std::is_enum<From>::value)>
-inline constexpr To bit_cast(const From& from) {
+ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -92,7 +93,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_enum<To>::value &&
                     std::is_enum<From>::value)>
-inline constexpr To bit_cast(const From& from) {
+ALWAYSINLINE constexpr To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -106,7 +107,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_pointer<To>::value &&
                     std::is_integral<From>::value)>
-inline To bit_cast(const From& from) {
+ALWAYSINLINE To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -119,7 +120,7 @@ template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     std::is_integral<To>::value &&
                     std::is_pointer<From>::value)>
-inline To bit_cast(const From& from) {
+ALWAYSINLINE To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
@@ -131,7 +132,7 @@ inline To bit_cast(const From& from) {
 template <typename To, typename From,
           ENABLE_IF(CanBitCastImpl<To, From>::value &&
                     (std::is_floating_point<To>::value || std::is_floating_point<From>::value))>
-inline To bit_cast(const From& from) {
+ALWAYSINLINE To bit_cast(const From& from) {
 #if HAS_BUILTIN(__builtin_bit_cast)
   return __builtin_bit_cast(To, from);
 #else
