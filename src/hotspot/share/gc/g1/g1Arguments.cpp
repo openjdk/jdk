@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -177,7 +177,13 @@ void G1Arguments::initialize() {
     FLAG_SET_ERGO(ParallelGCThreads, 1);
   }
 
-  if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+  if (!G1UseConcRefinement) {
+    if (!FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
+      log_warning(gc, ergo)("Ignoring -XX:G1ConcRefinementThreads "
+                            "because of -XX:-G1UseConcRefinement");
+    }
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, 0);
+  } else if (FLAG_IS_DEFAULT(G1ConcRefinementThreads)) {
     FLAG_SET_ERGO(G1ConcRefinementThreads, ParallelGCThreads);
   }
 

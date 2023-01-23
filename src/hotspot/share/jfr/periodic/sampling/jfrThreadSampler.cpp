@@ -41,6 +41,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
+#include "runtime/stackWatermark.hpp"
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "runtime/threadSMR.hpp"
@@ -256,6 +257,11 @@ void JfrNativeSamplerCallback::call() {
 }
 
 bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
+  // Process the oops in the thread head before calling into code that wants to
+  // stack walk over Loom continuations. The stack walking code will otherwise
+  // skip frames in stack chunks on the Java heap.
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+
   OSThreadSampler sampler(thread, *this, frames, max_frames);
   sampler.take_sample();
   /* We don't want to allocate any memory using malloc/etc while the thread
@@ -274,6 +280,11 @@ bool JfrThreadSampleClosure::sample_thread_in_java(JavaThread* thread, JfrStackF
 }
 
 bool JfrThreadSampleClosure::sample_thread_in_native(JavaThread* thread, JfrStackFrame* frames, u4 max_frames) {
+  // Process the oops in the thread head before calling into code that wants to
+  // stack walk over Loom continuations. The stack walking code will otherwise
+  // skip frames in stack chunks on the Java heap.
+  StackWatermarkSet::start_processing(thread, StackWatermarkKind::gc);
+
   JfrNativeSamplerCallback cb(*this, thread, frames, max_frames);
   if (JfrOptionSet::sample_protection()) {
     ThreadCrashProtection crash_protection;
@@ -299,14 +310,18 @@ static const uint MAX_NR_OF_NATIVE_SAMPLES = 1;
 void JfrThreadSampleClosure::commit_events(JfrSampleType type) {
   if (JAVA_SAMPLE == type) {
     assert(_added_java > 0 && _added_java <= MAX_NR_OF_JAVA_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_java; ++i) {
-      _events[i].commit();
+    if (EventExecutionSample::is_enabled()) {
+      for (uint i = 0; i < _added_java; ++i) {
+        _events[i].commit();
+      }
     }
   } else {
     assert(NATIVE_SAMPLE == type, "invariant");
     assert(_added_native > 0 && _added_native <= MAX_NR_OF_NATIVE_SAMPLES, "invariant");
-    for (uint i = 0; i < _added_native; ++i) {
-      _events_native[i].commit();
+    if (EventNativeMethodSample::is_enabled()) {
+      for (uint i = 0; i < _added_native; ++i) {
+        _events_native[i].commit();
+      }
     }
   }
 }

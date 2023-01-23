@@ -531,10 +531,22 @@ public:
     n->set_req_X(i, in, this);
   }
 
+  // Add "in" as input (req) of "n"
+  void add_input_to(Node* n, Node* in) {
+    rehash_node_delayed(n);
+    n->add_req(in);
+  }
+
   // Delete ith edge of "n"
   void delete_input_of(Node* n, int i) {
     rehash_node_delayed(n);
     n->del_req(i);
+  }
+
+  // Delete precedence edge i of "n"
+  void delete_precedence_of(Node* n, int i) {
+    rehash_node_delayed(n);
+    n->rm_prec(i);
   }
 
   bool delay_transform() const { return _delay_transform; }
@@ -566,7 +578,7 @@ protected:
 // Phase for performing global Conditional Constant Propagation.
 // Should be replaced with combined CCP & GVN someday.
 class PhaseCCP : public PhaseIterGVN {
-  Unique_Node_List _safepoints;
+  Unique_Node_List _root_and_safepoints;
   // Non-recursive.  Use analysis to transform single Node.
   virtual Node* transform_once(Node* n);
 
@@ -583,6 +595,8 @@ class PhaseCCP : public PhaseIterGVN {
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
@@ -590,6 +604,10 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+#ifdef ASSERT
+  // For every node n on verify list, check if type(n) == n->Value()
+  void verify_analyze(Unique_Node_List& worklist_verify);
+#endif
   // Recursive traversal of program.  Used analysis to modify program.
   virtual Node *transform( Node *n );
   // Do any transformation after analysis

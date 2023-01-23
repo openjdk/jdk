@@ -31,10 +31,66 @@
 #include "utilities/macros.hpp"
 
 const char* VM_Version::_uarch = "";
+const char* VM_Version::_vm_mode = "";
 uint32_t VM_Version::_initial_vector_length = 0;
 
 void VM_Version::initialize() {
   get_os_cpu_info();
+
+  // check if satp.mode is supported, currently supports up to SV48(RV64)
+  if (get_satp_mode() > VM_SV48) {
+    vm_exit_during_initialization(err_msg("Unsupported satp mode: %s", _vm_mode));
+  }
+
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
+  if (UseRVA20U64) {
+    if (FLAG_IS_DEFAULT(UseRVC)) {
+      FLAG_SET_DEFAULT(UseRVC, true);
+    }
+  }
+  // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva22-profiles
+  if (UseRVA22U64) {
+    if (FLAG_IS_DEFAULT(UseRVC)) {
+      FLAG_SET_DEFAULT(UseRVC, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZba)) {
+      FLAG_SET_DEFAULT(UseZba, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZbb)) {
+      FLAG_SET_DEFAULT(UseZbb, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZbs)) {
+      FLAG_SET_DEFAULT(UseZbs, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZic64b)) {
+      FLAG_SET_DEFAULT(UseZic64b, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZicbom)) {
+      FLAG_SET_DEFAULT(UseZicbom, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZicbop)) {
+      FLAG_SET_DEFAULT(UseZicbop, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZicboz)) {
+      FLAG_SET_DEFAULT(UseZicboz, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZfhmin)) {
+      FLAG_SET_DEFAULT(UseZfhmin, true);
+    }
+  }
+
+  if (UseZic64b) {
+    if (CacheLineSize != 64) {
+      assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
+      warning("CacheLineSize is assumed to be 64 bytes because Zic64b is enabled");
+      FLAG_SET_DEFAULT(CacheLineSize, 64);
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(CacheLineSize) && !is_power_of_2(CacheLineSize)) {
+      warning("CacheLineSize must be a power of 2");
+      FLAG_SET_DEFAULT(CacheLineSize, DEFAULT_CACHE_LINE_SIZE);
+    }
+  }
 
   if (FLAG_IS_DEFAULT(UseFMA)) {
     FLAG_SET_DEFAULT(UseFMA, true);
@@ -113,6 +169,11 @@ void VM_Version::initialize() {
   if (UseRVC && !(_features & CPU_C)) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
+
+    if (UseRVA20U64) {
+      warning("UseRVA20U64 is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseRVA20U64, false);
+    }
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
@@ -125,6 +186,18 @@ void VM_Version::initialize() {
     }
   } else {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+  }
+
+  if (UseZicboz) {
+    if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
+      FLAG_SET_DEFAULT(UseBlockZeroing, true);
+    }
+    if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * CacheLineSize);
+    }
+  } else if (UseBlockZeroing) {
+    warning("Block zeroing is not available");
+    FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
   char buf[512];
@@ -181,9 +254,43 @@ void VM_Version::c2_initialize() {
     }
   }
 
-  // disable prefetch
-  if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+  if (!UseZicbop) {
+    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      warning("Zicbop is not available on this CPU");
+    }
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+  } else {
+    // Limit AllocatePrefetchDistance so that it does not exceed the
+    // constraint in AllocatePrefetchDistanceConstraintFunc.
+    if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
+    }
+    if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize)) {
+      FLAG_SET_DEFAULT(AllocatePrefetchStepSize, (int)CacheLineSize);
+    }
+    if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
+      FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 3 * (int)CacheLineSize);
+    }
+    if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
+      FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3 * (int)CacheLineSize);
+    }
+
+    if (PrefetchCopyIntervalInBytes != -1 &&
+        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
+      warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
+      PrefetchCopyIntervalInBytes &= ~7;
+      if (PrefetchCopyIntervalInBytes >= 32768) {
+        PrefetchCopyIntervalInBytes = 32760;
+      }
+    }
+    if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
+      warning("AllocatePrefetchDistance must be multiple of 8");
+      AllocatePrefetchDistance &= ~7;
+    }
+    if (AllocatePrefetchStepSize & 7) {
+      warning("AllocatePrefetchStepSize must be multiple of 8");
+      AllocatePrefetchStepSize &= ~7;
+    }
   }
 
   if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {

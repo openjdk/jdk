@@ -180,18 +180,18 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Need new claim bits before marking starts.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 
   {
     StrongRootsScope srs(0);
 
-    gch->full_process_roots(false, // not the adjust phase
-                            GenCollectedHeap::SO_None,
-                            ClassUnloading, // only strong roots if ClassUnloading
-                                            // is enabled
-                            &follow_root_closure,
-                            &follow_cld_closure);
+    CLDClosure* weak_cld_closure = ClassUnloading ? NULL : &follow_cld_closure;
+    MarkingCodeBlobClosure mark_code_closure(&follow_root_closure, !CodeBlobToOopClosure::FixRelocations, true);
+    gch->process_roots(GenCollectedHeap::SO_None,
+                       &follow_root_closure,
+                       &follow_cld_closure,
+                       weak_cld_closure,
+                       &mark_code_closure);
   }
 
   // Process reference objects found during marking
@@ -236,16 +236,9 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 void GenMarkSweep::mark_sweep_phase2() {
   // Now all live objects are marked, compute the new object addresses.
-
-  // It is not required that we traverse spaces in the same order in
-  // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
-  // tracking expects us to do so. See comment under phase4.
-
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-
   GCTraceTime(Info, gc, phases) tm("Phase 2: Compute new object addresses", _gc_timer);
 
-  gch->prepare_for_compaction();
+  GenCollectedHeap::heap()->prepare_for_compaction();
 }
 
 class GenAdjustPointersClosure: public GenCollectedHeap::GenClosure {
@@ -261,18 +254,14 @@ void GenMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
   GCTraceTime(Info, gc, phases) tm("Phase 3: Adjust pointers", gc_timer());
 
-  // Need new claim bits for the pointer adjustment tracing.
-  ClassLoaderDataGraph::clear_claimed_marks();
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-  {
-    StrongRootsScope srs(0);
-
-    gch->full_process_roots(true,  // this is the adjust phase
-                            GenCollectedHeap::SO_AllCodeCache,
-                            false, // all roots
-                            &adjust_pointer_closure,
-                            &adjust_cld_closure);
-  }
+  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  gch->process_roots(GenCollectedHeap::SO_AllCodeCache,
+                     &adjust_pointer_closure,
+                     &adjust_cld_closure,
+                     &adjust_cld_closure,
+                     &code_closure);
 
   gch->gen_process_weak_roots(&adjust_pointer_closure);
 
@@ -290,20 +279,8 @@ public:
 
 void GenMarkSweep::mark_sweep_phase4() {
   // All pointers are now adjusted, move objects accordingly
-
-  // It is imperative that we traverse perm_gen first in phase4. All
-  // classes must be allocated earlier than their instances, and traversing
-  // perm_gen first makes sure that all Klass*s have moved to their new
-  // location before any instance does a dispatch through it's klass!
-
-  // The ValidateMarkSweep live oops tracking expects us to traverse spaces
-  // in the same order in phase2, phase3 and phase4. We don't quite do that
-  // here (perm_gen first rather than last), so we tell the validate code
-  // to use a higher index (saved from phase2) when verifying perm_gen.
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-
   GCTraceTime(Info, gc, phases) tm("Phase 4: Move objects", _gc_timer);
 
   GenCompactClosure blk;
-  gch->generation_iterate(&blk, true);
+  GenCollectedHeap::heap()->generation_iterate(&blk, true);
 }

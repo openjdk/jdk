@@ -26,10 +26,11 @@
 #ifndef SHARE_MEMORY_METASPACE_COUNTERS_HPP
 #define SHARE_MEMORY_METASPACE_COUNTERS_HPP
 
-#include "metaprogramming/isSigned.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 namespace metaspace {
 
@@ -43,7 +44,7 @@ class AbstractCounter {
   T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(IsSigned<T>::value == false);
+  STATIC_ASSERT(std::is_signed<T>::value == false);
 
 public:
 
@@ -86,7 +87,7 @@ class AbstractAtomicCounter {
   volatile T _c;
 
   // Only allow unsigned values for now
-  STATIC_ASSERT(IsSigned<T>::value == false);
+  STATIC_ASSERT(std::is_signed<T>::value == false);
 
 public:
 

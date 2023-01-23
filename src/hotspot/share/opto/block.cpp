@@ -543,6 +543,48 @@ void PhaseCFG::insert_goto_at(uint block_no, uint succ_no) {
   block->_freq = freq;
   // add new basic block to basic block list
   add_block_at(block_no + 1, block);
+  // Update dominator tree information of the new goto block.
+  block->_idom = in;
+  block->_dom_depth = in->_dom_depth + 1;
+  if (out->_idom != in) {
+    // The successor block was not immediately dominated by the predecessor
+    // block, so there is no dominator subtree to update.
+    return;
+  }
+  // Update immediate dominator of the successor block.
+  out->_idom = block;
+  // Increment the dominator tree depth of the goto block's descendants. These
+  // are found by a depth-first search starting from the successor block. Two
+  // domination properties guarantee that only descendant blocks are visited:
+  // 1) all dominators of a block b must appear in any path from the root to b;
+  // 2) if a block b does not dominate another block b', b cannot dominate any
+  //    block reachable from b' either.
+  // The exploration uses header indices as block identifiers, since
+  // Block::_pre_order might not be unique in the context of this function.
+  ResourceMark rm;
+  VectorSet descendants;
+  descendants.set(block->head()->_idx); // The goto block is a descendant of itself.
+  Block_List worklist;
+  worklist.push(out); // Start exploring from the successor block.
+  while (worklist.size() > 0) {
+    Block* b = worklist.pop();
+    // The immediate dominator of b is a descendant, hence b is also a
+    // descendant. Even though all predecessors of b might not have been visited
+    // yet, we know that all dominators of b have been already visited (since
+    // they must appear in any path from the goto block to b).
+    descendants.set(b->head()->_idx);
+    b->_dom_depth++;
+    for (uint i = 0; i < b->_num_succs; i++) {
+      Block* s = b->_succs[i];
+      if (s != get_root_block() &&
+          !descendants.test(s->head()->_idx) &&
+          // Do not search below non-descendant successors, since any block
+          // reachable from them cannot be descendant either.
+          descendants.test(s->_idom->head()->_idx)) {
+        worklist.push(s);
+      }
+    }
+  }
 }
 
 // Does this block end in a multiway branch that cannot have the default case
@@ -578,10 +620,13 @@ static bool no_flip_branch(Block *b) {
 // fake exit path to infinite loops.  At this late stage they need to turn
 // into Goto's so that when you enter the infinite loop you indeed hang.
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
-  // Find true target
   int end_idx = b->end_idx();
-  int idx = b->get_node(end_idx+1)->as_Proj()->_con;
-  Block *succ = b->_succs[idx];
+  NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
+  assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
+
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, b->head());
   Node *bp = b->get_node(end_idx);
@@ -600,7 +645,6 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
     }
   }
   // Kill alternate exit path
-  Block* dead = b->_succs[1 - idx];
   for (j = 1; j < dead->num_preds(); j++) {
     if (dead->pred(j)->in(0) == bp) {
       break;
@@ -698,7 +742,7 @@ void PhaseCFG::remove_empty_blocks() {
     // to give a fake exit path to infinite loops.  At this late stage they
     // need to turn into Goto's so that when you enter the infinite loop you
     // indeed hang.
-    if (block->get_node(block->end_idx())->Opcode() == Op_NeverBranch) {
+    if (block->get_node(block->end_idx())->is_NeverBranch()) {
       convert_NeverBranch_to_Goto(block);
     }
 
@@ -1272,6 +1316,23 @@ void PhaseCFG::verify_memory_writer_placement(const Block* b, const Node* n) con
   assert(found, "block b is not in n's home loop or an ancestor of it");
 }
 
+void PhaseCFG::verify_dominator_tree() const {
+  for (uint i = 0; i < number_of_blocks(); i++) {
+    Block* block = get_block(i);
+    assert(block->_dom_depth <= number_of_blocks(), "unexpected dominator tree depth");
+    if (block == get_root_block()) {
+      assert(block->_dom_depth == 1, "unexpected root dominator tree depth");
+      // The root block does not have an immediate dominator, stop checking.
+      continue;
+    }
+    assert(block->_idom != nullptr, "non-root blocks must have immediate dominators");
+    assert(block->_dom_depth == block->_idom->_dom_depth + 1,
+           "the dominator tree depth of a node must succeed that of its immediate dominator");
+    assert(block->num_preds() > 2 || block->_idom == get_block_for_node(block->pred(1)),
+           "the immediate dominator of a single-predecessor block must be the predecessor");
+  }
+}
+
 void PhaseCFG::verify() const {
   // Verify sane CFG
   for (uint i = 0; i < number_of_blocks(); i++) {
@@ -1314,7 +1375,13 @@ void PhaseCFG::verify() const {
                 }
               }
             }
-            assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
+            // Uses must be before definition, except if:
+            // - We are in some kind of loop we already detected
+            // - We are in infinite loop, where Region may not have been turned into LoopNode
+            assert(block->find_node(def) < j ||
+                   is_loop ||
+                   (n->is_Phi() && block->head()->as_Region()->is_in_infinite_subgraph()),
+                   "uses must follow definitions (except in loops)");
           }
         }
       }
@@ -1341,6 +1408,7 @@ void PhaseCFG::verify() const {
       assert(block->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
+  verify_dominator_tree();
 }
 #endif // ASSERT
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,19 +28,19 @@
 #pragma alloca
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
@@ -998,8 +998,6 @@ int os::current_process_id() {
 
 // DLL functions
 
-const char* os::dll_file_extension() { return ".so"; }
-
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
@@ -1874,7 +1872,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 

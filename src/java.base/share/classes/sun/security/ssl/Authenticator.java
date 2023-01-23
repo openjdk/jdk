@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ abstract class Authenticator {
      *
      * Sequence numbers are of type uint64 and may not exceed 2^64-1.
      * Sequence numbers do not wrap.  If a TLS
-     * implementation would need to wrap a sequence number, it must
+     * implementation needs to wrap a sequence number, it must
      * renegotiate instead.
      *
      * @return true if the sequence number is huge enough to renew

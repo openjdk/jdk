@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,17 +58,34 @@ public class GcProvoker{
      * This method provokes a GC
      */
     public void provokeGc() {
+        float targetFraction = 0;
+        // Read sizes of eden and overall heap, to find eden size as a fraction of heap.
+        // Recognise if heap is changing size, and retry (heap is expected to initially shrink).
         for (int i = 0; i < 3; i++) {
+            // One retry is expected occasionally.  More "should not happen":
+            if (i == 2) {
+                throw new RuntimeException("Cannot calculate targetFraction.  Heap size not stable.");
+            }
+            long heapSize0 = Pools.getHeapCommittedSize();
             long edenSize = Pools.getEdenCommittedSize();
             long heapSize = Pools.getHeapCommittedSize();
-            float targetPercent = ((float) edenSize) / (heapSize);
-            if ((targetPercent < 0) || (targetPercent > 1.0)) {
-                throw new RuntimeException("Error in the percent calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize + ", calculated eden percent: " + targetPercent + ")");
+            if (heapSize < heapSize0) {
+                System.out.println("provokeGc: Heap shrinking, retry. eden: " + edenSize + ", heap0: " + heapSize0 + ", heap: " + heapSize);
+                System.gc();
+                continue;
             }
-            allocateHeap(targetPercent);
-            allocateHeap(targetPercent);
-            System.gc();
+            targetFraction = ((float) edenSize) / (heapSize);
+            if ((targetFraction < 0) || (targetFraction > 1.0)) {
+                throw new RuntimeException("Error in fraction calculation" + " (eden size: " + edenSize + ", heap size: " + heapSize
+                                           + ", calculated eden fraction: " + targetFraction + ")");
+            }
+            break; // We have found eden as a fraction of heap.
         }
+        // Previously these allocations and GC call were in a loop.
+        // That appears unnecesary as the goal is simply to cause a GC:
+        allocateHeap(targetFraction);
+        allocateHeap(targetFraction);
+        System.gc();
     }
 
     public GcProvoker() {

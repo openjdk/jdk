@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveUtils.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.hpp"
@@ -37,6 +36,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -814,7 +814,7 @@ static void trace_method_resolution(const char* prefix,
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
             (klass == NULL ? "<NULL>" : klass->internal_name()),
-            (resolved_klass == NULL ? "<NULL>" : resolved_klass->internal_name()),
+            resolved_klass->internal_name(),
             Method::name_and_sig_as_C_string(resolved_klass,
                                              method->name(),
                                              method->signature()),
@@ -970,17 +970,16 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
   Symbol* field = link_info.name();
   Symbol* sig = link_info.signature();
 
-  if (resolved_klass == NULL) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), field->as_C_string());
-  }
-
   // Resolve instance field
   Klass* sel_klass = resolved_klass->find_field(field, sig, &fd);
   // check if field exists; i.e., if a klass containing the field def has been selected
   if (sel_klass == NULL) {
     ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), field->as_C_string());
+    stringStream ss;
+    ss.print("Class %s does not have member field '", resolved_klass->external_name());
+    sig->print_as_field_external_type(&ss);
+    ss.print(" %s'", field->as_C_string());
+    THROW_MSG(vmSymbols::java_lang_NoSuchFieldError(), ss.as_string());
   }
 
   // Access checking may be turned off when calling from within the VM.

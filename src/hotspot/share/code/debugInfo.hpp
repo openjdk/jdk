@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ class ConstantOopWriteValue;
 class LocationValue;
 class ObjectValue;
 
-class ScopeValue: public ResourceObj {
+class ScopeValue: public AnyObj {
  public:
   // Testers
   virtual bool is_location() const { return false; }
@@ -138,7 +138,7 @@ class ObjectValue: public ScopeValue {
 
   ObjectValue(int id)
      : _id(id)
-     , _klass(NULL)
+     , _klass(nullptr)
      , _field_values()
      , _value()
      , _visited(false) {}
@@ -301,7 +301,7 @@ class DebugInfoReadStream : public CompressedReadStream {
   const CompiledMethod* code() const { return _code; }
   GrowableArray<ScopeValue*>* _obj_pool;
  public:
-  DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = NULL) :
+  DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = nullptr) :
     CompressedReadStream(code->scopes_data_begin(), offset) {
     _code = code;
     _obj_pool = obj_pool;
@@ -312,7 +312,7 @@ class DebugInfoReadStream : public CompressedReadStream {
   Method* read_method() {
     Method* o = (Method*)(code()->metadata_at(read_int()));
     // is_metadata() is a faster check than is_metaspace_object()
-    assert(o == NULL || o->is_metadata(), "meta data only");
+    assert(o == nullptr || o->is_metadata(), "meta data only");
     return o;
   }
   ScopeValue* read_object_value(bool is_auto_box);

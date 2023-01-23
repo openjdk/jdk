@@ -26,7 +26,6 @@
 // This file is organized as os_linux_x86.cpp.
 
 // no precompiled headers
-#include "jvm.h"
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
@@ -34,6 +33,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "nativeInst_s390.hpp"
 #include "os_linux.hpp"
@@ -441,9 +441,8 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
-  intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", p2i(sp));
-  print_hex_dump(st, (address)sp, (address)(sp + 128), sizeof(intptr_t));
+  address sp = (address)os::Linux::ucontext_get_sp(uc);
+  print_tos(st, sp);
   st->cr();
 
   // Note: it may be unsafe to inspect memory near pc. For example, pc may

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ class LogSelection : public StackObj {
  public:
   static const LogSelection Invalid;
 
-  static LogSelection parse(const char* str, outputStream* error_stream = NULL);
+  static LogSelection parse(const char* str, outputStream* error_stream = nullptr);
 
   LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard, LogLevelType level);
 
@@ -61,8 +61,8 @@ class LogSelection : public StackObj {
   bool selects(const LogTagSet& ts) const;
   bool consists_of(const LogTagType tags[LogTag::MaxTags]) const;
 
-  int describe_tags(char* buf, size_t bufsize) const;
-  int describe(char* buf, size_t bufsize) const;
+  void describe_tags_on(outputStream* out) const;
+  void describe_on(outputStream* out) const;
 
   // List similar selections that matches existing tag sets on the given outputstream
   void suggest_similar_matching(outputStream* out) const;

@@ -32,7 +32,7 @@
 #endif
 
 
-class ciTypeFlow : public ResourceObj {
+class ciTypeFlow : public ArenaObj {
 private:
   ciEnv*    _env;
   ciMethod* _method;
@@ -66,7 +66,7 @@ public:
   // Represents information about an "active" jsr call.  This
   // class represents a call to the routine at some entry address
   // with some distinct return address.
-  class JsrRecord : public ResourceObj {
+  class JsrRecord : public ArenaObj {
   private:
     int _entry_address;
     int _return_address;
@@ -97,7 +97,7 @@ public:
   //
   // Note that different amounts of effort can be expended determining
   // if paths are compatible.  <DISCUSSION>
-  class JsrSet : public ResourceObj {
+  class JsrSet : public AnyObj {
   private:
     GrowableArray<JsrRecord*> _set;
 
@@ -153,7 +153,7 @@ public:
 
   // A StateVector summarizes the type information at some
   // point in the program
-  class StateVector : public ResourceObj {
+  class StateVector : public AnyObj {
   private:
     ciType**    _types;
     int         _stack_size;
@@ -513,7 +513,7 @@ public:
   };
 
   // A basic block
-  class Block : public ResourceObj {
+  class Block : public ArenaObj {
   private:
     ciBlock*                          _ciblock;
     GrowableArray<Block*>*           _exceptions;
@@ -707,7 +707,7 @@ public:
   };
 
   // Loop
-  class Loop : public ResourceObj {
+  class Loop : public ArenaObj {
   private:
     Loop* _parent;
     Loop* _sibling;  // List of siblings, null terminated
@@ -926,6 +926,7 @@ public:
   // Determine if bci is dominated by dom_bci
   bool is_dominated_by(int bci, int dom_bci);
 
+  void print() const PRODUCT_RETURN;
   void print_on(outputStream* st) const PRODUCT_RETURN;
 
   void rpo_print_on(outputStream* st) const PRODUCT_RETURN;

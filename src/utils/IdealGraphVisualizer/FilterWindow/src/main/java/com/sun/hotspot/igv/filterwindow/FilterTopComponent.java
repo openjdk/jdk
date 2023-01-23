@@ -184,13 +184,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filterSettings.add(setting);
 
             // Sort alphabetically
-            filterSettings.sort(new Comparator<FilterSetting>() {
-
-                @Override
-                public int compare(FilterSetting o1, FilterSetting o2) {
-                    return o1.getName().compareTo(o2.getName());
-                }
-            });
+            filterSettings.sort(Comparator.comparing(FilterSetting::getName));
 
             updateComboBox();
         }
@@ -268,13 +262,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
 
         public FilterChildren() {
-            sequence.getChangedEvent().addListener(new ChangedListener<FilterChain>() {
-
-                @Override
-                public void changed(FilterChain source) {
-                    addNotify();
-                }
-            });
+            sequence.getChangedEvent().addListener(source -> addNotify());
 
             setBefore(false);
         }
@@ -546,7 +534,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     /**
      * Gets default instance. Do not use directly: reserved for *.settings files only,
      * i.e. deserialization routines; otherwise you could get a non-deserialized instance.
-     * To obtain the singleton instance, use {@link findInstance}.
+     * To obtain the singleton instance, use {@link #findInstance()}.
      */
     public static synchronized FilterTopComponent getDefault() {
         if (instance == null) {
@@ -705,14 +693,5 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             filterSettings.add(s);
         }
         updateComboBox();
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return FilterTopComponent.getDefault();
-        }
     }
 }

@@ -133,6 +133,10 @@ public interface Types {
      * will appear last in the list. For an interface type with no direct
      * super-interfaces, a type mirror representing {@code java.lang.Object}
      * is returned.
+     * The type {@code java.lang.Object} has no direct supertype (JLS
+     * {@jls 8.1.4}, {@jls 8.1.5}) so an empty list is returned for
+     * the direct supertypes of a type mirror representing {@code
+     * java.lang.Object}.
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none

@@ -57,18 +57,17 @@ final class HandleCleaner extends Cleaner {
      * Releases the resource associated with {@code this.handle}.
      */
     @Override
-    void doCleanup() {
+    boolean doCleanup() {
         if (isJObject) {
-            // The sentinel value used to denote a free handle is
-            // an object on the HotSpot heap so we call into the
-            // VM to set the target of an object handle to this value.
-            CompilerToVM.compilerToVM().deleteGlobalHandle(handle);
+            IndirectHotSpotObjectConstantImpl.clearHandle(handle);
+            return true;
         } else {
             // Setting the target of a jmetadata handle to 0 enables
             // the handle to be reused. See MetadataHandles in
             // metadataHandles.hpp for more info.
             long value = UNSAFE.getLong(null, handle);
             UNSAFE.compareAndSetLong(null, handle, value, 0);
+            return false;
         }
     }
 

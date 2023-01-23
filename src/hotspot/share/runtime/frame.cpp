@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -390,11 +390,6 @@ frame frame::real_sender(RegisterMap* map) const {
 // Interpreter frames
 
 
-void frame::interpreter_frame_set_locals(intptr_t* locs)  {
-  assert(is_interpreted_frame(), "Not an interpreted frame");
-  *interpreter_frame_locals_addr() = locs;
-}
-
 Method* frame::interpreter_frame_method() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   Method* m = *interpreter_frame_method_addr();
@@ -464,8 +459,7 @@ BasicObjectLock* frame::previous_monitor_in_interpreter_frame(BasicObjectLock* c
 
 intptr_t* frame::interpreter_frame_local_at(int index) const {
   const int n = Interpreter::local_offset_in_bytes(index)/wordSize;
-  intptr_t* first = _on_heap ? fp() + (intptr_t)*interpreter_frame_locals_addr()
-                             : *interpreter_frame_locals_addr();
+  intptr_t* first = interpreter_frame_locals();
   return &(first[n]);
 }
 
@@ -570,8 +564,8 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
   for (BasicObjectLock* current = interpreter_frame_monitor_end();
        current < interpreter_frame_monitor_begin();
        current = next_monitor_in_interpreter_frame(current)) {
-    st->print(" - obj    [");
-    current->obj()->print_value_on(st);
+    st->print(" - obj    [%s", current->obj() == nullptr ? "null" : "");
+    if (current->obj() != nullptr) current->obj()->print_value_on(st);
     st->print_cr("]");
     st->print(" - lock   [");
     current->lock()->print_on(st, current->obj());
@@ -773,8 +767,6 @@ class InterpreterFrameClosure : public OffsetClosure {
       }
     }
   }
-
-  int max_locals()  { return _max_locals; }
 };
 
 
@@ -1253,10 +1245,10 @@ private:
 
 public:
   FrameValuesOopClosure() {
-    _oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _narrow_oops = new (ResourceObj::C_HEAP, mtThread) GrowableArray<narrowOop*>(100, mtThread);
-    _base = new (ResourceObj::C_HEAP, mtThread) GrowableArray<oop*>(100, mtThread);
-    _derived = new (ResourceObj::C_HEAP, mtThread) GrowableArray<derived_pointer*>(100, mtThread);
+    _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
+    _base = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
   }
   ~FrameValuesOopClosure() {
     delete _oops;
@@ -1567,7 +1559,7 @@ void FrameValues::validate() {
       prev = fv;
     }
   }
-  // if (error) { tty->cr(); print_on((JavaThread*)nullptr, tty); }
+  // if (error) { tty->cr(); print_on(static_cast<JavaThread*>(nullptr), tty); }
   assert(!error, "invalid layout");
 }
 #endif // ASSERT
@@ -1629,7 +1621,14 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
     } else {
       if (on_heap
           && *fv.location != 0 && *fv.location > -100 && *fv.location < 100
-          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))) {
+#if !defined(PPC64)
+          && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
+#else  // !defined(PPC64)
+          && (strcmp(fv.description, "sender_sp") == 0 || strcmp(fv.description, "top_frame_sp") == 0 ||
+              strcmp(fv.description, "esp") == 0 || strcmp(fv.description, "monitors") == 0 ||
+              strcmp(fv.description, "locals") == 0 || strstr(fv.description, " method "))
+#endif //!defined(PPC64)
+          ) {
         st->print_cr(" " INTPTR_FORMAT ": %18d %s", p2i(fv.location), (int)*fv.location, fv.description);
       } else {
         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);

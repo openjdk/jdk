@@ -3111,7 +3111,8 @@ public class Resolve {
         boundSearchResolveContext.methodCheck = methodCheck;
         Symbol boundSym = lookupMethod(boundEnv, env.tree.pos(),
                 site.tsym, boundSearchResolveContext, boundLookupHelper);
-        ReferenceLookupResult boundRes = new ReferenceLookupResult(boundSym, boundSearchResolveContext);
+        boolean isStaticSelector = TreeInfo.isStaticSelector(referenceTree.expr, names);
+        ReferenceLookupResult boundRes = new ReferenceLookupResult(boundSym, boundSearchResolveContext, isStaticSelector);
         if (dumpMethodReferenceSearchResults) {
             dumpMethodReferenceSearchResults(referenceTree, boundSearchResolveContext, boundSym, true);
         }
@@ -3127,7 +3128,7 @@ public class Resolve {
             unboundSearchResolveContext.methodCheck = methodCheck;
             unboundSym = lookupMethod(unboundEnv, env.tree.pos(),
                     site.tsym, unboundSearchResolveContext, unboundLookupHelper);
-            unboundRes = new ReferenceLookupResult(unboundSym, unboundSearchResolveContext);
+            unboundRes = new ReferenceLookupResult(unboundSym, unboundSearchResolveContext, isStaticSelector);
             if (dumpMethodReferenceSearchResults) {
                 dumpMethodReferenceSearchResults(referenceTree, unboundSearchResolveContext, unboundSym, false);
             }
@@ -3238,8 +3239,8 @@ public class Resolve {
         /** The lookup result. */
         Symbol sym;
 
-        ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext) {
-            this(sym, staticKind(sym, resolutionContext));
+        ReferenceLookupResult(Symbol sym, MethodResolutionContext resolutionContext, boolean isStaticSelector) {
+            this(sym, staticKind(sym, resolutionContext, isStaticSelector));
         }
 
         private ReferenceLookupResult(Symbol sym, StaticKind staticKind) {
@@ -3247,17 +3248,17 @@ public class Resolve {
             this.sym = sym;
         }
 
-        private static StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext) {
-            switch (sym.kind) {
-                case MTH:
-                case AMBIGUOUS:
-                    return resolutionContext.candidates.stream()
-                            .filter(c -> c.isApplicable() && c.step == resolutionContext.step)
-                            .map(c -> StaticKind.from(c.sym))
-                            .reduce(StaticKind::reduce)
-                            .orElse(StaticKind.UNDEFINED);
-                default:
-                    return StaticKind.UNDEFINED;
+        private static StaticKind staticKind(Symbol sym, MethodResolutionContext resolutionContext, boolean isStaticSelector) {
+            if (sym.kind == MTH && !isStaticSelector) {
+                return StaticKind.from(sym);
+            } else if (sym.kind == MTH || sym.kind == AMBIGUOUS) {
+                return resolutionContext.candidates.stream()
+                        .filter(c -> c.isApplicable() && c.step == resolutionContext.step)
+                        .map(c -> StaticKind.from(c.sym))
+                        .reduce(StaticKind::reduce)
+                        .orElse(StaticKind.UNDEFINED);
+            } else {
+                return StaticKind.UNDEFINED;
             }
         }
 
@@ -3680,7 +3681,9 @@ public class Resolve {
                 List<Type> typeargtypes, MethodResolutionPhase maxPhase) {
             super(referenceTree, names.init, site, argtypes, typeargtypes, maxPhase);
             if (site.isRaw()) {
-                this.site = new ClassType(site.getEnclosingType(), site.tsym.type.getTypeArguments(), site.tsym, site.getMetadata());
+                this.site = new ClassType(site.getEnclosingType(),
+                        !(site.tsym.isInner() && site.getEnclosingType().isRaw()) ?
+                                site.tsym.type.getTypeArguments() : List.nil(), site.tsym, site.getMetadata());
                 needsInference = true;
             }
         }
@@ -4170,17 +4173,34 @@ public class Resolve {
 
             Pair<Symbol, JCDiagnostic> c = errCandidate();
             Symbol ws = c.fst.asMemberOf(site, types);
-            return diags.create(dkind, log.currentSource(), pos,
-                      "cant.apply.symbol",
-                      compactMethodDiags ?
-                              d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
-                      kindName(ws),
-                      ws.name == names.init ? ws.owner.name : ws.name,
-                      methodArguments(ws.type.getParameterTypes()),
-                      methodArguments(argtypes),
-                      kindName(ws.owner),
-                      ws.owner.type,
-                      c.snd);
+
+            // If the problem is due to type arguments, then the method parameters aren't relevant,
+            // so use the error message that omits them to avoid confusion.
+            switch (c.snd.getCode()) {
+                case "compiler.misc.wrong.number.type.args":
+                case "compiler.misc.explicit.param.do.not.conform.to.bounds":
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol.noargs",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+                default:
+                    return diags.create(dkind, log.currentSource(), pos,
+                              "cant.apply.symbol",
+                              compactMethodDiags ?
+                                      d -> MethodResolutionDiagHelper.rewrite(diags, pos, log.currentSource(), dkind, c.snd) : null,
+                              kindName(ws),
+                              ws.name == names.init ? ws.owner.name : ws.name,
+                              methodArguments(ws.type.getParameterTypes()),
+                              methodArguments(argtypes),
+                              kindName(ws.owner),
+                              ws.owner.type,
+                              c.snd);
+            }
         }
 
         @Override

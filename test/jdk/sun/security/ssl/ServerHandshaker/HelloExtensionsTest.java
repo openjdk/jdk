@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class HelloExtensionsTest {
          Unknown (hash:0x3, signature:0x1), SHA1withECDSA,
          SHA1withRSA, SHA1withDSA
          Extension server_name, server_name:
-         [host_name: bugs.openjdk.java.net]
+         [host_name: bugs.openjdk.org]
          */
 
         String hello = "16030300df010000db03035898b7826c8c0cc" +

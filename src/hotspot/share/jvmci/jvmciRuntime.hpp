@@ -24,9 +24,9 @@
 #ifndef SHARE_JVMCI_JVMCIRUNTIME_HPP
 #define SHARE_JVMCI_JVMCIRUNTIME_HPP
 
-#include "jvm_io.h"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jvm_io.h"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciExceptions.hpp"
 #include "jvmci/jvmciObject.hpp"
@@ -223,14 +223,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // JVMCI_lock must be held by current thread
   static JVMCIRuntime* select_runtime_in_shutdown(JavaThread* thread);
 
-  // Helpers for destroy_oop_handle
-  int _last_found_oop_handle_index;
-  bool probe_oop_handle(jlong handle, int index);
-  int find_oop_handle(jlong handle);
-
   // Releases all the non-null entries in _oop_handles and then clears
-  // the list. Returns the number of non-null entries prior to clearing.
-  int release_and_clear_globals();
+  // the list. Returns the number released handles.
+  int release_and_clear_oop_handles();
 
  public:
   JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker);
@@ -277,10 +272,12 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // used when creating an IndirectHotSpotObjectConstantImpl in the
   // shared library JavaVM.
   jlong make_oop_handle(const Handle& obj);
-  bool is_oop_handle(jlong handle);
 
-  // Called from IndirectHotSpotObjectConstantImpl.clear(Object)
-  void destroy_oop_handle(jlong handle);
+  // Releases all the non-null entries in _oop_handles whose referent is null.
+  // Returns the number of handles released by this call.
+  // The method also resets _last_found_oop_handle_index to -1
+  // and _null_oop_handles to 0.
+  int release_cleared_oop_handles();
 
   // Allocation and management of metadata handles.
   jmetadata allocate_handle(const methodHandle& handle);

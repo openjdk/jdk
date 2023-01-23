@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -57,13 +57,13 @@ class PhaseTypeGuard : public StackObj {
 Semaphore PhaseTypeGuard::_mutex_semaphore(1);
 
 // Table for mapping compiler phases names to int identifiers.
-static GrowableArray<const char*>* phase_names = NULL;
+static GrowableArray<const char*>* phase_names = nullptr;
 
 class CompilerPhaseTypeConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer) {
     PhaseTypeGuard guard;
-    assert(phase_names != NULL, "invariant");
+    assert(phase_names != nullptr, "invariant");
     assert(phase_names->is_nonempty(), "invariant");
     const u4 nof_entries = phase_names->length();
     writer.write_count(nof_entries);
@@ -89,8 +89,8 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   bool register_jfr_serializer = false;
   {
     PhaseTypeGuard guard(sync);
-    if (phase_names == NULL) {
-      phase_names = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<const char*>(100, mtCompiler);
+    if (phase_names == nullptr) {
+      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);

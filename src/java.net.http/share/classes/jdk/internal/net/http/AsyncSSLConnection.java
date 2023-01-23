@@ -103,7 +103,7 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return ConnectionPool.cacheKey(address, null);
+        return ConnectionPool.cacheKey(true, address, null);
     }
 
     @Override

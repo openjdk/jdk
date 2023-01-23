@@ -35,7 +35,7 @@ public class TIFFImageMetadataFormatResources extends ListResourceBundle {
         { "TIFFIFD/parentTagName",
           "A mnemonic name for the field pointing to this IFD, if known" },
         { "TIFFField", "A field containing data" },
-        { "TIFFField/number", "The tag number asociated with the field" },
+        { "TIFFField/number", "The tag number associated with the field" },
         { "TIFFField/name",
           "A mnemonic name associated with the field, if known" },
 

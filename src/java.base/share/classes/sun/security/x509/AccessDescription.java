@@ -37,9 +37,9 @@ public final class AccessDescription {
 
     private int myhash = -1;
 
-    private ObjectIdentifier accessMethod;
+    private final ObjectIdentifier accessMethod;
 
-    private GeneralName accessLocation;
+    private final GeneralName accessLocation;
 
     public static final ObjectIdentifier Ad_OCSP_Id =
         ObjectIdentifier.of(KnownOIDs.OCSP);
@@ -72,7 +72,7 @@ public final class AccessDescription {
         return accessLocation;
     }
 
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
         tmp.putOID(accessMethod);
         accessLocation.encode(tmp);
@@ -99,7 +99,7 @@ public final class AccessDescription {
     }
 
     public String toString() {
-        String method = null;
+        String method;
         if (accessMethod.equals(Ad_CAISSUERS_Id)) {
             method = "caIssuers";
         } else if (accessMethod.equals(Ad_CAREPOSITORY_Id)) {

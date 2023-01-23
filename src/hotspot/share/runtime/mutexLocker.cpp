@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -66,7 +69,6 @@ Mutex*   SymbolArena_lock             = NULL;
 Monitor* StringDedup_lock             = NULL;
 Mutex*   StringDedupIntern_lock       = NULL;
 Monitor* CodeCache_lock               = NULL;
-Mutex*   MethodData_lock              = NULL;
 Mutex*   TouchedMethodLog_lock        = NULL;
 Mutex*   RetData_lock                 = NULL;
 Monitor* VMOperation_lock             = NULL;
@@ -153,6 +155,7 @@ Mutex*   DumpRegion_lock              = NULL;
 Mutex*   ClassListFile_lock           = NULL;
 Mutex*   UnregisteredClassesTable_lock= NULL;
 Mutex*   LambdaFormInvokers_lock      = NULL;
+Mutex*   ScratchObjects_lock          = NULL;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = NULL;
 
@@ -190,11 +193,6 @@ void assert_lock_strong(const Mutex* lock) {
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
   fatal("must own lock %s", lock->name());
-}
-
-void assert_locked_or_safepoint_or_handshake(const Mutex* lock, const JavaThread* thread) {
-  if (thread->is_handshake_safe_for(Thread::current())) return;
-  assert_locked_or_safepoint(lock);
 }
 #endif
 
@@ -294,7 +292,6 @@ void mutex_init() {
   def(Management_lock              , PaddedMutex  , safepoint);   // used for JVM management
 
   def(ConcurrentGCBreakpoints_lock , PaddedMonitor, safepoint, true);
-  def(MethodData_lock              , PaddedMutex  , safepoint);
   def(TouchedMethodLog_lock        , PaddedMutex  , safepoint);
 
   def(CompileThread_lock           , PaddedMonitor, safepoint);
@@ -333,6 +330,7 @@ void mutex_init() {
   def(DumpRegion_lock              , PaddedMutex  , nosafepoint);
   def(ClassListFile_lock           , PaddedMutex  , nosafepoint);
   def(LambdaFormInvokers_lock      , PaddedMutex  , safepoint);
+  def(ScratchObjects_lock          , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
   def(Bootclasspath_lock           , PaddedMutex  , nosafepoint);
   def(Zip_lock                     , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
@@ -373,11 +371,21 @@ void mutex_init() {
   defl(OopMapCacheAlloc_lock       , PaddedMutex ,  Threads_lock, true);
   defl(Module_lock                 , PaddedMutex ,  ClassLoaderDataGraph_lock);
   defl(SystemDictionary_lock       , PaddedMonitor, Module_lock);
-  defl(JNICritical_lock            , PaddedMonitor, MultiArray_lock); // used for JNI critical regions
+  defl(JNICritical_lock            , PaddedMonitor, AdapterHandlerLibrary_lock); // used for JNI critical regions
 #if INCLUDE_JVMCI
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   defl(JVMCI_lock                  , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+}
+
+void MutexLocker::post_initialize() {
+  // Print mutex ranks if requested.
+  LogTarget(Info, vmmutex) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    print_lock_ranks(&ls);
+  }
 }
 
 GCMutexLocker::GCMutexLocker(Mutex* mutex) {
@@ -408,4 +416,40 @@ void print_owned_locks_on_error(outputStream* st) {
      }
   }
   if (none) st->print_cr("None");
+}
+
+void print_lock_ranks(outputStream* st) {
+  st->print_cr("VM Mutex/Monitor ranks: ");
+
+#ifdef ASSERT
+  // Be extra defensive and figure out the bounds on
+  // ranks right here. This also saves a bit of time
+  // in the #ranks*#mutexes loop below.
+  int min_rank = INT_MAX;
+  int max_rank = INT_MIN;
+  for (int i = 0; i < _num_mutex; i++) {
+    Mutex* m = _mutex_array[i];
+    int r = (int) m->rank();
+    if (min_rank > r) min_rank = r;
+    if (max_rank < r) max_rank = r;
+  }
+
+  // Print the listings rank by rank
+  for (int r = min_rank; r <= max_rank; r++) {
+    bool first = true;
+    for (int i = 0; i < _num_mutex; i++) {
+      Mutex* m = _mutex_array[i];
+      if (r != (int) m->rank()) continue;
+
+      if (first) {
+        st->cr();
+        st->print_cr("Rank \"%s\":", m->rank_name());
+        first = false;
+      }
+      st->print_cr("  %s", m->name());
+    }
+  }
+#else
+  st->print_cr("  Only known in debug builds.");
+#endif // ASSERT
 }

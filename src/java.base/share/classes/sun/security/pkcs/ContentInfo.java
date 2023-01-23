@@ -35,7 +35,7 @@ import sun.security.util.*;
  * @author Benjamin Renaud
  */
 
-public class ContentInfo {
+public class ContentInfo implements DerEncoder {
 
     // pkcs7 pre-defined content types
     public static ObjectIdentifier PKCS7_OID =
@@ -90,8 +90,7 @@ public class ContentInfo {
      * Parses a PKCS#7 content info.
      */
     public ContentInfo(DerInputStream derin)
-        throws IOException, ParsingException
-    {
+        throws IOException {
         this(derin, false);
     }
 
@@ -102,12 +101,11 @@ public class ContentInfo {
      * PKCS#7 blocks that were generated using JDK1.1.x.
      *
      * @param derin the ASN.1 encoding of the content info.
-     * @param oldStyle flag indicating whether or not the given content info
+     * @param oldStyle flag indicating whether the given content info
      * is encoded according to JDK1.1.x.
      */
     public ContentInfo(DerInputStream derin, boolean oldStyle)
-        throws IOException, ParsingException
-    {
+        throws IOException {
         DerInputStream disType;
         DerInputStream disTaggedContent;
         DerValue type;
@@ -168,7 +166,8 @@ public class ContentInfo {
         throw new IOException("content type is not DATA: " + contentType);
     }
 
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream contentDerCode;
         DerOutputStream seq;
 
@@ -177,7 +176,7 @@ public class ContentInfo {
 
         // content is optional, it could be external
         if (content != null) {
-            DerValue taggedContent = null;
+            DerValue taggedContent;
             contentDerCode = new DerOutputStream();
             content.encode(contentDerCode);
 

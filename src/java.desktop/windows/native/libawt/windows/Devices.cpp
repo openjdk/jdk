@@ -204,7 +204,7 @@ BOOL Devices::UpdateInstance(JNIEnv *env)
     newDevices->AddReference();
 
     // Create all devices first, then initialize them.  This allows
-    // correct configuration of devices after contruction of the
+    // correct configuration of devices after construction of the
     // primary device (which may not be device 0).
     AwtWin32GraphicsDevice** rawDevices = newDevices->GetRawArray();
     int i;

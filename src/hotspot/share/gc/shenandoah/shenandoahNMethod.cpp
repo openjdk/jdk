@@ -250,7 +250,7 @@ void ShenandoahNMethod::assert_same_oops(bool allow_dead) {
       debug_stream.print_cr("-> " PTR_FORMAT, p2i(check.at(i)));
     }
     fatal("Must match #detected: %d, #recorded: %d, #total: %d, begin: " PTR_FORMAT ", end: " PTR_FORMAT "\n%s",
-          oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.as_string());
+          oops->length(), _oops_count, count, p2i(nm()->oops_begin()), p2i(nm()->oops_end()), debug_stream.freeze());
   }
 }
 #endif

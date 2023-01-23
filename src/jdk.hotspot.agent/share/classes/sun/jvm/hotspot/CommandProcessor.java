@@ -197,7 +197,7 @@ public class CommandProcessor {
                     add(w[i], t);
                 }
             }
-            tokens = (String[])t.toArray(new String[0]);
+            tokens = t.toArray(new String[0]);
             i = 0;
             length = tokens.length;
 
@@ -768,7 +768,7 @@ public class CommandProcessor {
                           });
                     for (int i = 0; i < keys.length; i++) {
                         out.print("  ");
-                        out.println(((Command)commands.get(keys[i])).usage);
+                        out.println(commands.get(keys[i]).usage);
                     }
                 }
             }
@@ -1085,7 +1085,7 @@ public class CommandProcessor {
                         n = n.getSuperclass();
                     }
                     while (!pending.isEmpty()) {
-                        n = (Type)pending.pop();
+                        n = pending.pop();
                         dumpType(n);
                         emitted.add(n.getName());
                     }
@@ -1481,7 +1481,7 @@ public class CommandProcessor {
                             n = n.getSuperclass();
                         }
                         while (!pending.isEmpty()) {
-                            n = (Type)pending.pop();
+                            n = pending.pop();
                             dumpType(n);
                             emitted.add(n.getName());
                         }
@@ -1986,7 +1986,7 @@ public class CommandProcessor {
     private boolean doEcho = false;
 
     private Command findCommand(String key) {
-        return (Command)commands.get(key);
+        return commands.get(key);
     }
 
     public void printPrompt() {
@@ -2082,17 +2082,17 @@ public class CommandProcessor {
 
                     String cmd = m.group(2);
                     if (cmd.equals("!!")) {
-                        result.append((String)history.get(history.size() - 1));
+                        result.append(history.get(history.size() - 1));
                     } else if (cmd.equals("!!-")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         item.trim(1);
                         result.append(item.join(" "));
                     } else if (cmd.equals("!*")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         item.nextToken();
                         result.append(item.join(" "));
                     } else if (cmd.equals("!$")) {
-                        Tokens item = new Tokens((String)history.get(history.size() - 1));
+                        Tokens item = new Tokens(history.get(history.size() - 1));
                         result.append(item.at(item.countTokens() - 1));
                     } else {
                         String tail = cmd.substring(1);
@@ -2115,13 +2115,13 @@ public class CommandProcessor {
                             if (index > size) {
                                 err.println("No such history item");
                             } else {
-                                result.append((String)history.get(index));
+                                result.append(history.get(index));
                             }
                             break;
                         }
                         default: {
                             for (int i = history.size() - 1; i >= 0; i--) {
-                                String s = (String)history.get(i);
+                                String s = history.get(i);
                                 if (s.startsWith(tail)) {
                                     result.append(s);
                                     break; // only capture the most recent match in the history

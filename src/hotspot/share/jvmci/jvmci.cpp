@@ -35,7 +35,8 @@
 #include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/events.hpp"
 
 JVMCIRuntime* JVMCI::_compiler_runtimes = nullptr;
@@ -107,7 +108,7 @@ void JVMCI::initialize_compiler(TRAPS) {
   }
   JVMCIRuntime* runtime;
   if (UseJVMCINativeLibrary) {
-      runtime = JVMCI::compiler_runtime((JavaThread*) THREAD);
+      runtime = JVMCI::compiler_runtime(THREAD);
   } else {
       runtime = JVMCI::java_runtime();
   }
@@ -228,9 +229,17 @@ void JVMCI::vlog(int level, const char* format, va_list ap) {
 void JVMCI::vtrace(int level, const char* format, va_list ap) {
   if (JVMCITraceLevel >= level) {
     Thread* thread = Thread::current_or_null_safe();
-    if (thread != nullptr) {
-      ResourceMark rm;
-      tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+    if (thread != nullptr && thread->is_Java_thread()) {
+      ResourceMark rm(thread);
+      JavaThreadState state = JavaThread::cast(thread)->thread_state();
+      if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
+        tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+      } else {
+        // According to check_access_thread_state, it's unsafe to
+        // resolve the j.l.Thread object unless the thread is in
+        // one of the states above.
+        tty->print("JVMCITrace-%d[%s@" PTR_FORMAT "]:%*c", level, thread->type_name(), p2i(thread), level, ' ');
+      }
     } else {
       tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');
     }

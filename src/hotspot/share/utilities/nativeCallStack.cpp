@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
     _stack[index] = pc[index];
   }
   for (; index < NMT_TrackingStackDepth; index ++) {
-    _stack[index] = NULL;
+    _stack[index] = nullptr;
   }
 }
 
@@ -64,7 +64,7 @@ NativeCallStack::NativeCallStack(address* pc, int frameCount) {
 int NativeCallStack::frames() const {
   int index;
   for (index = 0; index < NMT_TrackingStackDepth; index ++) {
-    if (_stack[index] == NULL) {
+    if (_stack[index] == nullptr) {
       break;
     }
   }
@@ -77,17 +77,17 @@ void NativeCallStack::print_on(outputStream* out) const {
 
 // Decode and print this call path
 void NativeCallStack::print_on(outputStream* out, int indent) const {
+  DEBUG_ONLY(assert_not_fake();)
   address pc;
   char    buf[1024];
   int     offset;
-  int     line_no;
   if (is_empty()) {
     for (int index = 0; index < indent; index ++) out->print(" ");
     out->print("[BOOTSTRAP]");
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
-      if (pc == NULL) break;
+      if (pc == nullptr) break;
       // Print indent
       for (int index = 0; index < indent; index ++) out->print(" ");
       if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
@@ -96,9 +96,10 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
         out->print("[" PTR_FORMAT "]", p2i(pc));
       }
 
-      if (Decoder::get_source_info(pc, buf, sizeof(buf), &line_no, frame != 0)) {
-        out->print("  (%s:%d)", buf, line_no);
-      }
+      // Note: we deliberately omit printing source information here. NativeCallStack::print_on()
+      // can be called thousands of times as part of NMT detail reporting, and source printing
+      // can slow down reporting by a factor of 5 or more depending on platform (see JDK-8296931).
+
       out->cr();
     }
   }

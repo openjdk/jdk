@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -34,6 +33,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -1921,7 +1921,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
     WorkerTask("dump heap") {
     _local_writer = writer;
     _gc_before_heap_dump = gc_before_heap_dump;
-    _klass_map = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
+    _klass_map = new (mtServiceability) GrowableArray<Klass*>(INITIAL_CLASS_COUNT, mtServiceability);
     _stack_traces = NULL;
     _num_threads = 0;
     _num_dumper_threads = num_dump_threads;
@@ -2425,7 +2425,11 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     event.set_gcBeforeDump(_gc_before_heap_dump);
     event.set_size(writer.bytes_written());
     event.set_onOutOfMemoryError(_oome);
+    event.set_overwrite(overwrite);
+    event.set_compression(compression);
     event.commit();
+  } else {
+    log_debug(cds, heap)("Error %s while dumping heap", error());
   }
 
   // print message in interactive case

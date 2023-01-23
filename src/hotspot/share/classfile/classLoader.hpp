@@ -80,7 +80,7 @@ class ClassPathDirEntry: public ClassPathEntry {
   ClassPathDirEntry(const char* dir) {
     _dir = copy_path(dir);
   }
-  virtual ~ClassPathDirEntry() {}
+  virtual ~ClassPathDirEntry();
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
 
@@ -110,7 +110,6 @@ class ClassPathZipEntry: public ClassPathEntry {
   virtual ~ClassPathZipEntry();
   u1* open_entry(JavaThread* current, const char* name, jint* filesize, bool nul_terminate);
   ClassFileStream* open_stream(JavaThread* current, const char* name);
-  void contents_do(void f(const char* name, void* context), void* context);
 };
 
 
@@ -374,6 +373,10 @@ class ClassLoader: AllStatic {
 #endif
 
   static char* lookup_vm_options();
+
+  // Determines if the named module is present in the
+  // modules jimage file or in the exploded modules directory.
+  static bool is_module_observable(const char* module_name);
 
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);

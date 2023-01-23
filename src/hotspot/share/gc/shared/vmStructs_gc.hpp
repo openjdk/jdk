@@ -88,8 +88,6 @@
   nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
                                                                                                                                      \
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
@@ -236,10 +234,7 @@
   declare_constant(BOTConstants::N_powers)                                  \
                                                                             \
   declare_constant(CardTable::clean_card)                                   \
-  declare_constant(CardTable::last_card)                                    \
   declare_constant(CardTable::dirty_card)                                   \
-  declare_constant(CardTable::Precise)                                      \
-  declare_constant(CardTable::ObjHeadPreciseArray)                          \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \

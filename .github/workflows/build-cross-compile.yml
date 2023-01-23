@@ -40,6 +40,12 @@ on:
       extra-conf-options:
         required: false
         type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
 
 jobs:
   build-cross-compile:
@@ -129,7 +135,7 @@ jobs:
 
       - name: 'Create sysroot'
         run: >
-          sudo qemu-debootstrap
+          sudo debootstrap
           --arch=${{ matrix.debian-arch }}
           --verbose
           --include=fakeroot,symlinks,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxrandr-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng-dev
@@ -145,7 +151,9 @@ jobs:
           # Prepare sysroot and remove unused files to minimize cache
           sudo chroot sysroot symlinks -cr .
           sudo chown ${USER} -R sysroot
-          rm -rf sysroot/{dev,proc,run,sys}
+          rm -rf sysroot/{dev,proc,run,sys,var}
+          rm -rf sysroot/usr/{sbin,bin,share}
+          rm -rf sysroot/usr/lib/{apt,udev,systemd}
         if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
 
       - name: 'Configure'
@@ -160,9 +168,10 @@ jobs:
           --openjdk-target=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}
           --with-sysroot=sysroot
           --with-build-jdk=${{ steps.buildjdk.outputs.jdk-path }}
+          --with-jmod-compress=zip-1
           CC=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-gcc-${{ inputs.gcc-major-version }}
           CXX=${{ matrix.gnu-arch }}-linux-gnu${{ matrix.gnu-abi}}-g++-${{ inputs.gcc-major-version }}
-          ${{ inputs.extra-conf-options }} || (
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
@@ -171,5 +180,5 @@ jobs:
         id: build
         uses: ./.github/actions/do-build
         with:
-          make-target: 'hotspot'
+          make-target: 'hotspot ${{ inputs.make-arguments }}'
           platform: linux-${{ matrix.target-cpu }}

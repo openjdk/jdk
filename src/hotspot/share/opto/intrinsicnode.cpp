@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,21 @@ Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
+
+uint VectorizedHashCodeNode::match_edge(uint idx) const {
+  // Do not match memory edge.
+  return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
+}
+
+Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
 
 //=============================================================================
 //------------------------------match_edge-------------------------------------

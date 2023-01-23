@@ -143,9 +143,8 @@ private:
                                                     HeapWord* const pb,
                                                     HeapWord* first_block) const;
 
-  static bool obj_is_filler(oop obj);
-
 public:
+
   // Returns the address of the block reaching into or starting at addr.
   HeapWord* block_start(const void* addr) const;
   HeapWord* block_start(const void* addr, HeapWord* const pb) const;
@@ -244,11 +243,7 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
-  void init_top_at_mark_start() {
-    set_top_at_mark_start(bottom());
-    _parsable_bottom = bottom();
-    _garbage_bytes = 0;
-  }
+  inline void init_top_at_mark_start();
 
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
@@ -376,7 +371,7 @@ public:
   inline void note_end_of_scrubbing();
 
   // Notify the region that the (corresponding) bitmap has been cleared.
-  inline void note_end_of_clearing();
+  inline void reset_top_at_mark_start();
 
   // During the concurrent scrubbing phase, can there be any areas with unloaded
   // classes or dead objects in this region?
@@ -462,6 +457,8 @@ public:
 
   inline bool in_collection_set() const;
 
+  void prepare_remset_for_scan();
+
   // Methods used by the HeapRegionSetBase class and subclasses.
 
   // Getter and setter for the next and prev fields used to link regions into
@@ -505,13 +502,13 @@ public:
   // Clear the card table corresponding to this region.
   void clear_cardtable();
 
-  // Notify the region that we are about to start processing
-  // self-forwarded objects during evac failure handling.
-  void note_self_forwarding_removal_start(bool during_concurrent_start);
+  // Notify the region that an evacuation failure occurred for an object within this
+  // region.
+  void note_evacuation_failure(bool during_concurrent_start);
 
-  // Notify the region that we have finished processing self-forwarded
-  // objects during evac failure handling.
-  void note_self_forwarding_removal_end(size_t marked_bytes);
+  // Notify the region that we have partially finished processing self-forwarded
+  // objects during evacuation failure handling.
+  void note_self_forward_chunk_done(size_t garbage_bytes);
 
   uint index_in_opt_cset() const {
     assert(has_index_in_opt_cset(), "Opt cset index not set.");
@@ -608,6 +605,25 @@ public:
 
   // Typically called on each region until it returns true.
   virtual bool do_heap_region(HeapRegion* r) = 0;
+
+  // True after iteration if the closure was applied to all heap regions
+  // and returned "false" in all cases.
+  bool is_complete() { return _is_complete; }
+};
+
+class HeapRegionIndexClosure : public StackObj {
+  friend class HeapRegionManager;
+  friend class G1CollectionSet;
+  friend class G1CollectionSetCandidates;
+
+  bool _is_complete;
+  void set_incomplete() { _is_complete = false; }
+
+public:
+  HeapRegionIndexClosure(): _is_complete(true) {}
+
+  // Typically called on each region until it returns true.
+  virtual bool do_heap_region_index(uint region_index) = 0;
 
   // True after iteration if the closure was applied to all heap regions
   // and returned "false" in all cases.

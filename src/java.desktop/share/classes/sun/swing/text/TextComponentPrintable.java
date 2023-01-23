@@ -245,7 +245,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     //the values do not matter
                     //we only need to get frames created
                     rendererPane.setSize(WIDTH, HEIGHT);
-                };
+                }
             };
         if (SwingUtilities.isEventDispatchThread()) {
             doCreateFrames.run();
@@ -769,7 +769,7 @@ public class TextComponentPrintable implements CountingPrintable {
                             && (y != previousY || height != previousHeight)) {
                         /*
                          * we do not store the same value as previous. in our
-                         * documents it is often for consequent positons to have
+                         * documents it is often for consequent positions to have
                          * the same modelToView y and height.
                          */
                         previousY = y;

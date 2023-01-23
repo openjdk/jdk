@@ -88,9 +88,6 @@ class MetaspaceShared : AllStatic {
 private:
   static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
   static void preload_classes(TRAPS) NOT_CDS_RETURN;
-  static int parse_classlist(const char * classlist_path,
-                              TRAPS) NOT_CDS_RETURN_(0);
-
 
 public:
   static Symbol* symbol_rs_base() {
@@ -116,9 +113,6 @@ public:
   }
 
   static void set_shared_metaspace_range(void* base, void *static_top, void* top) NOT_CDS_RETURN;
-
-  // Return true if given address is in the shared region corresponding to the idx
-  static bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
 
   static bool is_shared_dynamic(void* p) NOT_CDS_RETURN_(false);
 
@@ -202,5 +196,6 @@ private:
                                      ReservedSpace& class_space_rs);
   static MapArchiveResult map_archive(FileMapInfo* mapinfo, char* mapped_base_address, ReservedSpace rs);
   static void unmap_archive(FileMapInfo* mapinfo);
+  static void get_default_classlist(char* default_classlist, const size_t buf_size);
 };
 #endif // SHARE_CDS_METASPACESHARED_HPP

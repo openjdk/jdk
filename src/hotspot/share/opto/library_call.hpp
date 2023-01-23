@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ class LibraryCallKit : public GraphKit {
                           RegionNode* region, Node* phi, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
+  bool inline_vectorizedHashCode();
   bool inline_string_toBytesU();
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
@@ -239,9 +240,9 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_currentThread();
   bool inline_native_setCurrentThread();
 
-  bool inline_native_extentLocalCache();
-  Node* extentLocalCache_helper();
-  bool inline_native_setExtentLocalCache();
+  bool inline_native_scopedValueCache();
+  Node* scopedValueCache_helper();
+  bool inline_native_setScopedValueCache();
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #ifdef JFR_HAVE_INTRINSICS
@@ -291,15 +292,17 @@ class LibraryCallKit : public GraphKit {
   Node* inline_counterMode_AESCrypt_predicate();
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   bool inline_ghash_processBlocks();
+  bool inline_chacha20Block();
   bool inline_base64_encodeBlock();
   bool inline_base64_decodeBlock();
+  bool inline_poly1305_processBlocks();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
                                         BasicType elem_type, address stubAddr, const char *stubName,
                                         Node* src_start, Node* ofs, Node* limit);
   Node* get_state_from_digest_object(Node *digestBase_object, BasicType elem_type);
-  Node* get_digest_length_from_digest_object(Node *digestBase_object);
+  Node* get_block_size_from_digest_object(Node *digestBase_object);
   Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray(bool ascii);
   bool inline_updateCRC32();
@@ -348,6 +351,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_extract();
   bool inline_vector_insert();
   bool inline_vector_compress_expand();
+  bool inline_index_vector();
 
   Node* gen_call_to_svml(int vector_api_op_id, BasicType bt, int num_elem, Node* opd1, Node* opd2);
 

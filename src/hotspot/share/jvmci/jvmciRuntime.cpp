@@ -410,6 +410,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::monitorenter(JavaThread* current, oopDesc* o
 JRT_END
 
 JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* current, oopDesc* obj, BasicLock* lock))
+  assert(current == JavaThread::current(), "pre-condition");
   assert(current->last_Java_sp(), "last_Java_sp must be set");
   assert(oopDesc::is_oop(obj), "invalid lock object pointer dected");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
@@ -417,6 +418,7 @@ JRT_END
 
 // Object.notify() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notify(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   // Very few notify/notifyAll operations find any threads on the waitset, so
   // the dominant fast-path is to simply return.
@@ -433,6 +435,7 @@ JRT_END
 
 // Object.notifyAll() fast path, caller does slow path
 JRT_LEAF(jboolean, JVMCIRuntime::object_notifyAll(JavaThread* current, oopDesc* obj))
+  assert(current == JavaThread::current(), "pre-condition");
 
   if (!SafepointSynchronize::is_synchronizing() ) {
     if (ObjectSynchronizer::quick_notify(obj, current, true)) {
@@ -746,7 +749,7 @@ JVM_END
 void JVMCIRuntime::call_getCompiler(TRAPS) {
   THREAD_JVMCIENV(JavaThread::current());
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK);
   JVMCIENV->call_HotSpotJVMCIRuntime_getCompiler(jvmciRuntime, JVMCI_CHECK);
 }
 
@@ -820,11 +823,13 @@ void JVMCINMethodData::invalidate_nmethod_mirror(nmethod* nm) {
       // an InvalidInstalledCodeException.
       HotSpotJVMCI::InstalledCode::set_address(jvmciEnv, nmethod_mirror, 0);
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     } else if (nm->is_not_entrant()) {
       // Zero the entry point so any new invocation will fail but keep
       // the address link around that so that existing activations can
       // be deoptimized via the mirror (i.e. JVMCIEnv::invalidate_installed_code).
       HotSpotJVMCI::InstalledCode::set_entryPoint(jvmciEnv, nmethod_mirror, 0);
+      HotSpotJVMCI::HotSpotInstalledCode::set_codeStart(jvmciEnv, nmethod_mirror, 0);
     }
   }
 
@@ -843,94 +848,107 @@ static OopStorage* object_handles() {
 jlong JVMCIRuntime::make_oop_handle(const Handle& obj) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   assert(oopDesc::is_oop(obj()), "not an oop");
-  oop* ptr = object_handles()->allocate();
-  jlong res = 0;
-  if (ptr != nullptr) {
-    assert(*ptr == nullptr, "invariant");
-    NativeAccess<>::oop_store(ptr, obj());
-    res = (jlong) ptr;
-  } else {
-    vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
-                          "Cannot create JVMCI oop handle");
-  }
+
+  oop* ptr = OopHandle(object_handles(), obj()).ptr_raw();
   MutexLocker ml(_lock);
   _oop_handles.append(ptr);
-  return res;
+  return (jlong) ptr;
 }
 
-bool JVMCIRuntime::probe_oop_handle(jlong handle, int index) {
-  oop* key = (oop*) handle;
-  if (key == _oop_handles.at(index)) {
-    _last_found_oop_handle_index = index;
-    return true;
-  }
-  return false;
-}
-
-int JVMCIRuntime::find_oop_handle(jlong handle) {
-  int len = _oop_handles.length();
-  int next = _last_found_oop_handle_index + 1;
-  int prev = MAX2(_last_found_oop_handle_index, 0) - 1;
-
-  // Search "outwards" from the index of the last found
-  // entry. Experimentation shows that this significantly
-  // reduces the amount of searching performed.
-  do {
-    if (next < len) {
-      if (probe_oop_handle(handle, next)) {
-        return next;
-      }
-      next++;
-    }
-    if (prev >= 0) {
-      if (probe_oop_handle(handle, prev)) {
-        return prev;
-      }
-      prev--;
-    }
-  } while (next - (prev + 1) < len);
-  return -1;
-}
-
-int JVMCIRuntime::release_and_clear_globals() {
-  int released = 0;
+int JVMCIRuntime::release_and_clear_oop_handles() {
+  guarantee(_num_attached_threads == cannot_be_attached, "only call during JVMCI runtime shutdown");
+  int released = release_cleared_oop_handles();
   if (_oop_handles.length() != 0) {
-    // Squash non-null JNI handles to front of _oop_handles for
-    // the bulk release operation
     for (int i = 0; i < _oop_handles.length(); i++) {
       oop* oop_ptr = _oop_handles.at(i);
-      if (oop_ptr != nullptr) {
-        // Satisfy OopHandles::release precondition that all
-        // handles being released are null.
-        NativeAccess<>::oop_store(oop_ptr, (oop) NULL);
-
-        _oop_handles.at_put(released++, oop_ptr);
-      }
+      guarantee(oop_ptr != nullptr, "release_cleared_oop_handles left null entry in _oop_handles");
+      guarantee(*oop_ptr != nullptr, "unexpected cleared handle");
+      // Satisfy OopHandles::release precondition that all
+      // handles being released are null.
+      NativeAccess<>::oop_store(oop_ptr, (oop) NULL);
     }
+
     // Do the bulk release
-    object_handles()->release(_oop_handles.adr_at(0), released);
+    object_handles()->release(_oop_handles.adr_at(0), _oop_handles.length());
+    released += _oop_handles.length();
   }
   _oop_handles.clear();
-  _last_found_oop_handle_index = -1;
   return released;
 }
 
-void JVMCIRuntime::destroy_oop_handle(jlong handle) {
-  // Assert before nulling out, for better debugging.
-  assert(is_oop_handle(handle), "precondition");
-  oop* oop_ptr = (oop*) handle;
-  NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
-  object_handles()->release(oop_ptr);
-
-  MutexLocker ml(_lock);
-  int index = find_oop_handle(handle);
-  guarantee(index != -1, "global not allocated in JVMCI runtime %d: " INTPTR_FORMAT, id(), handle);
-  _oop_handles.at_put(index, nullptr);
+static bool is_referent_non_null(oop* handle) {
+  return handle != nullptr && *handle != nullptr;
 }
 
-bool JVMCIRuntime::is_oop_handle(jlong handle) {
-  const oop* ptr = (oop*) handle;
-  return object_handles()->allocation_status(ptr) == OopStorage::ALLOCATED_ENTRY;
+// Swaps the elements in `array` at index `a` and index `b`
+static void swap(GrowableArray<oop*>* array, int a, int b) {
+  oop* tmp = array->at(a);
+  array->at_put(a, array->at(b));
+  array->at_put(b, tmp);
+}
+
+int JVMCIRuntime::release_cleared_oop_handles() {
+  // Despite this lock, it's possible for another thread
+  // to clear a handle's referent concurrently (e.g., a thread
+  // executing IndirectHotSpotObjectConstantImpl.clear()).
+  // This is benign - it means there can still be cleared
+  // handles in _oop_handles when this method returns.
+  MutexLocker ml(_lock);
+
+  int next = 0;
+  if (_oop_handles.length() != 0) {
+    // Key for _oop_handles contents in example below:
+    //   H: handle with non-null referent
+    //   h: handle with clear (i.e., null) referent
+    //   -: null entry
+
+    // Shuffle all handles with non-null referents to the front of the list
+    // Example: Before: 0HHh-Hh-
+    //           After: HHHh--h-
+    for (int i = 0; i < _oop_handles.length(); i++) {
+      oop* handle = _oop_handles.at(i);
+      if (is_referent_non_null(handle)) {
+        if (i != next && !is_referent_non_null(_oop_handles.at(next))) {
+          // Swap elements at index `next` and `i`
+          swap(&_oop_handles, next, i);
+        }
+        next++;
+      }
+    }
+
+    // `next` is now the index of the first null handle or handle with a null referent
+    int num_alive = next;
+
+    // Shuffle all null handles to the end of the list
+    // Example: Before: HHHh--h-
+    //           After: HHHhh---
+    //       num_alive: 3
+    for (int i = next; i < _oop_handles.length(); i++) {
+      oop* handle = _oop_handles.at(i);
+      if (handle != nullptr) {
+        if (i != next && _oop_handles.at(next) == nullptr) {
+          // Swap elements at index `next` and `i`
+          swap(&_oop_handles, next, i);
+        }
+        next++;
+      }
+    }
+    int to_release = next - num_alive;
+
+    // `next` is now the index of the first null handle
+    // Example: to_release: 2
+
+    // Bulk release the handles with a null referent
+    object_handles()->release(_oop_handles.adr_at(num_alive), to_release);
+
+    // Truncate oop handles to only those with a non-null referent
+    JVMCI_event_1("compacted oop handles in JVMCI runtime %d from %d to %d", _id, _oop_handles.length(), num_alive);
+    _oop_handles.trunc_to(num_alive);
+    // Example: HHH
+
+    return to_release;
+  }
+  return 0;
 }
 
 jmetadata JVMCIRuntime::allocate_handle(const methodHandle& handle) {
@@ -968,7 +986,7 @@ static void _flush_log() {
 static void _fatal() {
   Thread* thread = Thread::current_or_null_safe();
   if (thread != nullptr && thread->is_Java_thread()) {
-    JavaThread* jthread = (JavaThread*) thread;
+    JavaThread* jthread = JavaThread::cast(thread);
     JVMCIRuntime* runtime = jthread->libjvmci_runtime();
     if (runtime != nullptr) {
       int javaVM_id = runtime->get_shared_library_javavm_id();
@@ -988,8 +1006,7 @@ JVMCIRuntime::JVMCIRuntime(JVMCIRuntime* next, int id, bool for_compile_broker) 
   _metadata_handles(new MetadataHandles()),
   _oop_handles(100, mtJVMCI),
   _num_attached_threads(0),
-  _for_compile_broker(for_compile_broker),
-  _last_found_oop_handle_index(-1)
+  _for_compile_broker(for_compile_broker)
 {
   if (id == -1) {
     _lock = JVMCIRuntime_lock;
@@ -1169,7 +1186,7 @@ bool JVMCIRuntime::detach_thread(JavaThread* thread, const char* reason, bool ca
         // that could be using them. Handles for the Java JVMCI runtime
         // are never released as we cannot guarantee all compiler threads
         // using it have been stopped.
-        int released = release_and_clear_globals();
+        int released = release_and_clear_oop_handles();
         JVMCI_event_1("releasing handles for JVMCI runtime %d: oop handles=%d, metadata handles={total=%d, live=%d, blocks=%d}",
             _id,
             released,
@@ -1298,7 +1315,7 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
     }
   }
 
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK);
 
   // This should only be called in the context of the JVMCI class being initialized
   JVMCIObject result = JVMCIENV->call_HotSpotJVMCIRuntime_runtime(JVMCI_CHECK);
@@ -1353,11 +1370,16 @@ class JavaVMRefsInitialization: public StackObj {
   }
 };
 
-void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
+void JVMCIRuntime::initialize(JVMCI_TRAPS) {
   // Check first without _lock
   if (_init_state == fully_initialized) {
     return;
   }
+
+  JavaThread* THREAD = JavaThread::current();
+
+  int properties_len = 0;
+  jbyte* properties = NULL;
 
   MutexLocker locker(_lock);
   // Check again under _lock
@@ -1380,7 +1402,6 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
   {
     MutexUnlocker unlock(_lock);
 
-    JavaThread* THREAD = JavaThread::current();
     HandleMark hm(THREAD);
     ResourceMark rm(THREAD);
     {
@@ -1424,7 +1445,12 @@ void JVMCIRuntime::initialize(JVMCIEnv* JVMCIENV) {
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
 
     if (!JVMCIENV->is_hotspot()) {
-      JVMCIENV->copy_saved_properties();
+      Handle properties_exception;
+      properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
+      if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
+        return;
+      }
+      JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
     }
   }
 
@@ -1467,7 +1493,7 @@ void JVMCIRuntime::initialize_JVMCI(JVMCI_TRAPS) {
 }
 
 JVMCIObject JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_TRAPS) {
-  initialize(JVMCIENV);
+  initialize(JVMCI_CHECK_(JVMCIObject()));
   initialize_JVMCI(JVMCI_CHECK_(JVMCIObject()));
   return _HotSpotJVMCIRuntime_instance;
 }
@@ -1568,14 +1594,10 @@ void JVMCIRuntime::describe_pending_hotspot_exception(JavaThread* THREAD, bool c
     const char* exception_file = THREAD->exception_file();
     int exception_line = THREAD->exception_line();
     CLEAR_PENDING_EXCEPTION;
-    if (exception->is_a(vmClasses::ThreadDeath_klass())) {
-      // Don't print anything if we are being killed.
-    } else {
-      java_lang_Throwable::print_stack_trace(exception, tty);
+    java_lang_Throwable::print_stack_trace(exception, tty);
 
-      // Clear and ignore any exceptions raised during printing
-      CLEAR_PENDING_EXCEPTION;
-    }
+    // Clear and ignore any exceptions raised during printing
+    CLEAR_PENDING_EXCEPTION;
     if (!clear) {
       THREAD->set_pending_exception(exception(), exception_file, exception_line);
     }
@@ -1979,11 +2001,21 @@ void JVMCIRuntime::compile_method(JVMCIEnv* JVMCIENV, JVMCICompiler* compiler, c
   HandleMark hm(thread);
   JVMCIObject receiver = get_HotSpotJVMCIRuntime(JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
-    fatal_exception(JVMCIENV, "Exception during HotSpotJVMCIRuntime initialization");
+    if (PrintWarnings) {
+      ResourceMark rm(thread);
+      warning("HotSpotJVMCIRuntime initialization failed when compiling %s", method->name_and_sig_as_C_string());
+      JVMCIENV->describe_pending_exception(true);
+    }
+    compile_state->set_failure(false, "exception during HotSpotJVMCIRuntime initialization");
+    return;
   }
   JVMCIObject jvmci_method = JVMCIENV->get_jvmci_method(method, JVMCIENV);
   if (JVMCIENV->has_pending_exception()) {
-    JVMCIENV->describe_pending_exception(true);
+    if (PrintWarnings) {
+      ResourceMark rm(thread);
+      warning("Error creating JVMCI wrapper for %s", method->name_and_sig_as_C_string());
+      JVMCIENV->describe_pending_exception(true);
+    }
     compile_state->set_failure(false, "exception getting JVMCI wrapper method");
     return;
   }

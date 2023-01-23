@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
             } else {
                 if (!utils.hasHiddenTag(holder) && !utils.hasHiddenTag(property)) {
                     Content link =
-                            writer.getDocLink(HtmlLinkInfo.Kind.PROPERTY_COPY,
+                            writer.getDocLink(HtmlLinkInfo.Kind.PLAIN,
                                     holder, property,
                                     utils.isIncluded(holder)
                                             ? holder.getSimpleName() : holder.getQualifiedName());
@@ -154,8 +154,8 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
-        return new Table(HtmlStyle.summaryTable)
+    protected Table<Element> createSummaryTable() {
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -164,7 +164,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
         Content classLink = writer.getPreQualifiedClassLink(
-                HtmlLinkInfo.Kind.MEMBER, typeElement);
+                HtmlLinkInfo.Kind.PLAIN, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = Text.of(utils.isClass(typeElement)
@@ -199,7 +199,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
         String mname = name(member);
-        Content content = writer.getDocLink(HtmlLinkInfo.Kind.MEMBER, typeElement, member,
+        Content content = writer.getDocLink(HtmlLinkInfo.Kind.PLAIN, typeElement, member,
                 utils.isProperty(mname) ? utils.getPropertyName(mname) : mname, true);
         target.add(content);
     }
@@ -211,7 +211,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
 
     @Override
     protected Content getSummaryLink(Element member) {
-        return writer.getDocLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member,
+        return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member,
                 utils.getFullyQualifiedName(member));
     }
 

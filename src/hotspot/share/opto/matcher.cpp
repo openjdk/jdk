@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,6 +276,7 @@ void Matcher::match( ) {
     // Permit args to have no register
     _calling_convention_mask[i].Clear();
     if( !vm_parm_regs[i].first()->is_valid() && !vm_parm_regs[i].second()->is_valid() ) {
+      _parm_regs[i].set_bad();
       continue;
     }
     // calling_convention returns stack arguments as a count of
@@ -1066,6 +1067,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_CountPositives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
@@ -2243,6 +2245,7 @@ bool Matcher::find_shared_visit(MStack& mstack, Node* n, uint opcode, bool& mem_
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_CountPositives:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
@@ -2356,9 +2359,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
     case Op_CMoveI:
     case Op_CMoveL:
     case Op_CMoveN:
-    case Op_CMoveP:
-    case Op_CMoveVF:
-    case Op_CMoveVD:  {
+    case Op_CMoveP: {
       // Restructure into a binary tree for Matching.  It's possible that
       // we could move this code up next to the graph reshaping for IfNodes
       // or vice-versa, but I do not want to debug this for Ladybird.
@@ -2370,9 +2371,17 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
-    case Op_VectorCmpMasked: {
-      Node* pair1 = new BinaryNode(n->in(2), n->in(3));
-      n->set_req(2, pair1);
+    case Op_CMoveVF:
+    case Op_CMoveVD: {
+      // Restructure into a binary tree for Matching:
+      // CMoveVF (Binary bool mask) (Binary src1 src2)
+      Node* in_cc = n->in(1);
+      assert(in_cc->is_Con(), "The condition input of cmove vector node must be a constant.");
+      Node* bol = new BoolNode(in_cc, (BoolTest::mask)in_cc->get_int());
+      Node* pair1 = new BinaryNode(bol, in_cc);
+      n->set_req(1, pair1);
+      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
+      n->set_req(2, pair2);
       n->del_req(3);
       break;
     }
@@ -2407,7 +2416,8 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       break;
     }
     case Op_StrComp:
-    case Op_StrIndexOf: {
+    case Op_StrIndexOf:
+    case Op_VectorizedHashCode: {
       Node* pair1 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair1);
       Node* pair2 = new BinaryNode(n->in(4),n->in(5));
@@ -2416,9 +2426,9 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(4);
       break;
     }
+    case Op_EncodeISOArray:
     case Op_StrCompressedCopy:
-    case Op_StrInflatedCopy:
-    case Op_EncodeISOArray: {
+    case Op_StrInflatedCopy: {
       // Restructure into a binary tree for Matching.
       Node* pair = new BinaryNode(n->in(3), n->in(4));
       n->set_req(3, pair);
@@ -2445,6 +2455,7 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       n->del_req(3);
       break;
     }
+    case Op_VectorCmpMasked:
     case Op_CopySignD:
     case Op_SignumVF:
     case Op_SignumVD:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,11 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     @Override
-    protected Table createSummaryTable() {
+    protected Table<Element> createSummaryTable() {
         List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colSecond,
                 HtmlStyle.colLast);
 
-        return new Table(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyle.summaryTable)
                 .setCaption(contents.getContent("doclet.Nested_Classes"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);
@@ -96,7 +96,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
 
     @Override
     public void addInheritedSummaryLabel(TypeElement typeElement, Content content) {
-        Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.MEMBER, typeElement);
+        Content classLink = writer.getPreQualifiedClassLink(HtmlLinkInfo.Kind.PLAIN, typeElement);
         Content label;
         if (options.summarizeOverriddenMethods()) {
             label = Text.of(utils.isPlainInterface(typeElement)
@@ -126,7 +126,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     @Override
     protected void addInheritedSummaryLink(TypeElement typeElement, Element member, Content target) {
         target.add(
-                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.MEMBER,
+                writer.getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
                         (TypeElement)member)));
     }
 
@@ -136,7 +136,12 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
     }
 
     @Override
+    protected void addSummaryLink(TypeElement typeElement, Element member, Content content) {
+        addSummaryLink(HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, typeElement, member, content);
+    }
+
+    @Override
     protected Content getSummaryLink(Element member) {
-        return writer.getQualifiedClassLink(HtmlLinkInfo.Kind.MEMBER_DEPRECATED_PREVIEW, member);
+        return writer.getQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member);
     }
 }

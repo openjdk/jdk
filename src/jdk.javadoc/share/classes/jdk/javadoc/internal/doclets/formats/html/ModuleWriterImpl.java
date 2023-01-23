@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,8 +427,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable2(Content caption, TableHeader tableHeader) {
-        return new Table(HtmlStyle.detailsTable)
+    private Table<?> getTable2(Content caption, TableHeader tableHeader) {
+        return new Table<Void>(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -441,8 +441,8 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param tableHeader the table header
      * @return a content object
      */
-    private Table getTable3(Content caption, TableHeader tableHeader) {
-        return new Table(HtmlStyle.detailsTable)
+    private Table<?> getTable3(Content caption, TableHeader tableHeader) {
+        return new Table<Void>(HtmlStyle.detailsTable)
                 .setCaption(caption)
                 .setHeader(tableHeader)
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
@@ -460,7 +460,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             if (display(requires)) {
                 String text = resources.getText("doclet.Requires_Summary");
                 Content caption = Text.of(text);
-                Table table = getTable3(caption, requiresTableHeader);
+                var table = getTable3(caption, requiresTableHeader);
                 addModulesList(requires, table);
                 section.add(table);
             }
@@ -468,7 +468,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             if (display(indirectModules)) {
                 String amrText = resources.getText("doclet.Indirect_Requires_Summary");
                 Content amrCaption = Text.of(amrText);
-                Table amrTable = getTable3(amrCaption, requiresTableHeader);
+                var amrTable = getTable3(amrCaption, requiresTableHeader);
                 addModulesList(indirectModules, amrTable);
                 section.add(amrTable);
             }
@@ -482,7 +482,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param mdleMap map of modules and modifiers
      * @param table the table to which the list will be added
      */
-    private void addModulesList(Map<ModuleElement, Content> mdleMap, Table table) {
+    private void addModulesList(Map<ModuleElement, Content> mdleMap, Table<?> table) {
         for (ModuleElement m : mdleMap.keySet()) {
             Content modifiers = mdleMap.get(m);
             Content moduleLink = getModuleLink(m, Text.of(m.getQualifiedName()));
@@ -506,13 +506,13 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.fromLabel, contents.packagesLabel);
             if (display(indirectPackages)) {
                 String aepText = resources.getText("doclet.Indirect_Exports_Summary");
-                Table aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
+                var aepTable = getTable2(Text.of(aepText), indirectPackagesHeader);
                 addIndirectPackages(aepTable, indirectPackages);
                 section.add(aepTable);
             }
             if (display(indirectOpenPackages)) {
                 String aopText = resources.getText("doclet.Indirect_Opens_Summary");
-                Table aopTable = getTable2(Text.of(aopText), indirectPackagesHeader);
+                var aopTable = getTable2(Text.of(aopText), indirectPackagesHeader);
                 addIndirectPackages(aopTable, indirectOpenPackages);
                 section.add(aopTable);
             }
@@ -526,7 +526,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param li
      */
     public void addPackageSummary(HtmlTree li) {
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<PackageElement>(HtmlStyle.summaryTable)
                 .setId(HtmlIds.PACKAGE_SUMMARY_TABLE)
                 .setDefaultTab(contents.getContent("doclet.All_Packages"))
                 .addTab(contents.getContent("doclet.Exported_Packages_Summary"), this::isExported)
@@ -643,7 +643,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param table the table to which the content rows will be added
      * @param ip indirect packages to be added
      */
-    public void addIndirectPackages(Table table, Map<ModuleElement, SortedSet<PackageElement>> ip) {
+    public void addIndirectPackages(Table<?> table, Map<ModuleElement, SortedSet<PackageElement>> ip) {
         for (Map.Entry<ModuleElement, SortedSet<PackageElement>> entry : ip.entrySet()) {
             ModuleElement m = entry.getKey();
             SortedSet<PackageElement> pkgList = entry.getValue();
@@ -673,7 +673,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                     new TableHeader(contents.typeLabel, contents.descriptionLabel);
             if (haveProvides) {
                 String label = resources.getText("doclet.Provides_Summary");
-                Table table = getTable2(Text.of(label), usesProvidesTableHeader);
+                var table = getTable2(Text.of(label), usesProvidesTableHeader);
                 addProvidesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -681,7 +681,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
             }
             if (haveUses){
                 String label = resources.getText("doclet.Uses_Summary");
-                Table table = getTable2(Text.of(label), usesProvidesTableHeader);
+                var table = getTable2(Text.of(label), usesProvidesTableHeader);
                 addUsesList(table);
                 if (!table.isEmpty()) {
                     section.add(table);
@@ -696,14 +696,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param table the table to which the services used will be added
      */
-    public void addUsesList(Table table) {
+    public void addUsesList(Table<?> table) {
         Content typeLinkContent;
         Content description;
         for (TypeElement t : uses) {
             if (!displayServiceDirective(t, usesTrees)) {
                 continue;
             }
-            typeLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, t));
+            typeLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, t));
             Content summary = new ContentBuilder();
             if (display(usesTrees)) {
                 description = usesTrees.get(t);
@@ -724,7 +724,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      *
      * @param table the table to which the services provided will be added
      */
-    public void addProvidesList(Table table) {
+    public void addProvidesList(Table<?> table) {
         SortedSet<TypeElement> implSet;
         Content description;
         for (Map.Entry<TypeElement, SortedSet<TypeElement>> entry : provides.entrySet()) {
@@ -733,7 +733,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 continue;
             }
             implSet = entry.getValue();
-            Content srvLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, srv));
+            Content srvLinkContent = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, srv));
             Content desc = new ContentBuilder();
             if (display(providesTrees)) {
                 description = providesTrees.get(srv);
@@ -755,7 +755,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 String sep = "";
                 for (TypeElement impl : implSet) {
                     desc.add(sep);
-                    desc.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PACKAGE, impl)));
+                    desc.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, impl)));
                     sep = ", ";
                 }
                 desc.add(")");
