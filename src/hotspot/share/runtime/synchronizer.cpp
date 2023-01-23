@@ -917,7 +917,7 @@ markWord ObjectSynchronizer::stable_mark(oop object) {
 
     // CASE: neutral or marked (for GC)
     // Catch if the object's header is not neutral or marked (it must not be locked).
-    assert(mark.is_neutral() || mark.is_marked(), "invariant: header=" INTPTR_FORMAT, mark.value());
+    assert(mark.is_neutral() || mark.is_marked() || mark.is_fast_locked(), "invariant: header=" INTPTR_FORMAT, mark.value());
     return mark;
   }
 }
@@ -1413,7 +1413,7 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread* current, oop object,
         OM_PERFDATA_OP(Inflations, inc());
         if (log_is_enabled(Trace, monitorinflation)) {
           ResourceMark rm(current);
-          lsh.print_cr("inflate(locked): object=" INTPTR_FORMAT ", mark="
+          lsh.print_cr("inflate(has_locker): object=" INTPTR_FORMAT ", mark="
                        INTPTR_FORMAT ", type='%s'", p2i(object),
                        object->mark().value(), object->klass()->external_name());
         }

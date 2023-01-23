@@ -51,7 +51,7 @@ markWord ShenandoahObjectUtils::stable_mark(oop obj) {
     // *  Marked       - object is forwarded, try again on forwardee
 
     // Most common case first.
-    if (mark.is_neutral()) {
+    if (mark.is_neutral() || mark.is_fast_locked()) {
       return mark;
     }
 
