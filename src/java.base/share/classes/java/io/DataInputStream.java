@@ -314,7 +314,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final short readShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getShort(readBuffer);
+        return ByteArray.getShort(readBuffer, 0);
     }
 
     /**
@@ -336,7 +336,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readUnsignedShort() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getUnsignedShort(readBuffer);
+        return ByteArray.getUnsignedShort(readBuffer, 0);
     }
 
     /**
@@ -358,7 +358,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final char readChar() throws IOException {
         readFully(readBuffer, 0, 2);
-        return ByteArray.getChar(readBuffer);
+        return ByteArray.getChar(readBuffer, 0);
     }
 
     /**
@@ -380,7 +380,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final int readInt() throws IOException {
         readFully(readBuffer, 0, 4);
-        return ByteArray.getInt(readBuffer);
+        return ByteArray.getInt(readBuffer, 0);
     }
 
     /**
@@ -402,7 +402,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
-        return ByteArray.getLong(readBuffer);
+        return ByteArray.getLong(readBuffer, 0);
     }
 
     /**
@@ -425,7 +425,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final float readFloat() throws IOException {
         readFully(readBuffer, 0, 4);
-        return ByteArray.getFloat(readBuffer);
+        return ByteArray.getFloat(readBuffer, 0);
     }
 
     /**
@@ -448,7 +448,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final double readDouble() throws IOException {
         readFully(readBuffer, 0, 8);
-        return ByteArray.getDouble(readBuffer);
+        return ByteArray.getDouble(readBuffer, 0);
     }
 
     private char[] lineBuffer;

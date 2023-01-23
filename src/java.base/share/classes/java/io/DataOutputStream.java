@@ -172,7 +172,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeShort(int v) throws IOException {
-        ByteArray.setUnsignedShort(writeBuffer, v);
+        ByteArray.setUnsignedShort(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -187,7 +187,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeChar(int v) throws IOException {
-        ByteArray.setUnsignedShort(writeBuffer, v);
+        ByteArray.setUnsignedShort(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 2);
         incCount(2);
     }
@@ -202,7 +202,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeInt(int v) throws IOException {
-        ByteArray.setInt(writeBuffer, v);
+        ByteArray.setInt(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
@@ -217,7 +217,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.io.FilterOutputStream#out
      */
     public final void writeLong(long v) throws IOException {
-        ByteArray.setLong(writeBuffer, v);
+        ByteArray.setLong(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -236,7 +236,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Float#floatToIntBits(float)
      */
     public final void writeFloat(float v) throws IOException {
-        ByteArray.setFloat(writeBuffer, v);
+        ByteArray.setFloat(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 4);
         incCount(4);
     }
@@ -255,7 +255,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
      * @see        java.lang.Double#doubleToLongBits(double)
      */
     public final void writeDouble(double v) throws IOException {
-        ByteArray.setDouble(writeBuffer, v);
+        ByteArray.setDouble(writeBuffer, 0, v);
         out.write(writeBuffer, 0, 8);
         incCount(8);
     }
@@ -295,7 +295,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         int len = s.length();
         for (int i = 0 ; i < len ; i++) {
             int v = s.charAt(i);
-            ByteArray.setUnsignedShort(writeBuffer, v);
+            ByteArray.setUnsignedShort(writeBuffer, 0, v);
             out.write(writeBuffer, 0, 2);
         }
         incCount(len * 2);
