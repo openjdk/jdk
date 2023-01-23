@@ -4179,7 +4179,7 @@ public class Arrays {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @throws ArrayStoreException if {@code element} cannot be stored into the array.
          */
         @Override
@@ -4224,7 +4224,7 @@ public class Arrays {
 
         /**
          * {@inheritDoc}
-         * 
+         *
          * @throws ArrayStoreException if {@code operator.apply} returns an object which cannot be
          *         stored into the array.
          */
