@@ -4113,15 +4113,10 @@ public class Arrays {
      * or <a href="List.html#unmodifiable">Unmodifiable Lists</a>.
      *
      * @implNote
-     * Modification methods of the returned list (such as {@link List#set} and
-     * {@link List#replaceAll}) will throw an {@link ArrayStoreException} when
-     * trying to set a wrong type of element into the list (and the backing
-     * array).  For example:
-     * {@snippet :
-     *   List<Object> list = Arrays.asList((Object[])new String[1]);
-     *   list.set(0, Integer.valueOf(0));    // throws ArrayStoreException
-     *   list.replaceAll(Objects::hashCode); // throws ArrayStoreException
-     * }
+     * The {@link List} implementation returned by this method does not conform to the
+     * specification for {@link List#replaceAll} and {@link List#set}, in that in the
+     * event of encountering an element of an unsuitable type, an {@link ArrayStoreException}
+     * will be thrown instead of a {@link ClassCastException}.
      *
      * @param <T> the class of the objects in the array
      * @param a the array by which the list will be backed
@@ -4177,11 +4172,6 @@ public class Arrays {
             return a[index];
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ArrayStoreException if {@code element} cannot be stored into the array.
-         */
         @Override
         public E set(int index, E element) {
             E oldValue = a[index];
@@ -4222,12 +4212,6 @@ public class Arrays {
             }
         }
 
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ArrayStoreException if {@code operator.apply} returns an object which cannot be
-         *         stored into the array.
-         */
         @Override
         public void replaceAll(UnaryOperator<E> operator) {
             Objects.requireNonNull(operator);
