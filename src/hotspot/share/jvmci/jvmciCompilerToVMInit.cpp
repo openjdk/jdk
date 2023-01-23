@@ -75,6 +75,7 @@ bool CompilerToVM::Data::continuations_enabled;
 
 #ifdef AARCH64
 int CompilerToVM::Data::BarrierSetAssembler_nmethod_patching_type;
+address CompilerToVM::Data::BarrierSetAssembler_patching_epoch_addr;
 #endif
 
 size_t CompilerToVM::Data::ThreadLocalAllocBuffer_alignment_reserve;

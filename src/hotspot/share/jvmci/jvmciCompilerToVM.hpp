@@ -56,7 +56,7 @@ class CompilerToVM {
     static int thread_address_bad_mask_offset;
 #ifdef AARCH64
     static int BarrierSetAssembler_nmethod_patching_type;
-    static address BarrierSetAssembler_patch_epoch_addr;
+    static address BarrierSetAssembler_patching_epoch_addr;
 #endif
 
     static address ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded;
