@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,14 @@ template <MEMFLAGS F> inline void BasicHashtable<F>::free_entry(BasicHashtableEn
 
 template <MEMFLAGS F> void BasicHashtable<F>::free_buckets() {
   FREE_C_HEAP_ARRAY(HashtableBucket, _buckets);
-  _buckets = NULL;
+  _buckets = nullptr;
 }
 
 // Default overload, for types that are uninteresting.
 template<typename T> static size_t literal_size(T) { return 0; }
 
 static size_t literal_size(oop obj) {
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return 0;
   }
 
@@ -121,7 +121,7 @@ template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
 
   // Allocate new buckets
   HashtableBucket<F>* buckets_new = NEW_C_HEAP_ARRAY2_RETURN_NULL(HashtableBucket<F>, new_size, F, CURRENT_PC);
-  if (buckets_new == NULL) {
+  if (buckets_new == nullptr) {
     return false;
   }
 
@@ -136,7 +136,7 @@ template <MEMFLAGS F> bool BasicHashtable<F>::resize(int new_size) {
 
   // Move entries from the old table to a new table
   for (int index_old = 0; index_old < table_size_old; index_old++) {
-    for (BasicHashtableEntry<F>* p = _buckets[index_old].get_entry(); p != NULL; ) {
+    for (BasicHashtableEntry<F>* p = _buckets[index_old].get_entry(); p != nullptr; ) {
       BasicHashtableEntry<F>* next = p->next();
       int index_new = hash_to_index(p->hash());
 
@@ -175,9 +175,9 @@ template <class T, MEMFLAGS F> TableStatistics Hashtable<T, F>::statistics_calcu
   for (int i = 0; i < this->table_size(); ++i) {
     int count = 0;
     for (HashtableEntry<T, F>* e = this->bucket(i);
-         e != NULL; e = e->next()) {
+         e != nullptr; e = e->next()) {
       count++;
-      T l = (literal_load_barrier != NULL) ? literal_load_barrier(e) : e->literal();
+      T l = (literal_load_barrier != nullptr) ? literal_load_barrier(e) : e->literal();
       literal_bytes += literal_size(l);
     }
     summary.add((double)count);
@@ -202,7 +202,7 @@ template <class T, MEMFLAGS F> void Hashtable<T, F>::print() {
 
   for (int i = 0; i < BasicHashtable<F>::table_size(); i++) {
     HashtableEntry<T, F>* entry = bucket(i);
-    while(entry != NULL) {
+    while(entry != nullptr) {
       tty->print("%d : ", i);
       print_literal(entry->literal());
       tty->cr();
@@ -218,7 +218,7 @@ template <class T> void BasicHashtable<F>::verify_table(const char* table_name) 
   int max_bucket_number = 0;
   for (int index = 0; index < table_size(); index++) {
     int bucket_count = 0;
-    for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+    for (T* probe = (T*)bucket(index); probe != nullptr; probe = probe->next()) {
       probe->verify();
       bucket_count++;
     }
@@ -237,7 +237,7 @@ template <class T> void BasicHashtable<F>::verify_table(const char* table_name) 
   if (_number_of_entries > 0 && log_is_enabled(Debug, hashtables)) {
     for (int index = 0; index < table_size(); index++) {
       int bucket_count = 0;
-      for (T* probe = (T*)bucket(index); probe != NULL; probe = probe->next()) {
+      for (T* probe = (T*)bucket(index); probe != nullptr; probe = probe->next()) {
         log_debug(hashtables)("bucket %d hash " INTPTR_FORMAT, index, (intptr_t)probe->hash());
         bucket_count++;
       }

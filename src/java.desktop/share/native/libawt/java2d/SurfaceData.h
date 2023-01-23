@@ -661,7 +661,7 @@ SurfaceData_InitOps(JNIEnv *env, jobject sData, int opsSize);
 void SurfaceData_DisposeOps(JNIEnv *env, jlong ops);
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 #endif

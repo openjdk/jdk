@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,6 @@ import sun.java2d.cmm.PCMM;
  * @see DataBuffer
  */
 public abstract class ColorModel implements Transparency{
-    private long pData;         // Placeholder for data for native functions
 
     /**
      * The total number of bits in the pixel.
@@ -222,7 +221,6 @@ public abstract class ColorModel implements Transparency{
         loadLibraries();
         initIDs();
     }
-    private static ColorModel RGBdefault;
 
     /**
      * Returns a {@code DirectColorModel} that describes the default
@@ -241,15 +239,13 @@ public abstract class ColorModel implements Transparency{
      *          RGB values.
      */
     public static ColorModel getRGBdefault() {
-        if (RGBdefault == null) {
-            RGBdefault = new DirectColorModel(32,
-                                              0x00ff0000,       // Red
-                                              0x0000ff00,       // Green
-                                              0x000000ff,       // Blue
-                                              0xff000000        // Alpha
-                                              );
+        interface RGBdefault {
+            ColorModel INSTANCE = new DirectColorModel(32, 0x00ff0000,  // Red
+                                                           0x0000ff00,  // Green
+                                                           0x000000ff,  // Blue
+                                                           0xff000000); // Alpha
         }
-        return RGBdefault;
+        return RGBdefault.INSTANCE;
     }
 
     /**

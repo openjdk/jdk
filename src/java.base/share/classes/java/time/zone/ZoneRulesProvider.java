@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -316,6 +316,10 @@ public abstract class ZoneRulesProvider {
             Objects.requireNonNull(zoneId, "zoneId");
             ZoneRulesProvider old = ZONES.putIfAbsent(zoneId, provider);
             if (old != null) {
+                // restore old state
+                ZONES.put(zoneId, old);
+                provider.provideZoneIds().stream()
+                    .forEach(id -> ZONES.remove(id, provider));
                 throw new ZoneRulesException(
                     "Unable to register zone as one already registered with that ID: " + zoneId +
                     ", currently loading from provider: " + provider);

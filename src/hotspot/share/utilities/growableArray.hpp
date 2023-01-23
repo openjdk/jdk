@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,7 +505,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
   for (     ; i < this->_len; i++) ::new ((void*)&newData[i]) E(this->_data[i]);
   for (     ; i < this->_capacity; i++) ::new ((void*)&newData[i]) E();
   for (i = 0; i < old_capacity; i++) this->_data[i].~E();
-  if (this->_data != NULL) {
+  if (this->_data != nullptr) {
     static_cast<Derived*>(this)->deallocate(this->_data);
   }
   this->_data = newData;
@@ -514,7 +514,7 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
 template <typename E, typename Derived>
 void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
   // grow the array by increasing _capacity to the first power of two larger than the size we need
-  expand_to(next_power_of_2((uint32_t)j));
+  expand_to(next_power_of_2(j));
 }
 
 template <typename E, typename Derived>
@@ -785,7 +785,7 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
 
   static E* allocate(int max, MEMFLAGS flags) {
     if (max == 0) {
-      return NULL;
+      return nullptr;
     }
 
     return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
@@ -842,7 +842,7 @@ class GrowableArrayIterator : public StackObj {
   }
 
  public:
-  GrowableArrayIterator() : _array(NULL), _position(0) { }
+  GrowableArrayIterator() : _array(nullptr), _position(0) { }
   GrowableArrayIterator<E>& operator++() { ++_position; return *this; }
   E operator*()                          { return _array->at(_position); }
 
