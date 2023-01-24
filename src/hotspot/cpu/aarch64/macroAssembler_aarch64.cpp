@@ -3594,11 +3594,142 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp,
   eor(crc, crc, tmp);
 }
 
+void MacroAssembler::kernel_crc32_using_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3) {
+    Label CRC_by128_loop, L_exit;
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
+
+    subs(tmp0, len, 256);
+    br(Assembler::LT, L_exit);
+    mov(len, tmp0);
+
+    Register table = tmp0;
+    {
+      uint64_t offset;
+      adrp(table, ExternalAddress(StubRoutines::crc_table_addr()), offset);
+      add(table, table, offset);
+    }
+    add(table, table, 4*256*sizeof(juint) + 8*sizeof(juint));
+
+    sub(buf, buf, 0x10);
+    ldrq(v1, Address(buf, 0x10));
+    ldrq(v2, Address(buf, 0x20));
+    ldrq(v3, Address(buf, 0x30));
+    ldrq(v4, Address(buf, 0x40));
+    ldrq(v5, Address(buf, 0x50));
+    ldrq(v6, Address(buf, 0x60));
+    ldrq(v7, Address(buf, 0x70));
+    ldrq(v8, Address(pre(buf, 0x80)));
+
+    mvnw(crc, crc);
+    movi(v25, T4S, 0);
+    mov(v25, S, 0, crc);
+    eor(v1, T16B, v1, v25);
+
+    ldrq(v0, Address(table));
+    b(CRC_by128_loop);
+
+    align(CodeEntryAlignment);
+  BIND(CRC_by128_loop);
+    subs(len, len, 0x80);
+
+    pmull (v9,  T1Q, v1, v0, T1D);
+    pmull2(v10, T1Q, v1, v0, T2D);
+    ldrq(v1, Address(buf, 0x10));
+    eor3(v1, T16B, v9,  v10, v1);
+
+    pmull (v11, T1Q, v2, v0, T1D);
+    pmull2(v12, T1Q, v2, v0, T2D);
+    ldrq(v2, Address(buf, 0x20));
+    eor3(v2, T16B, v11, v12, v2);
+
+    pmull (v13, T1Q, v3, v0, T1D);
+    pmull2(v14, T1Q, v3, v0, T2D);
+    ldrq(v3, Address(buf, 0x30));
+    eor3(v3, T16B, v13, v14, v3);
+
+    pmull (v15, T1Q, v4, v0, T1D);
+    pmull2(v16, T1Q, v4, v0, T2D);
+    ldrq(v4, Address(buf, 0x40));
+    eor3(v4, T16B, v15, v16, v4);
+
+    pmull (v17, T1Q, v5, v0, T1D);
+    pmull2(v18, T1Q, v5, v0, T2D);
+    ldrq(v5, Address(buf, 0x50));
+    eor3(v5, T16B, v17, v18, v5);
+
+    pmull (v19, T1Q, v6, v0, T1D);
+    pmull2(v20, T1Q, v6, v0, T2D);
+    ldrq(v6, Address(buf, 0x60));
+    eor3(v6, T16B, v19, v20, v6);
+
+    pmull (v21, T1Q, v7, v0, T1D);
+    pmull2(v22, T1Q, v7, v0, T2D);
+    ldrq(v7, Address(buf, 0x70));
+    eor3(v7, T16B, v21, v22, v7);
+
+    pmull (v23, T1Q, v8, v0, T1D);
+    pmull2(v24, T1Q, v8, v0, T2D);
+    ldrq(v8, Address(pre(buf, 0x80)));
+    eor3(v8, T16B, v23, v24, v8);
+    br(Assembler::GE, CRC_by128_loop);
+
+    // fold into 512 bits
+    ldrq(v0, Address(table, 0x10));
+
+    pmull (v10,  T1Q, v1, v0, T1D);
+    pmull2(v11, T1Q, v1, v0, T2D);
+    eor3(v1, T16B, v10, v11, v5);
+
+    pmull (v12, T1Q, v2, v0, T1D);
+    pmull2(v13, T1Q, v2, v0, T2D);
+    eor3(v2, T16B, v12, v13, v6);
+
+    pmull (v14, T1Q, v3, v0, T1D);
+    pmull2(v15, T1Q, v3, v0, T2D);
+    eor3(v3, T16B, v14, v15, v7);
+
+    pmull (v16, T1Q, v4, v0, T1D);
+    pmull2(v17, T1Q, v4, v0, T2D);
+    eor3(v4, T16B, v16, v17, v8);
+
+    // fold into 128 bits
+    ldrq(v5, Address(table, 0x20));
+    pmull (v10, T1Q, v1, v5, T1D);
+    pmull2(v11, T1Q, v1, v5, T2D);
+    eor3(v4, T16B, v4, v10, v11);
+
+    ldrq(v6, Address(table, 0x30));
+    pmull (v12, T1Q, v2, v6, T1D);
+    pmull2(v13, T1Q, v2, v6, T2D);
+    eor3(v4, T16B, v4, v12, v13);
+
+    ldrq(v7, Address(table, 0x40));
+    pmull (v14, T1Q, v3, v7, T1D);
+    pmull2(v15, T1Q, v3, v7, T2D);
+    eor3(v1, T16B, v4, v14, v15);
+
+    mov(tmp1, v1, D, 1);
+    mov(tmp2, v1, D, 0);
+    mov(crc, 0);
+    crc32x(crc, crc, tmp2);
+    crc32x(crc, crc, tmp1);
+
+    add(len, len, 0x80);
+    add(buf, buf, 0x10);
+
+    mvnw(crc, crc);
+  BIND(L_exit);
+}
+
 void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3) {
     Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop, CRC_less64, CRC_by64_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
+
+    prfm(Address(buf), PLDL1KEEP);
 
     mvnw(crc, crc);
 
@@ -3704,6 +3835,10 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+
+  if (UseCRC32 && UsePmull) {
+      kernel_crc32_using_pmull(crc, buf, len, table0, table1, table2, table3);
+  }
 
   if (UseCRC32) {
       kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);

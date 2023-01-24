@@ -290,6 +290,17 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
     0xED78D502UL, 0x62EDAE7DUL,         // byte swap
     0x02D578EDUL, 0x7DAEED62UL,         // word swap
     0xD502ED78UL, 0xAE7D62EDUL,         // byte swap of word swap
+
+    0xe88ef372UL, 0x00000001UL,
+    0x4a7fe880UL, 0x00000001UL,
+    0x54442bd4UL, 0x00000001UL,
+    0xc6e41596UL, 0x00000001UL,
+    0x3db1ecdcUL, 0x00000000UL,
+    0x74359406UL, 0x00000001UL,
+    0xf1da05aaUL, 0x00000000UL,
+    0x5a546366UL, 0x00000001UL,
+    0x751997d0UL, 0x00000001UL,
+    0xccaa009eUL, 0x00000000UL,
 };
 
 // Accumulation coefficients for adler32 upper 16 bits
