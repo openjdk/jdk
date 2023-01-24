@@ -38,7 +38,7 @@ JAR_DIR="$BUILD_DIR/jars"
 
 mkdir -p $BUILD_DIR $JAR_DIR
 cd $JAR_DIR
-rm -f $JAR_DIR/*
+rm -f *
 
 fetchJar() {
   url="https://repo.maven.apache.org/maven2/$1/$2/$3/$2-$3.jar"
