@@ -170,7 +170,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 #ifdef ASSERT
   // Read back
   {
-    MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
+    const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
     assert(header2->flags() == flags, "Wrong flags");
   }
