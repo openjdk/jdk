@@ -1122,8 +1122,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
         Object source       = pce.getSource();
 
         if ("beanContext".equals(propertyName)) {
-            synchronized(BeanContext.globalHierarchyLock) {
-                synchronized(children) {
+            synchronized (BeanContext.globalHierarchyLock) {
+                synchronized (children) {
                     if (containsKey(source)
                             && children.get(source).isRemovePending())
                     {
