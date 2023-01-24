@@ -120,16 +120,11 @@ public class URLEncoder {
          */
 
         DONT_NEED_ENCODING = new BitSet(256);
-        int i;
-        for (i = 'a'; i <= 'z'; i++) {
-            DONT_NEED_ENCODING.set(i);
-        }
-        for (i = 'A'; i <= 'Z'; i++) {
-            DONT_NEED_ENCODING.set(i);
-        }
-        for (i = '0'; i <= '9'; i++) {
-            DONT_NEED_ENCODING.set(i);
-        }
+
+        DONT_NEED_ENCODING.set('a', 'z' + 1);
+        DONT_NEED_ENCODING.set('A', 'Z' + 1);
+        DONT_NEED_ENCODING.set('0', '9' + 1);
+
         DONT_NEED_ENCODING.set(' '); /* encoding a space to a + is done
                                     * in the encode() method */
         DONT_NEED_ENCODING.set('-');

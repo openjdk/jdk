@@ -91,11 +91,7 @@ public class URLDecoder {
     private URLDecoder() {}
 
     // The default charset
-    private static final String DEFAULT_ENCODING_NAME;
-
-    static {
-        DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
-    }
+    private static final String DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
 
     /**
      * Decodes a {@code x-www-form-urlencoded} string.
