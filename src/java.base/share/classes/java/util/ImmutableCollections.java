@@ -171,7 +171,7 @@ class ImmutableCollections {
         } else if (coll.isEmpty()) { // implicit nullcheck of coll
             return List.of();
         } else {
-            return (List<E>)List.of(coll.toArray()); // implicit nullcheck of coll
+            return (List<E>)List.of(coll.toArray());
         }
     }
 
