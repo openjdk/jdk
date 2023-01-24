@@ -1747,7 +1747,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     .toUpperCase(Locale.ENGLISH)));
 
             // Signature related files must reside directly in META-INF/
-            if(signatureRelated && hasSlash(name, off + META_INF_LEN, off + len)) {
+            if (signatureRelated && hasSlash(name, off + META_INF_LEN, off + len)) {
                 signatureRelated = false;
             }
             return signatureRelated;
@@ -1758,9 +1758,9 @@ public class ZipFile implements ZipConstants, Closeable {
          * it is already assumed in isMetaName
          */
         private boolean hasSlash(byte[] name, int start, int end) {
-            for(int i = start; i < end; i++) {
+            for (int i = start; i < end; i++) {
                 int c = name[i];
-                if(c == '/') {
+                if (c == '/') {
                     return true;
                 }
             }
