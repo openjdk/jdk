@@ -624,7 +624,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * The alternative mechanisms to load styles from an {@code InputStream}
      * located as a resource co-located with the application or by
      * providing a {@code SynthStyleFactory} are preferred.
-     * Consequently this method is deprecated and will be removed in a future release. 
+     * Consequently this method is deprecated and will be removed in a future release.
      *
      * @param url the <code>URL</code> to load the set of
      *     <code>SynthStyle</code> from
