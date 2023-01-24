@@ -187,6 +187,17 @@ static bool check_stack_headroom(Thread* thread,
           static_cast<size_t>(stack_headroom) < headroom);
 }
 
+#ifdef ASSERT
+void VMError::reenterant_test_hit_stack_limit() {
+  if (!check_stack_headroom(_thread, _reattempt_required_stack_headroom)) {
+    char stack_buffer[_reattempt_required_stack_headroom / 2];
+    static_cast<void>(stack_buffer[sizeof(stack_buffer) - 1] = '\0');
+    reenterant_test_hit_stack_limit();
+  }
+  controlled_crash(14);
+}
+#endif // ASSERT
+
 bool VMError::should_stop_reattempt_step(const char* &reason) {
   if (check_stack_headroom(_thread, _reattempt_required_stack_headroom)) {
     reason = "Stack headroom limit reached";
@@ -654,6 +665,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   // Error handler self tests
   // Meaning of codes passed through in the tests.
 #define TEST_SECONDARY_CRASH 14
+#define TEST_REATTEMPT_SECONDARY_CRASH 15
 #define TEST_RESOURCE_MARK_CRASH 2
 
   // test secondary error handling. Test it twice, to test that resetting
@@ -667,6 +679,44 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
     controlled_crash(TestCrashInErrorHandler);
+
+  // See corresponding test in test/runtime/ErrorHandling/ReattemptErrorTest.java
+  STEP_IF("test reattempt secondary crash",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
+      TestCrashInErrorHandler);
+    controlled_crash(14);
+
+  REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 2",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt secondary crash. attempt 2");
+
+  REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 3",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt secondary crash. attempt 3");
+
+  STEP_IF("test reattempt timeout",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt timeout");
+    os::infinite_sleep();
+
+  REATTEMPT_STEP_WITH_NEW_TIMEOUT_IF("test reattempt timeout, attempt 2",
+       _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt timeout, attempt 2");
+    os::infinite_sleep();
+
+  REATTEMPT_STEP_IF("test reattempt timeout, attempt 3",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt timeout, attempt 3");
+
+  STEP_IF("test reattempt stack headroom",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt stack headroom");
+    reenterant_test_hit_stack_limit();
+
+  REATTEMPT_STEP_IF("test reattempt stack headroom, attempt 2",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt stack headroom, attempt 2");
 
   STEP_IF("test missing ResourceMark does not crash",
       _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)

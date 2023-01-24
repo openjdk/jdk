@@ -122,6 +122,7 @@ class VMError : public AllStatic {
     return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
 
+  DEBUG_ONLY(static void reenterant_test_hit_stack_limit());
   static bool should_stop_reattempt_step(const char* &reason);
 
   // Write a hint to the stream in case siginfo relates to a segv/bus error
