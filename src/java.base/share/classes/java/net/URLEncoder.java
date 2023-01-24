@@ -124,7 +124,6 @@ public class URLEncoder {
         DONT_NEED_ENCODING.set('a', 'z' + 1);
         DONT_NEED_ENCODING.set('A', 'Z' + 1);
         DONT_NEED_ENCODING.set('0', '9' + 1);
-
         DONT_NEED_ENCODING.set(' '); /* encoding a space to a + is done
                                     * in the encode() method */
         DONT_NEED_ENCODING.set('-');
