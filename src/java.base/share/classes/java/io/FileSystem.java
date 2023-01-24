@@ -243,10 +243,6 @@ abstract class FileSystem {
      */
     public abstract int hashCode(File f);
 
-    // Flags for enabling/disabling performance optimizations for file
-    // name canonicalization
-    static final boolean useCanonCaches;
-    static final boolean useCanonPrefixCache;
 
     private static boolean getBooleanProperty(String prop, boolean defaultVal) {
         String value = System.getProperty(prop);
@@ -254,7 +250,14 @@ abstract class FileSystem {
     }
 
     static {
-        useCanonCaches      = getBooleanProperty("sun.io.useCanonCaches", false);
-        useCanonPrefixCache = useCanonCaches && getBooleanProperty("sun.io.useCanonPrefixCache", false);
+        infoPropIsIgnored("sun.io.useCanonCaches");
+        infoPropIsIgnored("sun.io.useCanonPrefixCache");
     }
+
+    private static void infoPropIsIgnored(String property) {
+        if (getBooleanProperty(property, false))
+            System.out.println("INFO: " + property +
+                    " is ignored starting from Java 21. This implies no functional change.");
+    }
+
 }
