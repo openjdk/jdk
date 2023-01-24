@@ -347,7 +347,7 @@ class JavaThreadIterator : public StackObj {
 
 public:
   JavaThreadIterator(ThreadsList *list) : _list(list), _index(0) {
-    assert(list != nullptr, "ThreadsList must not be nullptr.");
+    assert(list != nullptr, "ThreadsList must not be null.");
   }
 
   JavaThread *first() {

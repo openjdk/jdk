@@ -297,7 +297,7 @@ class os: AllStatic {
 
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or nullptr if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(char* buffer, size_t buffer_length, bool utc = false);
 
   // Interface for detecting multiprocessor system

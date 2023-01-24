@@ -172,7 +172,7 @@ static int _num_mutex;
 #ifdef ASSERT
 void assert_locked_or_safepoint(const Mutex* lock) {
   // check if this thread owns the lock (common case)
-  assert(lock != nullptr, "Need non-nullptr lock");
+  assert(lock != nullptr, "Need non-null lock");
   if (lock->owned_by_self()) return;
   if (SafepointSynchronize::is_at_safepoint()) return;
   if (!Universe::is_fully_initialized()) return;

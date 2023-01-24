@@ -2138,7 +2138,7 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // call site with the same old data. clear_code will set code() to null
   // at the end of it. If we happen to see that null then we can skip trying
   // to patch. If we hit the window where the callee has a c2i in the
-  // from_compiled_entry and the nullptr isn't present yet then we lose the race
+  // from_compiled_entry and the null isn't present yet then we lose the race
   // and patch the code with the same old data. Asi es la vida.
 
   if (moop->code() == nullptr) return;

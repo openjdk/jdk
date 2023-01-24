@@ -112,7 +112,7 @@ public:
   static size_t localHotSpotVMStructsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a nullptr typeName
+  // the fact that it has a null typeName
   static VMTypeEntry   localHotSpotVMTypes[];
   // The function to get localHotSpotVMTypes length
   static size_t localHotSpotVMTypesLength() NOT_VM_STRUCTS_RETURN_(0);
