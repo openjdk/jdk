@@ -7072,8 +7072,10 @@ typedef uint32_t u32;
     address start = __ pc();
     Label here;
     __ enter();
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
 
-    RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r26) - r18_tls - rscratch1 - rscratch2).begin();
+    RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
 
     // Arguments
     const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
@@ -7165,6 +7167,7 @@ typedef uint32_t u32;
     __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
 
     __ bind(DONE);
+    __ pop(callee_saved, sp);
     __ leave();
     __ ret(lr);
 
