@@ -73,7 +73,10 @@ public:
     if (eof()) {
       return false;
     }
-    const char* end = strchrnul(_p, ':');
+    const char* end = strchr(_p, ':');
+    if (end == nullptr) {
+      end = _end;
+    }
     stringStream ss;
     ss.print("%.*s", (int)(end - _p), _p);
     MEMFLAGS f = NMTUtil::string_to_flag(ss.base());
