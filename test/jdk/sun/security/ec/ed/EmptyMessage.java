@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISPOINTER_HPP
-#define SHARE_METAPROGRAMMING_ISPOINTER_HPP
+/*
+ * @test
+ * @bug 8300399
+ * @summary EdDSA does not verify when there is no message
+ * @run main EmptyMessage
+ */
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.spec.NamedParameterSpec;
 
-#include "metaprogramming/integralConstant.hpp"
+public class EmptyMessage {
+    public static void main(String[] args) throws Exception {
+        var g = KeyPairGenerator.getInstance("EdDSA");
+        g.initialize(NamedParameterSpec.ED25519);
+        var kp = g.generateKeyPair();
 
-// This metafunction returns true iff the type T is (irrespective of CV qualifiers)
-// a pointer type.
+        var ss = Signature.getInstance("EdDSA");
+        ss.initSign(kp.getPrivate());
+        var sig = ss.sign();
 
-template <typename T> class IsPointer: public FalseType {};
-
-template <typename T> class IsPointer<T*>: public TrueType {};
-template <typename T> class IsPointer<T* const>: public TrueType {};
-template <typename T> class IsPointer<T* volatile>: public TrueType {};
-template <typename T> class IsPointer<T* const volatile>: public TrueType {};
-
-#endif // SHARE_METAPROGRAMMING_ISPOINTER_HPP
+        var ps = Signature.getInstance("EdDSA");
+        ps.initVerify(kp.getPublic());
+        if (!ps.verify(sig)) {
+            throw new RuntimeException();
+        }
+    }
+}

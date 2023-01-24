@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,27 +62,27 @@ package java.text;
  * <P>Examples:<P>
  *
  * Traverse the text from start to finish
- * <pre>{@code
+ * {@snippet lang=java :
  * public void traverseForward(CharacterIterator iter) {
- *     for(char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
+ *     for (char c = iter.first(); c != CharacterIterator.DONE; c = iter.next()) {
  *         processChar(c);
  *     }
  * }
- * }</pre>
+ * }
  *
  * Traverse the text backwards, from end to start
- * <pre>{@code
+ * {@snippet lang=java :
  * public void traverseBackward(CharacterIterator iter) {
- *     for(char c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
+ *     for (char c = iter.last(); c != CharacterIterator.DONE; c = iter.previous()) {
  *         processChar(c);
  *     }
  * }
- * }</pre>
+ * }
  *
  * Traverse both forward and backward from a given position in the text.
  * Calls to notBoundary() in this example represents some
  * additional stopping criteria.
- * <pre>{@code
+ * {@snippet lang=java :
  * public void traverseOut(CharacterIterator iter, int pos) {
  *     for (char c = iter.setIndex(pos);
  *              c != CharacterIterator.DONE && notBoundary(c);
@@ -96,7 +96,7 @@ package java.text;
  *     int start = iter.getIndex();
  *     processSection(start, end);
  * }
- * }</pre>
+ * }
  *
  * @since 1.1
  * @see StringCharacterIterator

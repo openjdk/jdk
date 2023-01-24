@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // NULL if it's native thread
+  static Thread*     _thread;           // nullptr if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
@@ -187,7 +187,7 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // Non-NULL address guaranteed to generate a SEGV mapping error on read, for test purposes.
+  // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
   static constexpr intptr_t segfault_address = (1 * K) AIX_ONLY(+ (4 * K));
 
   // Max value for the ErrorLogPrintCodeLimit flag.

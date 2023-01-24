@@ -1872,7 +1872,7 @@ public final class ObjectStreamClass implements Serializable {
      * Class for computing and caching field/constructor/method signatures
      * during serialVersionUID calculation.
      */
-    private static class MemberSignature {
+    private static final class MemberSignature {
 
         public final Member member;
         public final String name;
@@ -1903,10 +1903,10 @@ public final class ObjectStreamClass implements Serializable {
      * Class for setting and retrieving serializable field values in batch.
      */
     // REMIND: dynamically generate these?
-    private static class FieldReflector {
+    private static final class FieldReflector {
 
         /** handle for performing unsafe operations */
-        private static final Unsafe unsafe = Unsafe.getUnsafe();
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
         /** fields to operate on */
         private final ObjectStreamField[] fields;
@@ -1945,7 +1945,7 @@ public final class ObjectStreamClass implements Serializable {
                 ObjectStreamField f = fields[i];
                 Field rf = f.getField();
                 long key = (rf != null) ?
-                    unsafe.objectFieldOffset(rf) : Unsafe.INVALID_FIELD_OFFSET;
+                    UNSAFE.objectFieldOffset(rf) : Unsafe.INVALID_FIELD_OFFSET;
                 readKeys[i] = key;
                 writeKeys[i] = usedKeys.add(key) ?
                     key : Unsafe.INVALID_FIELD_OFFSET;
@@ -1987,14 +1987,14 @@ public final class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> ByteArray.setBoolean(buf, off, unsafe.getBoolean(obj, key));
-                    case 'B' -> buf[off] = unsafe.getByte(obj, key);
-                    case 'C' -> ByteArray.setChar(buf, off, unsafe.getChar(obj, key));
-                    case 'S' -> ByteArray.setShort(buf, off, unsafe.getShort(obj, key));
-                    case 'I' -> ByteArray.setInt(buf, off, unsafe.getInt(obj, key));
-                    case 'F' -> ByteArray.setFloat(buf, off, unsafe.getFloat(obj, key));
-                    case 'J' -> ByteArray.setLong(buf, off, unsafe.getLong(obj, key));
-                    case 'D' -> ByteArray.setDouble(buf, off, unsafe.getDouble(obj, key));
+                    case 'Z' -> ByteArray.setBoolean(buf, off, UNSAFE.getBoolean(obj, key));
+                    case 'B' -> buf[off] = UNSAFE.getByte(obj, key);
+                    case 'C' -> ByteArray.setChar(buf, off, UNSAFE.getChar(obj, key));
+                    case 'S' -> ByteArray.setShort(buf, off, UNSAFE.getShort(obj, key));
+                    case 'I' -> ByteArray.setInt(buf, off, UNSAFE.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloat(buf, off, UNSAFE.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLong(buf, off, UNSAFE.getLong(obj, key));
+                    case 'D' -> ByteArray.setDouble(buf, off, UNSAFE.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }
@@ -2016,14 +2016,14 @@ public final class ObjectStreamClass implements Serializable {
                 }
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> unsafe.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
-                    case 'B' -> unsafe.putByte(obj, key, buf[off]);
-                    case 'C' -> unsafe.putChar(obj, key, ByteArray.getChar(buf, off));
-                    case 'S' -> unsafe.putShort(obj, key, ByteArray.getShort(buf, off));
-                    case 'I' -> unsafe.putInt(obj, key, ByteArray.getInt(buf, off));
-                    case 'F' -> unsafe.putFloat(obj, key, ByteArray.getFloat(buf, off));
-                    case 'J' -> unsafe.putLong(obj, key, ByteArray.getLong(buf, off));
-                    case 'D' -> unsafe.putDouble(obj, key, ByteArray.getDouble(buf, off));
+                    case 'Z' -> UNSAFE.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
+                    case 'B' -> UNSAFE.putByte(obj, key, buf[off]);
+                    case 'C' -> UNSAFE.putChar(obj, key, ByteArray.getChar(buf, off));
+                    case 'S' -> UNSAFE.putShort(obj, key, ByteArray.getShort(buf, off));
+                    case 'I' -> UNSAFE.putInt(obj, key, ByteArray.getInt(buf, off));
+                    case 'F' -> UNSAFE.putFloat(obj, key, ByteArray.getFloat(buf, off));
+                    case 'J' -> UNSAFE.putLong(obj, key, ByteArray.getLong(buf, off));
+                    case 'D' -> UNSAFE.putDouble(obj, key, ByteArray.getDouble(buf, off));
                     default  -> throw new InternalError();
                 }
             }
@@ -2044,7 +2044,7 @@ public final class ObjectStreamClass implements Serializable {
              */
             for (int i = numPrimFields; i < fields.length; i++) {
                 vals[offsets[i]] = switch (typeCodes[i]) {
-                    case 'L', '[' -> unsafe.getReference(obj, readKeys[i]);
+                    case 'L', '[' -> UNSAFE.getReference(obj, readKeys[i]);
                     default       -> throw new InternalError();
                 };
             }
@@ -2095,7 +2095,7 @@ public final class ObjectStreamClass implements Serializable {
                                 obj.getClass().getName());
                         }
                         if (!dryRun)
-                            unsafe.putReference(obj, key, val);
+                            UNSAFE.putReference(obj, key, val);
                     }
                     default -> throw new InternalError();
                 }

@@ -770,7 +770,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes an 8 bit byte.
+     * Writes an 8-bit byte.
      *
      * @param   val the byte value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -781,7 +781,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit short.
+     * Writes a 16-bit short.
      *
      * @param   val the short value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -792,7 +792,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 16 bit char.
+     * Writes a 16-bit char.
      *
      * @param   val the char value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -803,7 +803,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit int.
+     * Writes a 32-bit int.
      *
      * @param   val the integer value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -814,7 +814,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit long.
+     * Writes a 64-bit long.
      *
      * @param   val the long value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -825,7 +825,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 32 bit float.
+     * Writes a 32-bit float.
      *
      * @param   val the float value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -836,7 +836,7 @@ public class ObjectOutputStream
     }
 
     /**
-     * Writes a 64 bit double.
+     * Writes a 64-bit double.
      *
      * @param   val the double value to be written
      * @throws  IOException if I/O errors occur while writing to the underlying
@@ -1756,7 +1756,7 @@ public class ObjectOutputStream
      * bracketed by block data markers (see object serialization specification
      * for details).
      */
-    private static class BlockDataOutputStream
+    private static final class BlockDataOutputStream
         extends OutputStream implements DataOutput
     {
         /** maximum data block length */
@@ -2262,7 +2262,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to integer handles,
      * assigned in ascending order.
      */
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* number of mappings in table/next available handle */
         private int size;
@@ -2387,7 +2387,7 @@ public class ObjectOutputStream
      * Lightweight identity hash table which maps objects to replacement
      * objects.
      */
-    private static class ReplaceTable {
+    private static final class ReplaceTable {
 
         /* maps object -> index */
         private final HandleTable htab;
@@ -2451,7 +2451,7 @@ public class ObjectOutputStream
      * Stack to keep debug information about the state of the
      * serialization process, for embedding in exception messages.
      */
-    private static class DebugTraceInfoStack {
+    private static final class DebugTraceInfoStack {
         private final List<String> stack;
 
         DebugTraceInfoStack() {

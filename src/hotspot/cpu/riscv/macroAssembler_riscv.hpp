@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,7 @@ class MacroAssembler: public Assembler {
   void resolve_weak_handle(Register result, Register tmp1, Register tmp2);
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   void movoop(Register dst, jobject obj);
   void mov_metadata(Register dst, Metadata* obj);
@@ -908,7 +909,7 @@ public:
         if (is_offset_in_range(adr.offset(), 12)) {                                                \
           Assembler::NAME(Rs, adr.base(), adr.offset());                                           \
         } else {                                                                                   \
-          int32_t offset= 0;                                                                       \
+          int32_t offset = 0;                                                                      \
           assert_different_registers(Rs, temp);                                                    \
           baseOffset32(temp, adr, offset);                                                         \
           Assembler::NAME(Rs, temp, offset);                                                       \
@@ -1313,7 +1314,6 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {

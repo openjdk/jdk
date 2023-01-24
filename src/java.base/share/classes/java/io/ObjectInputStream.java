@@ -1094,9 +1094,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an 8 bit byte.
+     * Reads an 8-bit byte.
      *
-     * @return  the 8 bit byte read.
+     * @return  the 8-bit byte read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1105,9 +1105,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an unsigned 8 bit byte.
+     * Reads an unsigned 8-bit byte.
      *
-     * @return  the 8 bit byte read.
+     * @return  the 8-bit byte read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1116,9 +1116,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 16 bit char.
+     * Reads a 16-bit char.
      *
-     * @return  the 16 bit char read.
+     * @return  the 16-bit char read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1127,9 +1127,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 16 bit short.
+     * Reads a 16-bit short.
      *
-     * @return  the 16 bit short read.
+     * @return  the 16-bit short read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1138,9 +1138,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an unsigned 16 bit short.
+     * Reads an unsigned 16-bit short.
      *
-     * @return  the 16 bit short read.
+     * @return  the 16-bit short read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1149,9 +1149,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 32 bit int.
+     * Reads a 32-bit int.
      *
-     * @return  the 32 bit integer read.
+     * @return  the 32-bit integer read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1160,9 +1160,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 64 bit long.
+     * Reads a 64-bit long.
      *
-     * @return  the read 64 bit long.
+     * @return  the read 64-bit long.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1171,9 +1171,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 32 bit float.
+     * Reads a 32-bit float.
      *
-     * @return  the 32 bit float read.
+     * @return  the 32-bit float read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1182,9 +1182,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 64 bit double.
+     * Reads a 64-bit double.
      *
-     * @return  the 64 bit double read.
+     * @return  the 64-bit double read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -3863,7 +3863,7 @@ public class ObjectInputStream
      * as memory conservation, it does not enforce this constraint.
      */
     // REMIND: add full description of exception propagation algorithm?
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* status codes indicating whether object has associated exception */
         private static final byte STATUS_OK = 1;
