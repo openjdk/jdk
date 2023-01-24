@@ -119,7 +119,7 @@ public class URLEncoder {
          *
          */
 
-        DONT_NEED_ENCODING = new BitSet(256);
+        DONT_NEED_ENCODING = new BitSet(128);
 
         DONT_NEED_ENCODING.set('a', 'z' + 1);
         DONT_NEED_ENCODING.set('A', 'Z' + 1);
