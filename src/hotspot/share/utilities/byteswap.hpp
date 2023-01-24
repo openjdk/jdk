@@ -27,7 +27,7 @@
 
 // Byte swapping for 8-bit, 16-bit, 32-bit, and 64-bit integers.
 
-// byteswap<T>()
+// T byteswap<T>(T)
 //
 // Reverses the bytes for the value of the integer type T. Partially compatible with std::byteswap
 // introduced in C++23.
