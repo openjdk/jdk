@@ -89,7 +89,6 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   size_t capacity_in_bytes() const { return capacity_in_words() * HeapWordSize; }
   size_t capacity_in_words() const { return pointer_delta(end(), bottom()); }
-  virtual size_t capacity_in_words(Thread*) const { return capacity_in_words(); }
 
   // Returns a subregion containing all objects in this space.
   MemRegion used_region() { return MemRegion(bottom(), top()); }
