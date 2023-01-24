@@ -1019,7 +1019,6 @@ class PSParallelCompact : AllStatic {
   static STWGCTimer           _gc_timer;
   static ParallelOldTracer    _gc_tracer;
   static elapsedTimer         _accumulated_time;
-  static unsigned int         _total_invocations;
   static unsigned int         _maximum_compaction_gc_num;
   static CollectorCounters*   _counters;
   static ParMarkBitMap        _mark_bitmap;
@@ -1157,7 +1156,7 @@ class PSParallelCompact : AllStatic {
 
   // Public accessors
   static elapsedTimer* accumulated_time() { return &_accumulated_time; }
-  static unsigned int total_invocations() { return _total_invocations; }
+
   static CollectorCounters* counters()    { return _counters; }
 
   // Marking support
