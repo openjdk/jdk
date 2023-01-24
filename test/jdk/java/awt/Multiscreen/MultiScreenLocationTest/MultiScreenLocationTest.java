@@ -70,6 +70,8 @@ public class MultiScreenLocationTest {
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
             Rectangle screen = gc.getBounds();
             Robot robot = new Robot(gd);
+            robot.setAutoDelay(250);
+            robot.waitForIdle();
 
             // check Robot.mouseMove()
             robot.mouseMove(screen.x + mouseOffset.x, screen.y + mouseOffset.y);
