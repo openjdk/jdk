@@ -457,7 +457,7 @@ void HeapShared::archive_java_mirrors() {
         if (rr != nullptr && !is_too_large_to_archive(rr)) {
           oop archived_obj = HeapShared::archive_reachable_objects_from(1, _default_subgraph_info, rr,
                                                                         /*is_closed_archive=*/false);
-          assert(archived_obj != NULL,  "already checked not too large to archive");
+          assert(archived_obj != nullptr,  "already checked not too large to archive");
           int root_index = append_root(archived_obj);
           ik->constants()->cache()->set_archived_references(root_index);
         }
@@ -637,12 +637,12 @@ void HeapShared::copy_interned_strings() {
   init_seen_objects_table();
 
   auto copier = [&] (oop s, bool value_ignored) {
-    assert(s != NULL, "sanity");
+    assert(s != nullptr, "sanity");
     typeArrayOop value = java_lang_String::value_no_keepalive(s);
     if (!HeapShared::is_too_large_to_archive(value)) {
       oop archived_s = archive_reachable_objects_from(1, _default_subgraph_info,
                                                     s, /*is_closed_archive=*/true);
-      assert(s != NULL, "must be");
+      assert(s != nullptr, "must be");
     }
   };
   _dumped_interned_strings->iterate_all(copier);

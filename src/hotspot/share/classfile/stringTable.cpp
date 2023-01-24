@@ -769,9 +769,9 @@ private:
 public:
   CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
-    assert(s != NULL, "sanity");
+    assert(s != nullptr, "sanity");
     oop new_s = HeapShared::find_archived_heap_object(s);
-    if (new_s != NULL) { // could be NULL if the string is too big
+    if (new_s != nullptr) { // could be null if the string is too big
       unsigned int hash = java_lang_String::hash_code(s);
       if (UseCompressedOops) {
         _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
