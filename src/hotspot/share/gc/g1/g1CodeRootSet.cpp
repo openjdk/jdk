@@ -23,18 +23,12 @@
  */
 
 #include "precompiled.hpp"
+
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "memory/heap.hpp"
-#include "memory/iterator.hpp"
-#include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
-#include "services/memTracker.hpp"
-#include "utilities/hashtable.inline.hpp"
-#include "utilities/stack.inline.hpp"
 
 void G1CodeRootSet::add(nmethod* nm) {
   assert(_is_iterating == false, "should not mutate while iterating the table");

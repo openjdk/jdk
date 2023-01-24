@@ -25,19 +25,12 @@
 #ifndef SHARE_GC_G1_G1CODEROOTSET_HPP
 #define SHARE_GC_G1_G1CODEROOTSET_HPP
 
-#include "utilities/globalDefinitions.hpp"
-
 #include "code/codeCache.hpp"
-#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/resizeableResourceHash.hpp"
-#include "utilities/resourceHash.hpp"
 
-class CleanCallback;
-class CodeBlobClosure;
-class G1CodeRootSetTable;
 class HeapRegion;
 class nmethod;
-
 
 // Implements storage for a set of code roots.
 // This class is not thread safe, locks are needed.
@@ -74,7 +67,6 @@ class G1CodeRootSet {
 
   // Memory size in bytes taken by this set.
   size_t mem_size();
-
 };
 
 #endif // SHARE_GC_G1_G1CODEROOTSET_HPP

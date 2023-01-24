@@ -180,7 +180,6 @@ public class TestGCLogMessages {
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
         new LogMessageWithLevel("Reset Hot Card Cache", Level.DEBUG),
-        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),

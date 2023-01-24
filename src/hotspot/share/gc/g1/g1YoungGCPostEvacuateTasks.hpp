@@ -54,7 +54,6 @@ public:
 
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
-// - Purge Code Roots (s)
 // - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
 // - Clear Retained Region Bitmaps (on evacuation failure)
