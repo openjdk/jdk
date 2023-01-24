@@ -54,10 +54,9 @@
 
 package java.lang;
 
-import java.io.*;
-import java.nio.charset.Charset;
 import java.util.*;
-import jdk.internal.util.StaticProperty;
+
+import static java.lang.ProcessImpl.JNU_CHARSET;
 
 
 final class ProcessEnvironment
@@ -165,7 +164,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOfQueryOnly(String str) {
-            return new Variable(str, str.getBytes(ProcessImpl.JNU_CHARSET));
+            return new Variable(str, str.getBytes(JNU_CHARSET));
         }
 
         public static Variable valueOf(String str) {
@@ -174,7 +173,7 @@ final class ProcessEnvironment
         }
 
         public static Variable valueOf(byte[] bytes) {
-            return new Variable(new String(bytes, ProcessImpl.JNU_CHARSET), bytes);
+            return new Variable(new String(bytes, JNU_CHARSET), bytes);
         }
 
         public int compareTo(Variable variable) {
@@ -198,7 +197,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOfQueryOnly(String str) {
-            return new Value(str, str.getBytes(ProcessImpl.JNU_CHARSET));
+            return new Value(str, str.getBytes(JNU_CHARSET));
         }
 
         public static Value valueOf(String str) {
@@ -207,7 +206,7 @@ final class ProcessEnvironment
         }
 
         public static Value valueOf(byte[] bytes) {
-            return new Value(new String(bytes, ProcessImpl.JNU_CHARSET), bytes);
+            return new Value(new String(bytes, JNU_CHARSET), bytes);
         }
 
         public int compareTo(Value value) {
