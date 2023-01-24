@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,27 @@
 package jdk.test.lib.jittester;
 
 import java.io.IOException;
-import java.util.function.Function;
 import jdk.test.lib.jittester.visitors.JavaCodeVisitor;
 
 /**
  * Generates java source code from IRTree
  */
 public class JavaCodeGenerator extends TestsGenerator {
-    private static final String DEFAULT_SUFFIX = "java_tests";
+    public static final String DEFAULT_SUFFIX = "java_tests";
 
-    JavaCodeGenerator() {
-        this(DEFAULT_SUFFIX, JavaCodeGenerator::generatePrerunAction, "-Xcomp");
+    private final HeaderFormatter headerFormatter;
+
+    protected JavaCodeGenerator() {
+        this(new HeaderFormatter.Builder()
+                                .preRunActions(JavaCodeGenerator::generatePrerunAction)
+                                .build());
     }
 
-    JavaCodeGenerator(String prefix, Function<String, String[]> preRunActions, String jtDriverOptions) {
-        super(prefix, preRunActions, jtDriverOptions);
+    protected JavaCodeGenerator(HeaderFormatter headerFormatter) {
+        super(DEFAULT_SUFFIX);
+        this.headerFormatter = headerFormatter;
     }
+
 
     @Override
     public void accept(IRNode mainClass, IRNode privateClasses) {
@@ -50,11 +55,11 @@ public class JavaCodeGenerator extends TestsGenerator {
         generateGoldenOut(mainClassName);
     }
 
-    private void generateSources(IRNode mainClass, IRNode privateClasses) {
+    protected void generateSources(IRNode mainClass, IRNode privateClasses) {
         String mainClassName = mainClass.getName();
         StringBuilder code = new StringBuilder();
         JavaCodeVisitor vis = new JavaCodeVisitor();
-        code.append(getJtregHeader(mainClassName));
+        code.append(headerFormatter.getJtregHeader(mainClassName));
         if (privateClasses != null) {
             code.append(privateClasses.accept(vis));
         }
@@ -63,14 +68,15 @@ public class JavaCodeGenerator extends TestsGenerator {
         writeFile(generatorDir, mainClassName + ".java", code.toString());
     }
 
-    private void compileJavaFile(String mainClassName) {
-        String classPath = tmpDir.toString();
+    protected void compileJavaFile(String mainClassName) {
+        String classPath = tmpDir.path.toString();
         ProcessBuilder pb = new ProcessBuilder(JAVAC,
                 "-d", classPath,
                 "-cp", classPath,
                 generatorDir.resolve(mainClassName + ".java").toString());
         try {
-            int r = runProcess(pb, tmpDir.resolve(mainClassName + ".javac").toString());
+            int r = ProcessRunner.runProcess(pb,
+                    tmpDir.path.resolve(mainClassName).toString(), Phase.COMPILE);
             if (r != 0) {
                 throw new Error("Can't compile sources, exit code = " + r);
             }
@@ -79,7 +85,7 @@ public class JavaCodeGenerator extends TestsGenerator {
         }
     }
 
-    private static String[] generatePrerunAction(String mainClassName) {
+    protected static String[] generatePrerunAction(String mainClassName) {
         return new String[] {"@compile " + mainClassName + ".java"};
     }
 }

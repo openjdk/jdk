@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,20 +30,22 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.function.Function;
 
 /**
  * Generates class files from IRTree
  */
-class ByteCodeGenerator extends TestsGenerator {
-    private static final String DEFAULT_SUFFIX = "bytecode_tests";
+public class ByteCodeGenerator extends TestsGenerator {
+    public static final String DEFAULT_SUFFIX = "bytecode_tests";
 
-    ByteCodeGenerator() {
-        super(DEFAULT_SUFFIX, s -> new String[0], "-Xcomp");
+    protected final HeaderFormatter headerFormatter;
+
+    protected ByteCodeGenerator() {
+        this(new HeaderFormatter.Builder().build());
     }
 
-    ByteCodeGenerator(String suffix, Function<String, String[]> preRunActions, String jtDriverOptions) {
-        super(suffix, preRunActions, jtDriverOptions);
+    protected ByteCodeGenerator(HeaderFormatter headerFormatter) {
+        super(DEFAULT_SUFFIX);
+        this.headerFormatter = headerFormatter;
     }
 
     @Override
@@ -56,10 +58,10 @@ class ByteCodeGenerator extends TestsGenerator {
 
     private void generateSeparateJtregHeader(IRNode mainClass) {
         String mainClassName = mainClass.getName();
-        writeFile(generatorDir, mainClassName + ".java", getJtregHeader(mainClassName));
+        writeFile(generatorDir, mainClassName + ".java", headerFormatter.getJtregHeader(mainClassName));
     }
 
-    private void generateClassFiles(IRNode mainClass, IRNode privateClasses) {
+    protected void generateClassFiles(IRNode mainClass, IRNode privateClasses) {
         String mainClassName = mainClass.getName();
         ensureExisting(generatorDir);
         try {

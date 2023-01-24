@@ -22,10 +22,16 @@
  */
 
 package jdk.test.lib.jittester;
+
+import java.time.Duration;
+import java.time.Instant;
+
 // an utility class to limit steps in the production of an expression
 public class ProductionLimiter {
 
     private static Integer limit = -1;
+
+    private static Instant limitInstant;
 
     public static void setUnlimited() {
         limit = -1;
@@ -44,5 +50,22 @@ public class ProductionLimiter {
         if (limit != -1 && limit <= 0) {
             throw new ProductionFailedException();
         }
+
+        if (Instant.now().isAfter(limitInstant)) {
+            long paramsLimitSeconds = ProductionParams.productionLimitSeconds.value();
+            Duration elapsed = Duration.between(limitInstant.minusSeconds(paramsLimitSeconds), Instant.now());
+            Duration timeLimit = Duration.ofSeconds(paramsLimitSeconds);
+
+            throw new RuntimeException(
+                    String.format("A test generation took %s while limit is %s",
+                        String.format("%d:%02d:%02d",
+                            elapsed.toHoursPart(), elapsed.toMinutesPart(), elapsed.toSecondsPart()),
+                        String.format("%d:%02d:%02d",
+                            timeLimit.toHoursPart(), timeLimit.toMinutesPart(), timeLimit.toSecondsPart())));
+        }
+    }
+
+    public static void resetTimer() {
+        limitInstant = Instant.now().plusSeconds(ProductionParams.productionLimitSeconds.value());
     }
 }
