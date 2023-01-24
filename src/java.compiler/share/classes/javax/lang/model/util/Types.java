@@ -49,6 +49,19 @@ public interface Types {
      * Returns {@code null} if the type is not one with a
      * corresponding element.
      *
+     * <p>Types without corresponding elements include:
+     * <ul>
+     * <li>{@linkplain TypeKind#isPrimitive() primitive types}
+     * <li>{@linkplain TypeKind#EXECUTABLE executable types}
+     * <li>{@linkplain TypeKind#MODULE module pseudo-types}
+     * <li>{@linkplain TypeKind#NONE "none" pseudo-types}
+     * <li>{@linkplain TypeKind#NULL  null types}
+     * <li>{@linkplain TypeKind#PACKAGE package pseudo-types}
+     * <li>{@linkplain TypeKind#UNION union types}
+     * <li>{@link TypeKind#VOID void}
+     * <li>{@linkplain TypeKind#WILDCARD wildcard type argument}
+     * </ul>
+     *
      * @param t the type to map to an element
      * @return the element corresponding to the given type
      */
