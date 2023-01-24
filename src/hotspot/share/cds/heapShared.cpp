@@ -641,8 +641,11 @@ void HeapShared::copy_interned_strings() {
     typeArrayOop value = java_lang_String::value_no_keepalive(s);
     if (!HeapShared::is_too_large_to_archive(value)) {
       oop archived_s = archive_reachable_objects_from(1, _default_subgraph_info,
-                                                    s, /*is_closed_archive=*/true);
-      assert(s != nullptr, "must be");
+                                                      s, /*is_closed_archive=*/true);
+      assert(archived_s != nullptr, "already checked not too large to archive");
+      // Prevent string deduplication from changing the value field to
+      // something not in the archive.
+      java_lang_String::set_deduplication_forbidden(archived_s);
     }
   };
   _dumped_interned_strings->iterate_all(copier);
