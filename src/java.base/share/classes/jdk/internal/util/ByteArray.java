@@ -198,7 +198,6 @@ public final class ByteArray {
      *
      * @param array  to get a value from.
      * @param offset where extraction in the array should begin
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 8]
      * @see #setDouble(byte[], int, double)
@@ -241,7 +240,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length]
      * @see #getBoolean(byte[], int)
@@ -259,7 +257,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getChar(byte[], int)
@@ -277,7 +274,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getShort(byte[], int)
@@ -295,7 +291,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getUnsignedShort(byte[], int)
@@ -313,7 +308,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
      * @see #getInt(byte[], int)
@@ -333,7 +327,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getFloat(byte[], int)
@@ -356,7 +349,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getFloatRaw(byte[], int)
@@ -375,7 +367,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 4]
      * @see #getLong(byte[], int)
@@ -395,7 +386,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getDouble(byte[], int)
@@ -418,7 +408,6 @@ public final class ByteArray {
      * @param array  to set (write) a value into
      * @param offset where setting (writing) in the array should begin
      * @param value  value to set in the array
-     * @throws NullPointerException      if the provided {@code array} is {@code null}
      * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
      *                                   the range [0, array.length - 2]
      * @see #getDoubleRaw(byte[], int)
