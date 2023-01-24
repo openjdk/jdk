@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -754,31 +754,6 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
 }
 
-oop StringTable::create_archived_string(oop s) {
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  assert(java_lang_String::is_instance(s), "sanity");
-  assert(!HeapShared::is_archived_object_during_dumptime(s), "sanity");
-
-  oop new_s = NULL;
-  typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_object(v);
-  if (new_v == NULL) {
-    return NULL;
-  }
-  new_s = HeapShared::archive_object(s);
-  if (new_s == NULL) {
-    return NULL;
-  }
-
-  // adjust the pointer to the 'value' field in the new String oop
-  java_lang_String::set_value_raw(new_s, new_v);
-  // Prevent string deduplication from changing the 'value' field to
-  // something not in the archive before building the archive.  Also marks
-  // the shared string when loaded.
-  java_lang_String::set_deduplication_forbidden(new_s);
-  return new_s;
-}
-
 class CopyToArchive : StackObj {
   CompactHashtableWriter* _writer;
 private:
@@ -795,19 +770,16 @@ public:
   CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
     assert(s != NULL, "sanity");
-    unsigned int hash = java_lang_String::hash_code(s);
-    oop new_s = StringTable::create_archived_string(s);
-    if (new_s == NULL) {
-      return true;
+    oop new_s = HeapShared::find_archived_heap_object(s);
+    if (new_s != NULL) { // could be NULL if the string is too big
+      unsigned int hash = java_lang_String::hash_code(s);
+      if (UseCompressedOops) {
+        _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+      } else {
+        _writer->add(hash, compute_delta(new_s));
+      }
     }
-
-    // add to the compact table
-    if (UseCompressedOops) {
-      _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
-    } else {
-      _writer->add(hash, compute_delta(new_s));
-    }
-    return true;
+    return true; // keep iterating
   }
 };
 

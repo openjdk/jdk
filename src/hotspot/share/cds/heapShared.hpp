@@ -316,7 +316,9 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
+  static oop archive_object(oop obj);
 
+  static void copy_interned_strings();
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -373,7 +375,6 @@ private:
 
   static bool is_too_large_to_archive(oop o);
   static oop find_archived_heap_object(oop obj);
-  static oop archive_object(oop obj);
 
   static void archive_java_mirrors();
 
