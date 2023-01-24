@@ -94,7 +94,7 @@ template <typename BE, typename IE, typename WriterPolicyImpl>
 void WriterHost<BE, IE, WriterPolicyImpl>::write_utf8(const char* value) {
   if (nullptr == value) {
     // only write encoding byte indicating null string
-    write<u1>(nullptr_STRING);
+    write<u1>(NULL_STRING);
     return;
   }
   write<u1>(UTF8); // designate encoding
@@ -217,7 +217,7 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_empty_string() {
 template <typename BE, typename IE, typename WriterPolicyImpl>
 inline void WriterHost<BE, IE, WriterPolicyImpl>::write(jstring string) {
   if (string == nullptr) {
-    write<u1>(nullptr_STRING);
+    write<u1>(NULL_STRING);
     return;
   }
   const oop string_oop = JNIHandles::resolve_external_guard(string);
