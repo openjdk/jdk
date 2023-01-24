@@ -630,7 +630,7 @@ void HeapShared::archive_objects(GrowableArray<MemRegion>* closed_regions,
   }
 
   G1HeapVerifier::verify_archive_regions();
-  StringTable::write_to_archive(_dumped_interned_strings);
+  StringTable::write_shared_table(_dumped_interned_strings);
 }
 
 void HeapShared::copy_interned_strings() {

@@ -754,7 +754,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
 }
 
-class CopyToArchive : StackObj {
+class EncodeSharedStringsAsOffsets : StackObj {
   CompactHashtableWriter* _writer;
 private:
   u4 compute_delta(oop s) {
@@ -767,7 +767,7 @@ private:
     return (u4)offset;
   }
 public:
-  CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
+  EncodeSharedStringsAsOffsets(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
     oop new_s = HeapShared::find_archived_heap_object(s);
@@ -783,15 +783,19 @@ public:
   }
 };
 
-void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
+// Write the _shared_table (a CompactHashtable) into the CDS archive file.
+void StringTable::write_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
 
-  // Copy the interned strings into the "string space" within the java heap
-  CopyToArchive copier(&writer);
-  dumped_interned_strings->iterate(&copier);
+  // Encode the strings in the CompactHashtable using offsets -- we know that the
+  // strings will not move during runtime because they are inside the G1 closed
+  // archive region.
+  EncodeSharedStringsAsOffsets offset_finder(&writer);
+  dumped_interned_strings->iterate(&offset_finder);
+
   writer.dump(&_shared_table, "string");
 }
 
