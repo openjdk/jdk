@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.io;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This class implements a character buffer that can be used as a Writer.
@@ -43,7 +44,7 @@ public class CharArrayWriter extends Writer {
     /**
      * The buffer where data is stored.
      */
-    protected char buf[];
+    protected char[] buf;
 
     /**
      * The number of chars in the buffer.
@@ -97,10 +98,8 @@ public class CharArrayWriter extends Writer {
      *          of the given array
      */
     public void write(char[] c, int off, int len) {
-        if ((off < 0) || (off > c.length) || (len < 0) ||
-            ((off + len) > c.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
+        Objects.checkFromIndexSize(off, len, c.length);
+        if (len == 0) {
             return;
         }
         synchronized (lock) {

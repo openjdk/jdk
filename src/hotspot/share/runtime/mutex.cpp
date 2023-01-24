@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,11 +209,10 @@ void Monitor::notify_all() {
   _lock.notify_all();
 }
 
-bool Monitor::wait_without_safepoint_check(int64_t timeout) {
+// timeout is in milliseconds - with zero meaning never timeout
+bool Monitor::wait_without_safepoint_check(uint64_t timeout) {
   Thread* const self = Thread::current();
 
-  // timeout is in milliseconds - with zero meaning never timeout
-  assert(timeout >= 0, "negative timeout");
   assert_owner(self);
   check_rank(self);
 
@@ -229,13 +228,12 @@ bool Monitor::wait_without_safepoint_check(int64_t timeout) {
   return wait_status != 0;          // return true IFF timeout
 }
 
-bool Monitor::wait(int64_t timeout) {
+// timeout is in milliseconds - with zero meaning never timeout
+bool Monitor::wait(uint64_t timeout) {
   JavaThread* const self = JavaThread::current();
   // Safepoint checking logically implies an active JavaThread.
   assert(self->is_active_Java_thread(), "invariant");
 
-  // timeout is in milliseconds - with zero meaning never timeout
-  assert(timeout >= 0, "negative timeout");
   assert_owner(self);
   check_rank(self);
 

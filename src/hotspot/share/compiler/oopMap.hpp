@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ class OopMapSet : public ResourceObj {
   // Collect OopMaps.
   int add_gc_map(int pc, OopMap* map);
 
-  // Methods oops_do() and all_do() filter out NULL oops and
+  // Methods oops_do() and all_do() filter out nullptr oops and
   // oop == CompressedOops::base() before passing oops
   // to closures.
 
@@ -404,7 +404,7 @@ private:
     const OopMap* _map;
     const OopMap* _other;
 
-    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(NULL) {}
+    Mapping() : _kind(OOPMAP_UNKNOWN), _offset(-1), _size(-1), _map(nullptr) {}
 
     void set(kind_t kind, int offset, int size, const OopMap* map = 0, const OopMap* other = 0) {
       _kind = kind;
@@ -427,7 +427,7 @@ private:
   }
 
   bool is_last_duplicate(const OopMap* map) {
-    if (_last != NULL && _last->count() > 0 && _last->equals(map)) {
+    if (_last != nullptr && _last->count() > 0 && _last->equals(map)) {
       return true;
     }
     return false;

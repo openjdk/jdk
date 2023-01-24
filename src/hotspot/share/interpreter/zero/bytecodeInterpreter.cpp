@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,7 +604,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
       return;
     }
     case method_entry: {
-      THREAD->set_do_not_unlock();
+      THREAD->set_do_not_unlock_if_synchronized(true);
 
       // Lock method if synchronized.
       if (METHOD->is_synchronized()) {
@@ -639,7 +639,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
           THREAD->inc_held_monitor_count();
         }
       }
-      THREAD->clr_do_not_unlock();
+      THREAD->set_do_not_unlock_if_synchronized(false);
 
       // Notify jvmti.
       // Whenever JVMTI puts a thread in interp_only_mode, method
@@ -2127,7 +2127,7 @@ run:
 
           case JVM_CONSTANT_String:
             {
-              oop result = constants->resolved_references()->obj_at(index);
+              oop result = constants->resolved_reference_at(index);
               if (result == NULL) {
                 CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode), handle_exception);
                 SET_STACK_OBJECT(THREAD->vm_result(), 0);
@@ -2232,7 +2232,7 @@ run:
         // This kind of CP cache entry does not need to match the flags byte, because
         // there is a 1-1 relation between bytecode type and CP entry type.
         ConstantPool* constants = METHOD->constants();
-        oop result = constants->resolved_references()->obj_at(index);
+        oop result = constants->resolved_reference_at(index);
         if (result == NULL) {
           CALL_VM(InterpreterRuntime::resolve_ldc(THREAD, (Bytecodes::Code) opcode),
                   handle_exception);
@@ -3098,12 +3098,12 @@ run:
     // there is no need to unlock it (or look for other monitors), since that
     // could not have happened.
 
-    if (THREAD->do_not_unlock()) {
+    if (THREAD->do_not_unlock_if_synchronized()) {
 
       // Never locked, reset the flag now because obviously any caller must
       // have passed their point of locking for us to have gotten here.
 
-      THREAD->clr_do_not_unlock();
+      THREAD->set_do_not_unlock_if_synchronized(false);
     } else {
       // At this point we consider that we have returned. We now check that the
       // locks were properly block structured. If we find that they were not
@@ -3229,7 +3229,7 @@ run:
       }
     }
     // Clear the do_not_unlock flag now.
-    THREAD->clr_do_not_unlock();
+    THREAD->set_do_not_unlock_if_synchronized(false);
 
     //
     // Notify jvmti/jvmdi

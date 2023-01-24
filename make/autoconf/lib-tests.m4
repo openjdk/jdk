@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -285,10 +285,16 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JIB],
 #
 AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
 [
-  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
+  if test "x$BUILD_ENV" = "xci"; then
+    BUILD_FAILURE_HANDLER_DEFAULT=auto
+  else
+    BUILD_FAILURE_HANDLER_DEFAULT=false
+  fi
+
+  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: $BUILD_FAILURE_HANDLER_DEFAULT,
       RESULT: BUILD_FAILURE_HANDLER,
       DESC: [enable building of the jtreg failure handler],
-      DEFAULT_DESC: [enabled if jtreg is present],
+      DEFAULT_DESC: [enabled if jtreg is present and build env is CI],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if the jtreg failure handler is available])

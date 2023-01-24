@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,7 +132,7 @@ void VM_Version::initialize() {
   // Enable vendor specific features
 
   // Ampere eMAG
-  if (_cpu == CPU_AMCC && (_model == 0) && (_variant == 0x3)) {
+  if (_cpu == CPU_AMCC && (_model == CPU_MODEL_EMAG) && (_variant == 0x3)) {
     if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
       FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
     }
@@ -141,6 +141,13 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, !(_revision == 1 || _revision == 2));
+    }
+  }
+
+  // Ampere CPUs: Ampere-1 and Ampere-1A
+  if (_cpu == CPU_AMPERE && ((_model == CPU_MODEL_AMPERE_1) || (_model == CPU_MODEL_AMPERE_1A))) {
+    if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
+      FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
   }
 
@@ -335,10 +342,14 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA && VM_Version::supports_sha3()) {
-    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
-    // }
+    // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
+    // Note that the evaluation of UseSHA3Intrinsics shows better performance
+    // on Apple silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE) {  // Apple silicon
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+      }
+    }
   } else if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
@@ -549,6 +560,42 @@ void VM_Version::initialize() {
 #endif
 
   _spin_wait = get_spin_wait_desc();
+
+  check_virtualizations();
+}
+
+void VM_Version::check_virtualizations() {
+#if defined(LINUX)
+  const char* info_file = "/sys/devices/virtual/dmi/id/product_name";
+  // check for various strings in the dmi data indicating virtualizations
+  char line[500];
+  FILE* fp = os::fopen(info_file, "r");
+  if (fp == nullptr) {
+    return;
+  }
+  while (fgets(line, sizeof(line), fp) != nullptr) {
+    if (strcasestr(line, "KVM") != 0) {
+      Abstract_VM_Version::_detected_virtualization = KVM;
+      break;
+    }
+    if (strcasestr(line, "VMware") != 0) {
+      Abstract_VM_Version::_detected_virtualization = VMWare;
+      break;
+    }
+  }
+  fclose(fp);
+#endif
+}
+
+void VM_Version::print_platform_virtualization_info(outputStream* st) {
+#if defined(LINUX)
+    VirtualizationType vrt = VM_Version::get_detected_virtualization();
+    if (vrt == KVM) {
+      st->print_cr("KVM virtualization detected");
+    } else if (vrt == VMWare) {
+      st->print_cr("VMWare virtualization detected");
+    }
+#endif
 }
 
 void VM_Version::initialize_cpu_information(void) {

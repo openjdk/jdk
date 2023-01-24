@@ -76,7 +76,7 @@ void MarkSweep::push_objarray(oop obj, size_t index) {
 }
 
 void MarkSweep::follow_array(objArrayOop array) {
-  MarkSweep::follow_klass(array->klass());
+  mark_and_push_closure.do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     MarkSweep::push_objarray(array, 0);
@@ -201,11 +201,6 @@ template <class T> void MarkSweep::mark_and_push(T* p) {
       _marking_stack.push(obj);
     }
   }
-}
-
-void MarkSweep::follow_klass(Klass* klass) {
-  oop op = klass->class_loader_data()->holder_no_keepalive();
-  MarkSweep::mark_and_push(&op);
 }
 
 template <typename T>

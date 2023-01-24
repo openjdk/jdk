@@ -178,7 +178,7 @@ kill_proc_common() {
         # check if it's still hanging around
         if [ $? -eq 0 ]
         then
-            # it's still lingering, now it it hard
+            # it's still lingering, now hit it hard
             kill -KILL ${kpid} 2>/dev/null
             if [ $? -ne 0 ]
             then

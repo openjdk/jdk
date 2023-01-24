@@ -17,14 +17,14 @@ public class Private06 {
         void foo(NAFI nafi);
     }
 
-    public static void main(String [] args) {
+    public static void meth() {
         Private06.NAFI nafi = () -> {};
         Private06.FI fi = Private06.NAFI::foo; // OK.
     }
 }
 
 class Private06_01 {
-    public static void main(String [] args) {
+    public static void meth() {
         Private06.FI fi = Private06.NAFI::foo; // NOT OK.
     }
 }

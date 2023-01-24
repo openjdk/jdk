@@ -58,25 +58,19 @@ public:
   virtual void do_oop(narrowOop* p);
 };
 
-class G1MarkAndPushClosure : public OopIterateClosure {
+class G1MarkAndPushClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1FullGCMarker* _marker;
   uint _worker_id;
 
 public:
-  G1MarkAndPushClosure(uint worker, G1FullGCMarker* marker, ReferenceDiscoverer* ref) :
-    OopIterateClosure(ref),
+  G1MarkAndPushClosure(uint worker_id, G1FullGCMarker* marker, int claim, ReferenceDiscoverer* ref) :
+    ClaimMetadataVisitingOopIterateClosure(claim, ref),
     _marker(marker),
-    _worker_id(worker) { }
+    _worker_id(worker_id) { }
 
   template <class T> inline void do_oop_work(T* p);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-
-  virtual bool do_metadata();
-  virtual void do_klass(Klass* k);
-  virtual void do_cld(ClassLoaderData* cld);
-  virtual void do_method(Method* m);
-  virtual void do_nmethod(nmethod* nm);
 };
 
 class G1AdjustClosure : public BasicOopIterateClosure {
