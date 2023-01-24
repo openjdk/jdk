@@ -7060,7 +7060,7 @@ typedef uint32_t u32;
     __ mul(prod_lo, n, m);
     __ umulh(prod_hi, n, m);
   }
-  void wide_madd(Register sum_hi, Register sum_lo, Register n, Register m) {
+  void wide_madd(Register sum_lo, Register sum_hi, Register n, Register m) {
     wide_mul(rscratch1, rscratch2, n, m);
     __ adds(sum_lo, sum_lo, rscratch1);
     __ adc(sum_hi, sum_hi, rscratch2);
@@ -7085,9 +7085,9 @@ typedef uint32_t u32;
 
     // RR_n is (R_n >> 2) * 5
     const Register RR_0 = *++regs, RR_1 = *++regs;
-    __ lsr(RR_0, RR_0, 2);
+    __ lsr(RR_0, R_0, 2);
     __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
-    __ lsr(RR_1, RR_1, 2);
+    __ lsr(RR_1, R_1, 2);
     __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
 
     // U_n is the current checksum
@@ -7098,7 +7098,7 @@ typedef uint32_t u32;
     Label DONE, LOOP;
 
     __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-    __ br(~ Assembler::GE, DONE); {
+    __ br(Assembler::LT, DONE); {
       __ bind(LOOP);
 
       // S_n is to be the sum of U_n and the next block of data
@@ -7116,7 +7116,7 @@ typedef uint32_t u32;
         X_2 = U_2;
 
       wide_mul(X_0, X_0HI, S_0, R_0);  wide_madd(X_0, X_0HI, S_1, RR_1); wide_madd(X_0, X_0HI, S_2, RR_0);
-      wide_mul(X_1, X_1HI, S_0, R_1);  wide_madd(X_1, X_1HI, S_1, R_0);  wide_madd(X_0, X_0HI, S_2, RR_1);
+      wide_mul(X_1, X_1HI, S_0, R_1);  wide_madd(X_1, X_1HI, S_1, R_0);  wide_madd(X_1, X_1HI, S_2, RR_1);
       __ andr(X_2, R_0, 3);
       __ mul(X_2, S_2, X_2);
 
@@ -7143,7 +7143,7 @@ typedef uint32_t u32;
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-      __ br(Assembler::GE, LOOP);
+      __ br(~ Assembler::LT, LOOP);
     }
 
     // Fully reduce modulo 2^130 - 5
@@ -7158,7 +7158,7 @@ typedef uint32_t u32;
     __ ubfx(rscratch2, U_0, 26, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start));
     __ ubfx(rscratch1, U_0, 52, 12);
-    __ ubfiz(rscratch1, U_1, 12, 14);
+    __ bfi(rscratch1, U_1, 12, 14);
     __ ubfx(rscratch2, U_1, 14, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
     __ ubfx(rscratch1, U_1, 40, 24);
@@ -8363,8 +8363,11 @@ typedef uint32_t u32;
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
 
     if (UsePoly1305Intrinsics) {
-      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks1();
-      // generate_poly1305_processBlocks1();
+      if (getenv("FOO_BAR_BAZ") == NULL) {
+        StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks1();
+      } else {
+        StubRoutines::_poly1305_processBlocks= generate_poly1305_processBlocks();
+      }
     }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
