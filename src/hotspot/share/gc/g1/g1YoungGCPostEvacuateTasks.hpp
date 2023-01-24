@@ -60,6 +60,7 @@ public:
 // - Redirty Logged Cards
 // - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
+// - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
   class ResetHotCardCacheTask;
@@ -70,7 +71,9 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class ClearRetainedRegionBitmaps;
   class RedirtyLoggedCardsTask;
   class RestorePreservedMarksTask;
+  class ResizeTLABsTask;
   class FreeCollectionSetTask;
+  class ResizeTLABTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

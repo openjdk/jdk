@@ -153,6 +153,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
+  _gc_par_phases[ResizeThreadLABs] = new WorkerDataArray<double>("ResizeTLAB", "Resize TLAB (ms):", max_gc_threads);
+
   _gc_par_phases[FreeCollectionSet] = new WorkerDataArray<double>("FreeCSet", "Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("YoungFreeCSet", "Young Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[NonYoungFreeCSet] = new WorkerDataArray<double>("NonYoungFreeCSet", "Non-Young Free Collection Set (ms):", max_gc_threads);
@@ -173,7 +175,6 @@ void G1GCPhaseTimes::reset() {
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_tlab_time_ms = 0.0;
-  _cur_resize_tlab_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
   _cur_post_evacuate_cleanup_2_time_ms = 0.0;
   _cur_expand_heap_time_ms = 0.0;
@@ -184,7 +185,7 @@ void G1GCPhaseTimes::reset() {
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_start_new_cset_time_ms = 0.0;
+  _recorded_prepare_for_mutator_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _recorded_total_rebuild_freelist_time_ms = 0.0;
   _recorded_serial_rebuild_freelist_time_ms = 0.0;
@@ -489,7 +490,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
                         _cur_post_evacuate_cleanup_1_time_ms +
                         _cur_post_evacuate_cleanup_2_time_ms +
                         _recorded_total_rebuild_freelist_time_ms +
-                        _recorded_start_new_cset_time_ms +
+                        _recorded_prepare_for_mutator_time_ms +
                         _cur_expand_heap_time_ms;
 
   info_time("Post Evacuate Collection Set", sum_ms);
@@ -527,6 +528,9 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[SampleCollectionSetCandidates], 1);
   }
   debug_phase(_gc_par_phases[RedirtyCards], 1);
+  if (UseTLAB && ResizeTLAB) {
+    debug_phase(_gc_par_phases[ResizeThreadLABs], 1);
+  }
   debug_phase(_gc_par_phases[FreeCollectionSet], 1);
   trace_phase(_gc_par_phases[YoungFreeCSet], true, 1);
   trace_phase(_gc_par_phases[NonYoungFreeCSet], true, 1);
@@ -537,10 +541,7 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   trace_time("Serial Rebuild Free List ", _recorded_serial_rebuild_freelist_time_ms);
   trace_phase(_gc_par_phases[RebuildFreeList]);
 
-  debug_time("Start New Collection Set", _recorded_start_new_cset_time_ms);
-  if (UseTLAB && ResizeTLAB) {
-    debug_time("Resize TLABs", _cur_resize_tlab_time_ms);
-  }
+  debug_time("Prepare For Mutator", _recorded_prepare_for_mutator_time_ms);
   debug_time("Expand Heap After Collection", _cur_expand_heap_time_ms);
 
   return sum_ms;

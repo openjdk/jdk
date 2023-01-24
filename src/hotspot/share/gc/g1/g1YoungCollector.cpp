@@ -1022,9 +1022,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
 
-  _g1h->start_new_collection_set();
-
-  _g1h->prepare_tlabs_for_mutator();
+  _g1h->prepare_for_mutator_after_young_gc();
 
   _g1h->gc_epilogue(false);
 

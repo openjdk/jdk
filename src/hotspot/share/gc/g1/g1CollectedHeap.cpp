@@ -2642,8 +2642,6 @@ class VerifyRegionRemSetClosure : public HeapRegionClosure {
 };
 
 void G1CollectedHeap::start_new_collection_set() {
-  double start = os::elapsedTime();
-
   collection_set()->start_incremental_building();
 
   clear_region_attr();
@@ -2654,8 +2652,6 @@ void G1CollectedHeap::start_new_collection_set() {
   // We redo the verification but now wrt to the new CSet which
   // has just got initialized after the previous CSet was freed.
   _cm->verify_no_collection_set_oops();
-
-  phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
 G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
@@ -2765,19 +2761,17 @@ G1JFRTracerMark::~G1JFRTracerMark() {
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
 }
 
-void G1CollectedHeap::prepare_tlabs_for_mutator() {
-  Ticks start = Ticks::now();
+void G1CollectedHeap::prepare_for_mutator_after_young_gc() {
+  double start = os::elapsedTime();
 
   _survivor_evac_stats.adjust_desired_plab_size();
   _old_evac_stats.adjust_desired_plab_size();
 
+  start_new_collection_set();
+
   allocate_dummy_regions();
-
   _allocator->init_mutator_alloc_regions();
-
-  resize_all_tlabs();
-
-  phase_times()->record_resize_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
+  phase_times()->record_prepare_for_mutator_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
 void G1CollectedHeap::retire_tlabs() {

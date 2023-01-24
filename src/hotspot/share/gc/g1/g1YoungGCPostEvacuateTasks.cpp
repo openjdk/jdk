@@ -37,6 +37,8 @@
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/ticks.hpp"
 
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
@@ -701,6 +703,34 @@ public:
   }
 };
 
+class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsTask : public G1AbstractSubTask {
+  ThreadsListHandle _list;
+  volatile uint _list_claim;
+
+  JavaThread* claim_next() {
+    uint claimed = Atomic::fetch_and_add(&_list_claim, 1u);
+    if (claimed >= _list.length()) {
+      return nullptr;
+    }
+    return _list.thread_at(claimed);
+  }
+
+public:
+
+  ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _list(), _list_claim(0) { }
+
+  void do_work(uint worker_id) override {
+    JavaThread* thread;
+    while ((thread = claim_next()) != nullptr) {
+      thread->tlab().resize();
+    }
+  }
+
+  double worker_cost() const override {
+    return (double)_list.length() / 10;
+  }
+};
+
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
@@ -722,6 +752,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     }
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  if (UseTLAB && ResizeTLAB) {
+    add_serial_task(new ResizeTLABsTask());
+  }
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
                                               per_thread_states->surviving_young_words(),
                                               evac_failure_regions));
