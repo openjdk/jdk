@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2013 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -132,7 +132,7 @@ public:
   ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index);
   ~ElfFuncDescTable();
 
-  // return the function address for the function descriptor at 'index' or NULL on error
+  // return the function address for the function descriptor at 'index' or nullptr on error
   address lookup(Elf_Word index);
 
   int get_index() const { return _index; };
