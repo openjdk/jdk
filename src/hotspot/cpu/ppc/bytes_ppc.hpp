@@ -137,13 +137,13 @@ class Bytes: AllStatic {
 
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
   // (no byte-order reversal is needed since Power CPUs are big-endian oriented).
-  static inline u2   get_Java_u2(address p) { return swap_u2(get_native_u2(p)); }
-  static inline u4   get_Java_u4(address p) { return swap_u4(get_native_u4(p)); }
-  static inline u8   get_Java_u8(address p) { return swap_u8(get_native_u8(p)); }
+  static inline u2   get_Java_u2(address p) { return byteswap<u2>(get_native_u2(p)); }
+  static inline u4   get_Java_u4(address p) { return byteswap<u4>(get_native_u4(p)); }
+  static inline u8   get_Java_u8(address p) { return byteswap<u8>(get_native_u8(p)); }
 
-  static inline void put_Java_u2(address p, u2 x)     { put_native_u2(p, swap_u2(x)); }
-  static inline void put_Java_u4(address p, u4 x)     { put_native_u4(p, swap_u4(x)); }
-  static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, swap_u8(x)); }
+  static inline void put_Java_u2(address p, u2 x)     { put_native_u2(p, byteswap<u2>(x)); }
+  static inline void put_Java_u4(address p, u4 x)     { put_native_u4(p, byteswap<u4>(x)); }
+  static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, byteswap<u8>(x)); }
 
 #else // !defined(VM_LITTLE_ENDIAN)
 
@@ -255,16 +255,6 @@ class Bytes: AllStatic {
   static inline void put_Java_u8(address p, u8 x)     { put_native_u8(p, x); }
 
 #endif // VM_LITTLE_ENDIAN
-
-#ifdef VM_LITTLE_ENDIAN
-  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
-  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
-  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
-#else
-  static inline u2 swap_u2(u2 x) { return x; }
-  static inline u4 swap_u4(u4 x) { return x; }
-  static inline u8 swap_u8(u8 x) { return x; }
-#endif
 };
 
 #endif // CPU_PPC_BYTES_PPC_HPP

@@ -26,7 +26,6 @@
 #define CPU_ARM_BYTES_ARM_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/byteswap.hpp"
 #include "utilities/macros.hpp"
 
 #ifndef VM_LITTLE_ENDIAN
@@ -176,16 +175,6 @@ class Bytes: AllStatic {
   static inline void put_native_u8(address p, u8 x) { put_Java_u8(p, x); }
 
 #endif // VM_LITTLE_ENDIAN
-
-#ifdef VM_LITTLE_ENDIAN
-  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
-  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
-  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
-#else
-  static inline u2 swap_u2(u2 x) { return x; }
-  static inline u4 swap_u4(u4 x) { return x; }
-  static inline u8 swap_u8(u8 x) { return x; }
-#endif
 };
 
 #endif // CPU_ARM_BYTES_ARM_HPP

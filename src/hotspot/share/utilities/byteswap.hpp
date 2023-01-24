@@ -42,8 +42,7 @@
 #include <type_traits>
 
 template <typename T>
-struct CanByteswapImpl final
-    : public std::integral_constant<bool, (std::is_integral<T>::value && sizeof(T) <= 8)> {};
+using CanByteswapImpl = std::integral_constant<bool, (std::is_integral<T>::value && sizeof(T) <= 8)>;
 
 template <typename T, size_t N = sizeof(T)>
 struct ByteswapImpl;

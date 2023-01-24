@@ -27,7 +27,6 @@
 #define CPU_ZERO_BYTES_ZERO_HPP
 
 #include "memory/allStatic.hpp"
-#include "utilities/byteswap.hpp"
 
 typedef union unaligned {
   u4 u;
@@ -141,16 +140,6 @@ class Bytes: AllStatic {
     put_native_u8(p, x);
   }
 #endif // VM_LITTLE_ENDIAN
-
-#ifdef VM_LITTLE_ENDIAN
-  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
-  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
-  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
-#else
-  static inline u2 swap_u2(u2 x) { return x; }
-  static inline u4 swap_u4(u4 x) { return x; }
-  static inline u8 swap_u8(u8 x) { return x; }
-#endif
 };
 
 #endif // CPU_ZERO_BYTES_ZERO_HPP

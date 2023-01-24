@@ -74,7 +74,7 @@ class Bytes: AllStatic {
     T x = get_native<T>(p);
 
     if (Endian::is_Java_byte_ordering_different()) {
-      x = swap<T>(x);
+      x = byteswap<T>(x);
     }
 
     return x;
@@ -83,7 +83,7 @@ class Bytes: AllStatic {
   template <typename T>
   static inline void put_Java(address p, T x) {
     if (Endian::is_Java_byte_ordering_different()) {
-      x = swap<T>(x);
+      x = byteswap<T>(x);
     }
 
     put_native<T>(p, x);
@@ -96,30 +96,6 @@ class Bytes: AllStatic {
   static inline void put_Java_u2(address p, u2 x)     { put_Java<u2>(p, x); }
   static inline void put_Java_u4(address p, u4 x)     { put_Java<u4>(p, x); }
   static inline void put_Java_u8(address p, u8 x)     { put_Java<u8>(p, x); }
-
-  // Efficient swapping of byte ordering
-  template <typename T>
-  static T swap(T x) {
-    switch (sizeof(T)) {
-    case sizeof(u1): return x;
-    case sizeof(u2): return swap_u2(x);
-    case sizeof(u4): return swap_u4(x);
-    case sizeof(u8): return swap_u8(x);
-    default:
-      guarantee(false, "invalid size: " SIZE_FORMAT "\n", sizeof(T));
-      return 0;
-    }
-  }
-
-#ifdef VM_LITTLE_ENDIAN
-  static inline u2 swap_u2(u2 x) { return byteswap<u2>(x); }
-  static inline u4 swap_u4(u4 x) { return byteswap<u4>(x); }
-  static inline u8 swap_u8(u8 x) { return byteswap<u8>(x); }
-#else
-  static inline u2 swap_u2(u2 x) { return x; }
-  static inline u4 swap_u4(u4 x) { return x; }
-  static inline u8 swap_u8(u8 x) { return x; }
-#endif
 };
 
 #endif // CPU_X86_BYTES_X86_HPP
