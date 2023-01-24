@@ -133,25 +133,24 @@ public class ListFormat extends Format {
      * @param style style of the list format. One of full/short/narrow
      */
     public static ListFormat getInstance(Locale locale, Type type, Style style) {
+        Objects.requireNonNull(locale);
         Objects.requireNonNull(type);
         Objects.requireNonNull(style);
-        return getInstance(locale, LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
+        return new ListFormat(locale, LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
                 .getLocaleResources(locale)
                 .getListPatterns(type, style));
     }
 
     /**
-     * {@return the list format object for the specified {@code Locale} and patterns array}
-     * @param locale Locale to be used, not null
+     * {@return the list format object for the specified patterns array}
      * @param patterns array of patterns, not null
      */
-    public static ListFormat getInstance(Locale locale, String[] patterns) {
-        Objects.requireNonNull(locale);
+    public static ListFormat getInstance(String[] patterns) {
         Objects.requireNonNull(patterns);
         if (patterns.length != PATTERN_ARRAY_LENGTH) {
             throw new IllegalArgumentException("Pattern array length should be " + PATTERN_ARRAY_LENGTH);
         }
-        return new ListFormat(locale, patterns);
+        return new ListFormat(Locale.ROOT, patterns);
     }
 
     @Override

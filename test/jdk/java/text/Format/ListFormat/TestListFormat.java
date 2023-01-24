@@ -43,7 +43,24 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
-    private static final Object[] SAMPLES = {"afo", "ika", "uni"};
+    private static final Object[] SAMPLE2 = {"afo", "ika"};
+    private static final Object[] SAMPLE3 = {"afo", "ika", "uni"};
+    private static final Object[] SAMPLE4 = {"afo", "ika", "uni", "tako"};
+    private static final String[] CUSTOM_PATTERNS = {
+            "sbef {0} sbet {1}",
+            "{0} mid {1}",
+            "{0} ebet {1} eaft",
+            "{0} two {1}",
+            "{0} three {1} three {2}",
+    };
+
+    static Arguments[] getInstance_1Arg() {
+        return new Arguments[] {
+                arguments(SAMPLE2, "afo two ika"),
+                arguments(SAMPLE3, "afo three ika three uni"),
+                arguments(SAMPLE4, "sbef afo sbet ika mid uni ebet tako eaft"),
+        };
+    }
 
     static Arguments[] getInstance_3Arg() {
         return new Arguments[] {
@@ -94,24 +111,24 @@ public class TestListFormat {
 
     @ParameterizedTest
     @MethodSource
-    void getInstance_2Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
-        var f = ListFormat.getInstance(l, type, style);
-        compareResult(f, expected, roundTrip);
+    void getInstance_1Arg(Object[] input, String expected) throws ParseException {
+        var f = ListFormat.getInstance(CUSTOM_PATTERNS);
+        compareResult(f, input, expected, true);
     }
 
     @ParameterizedTest
     @MethodSource
     void getInstance_3Arg(Locale l, ListFormat.Type type, ListFormat.Style style, String expected, boolean roundTrip) throws ParseException {
         var f = ListFormat.getInstance(l, type, style);
-        compareResult(f, expected, roundTrip);
+        compareResult(f, SAMPLE3, expected, roundTrip);
     }
 
-    private static void compareResult(ListFormat f, String expected, boolean roundTrip) throws ParseException {
-        var result = f.format(SAMPLES);
+    private static void compareResult(ListFormat f, Object[] input, String expected, boolean roundTrip) throws ParseException {
+        var result = f.format(input);
         assertEquals(expected, result);
         if (!roundTrip) {
             if (f.parseObject(result) instanceof Object[] ra) {
-                assertArrayEquals(SAMPLES, ra);
+                assertArrayEquals(input, ra);
             } else {
                 fail();
             }
