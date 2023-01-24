@@ -258,7 +258,7 @@ struct ByteswapImpl<T, 2> final {
   ALWAYSINLINE T operator()(T x) const {
     unsigned short y;
     __store2r(static_cast<unsigned short>(x), &y);
-    return y;
+    return static_cast<T>(y);
   }
 };
 
@@ -271,7 +271,7 @@ struct ByteswapImpl<T, 4> final {
   ALWAYSINLINE T operator()(T x) const {
     unsigned int y;
     __store4r(static_cast<unsigned int>(x), &y);
-    return y;
+    return static_cast<T>(y);
   }
 };
 
@@ -288,7 +288,7 @@ struct ByteswapImpl<T, 8> final {
   ALWAYSINLINE T operator()(T x) const {
     unsigned long long y;
     __store8r(static_cast<unsigned long long>(x), &y);
-    return y;
+    return static_cast<T>(y);
   }
 };
 
