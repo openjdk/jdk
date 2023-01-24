@@ -405,14 +405,42 @@ class CompileReplay : public StackObj {
       }
       bytecode.verify();
       int index = bytecode.index();
-
       ConstantPoolCacheEntry* cp_cache_entry = NULL;
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
       if (bytecode.is_invokedynamic()) {
-        cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-        cp_cache_entry->set_dynamic_call(cp, callInfo);
+        if (UseNewIndyCode) {
+          int indy_index = cp->decode_invokedynamic_index(index);
+          cp->cache()->set_dynamic_call(callInfo, indy_index);
+
+          // Cleanup please
+          char* dyno_ref = parse_string();
+          if (strcmp(dyno_ref, "<appendix>") == 0) {
+            obj = cp->resolved_reference_from_indy(indy_index);
+          } else if (strcmp(dyno_ref, "<adapter>") == 0) {
+            if (!parse_terminator()) {
+              report_error("no dynamic invoke found");
+              return NULL;
+            }
+            Method* adapter = cp->resolved_indy_info(indy_index)->method();
+            if (adapter == NULL) {
+              report_error("no adapter found");
+              return NULL;
+            }
+            return adapter->method_holder();
+          } else if (strcmp(dyno_ref, "<bsm>") == 0) {
+            int pool_index = cp->resolved_indy_info(indy_index)->cpool_index();
+            BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
+            obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
+          } else {
+            report_error("unrecognized token");
+            return NULL;
+          }
+        } else {
+          cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
+          cp_cache_entry->set_dynamic_call(cp, callInfo);
+        }
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
         Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
@@ -425,27 +453,30 @@ class CompileReplay : public StackObj {
         report_error("no dynamic invoke found");
         return NULL;
       }
-      char* dyno_ref = parse_string();
-      if (strcmp(dyno_ref, "<appendix>") == 0) {
-        obj = cp_cache_entry->appendix_if_resolved(cp);
-      } else if (strcmp(dyno_ref, "<adapter>") == 0) {
-        if (!parse_terminator()) {
-          report_error("no dynamic invoke found");
+      // Temporary solution, please clean up!!
+      if (!bytecode.is_invokedynamic()) {
+        char* dyno_ref = parse_string();
+        if (strcmp(dyno_ref, "<appendix>") == 0) {
+          obj = cp_cache_entry->appendix_if_resolved(cp);
+        } else if (strcmp(dyno_ref, "<adapter>") == 0) {
+          if (!parse_terminator()) {
+            report_error("no dynamic invoke found");
+            return NULL;
+          }
+          Method* adapter = cp_cache_entry->f1_as_method();
+          if (adapter == NULL) {
+            report_error("no adapter found");
+            return NULL;
+          }
+          return adapter->method_holder();
+        } else if (strcmp(dyno_ref, "<bsm>") == 0) {
+          int pool_index = cp_cache_entry->constant_pool_index();
+          BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+          obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
+        } else {
+          report_error("unrecognized token");
           return NULL;
         }
-        Method* adapter = cp_cache_entry->f1_as_method();
-        if (adapter == NULL) {
-          report_error("no adapter found");
-          return NULL;
-        }
-        return adapter->method_holder();
-      } else if (strcmp(dyno_ref, "<bsm>") == 0) {
-        int pool_index = cp_cache_entry->constant_pool_index();
-        BootstrapInfo bootstrap_specifier(cp, pool_index, index);
-        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
-      } else {
-        report_error("unrecognized token");
-        return NULL;
       }
     } else {
       // constant pool ref (MethodHandle)

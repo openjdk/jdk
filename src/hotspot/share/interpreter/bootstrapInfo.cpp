@@ -78,7 +78,7 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
       return true;
     } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
       int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
-      ConstantPool::throw_resolution_error(_pool, _indy_index, CHECK_false); // Doesn't necessarily need to be resolved yet
+      ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
       return true;
     } else {
       return false;

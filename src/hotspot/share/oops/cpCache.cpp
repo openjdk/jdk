@@ -699,26 +699,6 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
     ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map, array);
 }
 
-// Constructor
-inline ConstantPoolCache::ConstantPoolCache(int length,
-                                            const intStack& inverse_index_map,
-                                            const intStack& invokedynamic_inverse_index_map,
-                                            const intStack& invokedynamic_references_map,
-                                            Array<ResolvedIndyInfo>* invokedynamic_info) :
-                                                  _length(length),
-                                                  _constant_pool(NULL),
-                                                  _gc_epoch(0),
-                                                  _resolved_indy_info(invokedynamic_info) {
-
-  CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
-  initialize(inverse_index_map, invokedynamic_inverse_index_map,
-             invokedynamic_references_map);
-
-  for (int i = 0; i < length; i++) {
-    assert(entry_at(i)->is_f1_null(), "Failed to clear?");
-  }
-}
-
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
                                    const intArray& invokedynamic_inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
@@ -912,7 +892,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
 
   MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
 
-  // if f1 is not null or the indy_resolution_failed flag is set then another
+  // if the indy_info is resolved or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
   // exception, before this thread was able to record its failure.  So, clear
   // this thread's exception and return false so caller can use the earlier
@@ -925,7 +905,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
 
-  SystemDictionary::add_resolution_error(cpool, index, error, message);
+  SystemDictionary::add_resolution_error(cpool, cpool_index, error, message);
   resolved_indy_info(index)->set_resolution_failed();
   return true;
 }
@@ -933,6 +913,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
 oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
+  assert(index >= 0, "Indy index must be positive at this point");
 
   if (UseNewIndyCode) {
     if (resolved_indy_info(index)->method() != nullptr)
