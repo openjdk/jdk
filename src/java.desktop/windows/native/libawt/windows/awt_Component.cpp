@@ -3617,7 +3617,10 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     WORD wChar[2];
     int converted = 1;
     UINT ch = ::MapVirtualKeyEx(wkey, 2, GetKeyboardLayout());
-    if (deadKeyActive) {
+    if (ch & 0x80000000 && ch != 0x800000A8) {
+        // Dead key which is handled as a normal key
+        isDeadKey = deadKeyActive = TRUE;
+    } else if (deadKeyActive) {
         // We cannot use ::ToUnicodeEx if dead key is active because this will
         // break dead key function
         wChar[0] = shiftIsDown ? ch : tolower(ch);
