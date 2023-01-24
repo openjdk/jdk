@@ -118,8 +118,6 @@ public class TestArrayCopyIntrinsicWithUCT {
         System.arraycopy(byArr, 0, b, 0, len);
         return b;
     }
-
-
     static byte[] testNegativeFldSize2() {
         byte[] byArr = new byte[8];
         byte[] b = new byte[minusOne]; // throws NegativeArraySizeException
