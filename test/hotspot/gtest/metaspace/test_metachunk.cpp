@@ -62,24 +62,51 @@ TEST_VM(metaspace, get_chunk) {
 // Test ChunkManager::get_chunk, but with a commit limit.
 TEST_VM(metaspace, get_chunk_with_commit_limit) {
 
-  const size_t commit_limit_words = 1 * M;
-  ChunkGtestContext context(commit_limit_words);
-  Metachunk* c = NULL;
+  // A commit limit that is smaller than the largest possible chunk size.
 
-  for (chunklevel_t pref_lvl = LOWEST_CHUNK_LEVEL; pref_lvl <= HIGHEST_CHUNK_LEVEL; pref_lvl++) {
+  // Here we test different combinations of commit limit, preferred and highest chunk level, and min_committed_size.
 
-    for (chunklevel_t max_lvl = pref_lvl; max_lvl <= HIGHEST_CHUNK_LEVEL; max_lvl++) {
+  for (size_t commit_limit_words = Settings::commit_granule_words();
+       commit_limit_words < MAX_CHUNK_WORD_SIZE * 2; commit_limit_words *= 2) {
 
-      for (size_t min_committed_words = Settings::commit_granule_words();
-           min_committed_words <= word_size_for_level(max_lvl); min_committed_words *= 2) {
+    ChunkGtestContext context(commit_limit_words);
+    Metachunk* c = NULL;
 
-        if (min_committed_words <= commit_limit_words) {
-          context.alloc_chunk_expect_success(&c, pref_lvl, max_lvl, min_committed_words);
-          context.return_chunk(c);
-        } else {
-          context.alloc_chunk_expect_failure(pref_lvl, max_lvl, min_committed_words);
+    for (chunklevel_t pref_lvl = LOWEST_CHUNK_LEVEL; pref_lvl <= HIGHEST_CHUNK_LEVEL; pref_lvl++) {
+
+      for (chunklevel_t max_lvl = pref_lvl; max_lvl <= HIGHEST_CHUNK_LEVEL; max_lvl++) {
+
+        for (size_t min_committed_words = Settings::commit_granule_words();
+             min_committed_words <= word_size_for_level(max_lvl); min_committed_words *= 2) {
+
+          // When should commit work? As long as min_committed_words is smaller than commit_limit_words.
+          bool commit_should_work = min_committed_words <= commit_limit_words;
+
+          // Exception: MetaspaceReclaimPolicy=none. Here, chunks are fully committed from the get go and
+          // min_committed_words is effectively ignored. So commit would fail if the chunk is larger than
+          // the commit limit. Unfortunately, the chunk size is difficult to predict (it will be between
+          // [pref_lvl, max_lvl]. To make matters simple, we skip the test if we don't know the level for
+          // sure.
+          if (Settings::new_chunks_are_fully_committed()) {
+            if (pref_lvl == max_lvl) {
+              commit_should_work = word_size_for_level(max_lvl) <= commit_limit_words;
+            } else {
+              continue;
+            }
+          }
+
+          // printf("commit_limit: " SIZE_FORMAT ", min_committed_words: " SIZE_FORMAT
+          //       ", max chunk level: " CHKLVL_FORMAT ", preferred chunk level: " CHKLVL_FORMAT ", should work: %d\n",
+          //       commit_limit_words, min_committed_words, max_lvl, pref_lvl, commit_should_work);
+          // fflush(stdout);
+
+          if (commit_should_work) {
+            context.alloc_chunk_expect_success(&c, pref_lvl, max_lvl, min_committed_words);
+            context.return_chunk(c);
+          } else {
+            context.alloc_chunk_expect_failure(pref_lvl, max_lvl, min_committed_words);
+          }
         }
-
       }
     }
   }
