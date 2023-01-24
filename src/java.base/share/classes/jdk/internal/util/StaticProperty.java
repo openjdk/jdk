@@ -26,7 +26,6 @@
 package jdk.internal.util;
 
 import java.util.Properties;
-import java.nio.charset.Charset;
 
 /**
  * System Property access for internal use only.
