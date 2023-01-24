@@ -25,12 +25,12 @@
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
-#include "oops/instanceKlassMiscStatus.hpp"
+#include "oops/instanceKlassFlags.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/macros.hpp"
 
 #if INCLUDE_CDS
-void InstanceKlassMiscStatus::set_shared_class_loader_type(s2 loader_type) {
+void InstanceKlassFlags::set_shared_class_loader_type(s2 loader_type) {
   switch (loader_type) {
   case ClassLoader::BOOT_LOADER:
     _flags |= _misc_is_shared_boot_class;
@@ -47,7 +47,7 @@ void InstanceKlassMiscStatus::set_shared_class_loader_type(s2 loader_type) {
   }
 }
 
-void InstanceKlassMiscStatus::assign_class_loader_type(const ClassLoaderData* cld) {
+void InstanceKlassFlags::assign_class_loader_type(const ClassLoaderData* cld) {
   if (cld->is_boot_class_loader_data()) {
     set_shared_class_loader_type(ClassLoader::BOOT_LOADER);
   }
@@ -61,7 +61,7 @@ void InstanceKlassMiscStatus::assign_class_loader_type(const ClassLoaderData* cl
 #endif // INCLUDE_CDS
 
 #ifdef ASSERT
-void InstanceKlassMiscStatus::assert_is_safe(bool set) {
+void InstanceKlassFlags::assert_is_safe(bool set) {
   // Setting a flag is safe if it's set once or at a safepoint. RedefineClasses can set or
   // reset flags at a safepoint.
   assert(!set || SafepointSynchronize::is_at_safepoint(), "set once or at safepoint");

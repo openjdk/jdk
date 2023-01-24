@@ -37,6 +37,7 @@
 #include "memory/metaspace/virtualSpaceList.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "sanitizers/address.h"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -107,6 +108,23 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
   InternalStats::inc_num_chunk_splits();
 }
 
+Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words) {
+  assert(preferred_level <= max_level, "Sanity");
+  assert(chunklevel::level_fitting_word_size(min_committed_words) >= max_level, "Sanity");
+
+  Metachunk* c;
+  {
+    MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
+    c = get_chunk_locked(preferred_level, max_level, min_committed_words);
+  }
+
+  if (c != nullptr) {
+    ASAN_UNPOISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
+  }
+
+  return c;
+}
+
 // On success, returns a chunk of level of <preferred_level>, but at most <max_level>.
 //  The first first <min_committed_words> of the chunk are guaranteed to be committed.
 // On error, will return NULL.
@@ -116,12 +134,8 @@ void ChunkManager::split_chunk_and_add_splinters(Metachunk* c, chunklevel_t targ
 //   is non-expandable but needs expanding - aka out of compressed class space).
 // - Or, if the necessary space cannot be committed because we hit a commit limit.
 //   This may be either the GC threshold or MaxMetaspaceSize.
-Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words) {
-  assert(preferred_level <= max_level, "Sanity");
-  assert(chunklevel::level_fitting_word_size(min_committed_words) >= max_level, "Sanity");
-
-  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
-
+Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklevel_t max_level, size_t min_committed_words) {
+  assert_lock_strong(Metaspace_lock);
   DEBUG_ONLY(verify_locked();)
   DEBUG_ONLY(chunklevel::check_valid_level(max_level);)
   DEBUG_ONLY(chunklevel::check_valid_level(preferred_level);)
@@ -231,6 +245,9 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
 // !! Note: this may invalidate the chunk. Do not access the chunk after
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
+  // It is valid to poison the chunk payload area at this point since its physically separated from
+  // the chunk meta info.
+  ASAN_POISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return_chunk_locked(c);
 }
@@ -279,8 +296,20 @@ void ChunkManager::return_chunk_locked(Metachunk* c) {
 //
 // On success, true is returned, false otherwise.
 bool ChunkManager::attempt_enlarge_chunk(Metachunk* c) {
-  MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
-  return c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
+  bool enlarged;
+  size_t old_word_size;
+
+  {
+    MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
+    old_word_size = c->word_size();
+    enlarged = c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
+  }
+
+  if (enlarged) {
+    ASAN_UNPOISON_MEMORY_REGION(c->base() + old_word_size, (c->word_size() - old_word_size) * BytesPerWord);
+  }
+
+  return enlarged;
 }
 
 static void print_word_size_delta(outputStream* st, size_t word_size_1, size_t word_size_2) {

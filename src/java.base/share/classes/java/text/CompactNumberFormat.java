@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,10 +61,10 @@ import java.util.stream.Collectors;
  * For example:
  * <br>In the {@link java.util.Locale#US US locale}, {@code 1000} can be formatted
  * as {@code "1K"}, and {@code 1000000} as {@code "1M"}, depending upon the
- * <a href = "#compact_number_style" >style</a> used.
+ * {@linkplain ##compact_number_style style} used.
  * <br>In the {@code "hi_IN"} locale, {@code 1000} can be formatted as
  * "1 \u0939\u091C\u093C\u093E\u0930", and {@code 50000000} as "5 \u0915.",
- * depending upon the <a href = "#compact_number_style" >style</a> used.
+ * depending upon the {@linkplain ##compact_number_style style} used.
  *
  * <p>
  * To obtain a {@code CompactNumberFormat} for a locale, use one
@@ -72,11 +72,11 @@ import java.util.stream.Collectors;
  * formatting. For example,
  * {@link NumberFormat#getCompactNumberInstance(Locale, Style)}.
  *
- * <blockquote><pre>
+ * <blockquote>{@snippet lang=java :
  * NumberFormat fmt = NumberFormat.getCompactNumberInstance(
  *                             Locale.forLanguageTag("hi-IN"), NumberFormat.Style.SHORT);
  * String result = fmt.format(1000);
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <h2><a id="compact_number_style">Style</a></h2>
  * <p>
@@ -131,7 +131,7 @@ import java.util.stream.Collectors;
  * <p>
  * Many characters in a compact pattern are taken literally, they are matched
  * during parsing and output unchanged during formatting.
- * <a href = "DecimalFormat.html#special_pattern_character">Special characters</a>,
+ * {@linkplain DecimalFormat##special_pattern_character Special characters},
  * on the other hand, stand for other characters, strings, or classes of
  * characters. They must be quoted, using single quote {@code ' (U+0027)}
  * unless noted otherwise, if they are to appear in the prefix or suffix
@@ -170,10 +170,10 @@ import java.util.stream.Collectors;
  *        <i>Prefix<sub>optional</sub></i> <i>MinimumInteger</i> <i>Suffix<sub>optional</sub></i>
  * <i>Prefix:</i>
  *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
+ *      {@linkplain DecimalFormat##special_pattern_character special characters}.
  * <i>Suffix:</i>
  *      Any Unicode characters except {@code U+FFFE}, {@code U+FFFF}, and
- *      <a href = "DecimalFormat.html#special_pattern_character">special characters</a>.
+ *      {@linkplain DecimalFormat##special_pattern_character special characters}.
  * <i>MinimumInteger:</i>
  *      0
  *      0 <i>MinimumInteger</i>
@@ -384,8 +384,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param decimalPattern a decimal pattern for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
-     *        <a href = "CompactNumberFormat.html#compact_number_patterns">
-     *        compact number patterns</a>
+     *        {@linkplain ##compact_number_patterns compact number patterns}
      * @throws NullPointerException if any of the given arguments is
      *       {@code null}
      * @throws IllegalArgumentException if the given {@code decimalPattern} or the
@@ -412,8 +411,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param decimalPattern a decimal pattern for general number formatting
      * @param symbols the set of symbols to be used
      * @param compactPatterns an array of
-     *        <a href = "CompactNumberFormat.html#compact_number_patterns">
-     *        compact number patterns</a>
+     *        {@linkplain ##compact_number_patterns compact number patterns}
      * @param pluralRules a String designating plural rules which associate
      *        the {@code Count} keyword, such as "{@code one}", and the
      *        actual integer number. Its syntax is defined in Unicode Consortium's

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ public:
     Node* const* bucket = old_table;
     while (bucket < &old_table[old_size]) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         Node* next = node->_next;
         unsigned hash = HASH(node->_key);
         unsigned index = hash % new_size;
