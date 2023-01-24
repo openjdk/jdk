@@ -243,21 +243,4 @@ abstract class FileSystem {
      */
     public abstract int hashCode(File f);
 
-
-    private static boolean getBooleanProperty(String prop, boolean defaultVal) {
-        String value = System.getProperty(prop);
-        return (value != null) ? Boolean.parseBoolean(value) : defaultVal;
-    }
-
-    static {
-        infoPropIsIgnored("sun.io.useCanonCaches");
-        infoPropIsIgnored("sun.io.useCanonPrefixCache");
-    }
-
-    private static void infoPropIsIgnored(String property) {
-        if (getBooleanProperty(property, false))
-            System.out.println("INFO: " + property +
-                    " is ignored starting from Java 21. This implies no functional change.");
-    }
-
 }
