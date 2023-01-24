@@ -27,13 +27,7 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
-#include "metaprogramming/decay.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/integralConstant.hpp"
-#include "metaprogramming/isIntegral.hpp"
-#include "metaprogramming/isPointer.hpp"
-#include "metaprogramming/isSame.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
@@ -48,7 +42,7 @@ template <DecoratorSet decorators>
 struct HeapOopType: AllStatic {
   static const bool needs_oop_compress = HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value &&
                                          HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value;
-  typedef typename Conditional<needs_oop_compress, narrowOop, oop>::type type;
+  using type = std::conditional_t<needs_oop_compress, narrowOop, oop>;
 };
 
 namespace AccessInternal {
@@ -66,18 +60,18 @@ namespace AccessInternal {
   };
 
   template <DecoratorSet decorators, typename T>
-  struct MustConvertCompressedOop: public IntegralConstant<bool,
+  struct MustConvertCompressedOop: public std::integral_constant<bool,
     HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value &&
-    IsSame<typename HeapOopType<decorators>::type, narrowOop>::value &&
-    IsSame<T, oop>::value> {};
+    std::is_same<typename HeapOopType<decorators>::type, narrowOop>::value &&
+    std::is_same<T, oop>::value> {};
 
   // This metafunction returns an appropriate oop type if the value is oop-like
   // and otherwise returns the same type T.
   template <DecoratorSet decorators, typename T>
   struct EncodedType: AllStatic {
-    typedef typename Conditional<
-      HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-      typename HeapOopType<decorators>::type, T>::type type;
+    using type = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                    typename HeapOopType<decorators>::type,
+                                    T>;
   };
 
   template <DecoratorSet decorators>
@@ -91,9 +85,9 @@ namespace AccessInternal {
   // locking to support wide atomics or not.
   template <typename T>
 #ifdef SUPPORTS_NATIVE_CX8
-  struct PossiblyLockedAccess: public IntegralConstant<bool, false> {};
+  struct PossiblyLockedAccess: public std::false_type {};
 #else
-  struct PossiblyLockedAccess: public IntegralConstant<bool, (sizeof(T) > 4)> {};
+  struct PossiblyLockedAccess: public std::integral_constant<bool, (sizeof(T) > 4)> {};
 #endif
 
   template <DecoratorSet decorators, typename T>
@@ -429,7 +423,7 @@ namespace AccessInternal {
   // to compile, as desired.
   template <typename T>
   struct OopOrNarrowOop: AllStatic {
-    typedef typename OopOrNarrowOopInternal<typename Decay<T>::type>::type type;
+    typedef typename OopOrNarrowOopInternal<std::decay_t<T>>::type type;
   };
 
   inline void* field_addr(oop base, ptrdiff_t byte_offset) {
@@ -631,7 +625,7 @@ namespace AccessInternal {
   // not possible.
   struct PreRuntimeDispatch: AllStatic {
     template<DecoratorSet decorators>
-    struct CanHardwireRaw: public IntegralConstant<
+    struct CanHardwireRaw: public std::integral_constant<
       bool,
       !HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // primitive access
       !HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value || // don't care about compressed oops (oop* address)
@@ -1095,15 +1089,15 @@ namespace AccessInternal {
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
-                   (IsPointer<T>::value || IsIntegral<T>::value) ||
+                   (std::is_pointer<T>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // not allowed primitive type
   }
 
   template <DecoratorSet decorators, typename P, typename T>
   inline void store(P* addr, T value) {
     verify_types<decorators, T>();
-    typedef typename Decay<P>::type DecayedP;
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedP = std::decay_t<P>;
+    using DecayedT = std::decay_t<T>;
     DecayedT decayed_value = value;
     // If a volatile address is passed in but no memory ordering decorator,
     // set the memory ordering to MO_RELAXED by default.
@@ -1116,7 +1110,7 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   inline void store_at(oop base, ptrdiff_t offset, T value) {
     verify_types<decorators, T>();
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedT = std::decay_t<T>;
     DecayedT decayed_value = value;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators |
                                              (HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ?
@@ -1127,10 +1121,10 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename P, typename T>
   inline T load(P* addr) {
     verify_types<decorators, T>();
-    typedef typename Decay<P>::type DecayedP;
-    typedef typename Conditional<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-                                 typename OopOrNarrowOop<T>::type,
-                                 typename Decay<T>::type>::type DecayedT;
+    using DecayedP = std::decay_t<P>;
+    using DecayedT = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                        typename OopOrNarrowOop<T>::type,
+                                        std::decay_t<T>>;
     // If a volatile address is passed in but no memory ordering decorator,
     // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
@@ -1142,9 +1136,9 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   inline T load_at(oop base, ptrdiff_t offset) {
     verify_types<decorators, T>();
-    typedef typename Conditional<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-                                 typename OopOrNarrowOop<T>::type,
-                                 typename Decay<T>::type>::type DecayedT;
+    using DecayedT = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                        typename OopOrNarrowOop<T>::type,
+                                        std::decay_t<T>>;
     // Expand the decorators (figure out sensible defaults)
     // Potentially remember if we need compressed oop awareness
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators |
@@ -1156,8 +1150,8 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename P, typename T>
   inline T atomic_cmpxchg(P* addr, T compare_value, T new_value) {
     verify_types<decorators, T>();
-    typedef typename Decay<P>::type DecayedP;
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedP = std::decay_t<P>;
+    using DecayedT = std::decay_t<T>;
     DecayedT new_decayed_value = new_value;
     DecayedT compare_decayed_value = compare_value;
     const DecoratorSet expanded_decorators = DecoratorFixup<
@@ -1171,7 +1165,7 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   inline T atomic_cmpxchg_at(oop base, ptrdiff_t offset, T compare_value, T new_value) {
     verify_types<decorators, T>();
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedT = std::decay_t<T>;
     DecayedT new_decayed_value = new_value;
     DecayedT compare_decayed_value = compare_value;
     // Determine default memory ordering
@@ -1189,8 +1183,8 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename P, typename T>
   inline T atomic_xchg(P* addr, T new_value) {
     verify_types<decorators, T>();
-    typedef typename Decay<P>::type DecayedP;
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedP = std::decay_t<P>;
+    using DecayedT = std::decay_t<T>;
     DecayedT new_decayed_value = new_value;
     // atomic_xchg is only available in SEQ_CST flavour.
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | MO_SEQ_CST>::value;
@@ -1201,7 +1195,7 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   inline T atomic_xchg_at(oop base, ptrdiff_t offset, T new_value) {
     verify_types<decorators, T>();
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedT = std::decay_t<T>;
     DecayedT new_decayed_value = new_value;
     // atomic_xchg is only available in SEQ_CST flavour.
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | MO_SEQ_CST |
@@ -1215,9 +1209,9 @@ namespace AccessInternal {
                         arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                         size_t length) {
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
-                   (IsSame<T, void>::value || IsIntegral<T>::value) ||
+                   (std::is_same<T, void>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
-    typedef typename Decay<T>::type DecayedT;
+    using DecayedT = std::decay_t<T>;
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
     return arraycopy_reduce_types<expanded_decorators>(src_obj, src_offset_in_bytes, const_cast<DecayedT*>(src_raw),
                                                        dst_obj, dst_offset_in_bytes, const_cast<DecayedT*>(dst_raw),
@@ -1254,6 +1248,14 @@ namespace AccessInternal {
     template <typename T>
     inline bool operator !=(const T& other) const {
       return load<decorators | INTERNAL_VALUE_IS_OOP, P, T>(_addr) != other;
+    }
+
+    inline bool operator ==(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) == nullptr;
+    }
+
+    inline bool operator !=(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) != nullptr;
     }
   };
 

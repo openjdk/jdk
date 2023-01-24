@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1030,7 +1030,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   // Store values.
   __ std(R19_method, _ijava_state_neg(method), R1_SP);
   __ std(Rmirror, _ijava_state_neg(mirror), R1_SP);
-  __ std(R18_locals, _ijava_state_neg(locals), R1_SP);
+  __ sub(R12_scratch2, R18_locals, R1_SP);
+  __ srdi(R12_scratch2, R12_scratch2, Interpreter::logStackElementSize);
+  // Store relativized R18_locals, see frame::interpreter_frame_locals().
+  __ std(R12_scratch2, _ijava_state_neg(locals), R1_SP);
   __ std(R27_constPoolCache, _ijava_state_neg(cpoolCache), R1_SP);
 
   // Note: esp, bcp, monitor, mdx live in registers. Hence, the correct version can only

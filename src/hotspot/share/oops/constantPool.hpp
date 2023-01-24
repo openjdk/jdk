@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_reference_at(int obj_index) const;
+  oop set_resolved_reference_at(int index, oop new_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -474,7 +477,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_reference_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
@@ -694,7 +697,7 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
+  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
   bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();

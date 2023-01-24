@@ -109,7 +109,7 @@ public final class ImageCache {
                 // soft image has been removed
                 currentPixelCount -= key.getPixelCount();
                 map.remove(key);
-            };
+            }
 
 
             // add new image to pixel count
