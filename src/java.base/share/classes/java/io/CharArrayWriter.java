@@ -44,7 +44,7 @@ public class CharArrayWriter extends Writer {
     /**
      * The buffer where data is stored.
      */
-    protected char buf[];
+    protected char[] buf;
 
     /**
      * The number of chars in the buffer.
