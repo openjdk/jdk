@@ -46,4 +46,9 @@ inline oop CollectedHeap::class_allocate(Klass* klass, size_t size, TRAPS) {
   return allocator.allocate();
 }
 
+inline size_t CollectedHeap::filler_array_min_size() {
+  size_t aligned_header_size_words = heap_word_size(arrayOopDesc::base_offset_in_bytes(T_INT));
+  return align_object_size(aligned_header_size_words); // align to MinObjAlignment
+}
+
 #endif // SHARE_GC_SHARED_COLLECTEDHEAP_INLINE_HPP
