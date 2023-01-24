@@ -165,7 +165,7 @@ public class JarWithOneNonDisabledDigestAlg {
                 if (entry.isDirectory() || isSigningRelated(entry.getName())) {
                     continue;
                 }
-                try(InputStream is = jf.getInputStream(entry)) {
+                try (InputStream is = jf.getInputStream(entry)) {
                     is.transferTo(OutputStream.nullOutputStream());
                 }
                 CodeSigner[] signers = entry.getCodeSigners();
