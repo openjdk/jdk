@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
     cls->_cld = cld;
   }
 
-  if (cl != NULL) {
+  if (cl != nullptr) {
     cls->_parent = java_lang_ClassLoader::parent_no_keepalive(cl);
     addEmptyParents(cls->_parent);
   }
@@ -83,7 +83,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
   _total_classes += csc._num_classes;
 
   ClassLoaderMetaspace* ms = cld->metaspace_or_null();
-  if (ms != NULL) {
+  if (ms != nullptr) {
     size_t used_bytes, capacity_bytes;
     ms->calculate_jfr_stats(&used_bytes, &capacity_bytes);
     if(cld->has_class_mirror_holder()) {
@@ -108,14 +108,14 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 
 
 bool ClassLoaderStatsClosure::do_entry(oop const& key, ClassLoaderStats const& cls) {
-  Klass* class_loader_klass = (cls._class_loader == NULL ? NULL : cls._class_loader->klass());
-  Klass* parent_klass = (cls._parent == NULL ? NULL : cls._parent->klass());
+  Klass* class_loader_klass = (cls._class_loader == nullptr ? nullptr : cls._class_loader->klass());
+  Klass* parent_klass = (cls._parent == nullptr ? nullptr : cls._parent->klass());
 
   _out->print(INTPTR_FORMAT "  " INTPTR_FORMAT "  " INTPTR_FORMAT "  " UINTX_FORMAT_W(6) "  " SIZE_FORMAT_W(8) "  " SIZE_FORMAT_W(8) "  ",
       p2i(class_loader_klass), p2i(parent_klass), p2i(cls._cld),
       cls._classes_count,
       cls._chunk_sz, cls._block_sz);
-  if (class_loader_klass != NULL) {
+  if (class_loader_klass != nullptr) {
     _out->print("%s", class_loader_klass->external_name());
   } else {
     _out->print("<boot class loader>");
@@ -146,7 +146,7 @@ void ClassLoaderStatsClosure::print() {
 
 
 void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
-  while (cl != NULL && java_lang_ClassLoader::loader_data_acquire(cl) == NULL) {
+  while (cl != nullptr && java_lang_ClassLoader::loader_data_acquire(cl) == nullptr) {
     // This classloader has not loaded any classes
     bool added = false;
     ClassLoaderStats* cls = _stats->put_if_absent(cl, &added);

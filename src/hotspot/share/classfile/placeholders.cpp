@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,8 @@ private:
 public:
    SeenThread(JavaThread* thread) {
        _thread = thread;
-       _stnext = NULL;
-       _stprev = NULL;
+       _stnext = nullptr;
+       _stprev = nullptr;
    }
    JavaThread* thread()          const { return _thread;}
    void set_thread(JavaThread* thread) { _thread = thread; }
@@ -81,7 +81,7 @@ public:
 
   void print_action_queue(outputStream* st) {
     SeenThread* seen = this;
-    while (seen != NULL) {
+    while (seen != nullptr) {
       seen->thread()->print_value_on(st);
       st->print(", ");
       seen = seen->next();
@@ -90,7 +90,7 @@ public:
 };
 
 SeenThread* PlaceholderEntry::actionToQueue(PlaceholderTable::classloadAction action) {
-  SeenThread* queuehead = NULL;
+  SeenThread* queuehead = nullptr;
   switch (action) {
     case PlaceholderTable::LOAD_INSTANCE:
        queuehead = _loadInstanceThreadQ;
@@ -132,15 +132,15 @@ void PlaceholderEntry::add_seen_thread(JavaThread* thread, PlaceholderTable::cla
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
 
-  assert(action != PlaceholderTable::LOAD_INSTANCE || !EnableWaitForParallelLoad || seen == NULL,
+  assert(action != PlaceholderTable::LOAD_INSTANCE || !EnableWaitForParallelLoad || seen == nullptr,
          "Only one LOAD_INSTANCE allowed at a time");
 
-  if (seen == NULL) {
+  if (seen == nullptr) {
     set_threadQ(threadEntry, action);
     return;
   }
   SeenThread* next;
-  while ((next = seen->next()) != NULL) {
+  while ((next = seen->next()) != nullptr) {
     seen = next;
   }
   seen->set_next(threadEntry);
@@ -170,7 +170,7 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadQ = actionToQueue(action);
   SeenThread* seen = threadQ;
-  SeenThread* prev = NULL;
+  SeenThread* prev = nullptr;
   while (seen) {
     if (thread == seen->thread()) {
       if (prev) {
@@ -187,7 +187,7 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
     prev = seen;
     seen = seen->next();
   }
-  return (actionToQueue(action) == NULL);
+  return (actionToQueue(action) == nullptr);
 }
 
 
@@ -200,7 +200,7 @@ bool PlaceholderEntry::remove_seen_thread(JavaThread* thread, PlaceholderTable::
 PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
                             Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(class_name != NULL, "adding NULL obj");
+  assert(class_name != nullptr, "adding nullptr obj");
 
   PlaceholderEntry entry;
   entry.set_supername(supername);
@@ -255,9 +255,9 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
                                                  classloadAction action,
                                                  Symbol* supername,
                                                  JavaThread* thread) {
-  assert(action != LOAD_SUPER || supername != NULL, "must have a super class name");
+  assert(action != LOAD_SUPER || supername != nullptr, "must have a super class name");
   PlaceholderEntry* probe = get_entry(name, loader_data);
-  if (probe == NULL) {
+  if (probe == nullptr) {
     // Nothing found, add place holder
     probe = add_entry(name, loader_data, supername);
   } else {
@@ -289,12 +289,12 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
                                        JavaThread* thread) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   PlaceholderEntry* probe = get_entry(name, loader_data);
-  if (probe != NULL) {
+  if (probe != nullptr) {
     log(name, probe, "find_and_remove", action);
     probe->remove_seen_thread(thread, action);
     // If no other threads using this entry, and this thread is not using this entry for other states
-    if ((probe->superThreadQ() == NULL) && (probe->loadInstanceThreadQ() == NULL)
-        && (probe->defineThreadQ() == NULL) && (probe->definer() == NULL)) {
+    if ((probe->superThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
+        && (probe->defineThreadQ() == nullptr) && (probe->definer() == nullptr)) {
       probe->clear_supername();
       remove_entry(name, loader_data);
     }
@@ -308,15 +308,15 @@ void PlaceholderKey::print_on(outputStream* st) const {
 }
 
 void PlaceholderEntry::print_on(outputStream* st) const {
-  if (supername() != NULL) {
+  if (supername() != nullptr) {
     st->print(", supername ");
     supername()->print_value_on(st);
   }
-  if (definer() != NULL) {
+  if (definer() != nullptr) {
     st->print(", definer ");
     definer()->print_value_on(st);
   }
-  if (instance_klass() != NULL) {
+  if (instance_klass() != nullptr) {
     st->print(", InstanceKlass ");
     instance_klass()->print_value_on(st);
   }

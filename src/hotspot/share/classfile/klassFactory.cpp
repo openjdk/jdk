@@ -51,13 +51,13 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                           const ClassFileStream *cfs,
                                           TRAPS) {
 #if INCLUDE_CDS && INCLUDE_JVMTI
-  assert(ik != NULL, "sanity");
+  assert(ik != nullptr, "sanity");
   assert(ik->is_shared(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
 
     // Post the CFLH
-    JvmtiCachedClassFileData* cached_class_file = NULL;
-    if (cfs == NULL) {
+    JvmtiCachedClassFileData* cached_class_file = nullptr;
+    if (cfs == nullptr) {
       cfs = FileMapInfo::open_stream_for_jvmti(ik, class_loader, CHECK_NULL);
     }
     unsigned char* ptr = (unsigned char*)cfs->buffer();
@@ -91,7 +91,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                                            *cl_inst_info,  // dynamic_nest_host and classData
                                                            CHECK_NULL);
 
-      if (cached_class_file != NULL) {
+      if (cached_class_file != nullptr) {
         new_ik->set_cached_class_file(cached_class_file);
       }
 
@@ -104,7 +104,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
   }
 #endif
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -115,7 +115,7 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
                                                    JvmtiCachedClassFileData** cached_class_file,
                                                    TRAPS) {
 
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
     const JavaThread* jt = THREAD;
@@ -133,9 +133,9 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
 
     JvmtiThreadState* state = jt->jvmti_thread_state();
 
-    if (state != NULL) {
+    if (state != nullptr) {
       Klass* k = state->get_class_being_redefined();
-      if (k != NULL && state->get_class_load_kind() == jvmti_class_load_kind_retransform) {
+      if (k != nullptr && state->get_class_load_kind() == jvmti_class_load_kind_retransform) {
         InstanceKlass* class_being_redefined = InstanceKlass::cast(k);
         *cached_class_file = class_being_redefined->get_cached_class_file();
       }
@@ -170,13 +170,13 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 ClassLoaderData* loader_data,
                                                 const ClassLoadInfo& cl_info,
                                                 TRAPS) {
-  assert(stream != NULL, "invariant");
-  assert(loader_data != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
+  assert(loader_data != nullptr, "invariant");
 
   ResourceMark rm(THREAD);
   HandleMark hm(THREAD);
 
-  JvmtiCachedClassFileData* cached_class_file = NULL;
+  JvmtiCachedClassFileData* cached_class_file = nullptr;
 
   ClassFileStream* old_stream = stream;
 
@@ -202,9 +202,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   const ClassInstanceInfo* cl_inst_info = cl_info.class_hidden_info_ptr();
   InstanceKlass* result = parser.create_instance_klass(old_stream != stream, *cl_inst_info, CHECK_NULL);
-  assert(result != NULL, "result cannot be null with no pending exception");
+  assert(result != nullptr, "result cannot be null with no pending exception");
 
-  if (cached_class_file != NULL) {
+  if (cached_class_file != nullptr) {
     // JVMTI: we have an InstanceKlass now, tell it about the cached bytes
     result->set_cached_class_file(cached_class_file);
   }

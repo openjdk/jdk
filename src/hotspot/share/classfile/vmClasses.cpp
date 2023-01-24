@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@
 #include "runtime/globals.hpp"
 
 InstanceKlass* vmClasses::_klasses[static_cast<int>(vmClassID::LIMIT)]
-                                                 =  { NULL /*, NULL...*/ };
-InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { NULL /*, NULL...*/ };
+                                                 =  { nullptr /*, nullptr...*/ };
+InstanceKlass* vmClasses::_box_klasses[T_VOID+1] =  { nullptr /*, nullptr...*/ };
 
 
 // CDS: scan and relocate all classes referenced by _klasses[].
@@ -53,7 +53,7 @@ void vmClasses::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 bool vmClasses::is_loaded(InstanceKlass* klass) {
-  return klass != NULL && klass->is_loaded();
+  return klass != nullptr && klass->is_loaded();
 }
 
 // Compact table of the vmSymbolIDs of all the VM classes (stored as short to save space)
@@ -102,7 +102,7 @@ bool vmClasses::resolve(vmClassID id, TRAPS) {
     Klass* k = SystemDictionary::resolve_or_fail(symbol, true, CHECK_false);
     (*klassp) = InstanceKlass::cast(k);
   }
-  return ((*klassp) != NULL);
+  return ((*klassp) != nullptr);
 }
 
 void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
@@ -154,7 +154,7 @@ void vmClasses::resolve_all(TRAPS) {
     resolve_through(VM_CLASS_ID(Class_klass), scan, CHECK);
   }
 
-  assert(vmClasses::Object_klass() != NULL, "well-known classes should now be initialized");
+  assert(vmClasses::Object_klass() != nullptr, "well-known classes should now be initialized");
 
   java_lang_Object::register_natives(CHECK);
 
@@ -226,13 +226,13 @@ void vmClasses::resolve_all(TRAPS) {
 void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* loader_data, Handle domain, TRAPS) {
   assert(!Universe::is_fully_initialized(), "We can make short cuts only during VM initialization");
   assert(klass->is_shared(), "Must be shared class");
-  if (klass->class_loader_data() != NULL) {
+  if (klass->class_loader_data() != nullptr) {
     return;
   }
 
   // add super and interfaces first
   Klass* super = klass->super();
-  if (super != NULL && super->class_loader_data() == NULL) {
+  if (super != nullptr && super->class_loader_data() == nullptr) {
     assert(super->is_instance_klass(), "Super should be instance klass");
     resolve_shared_class(InstanceKlass::cast(super), loader_data, domain, CHECK);
   }
@@ -240,12 +240,12 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   Array<InstanceKlass*>* ifs = klass->local_interfaces();
   for (int i = 0; i < ifs->length(); i++) {
     InstanceKlass* ik = ifs->at(i);
-    if (ik->class_loader_data()  == NULL) {
+    if (ik->class_loader_data()  == nullptr) {
       resolve_shared_class(ik, loader_data, domain, CHECK);
     }
   }
 
-  klass->restore_unshareable_info(loader_data, domain, NULL, THREAD);
+  klass->restore_unshareable_info(loader_data, domain, nullptr, THREAD);
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   dictionary->add_klass(THREAD, klass->name(), klass);
@@ -258,7 +258,7 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
 // Tells if a given klass is a box (wrapper class, such as java.lang.Integer).
 // If so, returns the basic type it holds.  If not, returns T_OBJECT.
 BasicType vmClasses::box_klass_type(Klass* k) {
-  assert(k != NULL, "");
+  assert(k != nullptr, "");
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
     if (_box_klasses[i] == k)
       return (BasicType)i;

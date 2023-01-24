@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,12 +118,12 @@ void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
     lt.print("extending constraint for name %s by adding loader: %s %s",
                class_name->as_C_string(),
                loader->loader_name_and_id(),
-               _klass == NULL ? " and setting class object" : "");
+               _klass == nullptr ? " and setting class object" : "");
   }
-  if (_klass == NULL) {
+  if (_klass == nullptr) {
     set_klass(klass);
   } else {
-    assert(klass == NULL || _klass == klass, "constraints corrupted");
+    assert(klass == nullptr || _klass == klass, "constraints corrupted");
   }
 }
 
@@ -181,9 +181,9 @@ class PurgeUnloadedConstraints : public StackObj {
       LoaderConstraint* probe = set.constraint_at(i);
       InstanceKlass* klass = probe->klass();
       // Remove klass that is no longer alive
-      if (klass != NULL &&
+      if (klass != nullptr &&
           !klass->is_loader_alive()) {
-        probe->set_klass(NULL);
+        probe->set_klass(nullptr);
         if (lt.is_enabled()) {
           ResourceMark rm;
           lt.print("purging class object from constraint for name %s,"
@@ -228,7 +228,7 @@ class PurgeUnloadedConstraints : public StackObj {
         set.remove_constraint(probe);
       } else {
 #ifdef ASSERT
-        if (probe->klass() != NULL) {
+        if (probe->klass() != nullptr) {
           assert(probe->klass()->is_loader_alive(), "klass should be live");
         }
 #endif
@@ -268,7 +268,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
                                       InstanceKlass* klass2, ClassLoaderData* loader2) {
 
   LogTarget(Info, class, loader, constraints) lt;
-  if (klass1 != NULL && klass2 != NULL) {
+  if (klass1 != nullptr && klass2 != nullptr) {
     if (klass1 == klass2) {
       // Same type already loaded in both places.  There is no need for any constraint.
       return true;
@@ -281,10 +281,10 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     }
   }
 
-  InstanceKlass* klass = klass1 != NULL ? klass1 : klass2;
+  InstanceKlass* klass = klass1 != nullptr ? klass1 : klass2;
   LoaderConstraint* pp1 = find_loader_constraint(class_name, loader1);
-  if (pp1 != NULL && pp1->klass() != NULL) {
-    if (klass != NULL) {
+  if (pp1 != nullptr && pp1->klass() != nullptr) {
+    if (klass != nullptr) {
       if (klass != pp1->klass()) {
         log_ldr_constraint_msg(class_name,
                                "The class object presented by loader[0] does not match "
@@ -298,8 +298,8 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
   }
 
   LoaderConstraint* pp2 = find_loader_constraint(class_name, loader2);
-  if (pp2 != NULL && pp2->klass() != NULL) {
-    if (klass != NULL) {
+  if (pp2 != nullptr && pp2->klass() != nullptr) {
+    if (klass != nullptr) {
       if (klass != pp2->klass()) {
         log_ldr_constraint_msg(class_name,
                                "The class object presented by loader[1] does not match "
@@ -312,7 +312,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     }
   }
 
-  if (pp1 == NULL && pp2 == NULL) {
+  if (pp1 == nullptr && pp2 == nullptr) {
 
     add_loader_constraint(class_name, klass, loader1, loader2);
     if (lt.is_enabled()) {
@@ -325,7 +325,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     }
   } else if (pp1 == pp2) {
     /* constraint already imposed */
-    if (pp1->klass() == NULL) {
+    if (pp1->klass() == nullptr) {
       pp1->set_klass(klass);
       if (lt.is_enabled()) {
         ResourceMark rm;
@@ -337,9 +337,9 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
     } else {
       assert(pp1->klass() == klass, "loader constraints corrupted");
     }
-  } else if (pp1 == NULL) {
+  } else if (pp1 == nullptr) {
     pp2->extend_loader_constraint(class_name, loader1, klass);
-  } else if (pp2 == NULL) {
+  } else if (pp2 == nullptr) {
     pp1->extend_loader_constraint(class_name, loader1, klass);
   } else {
     merge_loader_constraints(class_name, pp1, pp2, klass);
@@ -355,7 +355,7 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
                                             Symbol* name) {
   LogTarget(Info, class, loader, constraints) lt;
   LoaderConstraint* p = find_loader_constraint(name, loader);
-  if (p && p->klass() != NULL && p->klass() != k) {
+  if (p && p->klass() != nullptr && p->klass() != k) {
     if (lt.is_enabled()) {
       ResourceMark rm;
       lt.print("constraint check failed for name %s, loader %s: "
@@ -365,7 +365,7 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
     }
     return false;
   } else {
-    if (p && p->klass() == NULL) {
+    if (p && p->klass() == nullptr) {
       p->set_klass(k);
       if (lt.is_enabled()) {
         ResourceMark rm;
@@ -382,18 +382,18 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
 InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
                                                              ClassLoaderData* loader) {
   LoaderConstraint *p = find_loader_constraint(name, loader);
-  if (p != NULL && p->klass() != NULL) {
+  if (p != nullptr && p->klass() != nullptr) {
     assert(p->klass()->is_instance_klass(), "sanity");
     if (!p->klass()->is_loaded()) {
       // Only return fully loaded classes.  Classes found through the
       // constraints might still be in the process of loading.
-      return NULL;
+      return nullptr;
     }
     return p->klass();
   }
 
   // No constraints, or else no klass loaded yet.
-  return NULL;
+  return nullptr;
 }
 
 void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
@@ -418,20 +418,20 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
     for (int i = 0; i < dest->num_loaders(); i++) {
       lt.print("    [%d]: %s", i, dest->loader_data(i)->loader_name_and_id());
     }
-    if (dest->klass() == NULL) {
+    if (dest->klass() == nullptr) {
       lt.print("... and setting class object");
     }
   }
 
-  // dest->klass() will hold NULL if klass, src->klass(), and old
-  // dest->klass() are all NULL.  In addition, all three must have
-  // matching non-NULL values, otherwise either the constraints would
+  // dest->klass() will hold null if klass, src->klass(), and old
+  // dest->klass() are all null.  In addition, all three must have
+  // matching non-null values, otherwise either the constraints would
   // have been violated, or the constraints had been corrupted (and an
   // assertion would fail).
-  if (src->klass() != NULL) {
+  if (src->klass() != nullptr) {
     assert(src->klass() == klass, "constraints corrupted");
   }
-  if (dest->klass() == NULL) {
+  if (dest->klass() == nullptr) {
     dest->set_klass(klass);
   } else {
     assert(dest->klass() == klass, "constraints corrupted");
@@ -449,14 +449,14 @@ void LoaderConstraintTable::verify() {
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);
-      if (probe->klass() != NULL) {
+      if (probe->klass() != nullptr) {
         InstanceKlass* ik = probe->klass();
         guarantee(key == ik->name(), "name should match");
         Symbol* name = ik->name();
         ClassLoaderData* loader_data = ik->class_loader_data();
         Dictionary* dictionary = loader_data->dictionary();
         InstanceKlass* k = dictionary->find_class(thread, name);
-        if (k != NULL) {
+        if (k != nullptr) {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
           guarantee(k == probe->klass(), "klass should be in dictionary");
@@ -468,7 +468,7 @@ void LoaderConstraintTable::verify() {
           // The InstanceKlass might not be on the entry, so the only
           // thing we can check here is whether we were successful in
           // finding the class in the placeholders table.
-          guarantee(entry != NULL, "klass should be in the placeholders");
+          guarantee(entry != nullptr, "klass should be in the placeholders");
         }
       }
       for (int n = 0; n< probe->num_loaders(); n++) {

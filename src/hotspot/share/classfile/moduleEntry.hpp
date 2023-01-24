@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public:
   bool             is_open() const                     { return _is_open; }
   void             set_is_open(bool is_open);
 
-  bool             is_named() const                    { return (_name != NULL); }
+  bool             is_named() const                    { return (_name != nullptr); }
 
   bool can_read_all_unnamed() const {
     assert(is_named() || _can_read_all_unnamed == true,
@@ -233,12 +233,12 @@ public:
   // Special handling for java.base
   static ModuleEntry* javabase_moduleEntry()                   { return _javabase_module; }
   static void set_javabase_moduleEntry(ModuleEntry* java_base) {
-    assert(_javabase_module == NULL, "_javabase_module is already defined");
+    assert(_javabase_module == nullptr, "_javabase_module is already defined");
     _javabase_module = java_base;
   }
 
-  static bool javabase_defined() { return ((_javabase_module != NULL) &&
-                                           (_javabase_module->module() != NULL)); }
+  static bool javabase_defined() { return ((_javabase_module != nullptr) &&
+                                           (_javabase_module->module() != nullptr)); }
   static void finalize_javabase(Handle module_handle, Symbol* version, Symbol* location);
   static void patch_javabase_entries(JavaThread* current, Handle module_handle);
 
