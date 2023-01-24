@@ -1154,7 +1154,7 @@ static ClassFileStream* schema_extend_event_klass_bytes(const InstanceKlass* ik,
   assert(orig_stream != nullptr, "invariant");
   const int orig_stream_length = orig_stream->length();
   // allocate an identically sized buffer
-  u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_nullptr(THREAD, u1, orig_stream_length);
+  u1* const new_buffer = NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, u1, orig_stream_length);
   if (new_buffer == nullptr) {
     return nullptr;
   }
