@@ -47,7 +47,7 @@ class Settings : public AllStatic {
   // Note that this only affects the non-class metaspace. Class space ignores this size (it is one
   //  single large mapping).
   static const size_t _virtual_space_node_default_word_size =
-      chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(2) LP64_ONLY(16); // 8MB (32-bit) / 64MB (64-bit)
+      chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(1) LP64_ONLY(4); // 16MB (32-bit) / 64MB (64-bit)
 
   // Alignment of the base address of a virtual space node
   static const size_t _virtual_space_node_reserve_alignment_words = chunklevel::MAX_CHUNK_WORD_SIZE;

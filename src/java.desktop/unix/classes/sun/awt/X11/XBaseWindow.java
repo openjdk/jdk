@@ -81,7 +81,7 @@ public class XBaseWindow {
         INITIALISING,
         INITIALISED,
         FAILED_INITIALISATION
-    };
+    }
 
     private InitialiseState initialising;
 

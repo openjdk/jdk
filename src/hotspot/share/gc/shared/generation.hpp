@@ -333,10 +333,6 @@ class Generation: public CHeapObj<mtGC> {
   // operations to be optimized.
   virtual void save_marks() {}
 
-  // This function allows generations to initialize any "saved marks".  That
-  // is, should only be called when the generation is empty.
-  virtual void reset_saved_marks() {}
-
   // This function is "true" iff any no allocations have occurred in the
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;

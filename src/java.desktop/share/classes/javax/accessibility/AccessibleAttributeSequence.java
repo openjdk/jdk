@@ -67,4 +67,4 @@ public class AccessibleAttributeSequence {
         endIndex = end;
         attributes = attr;
     }
-};
+}

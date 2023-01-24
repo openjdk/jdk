@@ -569,6 +569,8 @@ public class Runtime {
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the specified environment.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>{@link ProcessBuilder#start()} is now the preferred way to
      * start a process with a modified environment.

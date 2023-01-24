@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,18 +116,18 @@ import sun.security.action.GetIntegerAction;
  * the object's most specific class.
  *
  * <p>For example to read from a stream as written by the example in
- * ObjectOutputStream:
+ * {@link ObjectOutputStream}:
  * <br>
- * <pre>
- *      FileInputStream fis = new FileInputStream("t.tmp");
- *      ObjectInputStream ois = new ObjectInputStream(fis);
- *
- *      int i = ois.readInt();
- *      String today = (String) ois.readObject();
- *      Date date = (Date) ois.readObject();
- *
- *      ois.close();
- * </pre>
+ * {@snippet lang="java" :
+ *     try (FileInputStream fis = new FileInputStream("t.tmp");
+ *          ObjectInputStream ois = new ObjectInputStream(fis)) {
+ *         String label = (String) ois.readObject();
+ *         LocalDateTime dateTime = (LocalDateTime) ois.readObject();
+ *         // Use label and dateTime
+ *     } catch (Exception ex) {
+ *         // handle exception
+ *     }
+ * }
  *
  * <p>Classes control how they are serialized by implementing either the
  * java.io.Serializable or java.io.Externalizable interfaces.
@@ -142,14 +142,14 @@ import sun.security.action.GetIntegerAction;
  * serialization and deserialization process should implement methods
  * with the following signatures:
  *
- * <pre>
- * private void writeObject(java.io.ObjectOutputStream stream)
- *     throws IOException;
- * private void readObject(java.io.ObjectInputStream stream)
- *     throws IOException, ClassNotFoundException;
- * private void readObjectNoData()
- *     throws ObjectStreamException;
- * </pre>
+ * {@snippet lang="java":
+ *     private void writeObject(java.io.ObjectOutputStream stream)
+ *         throws IOException;
+ *     private void readObject(java.io.ObjectInputStream stream)
+ *         throws IOException, ClassNotFoundException;
+ *     private void readObjectNoData()
+ *         throws ObjectStreamException;
+ * }
  *
  * <p>The method name, modifiers, return type, and number and type of
  * parameters must match exactly for the method to be used by
@@ -771,9 +771,9 @@ public class ObjectInputStream
      *
      * <p>The default implementation of this method in
      * {@code ObjectInputStream} returns the result of calling
-     * <pre>
+     * {@snippet lang="java":
      *     Class.forName(desc.getName(), false, loader)
-     * </pre>
+     * }
      * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
@@ -833,9 +833,9 @@ public class ObjectInputStream
      * objects for the interfaces that are named in the {@code interfaces}
      * parameter.  The {@code Class} object for each interface name
      * {@code i} is the value returned by calling
-     * <pre>
+     * {@snippet lang="java":
      *     Class.forName(i, false, loader)
-     * </pre>
+     * }
      * where {@code loader} is the first class loader on the current
      * thread's stack (starting from the currently executing method) that is
      * neither the {@linkplain ClassLoader#getPlatformClassLoader() platform
@@ -1093,9 +1093,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an 8 bit byte.
+     * Reads an 8-bit byte.
      *
-     * @return  the 8 bit byte read.
+     * @return  the 8-bit byte read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1104,9 +1104,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an unsigned 8 bit byte.
+     * Reads an unsigned 8-bit byte.
      *
-     * @return  the 8 bit byte read.
+     * @return  the 8-bit byte read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1115,9 +1115,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 16 bit char.
+     * Reads a 16-bit char.
      *
-     * @return  the 16 bit char read.
+     * @return  the 16-bit char read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1126,9 +1126,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 16 bit short.
+     * Reads a 16-bit short.
      *
-     * @return  the 16 bit short read.
+     * @return  the 16-bit short read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1137,9 +1137,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads an unsigned 16 bit short.
+     * Reads an unsigned 16-bit short.
      *
-     * @return  the 16 bit short read.
+     * @return  the 16-bit short read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1148,9 +1148,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 32 bit int.
+     * Reads a 32-bit int.
      *
-     * @return  the 32 bit integer read.
+     * @return  the 32-bit integer read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1159,9 +1159,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 64 bit long.
+     * Reads a 64-bit long.
      *
-     * @return  the read 64 bit long.
+     * @return  the read 64-bit long.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1170,9 +1170,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 32 bit float.
+     * Reads a 32-bit float.
      *
-     * @return  the 32 bit float read.
+     * @return  the 32-bit float read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -1181,9 +1181,9 @@ public class ObjectInputStream
     }
 
     /**
-     * Reads a 64 bit double.
+     * Reads a 64-bit double.
      *
-     * @return  the 64 bit double read.
+     * @return  the 64-bit double read.
      * @throws  EOFException If end of file is reached.
      * @throws  IOException If other I/O error has occurred.
      */
@@ -3862,7 +3862,7 @@ public class ObjectInputStream
      * as memory conservation, it does not enforce this constraint.
      */
     // REMIND: add full description of exception propagation algorithm?
-    private static class HandleTable {
+    private static final class HandleTable {
 
         /* status codes indicating whether object has associated exception */
         private static final byte STATUS_OK = 1;

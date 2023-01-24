@@ -982,7 +982,7 @@ public class HtmlDocletWriter {
             HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
-                .where(id.name())
+                .fragment(id.name())
                 .style(style)
                 .targetMember(element));
         }
@@ -990,7 +990,7 @@ public class HtmlDocletWriter {
         if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
-                .where(element.getSimpleName().toString())
+                .fragment(element.getSimpleName().toString())
                 .style(style)
                 .targetMember(element));
         }
@@ -1815,7 +1815,7 @@ public class HtmlDocletWriter {
             annotation = new ContentBuilder();
             isAnnotationDocumented = false;
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                                                     HtmlLinkInfo.Kind.ANNOTATION, annotationElement);
+                                                     HtmlLinkInfo.Kind.PLAIN, annotationElement);
             Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = aDesc.getElementValues();
             // If the annotation is mandated, do not print the container.
             if (utils.configuration.workArounds.isMandated(aDesc)) {
@@ -1916,7 +1916,7 @@ public class HtmlDocletWriter {
                 }
                 String simpleName = element.getSimpleName().toString();
                 if (multipleValues || !"value".equals(simpleName)) { // Omit "value=" where unnecessary
-                    annotation.add(getDocLink(HtmlLinkInfo.Kind.ANNOTATION, element, simpleName));
+                    annotation.add(getDocLink(HtmlLinkInfo.Kind.PLAIN, element, simpleName));
                     annotation.add("=");
                 }
                 AnnotationValue annotationValue = map.get(element);
@@ -2006,7 +2006,7 @@ public class HtmlDocletWriter {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.ANNOTATION, t);
+                                HtmlLinkInfo.Kind.PLAIN, t);
                         String name = utils.isIncluded(t.asElement())
                                 ? t.asElement().getSimpleName().toString()
                                 : utils.getFullyQualifiedName(t.asElement());
@@ -2032,7 +2032,7 @@ public class HtmlDocletWriter {
 
             @Override
             public Content visitEnumConstant(VariableElement c, Void p) {
-                return getDocLink(HtmlLinkInfo.Kind.ANNOTATION, c, c.getSimpleName());
+                return getDocLink(HtmlLinkInfo.Kind.PLAIN, c, c.getSimpleName());
             }
 
             @Override
@@ -2309,7 +2309,7 @@ public class HtmlDocletWriter {
         elements.stream()
                 .sorted(Comparator.comparing(te -> te.getSimpleName().toString()))
                 .distinct()
-                .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS, te)
+                .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, te)
                         .label(HtmlTree.CODE(Text.of(te.getSimpleName()))).skipPreview(true)))
                 .forEach(c -> {
                     links.add(sep[0]);
