@@ -519,7 +519,7 @@ public:
                                                                parameters_size()); }
 
   // Get the data at an arbitrary bci, or null if there is none. If m
-  // is not nullptr look for a SpeculativeTrapData if any first.
+  // is not null look for a SpeculativeTrapData if any first.
   ciProfileData* bci_to_data(int bci, ciMethod* m = nullptr);
 
   uint overflow_trap_count() const {

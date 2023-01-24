@@ -53,7 +53,7 @@ protected:
 
 public:
   // If this object is a java mirror, return the corresponding type.
-  // Otherwise, return nullptr.
+  // Otherwise, return null.
   // (Remember that a java mirror is an instance of java.lang.Class.)
   ciType* java_mirror_type();
 

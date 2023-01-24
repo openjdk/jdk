@@ -783,7 +783,7 @@ bool ciMethod::can_omit_stack_trace() const {
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
-// Return nullptr if the call has no target or the target is abstract.
+// Return null if the call has no target or the target is abstract.
 ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, bool check_access, bool allow_abstract) {
   check_is_loaded();
   VM_ENTRY_MARK;
@@ -1032,7 +1032,7 @@ ciMethodData* ciMethod::method_data() {
 // ------------------------------------------------------------------
 // ciMethod::method_data_or_null
 // Returns a pointer to ciMethodData if MDO exists on the VM side,
-// nullptr otherwise.
+// null otherwise.
 ciMethodData* ciMethod::method_data_or_null() {
   ciMethodData *md = method_data();
   if (md->is_empty()) {
