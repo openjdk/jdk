@@ -302,6 +302,18 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
     0x5a546366UL, 0x00000001UL,
     0x751997d0UL, 0x00000001UL,
     0xccaa009eUL, 0x00000000UL,
+
+    // Constants for CRC-32C crypto pmull implementation
+    0x6992cea2UL, 0x00000000UL,
+    0x0d3b6092UL, 0x00000000UL,
+    0x740eef02UL, 0x00000000UL,
+    0x9e4addf8UL, 0x00000000UL,
+    0x1c291d04UL, 0x00000000UL,
+    0xd82c63daUL, 0x00000001UL,
+    0x384aa63aUL, 0x00000001UL,
+    0xba4fc28eUL, 0x00000000UL,
+    0xf20c0dfeUL, 0x00000000UL,
+    0x4cd00bd6UL, 0x00000001UL,
 };
 
 // Accumulation coefficients for adler32 upper 16 bits
