@@ -173,19 +173,30 @@ jobject ciObject::constant_encoding() {
 //
 // Cache constant value lookups to ensure that consistent values are observed
 // during compilation because fields may be (re-)initialized concurrently.
-ciConstant ciObject::check_constant_value_cache(int off, ciConstant val) {
+ciConstant ciObject::check_constant_value_cache(int off, BasicType bt) {
+  if (_constant_values != nullptr) {
+    for (int i = 0; i < _constant_values->length(); ++i) {
+      ConstantValue cached_val = _constant_values->at(i);
+      if (cached_val.off() == off) {
+        assert(cached_val.value().basic_type() == bt, "unexpected type");
+        return cached_val.value();
+      }
+    }
+  }
+  return ciConstant();
+}
+
+// ------------------------------------------------------------------
+// ciObject::add_to_constant_value_cache()
+//
+// Add a constant value to the cache.
+void ciObject::add_to_constant_value_cache(int off, ciConstant val) {
+  assert(val.is_valid(), "value must be valid");
   if (_constant_values == nullptr) {
     Arena* arena = CURRENT_ENV->arena();
     _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 0, 0, ConstantValue());
   }
-  for (int i = 0; i < _constant_values->length(); ++i) {
-    ConstantValue cached_val = _constant_values->at(i);
-    if (cached_val.off() == off) {
-      return cached_val.value();
-    }
-  }
-  _constant_values->append(ConstantValue(this, off, val));
-  return val;
+  _constant_values->append(ConstantValue(off, val));
 }
 
 // ------------------------------------------------------------------

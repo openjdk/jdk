@@ -67,7 +67,7 @@ private:
 
     public:
       ConstantValue() : _off(0), _value(ciConstant()) { }
-      ConstantValue(const ciObject* obj, int off, ciConstant value) : _off(off), _value(value) { }
+      ConstantValue(int off, ciConstant value) : _off(off), _value(value) { }
 
       int off() const { return _off; }
       ciConstant value() const { return _value; }
@@ -112,8 +112,9 @@ public:
   // be registered with the oopRecorder.
   jobject constant_encoding();
 
-  // Checks the constant value cache
-  ciConstant check_constant_value_cache(int off, ciConstant val);
+  // Access to the constant value cache
+  ciConstant check_constant_value_cache(int off, BasicType bt);
+  void add_to_constant_value_cache(int off, ciConstant val);
 
   virtual bool is_object() const            { return true; }
 
