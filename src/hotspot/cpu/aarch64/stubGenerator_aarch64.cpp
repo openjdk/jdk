@@ -7071,7 +7071,6 @@ typedef uint32_t u32;
     StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
     address start = __ pc();
     Label here;
-    __ set_last_Java_frame(sp, rfp, lr, rscratch1);
     __ enter();
 
     RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r26) - r18_tls - rscratch1 - rscratch2).begin();
