@@ -169,7 +169,7 @@ public class JarWithOneNonDisabledDigestAlg {
                     is.transferTo(OutputStream.nullOutputStream());
                 }
                 CodeSigner[] signers = entry.getCodeSigners();
-                if(!expected.containsKey(entry.getName())) {
+                if (!expected.containsKey(entry.getName())) {
                     throw new Exception("Unexpected entry " + entry.getName());
                 }
                 int expectedSigners = expected.get(entry.getName());
