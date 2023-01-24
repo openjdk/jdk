@@ -577,7 +577,7 @@ There are a few exceptions to this rule.
 
 Certain restrictions apply to the declarations provided by `<type_traits>`.
 
-* The `alignof` operator should be utilized rather than `std::alignment_of<>`.
+* The `alignof` operator should be used rather than `std::alignment_of<>`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
