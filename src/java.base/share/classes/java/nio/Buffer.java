@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -747,9 +747,7 @@ public abstract sealed class Buffer
     }
 
     final int checkIndex(int i, int nb) {               // package-private
-        if ((i < 0) || (nb > limit - i))
-            throw new IndexOutOfBoundsException();
-        return i;
+        return Objects.checkIndex(i, limit - nb + 1);
     }
 
     final int markValue() {                             // package-private
