@@ -26,8 +26,11 @@
  * @bug 8298118
  * @summary Test that the JVM doesn't fail due to split-if causing empty loop to temporarily have more than one phi
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=TestEmptyLoopMultiplePhis TestEmptyLoopMultiplePhis
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestEmptyLoopMultiplePhis::test
+ *      compiler.loopopts.TestEmptyLoopMultiplePhis
  */
+
+package compiler.loopopts;
 
 public class TestEmptyLoopMultiplePhis {
     static int[] iArrFld = new int[10];
