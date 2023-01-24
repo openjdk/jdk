@@ -465,6 +465,7 @@ public:
 
   void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
+    evacuation_info->set_collection_set_used_before(_before_used_bytes + _after_used_bytes);
     evacuation_info->increment_collection_set_used_after(_after_used_bytes);
 
     g1h->decrement_summary_bytes(_before_used_bytes);
