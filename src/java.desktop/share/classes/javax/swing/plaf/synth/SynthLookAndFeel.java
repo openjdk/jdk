@@ -615,6 +615,16 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * <code>new URL(synthFile, path)</code>. Refer to
      * <a href="doc-files/synthFileFormat.html">Synth File Format</a> for more
      * information.
+     * <p>
+     * Whilst this API may be safe for loading local resources that are
+     * delivered with a {@code LookAndFeel} or application, and so have an
+     * equal level of trust with application code, using it to load from
+     * from remote resources, particularly any which may have a lower level of
+     * trust, is strongly discouraged.
+     * The alternative mechanisms to load styles from an {@code InputStream}
+     * located as a resource co-located with the application or by
+     * providing a {@code SynthStyleFactory} are preferred.
+     * Consequently this method is deprecated and will be removed in a future release. 
      *
      * @param url the <code>URL</code> to load the set of
      *     <code>SynthStyle</code> from
@@ -623,6 +633,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * @throws IOException if synthSet cannot be opened as an <code>InputStream</code>
      * @since 1.6
      */
+    @Deprecated(since = "21", forRemoval = true)
     public void load(URL url) throws ParseException, IOException {
         if (url == null) {
             throw new IllegalArgumentException(

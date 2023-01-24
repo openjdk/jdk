@@ -70,6 +70,8 @@ div.example {
     <p>
       This example loads the look and feel from an input stream, using
       the specified class as the resource base to resolve paths.
+    </p>
+    <p>
       It is also possible to load a look and feel from an arbitrary URL
       as in the following example.
     </p>
@@ -94,6 +96,11 @@ div.example {
       <li>Remote JAR file, e.g.
         <code>jar:http://host/synth-laf.jar!/laf.xml</code></li>
     </ul>
+    <p>Note: Synth's file format allows for the definition of code to be executed.
+       Loading any code from a remote location should be used only
+       with extreme caution from a trusted source over a secure connection.
+       It is strongly discouraged for an application or a LookAndFeel to do so.
+    </p>
     <p>
       While the DTD for synth is specified, the parser is not validating.
       Parsing will fail only if a necessary attribute is not
