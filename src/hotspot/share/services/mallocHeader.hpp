@@ -114,8 +114,8 @@ class MallocHeader {
   uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
-  template<typename IN, typename OUT>
-  inline static OUT resolve_checked_impl(IN memblock);
+  template<typename InTypeParam, typename OutTypeParam>
+  inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
 public:
   // Contains all of the necessary data to to deaccount block with NMT.
