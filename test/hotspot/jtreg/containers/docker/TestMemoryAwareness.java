@@ -50,11 +50,11 @@ public class TestMemoryAwareness {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     private static String getHostMaxMemory() {
-        return Long.valueOf(wb.physicalMemory()).toString();
+        return Long.valueOf(wb.hostPhysicalMemory()).toString();
     }
 
     private static String getHostSwap() {
-        return Long.valueOf(wb.physicalSwap()).toString();
+        return Long.valueOf(wb.hostPhysicalSwap()).toString();
     }
 
     public static void main(String[] args) throws Exception {
