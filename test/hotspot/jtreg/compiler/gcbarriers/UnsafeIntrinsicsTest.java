@@ -31,7 +31,7 @@
  * @library /test/lib
  * @run main/othervm -XX:+UseZGC
  *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:ZCollectionIntervalMajor=1
+ *                   -XX:+ZVerifyOops -XX:ZCollectionInterval=1
  *                   -XX:-CreateCoredumpOnCrash
  *                   -XX:CompileCommand=dontinline,*::mergeImpl*
  *                   compiler.gcbarriers.UnsafeIntrinsicsTest
