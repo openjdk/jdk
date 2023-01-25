@@ -45,6 +45,7 @@ include NativeCompilation.gmk
 #   SOURCE_DIRS A list of source directories to search
 #   OUTPUT_DIR Where to put the resulting files
 #   EXCLUDE A list of filenames to exclude from compilation
+#   EXTRA_FILES List of extra files not in SOURCE_DIRS
 SetupTestFilesCompilation = $(NamedParamsMacroTemplate)
 define SetupTestFilesCompilationBody
 
@@ -93,7 +94,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
-        EXTRA_FILES := $$(file), \
+        EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
         CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \

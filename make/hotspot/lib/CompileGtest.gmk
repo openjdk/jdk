@@ -28,6 +28,10 @@ $(eval $(call IncludeCustomExtension, hotspot/lib/CompileGtest.gmk))
 GTEST_TEST_SRC += $(TOPDIR)/test/hotspot/gtest
 GTEST_LAUNCHER_SRC := $(TOPDIR)/test/hotspot/gtest/gtestLauncher.cpp
 
+ifeq ($(ASAN_ENABLED), true)
+  GTEST_LAUNCHER_SRC += $(TOPDIR)/make/data/asan/asan_default_options.cpp
+endif
+
 # On Windows, there are no internal debug symbols so must set copying to true
 # to get any at all.
 ifeq ($(call isTargetOs, windows), true)
