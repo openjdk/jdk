@@ -350,7 +350,7 @@ static int store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bo
   bool in_scratch_emit_size = masm->code_section()->scratch_emit();
   if (!in_scratch_emit_size) {
     // Temporarily register as scratch buffer so that relocations don't register
-    masm->code_section()->set_scratch_emit(true);
+    masm->code_section()->set_scratch_emit();
   }
   // First emit the code, to measure its size
   address insts_end = masm->code_section()->end();
@@ -364,7 +364,7 @@ static int store_fast_path_check_size(MacroAssembler* masm, Address ref_addr, bo
   __ bind(dummy_medium_path);
   if (!in_scratch_emit_size) {
     // Potentially restore scratchyness
-    masm->code_section()->set_scratch_emit(false);
+    masm->code_section()->clear_scratch_emit();
   }
   // Roll back code, now that we know the size
   masm->code_section()->set_end(insts_end);
