@@ -25,7 +25,6 @@
 
 package java.util;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -2507,7 +2506,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return {@code true} if the two arrays are equal
      */
-    public static boolean equals(short[] a, short a2[]) {
+    public static boolean equals(short[] a, short[] a2) {
         if (a==a2)
             return true;
         if (a==null || a2==null)
@@ -3509,7 +3508,7 @@ public class Arrays {
     @IntrinsicCandidate
     public static <T,U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> newType) {
         @SuppressWarnings("unchecked")
-        T[] copy = ((Object)newType == (Object)Object[].class)
+        T[] copy = (newType == Object[].class)
             ? (T[]) new Object[newLength]
             : (T[]) Array.newInstance(newType.getComponentType(), newLength);
         System.arraycopy(original, 0, copy, 0,
@@ -3782,7 +3781,7 @@ public class Arrays {
         if (newLength < 0)
             throw new IllegalArgumentException(from + " > " + to);
         @SuppressWarnings("unchecked")
-        T[] copy = ((Object)newType == (Object)Object[].class)
+        T[] copy = (newType == Object[].class)
             ? (T[]) new Object[newLength]
             : (T[]) Array.newInstance(newType.getComponentType(), newLength);
         System.arraycopy(original, from, copy, 0,
