@@ -242,35 +242,15 @@ bool MutableNUMASpace::update_layout(bool force) {
     int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtGC);
     int lgrp_num = (int)os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
     assert(lgrp_num > 0, "There should be at least one locality group");
+    // Clear existing spaces
+    for (int i = 0; i < lgrp_spaces()->length(); ++i) {
+      delete lgrp_spaces()->at(i);
+    }
+    lgrp_spaces()->clear();
+    lgrp_spaces()->reserve(lgrp_num);
     // Add new spaces for the new nodes
     for (int i = 0; i < lgrp_num; i++) {
-      bool found = false;
-      for (int j = 0; j < lgrp_spaces()->length(); j++) {
-        if (lgrp_spaces()->at(j)->lgrp_id() == lgrp_ids[i]) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment()));
-      }
-    }
-
-    // Remove spaces for the removed nodes.
-    for (int i = 0; i < lgrp_spaces()->length();) {
-      bool found = false;
-      for (int j = 0; j < lgrp_num; j++) {
-        if (lgrp_spaces()->at(i)->lgrp_id() == lgrp_ids[j]) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        delete lgrp_spaces()->at(i);
-        lgrp_spaces()->remove_at(i);
-      } else {
-        i++;
-      }
+      lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], alignment()));
     }
 
     FREE_C_HEAP_ARRAY(int, lgrp_ids);
