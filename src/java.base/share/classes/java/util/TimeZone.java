@@ -297,7 +297,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @implSpec The default implementation throws a
      * {@code NullPointerException} if {@code ID} is {@code null}
      * @throws NullPointerException This method may throw a
-     * {@code NullPointerException}, if {@code ID} is {@code null}
+     * {@code NullPointerException} if {@code ID} is {@code null}
      */
     public void setID(String ID)
     {
@@ -400,14 +400,14 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @param style either {@link #LONG} or {@link #SHORT}
      * @param locale   the locale in which to supply the display name.
      * @implSpec The default implementation throws a
-     * {@code NullPointerException}, if {@code ID} is {@code null}.
+     * {@code NullPointerException} if {@code ID} is {@code null}.
      * Additionally, an {@code IllegalArgumentException} will be thrown if
      * {@code style} is invalid.
      * @return the human-readable name of this time zone in the given locale.
      * @throws IllegalArgumentException This method may throw a
-     * {@code IllegalArgumentException}, if {@code style} is invalid.
+     * {@code IllegalArgumentException} if {@code style} is invalid.
      * @throws NullPointerException This method may throw a
-     * {@code NullPointerException}, if {@code ID} is {@code null}
+     * {@code NullPointerException} if {@code ID} is {@code null}
      * @since 1.2
      * @see java.text.DateFormatSymbols#getZoneStrings()
      */
@@ -518,7 +518,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * @return {@code true} if the given date is in Daylight Saving Time,
      *         {@code false}, otherwise.
      * @throws NullPointerException This method may throw a
-     * {@code NullPointerException}, if {@code date} is {@code null}
+     * {@code NullPointerException} if {@code date} is {@code null}
      */
     public abstract boolean inDaylightTime(Date date);
 
