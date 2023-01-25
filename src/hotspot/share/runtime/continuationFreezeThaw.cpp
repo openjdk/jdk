@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -67,6 +66,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+
+#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -260,7 +261,7 @@ template <oop_kind oops, typename BarrierSetT>
 class Config {
 public:
   typedef Config<oops, BarrierSetT> SelfT;
-  typedef typename Conditional<oops == oop_kind::NARROW, narrowOop, oop>::type OopT;
+  using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static int freeze(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT>(thread, sp);
@@ -274,7 +275,7 @@ public:
 static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
   const int page_size = os::vm_page_size();
   if (size > page_size) {
-    if (sp - size < thread->stack_overflow_state()->stack_overflow_limit()) {
+    if (sp - size < thread->stack_overflow_state()->shadow_zone_safe_limit()) {
       return false;
     }
   }
@@ -388,7 +389,6 @@ public:
 
 protected:
   inline void init_rest();
-  void freeze_fast_init_cont_data(intptr_t* frame_sp);
   void throw_stack_overflow_on_humongous_chunk();
 
   // fast path
@@ -484,8 +484,11 @@ FreezeBase::FreezeBase(JavaThread* thread, ContinuationWrapper& cont, intptr_t* 
 
   assert(_cont.chunk_invariant(), "");
   assert(!Interpreter::contains(_cont.entryPC()), "");
-  static const int doYield_stub_frame_size = NOT_PPC64(frame::metadata_words)
-                                             PPC64_ONLY(frame::abi_reg_args_size >> LogBytesPerWord);
+#if !defined(PPC64) || defined(ZERO)
+  static const int doYield_stub_frame_size = frame::metadata_words;
+#else
+  static const int doYield_stub_frame_size = frame::abi_reg_args_size >> LogBytesPerWord;
+#endif
   assert(SharedRuntime::cont_doYield_stub()->frame_size() == doYield_stub_frame_size, "");
 
   // properties of the continuation on the stack; all sizes are in words
@@ -1229,7 +1232,11 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
     // old chunks are all in GC mode.
     assert(!UseG1GC, "G1 can not deal with allocating outside of eden");
     assert(!UseZGC, "ZGC can not deal with allocating chunks visible to marking");
-    ContinuationGCSupport::transform_stack_chunk(_cont.tail());
+    if (UseShenandoahGC) {
+      _cont.tail()->relativize_derived_pointers_concurrently();
+    } else {
+      ContinuationGCSupport::transform_stack_chunk(_cont.tail());
+    }
     // For objects in the old generation we must maintain the remembered set
     _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>();
   }
@@ -1253,7 +1260,7 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
 inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive native code
   JavaThread* t = !_preempt ? _thread : JavaThread::current();
   assert(t == JavaThread::current(), "");
-  if (os::current_stack_pointer() < t->stack_overflow_state()->stack_overflow_limit()) {
+  if (os::current_stack_pointer() < t->stack_overflow_state()->shadow_zone_safe_limit()) {
     if (!_preempt) {
       ContinuationWrapper::SafepointOp so(t, _cont); // could also call _cont.done() instead
       Exceptions::_throw_msg(t, __FILE__, __LINE__, vmSymbols::java_lang_StackOverflowError(), "Stack overflow while freezing");
@@ -1262,6 +1269,84 @@ inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive
   }
   return false;
 }
+
+class StackChunkAllocator : public MemAllocator {
+  const size_t                                 _stack_size;
+  ContinuationWrapper&                         _continuation_wrapper;
+  JvmtiSampledObjectAllocEventCollector* const _jvmti_event_collector;
+  mutable bool                                 _took_slow_path;
+
+  // Does the minimal amount of initialization needed for a TLAB allocation.
+  // We don't need to do a full initialization, as such an allocation need not be immediately walkable.
+  virtual oop initialize(HeapWord* mem) const override {
+    assert(_stack_size > 0, "");
+    assert(_stack_size <= max_jint, "");
+    assert(_word_size > _stack_size, "");
+
+    // zero out fields (but not the stack)
+    const size_t hs = oopDesc::header_size();
+    Copy::fill_to_aligned_words(mem + hs, vmClasses::StackChunk_klass()->size_helper() - hs);
+
+    jdk_internal_vm_StackChunk::set_size(mem, (int)_stack_size);
+    jdk_internal_vm_StackChunk::set_sp(mem, (int)_stack_size);
+
+    return finish(mem);
+  }
+
+  stackChunkOop allocate_fast() const {
+    if (!UseTLAB) {
+      return nullptr;
+    }
+
+    HeapWord* const mem = MemAllocator::mem_allocate_inside_tlab_fast();
+    if (mem == nullptr) {
+      return nullptr;
+    }
+
+    oop obj = initialize(mem);
+    return stackChunkOopDesc::cast(obj);
+  }
+
+public:
+  StackChunkAllocator(Klass* klass,
+                      size_t word_size,
+                      Thread* thread,
+                      size_t stack_size,
+                      ContinuationWrapper& continuation_wrapper,
+                      JvmtiSampledObjectAllocEventCollector* jvmti_event_collector)
+    : MemAllocator(klass, word_size, thread),
+      _stack_size(stack_size),
+      _continuation_wrapper(continuation_wrapper),
+      _jvmti_event_collector(jvmti_event_collector),
+      _took_slow_path(false) {}
+
+  // Provides it's own, specialized allocation which skips instrumentation
+  // if the memory can be allocated without going to a slow-path.
+  stackChunkOop allocate() const {
+    // First try to allocate without any slow-paths or instrumentation.
+    stackChunkOop obj = allocate_fast();
+    if (obj != nullptr) {
+      return obj;
+    }
+
+    // Now try full-blown allocation with all expensive operations,
+    // including potentially safepoint operations.
+    _took_slow_path = true;
+
+    // Protect unhandled Loom oops
+    ContinuationWrapper::SafepointOp so(_thread, _continuation_wrapper);
+
+    // Can safepoint
+    _jvmti_event_collector->start();
+
+    // Can safepoint
+    return stackChunkOopDesc::cast(MemAllocator::allocate());
+  }
+
+  bool took_slow_path() const {
+    return _took_slow_path;
+  }
+};
 
 template <typename ConfigT>
 stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
@@ -1280,20 +1365,19 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   JavaThread* current = _preempt ? JavaThread::current() : _thread;
   assert(current == JavaThread::current(), "should be current");
 
-  StackChunkAllocator allocator(klass, size_in_words, stack_size, current);
-  oop fast_oop = allocator.try_allocate_in_existing_tlab();
-  oop chunk_oop = fast_oop;
-  if (chunk_oop == nullptr) {
-    ContinuationWrapper::SafepointOp so(current, _cont);
-    assert(_jvmti_event_collector != nullptr, "");
-    _jvmti_event_collector->start();  // can safepoint
-    chunk_oop = allocator.allocate(); // can safepoint
-    if (chunk_oop == nullptr) {
-      return nullptr; // OOME
-    }
+  // Allocate the chunk.
+  //
+  // This might safepoint while allocating, but all safepointing due to
+  // instrumentation have been deferred. This property is important for
+  // some GCs, as this ensures that the allocated object is in the young
+  // generation / newly allocated memory.
+  StackChunkAllocator allocator(klass, size_in_words, current, stack_size, _cont, _jvmti_event_collector);
+  stackChunkOop chunk = allocator.allocate();
+
+  if (chunk == nullptr) {
+    return nullptr; // OOME
   }
 
-  stackChunkOop chunk = stackChunkOopDesc::cast(chunk_oop);
   // assert that chunk is properly initialized
   assert(chunk->stack_size() == (int)stack_size, "");
   assert(chunk->size() >= stack_size, "chunk->size(): %zu size: %zu", chunk->size(), stack_size);
@@ -1309,23 +1393,36 @@ stackChunkOop Freeze<ConfigT>::allocate_chunk(size_t stack_size) {
   chunk->set_parent_access<IS_DEST_UNINITIALIZED>(_cont.last_nonempty_chunk());
   chunk->set_cont_access<IS_DEST_UNINITIALIZED>(_cont.continuation());
 
-  assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
+#if INCLUDE_ZGC
+ if (UseZGC) {
+    assert(!chunk->requires_barriers(), "ZGC always allocates in the young generation");
+    _barriers = false;
+  } else
+#endif
+#if INCLUDE_SHENANDOAHGC
+if (UseShenandoahGC) {
 
-  // Shenandoah: even continuation is good, it does not mean it is deeply good.
-  if (UseShenandoahGC && chunk->requires_barriers()) {
-    fast_oop = nullptr;
-  }
-
-  if (fast_oop != nullptr) {
-    assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
-  } else {
-    assert(!UseZGC || !chunk->requires_barriers(), "Allocated ZGC object requires barriers");
-    _barriers = !UseZGC && chunk->requires_barriers();
-
-    if (_barriers) {
-      log_develop_trace(continuations)("allocation requires barriers");
+    _barriers = chunk->requires_barriers();
+  } else
+#endif
+  {
+    if (!allocator.took_slow_path()) {
+      // Guaranteed to be in young gen / newly allocated memory
+      assert(!chunk->requires_barriers(), "Unfamiliar GC requires barriers on TLAB allocation");
+      _barriers = false;
+    } else {
+      // Some GCs could put direct allocations in old gen for slow-path
+      // allocations; need to explicitly check if that was the case.
+      _barriers = chunk->requires_barriers();
     }
   }
+
+  if (_barriers) {
+    log_develop_trace(continuations)("allocation requires barriers");
+  }
+
+  assert(chunk->parent() == nullptr || chunk->parent()->is_stackChunk(), "");
+
   return chunk;
 }
 
@@ -1368,7 +1465,7 @@ static bool monitors_on_stack(JavaThread* thread) {
   ContinuationEntry* ce = thread->last_continuation();
   RegisterMap map(thread,
                   RegisterMap::UpdateMap::include,
-                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::ProcessFrames::include,
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = thread->last_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
@@ -1431,15 +1528,15 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   ContinuationEntry* entry = current->last_continuation();
 
-  oop oopCont = entry->cont_oop();
-  assert(oopCont == current->last_continuation()->cont_oop(), "");
+  oop oopCont = entry->cont_oop(current);
+  assert(oopCont == current->last_continuation()->cont_oop(current), "");
   assert(ContinuationEntry::assert_entry_frame_laid_out(current), "");
 
   verify_continuation(oopCont);
   ContinuationWrapper cont(current, oopCont);
   log_develop_debug(continuations)("FREEZE #" INTPTR_FORMAT " " INTPTR_FORMAT, cont.hash(), p2i((oopDesc*)oopCont));
 
-  assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
+  assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
   assert(monitors_on_stack(current) == ((current->held_monitor_count() - current->jni_monitor_count()) > 0),
          "Held monitor count and locks on stack invariant: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
@@ -1523,7 +1620,7 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
 
     f = f.sender(&map);
     if (!Continuation::is_frame_in_continuation(entry, f)) {
-      oop scope = jdk_internal_vm_Continuation::scope(entry->cont_oop());
+      oop scope = jdk_internal_vm_Continuation::scope(entry->cont_oop(thread));
       if (scope == cont_scope) {
         break;
       }
@@ -1560,7 +1657,7 @@ static inline int prepare_thaw_internal(JavaThread* thread, bool return_barrier)
 
   ContinuationEntry* ce = thread->last_continuation();
   assert(ce != nullptr, "");
-  oop continuation = ce->cont_oop();
+  oop continuation = ce->cont_oop(thread);
   assert(continuation == get_continuation(thread), "");
   verify_continuation(continuation);
 
@@ -1627,7 +1724,6 @@ protected:
   // fast path
   inline void prefetch_chunk_pd(void* start, int size_words);
   void patch_return(intptr_t* sp, bool is_last);
-  void patch_chunk_pd(intptr_t* sp); // TODO remove
 
   // slow path
   NOINLINE intptr_t* thaw_slow(stackChunkOop chunk, bool return_barrier);
@@ -1709,8 +1805,6 @@ public:
     assert(_base - 1 <= top() + total_size() + frame::metadata_words_at_bottom, "missed entry frame");
   }
 
-  int thaw_size() const { return _thaw_size; }
-  int argsize() const { return _argsize; }
   int entry_frame_extension() const { return _argsize + (_argsize > 0 ? frame::metadata_words_at_top : 0); }
 
   // top and bottom stack pointers
@@ -1771,7 +1865,6 @@ void ThawBase::patch_return(intptr_t* sp, bool is_last) {
 
   address pc = !is_last ? StubRoutines::cont_returnBarrier() : _cont.entryPC();
   *(address*)(sp - frame::sender_sp_ret_address_offset()) = pc;
-  // patch_chunk_pd(sp); -- TODO: If not needed - remove method; it's not used elsewhere
 }
 
 template <typename ConfigT>
@@ -1813,7 +1906,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   }
 
   // Are we thawing the last frame(s) in the continuation
-  const bool is_last = empty && chunk->is_parent_null<typename ConfigT::OopT>();
+  const bool is_last = empty && chunk->parent() == nullptr;
   assert(!is_last || argsize == 0, "");
 
   log_develop_trace(continuations)("thaw_fast partial: %d is_last: %d empty: %d size: %d argsize: %d entrySP: " PTR_FORMAT,
@@ -1897,7 +1990,6 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
 
 #if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
   if (UseZGC || UseShenandoahGC) {
-    // TODO ZGC: this is where we'd want to restore color to the oops
     _cont.tail()->relativize_derived_pointers_concurrently();
   }
 #endif
@@ -2283,13 +2375,13 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
 
   ContinuationEntry* entry = thread->last_continuation();
   assert(entry != nullptr, "");
-  oop oopCont = entry->cont_oop();
+  oop oopCont = entry->cont_oop(thread);
 
   assert(!jdk_internal_vm_Continuation::done(oopCont), "");
   assert(oopCont == get_continuation(thread), "");
   verify_continuation(oopCont);
 
-  assert(entry->is_virtual_thread() == (entry->scope() == java_lang_VirtualThread::vthread_scope()), "");
+  assert(entry->is_virtual_thread() == (entry->scope(thread) == java_lang_VirtualThread::vthread_scope()), "");
 
   ContinuationWrapper cont(thread, oopCont);
   log_develop_debug(continuations)("THAW #" INTPTR_FORMAT " " INTPTR_FORMAT, cont.hash(), p2i((oopDesc*)oopCont));
@@ -2475,7 +2567,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
   FrameValues values;
   assert(f.get_cb() != nullptr, "");
   RegisterMap map(f.is_heap_frame() ?
-                    (JavaThread*)nullptr :
+                    nullptr :
                     JavaThread::current(),
                   RegisterMap::UpdateMap::include,
                   RegisterMap::ProcessFrames::skip,
@@ -2486,7 +2578,7 @@ static void print_frame_layout(const frame& f, bool callee_complete, outputStrea
     frame::update_map_with_saved_link(&map, ContinuationHelper::Frame::callee_link_address(f));
   }
   const_cast<frame&>(f).describe(values, 0, &map);
-  values.print_on((JavaThread*)nullptr, st);
+  values.print_on(static_cast<JavaThread*>(nullptr), st);
 }
 #endif
 
@@ -2514,7 +2606,7 @@ private:
   template <bool use_compressed>
   static void resolve_gc() {
     BarrierSet* bs = BarrierSet::barrier_set();
-    assert(bs != NULL, "freeze/thaw invoked before BarrierSet is set");
+    assert(bs != nullptr, "freeze/thaw invoked before BarrierSet is set");
     switch (bs->kind()) {
 #define BARRIER_SET_RESOLVE_BARRIER_CLOSURE(bs_name)                    \
       case BarrierSet::bs_name: {                                       \

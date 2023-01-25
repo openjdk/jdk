@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,7 +282,10 @@ public class ResponseSubscribers {
         @Override
         public void onNext(List<ByteBuffer> items) {
             try {
-                out.write(items.toArray(Utils.EMPTY_BB_ARRAY));
+                ByteBuffer[] buffers = items.toArray(Utils.EMPTY_BB_ARRAY);
+                do {
+                    out.write(buffers);
+                } while (Utils.hasRemaining(buffers));
             } catch (IOException ex) {
                 close();
                 subscription.cancel();
@@ -481,7 +484,12 @@ public class ResponseSubscribers {
                     if (debug.on()) debug.log("Next Buffer");
                     currentBuffer = currentListItr.next();
                 } catch (InterruptedException ex) {
-                    // continue
+                    try {
+                        close();
+                    } catch (IOException ignored) {
+                    }
+                    Thread.currentThread().interrupt();
+                    throw new IOException(ex);
                 }
             }
             assert currentBuffer == LAST_BUFFER || currentBuffer.hasRemaining();
@@ -537,8 +545,10 @@ public class ResponseSubscribers {
         @Override
         public void onSubscribe(Flow.Subscription s) {
             Objects.requireNonNull(s);
+            if (debug.on()) debug.log("onSubscribed called");
             try {
                 if (!subscribed.compareAndSet(false, true)) {
+                    if (debug.on()) debug.log("Already subscribed: canceling");
                     s.cancel();
                 } else {
                     // check whether the stream is already closed.
@@ -549,10 +559,14 @@ public class ResponseSubscribers {
                         closed = this.closed;
                         if (!closed) {
                             this.subscription = s;
-                            assert buffers.remainingCapacity() > 1; // should contain at least 2
+                            // should contain at least 2
+                            assert buffers.remainingCapacity() > 1
+                                    : "buffers capacity: " + buffers.remainingCapacity()
+                                    + " closed: " + closed + " failed: " + failed;
                         }
                     }
                     if (closed) {
+                        if (debug.on()) debug.log("Already closed: canceling");
                         s.cancel();
                         return;
                     }
@@ -563,6 +577,8 @@ public class ResponseSubscribers {
                 }
             } catch (Throwable t) {
                 failed = t;
+                if (debug.on())
+                    debug.log("onSubscribed failed", t);
                 try {
                     close();
                 } catch (IOException x) {
@@ -596,6 +612,8 @@ public class ResponseSubscribers {
 
         @Override
         public void onError(Throwable thrwbl) {
+            if (debug.on())
+                debug.log("onError called: " + thrwbl);
             subscription = null;
             failed = Objects.requireNonNull(thrwbl);
             // The client process that reads the input stream might
@@ -610,6 +628,8 @@ public class ResponseSubscribers {
 
         @Override
         public void onComplete() {
+            if (debug.on())
+                debug.log("onComplete called");
             subscription = null;
             onNext(LAST_LIST);
         }
@@ -623,6 +643,8 @@ public class ResponseSubscribers {
                 s = subscription;
                 subscription = null;
             }
+            if (debug.on())
+                debug.log("close called");
             // s will be null if already completed
             try {
                 if (s != null) {

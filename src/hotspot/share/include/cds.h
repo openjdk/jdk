@@ -50,9 +50,17 @@ typedef struct CDSFileMapRegion {
   int     _mapped_from_file;  // Is this region mapped from a file?
                               // If false, this region was initialized using ::read().
   size_t  _file_offset;       // Data for this region starts at this offset in the archive file.
-  size_t  _mapping_offset;    // This region should be mapped at this offset from the base address
-                              // - for non-heap regions, the base address is SharedBaseAddress
-                              // - for heap regions, the base address is the compressed oop encoding base
+  size_t  _mapping_offset;    // This encodes the requested address for this region to be mapped at runtime.
+                              // However, the JVM may choose to map at an alternative location (e.g., for ASLR,
+                              // or to adapt to the available ranges in the Java heap range).
+                              // - For an RO/RW region, the requested address is:
+                              //     FileMapHeader::requested_base_address() + _mapping_offset
+                              // - For a heap region, the requested address is:
+                              //     +UseCompressedOops: /*runtime*/ CompressedOops::base() + _mapping_offset
+                              //     -UseCompressedOops: FileMapHeader::heap_begin() + _mapping_offset
+                              //     See FileMapInfo::heap_region_requested_address().
+                              // - For bitmap regions, the _mapping_offset is always zero. The runtime address
+                              //   is picked by the OS.
   size_t  _used;              // Number of bytes actually used by this region (excluding padding bytes added
                               // for alignment purposed.
   size_t  _oopmap_offset;     // Bitmap for relocating oop fields in archived heap objects.

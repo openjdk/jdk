@@ -72,13 +72,11 @@ public:
   static int prepare_thaw(JavaThread* thread, bool return_barrier);
   static address thaw_entry();
 
-  static const ContinuationEntry* last_continuation(const JavaThread* thread, oop cont_scope);
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);
   static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f);
 
   static bool is_continuation_mounted(JavaThread* thread, oop continuation);
-  static bool is_continuation_scope_mounted(JavaThread* thread, oop cont_scope);
 
   static bool is_cont_barrier_frame(const frame& f);
   static bool is_return_barrier_entry(const address pc);

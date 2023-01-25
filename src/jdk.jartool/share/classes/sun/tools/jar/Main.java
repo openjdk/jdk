@@ -875,6 +875,7 @@ public class Main {
                 }
                 ZipEntry e = new ZipEntry(MANIFEST_DIR);
                 setZipEntryTime(e);
+                e.setMethod(ZipEntry.STORED);
                 e.setSize(0);
                 e.setCrc(0);
                 zos.putNextEntry(e);

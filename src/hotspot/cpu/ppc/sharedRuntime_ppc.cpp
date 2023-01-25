@@ -1657,7 +1657,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& framesize_wor
   __ push_frame(frame_size_in_bytes , R0); // SP -= frame_size_in_bytes
 
   OopMap* map = new OopMap((int)frame_size_in_bytes / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ld_ptr(R0, JavaThread::cont_entry_offset(), R16_thread);
   __ st_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
@@ -1990,6 +1989,19 @@ static void gen_continuation_yield(MacroAssembler* masm,
   continuation_enter_cleanup(masm);
 
   __ bind(L_pinned); // pinned -- return to caller
+
+  // handle pending exception thrown by freeze
+  Label ok;
+  __ ld(tmp, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
+  __ cmpdi(CCR0, tmp, 0);
+  __ beq(CCR0, ok);
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
+  __ mtctr(tmp);
+  __ bctr();
+  __ bind(ok);
 
   // Pop frame and return
   __ pop_frame();

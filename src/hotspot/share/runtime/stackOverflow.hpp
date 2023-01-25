@@ -300,7 +300,6 @@ class StackOverflow {
   void disable_stack_reserved_zone();
   void enable_stack_yellow_reserved_zone();
   void disable_stack_yellow_reserved_zone();
-  void enable_stack_red_zone();
   void disable_stack_red_zone();
 
   bool stack_guard_zone_unused() const { return _stack_guard_state == stack_guard_unused; }

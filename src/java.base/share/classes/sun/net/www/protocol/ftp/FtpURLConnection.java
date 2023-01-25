@@ -56,8 +56,6 @@ import sun.net.www.URLConnection;
 import sun.net.www.protocol.http.HttpURLConnection;
 import sun.net.ftp.FtpClient;
 import sun.net.ftp.FtpProtocolException;
-import sun.net.ProgressSource;
-import sun.net.ProgressMonitor;
 import sun.net.www.ParseUtil;
 import sun.security.action.GetPropertyAction;
 
@@ -466,17 +464,7 @@ public class FtpURLConnection extends URLConnection {
 
                     // Wrap input stream with MeteredStream to ensure read() will always return -1
                     // at expected length.
-
-                    // Check if URL should be metered
-                    boolean meteredInput = ProgressMonitor.getDefault().shouldMeterInput(url, "GET");
-                    ProgressSource pi = null;
-
-                    if (meteredInput) {
-                        pi = new ProgressSource(url, "GET", l);
-                        pi.beginTracking();
-                    }
-
-                    is = new MeteredStream(is, pi, l);
+                    is = new MeteredStream(is, l);
                 }
             } catch (Exception e) {
                 e.printStackTrace();

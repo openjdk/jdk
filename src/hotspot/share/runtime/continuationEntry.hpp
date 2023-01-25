@@ -90,8 +90,6 @@ public:
   static ByteSize parent_cont_fastpath_offset()      { return byte_offset_of(ContinuationEntry, _parent_cont_fastpath); }
   static ByteSize parent_held_monitor_count_offset() { return byte_offset_of(ContinuationEntry, _parent_held_monitor_count); }
 
-  static void setup_oopmap(OopMap* map);
-
 public:
   static size_t size() { return align_up((int)sizeof(ContinuationEntry), 2*wordSize); }
 
@@ -104,8 +102,6 @@ public:
 
   static address compiled_entry();
   static address interpreted_entry();
-
-  static CompiledMethod* enter_special() { return _enter_special; }
 
   int argsize() const { return _argsize; }
   void set_argsize(int value) { _argsize = value; }
@@ -131,9 +127,12 @@ public:
   void flush_stack_processing(JavaThread* thread) const;
 
   inline intptr_t* bottom_sender_sp() const;
-  inline oop cont_oop() const;
-  inline oop scope() const;
-  inline static oop cont_oop_or_null(const ContinuationEntry* ce);
+  inline oop cont_oop(const JavaThread* thread) const;
+  inline oop scope(const JavaThread* thread) const;
+  inline static oop cont_oop_or_null(const ContinuationEntry* ce, const JavaThread* thread);
+
+  oop* cont_addr() { return (oop*)&_cont; }
+  oop* chunk_addr() { return (oop*)&_chunk; }
 
   bool is_virtual_thread() const { return _flags != 0; }
 

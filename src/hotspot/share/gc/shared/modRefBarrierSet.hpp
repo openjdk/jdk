@@ -40,6 +40,7 @@ protected:
                  barrier_set_c1,
                  barrier_set_c2,
                  NULL /* barrier_set_nmethod */,
+                 NULL /* barrier_set_stack_chunk */,
                  fake_rtti.add_tag(BarrierSet::ModRef)) { }
   ~ModRefBarrierSet() { }
 

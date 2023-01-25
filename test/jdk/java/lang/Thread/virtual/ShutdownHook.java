@@ -25,8 +25,8 @@
  * @test
  * @library /test/lib
  * @summary Shutdown hook is called with virtual thread
- * @compile --enable-preview -source ${jdk.version} ShutdownHook.java
- * @run main/othervm --enable-preview ShutdownHook test
+ * @enablePreview
+ * @run main ShutdownHook test
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

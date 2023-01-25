@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,9 +188,9 @@ void BootstrapInfo::resolve_args(TRAPS) {
     objArrayOop args_oop = oopFactory::new_objArray(vmClasses::Object_klass(), _argc, CHECK);
     objArrayHandle args(THREAD, args_oop);
     _pool->copy_bootstrap_arguments_at(_bss_index, 0, _argc, args, 0, true, Handle(), CHECK);
-    oop arg_oop = ((_argc == 1) ? args->obj_at(0) : (oop)NULL);
+    oop arg_oop = ((_argc == 1) ? args->obj_at(0) : (oop)nullptr);
     // try to discard the singleton array
-    if (arg_oop != NULL && !arg_oop->is_array()) {
+    if (arg_oop != nullptr && !arg_oop->is_array()) {
       // JVM treats arrays and nulls specially in this position,
       // but other things are just single arguments
       _arg_values = Handle(THREAD, arg_oop);
@@ -230,10 +230,10 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   st = st ? st : tty;
 
   if (_indy_index != -1)
-    sprintf(what, "indy#%d", decode_indy_index());
+    os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
   else
-    sprintf(what, "condy");
-  bool have_msg = (msg != NULL && strlen(msg) > 0);
+    os::snprintf_checked(what, sizeof(what), "condy");
+  bool have_msg = (msg != nullptr && strlen(msg) > 0);
   st->print_cr("%s%sBootstrap in %s %s@CP[%d] %s:%s%s BSMS[%d] BSM@CP[%d]%s argc=%d%s",
                 (have_msg ? msg : ""), (have_msg ? " " : ""),
                 caller()->name()->as_C_string(),
@@ -251,11 +251,11 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
     for (int i = 0; i < _argc; i++) {
       int pos = (int) strlen(argbuf);
       if (pos + 20 > (int)sizeof(argbuf)) {
-        sprintf(argbuf + pos, "...");
+        os::snprintf_checked(argbuf + pos, sizeof(argbuf) - pos, "...");
         break;
       }
       if (i > 0)  argbuf[pos++] = ',';
-      sprintf(argbuf+pos, "%d", arg_index(i));
+      os::snprintf_checked(argbuf+pos, sizeof(argbuf) - pos, "%d", arg_index(i));
     }
     st->print_cr("  argument indexes: {%s}", argbuf);
   }
@@ -276,7 +276,7 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
       int lines = 0;
       for (int i = 0; i < _argc; i++) {
         oop x = static_args->obj_at(i);
-        if (x != NULL) {
+        if (x != nullptr) {
           if (++lines > 6) {
             st->print_cr("  resolved arg[%d]: ...", i);
             break;

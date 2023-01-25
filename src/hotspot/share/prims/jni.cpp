@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -626,7 +626,7 @@ JNI_ENTRY(void, jni_FatalError(JNIEnv *env, const char *msg))
   HOTSPOT_JNI_FATALERROR_ENTRY(env, (char *) msg);
 
   tty->print_cr("FATAL ERROR in native method: %s", msg);
-  thread->print_stack();
+  thread->print_jni_stack();
   os::abort(); // Dump core and abort
 JNI_END
 
@@ -2793,34 +2793,19 @@ JNI_ENTRY(void, jni_GetStringUTFRegion(JNIEnv *env, jstring string, jsize start,
   }
 JNI_END
 
-static oop lock_gc_or_pin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->pin_object(thread, o);
-  } else {
-    GCLocker::lock_critical(thread);
-    return JNIHandles::resolve_non_null(obj);
-  }
-}
-
-static void unlock_gc_or_unpin_object(JavaThread* thread, jobject obj) {
-  if (Universe::heap()->supports_object_pinning()) {
-    const oop o = JNIHandles::resolve_non_null(obj);
-    return Universe::heap()->unpin_object(thread, o);
-  } else {
-    GCLocker::unlock_critical(thread);
-  }
-}
-
 JNI_ENTRY(void*, jni_GetPrimitiveArrayCritical(JNIEnv *env, jarray array, jboolean *isCopy))
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_ENTRY(env, array, (uintptr_t *) isCopy);
+  Handle a(thread, JNIHandles::resolve_non_null(array));
+  assert(a->is_typeArray(), "just checking");
+
+  // Pin object
+  Universe::heap()->pin_object(thread, a());
+
+  BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
+  void* ret = arrayOop(a())->base(type);
   if (isCopy != NULL) {
     *isCopy = JNI_FALSE;
   }
-  oop a = lock_gc_or_pin_object(thread, array);
-  assert(a->is_typeArray(), "Primitive array only");
-  BasicType type = TypeArrayKlass::cast(a->klass())->element_type();
-  void* ret = arrayOop(a)->base(type);
  HOTSPOT_JNI_GETPRIMITIVEARRAYCRITICAL_RETURN(ret);
   return ret;
 JNI_END
@@ -2828,45 +2813,22 @@ JNI_END
 
 JNI_ENTRY(void, jni_ReleasePrimitiveArrayCritical(JNIEnv *env, jarray array, void *carray, jint mode))
   HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_ENTRY(env, array, carray, mode);
-  unlock_gc_or_unpin_object(thread, array);
+  // Unpin object
+  Universe::heap()->unpin_object(thread, JNIHandles::resolve_non_null(array));
 HOTSPOT_JNI_RELEASEPRIMITIVEARRAYCRITICAL_RETURN();
 JNI_END
 
-
-static typeArrayOop lock_gc_or_pin_string_value(JavaThread* thread, oop str) {
-  if (Universe::heap()->supports_object_pinning()) {
-    // Forbid deduplication before obtaining the value array, to prevent
-    // deduplication from replacing the value array while setting up or in
-    // the critical section.  That would lead to the release operation
-    // unpinning the wrong object.
-    if (StringDedup::is_enabled()) {
-      NoSafepointVerifier nsv;
-      StringDedup::forbid_deduplication(str);
-    }
-    typeArrayOop s_value = java_lang_String::value(str);
-    return (typeArrayOop) Universe::heap()->pin_object(thread, s_value);
-  } else {
-    Handle h(thread, str);      // Handlize across potential safepoint.
-    GCLocker::lock_critical(thread);
-    return java_lang_String::value(h());
-  }
-}
-
-static void unlock_gc_or_unpin_string_value(JavaThread* thread, oop str) {
-  if (Universe::heap()->supports_object_pinning()) {
-    typeArrayOop s_value = java_lang_String::value(str);
-    Universe::heap()->unpin_object(thread, s_value);
-  } else {
-    GCLocker::unlock_critical(thread);
-  }
-}
 
 JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jboolean *isCopy))
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
   oop s = JNIHandles::resolve_non_null(string);
   jchar* ret;
   if (!java_lang_String::is_latin1(s)) {
-    typeArrayOop s_value = lock_gc_or_pin_string_value(thread, s);
+    typeArrayHandle s_value(thread, java_lang_String::value(s));
+
+    // Pin value array
+    Universe::heap()->pin_object(thread, s_value());
+
     ret = (jchar*) s_value->base(T_CHAR);
     if (isCopy != NULL) *isCopy = JNI_FALSE;
   } else {
@@ -2892,13 +2854,18 @@ JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar 
   HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
   oop s = JNIHandles::resolve_non_null(str);
   bool is_latin1 = java_lang_String::is_latin1(s);
+
   if (is_latin1) {
     // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
     // This assumes that ReleaseStringCritical bookends GetStringCritical.
     FREE_C_HEAP_ARRAY(jchar, chars);
   } else {
-    // For non-latin1 string, drop the associated gc-locker/pin.
-    unlock_gc_or_unpin_string_value(thread, s);
+    // StringDedup can have replaced the value array, so don't fetch the array from 's'.
+    // Instead, we calculate the address based on the jchar array exposed with GetStringCritical.
+    oop value = cast_to_oop((address)chars - arrayOopDesc::base_offset_in_bytes(T_CHAR));
+
+    // Unpin value array
+    Universe::heap()->unpin_object(thread, value);
   }
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
@@ -2992,7 +2959,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     }
 
     // Get needed field and method IDs
-    directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JI)V");
+    directByteBufferConstructor = env->GetMethodID(directByteBufferClass, "<init>", "(JJ)V");
     if (env->ExceptionCheck()) {
       env->ExceptionClear();
       directBufferSupportInitializeFailed = 1;
@@ -3044,10 +3011,7 @@ extern "C" jobject JNICALL jni_NewDirectByteBuffer(JNIEnv *env, void* address, j
 
   // Being paranoid about accidental sign extension on address
   jlong addr = (jlong) ((uintptr_t) address);
-  // NOTE that package-private DirectByteBuffer constructor currently
-  // takes int capacity
-  jint  cap  = (jint)  capacity;
-  jobject ret = env->NewObject(directByteBufferClass, directByteBufferConstructor, addr, cap);
+  jobject ret = env->NewObject(directByteBufferClass, directByteBufferConstructor, addr, capacity);
   HOTSPOT_JNI_NEWDIRECTBYTEBUFFER_RETURN(ret);
   return ret;
 }

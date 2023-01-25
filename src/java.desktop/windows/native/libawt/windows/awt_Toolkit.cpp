@@ -1946,7 +1946,7 @@ HICON AwtToolkit::GetSecurityWarningIcon(UINT index, UINT w, UINT h)
     //Note: should not exceed 10 because of the current implementation.
     static const int securityWarningIconCounter = 3;
 
-    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};;
+    static HICON securityWarningIcon[securityWarningIconCounter]      = {NULL, NULL, NULL};
     static UINT securityWarningIconWidth[securityWarningIconCounter]  = {0, 0, 0};
     static UINT securityWarningIconHeight[securityWarningIconCounter] = {0, 0, 0};
 
@@ -2861,8 +2861,10 @@ Java_sun_awt_windows_WToolkit_loadSystemColors(JNIEnv *env, jobject self,
     jint* colorsPtr = NULL;
     try {
         colorsPtr = (jint *)env->GetPrimitiveArrayCritical(colors, 0);
-        for (int i = 0; i < (sizeof indexMap)/(sizeof *indexMap) && i < colorLen; i++) {
-            colorsPtr[i] = DesktopColor2RGB(indexMap[i]);
+        if (colorsPtr != NULL) {
+            for (int i = 0; i < (sizeof indexMap)/(sizeof *indexMap) && i < colorLen; i++) {
+                colorsPtr[i] = DesktopColor2RGB(indexMap[i]);
+            }
         }
     } catch (...) {
         if (colorsPtr != NULL) {

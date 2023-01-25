@@ -583,7 +583,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.
 
-    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, (oop) NULL, event_type, enabled);
+    JvmtiEventController::set_user_enabled(this, NULL, (oop) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
     ThreadsListHandle tlh;
@@ -3522,7 +3522,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 
   // does the klass have any local variable information?
   InstanceKlass* ik = method->method_holder();
-  if (!ik->access_flags().has_localvariable_table()) {
+  if (!ik->has_localvariable_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
 

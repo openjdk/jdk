@@ -430,6 +430,7 @@ public final class TimeZoneNames extends TimeZoneNamesBundle {
                                               "French Guiana Time", "GFT"}},
             {"America/Cayman", EST},
             {"America/Chihuahua", CST},
+            {"America/Ciudad_Juarez", MST},
             {"America/Creston", MST},
             {"America/Coral_Harbour", EST},
             {"America/Cordoba", AGT},

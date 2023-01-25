@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
@@ -251,7 +252,7 @@ private:
   // (a) cause == _g1_humongous_allocation,
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
   // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
-  // (d) cause == _wb_conc_mark or _wb_breakpoint,
+  // (d) cause == _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
@@ -787,6 +788,8 @@ private:
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
 
+  G1MonotonicArenaFreePool _card_set_freelist_pool;
+
 public:
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -912,6 +915,9 @@ public:
   G1Policy* policy() const { return _policy; }
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
+
+  const G1MonotonicArenaFreePool* card_set_freelist_pool() const { return &_card_set_freelist_pool; }
+  G1MonotonicArenaFreePool* card_set_freelist_pool() { return &_card_set_freelist_pool; }
 
   inline G1GCPhaseTimes* phase_times() const;
 
@@ -1306,6 +1312,9 @@ public:
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   // Printing
 private:
   void print_heap_regions() const;
@@ -1320,10 +1329,6 @@ public:
 
   // Override
   void print_tracing_info() const override;
-
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

@@ -351,6 +351,6 @@ public class BasicDesktopIconUI extends DesktopIconUI {
             SwingUtilities.computeUnion(newX, newY, newWidth, newHeight, r);
             f.getParent().repaint(r.x, r.y, r.width, r.height);
         }
-    }; /// End MotionListener
+    } /// End MotionListener
 
 }

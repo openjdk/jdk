@@ -45,6 +45,16 @@ inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_mark
   set_footer(_footer_canary_life_mark); // set after initializing _size
 }
 
+inline void MallocHeader::revive() {
+  assert(_canary == _header_canary_dead_mark, "must be dead");
+  assert(get_footer() == _footer_canary_dead_mark, "must be dead");
+  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
+  _canary = _header_canary_life_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_life_mark);
+  set_footer(_footer_canary_life_mark);
+}
+
+// The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
@@ -55,9 +65,7 @@ inline void MallocHeader::assert_block_integrity() const {
   char msg[256];
   address corruption = NULL;
   if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
+    print_block_on_error(tty, corruption != NULL ? corruption : (address)this);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
   }
 }

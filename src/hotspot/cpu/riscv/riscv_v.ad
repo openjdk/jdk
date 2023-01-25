@@ -74,7 +74,6 @@ source %{
       case Op_VectorCastL2X:
       case Op_VectorCastS2X:
       case Op_VectorInsert:
-      case Op_VectorLoadConst:
       case Op_VectorLoadMask:
       case Op_VectorLoadShuffle:
       case Op_VectorMaskCmp:
@@ -2076,4 +2075,21 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
   %}
 
   ins_pipe(pipe_class_memory);
+%}
+
+// Vector Load Const
+instruct vloadcon(vReg dst, immI0 src) %{
+  match(Set dst (VectorLoadConst src));
+  ins_cost(VEC_COST);
+  format %{ "vloadcon $dst\t# generate iota indices" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
+    __ vsetvli(t0, x0, sew);
+    __ vid_v(as_VectorRegister($dst$$reg));
+    if (is_floating_point_type(bt)) {
+      __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
+    }
+  %}
+  ins_pipe(pipe_slow);
 %}

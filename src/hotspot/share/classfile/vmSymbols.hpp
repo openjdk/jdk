@@ -156,6 +156,8 @@
   template(jdk_internal_loader_BuiltinClassLoader,    "jdk/internal/loader/BuiltinClassLoader")   \
   template(jdk_internal_loader_ClassLoaders_AppClassLoader,      "jdk/internal/loader/ClassLoaders$AppClassLoader")      \
   template(jdk_internal_loader_ClassLoaders_PlatformClassLoader, "jdk/internal/loader/ClassLoaders$PlatformClassLoader") \
+  template(jdk_incubator_concurrent_ScopedValue,      "jdk/incubator/concurrent/ScopedValue")     \
+  template(jdk_incubator_concurrent_ScopedValue_Carrier, "jdk/incubator/concurrent/ScopedValue$Carrier") \
                                                                                                   \
   /* Java runtime version access */                                                               \
   template(java_lang_VersionProps,                    "java/lang/VersionProps")                   \
@@ -396,6 +398,7 @@
   template(group_name,                                "group")                                    \
   template(daemon_name,                               "daemon")                                   \
   template(run_method_name,                           "run")                                      \
+  template(runWith_method_name,                       "runWith")                                  \
   template(interrupt_method_name,                     "interrupt")                                \
   template(exit_method_name,                          "exit")                                     \
   template(remove_method_name,                        "remove")                                   \
@@ -601,6 +604,7 @@
   template(string_array_string_array_void_signature,  "([Ljava/lang/String;[Ljava/lang/String;)V")                \
   template(thread_throwable_void_signature,           "(Ljava/lang/Thread;Ljava/lang/Throwable;)V")               \
   template(thread_void_signature,                     "(Ljava/lang/Thread;)V")                                    \
+  template(runnable_void_signature,                   "(Ljava/lang/Runnable;)V")                                   \
   template(threadgroup_runnable_void_signature,       "(Ljava/lang/ThreadGroup;Ljava/lang/Runnable;)V")           \
   template(threadgroup_string_void_signature,         "(Ljava/lang/ThreadGroup;Ljava/lang/String;)V")             \
   template(void_threadgroup_array_signature,          "()[Ljava/lang/ThreadGroup;")                               \
@@ -741,6 +745,10 @@
   do_alias(appendToClassPathForInstrumentation_signature, string_void_signature)                                  \
   template(serializePropertiesToByteArray_name,        "serializePropertiesToByteArray")                          \
   template(serializeAgentPropertiesToByteArray_name,   "serializeAgentPropertiesToByteArray")                     \
+  template(serializeSavedPropertiesToByteArray_name,   "serializeSavedPropertiesToByteArray")                     \
+  template(encodeThrowable_name,                       "encodeThrowable")                                         \
+  template(encodeThrowable_signature,                  "(Ljava/lang/Throwable;JI)I")                              \
+  template(decodeAndThrowThrowable_name,               "decodeAndThrowThrowable")                                 \
   template(classRedefinedCount_name,                   "classRedefinedCount")                                     \
   template(classLoader_name,                           "classLoader")                                             \
   template(componentType_name,                         "componentType")                                           \

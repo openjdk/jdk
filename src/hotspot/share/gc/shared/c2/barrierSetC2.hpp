@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,7 @@ public:
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier_data(Node* node) const { }
   virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 

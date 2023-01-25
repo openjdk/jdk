@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.util;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -2793,7 +2794,7 @@ public class Arrays {
      * two array references are considered equal if both are {@code null}.
      *
      * Two doubles {@code d1} and {@code d2} are considered equal if:
-     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * <pre>    {@code Double.valueOf(d1).equals(Double.valueOf(d2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0d unequal to -0.0d.)
      *
@@ -2826,7 +2827,7 @@ public class Arrays {
      * in the same order.
      *
      * <p>Two doubles {@code d1} and {@code d2} are considered equal if:
-     * <pre>    {@code new Double(d1).equals(new Double(d2))}</pre>
+     * <pre>    {@code Double.valueOf(d1).equals(Double.valueOf(d2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0d unequal to -0.0d.)
      *
@@ -2876,7 +2877,7 @@ public class Arrays {
      * two array references are considered equal if both are {@code null}.
      *
      * Two floats {@code f1} and {@code f2} are considered equal if:
-     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * <pre>    {@code Float.valueOf(f1).equals(Float.valueOf(f2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0f unequal to -0.0f.)
      *
@@ -2909,7 +2910,7 @@ public class Arrays {
      * in the same order.
      *
      * <p>Two floats {@code f1} and {@code f2} are considered equal if:
-     * <pre>    {@code new Float(f1).equals(new Float(f2))}</pre>
+     * <pre>    {@code Float.valueOf(f1).equals(Float.valueOf(f2))}</pre>
      * (Unlike the {@code ==} operator, this method considers
      * {@code NaN} equal to itself, and 0.0f unequal to -0.0f.)
      *
@@ -4266,15 +4267,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(long[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
         int result = 1;
         for (long element : a) {
             int elementHash = (int)(element ^ (element >>> 32));
             result = 31 * result + elementHash;
         }
-
         return result;
     }
 
@@ -4295,14 +4295,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(int[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (int element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
+        };
     }
 
     /**
@@ -4322,14 +4322,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(short[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (short element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_SHORT);
+        };
     }
 
     /**
@@ -4349,14 +4349,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(char[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (char element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_CHAR);
+        };
     }
 
     /**
@@ -4376,14 +4376,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(byte[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (byte element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_BYTE);
+        };
     }
 
     /**

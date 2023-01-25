@@ -42,8 +42,8 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @compile --enable-preview -source ${jdk.version} TestDeepVirtualStackTrace.java
- * @run main/othervm --enable-preview -XX:FlightRecorderOptions:stackdepth=2048
+ * @enablePreview
+ * @run main/othervm -XX:FlightRecorderOptions:stackdepth=2048
  *      jdk.jfr.threading.TestDeepVirtualStackTrace
  */
 public class TestDeepVirtualStackTrace {

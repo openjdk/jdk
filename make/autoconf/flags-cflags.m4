@@ -532,7 +532,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # Suggested additions: -qsrcmsg to get improved error reporting
     # set -qtbtable=full for a better traceback table/better stacks in hs_err when xlc16 is used
     TOOLCHAIN_CFLAGS_JDK="-qtbtable=full -qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
-    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
+    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP"

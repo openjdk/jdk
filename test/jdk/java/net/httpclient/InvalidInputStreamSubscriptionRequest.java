@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,9 @@
  * @summary Tests an asynchronous BodySubscriber that completes
  *          immediately with an InputStream which issues bad
  *          requests
- * @library /test/lib http2/server
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ReferenceTracker
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm InvalidInputStreamSubscriptionRequest
  */
 
@@ -73,6 +70,8 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;

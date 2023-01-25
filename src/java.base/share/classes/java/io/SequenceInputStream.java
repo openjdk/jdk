@@ -235,4 +235,19 @@ public class SequenceInputStream extends InputStream {
             throw ioe;
         }
     }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        if (getClass() == SequenceInputStream.class) {
+            long c = 0;
+            while (in != null) {
+                c += in.transferTo(out);
+                nextStream();
+            }
+            return c;
+        } else {
+            return super.transferTo(out);
+        }
+    }
 }

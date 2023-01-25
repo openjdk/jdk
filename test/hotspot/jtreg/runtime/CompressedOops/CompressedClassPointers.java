@@ -126,7 +126,7 @@ public class CompressedClassPointers {
         if (testNarrowKlassBase()) {
             if (!(Platform.isAArch64() && Platform.isOSX())) { // see JDK-8262895
                 output.shouldContain("Narrow klass base: 0x0000000000000000");
-                if (!Platform.isAArch64() && !Platform.isOSX()) {
+                if (!Platform.isAArch64() && !Platform.isPPC() && !Platform.isOSX()) {
                     output.shouldContain("Narrow klass shift: 0");
                 }
             }

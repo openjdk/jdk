@@ -206,64 +206,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return result;
     }
 
-    /**
-     * Decodes the exception encoded in {@code buffer} and throws it.
-     *
-     * @param errorOrBuffer an error code or a native byte buffer containing an exception encoded by
-     *            {@link #encodeThrowable}. Error code values and their meanings are:
-     *
-     *            <pre>
-     *             0: native memory for the buffer could not be allocated
-     *            -1: an OutOfMemoryError was thrown while encoding the exception
-     *            -2: some other throwable was thrown while encoding the exception
-     *            </pre>
-     */
-    @VMEntryPoint
-    static void decodeAndThrowThrowable(long errorOrBuffer) throws Throwable {
-        if (errorOrBuffer >= -2L && errorOrBuffer <= 0) {
-            String context = String.format("while encoding an exception to translate it from %s to %s",
-                            IS_IN_NATIVE_IMAGE ? "HotSpot" : "libjvmci",
-                            IS_IN_NATIVE_IMAGE ? "libjvmci" : "HotSpot");
-            if (errorOrBuffer == 0) {
-                throw new InternalError("native buffer could not be allocated " + context);
-            }
-            if (errorOrBuffer == -1L) {
-                throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
-            }
-            throw new InternalError("unexpected problem occurred " + context);
-        }
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        int encodingLength = unsafe.getInt(errorOrBuffer);
-        byte[] encoding = new byte[encodingLength];
-        unsafe.copyMemory(null, errorOrBuffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
-        throw TranslatedException.decodeThrowable(encoding);
-    }
-
-    /**
-     * If {@code bufferSize} is large enough, encodes {@code throwable} into a byte array and writes
-     * it to {@code buffer}. The encoding in {@code buffer} can be decoded by
-     * {@link #decodeAndThrowThrowable}.
-     *
-     * @param throwable the exception to encode
-     * @param buffer a native byte buffer
-     * @param bufferSize the size of {@code buffer} in bytes
-     * @return the number of bytes written into {@code buffer} if {@code bufferSize} is large
-     *         enough, otherwise {@code -N} where {@code N} is the value {@code bufferSize} needs to
-     *         be to fit the encoding
-     */
-    @VMEntryPoint
-    static int encodeThrowable(Throwable throwable, long buffer, int bufferSize) throws Throwable {
-        byte[] encoding = TranslatedException.encodeThrowable(throwable);
-        int requiredSize = 4 + encoding.length;
-        if (bufferSize < requiredSize) {
-            return -requiredSize;
-        }
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        unsafe.putInt(buffer, encoding.length);
-        unsafe.copyMemory(encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, encoding.length);
-        return requiredSize;
-    }
-
     @VMEntryPoint
     static String callToString(Object o) {
         return o.toString();
@@ -1330,7 +1272,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         for (String filter : filters) {
             Matcher m = FORCE_TRANSLATE_FAILURE_FILTER_RE.matcher(filter);
             if (!m.matches()) {
-                throw new JVMCIError(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
+                throw new IllegalArgumentException(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
             }
             String typeSelector = m.group(1);
             String substring = m.group(2);
@@ -1350,7 +1292,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 continue;
             }
             if (toMatch.contains(substring)) {
-                throw new JVMCIError("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
+                throw new RuntimeException("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
             }
         }
     }

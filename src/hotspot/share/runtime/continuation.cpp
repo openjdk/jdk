@@ -61,23 +61,13 @@ static jlong java_tid(JavaThread* thread) {
 }
 #endif
 
-const ContinuationEntry* Continuation::last_continuation(const JavaThread* thread, oop cont_scope) {
-  // guarantee (thread->has_last_Java_frame(), "");
-  for (ContinuationEntry* entry = thread->last_continuation(); entry != nullptr; entry = entry->parent()) {
-    if (cont_scope == jdk_internal_vm_Continuation::scope(entry->cont_oop())) {
-      return entry;
-    }
-  }
-  return nullptr;
-}
-
 ContinuationEntry* Continuation::get_continuation_entry_for_continuation(JavaThread* thread, oop continuation) {
   if (thread == nullptr || continuation == nullptr) {
     return nullptr;
   }
 
   for (ContinuationEntry* entry = thread->last_continuation(); entry != nullptr; entry = entry->parent()) {
-    if (continuation == entry->cont_oop()) {
+    if (continuation == entry->cont_oop(thread)) {
       return entry;
     }
   }
@@ -97,10 +87,6 @@ static bool is_on_stack(JavaThread* thread, const ContinuationEntry* entry) {
 
 bool Continuation::is_continuation_mounted(JavaThread* thread, oop continuation) {
   return is_on_stack(thread, get_continuation_entry_for_continuation(thread, continuation));
-}
-
-bool Continuation::is_continuation_scope_mounted(JavaThread* thread, oop cont_scope) {
-  return is_on_stack(thread, last_continuation(thread, cont_scope));
 }
 
 // When walking the virtual stack, this method returns true
@@ -193,7 +179,7 @@ frame Continuation::top_frame(const frame& callee, RegisterMap* map) {
   assert(map != nullptr, "");
   ContinuationEntry* ce = get_continuation_entry_for_sp(map->thread(), callee.sp());
   assert(ce != nullptr, "");
-  oop continuation = ce->cont_oop();
+  oop continuation = ce->cont_oop(map->thread());
   ContinuationWrapper cont(continuation);
   return continuation_top_frame(cont, map);
 }
@@ -266,7 +252,7 @@ bool Continuation::is_scope_bottom(oop cont_scope, const frame& f, const Registe
     if (ce == nullptr) {
       return false;
     }
-    continuation = ce->cont_oop();
+    continuation = ce->cont_oop(map->thread());
   }
   if (continuation == nullptr) {
     return false;
@@ -440,9 +426,8 @@ static JNINativeMethod CONT_methods[] = {
 };
 
 void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls) {
-    Thread* thread = Thread::current();
-    assert(thread->is_Java_thread(), "");
-    ThreadToNativeFromVM trans((JavaThread*)thread);
+    JavaThread* thread = JavaThread::current();
+    ThreadToNativeFromVM trans(thread);
     int status = env->RegisterNatives(cls, CONT_methods, sizeof(CONT_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK, "register jdk.internal.vm.Continuation natives");
     guarantee(!env->ExceptionOccurred(), "register jdk.internal.vm.Continuation natives");
