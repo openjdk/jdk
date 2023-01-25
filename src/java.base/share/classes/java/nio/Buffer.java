@@ -747,6 +747,7 @@ public abstract sealed class Buffer
         return Objects.checkIndex(i, limit);
     }
 
+    @ForceInline
     final int checkIndex(int i, int nb) {               // package-private
         return Preconditions.checkIndex(i, limit - nb + 1,
             (x, y) -> {
