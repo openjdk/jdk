@@ -91,19 +91,20 @@ public class VerifySignedJar {
         }
     }
 
-    private static void checkSignedBy(JarEntry e, String dname) throws Exception {
-        if (e.getCodeSigners() == null || e.getCodeSigners().length == 0) {
-            throw new Exception("JarEntry has no code signers: " + e.getName());
+    // Check that a JAR entry is signed by an expected DN
+    private static void checkSignedBy(JarEntry e, String expectedDn) throws Exception {
+        Certificate[] certs = e.getCertificates();
+        if (certs == null || certs.length == 0) {
+            throw new Exception("JarEntry has no certificates: " + e.getName());
         }
 
-        if (e.getCodeSigners()[0].getSignerCertPath().getCertificates().get(0)
-                instanceof X509Certificate x) {
+        if (certs[0] instanceof X509Certificate x) {
             String name = x.getSubjectX500Principal().getName();
-            if (!name.equalsIgnoreCase(dname)) {
-                throw new Exception("Unexpected ");
+            if (!name.equalsIgnoreCase(expectedDn)) {
+                throw new Exception("Expected entry signed by %s, was %s".formatted(name, expectedDn));
             }
         } else {
-            throw new Exception("Cannot find X509Certificate in CodeSigners");
+            throw new Exception("Expected JarEntry.getCertificate to return X509Certificate");
         }
     }
 
