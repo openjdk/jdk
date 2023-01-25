@@ -1293,6 +1293,10 @@ enum VectorMask {
   INSN(vsrl_vi,    0b1010111, 0b011, 0b101000);
   INSN(vsll_vi,    0b1010111, 0b011, 0b100101);
 
+  // Vector Slide Instructions
+  INSN(vslideup_vi,   0b1010111, 0b011, 0b001110);
+  INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1316,6 +1320,13 @@ enum VectorMask {
   INSN(vnmsac_vv, 0b1010111, 0b010, 0b101111);
   INSN(vmacc_vv,  0b1010111, 0b010, 0b101101);
 
+#undef INSN
+
+#define INSN(NAME, op, funct3, funct6)                                                             \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
   // Vector Register Gather Instructions
   INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
   INSN(vrgatherei16_vv, 0b1010111, 0b000, 0b001110);
@@ -1332,6 +1343,12 @@ enum VectorMask {
   INSN(vmadd_vx,  0b1010111, 0b110, 0b101001);
   INSN(vnmsac_vx, 0b1010111, 0b110, 0b101111);
   INSN(vmacc_vx,  0b1010111, 0b110, 0b101101);
+
+  // Vector Slide Instructions
+  INSN(vslideup_vx,    0b1010111, 0b100, 0b001110);
+  INSN(vslide1up_vx,   0b1010111, 0b110, 0b001110);
+  INSN(vslidedown_vx,  0b1010111, 0b100, 0b001111);
+  INSN(vslide1down_vx, 0b1010111, 0b110, 0b001111);
 
 #undef INSN
 
@@ -1571,24 +1588,12 @@ enum VectorMask {
 #undef INSN
 
 #define INSN(NAME, op, funct3, vm, funct6)                                   \
-  void NAME(VectorRegister Vd, VectorRegister Vs1, VectorRegister Vs2) {     \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
     patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
   }
 
   // Vector Integer Merge Instructions
   INSN(vmerge_vvm,  0b1010111, 0b000, 0b0, 0b010111);
-
-#undef INSN
-
-#define INSN(NAME, op, funct3, vm, funct6)                                   \
-  void NAME(VectorRegister Vd, VectorRegister Vs1, VectorRegister Vs2) {     \
-    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
-  }
-
-  // Vector SHA-2 Instructions
-  INSN(vsha2ms_vv,  0b0001011, 0b000, 0b1, 0b100000);
-  INSN(vsha2cl_vv,  0b0001011, 0b000, 0b1, 0b100001);
-  INSN(vsha2ch_vv,  0b0001011, 0b000, 0b1, 0b100010);
 
 #undef INSN
 
@@ -1637,7 +1642,6 @@ enum VectorMask {
   INSN(vmv_v_x, 0b1010111, 0b100, v0, 0b1, 0b010111);
 
 #undef INSN
-#undef patch_VArith
 
 #define INSN(NAME, op, funct13, funct6)                    \
   void NAME(VectorRegister Vd, VectorMask vm = unmasked) { \
@@ -1785,6 +1789,55 @@ enum Nf {
 
 #undef INSN
 #undef patch_VLdSt
+
+// ====================================
+// RISC-V Vector Crypto Extension
+// ====================================
+
+#define INSN(NAME, op, funct3, funct6)                                                             \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
+  INSN(vandn_vv,   0b1010111, 0b000, 0b000001);
+  INSN(vandn_vx,   0b1010111, 0b100, 0b000001);
+  INSN(vandn_vi,   0b1010111, 0b011, 0b000001);
+  INSN(vclmul_vv,  0b1010111, 0b010, 0b001100);
+  INSN(vclmul_vx,  0b1010111, 0b110, 0b001100);
+  INSN(vclmulh_vv, 0b1010111, 0b010, 0b001101);
+  INSN(vclmulh_vx, 0b1010111, 0b110, 0b001101);
+  INSN(vror_vv,    0b1010111, 0b000, 0b010100);
+  INSN(vror_vx,    0b1010111, 0b100, 0b010100);
+  INSN(vrol_vv,    0b1010111, 0b000, 0b010101);
+  INSN(vrol_vx,    0b1010111, 0b100, 0b010101);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, Vs1, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorMask vm = unmasked) { \
+    patch_VArith(op, Vd, funct3, Vs1, Vs2, vm, funct6);                        \
+  }
+
+  // Vector Bit-manipulation used in Cryptography (Zvkb) Extension
+  INSN(vbrev8_v, 0b1010111, 0b010, 0b01000, 0b010010);
+  INSN(vrev8_v,  0b1010111, 0b010, 0b01001, 0b010010);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                   \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
+    patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
+  }
+
+  // Vector SHA-2 Secure Hash (Zvknh[ab]) Extension
+  INSN(vsha2ms_vv,  0b1110111, 0b010, 0b1, 0b101101);
+  INSN(vsha2ch_vv,  0b1110111, 0b010, 0b1, 0b101110);
+  INSN(vsha2cl_vv,  0b1110111, 0b010, 0b1, 0b101111);
+
+#undef INSN
+
+#undef patch_VArith
 
 // ====================================
 // RISC-V Bit-Manipulation Extension
