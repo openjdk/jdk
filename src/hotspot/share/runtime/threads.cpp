@@ -1307,9 +1307,20 @@ void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
 
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
-    assert_thread_claimed("Thread", p, _thread_claim_token);
+    assert_thread_claimed("JavaThread", p, _thread_claim_token);
   }
-  assert_thread_claimed("VMThread", VMThread::vm_thread(), _thread_claim_token);
+
+  struct NJTClaimedVerifierClosure : public ThreadClosure {
+    uintx _thread_claim_token;
+
+    NJTClaimedVerifierClosure(uintx thread_claim_token) : ThreadClosure(), _thread_claim_token(thread_claim_token) { }
+
+    virtual void do_thread(Thread* thread) override {
+      assert_thread_claimed("Non-JavaThread", VMThread::vm_thread(), _thread_claim_token);
+    }
+  } tc(_thread_claim_token);
+
+  non_java_threads_do(&tc);
 }
 #endif // ASSERT
 

@@ -147,7 +147,7 @@ public:
     ASSERT_EQ(max_uintx, thread_claim_token());
 
     CountThreads count2(thread_claim_token(), false); // Claimed by PPTD below
-    possibly_parallel_threads_do(true, &count2);
+    possibly_parallel_threads_do(true /* is_par */, &count2);
     ASSERT_EQ(count1.java_threads_count(), count2.java_threads_count());
     ASSERT_EQ(count1.non_java_threads_count(), count2.non_java_threads_count());
 

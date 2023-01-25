@@ -1976,7 +1976,7 @@ public:
     }
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
     // Mark from OopStorages
     {
