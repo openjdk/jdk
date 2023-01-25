@@ -492,9 +492,6 @@ public:
     NOT_CDS(return false;)
   }
 
-  // Stop CDS sharing and unmap CDS regions.
-  static void stop_sharing_and_unmap(const char* msg);
-
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
   static void clone_shared_path_table(TRAPS);
