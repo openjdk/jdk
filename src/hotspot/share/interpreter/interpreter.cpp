@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
     st->print_cr("----------------------------------------------------------------------");
   }
 
-  if (description() != NULL) st->print("%s  ", description());
+  if (description() != nullptr) st->print("%s  ", description());
   if (bytecode()    >= 0   ) st->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
                 p2i(code_begin()), p2i(code_end()), code_size());
@@ -90,7 +90,7 @@ CodeletMark::CodeletMark(InterpreterMacroAssembler*& masm,
   _clet((InterpreterCodelet*)AbstractInterpreter::code()->request(codelet_size())),
   _cb(_clet->code_begin(), _clet->code_size()) {
   // Request all space (add some slack for Codelet data).
-  assert(_clet != NULL, "we checked not enough space already");
+  assert(_clet != nullptr, "we checked not enough space already");
 
   // Initialize Codelet attributes.
   _clet->initialize(description, bytecode);
@@ -116,7 +116,7 @@ CodeletMark::~CodeletMark() {
     AbstractInterpreter::code()->commit(committed_code_size);
   }
   // Make sure nobody can use _masm outside a CodeletMark lifespan.
-  *_masm = NULL;
+  *_masm = nullptr;
 }
 
 // The reason that interpreter initialization is split into two parts is that the first part

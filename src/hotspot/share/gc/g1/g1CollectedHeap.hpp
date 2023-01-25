@@ -1330,10 +1330,6 @@ public:
   // Override
   void print_tracing_info() const override;
 
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
-
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;
 };

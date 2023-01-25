@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ void BasicLock::print_on(outputStream* st, oop owner) const {
   markWord mark_word = displaced_header();
   if (mark_word.value() != 0) {
     // Print monitor info if there's an owning oop and it refers to this BasicLock.
-    bool print_monitor_info = (owner != NULL) && (owner->mark() == markWord::from_pointer((void*)this));
+    bool print_monitor_info = (owner != nullptr) && (owner->mark() == markWord::from_pointer((void*)this));
     mark_word.print_on(st, print_monitor_info);
   }
 }

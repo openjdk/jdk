@@ -69,7 +69,7 @@ inline oop* JNIHandles::weak_global_ptr(jweak handle) {
 // external_guard is true if called from resolve_external_guard.
 template <DecoratorSet decorators, bool external_guard>
 inline oop JNIHandles::resolve_impl(jobject handle) {
-  assert(handle != NULL, "precondition");
+  assert(handle != nullptr, "precondition");
   assert(!current_thread_in_native(), "must not be in native");
   oop result;
   if (is_weak_global_tagged(handle)) {       // Unlikely
@@ -78,27 +78,27 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
     result = NativeAccess<decorators>::oop_load(global_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
-    assert(external_guard || result != NULL, "Invalid JNI handle");
+    assert(external_guard || result != nullptr, "Invalid JNI handle");
   } else {
     result = *local_ptr(handle);
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
-    assert(external_guard || result != NULL, "Invalid JNI handle");
+    assert(external_guard || result != nullptr, "Invalid JNI handle");
   }
   return result;
 }
 
 inline oop JNIHandles::resolve(jobject handle) {
-  oop result = NULL;
-  if (handle != NULL) {
+  oop result = nullptr;
+  if (handle != nullptr) {
     result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);
   }
   return result;
 }
 
 inline oop JNIHandles::resolve_no_keepalive(jobject handle) {
-  oop result = NULL;
-  if (handle != NULL) {
+  oop result = nullptr;
+  if (handle != nullptr) {
     result = resolve_impl<AS_NO_KEEPALIVE, false /* external_guard */>(handle);
   }
   return result;
@@ -111,15 +111,15 @@ inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
 }
 
 inline oop JNIHandles::resolve_non_null(jobject handle) {
-  assert(handle != NULL, "JNI handle should not be null");
+  assert(handle != nullptr, "JNI handle should not be null");
   oop result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);
-  assert(result != NULL, "NULL read from jni handle");
+  assert(result != nullptr, "nullptr read from jni handle");
   return result;
 }
 
 inline void JNIHandles::destroy_local(jobject handle) {
-  if (handle != NULL) {
-    *local_ptr(handle) = NULL;
+  if (handle != nullptr) {
+    *local_ptr(handle) = nullptr;
   }
 }
 

@@ -112,13 +112,13 @@ public:
   static void print_on(outputStream* st);
   static void print();
   static void verify();
-  // The category predicates all require handle != NULL.
+  // The category predicates all require handle != nullptr.
   static bool is_local_handle(JavaThread* thread, jobject handle);
   static bool is_frame_handle(JavaThread* thread, jobject handle);
   static bool is_global_handle(jobject handle);
   static bool is_weak_global_handle(jobject handle);
 
-  // precondition: handle != NULL.
+  // precondition: handle != nullptr.
   static jobjectRefType handle_type(JavaThread* thread, jobject handle);
 
   // Garbage collection support(global handles only, local handles are traversed from thread)
@@ -170,8 +170,8 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
   jobject allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
   // Block allocation and block free list management
-  static JNIHandleBlock* allocate_block(JavaThread* thread = NULL, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  static void release_block(JNIHandleBlock* block, JavaThread* thread = NULL);
+  static JNIHandleBlock* allocate_block(JavaThread* thread = nullptr, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static void release_block(JNIHandleBlock* block, JavaThread* thread = nullptr);
 
   // JNI PushLocalFrame/PopLocalFrame support
   JNIHandleBlock* pop_frame_link() const          { return _pop_frame_link; }

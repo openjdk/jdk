@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,7 +307,7 @@ class PerfData : public CHeapObj<mtInternal> {
     // returns a boolean indicating the validity of this object.
     // the object is valid if and only if memory in PerfMemory
     // region was successfully allocated.
-    inline bool is_valid() { return _valuep != NULL; }
+    inline bool is_valid() { return _valuep != nullptr; }
 
     // returns a boolean indicating whether the underlying object
     // was allocated in the PerfMemory region or on the C heap.
@@ -604,12 +604,12 @@ class PerfDataList : public CHeapObj<mtInternal> {
     ~PerfDataList();
 
     // return the PerfData item indicated by name,
-    // or NULL if it doesn't exist.
+    // or null if it doesn't exist.
     PerfData* find_by_name(const char* name);
 
     // return true if a PerfData item with the name specified in the
     // argument exists, otherwise return false.
-    bool contains(const char* name) { return find_by_name(name) != NULL; }
+    bool contains(const char* name) { return find_by_name(name) != nullptr; }
 
     // return the number of PerfData items in this list
     inline int length();

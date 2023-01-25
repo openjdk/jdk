@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ char type2char_tab[T_CONFLICT+1] = {
 
 // Map BasicType to Java type name
 const char* type2name_tab[T_CONFLICT+1] = {
-  NULL, NULL, NULL, NULL,
+  nullptr, nullptr, nullptr, nullptr,
   "boolean",
   "char",
   "float",
@@ -252,7 +252,7 @@ const char* type2name(BasicType t) {
 BasicType name2type(const char* name) {
   for (int i = T_BOOLEAN; i <= T_VOID; i++) {
     BasicType t = (BasicType)i;
-    if (type2name_tab[t] != NULL && 0 == strcmp(type2name_tab[t], name))
+    if (type2name_tab[t] != nullptr && 0 == strcmp(type2name_tab[t], name))
       return t;
   }
   return T_ILLEGAL;
