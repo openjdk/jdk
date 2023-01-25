@@ -1147,11 +1147,9 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
       assert(false, "VerifyIterativeGVN: new modified node was added");
     }
   }
-#endif
 
-  if (is_verify_Value()) {
-    DEBUG_ONLY(verify_optimize();)
-  }
+  verify_optimize();
+#endif
 }
 #endif /* PRODUCT */
 
@@ -1216,29 +1214,31 @@ void PhaseIterGVN::optimize() {
 
 #ifdef ASSERT
 void PhaseIterGVN::verify_optimize() {
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  bool failure = false;
-  // BFS all nodes, starting at root
-  worklist.push(C->root());
-  for (uint j = 0; j < worklist.size(); ++j) {
-    Node* n = worklist.at(j);
-    failure |= verify_node_value(n);
-    // traverse all inputs and outputs
-    for (uint i = 0; i < n->req(); i++) {
-      if (n->in(i) != nullptr) {
-        worklist.push(n->in(i));
+  if (is_verify_Value()) {
+    ResourceMark rm;
+    Unique_Node_List worklist;
+    bool failure = false;
+    // BFS all nodes, starting at root
+    worklist.push(C->root());
+    for (uint j = 0; j < worklist.size(); ++j) {
+      Node* n = worklist.at(j);
+      failure |= verify_node_value(n);
+      // traverse all inputs and outputs
+      for (uint i = 0; i < n->req(); i++) {
+        if (n->in(i) != nullptr) {
+          worklist.push(n->in(i));
+        }
+      }
+      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+        worklist.push(n->fast_out(i));
       }
     }
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      worklist.push(n->fast_out(i));
-    }
+    // If we get this assert, check why the reported nodes were not processed again in IGVN.
+    // We should either make sure that these nodes are properly added back to the IGVN worklist
+    // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
+    // in the verification code above if that is not possible for some reason (like Load nodes).
+    assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
   }
-  // If we get this assert, check why the reported nodes were not processed again in IGVN.
-  // We should either make sure that these nodes are properly added back to the IGVN worklist
-  // in PhaseIterGVN::add_users_to_worklist to update them again or add an exception
-  // in the verification code above if that is not possible for some reason (like Load nodes).
-  assert(!failure, "Missed optimization opportunity in PhaseIterGVN");
 }
 
 // Check that if type(n) == n->Value(), return true if we have a failure
@@ -1329,9 +1329,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
+#ifdef ASSERT
   if (is_verify_def_use()) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
+#endif
 
   // Allow Bool -> Cmp idealisation in late inlining intrinsics that return a bool
   if (n->is_Cmp()) {
