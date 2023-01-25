@@ -192,9 +192,10 @@ ciConstant ciObject::check_constant_value_cache(int off, BasicType bt) {
 // Add a constant value to the cache.
 void ciObject::add_to_constant_value_cache(int off, ciConstant val) {
   assert(val.is_valid(), "value must be valid");
+  assert(!check_constant_value_cache(off, val.basic_type()).is_valid(), "duplicate");
   if (_constant_values == nullptr) {
     Arena* arena = CURRENT_ENV->arena();
-    _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 0, 0, ConstantValue());
+    _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 1, 0, ConstantValue());
   }
   _constant_values->append(ConstantValue(off, val));
 }
