@@ -27,8 +27,9 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allStatic.hpp"
-#include "metaprogramming/integralConstant.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <type_traits>
 
 // A decorator is an attribute or property that affects the way a memory access is performed in some way.
 // There are different groups of decorators. Some have to do with memory ordering, others to do with,
@@ -41,7 +42,7 @@ typedef uint64_t DecoratorSet;
 // The HasDecorator trait can help at compile-time determining whether a decorator set
 // has an intersection with a certain other decorator set
 template <DecoratorSet decorators, DecoratorSet decorator>
-struct HasDecorator: public IntegralConstant<bool, (decorators & decorator) != 0> {};
+struct HasDecorator: public std::integral_constant<bool, (decorators & decorator) != 0> {};
 
 // == General Decorators ==
 // * DECORATORS_NONE: This is the name for the empty decorator set (in absence of other decorators).

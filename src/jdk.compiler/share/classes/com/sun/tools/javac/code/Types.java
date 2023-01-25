@@ -119,7 +119,6 @@ public class Types {
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         noWarnings = new Warner(null);
-        qualifiedSymbolCache = new HashMap<>();
     }
     // </editor-fold>
 
@@ -3617,56 +3616,6 @@ public class Types {
         }
     }
     // </editor-fold>
-
-    /** Cache the symbol to reflect the qualifying type.
-     *  key: corresponding type
-     *  value: qualified symbol
-     */
-    private Map<Type, Symbol> qualifiedSymbolCache;
-
-    public void clearQualifiedSymbolCache() {
-        qualifiedSymbolCache.clear();
-    }
-
-    /** Construct a symbol to reflect the qualifying type that should
-     *  appear in the byte code as per JLS 13.1.
-     *
-     *  For {@literal target >= 1.2}: Clone a method with the qualifier as owner (except
-     *  for those cases where we need to work around VM bugs).
-     *
-     *  For {@literal target <= 1.1}: If qualified variable or method is defined in a
-     *  non-accessible class, clone it with the qualifier class as owner.
-     *
-     *  @param sym    The accessed symbol
-     *  @param site   The qualifier's type.
-     */
-    public Symbol binaryQualifier(Symbol sym, Type site) {
-
-        if (site.hasTag(ARRAY)) {
-            if (sym == syms.lengthVar ||
-                    sym.owner != syms.arrayClass)
-                return sym;
-            // array clone can be qualified by the array type in later targets
-            Symbol qualifier;
-            if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
-                qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
-                qualifiedSymbolCache.put(site, qualifier);
-            }
-            return sym.clone(qualifier);
-        }
-
-        if (sym.owner == site.tsym ||
-                (sym.flags() & (STATIC | SYNTHETIC)) == (STATIC | SYNTHETIC)) {
-            return sym;
-        }
-
-        // leave alone methods inherited from Object
-        // JLS 13.1.
-        if (sym.owner == syms.objectType.tsym)
-            return sym;
-
-        return sym.clone(site.tsym);
-    }
 
     /**
      * Helper method for generating a string representation of a given type

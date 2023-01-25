@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+#include <stdint.h>
 #include <stdlib.h>
 #include "jni.h"
 
@@ -30,7 +31,7 @@ Java_NewDirectByteBuffer_newDirectByteBuffer
 {
     // Create the direct byte buffer, freeing the native memory if an exception
     // is thrown while constructing the buffer
-    return (*env)->NewDirectByteBuffer(env, (void*)addr, size);
+    return (*env)->NewDirectByteBuffer(env, (void*)(uintptr_t)addr, size);
 }
 
 // private static native long getDirectByteBufferCapacity(ByteBuffer buf)
@@ -46,5 +47,5 @@ JNIEXPORT jlong JNICALL
 Java_NewDirectByteBuffer_getDirectBufferAddress
     (JNIEnv *env, jclass cls, jobject buf)
 {
-    return (jlong)(*env)->GetDirectBufferAddress(env, buf);
+    return (jlong)(uintptr_t)(*env)->GetDirectBufferAddress(env, buf);
 }
