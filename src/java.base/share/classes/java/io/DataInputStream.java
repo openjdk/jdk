@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.io;
+
+import jdk.internal.util.ByteArray;
 
 import java.util.Objects;
 
@@ -53,6 +55,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
     public DataInputStream(InputStream in) {
         super(in);
     }
+
+    private final byte[] readBuffer = new byte[8];
 
     /**
      * working arrays initialized on demand by readUTF
@@ -309,7 +313,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final short readShort() throws IOException {
-        return (short) readUnsignedShort();
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getShort(readBuffer, 0);
     }
 
     /**
@@ -330,12 +335,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readUnsignedShort() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (ch1 << 8) + (ch2 << 0);
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getUnsignedShort(readBuffer, 0);
     }
 
     /**
@@ -356,7 +357,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final char readChar() throws IOException {
-        return (char) readUnsignedShort();
+        readFully(readBuffer, 0, 2);
+        return ByteArray.getChar(readBuffer, 0);
     }
 
     /**
@@ -377,17 +379,9 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.io.FilterInputStream#in
      */
     public final int readInt() throws IOException {
-        InputStream in = this.in;
-        int ch1 = in.read();
-        int ch2 = in.read();
-        int ch3 = in.read();
-        int ch4 = in.read();
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
-        return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
+        readFully(readBuffer, 0, 4);
+        return ByteArray.getInt(readBuffer, 0);
     }
-
-    private final byte[] readBuffer = new byte[8];
 
     /**
      * See the general contract of the {@code readLong}
@@ -408,14 +402,7 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      */
     public final long readLong() throws IOException {
         readFully(readBuffer, 0, 8);
-        return (((long)readBuffer[0] << 56) +
-                ((long)(readBuffer[1] & 255) << 48) +
-                ((long)(readBuffer[2] & 255) << 40) +
-                ((long)(readBuffer[3] & 255) << 32) +
-                ((long)(readBuffer[4] & 255) << 24) +
-                ((readBuffer[5] & 255) << 16) +
-                ((readBuffer[6] & 255) <<  8) +
-                ((readBuffer[7] & 255) <<  0));
+        return ByteArray.getLong(readBuffer, 0);
     }
 
     /**
@@ -437,7 +424,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.lang.Float#intBitsToFloat(int)
      */
     public final float readFloat() throws IOException {
-        return Float.intBitsToFloat(readInt());
+        readFully(readBuffer, 0, 4);
+        return ByteArray.getFloat(readBuffer, 0);
     }
 
     /**
@@ -459,7 +447,8 @@ public class DataInputStream extends FilterInputStream implements DataInput {
      * @see        java.lang.Double#longBitsToDouble(long)
      */
     public final double readDouble() throws IOException {
-        return Double.longBitsToDouble(readLong());
+        readFully(readBuffer, 0, 8);
+        return ByteArray.getDouble(readBuffer, 0);
     }
 
     private char[] lineBuffer;

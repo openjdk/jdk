@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,12 @@
 
 // Implementation of StubCodeDesc
 
-StubCodeDesc* StubCodeDesc::_list = NULL;
+StubCodeDesc* StubCodeDesc::_list = nullptr;
 bool          StubCodeDesc::_frozen = false;
 
 StubCodeDesc* StubCodeDesc::desc_for(address pc) {
   StubCodeDesc* p = _list;
-  while (p != NULL && !p->contains(pc)) {
+  while (p != nullptr && !p->contains(pc)) {
     p = p->_next;
   }
   return p;
@@ -71,7 +71,7 @@ StubCodeGenerator::~StubCodeGenerator() {
 #ifndef PRODUCT
   CodeBuffer* cbuf = _masm->code();
   CodeBlob*   blob = CodeCache::find_blob(cbuf->insts()->start());
-  if (blob != NULL) {
+  if (blob != nullptr) {
     blob->use_remarks(cbuf->asm_remarks());
     blob->use_strings(cbuf->dbg_strings());
   }

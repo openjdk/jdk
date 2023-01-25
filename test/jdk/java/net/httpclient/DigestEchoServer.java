@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import sun.net.www.HeaderParser;
 import java.net.http.HttpClient.Version;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 /**
  * A simple HTTP server that supports Basic or Digest authentication.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,8 @@
  * @test
  * @bug 8203433 8276559
  * @summary (httpclient) Add tests for HEAD and 304 responses.
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       HeadTest
@@ -59,6 +52,8 @@ import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static org.testng.Assert.assertEquals;

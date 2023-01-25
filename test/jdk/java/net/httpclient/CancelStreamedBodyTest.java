@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,9 @@
  * @bug 8294916 8297075 8297149
  * @summary Tests that closing a streaming handler (ofInputStream()/ofLines())
  *      without reading all the bytes unregisters the underlying subscriber.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        ReferenceTracker CancelStreamedBodyTest
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     CancelStreamedBodyTest
  */
@@ -82,6 +78,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.arraycopy;
 import static java.lang.System.out;

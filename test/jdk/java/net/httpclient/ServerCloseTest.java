@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
  * @test
  * @summary Tests that our client deals correctly with servers that
  *          close the connection right after sending the last byte.
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters EncodedCharsInURI
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm -Djdk.tls.acknowledgeCloseNotify=true ServerCloseTest
  */
 //*        -Djdk.internal.httpclient.debug=true
@@ -72,6 +69,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;

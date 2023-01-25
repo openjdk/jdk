@@ -382,8 +382,9 @@ void os::init_system_properties_values() {
     char path[MAX_PATH];
     char buf[2 * MAX_PATH + 2 * sizeof(EXT_DIR) + sizeof(PACKAGE_DIR) + 1];
     GetWindowsDirectory(path, MAX_PATH);
-    sprintf(buf, "%s%s;%s%s%s", Arguments::get_java_home(), EXT_DIR,
-            path, PACKAGE_DIR, EXT_DIR);
+    os::snprintf_checked(buf, sizeof(buf), "%s%s;%s%s%s",
+                         Arguments::get_java_home(), EXT_DIR,
+                         path, PACKAGE_DIR, EXT_DIR);
     Arguments::set_ext_dirs(buf);
   }
   #undef EXT_DIR

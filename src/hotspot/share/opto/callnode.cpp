@@ -364,7 +364,7 @@ static void format_helper( PhaseRegAlloc *regalloc, outputStream* st, Node *n, c
   if (regalloc->node_regs_max_index() > 0 &&
       OptoReg::is_valid(regalloc->get_reg_first(n))) { // Check for undefined
     char buf[50];
-    regalloc->dump_register(n,buf);
+    regalloc->dump_register(n,buf,sizeof(buf));
     st->print(" %s%d]=%s",msg,i,buf);
   } else {                      // No register, but might be constant
     const Type *t = n->bottom_type();

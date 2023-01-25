@@ -2276,11 +2276,11 @@ void PrintBFS::print_node_idx(const Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
-    sprintf(buf,"_");           // null
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
   } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
   } else {
-    sprintf(buf, "o%d", n->_idx); // old node
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
   tty->print("%6s", buf);
 }
@@ -2288,7 +2288,7 @@ void PrintBFS::print_node_idx(const Node* n) {
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
-  sprintf(buf, "B%d", b->_pre_order);
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
   tty->print("%7s", buf);
 }
 
