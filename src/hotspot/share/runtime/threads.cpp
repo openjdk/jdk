@@ -260,9 +260,11 @@ void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
       tc->do_thread(p);
     }
   }
-  VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_threads_do(is_par, claim_token)) {
-    tc->do_thread(vmt);
+  for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
+    Thread* current = njti.current();
+    if (current->claim_threads_do(is_par, claim_token)) {
+      tc->do_thread(current);
+    }
   }
 }
 
