@@ -2836,7 +2836,7 @@ void ClassVerifier::verify_invoke_instructions(
   if (mth_sig_verif_types_ptr != nullptr) {
     // Found the entry for the signature's verification types in the hash table.
     mth_sig_verif_types = *mth_sig_verif_types_ptr;
-    assert(mth_sig_verif_types != nullptr, "Unexpected nullptr sig_as_verification_types value");
+    assert(mth_sig_verif_types != nullptr, "Unexpected null sig_as_verification_types value");
   } else {
     // Not found, add the entry to the table.
     GrowableArray<VerificationType>* verif_types = new GrowableArray<VerificationType>(10);

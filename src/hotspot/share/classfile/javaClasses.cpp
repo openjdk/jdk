@@ -4277,14 +4277,14 @@ void java_lang_invoke_MethodType::print_signature(oop mt, outputStream* st) {
       java_lang_Class::print_signature(pts->obj_at(i), st);
     }
   } else {
-    st->print("nullptr");
+    st->print("null");
   }
   st->print(")");
   oop rt = rtype(mt);
   if (rt != nullptr) {
     java_lang_Class::print_signature(rt, st);
   } else {
-    st->print("nullptr");
+    st->print("null");
   }
 }
 
@@ -4472,19 +4472,19 @@ int  java_lang_ClassLoader::_unnamedModule_offset;
 int  java_lang_ClassLoader::_parent_offset;
 
 ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
-  assert(loader != nullptr, "loader must not be nullptr");
+  assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
   return Atomic::load_acquire(loader->field_addr<ClassLoaderData*>(_loader_data_offset));
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
-  assert(loader != nullptr, "loader must not be nullptr");
+  assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
   return *loader->field_addr<ClassLoaderData*>(_loader_data_offset);
 }
 
 void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
-  assert(loader != nullptr, "loader must not be nullptr");
+  assert(loader != nullptr, "loader must not be null");
   assert(oopDesc::is_oop(loader), "loader must be oop");
   Atomic::release_store(loader->field_addr<ClassLoaderData*>(_loader_data_offset), new_data);
 }

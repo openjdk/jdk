@@ -59,7 +59,7 @@ static bool verify_module_name(const char *module_name, int len) {
 }
 
 static bool verify_package_name(const char* package_name, int len) {
-  assert(package_name != nullptr, "Package name derived from non-null jstring can't be nullptr");
+  assert(package_name != nullptr, "Package name derived from non-null jstring can't be null");
   return (len > 0 && len <= Symbol::max_length() &&
     ClassFileParser::verify_unqualified_name(package_name, len,
     ClassFileParser::LegalClass));
@@ -432,13 +432,13 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
   }
 
   log_info(module, load)("%s location: %s", module_name,
-                         location_symbol != nullptr ? location_symbol->as_C_string() : "nullptr");
+                         location_symbol != nullptr ? location_symbol->as_C_string() : "null");
   LogTarget(Debug, module) lt;
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print("define_module(): creation of module: %s, version: %s, location: %s, ",
-                 module_name, version_symbol != nullptr ? version_symbol->as_C_string() : "nullptr",
-                 location_symbol != nullptr ? location_symbol->as_C_string() : "nullptr");
+                 module_name, version_symbol != nullptr ? version_symbol->as_C_string() : "null",
+                 location_symbol != nullptr ? location_symbol->as_C_string() : "null");
     loader_data->print_value_on(&ls);
     ls.print_cr(", package #: %d", pkg_list->length());
     for (int y = 0; y < pkg_list->length(); y++) {
@@ -699,7 +699,7 @@ void Modules::add_module_exports(Handle from_module, jstring package_name, Handl
     log_debug(module)("add_module_exports(): package %s in module %s is exported to module %s",
                       package_entry->name()->as_C_string(),
                       from_module_entry->name()->as_C_string(),
-                      to_module_entry == nullptr ? "nullptr" :
+                      to_module_entry == nullptr ? "null" :
                       to_module_entry->is_named() ?
                       to_module_entry->name()->as_C_string() : UNNAMED_MODULE);
   }
@@ -805,7 +805,7 @@ oop Modules::get_named_module(Handle h_loader, const char* package_name) {
          "Attempt to call get_named_module before " JAVA_BASE_NAME " is defined");
   assert(h_loader.is_null() || java_lang_ClassLoader::is_subclass(h_loader->klass()),
          "Class loader is not a subclass of java.lang.ClassLoader");
-  assert(package_name != nullptr, "the package_name should not be nullptr");
+  assert(package_name != nullptr, "the package_name should not be null");
 
   if (strlen(package_name) == 0) {
     return nullptr;

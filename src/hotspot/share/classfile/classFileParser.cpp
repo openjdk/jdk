@@ -793,7 +793,7 @@ static void initialize_hashtable(NameSigHash** table) {
 // NOTE: caller should guarantee that GC doesn't happen during the life cycle
 // of table since we don't expect Symbol*'s to move.
 static bool put_after_lookup(const Symbol* name, const Symbol* sig, NameSigHash** table) {
-  assert(name != nullptr, "name in constant pool is nullptr");
+  assert(name != nullptr, "name in constant pool is null");
 
   // First lookup for duplicates
   int index = hash(name, sig);
@@ -892,7 +892,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
       for (index = 0; index < itfs_len; index++) {
         const InstanceKlass* const k = _local_interfaces->at(index);
         name = k->name();
-        // If no duplicates, add (name, null) in hashtable interface_names.
+        // If no duplicates, add (name, nullptr) in hashtable interface_names.
         if (!put_after_lookup(name, nullptr, interface_names)) {
           dup = true;
           break;

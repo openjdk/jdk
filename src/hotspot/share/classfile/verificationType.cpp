@@ -190,7 +190,7 @@ void VerificationType::print_on(outputStream* st) const {
         if (name() != nullptr) {
           name()->print_value_on(st);
         } else {
-          st->print_cr("nullptr");
+          st->print_cr("null");
         }
       }
   }

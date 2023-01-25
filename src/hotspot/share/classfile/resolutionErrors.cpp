@@ -64,7 +64,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      Symbol* cause, Symbol* cause_msg)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && error != nullptr, "adding nullptr obj");
+  assert(!pool.is_null() && error != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(error, message, cause, cause_msg);
@@ -76,7 +76,7 @@ void ResolutionErrorTable::add_entry(const constantPoolHandle& pool, int cp_inde
                                      const char* message)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  assert(!pool.is_null() && message != nullptr, "adding nullptr obj");
+  assert(!pool.is_null() && message != nullptr, "adding null obj");
 
   ResolutionErrorKey key(pool(), cp_index);
   ResolutionErrorEntry *entry = new ResolutionErrorEntry(message);

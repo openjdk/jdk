@@ -43,17 +43,17 @@ class Symbol;
  * Output: a VM runtime representation of a Java class
  *
  * Pre-conditions:
- *   a non-nullptr ClassFileStream* // the classfile bytestream
- *   a non-nullptr Symbol*          // the name of the class
- *   a non-nullptr ClassLoaderData* // the metaspace allocator
+ *   a non-null ClassFileStream* // the classfile bytestream
+ *   a non-null Symbol*          // the name of the class
+ *   a non-null ClassLoaderData* // the metaspace allocator
  *   (no pending exceptions)
  *
  * Returns:
- *   if the returned value is non-nullptr, that value is an indirection (pointer/handle)
+ *   if the returned value is non-null, that value is an indirection (pointer/handle)
  *   to a Klass. The caller will not have a pending exception.
  *
  *   On broken invariants and/or runtime errors the returned value will be
- *   nullptr (or a nullptr handle) and the caller *might* now have a pending exception.
+ *   null (or a null handle) and the caller *might* now have a pending exception.
  *
  */
 

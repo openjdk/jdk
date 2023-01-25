@@ -518,7 +518,7 @@ static void double_lock_wait(JavaThread* thread, Handle lockObject) {
   assert(EnableWaitForParallelLoad,
          "Only called when enabling legacy parallel class loading logic "
          "for non-parallel capable class loaders");
-  assert(lockObject() != nullptr, "lockObject must be non-nullptr");
+  assert(lockObject() != nullptr, "lockObject must be non-null");
   bool calledholdinglock
       = ObjectSynchronizer::current_thread_holds_lock(thread, lockObject);
   assert(calledholdinglock, "must hold lock for notify");
