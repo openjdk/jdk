@@ -85,8 +85,8 @@ class GCCause : public AllStatic {
     _z_warmup,
     _z_allocation_rate,
     _z_allocation_stall,
-    _z_high_usage,
     _z_proactive,
+    _z_high_usage,
 
     _last_gc_cause
   };
