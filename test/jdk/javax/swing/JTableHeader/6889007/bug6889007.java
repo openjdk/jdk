@@ -75,15 +75,15 @@ public class bug6889007 {
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
                 point = frame.getLocationOnScreen();
-		width = frame.getWidth();
-		height = frame.getHeight();
+                width = frame.getWidth();
+                height = frame.getHeight();
             });
             int shift = 10;
             int x = point.x;
             int y = point.y + height/2;
             for(int i = -shift; i < width + 2*shift; i++) {
                 robot.mouseMove(x++, y);
-		robot.waitForIdle();
+                robot.waitForIdle();
             }
             robot.waitForIdle();
             // 9 is a magic test number
@@ -117,7 +117,7 @@ public class bug6889007 {
                                                (int) screenSize.getHeight());
                     BufferedImage img = robot.createScreenCapture(screen);
                     ImageIO.write(img, "png", new java.io.File("image.png"));
-		} catch (Exception e) {}
+                } catch (Exception e) {}
                 throw new RuntimeException("Wrong type of cursor!");
             }
         }
