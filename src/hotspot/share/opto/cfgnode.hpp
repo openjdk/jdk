@@ -65,11 +65,26 @@ class PhaseIdealLoop;
 // correspond 1-to-1 with RegionNode inputs.  The zero input of a PhiNode is
 // the RegionNode, and the zero input of the RegionNode is itself.
 class RegionNode : public Node {
+public:
+  enum LoopStatus {
+    // No guarantee: the region may be an irreducible loop entry, thus we have to
+    // be careful when removing entry control to it.
+    MaybeIrreducibleEntry,
+    // Limited guarantee: this region may be (nested) inside an irreducible loop,
+    // but it will never be an irreducible loop entry.
+    NeverIrreducibleEntry,
+    // Strong guarantee: this region is not (nested) inside an irreducible loop.
+    Reducible,
+  };
+
 private:
   bool _is_unreachable_region;
 
   bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
+
+  LoopStatus _loop_status;
+
 public:
   // Node layout (parallels PhiNode):
   enum { Region,                // Generally points to self.
@@ -99,20 +114,6 @@ public:
   bool is_in_infinite_subgraph();
   static bool are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist);
 #endif //ASSERT
-
-  enum LoopStatus {
-    // No guarantee: the region may be an irreducible loop entry, thus we have to
-    // be careful when removing entry control to it.
-    MaybeIrreducibleEntry,
-    // Limited guarantee: this region may be (nested) inside an irreducible loop,
-    // but it will never be an irreducible loop entry.
-    NeverIrreducibleEntry,
-    // Strong guarantee: this region is not (nested) inside an irreducible loop.
-    Reducible,
-  };
-private:
-  LoopStatus _loop_status;
-public:
   LoopStatus loop_status() const { return _loop_status; };
   void set_loop_status(LoopStatus status);
   DEBUG_ONLY(void verify_can_be_irreducible_entry() const;)
@@ -131,9 +132,7 @@ public:
   virtual const RegMask &out_RegMask() const;
   bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream* st) const;
-#endif
+  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
 };
 
 //------------------------------JProjNode--------------------------------------

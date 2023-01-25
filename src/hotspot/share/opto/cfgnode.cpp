@@ -811,7 +811,7 @@ void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
     Node* n = unreachable.at(i);
     for (uint i = 0; i < n->req(); ++i) {
       Node* m = n->in(i);
-      assert(m != igvn->C->root(), "Should be unreachable from root");
+      assert(m == nullptr || !m->is_Root(), "Should be unreachable from root");
       if (m != nullptr && m->is_CFG()) {
         unreachable.push(m);
       }
