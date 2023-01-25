@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ int Bytecode_tableswitch::dest_offset_at(int i) const {
 
 void Bytecode_invoke::verify() const {
   assert(is_valid(), "check invoke");
-  assert(cpcache() != NULL, "do not call this from verifier or rewriter");
+  assert(cpcache() != nullptr, "do not call this from verifier or rewriter");
 }
 
 int Bytecode_invoke::size_of_parameters() const {
@@ -208,7 +208,7 @@ BasicType Bytecode_loadconstant::result_type() const {
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
-  assert(_method != NULL, "must supply method to resolve constant");
+  assert(_method != nullptr, "must supply method to resolve constant");
   int index = raw_index();
   ConstantPool* constants = _method->constants();
   if (has_cache_index()) {
