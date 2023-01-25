@@ -27,8 +27,7 @@
  * @bug 8263583 8269806
  * @summary Checks that emoji character has a non-empty and identical
  *          representation when rendered to different types of images,
- *          including an accelerated (OpenGL or Metal) surface.
- * @requires (os.family == "mac" | os.family == "linux")
+ *          including an accelerated surface.
  * @run main/othervm -Dsun.java2d.uiScale=1 Emoji
  */
 
@@ -36,6 +35,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.util.List;
+import java.util.stream.Stream;
 
 public class Emoji {
     private static final int IMG_WIDTH = 20;
@@ -45,6 +45,8 @@ public class Emoji {
                     "Noto Color Emoji" : Font.DIALOG, Font.PLAIN, 12);
 
     public static void main(String[] args) {
+        requireFont("Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji");
+
         GraphicsConfiguration cfg
                 = GraphicsEnvironment.getLocalGraphicsEnvironment()
                 .getDefaultScreenDevice().getDefaultConfiguration();
@@ -107,5 +109,19 @@ public class Emoji {
         g.setFont(FONT);
         g.drawString("\uD83D\uDE00" /* U+1F600 'GRINNING FACE' */, 2, 15);
         g.dispose();
+    }
+
+    private static void requireFont(String macOS, String windows, String linux) {
+        String os = System.getProperty("os.name").toLowerCase();
+        String font;
+        if (os.contains("mac")) font = macOS;
+        else if (os.contains("windows")) font = windows;
+        else if (os.contains("linux")) font = linux;
+        else return;
+        String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+        if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
+            System.err.println("Required font not found: " + font);
+            System.exit(0);
+        }
     }
 }

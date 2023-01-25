@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8269806
  * @summary Checks that complex emoji are rendered with proper shaping.
  */
 
@@ -119,7 +120,8 @@ public class ComplexEmoji {
         else return;
         String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
-            throw new Error("Required font not found: " + font);
+            System.err.println("Required font not found: " + font);
+            System.exit(0);
         }
     }
 }
