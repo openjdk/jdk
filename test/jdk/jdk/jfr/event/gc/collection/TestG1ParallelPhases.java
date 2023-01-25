@@ -87,6 +87,7 @@ public class TestG1ParallelPhases {
             .collect(toSet());
 
         Set<String> allPhases = of(
+            "RetireTLABsAndFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",

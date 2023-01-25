@@ -46,6 +46,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   enum GCParPhases {
+    RetireTLABsAndFlushLogs,
+    NonJavaThreadFlushLogs,
     GCWorkerStart,
     ExtRootScan,
     ThreadRoots,
@@ -179,9 +181,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_prepare_merge_heap_roots_time_ms;
   double _cur_optional_prepare_merge_heap_roots_time_ms;
 
-  double _cur_prepare_tlab_time_ms;
+  double _cur_resize_tlab_time_ms;
 
-  double _cur_concatenate_dirty_card_logs_time_ms;
+  double _cur_pre_evacuate_prepare_time_ms;
 
   double _cur_post_evacuate_cleanup_1_time_ms;
   double _cur_post_evacuate_cleanup_2_time_ms;
@@ -272,12 +274,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   size_t sum_thread_work_items(GCParPhases phase, uint index = 0);
 
-  void record_prepare_tlab_time_ms(double ms) {
-    _cur_prepare_tlab_time_ms = ms;
-  }
-
-  void record_concatenate_dirty_card_logs_time_ms(double ms) {
-    _cur_concatenate_dirty_card_logs_time_ms = ms;
+  void record_pre_evacuate_prepare_time_ms(double ms) {
+    _cur_pre_evacuate_prepare_time_ms = ms;
   }
 
   void record_expand_heap_time(double ms) {
