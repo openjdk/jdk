@@ -454,7 +454,7 @@ class CompileReplay : public StackObj {
         return NULL;
       }
       // Temporary solution, please clean up!!
-      if (!bytecode.is_invokedynamic()) {
+      if (!bytecode.is_invokedynamic() || !UseNewIndyCode) {
         char* dyno_ref = parse_string();
         if (strcmp(dyno_ref, "<appendix>") == 0) {
           obj = cp_cache_entry->appendix_if_resolved(cp);

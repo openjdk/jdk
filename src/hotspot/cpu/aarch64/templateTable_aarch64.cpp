@@ -2322,10 +2322,10 @@ void TemplateTable::load_field_cp_cache_entry(Register obj,
 
 void TemplateTable::load_invokedynamic_entry(Register method) {
   // setup registers
-  const Register appendix = rax;
-  const Register cache = rcx;
-  const Register index = rdx;
-  assert_different_registers(method, appendix, cache, index);
+  const Register appendix = r0;
+  const Register cache = r2;
+  const Register index = r3;
+  assert_different_registers(method, appendix, cache, index, rcpool);
 
   __ save_bcp();
 
@@ -2334,16 +2334,16 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
   __ get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
-  __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
-  __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  __ ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ mov(index, sizeof(ResolvedIndyInfo));
-  __ mull(index, index, index);
-  __ ldr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
-  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
+  __ mov(appendix, sizeof(ResolvedIndyInfo)); // use appendix as temp
+  __ mul(index, index, appendix);
+  __ add(cache, cache, Array<ResolvedIndyInfo>::base_offset_in_bytes());
+  __ ldr(cache, Address(cache, index));
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
   // Compare the method to zero
-  __ subs(method, method);
+  __ tst(method, method);
   __ br(Assembler::EQ, resolved);
 
   Bytecodes::Code code = bytecode();
@@ -2354,17 +2354,18 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
   // Update registers with resolved info
   __ get_cache_index_at_bcp(index, 1, sizeof(u4));
-  __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
-  __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
+  // Get address of invokedynamic array
+  __ ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ mov(index, sizeof(ResolvedIndyInfo));
-  __ mull(index, index, index);
-  __ ldr(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
-  __ movptr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
+  __ mov(appendix, sizeof(ResolvedIndyInfo)); // use appendix as temp
+  __ mul(index, index, appendix);
+  __ add(cache, cache, Array<ResolvedIndyInfo>::base_offset_in_bytes());
+  __ ldr(cache, Address(cache, index));
+  __ ldr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
 #ifdef ASSERT
-  __ testptr(method, method);
-  __ jcc(Assembler::notZero, resolved);
+  __ tst(method, method);
+  __ br(Assembler::NE, resolved);
   __ stop("Should be resolved by now");
 #endif // ASSERT
   __ bind(resolved);
@@ -2372,19 +2373,19 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::has_appendix_offset())));
-  __ subs(index, index);
-  __ jcc(Assembler::EQ, L_no_push);
+  __ tst(index, index);
+  __ br(Assembler::EQ, L_no_push);
 
   // Get appendix
   __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyInfo::resolved_references_index_offset())));
   // Push the appendix as a trailing parameter.
   // This must be done before we get the receiver,
   // since the parameter_size includes it.
-  __ push(rbx);
-  __ mov(rbx, index);
-  __ load_resolved_reference_at_index(appendix, rbx);
+  __ push(method);
+  __ mov(method, index);
+  __ load_resolved_reference_at_index(appendix, method);
   __ verify_oop(appendix);
-  __ pop(rbx);
+  __ pop(method);
   __ push(appendix);  // push appendix (MethodType, CallSite, etc.)
   __ bind(L_no_push);
 

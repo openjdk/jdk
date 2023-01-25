@@ -680,8 +680,15 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
                                      TRAPS) {
 
+  int len = 0;
+  if (UseNewIndyCode) {
+    len = index_map.length();
+  } else {
+    len = index_map.length() + invokedynamic_index_map.length();
+  }
   // const int length = index_map.length() + invokedynamic_index_map.length();
-  const int length = index_map.length();
+  //const int length = index_map.length();
+  const int length = len;
   int size = ConstantPoolCache::size(length);
   // Initialize resolvedinvokedynamicinfo array with available data
   Array<ResolvedIndyInfo>* array;
