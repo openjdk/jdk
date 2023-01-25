@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ class SmallResourceHashtableTest : public CommonResourceHashtableTest {
       ASSERT_FALSE(rh.contains(as_K(step)));
       rh.iterate(&et);
 
-
+      rh.unlink_all();
     }
   };
 };
@@ -259,6 +259,12 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
       DeleterTestIter dt(5);
       rh.unlink(&dt);
       ASSERT_FALSE(rh.get(as_K(5)));
+
+      rh.unlink_all();
+      for (uintptr_t i = 10; i > 0; --i) {
+        uintptr_t index = i - 1;
+        ASSERT_FALSE(rh.get(as_K(index)));
+      }
     }
   };
 };
@@ -327,6 +333,18 @@ TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
   // Use unlink to remove the matching (or all) values from the table.
   SimpleDeleter deleter;
   _simple_test_table.unlink(&deleter);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simle_unlink_all) {
+  TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
+  Symbol* s = t;
+  int s_orig_count = s->refcount();
+  _simple_test_table.put(s, 66);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  // Use unlink_all to remove the matching (or all) values from the table.
+  _simple_test_table.unlink_all();
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
 }
 
@@ -409,6 +427,21 @@ TEST_VM_F(ResourceHashtableDeleteTest, value_delete) {
   ASSERT_EQ(d->refcount(), d_orig_count + 1) << "refcount incremented in table";
   Deleter deleter;
   _test_table.unlink(&deleter);
+  ASSERT_EQ(d->refcount(), d_orig_count) << "refcount should be as we started";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, value_unlink_all) {
+  TempNewSymbol d = SymbolTable::new_symbol("defghijklmnop");
+  int d_orig_count = d->refcount();
+  {
+    TestValue tv(d);
+    // Same as above, but the do_entry does nothing because the value is deleted when the
+    // hashtable node is deleted.
+    _test_table.put(d, tv);
+    ASSERT_EQ(d->refcount(), d_orig_count + 2) << "refcount incremented by copy";
+  }
+  ASSERT_EQ(d->refcount(), d_orig_count + 1) << "refcount incremented in table";
+  _test_table.unlink_all();
   ASSERT_EQ(d->refcount(), d_orig_count) << "refcount should be as we started";
 }
 

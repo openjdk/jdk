@@ -98,17 +98,7 @@ class ResourceHashtableBase : public STORAGE {
 
   ~ResourceHashtableBase() {
     if (ALLOC_TYPE == AnyObj::C_HEAP) {
-      Node* const* bucket = table();
-      const unsigned sz = table_size();
-      while (bucket < bucket_at(sz)) {
-        Node* node = *bucket;
-        while (node != NULL) {
-          Node* cur = node;
-          node = node->_next;
-          delete cur;
-        }
-        ++bucket;
-      }
+      unlink_all();
     }
   }
 
@@ -258,9 +248,12 @@ class ResourceHashtableBase : public STORAGE {
   template<class ITER>
   void unlink(ITER* iter) {
     const unsigned sz = table_size();
-    for (unsigned index = 0; index < sz; index++) {
+    int cnt = _number_of_entries;
+
+    for (unsigned index = 0; cnt > 0 && index < sz; ++index) {
       Node** ptr = bucket_at(index);
-      while (*ptr != NULL) {
+
+      while (*ptr != nullptr) {
         Node* node = *ptr;
         // do_entry must clean up the key and value in Node.
         bool clean = iter->do_entry(node->_key, node->_value);
@@ -273,8 +266,38 @@ class ResourceHashtableBase : public STORAGE {
         } else {
           ptr = &(node->_next);
         }
+        if (--cnt <= 0) return;
       }
     }
+  }
+
+  // unlink_all() is a specialized version of unlink() when we decide to remove all elements.
+  // It can not replace unlink(ITER* iter) if user-provided iter releases key/value
+  void unlink_all() {
+    Node** bucket = table();
+    const unsigned sz = table_size();
+
+    while (_number_of_entries > 0 && bucket < bucket_at(sz)) {
+      Node* node = *bucket;
+      int n = 0;
+
+      while (node != NULL) {
+        Node* cur = node;
+        node = node->_next;
+        if (ALLOC_TYPE == AnyObj::C_HEAP) {
+          delete cur;
+        }
+        n++;
+      }
+
+      if (n > 0) {
+        *bucket = nullptr;
+        _number_of_entries -= n;
+      }
+      bucket++;
+    }
+
+    assert(_number_of_entries == 0, "sanity check");
   }
 
   template<typename Function>
