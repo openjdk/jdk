@@ -50,10 +50,10 @@ import com.sun.org.apache.bcel.internal.classfile.ConstantUtf8;
  * JVM and that Double and Long constants need two slots.
  *
  * @see Constant
- * @LastModified: May 2022
+ * @LastModified: June 2022
  */
 public class ConstantPoolGen {
-    public static final int CONSTANT_POOL_SIZE = 65536;
+    public static final int CONSTANT_POOL_SIZE = 65535;
     private static final int DEFAULT_BUFFER_SIZE = 256;
     private int size;
     private Constant[] constants;
@@ -81,6 +81,19 @@ public class ConstantPoolGen {
      * @param cs array of given constants, new ones will be appended
      */
     public ConstantPoolGen(final Constant[] cs) {
+        /*
+         * To be logically/programmatically correct, the size of the constant pool
+         * shall not exceed the size limit as the code below does a copy and then
+         * walk through the whole array.
+         * This is however, not used by XSLT (or the java.xml implementation),
+         * and only happens when BCELifier is called (see BCELifier).
+        */
+        if (cs.length > CONSTANT_POOL_SIZE) {
+            throw new RuntimeException("The number of constants " + cs.length
+                    + " is over the size limit of the constant pool: "
+                    + CONSTANT_POOL_SIZE);
+        }
+
         final StringBuilder sb = new StringBuilder(DEFAULT_BUFFER_SIZE);
 
         size = Math.min(Math.max(DEFAULT_BUFFER_SIZE, cs.length + 64), CONSTANT_POOL_SIZE);
@@ -215,8 +228,8 @@ public class ConstantPoolGen {
         // 3 extra spaces are needed as some entries may take 3 slots
         if (index + 3 >= CONSTANT_POOL_SIZE) {
             throw new RuntimeException("The number of constants " + (index + 3)
-                    + " is over the size of the constant pool: "
-                    + (CONSTANT_POOL_SIZE - 1));
+                    + " is over the size limit of the constant pool: "
+                    + CONSTANT_POOL_SIZE);
         }
 
         if (index + 3 >= size) {
