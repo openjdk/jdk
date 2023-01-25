@@ -1459,7 +1459,6 @@ class StubGenerator: public StubCodeGenerator {
     __ b(finish);
 
     if (granularity < 8) {
-      // TODO: Interface primitives for completeness?
       // 4..7 bytes
       __ bind(copy8);
       __ tbz(count, 2 - exact_log2(granularity), copy4);
