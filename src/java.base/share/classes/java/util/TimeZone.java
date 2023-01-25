@@ -293,9 +293,9 @@ public abstract class TimeZone implements Serializable, Cloneable {
     /**
      * Sets the time zone ID. This does not change any other data in
      * the time zone object.
-     * @param ID the new time zone ID.
      * @implSpec The default implementation throws a
      * {@code NullPointerException} if {@code ID} is {@code null}
+     * @param ID the new time zone ID.
      * @throws NullPointerException This method may throw a
      * {@code NullPointerException} if {@code ID} is {@code null}
      */
@@ -395,16 +395,15 @@ public abstract class TimeZone implements Serializable, Cloneable {
      * found, the name is returned. Otherwise, a string in the
      * <a href="#NormalizedCustomID">normalized custom ID format</a> is returned.
      *
+     * @implSpec The default implementation throws an
+     * {@code IllegalArgumentException} if {@code style} is invalid or a
+     * {@code NullPointerException} if {@code ID} is {@code null}.
      * @param daylight {@code true} specifying a Daylight Saving Time name, or
      *                 {@code false} specifying a Standard Time name
      * @param style either {@link #LONG} or {@link #SHORT}
      * @param locale   the locale in which to supply the display name.
-     * @implSpec The default implementation throws a
-     * {@code NullPointerException} if {@code ID} is {@code null}.
-     * Additionally, an {@code IllegalArgumentException} will be thrown if
-     * {@code style} is invalid.
      * @return the human-readable name of this time zone in the given locale.
-     * @throws IllegalArgumentException This method may throw a
+     * @throws IllegalArgumentException This method may throw an
      * {@code IllegalArgumentException} if {@code style} is invalid.
      * @throws NullPointerException This method may throw a
      * {@code NullPointerException} if {@code ID} is {@code null}
