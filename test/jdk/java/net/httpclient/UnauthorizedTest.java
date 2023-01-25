@@ -29,8 +29,6 @@
  *      header only in the case where an authenticator is configured
  *      for the client. If no authenticator is configured the client
  *      should simply let the caller deal with the unauthorized response.
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm

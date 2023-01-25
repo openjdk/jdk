@@ -24,8 +24,6 @@
 /*
  * @test
  * @summary Checks correct handling of Publishers that call onComplete without demand
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm CustomRequestPublisher

@@ -25,8 +25,6 @@
  * @test
  * @bug 8199851
  * @summary Test for multiple vs single cookie header for HTTP/2 vs HTTP/1.1
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm

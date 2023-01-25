@@ -65,8 +65,6 @@ import static org.testng.Assert.fail;
 /*
  * @test
  * @summary Basic tests for Flow adapter Publishers
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext

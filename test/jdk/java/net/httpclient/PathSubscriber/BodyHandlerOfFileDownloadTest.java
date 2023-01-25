@@ -26,7 +26,6 @@
  * @bug 8237470
  * @summary Confirm HttpResponse.BodySubscribers#ofFileDownload(Path)
  *          works only with the default file system
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer

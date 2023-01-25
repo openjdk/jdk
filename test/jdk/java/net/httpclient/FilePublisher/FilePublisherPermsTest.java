@@ -29,7 +29,6 @@
  *          policy 1: no custom permission
  *          policy 2: custom permission for test classes
  *          policy 3: custom permission for test classes and httpclient
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        SecureZipFSProvider

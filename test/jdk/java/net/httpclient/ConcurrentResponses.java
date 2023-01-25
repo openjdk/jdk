@@ -26,8 +26,6 @@
  * @bug 8195823
  * @summary Buffers given to response body subscribers should not contain
  *          unprocessed HTTP data
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm

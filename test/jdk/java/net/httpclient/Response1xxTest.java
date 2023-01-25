@@ -50,8 +50,6 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8292044
  * @summary Tests behaviour of HttpClient when server responds with 102 or 103 status codes
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.httpclient.test.lib.http2.Http2TestServer

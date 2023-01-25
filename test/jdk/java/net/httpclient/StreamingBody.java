@@ -25,8 +25,6 @@
  * @test
  * @summary Exercise a streaming subscriber ( InputStream ) without holding a
  *          strong (or any ) reference to the client.
- *          java.logging
- *          jdk.httpserver
  * @library /test/lib lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm

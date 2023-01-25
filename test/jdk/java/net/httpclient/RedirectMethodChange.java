@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Method change during redirection
- *          jdk.httpserver
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm RedirectMethodChange
