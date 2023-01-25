@@ -395,12 +395,12 @@ instruct popCountL_b(iRegINoSp dst, iRegL src) %{
 %}
 
 // Max and Min
-instruct minI_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
+instruct minI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
   predicate(UseZbb);
   match(Set dst (MinI src1 src2));
 
   ins_cost(ALU_COST);
-  format %{ "min  $dst, $src1, $src2\t#@minI_reg_b" %}
+  format %{ "min  $dst, $src1, $src2\t#@minI_reg_reg_b" %}
 
   ins_encode %{
     __ min(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
@@ -409,15 +409,49 @@ instruct minI_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct maxI_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
+instruct maxI_reg_reg_b(iRegINoSp dst, iRegI src1, iRegI src2) %{
   predicate(UseZbb);
   match(Set dst (MaxI src1 src2));
 
   ins_cost(ALU_COST);
-  format %{ "max  $dst, $src1, $src2\t#@maxI_reg_b" %}
+  format %{ "max  $dst, $src1, $src2\t#@maxI_reg_reg_b" %}
 
   ins_encode %{
     __ max(as_Register($dst$$reg), as_Register($src1$$reg), as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+// special case for comparing with zero
+// n.b. this is selected in preference to the rule above because it
+// avoids loading constant 0 into a source register
+
+instruct minI_reg_zero_b(iRegINoSp dst, iRegI src1, immI0 zero) %{
+  predicate(UseZbb);
+  match(Set dst (MinI src1 zero));
+  match(Set dst (MinI zero src1));
+
+  ins_cost(ALU_COST);
+  format %{ "min  $dst, $src1, zr\t#@minI_reg_zero_b" %}
+
+  ins_encode %{
+    __ min(as_Register($dst$$reg), as_Register($src1$$reg), zr);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct maxI_reg_zero_b(iRegINoSp dst, iRegI src1, immI0 zero) %{
+  predicate(UseZbb);
+  match(Set dst (MaxI src1 zero));
+  match(Set dst (MaxI zero src1));
+
+  ins_cost(ALU_COST);
+  format %{ "max  $dst, $src1, zr\t#@maxI_reg_zero_b" %}
+
+  ins_encode %{
+    __ max(as_Register($dst$$reg), as_Register($src1$$reg), zr);
   %}
 
   ins_pipe(ialu_reg_reg);
