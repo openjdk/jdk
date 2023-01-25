@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -81,7 +81,7 @@ address ZeroInterpreterGenerator::generate_method_entry(
   // determine code generation flags
   bool native = false;
   bool synchronized = false;
-  address entry_point = NULL;
+  address entry_point = nullptr;
 
   switch (kind) {
   case Interpreter::zerolocals             :                                          break;
@@ -118,12 +118,12 @@ address ZeroInterpreterGenerator::generate_method_entry(
   // We expect the normal and native entry points to be generated first so we can reuse them.
   if (native) {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::native_synchronized : Interpreter::native);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_native_entry(synchronized);
     }
   } else {
     entry_point = Interpreter::entry_for_kind(synchronized ? Interpreter::zerolocals_synchronized : Interpreter::zerolocals);
-    if (entry_point == NULL) {
+    if (entry_point == nullptr) {
       entry_point = generate_normal_entry(synchronized);
     }
   }
@@ -139,10 +139,10 @@ address ZeroInterpreterGenerator::generate_slow_signature_handler() {
 address ZeroInterpreterGenerator::generate_math_entry(
     AbstractInterpreter::MethodKind kind) {
   if (!InlineIntrinsics)
-    return NULL;
+    return nullptr;
 
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 address ZeroInterpreterGenerator::generate_abstract_entry() {
@@ -151,21 +151,21 @@ address ZeroInterpreterGenerator::generate_abstract_entry() {
 
 address ZeroInterpreterGenerator::generate_empty_entry() {
   if (!UseFastEmptyMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::empty_entry);
 }
 
 address ZeroInterpreterGenerator::generate_getter_entry() {
   if (!UseFastAccessorMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::getter_entry);
 }
 
 address ZeroInterpreterGenerator::generate_setter_entry() {
   if (!UseFastAccessorMethods)
-    return NULL;
+    return nullptr;
 
   return generate_entry((address) ZeroInterpreter::setter_entry);
 }

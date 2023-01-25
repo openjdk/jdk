@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -54,7 +54,7 @@
 
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
 // Current thread is maintained as a thread-local variable
-THREAD_LOCAL Thread* Thread::_thr_current = NULL;
+THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 #endif
 
 // ======= Thread ========
@@ -70,31 +70,31 @@ void Thread::operator delete(void* p) {
 // Base class for all threads: VMThread, WatcherThread, ConcurrentMarkSweepThread,
 // JavaThread
 
-DEBUG_ONLY(Thread* Thread::_starting_thread = NULL;)
+DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
 
 Thread::Thread() {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
   // stack and get_thread
-  set_stack_base(NULL);
+  set_stack_base(nullptr);
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
 
   // allocated data structures
-  set_osthread(NULL);
+  set_osthread(nullptr);
   set_resource_area(new (mtThread)ResourceArea());
-  DEBUG_ONLY(_current_resource_mark = NULL;)
-  set_handle_area(new (mtThread) HandleArea(NULL));
+  DEBUG_ONLY(_current_resource_mark = nullptr;)
+  set_handle_area(new (mtThread) HandleArea(nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
-  set_last_handle_mark(NULL);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = NULL);
+  set_last_handle_mark(nullptr);
+  DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
-  _threads_hazard_ptr = NULL;
-  _threads_list_ptr = NULL;
+  _threads_hazard_ptr = nullptr;
+  _threads_list_ptr = nullptr;
   _nested_threads_hazard_ptr_cnt = 0;
   _rcu_counter = 0;
 
@@ -102,11 +102,11 @@ Thread::Thread() {
   new HandleMark(this);
 
   // plain initialization
-  debug_only(_owned_locks = NULL;)
+  debug_only(_owned_locks = nullptr;)
   NOT_PRODUCT(_skip_gcalot = false;)
   _jvmti_env_iteration_count = 0;
   set_allocated_bytes(0);
-  _current_pending_raw_monitor = NULL;
+  _current_pending_raw_monitor = nullptr;
 
   // thread-specific hashCode stream generator state - Marsaglia shift-xor form
   _hashStateX = os::random();
@@ -134,14 +134,14 @@ Thread::Thread() {
   // BarrierSet::on_thread_create() for this thread is therefore deferred
   // to BarrierSet::set_barrier_set().
   BarrierSet* const barrier_set = BarrierSet::barrier_set();
-  if (barrier_set != NULL) {
+  if (barrier_set != nullptr) {
     barrier_set->on_thread_create(this);
   } else {
     // Only the main thread should be created before the barrier set
     // and that happens just before Thread::current is set. No other thread
     // can attach as the VM is not created yet, so they can't execute this code.
     // If the main thread creates other threads before the barrier set that is an error.
-    assert(Thread::current_or_null() == NULL, "creating thread before barrier set");
+    assert(Thread::current_or_null() == nullptr, "creating thread before barrier set");
   }
 
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
@@ -155,10 +155,10 @@ void Thread::initialize_tlab() {
 
 void Thread::initialize_thread_current() {
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
-  assert(_thr_current == NULL, "Thread::current already initialized");
+  assert(_thr_current == nullptr, "Thread::current already initialized");
   _thr_current = this;
 #endif
-  assert(ThreadLocalStorage::thread() == NULL, "ThreadLocalStorage::thread already initialized");
+  assert(ThreadLocalStorage::thread() == nullptr, "ThreadLocalStorage::thread already initialized");
   ThreadLocalStorage::set_thread(this);
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
 }
@@ -166,9 +166,9 @@ void Thread::initialize_thread_current() {
 void Thread::clear_thread_current() {
   assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
 #ifndef USE_LIBRARY_BASED_TLS_ONLY
-  _thr_current = NULL;
+  _thr_current = nullptr;
 #endif
-  ThreadLocalStorage::set_thread(NULL);
+  ThreadLocalStorage::set_thread(nullptr);
 }
 
 void Thread::record_stack_base_and_size() {
@@ -199,7 +199,7 @@ void Thread::call_run() {
   // At this point, Thread object should be fully initialized and
   // Thread::current() should be set.
 
-  assert(Thread::current_or_null() != NULL, "current thread is unset");
+  assert(Thread::current_or_null() != nullptr, "current thread is unset");
   assert(Thread::current_or_null() == this, "current thread is wrong");
 
   // Perform common initialization actions
@@ -226,7 +226,7 @@ void Thread::call_run() {
 
   // Perform common tear-down actions
 
-  assert(Thread::current_or_null() != NULL, "current thread is unset");
+  assert(Thread::current_or_null() != nullptr, "current thread is unset");
   assert(Thread::current_or_null() == this, "current thread is wrong");
 
   // Perform <ChildClass> tear-down actions
@@ -239,7 +239,7 @@ void Thread::call_run() {
   // asynchronously with respect to its termination - that is what _run_state can
   // be used to check.
 
-  assert(Thread::current_or_null() == NULL, "current thread still present");
+  assert(Thread::current_or_null() == nullptr, "current thread still present");
 }
 
 Thread::~Thread() {
@@ -254,7 +254,7 @@ Thread::~Thread() {
   // Notify the barrier set that a thread is being destroyed. Note that a barrier
   // set might not be available if we encountered errors during bootstrapping.
   BarrierSet* const barrier_set = BarrierSet::barrier_set();
-  if (barrier_set != NULL) {
+  if (barrier_set != nullptr) {
     barrier_set->on_thread_destroy(this);
   }
 
@@ -262,19 +262,19 @@ Thread::~Thread() {
   delete resource_area();
   // since the handle marks are using the handle area, we have to deallocated the root
   // handle mark before deallocating the thread's handle area,
-  assert(last_handle_mark() != NULL, "check we have an element");
+  assert(last_handle_mark() != nullptr, "check we have an element");
   delete last_handle_mark();
-  assert(last_handle_mark() == NULL, "check we have reached the end");
+  assert(last_handle_mark() == nullptr, "check we have reached the end");
 
   ParkEvent::Release(_ParkEvent);
-  // Set to NULL as a termination indicator for has_terminated().
-  Atomic::store(&_ParkEvent, (ParkEvent*)NULL);
+  // Set to null as a termination indicator for has_terminated().
+  Atomic::store(&_ParkEvent, (ParkEvent*)nullptr);
 
   delete handle_area();
   delete metadata_handles();
 
-  // osthread() can be NULL, if creation of thread failed.
-  if (osthread() != NULL) os::free_thread(osthread());
+  // osthread() can be nullptr, if creation of thread failed.
+  if (osthread() != nullptr) os::free_thread(osthread());
 
   // Clear Thread::current if thread is deleting itself and it has not
   // already been done. This must be done before the memory is deallocated.
@@ -315,7 +315,7 @@ bool Thread::is_JavaThread_protected(const JavaThread* target) {
   // If the target hasn't been started yet then it is trivially
   // "protected". We assume the caller is the thread that will do
   // the starting.
-  if (target->osthread() == NULL || target->osthread()->get_state() <= INITIALIZED) {
+  if (target->osthread() == nullptr || target->osthread()->get_state() <= INITIALIZED) {
     return true;
   }
 
@@ -357,7 +357,7 @@ bool Thread::is_JavaThread_protected_by_TLH(const JavaThread* target) {
   // Check the ThreadsLists associated with the calling thread (if any)
   // to see if one of them protects the target JavaThread:
   for (SafeThreadsListPtr* stlp = current_thread->_threads_list_ptr;
-       stlp != NULL; stlp = stlp->previous()) {
+       stlp != nullptr; stlp = stlp->previous()) {
     if (stlp->list()->includes(target)) {
       // The target JavaThread is protected by this ThreadsList:
       return true;
@@ -417,17 +417,17 @@ public:
     Thread* self = Thread::current();
     if (self->is_Named_thread()) {
       _cur_thr = (NamedThread *)self;
-      assert(_cur_thr->processed_thread() == NULL, "nesting not supported");
+      assert(_cur_thr->processed_thread() == nullptr, "nesting not supported");
       _cur_thr->set_processed_thread(thread);
     } else {
-      _cur_thr = NULL;
+      _cur_thr = nullptr;
     }
   }
 
   ~RememberProcessedThread() {
     if (_cur_thr) {
-      assert(_cur_thr->processed_thread() != NULL, "nesting not supported");
-      _cur_thr->set_processed_thread(NULL);
+      assert(_cur_thr->processed_thread() != nullptr, "nesting not supported");
+      _cur_thr->set_processed_thread(nullptr);
     }
   }
 };
@@ -441,7 +441,7 @@ void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 
 void Thread::metadata_handles_do(void f(Metadata*)) {
   // Only walk the Handles in Thread.
-  if (metadata_handles() != NULL) {
+  if (metadata_handles() != nullptr) {
     for (int i = 0; i< metadata_handles()->length(); i++) {
       f(metadata_handles()->at(i));
     }
@@ -450,7 +450,7 @@ void Thread::metadata_handles_do(void f(Metadata*)) {
 
 void Thread::print_on(outputStream* st, bool print_extended_info) const {
   // get_priority assumes osthread initialized
-  if (osthread() != NULL) {
+  if (osthread() != nullptr) {
     int os_prio;
     if (os::get_native_priority(this, &os_prio) == OS_OK) {
       st->print("os_prio=%d ", os_prio);
@@ -491,7 +491,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), name());
 
   OSThread* os_thr = osthread();
-  if (os_thr != NULL) {
+  if (os_thr != nullptr) {
     if (os_thr->get_state() != ZOMBIE) {
       st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
                 p2i(stack_end()), p2i(stack_base()));
@@ -515,7 +515,7 @@ void Thread::print_value_on(outputStream* st) const {
 #ifdef ASSERT
 void Thread::print_owned_locks_on(outputStream* st) const {
   Mutex* cur = _owned_locks;
-  if (cur == NULL) {
+  if (cur == nullptr) {
     st->print(" (no locks) ");
   } else {
     st->print_cr(" Locks owned:");
@@ -537,7 +537,7 @@ bool Thread::is_lock_owned(address adr) const {
 }
 
 bool Thread::set_as_starting_thread() {
-  assert(_starting_thread == NULL, "already initialized: "
+  assert(_starting_thread == nullptr, "already initialized: "
          "_starting_thread=" INTPTR_FORMAT, p2i(_starting_thread));
   // NOTE: this must be called inside the main thread.
   DEBUG_ONLY(_starting_thread = this;)

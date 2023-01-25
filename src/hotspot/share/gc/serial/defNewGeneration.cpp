@@ -772,13 +772,6 @@ void DefNewGeneration::save_marks() {
 }
 
 
-void DefNewGeneration::reset_saved_marks() {
-  eden()->reset_saved_mark();
-  to()->reset_saved_mark();
-  from()->reset_saved_mark();
-}
-
-
 bool DefNewGeneration::no_allocs_since_save_marks() {
   assert(eden()->saved_mark_at_top(), "Violated spec - alloc in eden");
   assert(from()->saved_mark_at_top(), "Violated spec - alloc in from");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
   : CodeBlob(name, type, layout, frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
     _mark_for_deoptimization_status(not_marked),
     _method(method),
-    _gc_data(NULL)
+    _gc_data(nullptr)
 {
   init_defaults();
 }
@@ -68,17 +68,17 @@ CompiledMethod::CompiledMethod(Method* method, const char* name, CompilerType ty
              frame_complete_offset, frame_size, oop_maps, caller_must_gc_arguments, compiled),
     _mark_for_deoptimization_status(not_marked),
     _method(method),
-    _gc_data(NULL)
+    _gc_data(nullptr)
 {
   init_defaults();
 }
 
 void CompiledMethod::init_defaults() {
   { // avoid uninitialized fields, even for short time periods
-    _scopes_data_begin          = NULL;
-    _deopt_handler_begin        = NULL;
-    _deopt_mh_handler_begin     = NULL;
-    _exception_cache            = NULL;
+    _scopes_data_begin          = nullptr;
+    _deopt_handler_begin        = nullptr;
+    _deopt_mh_handler_begin     = nullptr;
+    _exception_cache            = nullptr;
   }
   _has_unsafe_access          = 0;
   _has_method_handle_invokes  = 0;
@@ -89,7 +89,7 @@ void CompiledMethod::init_defaults() {
 bool CompiledMethod::is_method_handle_return(address return_pc) {
   if (!has_method_handle_invokes())  return false;
   PcDesc* pd = pc_desc_at(return_pc);
-  if (pd == NULL)
+  if (pd == nullptr)
     return false;
   return pd->is_method_handle_invoke();
 }
@@ -108,14 +108,14 @@ const char* CompiledMethod::state() const {
     return "not_entrant";
   default:
     fatal("unexpected method state: %d", state);
-    return NULL;
+    return nullptr;
   }
 }
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::mark_for_deoptimization(bool inc_recompile_counts) {
   // assert(can_be_deoptimized(), ""); // in some places we check before marking, in others not.
-  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? NULL : CompiledMethod_lock,
+  MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   if (_mark_for_deoptimization_status != deoptimize_done) { // can't go backwards
      _mark_for_deoptimization_status = (inc_recompile_counts ? deoptimize : deoptimize_noupdate);
@@ -130,12 +130,12 @@ ExceptionCache* CompiledMethod::exception_cache_acquire() const {
 
 void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
   assert(ExceptionCache_lock->owned_by_self(),"Must hold the ExceptionCache_lock");
-  assert(new_entry != NULL,"Must be non null");
-  assert(new_entry->next() == NULL, "Must be null");
+  assert(new_entry != nullptr,"Must be non null");
+  assert(new_entry->next() == nullptr, "Must be null");
 
   for (;;) {
     ExceptionCache *ec = exception_cache();
-    if (ec != NULL) {
+    if (ec != nullptr) {
       Klass* ex_klass = ec->exception_type();
       if (!ex_klass->is_loader_alive()) {
         // We must guarantee that entries are not inserted with new next pointer
@@ -151,7 +151,7 @@ void CompiledMethod::add_exception_cache_entry(ExceptionCache* new_entry) {
         continue;
       }
       ec = exception_cache();
-      if (ec != NULL) {
+      if (ec != nullptr) {
         new_entry->set_next(ec);
       }
     }
@@ -177,19 +177,19 @@ void CompiledMethod::clean_exception_cache() {
   // That similarly implies that CAS operations on ExceptionCache entries do not
   // suffer from ABA problems as unlinking and deletion is separated by a global
   // handshake operation.
-  ExceptionCache* prev = NULL;
+  ExceptionCache* prev = nullptr;
   ExceptionCache* curr = exception_cache_acquire();
 
-  while (curr != NULL) {
+  while (curr != nullptr) {
     ExceptionCache* next = curr->next();
 
     if (!curr->exception_type()->is_loader_alive()) {
-      if (prev == NULL) {
+      if (prev == nullptr) {
         // Try to clean head; this is contended by concurrent inserts, that
         // both lazily clean the head, and insert entries at the head. If
         // the CAS fails, the operation is restarted.
         if (Atomic::cmpxchg(&_exception_cache, curr, next) != curr) {
-          prev = NULL;
+          prev = nullptr;
           curr = exception_cache_acquire();
           continue;
         }
@@ -217,14 +217,14 @@ address CompiledMethod::handler_for_exception_and_pc(Handle exception, address p
   // have false negatives. This is okay, as it can only happen during
   // the first few exception lookups for a given nmethod.
   ExceptionCache* ec = exception_cache_acquire();
-  while (ec != NULL) {
+  while (ec != nullptr) {
     address ret_val;
-    if ((ret_val = ec->match(exception,pc)) != NULL) {
+    if ((ret_val = ec->match(exception,pc)) != nullptr) {
       return ret_val;
     }
     ec = ec->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 void CompiledMethod::add_handler_for_exception_and_pc(Handle exception, address pc, address handler) {
@@ -237,7 +237,7 @@ void CompiledMethod::add_handler_for_exception_and_pc(Handle exception, address 
   MutexLocker ml(ExceptionCache_lock);
   ExceptionCache* target_entry = exception_cache_entry_for_exception(exception);
 
-  if (target_entry == NULL || !target_entry->add_address_and_handler(pc,handler)) {
+  if (target_entry == nullptr || !target_entry->add_address_and_handler(pc,handler)) {
     target_entry = new ExceptionCache(exception,pc,handler);
     add_exception_cache_entry(target_entry);
   }
@@ -248,13 +248,13 @@ void CompiledMethod::add_handler_for_exception_and_pc(Handle exception, address 
 // directly.
 ExceptionCache* CompiledMethod::exception_cache_entry_for_exception(Handle exception) {
   ExceptionCache* ec = exception_cache_acquire();
-  while (ec != NULL) {
+  while (ec != nullptr) {
     if (ec->match_exception_with_space(exception)) {
       return ec;
     }
     ec = ec->next();
   }
-  return NULL;
+  return nullptr;
 }
 
 //-------------end of code for ExceptionCache--------------
@@ -281,7 +281,7 @@ bool CompiledMethod::is_at_poll_or_poll_return(address pc) {
 
 void CompiledMethod::verify_oop_relocations() {
   // Ensure sure that the code matches the current oop values
-  RelocIterator iter(this, NULL, NULL);
+  RelocIterator iter(this, nullptr, nullptr);
   while (iter.next()) {
     if (iter.type() == relocInfo::oop_type) {
       oop_Relocation* reloc = iter.oop_reloc();
@@ -295,13 +295,13 @@ void CompiledMethod::verify_oop_relocations() {
 
 ScopeDesc* CompiledMethod::scope_desc_at(address pc) {
   PcDesc* pd = pc_desc_at(pc);
-  guarantee(pd != NULL, "scope must be present");
+  guarantee(pd != nullptr, "scope must be present");
   return new ScopeDesc(this, pd);
 }
 
 ScopeDesc* CompiledMethod::scope_desc_near(address pc) {
   PcDesc* pd = pc_desc_near(pc);
-  guarantee(pd != NULL, "scope must be present");
+  guarantee(pd != nullptr, "scope must be present");
   return new ScopeDesc(this, pd);
 }
 
@@ -322,7 +322,7 @@ address CompiledMethod::oops_reloc_begin() const {
 
   // It is not safe to read oops concurrently using entry barriers, if their
   // location depend on whether the nmethod is entrant or not.
-  // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == NULL, "Not safe oop scan");
+  // assert(BarrierSet::barrier_set()->barrier_set_nmethod() == nullptr, "Not safe oop scan");
 
   address low_boundary = verified_entry_point();
   if (!is_in_use() && is_nmethod()) {
@@ -348,7 +348,7 @@ int CompiledMethod::verify_icholder_relocations() {
           tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
           ic->print();
         }
-        assert(ic->cached_icholder() != NULL, "must be non-NULL");
+        assert(ic->cached_icholder() != nullptr, "must be non-nullptr");
         count++;
       }
     }
@@ -360,7 +360,7 @@ int CompiledMethod::verify_icholder_relocations() {
 // Method that knows how to preserve outgoing arguments at call. This method must be
 // called with a frame corresponding to a Java invoke
 void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
-  if (method() == NULL) {
+  if (method() == nullptr) {
     return;
   }
 
@@ -378,7 +378,7 @@ void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *
     // The method attached by JIT-compilers should be used, if present.
     // Bytecode can be inaccurate in such case.
     Method* callee = attached_method_before_pc(pc);
-    if (callee != NULL) {
+    if (callee != nullptr) {
       has_receiver = !(callee->access_flags().is_static());
       has_appendix = false;
       signature    = callee->signature();
@@ -412,7 +412,7 @@ Method* CompiledMethod::attached_method(address call_instr) {
       }
     }
   }
-  return NULL; // not found
+  return nullptr; // not found
 }
 
 Method* CompiledMethod::attached_method_before_pc(address pc) {
@@ -420,7 +420,7 @@ Method* CompiledMethod::attached_method_before_pc(address pc) {
     NativeCall* ncall = nativeCall_before(pc);
     return attached_method(ncall->instruction_address());
   }
-  return NULL; // not a call
+  return nullptr; // not a call
 }
 
 void CompiledMethod::clear_inline_caches() {
@@ -449,7 +449,7 @@ void CompiledMethod::clear_ic_callsites() {
 // Check class_loader is alive for this bit of metadata.
 class CheckClass : public MetadataClosure {
   void do_metadata(Metadata* md) {
-    Klass* klass = NULL;
+    Klass* klass = nullptr;
     if (md->is_klass()) {
       klass = ((Klass*)md);
     } else if (md->is_method()) {
@@ -480,7 +480,7 @@ bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
     }
   } else {
     Metadata* ic_metdata = ic->cached_metadata();
-    if (ic_metdata != NULL) {
+    if (ic_metdata != nullptr) {
       if (ic_metdata->is_klass()) {
         if (((Klass*)ic_metdata)->is_loader_alive()) {
           return true;
@@ -509,8 +509,8 @@ template <class CompiledICorStaticCall>
 static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from,
                                          bool clean_all) {
   CodeBlob *cb = CodeCache::find_blob(addr);
-  CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-  if (nm != NULL) {
+  CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+  if (nm != nullptr) {
     // Clean inline caches pointing to bad nmethods
     if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
       if (!ic->set_to_clean(!from->is_unloading())) {
@@ -561,13 +561,13 @@ bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
 
 void CompiledMethod::run_nmethod_entry_barrier() {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-  if (bs_nm != NULL) {
+  if (bs_nm != nullptr) {
     // We want to keep an invariant that nmethods found through iterations of a Thread's
     // nmethods found in safepoints have gone through an entry barrier and are not armed.
     // By calling this nmethod entry barrier, it plays along and acts
     // like any other nmethod found on the stack of a thread (fewer surprises).
     nmethod* nm = as_nmethod_or_null();
-    if (nm != NULL && bs_nm->is_armed(nm)) {
+    if (nm != nullptr && bs_nm->is_armed(nm)) {
       bool alive = bs_nm->nmethod_entry_barrier(nm);
       assert(alive, "should be alive");
     }
@@ -655,10 +655,10 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       }
       metadata_Relocation* r = iter.metadata_reloc();
       Metadata* md = r->metadata_value();
-      if (md != NULL && md->is_method()) {
+      if (md != nullptr && md->is_method()) {
         Method* method = static_cast<Method*>(md);
         if (!method->method_holder()->is_loader_alive()) {
-          Atomic::store(r->metadata_addr(), (Method*)NULL);
+          Atomic::store(r->metadata_addr(), (Method*)nullptr);
 
           if (!r->metadata_is_immediate()) {
             r->fix_metadata_relocation();
@@ -686,7 +686,7 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
     Thread* thread = Thread::current();
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
-    assert(cb != NULL && cb == this, "");
+    assert(cb != nullptr && cb == this, "");
     ttyLocker ttyl;
     tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print();
@@ -697,7 +697,7 @@ address CompiledMethod::continuation_for_implicit_exception(address pc, bool for
 #endif
   if (cont_offset == 0) {
     // Let the normal error handling report the exception
-    return NULL;
+    return nullptr;
   }
   if (cont_offset == exception_offset) {
 #if INCLUDE_JVMCI

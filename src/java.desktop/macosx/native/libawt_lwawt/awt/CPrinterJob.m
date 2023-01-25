@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ static jmethodID sjm_printerJob = NULL;
    GET_CPRINTERDIALOG_CLASS_RETURN(ret); \
    GET_FIELD_RETURN(sjm_printerJob, sjc_CPrinterDialog, "fPrinterJob", "Lsun/lwawt/macosx/CPrinterJob;", ret);
 
-static NSPrintInfo* createDefaultNSPrintInfo();
+static NSPrintInfo* createDefaultNSPrintInfo(JNIEnv* env, jstring printer);
 
 static void makeBestFit(NSPrintInfo* src);
 

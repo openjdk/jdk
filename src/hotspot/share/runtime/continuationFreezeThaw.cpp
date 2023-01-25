@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -67,6 +66,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+
+#include <type_traits>
 
 /*
  * This file contains the implementation of continuation freezing (yield) and thawing (run).
@@ -260,7 +261,7 @@ template <oop_kind oops, typename BarrierSetT>
 class Config {
 public:
   typedef Config<oops, BarrierSetT> SelfT;
-  typedef typename Conditional<oops == oop_kind::NARROW, narrowOop, oop>::type OopT;
+  using OopT = std::conditional_t<oops == oop_kind::NARROW, narrowOop, oop>;
 
   static int freeze(JavaThread* thread, intptr_t* const sp) {
     return freeze_internal<SelfT>(thread, sp);
@@ -274,7 +275,7 @@ public:
 static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
   const int page_size = os::vm_page_size();
   if (size > page_size) {
-    if (sp - size < thread->stack_overflow_state()->stack_overflow_limit()) {
+    if (sp - size < thread->stack_overflow_state()->shadow_zone_safe_limit()) {
       return false;
     }
   }
@@ -1259,7 +1260,7 @@ NOINLINE void FreezeBase::finish_freeze(const frame& f, const frame& top) {
 inline bool FreezeBase::stack_overflow() { // detect stack overflow in recursive native code
   JavaThread* t = !_preempt ? _thread : JavaThread::current();
   assert(t == JavaThread::current(), "");
-  if (os::current_stack_pointer() < t->stack_overflow_state()->stack_overflow_limit()) {
+  if (os::current_stack_pointer() < t->stack_overflow_state()->shadow_zone_safe_limit()) {
     if (!_preempt) {
       ContinuationWrapper::SafepointOp so(t, _cont); // could also call _cont.done() instead
       Exceptions::_throw_msg(t, __FILE__, __LINE__, vmSymbols::java_lang_StackOverflowError(), "Stack overflow while freezing");
@@ -1905,7 +1906,7 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   }
 
   // Are we thawing the last frame(s) in the continuation
-  const bool is_last = empty && chunk->parent() == NULL;
+  const bool is_last = empty && chunk->parent() == nullptr;
   assert(!is_last || argsize == 0, "");
 
   log_develop_trace(continuations)("thaw_fast partial: %d is_last: %d empty: %d size: %d argsize: %d entrySP: " PTR_FORMAT,
@@ -2605,7 +2606,7 @@ private:
   template <bool use_compressed>
   static void resolve_gc() {
     BarrierSet* bs = BarrierSet::barrier_set();
-    assert(bs != NULL, "freeze/thaw invoked before BarrierSet is set");
+    assert(bs != nullptr, "freeze/thaw invoked before BarrierSet is set");
     switch (bs->kind()) {
 #define BARRIER_SET_RESOLVE_BARRIER_CLOSURE(bs_name)                    \
       case BarrierSet::bs_name: {                                       \

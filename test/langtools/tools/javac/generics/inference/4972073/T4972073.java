@@ -22,9 +22,4 @@ public class T4972073 {
     }
 
     static class B<E extends MyClass & MyInterface<E> & MyInterface<E>> extends D {}
-
-
-    public static void main(String[] args) {
-        B b = new B<Sun1>();
-    }
 }

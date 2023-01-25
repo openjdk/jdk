@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
+  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
   *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
@@ -232,12 +233,12 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     assert(frame_sp == unextended_sp, "");
     caller.set_sp(fp + frame::sender_sp_offset);
     frame f(frame_sp, frame_sp, fp, hf.pc());
-    // it's set again later in set_interpreter_frame_bottom, but we need to set the locals now so that
-    // we could call ContinuationHelper::InterpretedFrame::frame_bottom
+    // we need to set the locals so that the caller of new_stack_frame() can call
+    // ContinuationHelper::InterpretedFrame::frame_bottom
     intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
     assert((int)offset == frame::sender_sp_offset + locals - 1, "");
-    // derelativize locals
-    *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = fp + padding + offset;
+    // set relativized locals
+    *f.addr_at(frame::interpreter_frame_locals_offset) = padding + offset;
     assert((intptr_t)f.fp() % frame::frame_alignment == 0, "");
     return f;
   } else {
@@ -300,7 +301,9 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
 }
 
 inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  *(intptr_t**)f.addr_at(frame::interpreter_frame_locals_offset) = bottom - 1;
+  // set relativized locals
+  // this line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
+  *f.addr_at(frame::interpreter_frame_locals_offset) = (bottom - 1) - f.fp();
 }
 
 #endif // CPU_AARCH64_CONTINUATIONFREEZETHAW_AARCH64_INLINE_HPP

@@ -39,5 +39,7 @@ JNIEXPORT jlong JNICALL
 Java_jdk_internal_platform_CgroupMetrics_getTotalMemorySize0
   (JNIEnv *env, jclass ignored)
 {
-    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+    jlong pages = sysconf(_SC_PHYS_PAGES);
+    jlong page_size = sysconf(_SC_PAGESIZE);
+    return pages * page_size;
 }

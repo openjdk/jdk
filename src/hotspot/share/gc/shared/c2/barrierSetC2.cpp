@@ -85,9 +85,6 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
-  bool in_native = (decorators & IN_NATIVE) != 0;
-  assert(!in_native || (unsafe && !access.is_oop()), "not supported yet");
-
   MemNode::MemOrd mo = access.mem_node_mo();
 
   Node* store;
@@ -143,8 +140,6 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool unknown_control = (decorators & C2_UNKNOWN_CONTROL_LOAD) != 0;
   bool unsafe = (decorators & C2_UNSAFE_ACCESS) != 0;
   bool immutable = (decorators & C2_IMMUTABLE_MEMORY) != 0;
-
-  bool in_native = (decorators & IN_NATIVE) != 0;
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = unknown_control ? LoadNode::UnknownControl : LoadNode::DependsOnlyOnTest;

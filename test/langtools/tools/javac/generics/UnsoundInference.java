@@ -12,7 +12,7 @@ import java.util.Collection;
 
 public class UnsoundInference {
 
-    public static void main(String[] args) {
+    public static void meth() {
         Object[] objArray = {new Object()};
         ArrayList<String> strList = new ArrayList<String>();
         transferBug(objArray, strList);
