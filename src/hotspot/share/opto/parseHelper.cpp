@@ -366,8 +366,8 @@ void PEAState::add_new_allocation(Node* obj) {
 
 PEAState& PEAState::operator=(const PEAState& init) {
   if (this != &init) {
-    assert(0 == _state.number_of_entries(), "invalid state");
-    assert(0 == _alias.number_of_entries(), "invalid state");
+    _state.unlink_all();
+    _alias.unlink_all();
 
     init._state.iterate([&](ObjID key, ObjectState* value) {
       _state.put(key, value->clone());
@@ -378,11 +378,11 @@ PEAState& PEAState::operator=(const PEAState& init) {
       add_alias(id, key);
       return true;
     });
+  }
 
 #ifdef ASSERT
     validate();
 #endif
-  }
   return *this;
 }
 

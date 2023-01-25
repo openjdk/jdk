@@ -1817,7 +1817,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
               // Part-1: only check 'm'. ensure_phi has replaced m with phi.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
                 PEAState& as = block()->state();
-                const PEAState& pred_as = save_block->state();
+                const PEAState& pred_as = newin->jvms()->alloc_state();
                 ObjID id = as.is_alias(phi);
 
                 if (id != nullptr) {
@@ -1858,7 +1858,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
         // Part-2: materialize 'n' if it needs
         if (DoPartialEscapeAnalysis) {
           PEAState& as = block()->state();
-          PEAState& pred_as = save_block->state();
+          PEAState& pred_as = newin->jvms()->alloc_state();
           ObjID id = as.is_alias(phi);
 
           if (as.contains(id)) {
@@ -2350,6 +2350,8 @@ void Parse::return_current(Node* value) {
 
   if (_first_return) {
     _exits.map()->transfer_replaced_nodes_from(map(), _new_idx);
+    // copy assignment
+    _exits.jvms()->alloc_state() = jvms()->alloc_state();
     _first_return = false;
   } else {
     _exits.map()->merge_replaced_nodes_with(map());
