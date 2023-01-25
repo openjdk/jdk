@@ -1365,10 +1365,13 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || dst_type == nullptr) {
+    return false;
+  }
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
@@ -5386,19 +5389,17 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   src = must_be_not_null(src, true);
   dst = must_be_not_null(dst, true);
 
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dst_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM ||
-      top_dest == NULL || top_dest->elem() == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM ||
+      dst_type == nullptr || dst_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
@@ -5441,18 +5442,16 @@ bool LibraryCallKit::inline_multiplyToLen() {
   x = must_be_not_null(x, true);
   y = must_be_not_null(y, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* y_type = y->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_y = y_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_y == NULL || top_y->elem() == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* y_type = y->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      y_type == nullptr || y_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType y_elem = y_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType y_elem = y_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || y_elem != T_INT) {
     return false;
   }
@@ -5549,18 +5548,16 @@ bool LibraryCallKit::inline_squareToLen() {
   x = must_be_not_null(x, true);
   z = must_be_not_null(z, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* z_type = z->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_z = z_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_z  == NULL || top_z->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* z_type = z->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      z_type == nullptr || z_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType z_elem = z_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType z_elem = z_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
@@ -5596,20 +5593,19 @@ bool LibraryCallKit::inline_mulAdd() {
   Node* len      = argument(3);
   Node* k        = argument(4);
 
+  in = must_be_not_null(in, true);
   out = must_be_not_null(out, true);
 
-  const Type* out_type = out->Value(&_gvn);
-  const Type* in_type = in->Value(&_gvn);
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  if (top_out  == NULL || top_out->elem()  == Type::BOTTOM ||
-      top_in == NULL || top_in->elem() == Type::BOTTOM) {
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  if (out_type == nullptr || out_type->elem() == Type::BOTTOM ||
+       in_type == nullptr ||  in_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType out_elem = out_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType in_elem = in_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType out_elem = out_type->elem()->array_element_basic_type();
+  BasicType in_elem = in_type->elem()->array_element_basic_type();
   if (out_elem != T_INT || in_elem != T_INT) {
     return false;
   }
@@ -5647,26 +5643,22 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
   Node* inv  = argument(4);
   Node* m    = argument(6);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* b_type = b->Value(&_gvn);
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_b == NULL || top_b->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* b_type = b->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      b_type == nullptr || b_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType b_elem = b_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType b_elem = b_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || b_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5706,22 +5698,19 @@ bool LibraryCallKit::inline_montgomerySquare() {
   Node* inv  = argument(3);
   Node* m    = argument(5);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5762,17 +5751,15 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   Node* shiftCount = argument(3);
   Node* numIter = argument(4);
 
-  const Type* newArr_type = newArr->Value(&_gvn);
-  const TypeAryPtr* top_newArr = newArr_type->isa_aryptr();
-  const Type* oldArr_type = oldArr->Value(&_gvn);
-  const TypeAryPtr* top_oldArr = oldArr_type->isa_aryptr();
-  if (top_newArr == NULL || top_newArr->elem() == Type::BOTTOM || top_oldArr == NULL
-      || top_oldArr->elem() == Type::BOTTOM) {
+  const TypeAryPtr* newArr_type = newArr->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* oldArr_type = oldArr->Value(&_gvn)->isa_aryptr();
+  if (newArr_type == nullptr || newArr_type->elem() == Type::BOTTOM ||
+      oldArr_type == nullptr || oldArr_type->elem() == Type::BOTTOM) {
     return false;
   }
 
-  BasicType newArr_elem = newArr_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType oldArr_elem = oldArr_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType newArr_elem = newArr_type->elem()->array_element_basic_type();
+  BasicType oldArr_elem = oldArr_type->elem()->array_element_basic_type();
   if (newArr_elem != T_INT || oldArr_elem != T_INT) {
     return false;
   }
@@ -6009,15 +5996,14 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6098,15 +6084,14 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
 
   Node* length = _gvn.transform(new SubINode(end, offset));
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6191,15 +6176,14 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6433,11 +6417,10 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, true);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // for the quick and dirty code we will skip all the checks.
   // we are just trying to get the call to be generated.
@@ -6494,12 +6477,10 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, false);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM
-          &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start  = src;
@@ -6582,12 +6563,10 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset               = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM
-         &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6656,12 +6635,10 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM &&
-         top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -7095,14 +7072,13 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   Node* src            = argument(1); // type oop
   Node* ofs            = argument(2); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7187,14 +7163,13 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   Node* ofs            = argument(2); // type int
   Node* limit          = argument(3); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7325,15 +7300,12 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* ghash_object = argument(8);
 
   // (1) in, ct and out are arrays.
-  const Type* in_type = in->Value(&_gvn);
-  const Type* ct_type = ct->Value(&_gvn);
-  const Type* out_type = out->Value(&_gvn);
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  const TypeAryPtr* top_ct = ct_type->isa_aryptr();
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  assert(top_in != NULL && top_in->elem() != Type::BOTTOM &&
-         top_ct != NULL && top_ct->elem() != Type::BOTTOM &&
-         top_out != NULL && top_out->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* ct_type = ct->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  assert( in_type != nullptr &&  in_type->elem() != Type::BOTTOM &&
+          ct_type != nullptr &&  ct_type->elem() != Type::BOTTOM &&
+         out_type != nullptr && out_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* in_start = in;

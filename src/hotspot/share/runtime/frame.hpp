@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,9 +293,9 @@ class frame {
   // Interpreter frames:
 
  private:
-  intptr_t** interpreter_frame_locals_addr() const;
-  intptr_t*  interpreter_frame_bcp_addr() const;
-  intptr_t*  interpreter_frame_mdp_addr() const;
+  intptr_t* interpreter_frame_locals() const;
+  intptr_t* interpreter_frame_bcp_addr() const;
+  intptr_t* interpreter_frame_mdp_addr() const;
 
  public:
   // Locals
