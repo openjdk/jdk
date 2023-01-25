@@ -790,7 +790,7 @@ class ParDumpWriter : public AbstractDumpWriter {
  private:
   void allocate_internal_buffer() {
     assert(_buffer_queue != nullptr, "Internal buffer queue is not ready when allocate internal buffer");
-    assert(_buffer == nullptr && _buffer_base == nullptr, "current buffer must be nullptr before allocate");
+    assert(_buffer == nullptr && _buffer_base == nullptr, "current buffer must be null before allocate");
     _buffer_base = _buffer = (char*)os::malloc(io_buffer_max_size, mtInternal);
     if (_buffer == nullptr) {
       set_error("Could not allocate buffer for writer");

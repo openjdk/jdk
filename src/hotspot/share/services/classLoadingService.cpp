@@ -45,10 +45,10 @@
 #define HOTSPOT_CLASS_loaded HOTSPOT_CLASS_LOADED
 #define DTRACE_CLASSLOAD_PROBE(type, clss, shared)  \
   {                                                 \
-    char* data = nullptr;                              \
+    char* data = nullptr;                           \
     int len = 0;                                    \
     Symbol* name = (clss)->name();                  \
-    if (name != nullptr) {                             \
+    if (name != nullptr) {                          \
       data = (char*)name->bytes();                  \
       len = name->utf8_length();                    \
     }                                               \

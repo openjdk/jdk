@@ -37,7 +37,7 @@
 CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
   : _cmd(line), _cmd_len(0), _args(nullptr), _args_len(0)
 {
-  assert(line != nullptr, "Command line string should not be nullptr");
+  assert(line != nullptr, "Command line string should not be null");
   const char* line_end;
   const char* cmd_end;
 

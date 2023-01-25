@@ -381,7 +381,7 @@ void MemDetailReporter::report_virtual_memory_map() {
 }
 
 void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
-  assert(reserved_rgn != nullptr, "nullptr pointer");
+  assert(reserved_rgn != nullptr, "null pointer");
 
   // Don't report if size is too small
   if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
@@ -817,7 +817,7 @@ void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_
   size_t current_count, size_t early_size, size_t early_count, MEMFLAGS flags) const {
   outputStream* out = output();
 
-  assert(stack != nullptr, "nullptr stack");
+  assert(stack != nullptr, "null stack");
 
   if (diff_in_current_scale(current_size, early_size) == 0) {
       return;

@@ -365,7 +365,7 @@ static AttachOperationFunctionInfo funcs[] = {
   { "setflag",          set_flag },
   { "printflag",        print_flag },
   { "jcmd",             jcmd },
-  { nullptr,               nullptr }
+  { nullptr,            nullptr }
 };
 
 
