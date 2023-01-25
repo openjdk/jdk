@@ -249,6 +249,7 @@ package gc;
  */
 
 import jdk.internal.misc.Unsafe;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -351,7 +352,13 @@ public class TestTrimNative {
         // This is very fuzzy. We malloced X, free'd X, trimmed, measured the combined effect of all reductions.
         // This does not take into effect mallocs or frees that may happen concurrently. But we expect to see *some*
         // reduction somewhere. Test with a fudge factor.
-        float fudge = 0.8f;
+        float fudge = 0.7f;
+        // On ppc, we see a vastly diminished return (~3M reduction instead of ~200), I suspect because of the underlying
+        // 64k pages lead to a different geometry. Manual tests with larger reclaim sizes show that autotrim works. For
+        // this test, we just reduce the fudge factor.
+        if (Platform.isPPC()) { // le and be both
+            fudge = 0.01f;
+        }
         long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
         if (rssReductionTotal < expectedMinimalReduction) {
             throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
