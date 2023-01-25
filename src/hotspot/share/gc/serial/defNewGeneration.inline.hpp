@@ -91,7 +91,7 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // no allocation in from-space (eden/from)
+  // No allocation in eden and from spaces, so no iteration required.
   assert(eden()->saved_mark_at_top(), "inv");
   assert(from()->saved_mark_at_top(), "inv");
 
