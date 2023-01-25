@@ -74,7 +74,7 @@ public class TestAsElement extends JavacTestingAbstractProcessor {
         }
     }
 
-    
+
 
     private void expectNullAsElement(TypeMirror typeMirror) {
         var e = typeUtils.asElement(typeMirror);
