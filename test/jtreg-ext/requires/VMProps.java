@@ -27,6 +27,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.File;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -406,6 +407,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
+        log("vmCDS()");
         return "" + WB.isCDSIncluded();
     }
 
@@ -650,6 +652,13 @@ public class VMProps implements Callable<Map<String, String>> {
         String fileName = System.getProperty("jtreg.ext.at.requires.logfile");
         if (fileName == null) {
             return;
+        }
+
+        // If path starts with the separator it will be used as is, as an absolute path.
+        // Otherwise it will be treated as a path relative to the jtreg current working directory.
+        String currentWorkDir = ".";
+        if(!fileName.startsWith(File.separator)) {
+            fileName = currentWorkDir + File.separator + fileName;
         }
 
         try {
