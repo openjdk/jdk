@@ -649,11 +649,19 @@ public abstract class Charset
      *
      * @since 1.5
      */
+    @SuppressWarnings("removal")
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
                 // do not look for providers other than the standard one
-                Charset cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
+                Charset cs;
+                if (System.getSecurityManager() == null) {
+                    cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
+                } else {
+                    PrivilegedAction<Charset> pa =
+                        () -> standardProvider.charsetForName(StaticProperty.fileEncoding());
+                    cs = AccessController.doPrivileged(pa);
+                }
                 if (cs != null)
                     defaultCharset = cs;
                 else
