@@ -789,8 +789,8 @@ public:
   }
 
 #ifndef PRODUCT
-  void dump_head() const;       // Dump loop head only
-  void dump() const;            // Dump this loop recursively
+  void dump_head();       // Dump loop head only
+  void dump();            // Dump this loop recursively
   void verify_tree(IdealLoopTree *loop, const IdealLoopTree *parent) const;
 #endif
 
