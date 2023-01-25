@@ -114,7 +114,7 @@ public final class Module implements AnnotatedElement {
 
     // true, if this module allows restricted native access "by definition".
     // otherwise false, where lateEnableNativeAccess needs to be consulted
-    // in order to determine if native access is enabled.
+    // in order to determine if native access is actually enabled.
     // Having a two-staged construct prevents synchronization for modules
     // that allows access by definition.
     private final boolean enableNativeAccessByDefinition;
