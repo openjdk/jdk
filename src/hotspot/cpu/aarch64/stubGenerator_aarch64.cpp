@@ -7110,37 +7110,34 @@ typedef uint32_t u32;
       __ adc(S_2, U_2, zr);
       __ add(S_2, S_2, 1);
 
-      // Recycle registers U_0, U_1, U_2
-      const Register
-        X_0 = U_0, X_0HI = *++regs,
-        X_1 = U_1, X_1HI = *++regs,
-        X_2 = U_2;
+      const Register U_0HI = *++regs, U_1HI = *++regs;
 
-      wide_mul(X_0, X_0HI, S_0, R_0);  wide_madd(X_0, X_0HI, S_1, RR_1); wide_madd(X_0, X_0HI, S_2, RR_0);
-      wide_mul(X_1, X_1HI, S_0, R_1);  wide_madd(X_1, X_1HI, S_1, R_0);  wide_madd(X_1, X_1HI, S_2, RR_1);
-      __ andr(X_2, R_0, 3);
-      __ mul(X_2, S_2, X_2);
+      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
+      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
+      __ andr(U_2, R_0, 3);
+      __ mul(U_2, S_2, U_2);
 
       // Recycle registers S_0, S_1, S_2
       regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
 
       // Partial reduction mod 2**130 - 5
-      __ adds(X_1, X_0HI, X_1);
-      __ adc(X_2, X_1HI, X_2);
-      // Sum now in X_2:X_1, X_0.
-      // Dead: X_0HI, X_1HI.
+      __ adds(U_1, U_0HI, U_1);
+      __ adc(U_2, U_1HI, U_2);
+      // Sum now in U_2:U_1, U_0.
+      // Dead: U_0HI, U_1HI.
+      regs = (regs.remaining() + U_0HI + U_1HI).begin();
 
-      // X_2:X_1:X_0 += (X_1HI >> 2)
-      __ lsr(rscratch1, X_2, 2);
-      __ andr(X_2, X_2, (u8)3);
-      __ adds(X_0, X_0, rscratch1);
-      __ adcs(X_1, X_1, zr);
-      __ adc(X_2, X_2, zr);
+      // U_2:U_1:U_0 += (U_1HI >> 2)
+      __ lsr(rscratch1, U_2, 2);
+      __ andr(U_2, U_2, (u8)3);
+      __ adds(U_0, U_0, rscratch1);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
 
-      // X_1HI:X_0HI, X_0 += (X_1HI >> 2) << 2
-      __ adds(X_0, X_0, rscratch1, Assembler::LSL, 2);
-      __ adcs(X_1, X_1, zr);
-      __ adc(X_2, X_2, zr);
+      // U_1HI:U_0HI, U_0 += (U_1HI >> 2) << 2
+      __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
