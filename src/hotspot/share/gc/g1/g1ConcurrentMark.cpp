@@ -824,8 +824,7 @@ void G1ConcurrentMark::post_concurrent_mark_start() {
 
 void G1ConcurrentMark::post_concurrent_undo_start() {
   root_regions()->cancel_scan();
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
+  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 /*
@@ -1318,8 +1317,7 @@ void G1ConcurrentMark::remark() {
     report_object_count(mark_finished);
   }
 
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
+  G1CollectedHeap::finish_codecache_marking_cycle();
 
   // Statistics
   double now = os::elapsedTime();

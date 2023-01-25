@@ -211,8 +211,7 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
+  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 void G1FullCollector::complete_collection() {

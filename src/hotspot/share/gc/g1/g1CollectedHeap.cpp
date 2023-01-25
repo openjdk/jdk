@@ -3380,3 +3380,8 @@ void G1CollectedHeap::start_codecache_marking_cycle() {
   CodeCache::on_gc_marking_cycle_start();
   CodeCache::arm_all_nmethods();
 }
+
+void G1CollectedHeap::finish_codecache_marking_cycle() {
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
+}

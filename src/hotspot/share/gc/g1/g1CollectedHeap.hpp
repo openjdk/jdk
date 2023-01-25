@@ -935,6 +935,7 @@ public:
 
   static void start_codecache_marking_cycle();
   static void start_codecache_marking_cycle_if_inactive();
+  static void finish_codecache_marking_cycle();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
