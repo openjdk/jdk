@@ -51,7 +51,7 @@ public class TestCheckedTests {
         TestFramework.run();
         try {
             TestFramework.run(BadIRAndRuntimeCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (TestVMException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Test Failures (2)"));
@@ -64,7 +64,7 @@ public class TestCheckedTests {
         System.setOut(ps);
         try {
             TestFramework.run(BadIRCheckedTests.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             System.setOut(oldOut);
             Asserts.assertTrue(e.getExceptionInfo().contains("Failed IR Rules (3)"));

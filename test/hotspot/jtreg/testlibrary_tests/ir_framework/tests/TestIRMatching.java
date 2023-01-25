@@ -233,7 +233,7 @@ public class TestIRMatching {
 
         try {
             runWithArgumentsFail(CompilationOutputOfFails.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             try {
                 StringBuilder failures = new StringBuilder();
@@ -365,7 +365,7 @@ public class TestIRMatching {
                 framework.addFlags(args);
             }
             runFramework(framework);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             checkConstraints(e, constraints);
         } catch (Exception e) {

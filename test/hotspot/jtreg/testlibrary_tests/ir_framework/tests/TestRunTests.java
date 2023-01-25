@@ -51,7 +51,7 @@ public class TestRunTests {
         TestFramework.run();
         try {
             TestFramework.run(BadStandalone.class);
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (IRViolationException e) {
             System.setOut(oldOut);
             String[] matches = { "test(int)", "test2(int)", "Failed IR Rules (2)"};

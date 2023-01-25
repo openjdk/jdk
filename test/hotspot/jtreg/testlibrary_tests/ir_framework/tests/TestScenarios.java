@@ -52,20 +52,20 @@ public class TestScenarios {
         Scenario s3dup = new Scenario(3, "-XX:TLABRefillWasteFraction=53");
         try {
             new TestFramework().addScenarios(sDefault, s1, s2, s3).start();
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
             if (!e.getMessage().contains("The following scenarios have failed: #0, #1, #3")) {
-                Utils.throwIfNoSafepointPrinting(baos.toString(), e);
+                throw e;
             }
         }
 
         baos.reset();
         try {
             new TestFramework().addScenarios(s1, s2, s3).start();
-            Utils.shouldHaveThrownException(baos.toString());
+            Asserts.fail("Should have thrown exception");
         } catch (TestRunException e) {
             if (!e.getMessage().contains("The following scenarios have failed: #1, #3")) {
-                Utils.throwIfNoSafepointPrinting(baos.toString(), e);
+                throw e;
             }
         }
         System.setOut(oldOut);
