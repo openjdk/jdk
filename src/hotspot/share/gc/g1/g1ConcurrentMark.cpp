@@ -792,8 +792,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
-  CodeCache::on_gc_marking_cycle_start();
-  CodeCache::arm_all_nmethods();
+  G1CollectedHeap::start_codecache_marking_cycle();
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 

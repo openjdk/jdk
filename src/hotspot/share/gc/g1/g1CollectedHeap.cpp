@@ -3369,10 +3369,14 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
 
 void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
   if (!CodeCache::is_gc_marking_cycle_active()) {
-    CodeCache::on_gc_marking_cycle_start();
-    CodeCache::arm_all_nmethods();
+    start_codecache_marking_cycle();
   } else {
     assert(G1CollectedHeap::heap()->concurrent_mark()->has_aborted(),
            "Expected full gc after concurrent mark has aborted");
   }
+}
+
+void G1CollectedHeap::start_codecache_marking_cycle() {
+  CodeCache::on_gc_marking_cycle_start();
+  CodeCache::arm_all_nmethods();
 }
