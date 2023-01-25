@@ -514,25 +514,13 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         int boff = 0;
         if (byteOrder == ByteOrder.BIG_ENDIAN) {
             for (int j = 0; j < len; j++) {
-
-/*                int b0 = b[boff];
-                int b1 = b[boff + 1] & 0xff;
-                s[off + j] = (short)((b0 << 8) | b1);
-                boff += 2;*/
-
                 s[off + j] = ByteArray.getShort(b, boff);
                 boff += 2;
             }
         } else {
             for (int j = 0; j < len; j++) {
-/*                int b0 = b[boff + 1];
-                int b1 = b[boff] & 0xff;
-                s[off + j] = (short)((b0 << 8) | b1);
-                boff += 2;*/
-
                 s[off + j] = ByteArrayLittleEndian.getShort(b, boff);
                 boff += 2;
-
             }
         }
     }
