@@ -103,7 +103,7 @@ class GCCause : public AllStatic {
             cause == GCCause::_heap_dump);
   }
 
-  // Causes for collection of the tenured generation
+  // Causes for collection of the tenured gernation
   inline static bool is_tenured_allocation_failure_gc(GCCause::Cause cause) {
     // _adaptive_size_policy for a full collection after a young GC
     // _allocation_failure is the generic cause a collection which could result
