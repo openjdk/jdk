@@ -46,11 +46,9 @@ public class GraphRemoveCookie implements RemoveCookie {
         List<InputGraph> list = graph.getGroup().getGraphs();
         WindowManager manager = WindowManager.getDefault();
         for (Mode m : manager.getModes()) {
-            List<TopComponent> l = new ArrayList<>(Arrays.asList(manager.getOpenedTopComponents(m)));
-            for (TopComponent t : l) {
+            for (TopComponent t : manager.getOpenedTopComponents(m)) {
                 if (t instanceof EditorTopComponent) {
-                    EditorTopComponent etc = (EditorTopComponent) t;
-                    DiagramViewModel model = etc.getModel();
+                    DiagramViewModel model = ((EditorTopComponent) t).getModel();
                     if (!model.getGroup().getGraphs().contains(graph)) {
                         continue;
                     }
