@@ -102,7 +102,7 @@ public:
 
   enum LoopStatus {
     // No guarantee: the region may be an irreducible loop entry, thus we have to
-    // be carefull when removing entry control to it.
+    // be careful when removing entry control to it.
     MaybeIrreducibleEntry,
     // Limited guarantee: this region may be (nested) inside an irreducible loop,
     // but it will never be an irreducible loop entry.
@@ -134,7 +134,7 @@ public:
   bool try_clean_mem_phi(PhaseGVN* phase);
   bool optimize_trichotomy(PhaseIterGVN* igvn);
 #ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
+  virtual void dump_spec(outputStream* st) const;
 #endif
 };
 

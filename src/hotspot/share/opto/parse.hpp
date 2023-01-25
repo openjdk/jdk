@@ -231,7 +231,7 @@ class Parse : public GraphKit {
     void copy_irreducible_status_to(RegionNode* region, const JVMState* jvms) {
       assert(!is_irreducible_loop_entry() || is_in_irreducible_loop(), "entry is part of irreducible loop");
       if (is_in_irreducible_loop()) {
-        // The block in irreducible loop in this method, so it is possible that this
+        // The block is in an irreducible loop of this method, so it is possible that this
         // region becomes an irreducible loop entry. (no guarantee)
         region->set_loop_status(RegionNode::LoopStatus::MaybeIrreducibleEntry);
       } else if (jvms->caller() != nullptr) {

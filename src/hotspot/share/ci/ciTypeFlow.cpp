@@ -1851,7 +1851,7 @@ bool ciTypeFlow::Block::is_in_irreducible_loop() const {
   Loop* lp = loop(); // Innermost loop containing block.
   if (lp == nullptr) {
     assert(!is_post_visited(), "must have enclosing loop once post-visited");
-    return false; // Not yet processed, so we do not yet know.
+    return false; // Not yet processed, so we do not know, yet.
   }
   // Walk all the way up the loop-tree, search for an irreducible loop.
   do {

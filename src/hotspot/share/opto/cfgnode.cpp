@@ -811,7 +811,7 @@ void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
     Node* n = unreachable.at(i);
     for (uint i = 0; i < n->req(); ++i) {
       Node* m = n->in(i);
-      assert(m != (Node*)igvn->C->root(), "Should be unreachable from root");
+      assert(m != igvn->C->root(), "Should be unreachable from root");
       if (m != nullptr && m->is_CFG()) {
         unreachable.push(m);
       }
@@ -994,9 +994,9 @@ const RegMask &RegionNode::out_RegMask() const {
 }
 
 #ifndef PRODUCT
-void RegionNode::dump_spec(outputStream *st) const {
+void RegionNode::dump_spec(outputStream* st) const {
   Node::dump_spec(st);
-  switch(loop_status()) {
+  switch (loop_status()) {
   case RegionNode::LoopStatus::MaybeIrreducibleEntry:
     st->print("#irreducible ");
     break;
@@ -1768,7 +1768,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   // an irreducible loop. For reducible loops, this never seems to happen, as the multiple
   // fall-in edges are already merged before the loop head during parsing. But with irreducible
   // loops present the order or merging during parsing can sometimes prevent this.
-  if(phase->C->has_irreducible_loop()) {
+  if (phase->C->has_irreducible_loop()) {
     // Avoid this optimization if any irreducible loops are present. Else we may create
     // an irreducible loop that we do not detect.
     return nullptr;
@@ -1977,12 +1977,12 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
   RegionNode* region = in(0)->as_Region();
   if (region->loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
     Node* top = phase->C->top();
-    for( uint j = 1; j < req(); ++j ){
+    for (uint j = 1; j < req(); j++) {
       Node* rc = region->in(j); // for each control input
       if (rc == nullptr || phase->type(rc) == Type::TOP) {
         // Region is missing a control input
         Node* n = in(j);
-        if (n != nullptr && n!= top) {
+        if (n != nullptr && n != top) {
           // Phi still has its input, so region just lost its input
           return true;
         }
@@ -2840,7 +2840,7 @@ void CatchProjNode::dump_spec(outputStream *st) const {
 Node* CreateExNode::Identity(PhaseGVN* phase) {
   if( phase->type(in(1)) == Type::TOP ) return in(1);
   if( phase->type(in(0)) == Type::TOP ) return in(0);
-  if( phase->type(in(0)->in(0)) == Type::TOP ) {
+  if (phase->type(in(0)->in(0)) == Type::TOP) {
     assert(in(0)->is_CatchProj(), "control is CatchProj");
     return phase->C->top(); // dead code
   }

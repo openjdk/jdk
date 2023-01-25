@@ -3138,7 +3138,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
   uint i;
 
   // Make a new RegionNode to be the landing pad.
-  RegionNode *landing_pad = new RegionNode( fall_in_cnt+1 );
+  RegionNode* landing_pad = new RegionNode(fall_in_cnt + 1);
   phase->set_loop(landing_pad,_parent);
   // If _head was irreducible loop entry, landing_pad may now be too
   landing_pad->set_loop_status(_head->as_Region()->loop_status());
@@ -5260,7 +5260,7 @@ void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
     return;
   }
 
-  RootNode* root = Compile::current()->root();
+  RootNode* root = C->root();
   Unique_Node_List worklist; // visit all nodes once
   worklist.push(root);
   bool failure = false;
@@ -5291,7 +5291,7 @@ bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
   if (!_has_irreducible_loops) {
     return false; // no irreducible loop in graph
   }
-  IdealLoopTree *l = get_loop(region); // l: innermost loop that contains region
+  IdealLoopTree* l = get_loop(region); // l: innermost loop that contains region
   do {
     if (l->_irreducible) {
       return true; // found it

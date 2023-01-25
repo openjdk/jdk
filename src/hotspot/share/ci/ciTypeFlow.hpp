@@ -535,10 +535,10 @@ public:
     // Has this block been cloned for a loop backedge?
     bool                             _backedge_copy;
 
-    // This block is loop head of an irreducible loop.
+    // This block is a loop head of an irreducible loop.
     bool                             _irreducible_loop_head;
 
-    // This block is secondary entry to irreducible loop (entry but not head)
+    // This block is a secondary entry to an irreducible loop (entry but not head).
     bool                             _irreducible_loop_secondary_entry;
 
     // This block has monitor entry point.
