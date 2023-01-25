@@ -177,7 +177,7 @@ void*Dict::Insert(void* key, void* val, bool replace) {
   b->_keyvals[b->_cnt + b->_cnt    ] = key;
   b->_keyvals[b->_cnt + b->_cnt + 1] = val;
   b->_cnt++;
-  return nullptr;                  // Nothing found prior
+  return nullptr;              // Nothing found prior
 }
 
 //------------------------------Delete---------------------------------------
