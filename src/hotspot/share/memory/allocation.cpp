@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ char* AllocateHeap(size_t size,
                    const NativeCallStack& stack,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
   char* p = (char*) os::malloc(size, flags, stack);
-  if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+  if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "AllocateHeap");
   }
   return p;
@@ -57,19 +57,19 @@ char* ReallocateHeap(char *old,
                      MEMFLAGS flag,
                      AllocFailType alloc_failmode) {
   char* p = (char*) os::realloc(old, size, flag, CALLER_PC);
-  if (p == NULL && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+  if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "ReallocateHeap");
   }
   return p;
 }
 
-// handles NULL pointers
+// handles null pointers
 void FreeHeap(void* p) {
   os::free(p);
 }
 
-void* MetaspaceObj::_shared_metaspace_base = NULL;
-void* MetaspaceObj::_shared_metaspace_top  = NULL;
+void* MetaspaceObj::_shared_metaspace_base = nullptr;
+void* MetaspaceObj::_shared_metaspace_top  = nullptr;
 
 void* StackObj::operator new(size_t size)     throw() { ShouldNotCallThis(); return 0; }
 void  StackObj::operator delete(void* p)              { ShouldNotCallThis(); }
@@ -132,7 +132,7 @@ void* AnyObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
     MEMFLAGS flags) throw() {
   // should only call this with std::nothrow, use other operator new() otherwise
     address res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
-    DEBUG_ONLY(if (res!= NULL) set_allocation_type(res, C_HEAP);)
+    DEBUG_ONLY(if (res!= nullptr) set_allocation_type(res, C_HEAP);)
   return res;
 }
 

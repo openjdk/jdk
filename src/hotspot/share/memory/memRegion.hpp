@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ private:
   size_t    _word_size;
 
 public:
-  MemRegion() : _start(NULL), _word_size(0) {};
+  MemRegion() : _start(nullptr), _word_size(0) {};
   MemRegion(HeapWord* start, size_t word_size) :
     _start(start), _word_size(word_size) {};
   MemRegion(HeapWord* start, HeapWord* end) :

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,12 @@ typeArrayOop oopFactory::new_longArray(int length, TRAPS) {
 
 // create java.lang.Object[]
 objArrayOop oopFactory::new_objectArray(int length, TRAPS)  {
-  assert(Universe::objectArrayKlassObj() != NULL, "Too early?");
+  assert(Universe::objectArrayKlassObj() != nullptr, "Too early?");
   return ObjArrayKlass::cast(Universe::objectArrayKlassObj())->allocate(length, THREAD);
 }
 
 typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {
-  int length = utf8_str == NULL ? 0 : UTF8::unicode_length(utf8_str);
+  int length = utf8_str == nullptr ? 0 : UTF8::unicode_length(utf8_str);
   typeArrayOop result = new_charArray(length, CHECK_NULL);
   if (length > 0) {
     UTF8::convert_to_unicode(utf8_str, result->char_at_addr(0), length);

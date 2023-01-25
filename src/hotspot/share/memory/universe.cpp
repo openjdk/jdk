@@ -85,9 +85,9 @@
 #include "utilities/preserveException.hpp"
 
 // Known objects
-Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
-Klass* Universe::_objectArrayKlassObj                 = NULL;
-Klass* Universe::_fillerArrayKlassObj                 = NULL;
+Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { nullptr /*, nullptr...*/ };
+Klass* Universe::_objectArrayKlassObj                 = nullptr;
+Klass* Universe::_fillerArrayKlassObj                 = nullptr;
 OopHandle Universe::_basic_type_mirrors[T_VOID+1];
 #if INCLUDE_CDS_JAVA_HEAP
 int Universe::_archived_basic_type_mirror_indices[T_VOID+1];
@@ -128,20 +128,20 @@ OopHandle Universe::_virtual_machine_error_instance;
 
 OopHandle Universe::_reference_pending_list;
 
-Array<Klass*>* Universe::_the_array_interfaces_array = NULL;
-LatestMethodCache* Universe::_finalizer_register_cache = NULL;
-LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
-LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
-LatestMethodCache* Universe::_throw_no_such_method_error_cache = NULL;
-LatestMethodCache* Universe::_do_stack_walk_cache     = NULL;
+Array<Klass*>* Universe::_the_array_interfaces_array = nullptr;
+LatestMethodCache* Universe::_finalizer_register_cache = nullptr;
+LatestMethodCache* Universe::_loader_addClass_cache    = nullptr;
+LatestMethodCache* Universe::_throw_illegal_access_error_cache = nullptr;
+LatestMethodCache* Universe::_throw_no_such_method_error_cache = nullptr;
+LatestMethodCache* Universe::_do_stack_walk_cache     = nullptr;
 
 long Universe::verify_flags                           = Universe::Verify_All;
 
-Array<int>* Universe::_the_empty_int_array            = NULL;
-Array<u2>* Universe::_the_empty_short_array           = NULL;
-Array<Klass*>* Universe::_the_empty_klass_array     = NULL;
-Array<InstanceKlass*>* Universe::_the_empty_instance_klass_array  = NULL;
-Array<Method*>* Universe::_the_empty_method_array   = NULL;
+Array<int>* Universe::_the_empty_int_array            = nullptr;
+Array<u2>* Universe::_the_empty_short_array           = nullptr;
+Array<Klass*>* Universe::_the_empty_klass_array     = nullptr;
+Array<InstanceKlass*>* Universe::_the_empty_instance_klass_array  = nullptr;
+Array<Method*>* Universe::_the_empty_method_array   = nullptr;
 
 // These variables are guarded by FullGCALot_lock.
 debug_only(OopHandle Universe::_fullgc_alot_dummy_array;)
@@ -159,10 +159,10 @@ bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
 
-OopStorage*     Universe::_vm_weak = NULL;
-OopStorage*     Universe::_vm_global = NULL;
+OopStorage*     Universe::_vm_weak = nullptr;
+OopStorage*     Universe::_vm_global = nullptr;
 
-CollectedHeap*  Universe::_collectedHeap = NULL;
+CollectedHeap*  Universe::_collectedHeap = nullptr;
 
 objArrayOop Universe::the_empty_class_array ()  {
   return (objArrayOop)_the_empty_class_array.resolve();
@@ -248,7 +248,7 @@ void Universe::update_archived_basic_type_mirrors() {
       int index = _archived_basic_type_mirror_indices[i];
       if (!is_reference_type((BasicType)i) && index >= 0) {
         oop mirror_oop = HeapShared::get_root(index);
-        assert(mirror_oop != NULL, "must be");
+        assert(mirror_oop != nullptr, "must be");
         _basic_type_mirrors[i] = OopHandle(vm_global(), mirror_oop);
       }
     }
@@ -301,14 +301,14 @@ void initialize_basic_type_klass(Klass* k, TRAPS) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
     if (k->is_instance_klass()) {
-      InstanceKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), NULL, CHECK);
+      InstanceKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), nullptr, CHECK);
     } else {
       ArrayKlass::cast(k)->restore_unshareable_info(loader_data, Handle(), CHECK);
     }
   } else
 #endif
   {
-    k->initialize_supers(ok, NULL, CHECK);
+    k->initialize_supers(ok, nullptr, CHECK);
   }
   k->append_to_sibling_list();
 }
@@ -337,7 +337,7 @@ void Universe::genesis(TRAPS) {
 
         ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
-        _the_array_interfaces_array     = MetadataFactory::new_array<Klass*>(null_cld, 2, NULL, CHECK);
+        _the_array_interfaces_array     = MetadataFactory::new_array<Klass*>(null_cld, 2, nullptr, CHECK);
         _the_empty_int_array            = MetadataFactory::new_array<int>(null_cld, 0, CHECK);
         _the_empty_short_array          = MetadataFactory::new_array<u2>(null_cld, 0, CHECK);
         _the_empty_method_array         = MetadataFactory::new_array<Method*>(null_cld, 0, CHECK);
@@ -393,7 +393,7 @@ void Universe::genesis(TRAPS) {
   }
 
   // Create a handle for reference_pending_list
-  _reference_pending_list = OopHandle(vm_global(), NULL);
+  _reference_pending_list = OopHandle(vm_global(), nullptr);
 
   // Maybe this could be lifted up now that object array can be initialized
   // during the bootstrapping.
@@ -455,18 +455,18 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
     if (UseSharedSpaces &&
         ArchiveHeapLoader::are_archived_mirrors_available() &&
-        _basic_type_mirrors[T_INT].resolve() != NULL) {
+        _basic_type_mirrors[T_INT].resolve() != nullptr) {
       assert(ArchiveHeapLoader::can_use(), "Sanity");
 
       // check that all basic type mirrors are mapped also
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
         if (!is_reference_type((BasicType)i)) {
           oop m = _basic_type_mirrors[i].resolve();
-          assert(m != NULL, "archived mirrors should not be NULL");
+          assert(m != nullptr, "archived mirrors should not be nullptr");
         }
       }
     } else
-      // _basic_type_mirrors[T_INT], etc, are NULL if archived heap is not mapped.
+      // _basic_type_mirrors[T_INT], etc, are null if archived heap is not mapped.
 #endif
     {
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
@@ -504,7 +504,7 @@ void Universe::fixup_mirrors(TRAPS) {
     java_lang_Class::fixup_mirror(k, CATCH);
   }
   delete java_lang_Class::fixup_mirror_list();
-  java_lang_Class::set_fixup_mirror_list(NULL);
+  java_lang_Class::set_fixup_mirror_list(nullptr);
 }
 
 #define assert_pll_locked(test) \
@@ -523,12 +523,12 @@ oop Universe::reference_pending_list() {
 
 void Universe::clear_reference_pending_list() {
   assert_pll_ownership();
-  _reference_pending_list.replace(NULL);
+  _reference_pending_list.replace(nullptr);
 }
 
 bool Universe::has_reference_pending_list() {
   assert_pll_ownership();
-  return _reference_pending_list.peek() != NULL;
+  return _reference_pending_list.peek() != nullptr;
 }
 
 oop Universe::swap_reference_pending_list(oop list) {
@@ -647,15 +647,15 @@ oop Universe::gen_out_of_memory_error(oop default_err) {
   } else {
     JavaThread* current = JavaThread::current();
     Handle default_err_h(current, default_err);
-    // get the error object at the slot and set set it to NULL so that the
+    // get the error object at the slot and set set it to null so that the
     // array isn't keeping it alive anymore.
     Handle exc(current, preallocated_out_of_memory_errors()->obj_at(next));
-    assert(exc() != NULL, "slot has been used already");
-    preallocated_out_of_memory_errors()->obj_at_put(next, NULL);
+    assert(exc() != nullptr, "slot has been used already");
+    preallocated_out_of_memory_errors()->obj_at_put(next, nullptr);
 
     // use the message from the default error
     oop msg = java_lang_Throwable::message(default_err_h());
-    assert(msg != NULL, "no message");
+    assert(msg != nullptr, "no message");
     java_lang_Throwable::set_message(exc(), msg);
 
     // populate the stack trace and return it.
@@ -839,7 +839,7 @@ jint universe_init() {
 }
 
 jint Universe::initialize_heap() {
-  assert(_collectedHeap == NULL, "Heap already created");
+  assert(_collectedHeap == nullptr, "Heap already created");
   _collectedHeap = GCConfig::arguments()->create_heap();
 
   log_info(gc)("Using %s", _collectedHeap->name());
@@ -881,7 +881,7 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
            "must be exactly of required size and alignment");
     // We are good.
 
-    if (AllocateHeapAt != NULL) {
+    if (AllocateHeapAt != nullptr) {
       log_info(gc,heap)("Successfully allocated Java heap at location %s", AllocateHeapAt);
     }
 
@@ -927,10 +927,10 @@ void initialize_known_method(LatestMethodCache* method_cache,
                              bool is_static, TRAPS)
 {
   TempNewSymbol name = SymbolTable::new_symbol(method);
-  Method* m = NULL;
+  Method* m = nullptr;
   // The klass must be linked before looking up the method.
   if (!ik->link_class_or_fail(THREAD) ||
-      ((m = ik->find_method(name, signature)) == NULL) ||
+      ((m = ik->find_method(name, signature)) == nullptr) ||
       is_static != m->is_static()) {
     ResourceMark rm(THREAD);
     // NoSuchMethodException doesn't actually work because it tries to run the
@@ -1081,7 +1081,7 @@ void Universe::initialize_verify_flags() {
   char* save_ptr;
 
   char* token = strtok_r(subset_list, delimiter, &save_ptr);
-  while (token != NULL) {
+  while (token != nullptr) {
     if (strcmp(token, "threads") == 0) {
       verify_flags |= Verify_Threads;
     } else if (strcmp(token, "heap") == 0) {
@@ -1109,7 +1109,7 @@ void Universe::initialize_verify_flags() {
     } else {
       vm_exit_during_initialization(err_msg("VerifySubSet: \'%s\' memory sub-system is unknown, please correct it", token));
     }
-    token = strtok_r(NULL, delimiter, &save_ptr);
+    token = strtok_r(nullptr, delimiter, &save_ptr);
   }
   FREE_C_HEAP_ARRAY(char, subset_list);
 }
@@ -1249,7 +1249,7 @@ void LatestMethodCache::init(Klass* k, Method* m) {
 #ifndef PRODUCT
   else {
     // sharing initialization should have already set up _klass
-    assert(_klass != NULL, "just checking");
+    assert(_klass != nullptr, "just checking");
   }
 #endif
 
@@ -1259,10 +1259,10 @@ void LatestMethodCache::init(Klass* k, Method* m) {
 
 
 Method* LatestMethodCache::get_method() {
-  if (klass() == NULL) return NULL;
+  if (klass() == nullptr) return nullptr;
   InstanceKlass* ik = InstanceKlass::cast(klass());
   Method* m = ik->method_with_idnum(method_idnum());
-  assert(m != NULL, "sanity check");
+  assert(m != nullptr, "sanity check");
   return m;
 }
 
@@ -1271,16 +1271,16 @@ Method* LatestMethodCache::get_method() {
 bool Universe::release_fullgc_alot_dummy() {
   MutexLocker ml(FullGCALot_lock);
   objArrayOop fullgc_alot_dummy_array = (objArrayOop)_fullgc_alot_dummy_array.resolve();
-  if (fullgc_alot_dummy_array != NULL) {
+  if (fullgc_alot_dummy_array != nullptr) {
     if (_fullgc_alot_dummy_next >= fullgc_alot_dummy_array->length()) {
       // No more dummies to release, release entire array instead
       _fullgc_alot_dummy_array.release(Universe::vm_global());
-      _fullgc_alot_dummy_array = OopHandle(); // NULL out OopStorage pointer.
+      _fullgc_alot_dummy_array = OopHandle(); // null out OopStorage pointer.
       return false;
     }
 
     // Release dummy at bottom of old generation
-    fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, NULL);
+    fullgc_alot_dummy_array->obj_at_put(_fullgc_alot_dummy_next++, nullptr);
   }
   return true;
 }

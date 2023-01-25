@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public:
 
   protected:
     virtual void** mpp() const = 0;
-    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(NULL), _user_data(NULL) {}
+    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(nullptr), _user_data(nullptr) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -162,7 +162,7 @@ private:
     MSORef(T** mpp, Writability w) : Ref(w), _mpp(mpp) {}
 
     virtual bool is_read_only_by_default() const { return T::is_read_only_by_default(); }
-    virtual bool not_null()                const { return dereference() != NULL; }
+    virtual bool not_null()                const { return dereference() != nullptr; }
     virtual int size()                     const { return dereference()->size(); }
     virtual MetaspaceObj::Type msotype()   const { return dereference()->type(); }
 
@@ -189,7 +189,7 @@ private:
 
     // all Arrays are read-only by default
     virtual bool is_read_only_by_default() const { return true; }
-    virtual bool not_null()                const { return dereference() != NULL;  }
+    virtual bool not_null()                const { return dereference() != nullptr;  }
     virtual int size()                     const { return dereference()->size(); }
     virtual MetaspaceObj::Type msotype()   const { return MetaspaceObj::array_type(sizeof(T)); }
   };
@@ -267,7 +267,7 @@ private:
   void do_push(Ref* ref);
 
 public:
-  MetaspaceClosure(): _pending_refs(NULL), _nest_level(0), _enclosing_ref(NULL) {}
+  MetaspaceClosure(): _pending_refs(nullptr), _nest_level(0), _enclosing_ref(nullptr) {}
   ~MetaspaceClosure();
 
   void finish();
@@ -283,7 +283,7 @@ public:
   //
   // Note that if we have stack overflow, do_pending_ref(r) will be called first and
   // do_ref(r) will be called later, for the same r. In this case, enclosing_ref() is valid only
-  // when do_pending_ref(r) is called, and will return NULL when do_ref(r) is called.
+  // when do_pending_ref(r) is called, and will return null when do_ref(r) is called.
   Ref* enclosing_ref() const {
     return _enclosing_ref;
   }
@@ -345,13 +345,13 @@ public:
   // Enable this block if you're changing the push(...) methods, to test for types that should be
   // disallowed. Each of the following "push" calls should result in a compile-time error.
   void test_disallowed_types(MetaspaceClosure* it) {
-    Hashtable<bool, mtInternal>* h  = NULL;
+    Hashtable<bool, mtInternal>* h  = nullptr;
     it->push(&h);
 
-    Array<Hashtable<bool, mtInternal>*>* a6 = NULL;
+    Array<Hashtable<bool, mtInternal>*>* a6 = nullptr;
     it->push(&a6);
 
-    Array<int*>* a7 = NULL;
+    Array<int*>* a7 = nullptr;
     it->push(&a7);
   }
 #endif
