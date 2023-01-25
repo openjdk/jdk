@@ -112,9 +112,16 @@ public final class Module implements AnnotatedElement {
     // the module descriptor
     private final ModuleDescriptor descriptor;
 
-    // true, if this module allows restricted native access
+    // true, if this module allows restricted native access "by definition".
+    // otherwise false, where lateEnableNativeAccess needs to be consulted
+    // in order to determine if native access is enabled.
+    // Having a two-staged construct prevents synchronization for modules
+    // that allows access by definition.
+    private final boolean enableNativeAccessByDefinition;
+    // true, if this module allows restricted native access for reasons
+    // other than by definition.
     @Stable
-    private boolean enableNativeAccess;
+    private boolean lateEnableNativeAccess;
 
     /**
      * Creates a new named Module. The resulting Module will be defined to the
@@ -139,10 +146,8 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
-        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
-            // boot/builtin modules are always native
-            implAddEnableNativeAccess();
-        }
+        // boot/builtin modules always have native access enabled by definition
+        this.enableNativeAccessByDefinition = (loader == null || loader == ClassLoaders.platformClassLoader());
     }
 
 
@@ -156,6 +161,7 @@ public final class Module implements AnnotatedElement {
         this.name = null;
         this.loader = loader;
         this.descriptor = null;
+        this.enableNativeAccessByDefinition = false;
     }
 
 
@@ -169,6 +175,7 @@ public final class Module implements AnnotatedElement {
         this.name = descriptor.name();
         this.loader = loader;
         this.descriptor = descriptor;
+        this.enableNativeAccessByDefinition = false;
     }
 
 
@@ -258,8 +265,9 @@ public final class Module implements AnnotatedElement {
     /**
      * Update this module to allow access to restricted methods.
      */
-    synchronized Module implAddEnableNativeAccess() {
-        enableNativeAccess = true;
+    Module implAddEnableNativeAccess() {
+        if (!enableNativeAccessByDefinition)
+            casLateEnableNativeAccess(this);
         return this;
     }
 
@@ -274,9 +282,42 @@ public final class Module implements AnnotatedElement {
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
-        synchronized(target) {
-            return target.enableNativeAccess;
+        return isNativeAccessEnabled(target);
+    }
+
+    private static boolean isNativeAccessEnabled(Module target) {
+        return target.enableNativeAccessByDefinition ||
+                // If target.lateEnableNativeAccess happens to be read as `true` by
+                // this thread, we do not have to do a synchronized access
+                // (as the variable is a @Stable boolean)
+                target.lateEnableNativeAccess ||
+                // This is guaranteed to give the correct value for any thread
+                isStrictlyLateEnableNativeAccess(target);
+    }
+
+    private static boolean isStrictlyLateEnableNativeAccess(Module target) {
+        synchronized (target) {
+            return target.lateEnableNativeAccess;
         }
+    }
+
+    private static boolean casLateEnableNativeAccess(Module target) {
+        // Tentatively first check if already enabled. If so, we do not need to enter the
+        // synchronization block as we are dealing with a @Stable boolean variable.
+        // This is a form of double-checked locking but, we do not need to declare
+        // the primitive boolean variable `volatile` as it is a @Stable primitive, and
+        // we do not need strict guarantees only enter the synchronized area at most
+        // once.
+        if (!target.lateEnableNativeAccess) {
+            synchronized (target) {
+                // Make sure the @Stable variable is updated at most once
+                if (!target.lateEnableNativeAccess) {
+                    target.lateEnableNativeAccess = true;
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // Returns the Module object that holds the enableNativeAccess
@@ -290,45 +331,34 @@ public final class Module implements AnnotatedElement {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
         // racy read of the enable native access flag
-        boolean isNativeAccessEnabled = target.enableNativeAccess;
+        boolean isNativeAccessEnabled = isNativeAccessEnabled(target);
         if (!isNativeAccessEnabled) {
-            synchronized (target) {
-                // safe read of the enableNativeAccess of the target module
-                isNativeAccessEnabled = target.enableNativeAccess;
-
-                // check again with the safely read flag
-                if (isNativeAccessEnabled) {
-                    // another thread beat us to it - nothing to do
-                    return;
-                } else if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
-                    throw new IllegalCallerException("Illegal native access from: " + this);
-                } else {
-                    // warn and set flag, so that only one warning is reported per module
+            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+                throw new IllegalCallerException("Illegal native access from: " + this);
+            } else {
+                // CAS the flag so that only one warning is reported per module
+                // and I/O is performed outside thread synchronization
+                if (casLateEnableNativeAccess(target)) {
+                    // warn
                     String cls = owner.getName();
                     String mtd = cls + "::" + methodName;
                     String mod = isNamed() ? "module " + getName() : "the unnamed module";
                     String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                     System.err.printf("""
-                        WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
-                        %n""", cls, mtd, mod, modflag);
-
-                    // set the flag
-                    target.enableNativeAccess = true;
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                            %n""", cls, mtd, mod, modflag);
                 }
             }
         }
     }
 
-
     /**
      * Update all unnamed modules to allow access to restricted methods.
      */
     static void implAddEnableNativeAccessToAllUnnamed() {
-        synchronized (ALL_UNNAMED_MODULE) {
-            ALL_UNNAMED_MODULE.enableNativeAccess = true;
-        }
+        ALL_UNNAMED_MODULE.implAddEnableNativeAccess();
     }
 
     // --
@@ -1765,7 +1795,6 @@ public final class Module implements AnnotatedElement {
     private Module getCallerModule(Class<?> caller) {
         return (caller != null) ? caller.getModule() : null;
     }
-
 
     // -- native methods --
 
