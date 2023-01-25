@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,8 +258,8 @@ public final class Module implements AnnotatedElement {
     /**
      * Update this module to allow access to restricted methods.
      */
-    synchronized Module implAddEnableNativeAccess() {
-        enableNativeAccess = true;
+    Module implAddEnableNativeAccess() {
+        casEnableNativeAccess(this);
         return this;
     }
 
@@ -274,6 +274,12 @@ public final class Module implements AnnotatedElement {
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
+        return isNativeAccessEnabled(target);
+    }
+
+    private static boolean isNativeAccessEnabled(Module target) {
+        if (target.enableNativeAccess)
+            return true;
         synchronized(target) {
             return target.enableNativeAccess;
         }
@@ -289,46 +295,41 @@ public final class Module implements AnnotatedElement {
     void ensureNativeAccess(Class<?> owner, String methodName) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
-        // racy read of the enable native access flag
-        boolean isNativeAccessEnabled = target.enableNativeAccess;
-        if (!isNativeAccessEnabled) {
-            synchronized (target) {
-                // safe read of the enableNativeAccess of the target module
-                isNativeAccessEnabled = target.enableNativeAccess;
-
-                // check again with the safely read flag
-                if (isNativeAccessEnabled) {
-                    // another thread beat us to it - nothing to do
-                    return;
-                } else if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
-                    throw new IllegalCallerException("Illegal native access from: " + this);
-                } else {
+        if (!isNativeAccessEnabled(target)) {
+            if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
+                throw new IllegalCallerException("Illegal native access from: " + this);
+            } else {
+                if (casEnableNativeAccess(target)) {
                     // warn and set flag, so that only one warning is reported per module
                     String cls = owner.getName();
                     String mtd = cls + "::" + methodName;
                     String mod = isNamed() ? "module " + getName() : "the unnamed module";
                     String modflag = isNamed() ? getName() : "ALL-UNNAMED";
                     System.err.printf("""
-                        WARNING: A restricted method in %s has been called
-                        WARNING: %s has been called by %s
-                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
-                        %n""", cls, mtd, mod, modflag);
-
-                    // set the flag
-                    target.enableNativeAccess = true;
+                            WARNING: A restricted method in %s has been called
+                            WARNING: %s has been called by %s
+                            WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                            %n""", cls, mtd, mod, modflag);
                 }
             }
         }
     }
 
+    private static boolean casEnableNativeAccess(Module target) {
+        synchronized (target) {
+            if (!target.enableNativeAccess) {
+                target.enableNativeAccess = true;
+                return true;
+            }
+        }
+        return false;
+    }
 
     /**
      * Update all unnamed modules to allow access to restricted methods.
      */
     static void implAddEnableNativeAccessToAllUnnamed() {
-        synchronized (ALL_UNNAMED_MODULE) {
-            ALL_UNNAMED_MODULE.enableNativeAccess = true;
-        }
+        casEnableNativeAccess(ALL_UNNAMED_MODULE);
     }
 
     // --
