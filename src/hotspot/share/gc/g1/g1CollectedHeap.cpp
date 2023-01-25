@@ -3372,7 +3372,7 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
     CodeCache::on_gc_marking_cycle_start();
     CodeCache::arm_all_nmethods();
   } else {
-    assert(static_cast<G1CollectedHeap*>(Universe::heap())->_cm->has_aborted(),
-           "expected stw full gc after cm has aborted");
+    assert(G1CollectedHeap::heap()->concurrent_mark()->has_aborted(),
+           "Expected full gc after concurrent mark has aborted");
   }
 }
