@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,7 @@ class PerfMemory : AllStatic {
     static bool is_destroyed() { return _destroyed; }
     static bool is_usable() { return is_initialized() && !is_destroyed(); }
     static bool contains(char* addr) {
-      return ((_start != NULL) && (addr >= _start) && (addr < _end));
+      return ((_start != nullptr) && (addr >= _start) && (addr < _end));
     }
     static void mark_updated();
 

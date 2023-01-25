@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 // immediately.
 
 volatile int ParkEvent::ListLock = 0 ;
-ParkEvent * volatile ParkEvent::FreeList = NULL ;
+ParkEvent * volatile ParkEvent::FreeList = nullptr ;
 
 ParkEvent * ParkEvent::Allocate (Thread * t) {
   ParkEvent * ev ;
@@ -64,14 +64,14 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   Thread::SpinAcquire(&ListLock, "ParkEventFreeListAllocate");
   {
     ev = FreeList;
-    if (ev != NULL) {
+    if (ev != nullptr) {
       FreeList = ev->FreeNext;
     }
   }
   Thread::SpinRelease(&ListLock);
 
-  if (ev != NULL) {
-    guarantee (ev->AssociatedWith == NULL, "invariant") ;
+  if (ev != nullptr) {
+    guarantee (ev->AssociatedWith == nullptr, "invariant") ;
   } else {
     // Do this the hard way -- materialize a new ParkEvent.
     ev = new ParkEvent () ;
@@ -79,14 +79,14 @@ ParkEvent * ParkEvent::Allocate (Thread * t) {
   }
   ev->reset() ;                     // courtesy to caller
   ev->AssociatedWith = t ;          // Associate ev with t
-  ev->FreeNext       = NULL ;
+  ev->FreeNext       = nullptr ;
   return ev ;
 }
 
 void ParkEvent::Release (ParkEvent * ev) {
-  if (ev == NULL) return ;
-  guarantee (ev->FreeNext == NULL      , "invariant") ;
-  ev->AssociatedWith = NULL ;
+  if (ev == nullptr) return ;
+  guarantee (ev->FreeNext == nullptr      , "invariant") ;
+  ev->AssociatedWith = nullptr ;
   // Note that if we didn't have the TSM/immortal constraint, then
   // when reattaching we could trim the list.
   Thread::SpinAcquire(&ListLock, "ParkEventFreeListRelease");
