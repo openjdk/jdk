@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,14 @@
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 
-JVMCICompiler* JVMCICompiler::_instance = NULL;
+JVMCICompiler* JVMCICompiler::_instance = nullptr;
 
 JVMCICompiler::JVMCICompiler() : AbstractCompiler(compiler_jvmci) {
   _bootstrapping = false;
   _bootstrap_compilation_request_handled = false;
   _methods_compiled = 0;
   _global_compilation_ticks = 0;
-  assert(_instance == NULL, "only one instance allowed");
+  assert(_instance == nullptr, "only one instance allowed");
   _instance = this;
 }
 
@@ -48,7 +48,7 @@ JVMCICompiler* JVMCICompiler::instance(bool require_non_null, TRAPS) {
   if (!EnableJVMCI) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "JVMCI is not enabled")
   }
-  if (_instance == NULL && require_non_null) {
+  if (_instance == nullptr && require_non_null) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "The JVMCI compiler instance has not been created");
   }
   return _instance;
@@ -127,12 +127,12 @@ bool JVMCICompiler::force_comp_at_level_simple(const methodHandle& method) {
     return false;
   } else {
     JVMCIRuntime* runtime = JVMCI::java_runtime();
-    if (runtime != NULL) {
+    if (runtime != nullptr) {
       JVMCIObject receiver = runtime->probe_HotSpotJVMCIRuntime();
       if (receiver.is_null()) {
         return false;
       }
-      JVMCIEnv* ignored_env = NULL;
+      JVMCIEnv* ignored_env = nullptr;
       objArrayHandle excludeModules(JavaThread::current(), HotSpotJVMCI::HotSpotJVMCIRuntime::excludeFromJVMCICompilation(ignored_env, HotSpotJVMCI::resolve(receiver)));
       if (excludeModules.not_null()) {
         ModuleEntry* moduleEntry = method->method_holder()->module();
