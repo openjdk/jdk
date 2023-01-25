@@ -50,6 +50,9 @@ Java_jdk_internal_platform_CgroupMetrics_getTotalSwapSize0
   (JNIEnv *env, jclass ignored)
 {
     struct sysinfo si;
-    sysinfo(&si);
+    int retval = sysinfo(&si);
+    if (retval < 0) {
+         return 0; // syinfo failed, treat as no swap
+    }
     return (jlong)si.totalswap;
 }
