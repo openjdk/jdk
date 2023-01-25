@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -63,9 +63,9 @@ inline void MallocHeader::mark_block_as_dead() {
 
 inline void MallocHeader::assert_block_integrity() const {
   char msg[256];
-  address corruption = NULL;
+  address corruption = nullptr;
   if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    print_block_on_error(tty, corruption != NULL ? corruption : (address)this);
+    print_block_on_error(tty, corruption != nullptr ? corruption : (address)this);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
   }
 }
@@ -74,8 +74,8 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   // Note: if you modify the error messages here, make sure you
   // adapt the associated gtests too.
 
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
+  // Weed out obviously wrong block addresses of null or very low
+  // values. Note that we should not call this for ::free(null),
   // which should be handled by os::free() above us.
   if (((size_t)p2i(this)) < K) {
     jio_snprintf(msg, msglen, "invalid block address");

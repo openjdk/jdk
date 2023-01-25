@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 StringArrayArgument::StringArrayArgument() {
   _array = new (mtServiceability) GrowableArray<char *>(32, mtServiceability);
-  assert(_array != NULL, "Sanity check");
+  assert(_array != nullptr, "Sanity check");
 }
 
 StringArrayArgument::~StringArrayArgument() {
@@ -43,7 +43,7 @@ StringArrayArgument::~StringArrayArgument() {
 }
 
 void StringArrayArgument::add(const char* str, size_t len) {
-  if (str != NULL) {
+  if (str != nullptr) {
     char* ptr = NEW_C_HEAP_ARRAY(char, len+1, mtInternal);
     strncpy(ptr, str, len);
     ptr[len] = 0;
@@ -84,7 +84,7 @@ void GenDCmdArgument::to_string(MemorySizeArgument m, char* buf, size_t len) con
 }
 
 void GenDCmdArgument::to_string(char* c, char* buf, size_t len) const {
-  jio_snprintf(buf, len, "%s", (c != NULL) ? c : "");
+  jio_snprintf(buf, len, "%s", (c != nullptr) ? c : "");
 }
 
 void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) const {
@@ -111,7 +111,7 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) c
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   int scanned = -1;
-  if (str == NULL
+  if (str == nullptr
       || sscanf(str, JLONG_FORMAT "%n", &_value, &scanned) != 1
       || (size_t)scanned != len)
   {
@@ -119,7 +119,7 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IllegalArgumentException(),
       "Integer parsing error in command argument '%s'. Could not parse: %.*s%s.\n", _name,
       MIN2((int)len, maxprint),
-      (str == NULL ? "<null>" : str),
+      (str == nullptr ? "<null>" : str),
       (len > maxprint ? "..." : ""));
   }
 }
@@ -180,8 +180,8 @@ template <> void DCmdArgument<bool>::destroy_value() { }
 
 template <> void DCmdArgument<char*>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
-  if (str == NULL) {
-    _value = NULL;
+  if (str == nullptr) {
+    _value = nullptr;
   } else {
     _value = NEW_C_HEAP_ARRAY(char, len + 1, mtInternal);
     int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
@@ -190,24 +190,24 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
 }
 
 template <> void DCmdArgument<char*>::init_value(TRAPS) {
-  if (has_default() && _default_string != NULL) {
+  if (has_default() && _default_string != nullptr) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
     if (HAS_PENDING_EXCEPTION) {
      fatal("Default string must be parsable");
     }
   } else {
-    set_value(NULL);
+    set_value(nullptr);
   }
 }
 
 template <> void DCmdArgument<char*>::destroy_value() {
   FREE_C_HEAP_ARRAY(char, _value);
-  set_value(NULL);
+  set_value(nullptr);
 }
 
 template <> void DCmdArgument<NanoTimeArgument>::parse_value(const char* str,
                                                  size_t len, TRAPS) {
-  if (str == NULL) {
+  if (str == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Integer parsing error nanotime value: syntax error, value is null\n");
   }
@@ -296,15 +296,15 @@ template <> void DCmdArgument<StringArrayArgument*>::init_value(TRAPS) {
 }
 
 template <> void DCmdArgument<StringArrayArgument*>::destroy_value() {
-  if (_value != NULL) {
+  if (_value != nullptr) {
     delete _value;
-    set_value(NULL);
+    set_value(nullptr);
   }
 }
 
 template <> void DCmdArgument<MemorySizeArgument>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
-  if (str == NULL) {
+  if (str == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                "Parsing error memory size value: syntax error, value is null\n");
   }

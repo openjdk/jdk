@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,8 @@ private:
   // ThreadSnapshot instances should only be created via
   // ThreadDumpResult::add_thread_snapshot.
   friend class ThreadDumpResult;
-  ThreadSnapshot() : _thread(NULL),
-                     _stack_trace(NULL), _concurrent_locks(NULL), _next(NULL) {};
+  ThreadSnapshot() : _thread(nullptr),
+                     _stack_trace(nullptr), _concurrent_locks(nullptr), _next(nullptr) {};
   void        initialize(ThreadsList * t_list, JavaThread* thread);
 
 public:
@@ -279,7 +279,7 @@ class ThreadStackTrace : public CHeapObj<mtInternal> {
   Handle          allocate_fill_stack_trace_element_array(TRAPS);
   void            metadata_do(void f(Metadata*));
   GrowableArray<OopHandle>* jni_locked_monitors() { return _jni_locked_monitors; }
-  int             num_jni_locked_monitors() { return (_jni_locked_monitors != NULL ? _jni_locked_monitors->length() : 0); }
+  int             num_jni_locked_monitors() { return (_jni_locked_monitors != nullptr ? _jni_locked_monitors->length() : 0); }
 
   bool            is_owned_monitor_on_stack(oop object);
   void            add_jni_locked_monitor(oop object);
@@ -305,7 +305,7 @@ class StackFrameInfo : public CHeapObj<mtInternal> {
   int       bci()    const       { return _bci; }
   void      metadata_do(void f(Metadata*));
 
-  int       num_locked_monitors()       { return (_locked_monitors != NULL ? _locked_monitors->length() : 0); }
+  int       num_locked_monitors()       { return (_locked_monitors != nullptr ? _locked_monitors->length() : 0); }
   GrowableArray<OopHandle>* locked_monitors() { return _locked_monitors; }
 
   void      print_on(outputStream* st) const;
@@ -343,10 +343,10 @@ class ConcurrentLocksDump : public StackObj {
   void add_lock(JavaThread* thread, instanceOop o);
 
  public:
-  ConcurrentLocksDump(bool retain_map_on_free) : _map(NULL), _last(NULL), _retain_map_on_free(retain_map_on_free) {
+  ConcurrentLocksDump(bool retain_map_on_free) : _map(nullptr), _last(nullptr), _retain_map_on_free(retain_map_on_free) {
     assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
   };
-  ConcurrentLocksDump() : _map(NULL), _last(NULL), _retain_map_on_free(false) {
+  ConcurrentLocksDump() : _map(nullptr), _last(nullptr), _retain_map_on_free(false) {
     assert(SafepointSynchronize::is_at_safepoint(), "Must be constructed at a safepoint.");
   };
   ~ConcurrentLocksDump();
@@ -459,7 +459,7 @@ class JavaThreadStatusChanger : public StackObj {
   }
 
   static bool is_alive(JavaThread* java_thread) {
-    return java_thread != NULL && java_thread->threadObj() != NULL;
+    return java_thread != nullptr && java_thread->threadObj() != nullptr;
   }
 
   bool is_alive() {
@@ -546,7 +546,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   // java_thread is waiting thread being blocked on monitor reenter.
   // Current thread is the notifying thread which holds the monitor.
   static bool wait_reenter_begin(JavaThread *java_thread, ObjectMonitor *obj_m) {
-    assert((java_thread != NULL), "Java thread should not be null here");
+    assert((java_thread != nullptr), "Java thread should not be null here");
     bool active = false;
     if (is_alive(java_thread)) {
       active = contended_enter_begin(java_thread);
@@ -562,8 +562,8 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   }
 
   JavaThreadBlockedOnMonitorEnterState(JavaThread *java_thread, ObjectMonitor *obj_m) :
-    JavaThreadStatusChanger(java_thread), _stat(NULL), _active(false) {
-    assert((java_thread != NULL), "Java thread should not be null here");
+    JavaThreadStatusChanger(java_thread), _stat(nullptr), _active(false) {
+    assert((java_thread != nullptr), "Java thread should not be null here");
     // Change thread status and collect contended enter stats for monitor contended
     // enter done for external java world objects and it is contended. All other cases
     // like for vm internal objects and for external objects which are not contended
