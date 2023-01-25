@@ -30,7 +30,6 @@ import jdk.internal.misc.VM;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
