@@ -52,13 +52,6 @@ import static java.lang.System.out;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        ProxyServer HttpsTunnelAuthTest
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
  * @run main/othervm -Djdk.httpclient.HttpClient.log=requests,headers,errors
  *                   -Djdk.http.auth.tunneling.disabledSchemes
  *                   -Djdk.httpclient.allowRestrictedHeaders=connection

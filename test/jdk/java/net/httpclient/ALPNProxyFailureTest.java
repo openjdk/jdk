@@ -31,13 +31,6 @@
  * @build jdk.test.lib.net.SimpleSSLContext DigestEchoServer
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  *        ALPNFailureTest ALPNProxyFailureTest
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
  * @run main/othervm -Djdk.internal.httpclient.debug=true -Dtest.nolinger=true ALPNProxyFailureTest HTTP_1_1
  * @run main/othervm -Dtest.nolinger=true ALPNProxyFailureTest HTTP_2
  */

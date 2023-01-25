@@ -55,12 +55,6 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
  * @summary Tests HttpClient usage when configured with a local address to bind
  *          to, when sending requests
  * @bug 8209137
- * @modules jdk.httpserver
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.hpack
- *
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  *
  * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.IPSupport

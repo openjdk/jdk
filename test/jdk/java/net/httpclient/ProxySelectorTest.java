@@ -26,13 +26,6 @@
  * @bug 8244205
  * @summary checks that a different proxy returned for
  *          the same host:port is taken into account
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- *          java.base/sun.net.www
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build DigestEchoServer ProxySelectorTest jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext

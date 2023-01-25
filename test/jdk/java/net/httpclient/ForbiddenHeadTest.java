@@ -25,13 +25,6 @@
  * @test
  * @summary checks that receiving 403 for a HEAD request after
  *          401/407 doesn't cause any unexpected behavior.
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- *          java.base/sun.net.www
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build DigestEchoServer ForbiddenHeadTest jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
