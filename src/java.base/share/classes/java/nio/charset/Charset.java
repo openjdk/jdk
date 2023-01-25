@@ -27,6 +27,8 @@ package java.nio.charset;
 
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
+import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ThreadLocalCoders;
 import sun.security.action.GetPropertyAction;
 
@@ -48,7 +50,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.jar.JarFile;
 
 
 /**
@@ -628,6 +629,7 @@ public abstract class Charset
             });
     }
 
+    @Stable
     private static volatile Charset defaultCharset;
 
     /**
@@ -651,10 +653,8 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
-                String csn = GetPropertyAction
-                        .privilegedGetProperty("file.encoding");
                 // do not look for providers other than the standard one
-                Charset cs = standardProvider.charsetForName(csn);
+                Charset cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
                 if (cs != null)
                     defaultCharset = cs;
                 else
