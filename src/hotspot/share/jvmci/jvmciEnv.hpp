@@ -64,7 +64,7 @@ class JVMCIKlassHandle : public StackObj {
   Thread*    _thread;
 
   Klass*        klass() const                     { return _klass; }
-  Klass*        non_null_klass() const            { assert(_klass != nullptr, "resolving nullptr _klass"); return _klass; }
+  Klass*        non_null_klass() const            { assert(_klass != nullptr, "resolving null _klass"); return _klass; }
 
  public:
   /* Constructors */

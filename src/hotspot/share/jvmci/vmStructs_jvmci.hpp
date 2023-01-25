@@ -30,24 +30,24 @@
 class JVMCIVMStructs {
 public:
   /**
-   * The last entry has a nullptr fieldName.
+   * The last entry has a null fieldName.
    */
   static VMStructEntry localHotSpotVMStructs[];
 
   /**
-   * The last entry has a nullptr typeName.
+   * The last entry has a null typeName.
    */
   static VMTypeEntry localHotSpotVMTypes[];
 
   /**
    * Table of integer constants.
-   * The last entry has a nullptr typeName.
+   * The last entry has a null typeName.
    */
   static VMIntConstantEntry localHotSpotVMIntConstants[];
 
   /**
    * Table of long constants.
-   * The last entry has a nullptr typeName.
+   * The last entry has a null typeName.
    */
   static VMLongConstantEntry localHotSpotVMLongConstants[];
 

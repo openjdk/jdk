@@ -271,7 +271,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
     assert(exception_frame.is_deoptimized_frame(), "must be deopted");
     pc = exception_frame.pc();
   }
-  assert(exception.not_null(), "nullptr exceptions should be handled by throw_exception");
+  assert(exception.not_null(), "null exceptions should be handled by throw_exception");
   assert(oopDesc::is_oop(exception()), "just checking");
   // Check that exception is a subclass of Throwable
   assert(exception->is_a(vmClasses::Throwable_klass()),
@@ -333,7 +333,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* c
 
   // If the stack guard pages are enabled, check whether there is a handler in
   // the current method.  Otherwise (guard pages disabled), force an unwind and
-  // skip the exception cache update (i.e., just leave continuation==null).
+  // skip the exception cache update (i.e., just leave continuation==nullptr).
   address continuation = nullptr;
   if (guard_pages_enabled) {
 
@@ -584,7 +584,7 @@ JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool a
   ttyLocker ttyl;
 
   if (obj == nullptr) {
-    tty->print("nullptr");
+    tty->print("null");
   } else if (oopDesc::is_oop_or_null(obj, true) && (!as_string || !java_lang_String::is_instance(obj))) {
     if (oopDesc::is_oop_or_null(obj, true)) {
       char buf[O_BUFLEN];

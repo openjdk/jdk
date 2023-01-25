@@ -1689,7 +1689,7 @@ nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
       return (JVMCIObjectArray) wrap(array);                                                                         \
     } else {                                                                                                         \
       JNIAccessMark jni(this);                                                                                       \
-      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), nullptr);                       \
+      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), nullptr);                    \
       return wrap(result);                                                                                           \
     }                                                                                                                \
   }                                                                                                                  \

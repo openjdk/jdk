@@ -486,11 +486,11 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 
 #define DO_BOX_CLASS(klass, basicType, type) \
   current_class_name = "java/lang/" #klass;                                                                       \
-  if (JVMCILibDumpJNIConfig == nullptr) {                                                                            \
+  if (JVMCILibDumpJNIConfig == nullptr) {                                                                         \
     _box_classes[basicType] = env->FindClass("java/lang/" #klass);                                                \
     JVMCI_EXCEPTION_CHECK(env, "FindClass(%s)", #klass);                                                          \
     _box_classes[basicType] = (jclass) env->NewGlobalRef(_box_classes[basicType]);                                \
-    assert(_box_classes[basicType] != nullptr, "uninitialized");                                                     \
+    assert(_box_classes[basicType] != nullptr, "uninitialized");                                                  \
     _box_fields[basicType] = env->GetFieldID(_box_classes[basicType], "value", #type);                            \
     JVMCI_EXCEPTION_CHECK(env, "GetFieldID(%s, value, %s)", #klass, #type);                                       \
     GET_JNI_METHOD(GetMethodID, _box_constructors[basicType], _box_classes[basicType], "<init>", "(" #type ")V"); \

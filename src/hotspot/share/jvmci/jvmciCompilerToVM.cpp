@@ -1292,7 +1292,7 @@ void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_p
 }
 
 /*
- * Used by c2v_iterateFrames. Returns an array of any unallocated scope objects or nullptr if none.
+ * Used by c2v_iterateFrames. Returns an array of any unallocated scope objects or null if none.
  */
 GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
   GrowableArray<ScopeValue*>* unallocated = nullptr;

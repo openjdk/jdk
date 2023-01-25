@@ -377,7 +377,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
     JVMCI_ERROR_(Handle(), "unexpected oop tag: %d", tag)
   }
   if (obj == nullptr) {
-    JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly nullptr", Handle());
+    JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
   } else {
     oopDesc::verify(obj);
   }

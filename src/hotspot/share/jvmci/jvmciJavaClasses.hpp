@@ -148,7 +148,7 @@
   end_class                                                                                                   \
   start_class(JavaConstant, jdk_vm_ci_meta_JavaConstant)                                                      \
     static_object_field(JavaConstant, ILLEGAL, "Ljdk/vm/ci/meta/PrimitiveConstant;")                          \
-    static_object_field(JavaConstant, nullptr_POINTER, "Ljdk/vm/ci/meta/JavaConstant;")                          \
+    static_object_field(JavaConstant, NULL_POINTER, "Ljdk/vm/ci/meta/JavaConstant;")                          \
     jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, JavaConstant, forPrimitive, forPrimitive_signature, (JVMCIObject kind, jlong value, JVMCI_TRAPS)) \
   end_class                                                                                                   \
   start_class(ResolvedJavaMethod, jdk_vm_ci_meta_ResolvedJavaMethod)                                          \
@@ -284,13 +284,13 @@ class JVMCIEnv;
 #define STATIC_OBJECT_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObject, oop)
 #define STATIC_OBJECTARRAY_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, objArrayOop)
 
-#define HS_START_CLASS(simpleClassName, fullClassName)                               \
-  START_CLASS(simpleClassName, fullClassName)                                        \
-  friend class HotSpotJVMCI;                                                         \
- private:                                                                            \
-  static void check(oop obj, const char* field_name, int offset);                    \
-  static InstanceKlass* _klass;                                                      \
- public:                                                                             \
+#define HS_START_CLASS(simpleClassName, fullClassName)                                  \
+  START_CLASS(simpleClassName, fullClassName)                                           \
+  friend class HotSpotJVMCI;                                                            \
+ private:                                                                               \
+  static void check(oop obj, const char* field_name, int offset);                       \
+  static InstanceKlass* _klass;                                                         \
+ public:                                                                                \
   static InstanceKlass* klass() { assert(_klass != nullptr, "uninit"); return _klass; } \
   static Symbol* symbol() { return vmSymbols::fullClassName(); }
 

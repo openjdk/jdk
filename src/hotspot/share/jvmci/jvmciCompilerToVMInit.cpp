@@ -152,7 +152,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   vm_page_size = os::vm_page_size();
 
 #define SET_TRIGFUNC(name)                                      \
-  if (StubRoutines::name() != nullptr) {                           \
+  if (StubRoutines::name() != nullptr) {                        \
     name = StubRoutines::name();                                \
   } else {                                                      \
     name = CAST_FROM_FN_PTR(address, SharedRuntime::name);      \
