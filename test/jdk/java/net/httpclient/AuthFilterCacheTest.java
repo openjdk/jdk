@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.HttpsConfigurator;
@@ -46,15 +48,9 @@ import javax.net.ssl.SSLContext;
  * @test
  * @bug 8232853
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer HttpRedirectTest
- * @modules java.net.http/jdk.internal.net.http.common
- * java.net.http/jdk.internal.net.http.frame
- * java.net.http/jdk.internal.net.http.hpack
- * java.logging
- * java.base/sun.net.www.http
- * java.base/sun.net.www
- * java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer
  * @run testng/othervm -Dtest.requiresHost=true
  * -Djdk.httpclient.HttpClient.log=headers
  * -Djdk.internal.httpclient.debug=false
