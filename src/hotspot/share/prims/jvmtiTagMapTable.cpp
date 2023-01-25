@@ -23,20 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/oopStorage.hpp"
-#include "jvmtifiles/jvmtiEnv.hpp"
-#include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
-#include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiTagMapTable.hpp"
-#include "utilities/hashtable.inline.hpp"
-#include "utilities/macros.hpp"
 
 
 JvmtiTagMapKey::JvmtiTagMapKey(oop obj) : _obj(obj) {}
@@ -44,6 +36,11 @@ JvmtiTagMapKey::JvmtiTagMapKey(oop obj) : _obj(obj) {}
 JvmtiTagMapKey::JvmtiTagMapKey(const JvmtiTagMapKey& src) {
   // move object into WeakHandle when copying into the table
   assert(src._obj != nullptr, "must be set");
+
+  // obj was read with AS_NO_KEEPALIVE, or equivalent, like during
+  // a heap walk.  The object needs to be kept alive when it is published.
+  Universe::heap()->keep_alive(src._obj);
+
   _wh = WeakHandle(JvmtiExport::weak_tag_storage(), src._obj);
   _obj = nullptr;
 }

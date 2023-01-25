@@ -1184,7 +1184,7 @@ void JvmtiTagMap::post_dead_objects(GrowableArray<jlong>* const objects) {
   assert(Thread::current()->is_Java_thread(), "Must post from JavaThread");
   if (objects != NULL && objects->length() > 0) {
     JvmtiExport::post_object_free(env(), objects);
-    log_info(jvmti)("%d free object posted", objects->length());
+    log_info(jvmti, table)("%d free object posted", objects->length());
   }
 }
 
