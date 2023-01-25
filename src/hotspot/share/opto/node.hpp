@@ -412,7 +412,7 @@ protected:
 
 #ifdef ASSERT
   bool is_dead() const;
-#define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
+  static bool is_not_dead(const Node* n);
   bool is_reachable_from_root() const;
 #endif
   // Check whether node has become unreachable
@@ -1042,7 +1042,7 @@ public:
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
   // treatise in node.cpp above the default implementation AND TEST WITH
-  // +VerifyIterativeGVN!
+  // -XX:VerifyIterativeGVN=1
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Some nodes have specific Ideal subgraph transformations only if they are

@@ -571,8 +571,16 @@ public:
   bool no_dependent_zero_check(Node* n) const;
 
 #ifndef PRODUCT
+  static bool is_verify_def_use() {
+    // '-XX:VerifyIterativeGVN=1'
+    return (VerifyIterativeGVN % 10) == 1;
+  }
+  static bool is_verify_Value() {
+    // '-XX:VerifyIterativeGVN=10'
+    return ((VerifyIterativeGVN % 100) / 10) == 1;
+  }
 protected:
-  // Sub-quadratic implementation of VerifyIterativeGVN.
+  // Sub-quadratic implementation of '-XX:VerifyIterativeGVN=1' (Use-Def verification).
   julong _verify_counter;
   julong _verify_full_passes;
   enum { _verify_window_size = 30 };

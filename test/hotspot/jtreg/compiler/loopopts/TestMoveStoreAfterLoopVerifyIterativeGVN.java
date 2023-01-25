@@ -25,9 +25,9 @@
  * @test
  * @bug 8238756
  * @requires vm.debug == true & vm.flavor == "server"
- * @summary Test which triggers assertion in PhaseIdealLoop::try_move_store_after_loop with -XX:+VerifyIterativeGVN due to dead hook.
+ * @summary Test which triggers assertion in PhaseIdealLoop::try_move_store_after_loop with -XX:VerifyIterativeGVN=1 due to dead hook.
  *
- * @run main/othervm -Xbatch -XX:+VerifyIterativeGVN compiler.loopopts.TestMoveStoreAfterLoopVerifyIterativeGVN
+ * @run main/othervm -Xbatch -XX:VerifyIterativeGVN=1 compiler.loopopts.TestMoveStoreAfterLoopVerifyIterativeGVN
  */
 
 package compiler.loopopts;

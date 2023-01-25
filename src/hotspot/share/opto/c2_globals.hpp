@@ -618,9 +618,12 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(bool, VerifyIterativeGVN, false,                                  \
-          "Verify Def-Use modifications during sparse Iterative Global "    \
-          "Value Numbering")                                                \
+  develop(uintx, VerifyIterativeGVN, 0,                                     \
+          "Verify Iterative Global Value Numbering"                         \
+          "=XY, with Y: verify Def-Use modifications during sparse IGVN"    \
+          "          X: verify that type(n) == n->Value() after IGVN"       \
+          "X and Y in 0=off; 1=on")                                         \
+          constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   notproduct(bool, TraceCISCSpill, false,                                   \
           "Trace allocators use of cisc spillable instructions")            \

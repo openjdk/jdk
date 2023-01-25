@@ -737,6 +737,10 @@ bool Node::is_dead() const {
   return true;
 }
 
+bool Node::is_not_dead(const Node* n) {
+  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
+}
+
 bool Node::is_reachable_from_root() const {
   ResourceMark rm;
   Unique_Node_List wq;
@@ -1144,9 +1148,9 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '+VerifyIterativeGVN' checks
+// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
 // these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with +VerifyIterativeGVN!
+// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped

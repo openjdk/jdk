@@ -1018,7 +1018,7 @@ void PhaseIterGVN::shuffle_worklist() {
 
 #ifndef PRODUCT
 void PhaseIterGVN::verify_step(Node* n) {
-  if (VerifyIterativeGVN) {
+  if (is_verify_def_use()) {
     ResourceMark rm;
     VectorSet visited;
     Node_List worklist;
@@ -1129,7 +1129,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
 #endif
 
   C->verify_graph_edges();
-  if (VerifyIterativeGVN && PrintOpto) {
+  if (is_verify_def_use() && PrintOpto) {
     if (_verify_counter == _verify_full_passes) {
       tty->print_cr("VerifyIterativeGVN: %d transforms and verify passes",
                     (int) _verify_full_passes);
@@ -1149,7 +1149,7 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
   }
 #endif
 
-  if (VerifyIterativeGVN) {
+  if (is_verify_Value()) {
     DEBUG_ONLY(verify_optimize();)
   }
 }
@@ -1329,7 +1329,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   NOT_PRODUCT(set_transforms());
   // Remove 'n' from hash table in case it gets modified
   _table.hash_delete(n);
-  if (VerifyIterativeGVN) {
+  if (is_verify_def_use()) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 
@@ -1579,7 +1579,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
     _worklist.push(nn);
   }
 #ifndef PRODUCT
-  if( VerifyIterativeGVN ) {
+  if (is_verify_def_use()) {
     for ( int i = 0; i < _verify_window_size; i++ ) {
       if ( _verify_window[i] == old )
         _verify_window[i] = nn;

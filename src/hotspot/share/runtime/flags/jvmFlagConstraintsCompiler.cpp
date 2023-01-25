@@ -305,6 +305,20 @@ JVMFlag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+JVMFlag::Error VerifyIterativeGVNConstraintFunc(uintx value, bool verbose) {
+  for (int i = 0; i < 2; i++) {
+    if (value % 10 > 1) {
+      JVMFlag::printError(verbose,
+                          "Invalid value (" UINTX_FORMAT ") "
+                          "in VerifyIterativeGVN at position %d\n", value, i);
+      return JVMFlag::VIOLATES_CONSTRAINT;
+    }
+    value = value / 10;
+  }
+
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error InitArrayShortSizeConstraintFunc(intx value, bool verbose) {
   if (value % BytesPerLong != 0) {
     JVMFlag::printError(verbose,

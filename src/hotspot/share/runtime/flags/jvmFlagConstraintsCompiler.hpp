@@ -48,6 +48,7 @@
   f(uintx, ArraycopySrcPrefetchDistanceConstraintFunc)  \
   f(int,   AVX3ThresholdConstraintFunc)                 \
   f(uintx, TypeProfileLevelConstraintFunc)              \
+  f(uintx, VerifyIterativeGVNConstraintFunc)            \
   f(intx,  InitArrayShortSizeConstraintFunc)            \
   f(int ,  RTMTotalCountIncrRateConstraintFunc)         \
   f(ccstrlist, DisableIntrinsicConstraintFunc)          \
