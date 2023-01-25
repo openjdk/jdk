@@ -162,6 +162,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     protected String filenameTextFieldToolTipText = null;
     protected String filterComboBoxToolTipText = null;
     protected String openDirectoryButtonToolTipText = null;
+    protected String chooseButtonToolTipText = null;
 
     protected String cancelOpenButtonToolTipText = null;
     protected String cancelSaveButtonToolTipText = null;
@@ -325,6 +326,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         chooseButtonText = getString("FileChooser.chooseButtonText", "Choose");
         newFolderButtonText = getString("FileChooser.newFolderButtonText", "New");
         newFolderTitleText = getString("FileChooser.newFolderTitleText", "New Folder");
+        chooseButtonToolTipText = getString("FileChooser.chooseButtonToolTipText", "Choose");
 
         if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             fileNameLabelText = getString("FileChooser.saveDialogFileNameLabelText", "Save As:");
@@ -397,6 +399,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         cancelSaveButtonToolTipText = null;
         cancelChooseButtonToolTipText = null;
         cancelNewFolderButtonToolTipText = null;
+        chooseButtonToolTipText = null;
 
         saveButtonToolTipText = null;
         openButtonToolTipText = null;
@@ -2053,7 +2056,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         // No fallback
         String getApproveButtonToolTipText(final JFileChooser fc) {
-            return getApproveButtonToolTipText(fc, null);
+            return getApproveButtonToolTipText(fc,chooseButtonToolTipText);
         }
 
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {
