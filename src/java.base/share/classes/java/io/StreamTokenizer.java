@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class StreamTokenizer {
     private Reader reader = null;
     private InputStream input = null;
 
-    private char buf[] = new char[20];
+    private char[] buf = new char[20];
 
     /**
      * The next character to be considered by the nextToken method.  May also
@@ -91,7 +91,7 @@ public class StreamTokenizer {
     private boolean slashSlashCommentsP = false;
     private boolean slashStarCommentsP = false;
 
-    private byte ctype[] = new byte[256];
+    private final byte[] ctype = new byte[256];
     private static final byte CT_WHITESPACE = 1;
     private static final byte CT_DIGIT = 2;
     private static final byte CT_ALPHA = 4;

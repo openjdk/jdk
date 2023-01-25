@@ -195,7 +195,7 @@ class MutexLocker: public StackObj {
   MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -207,7 +207,7 @@ class MutexLocker: public StackObj {
   MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {
@@ -217,7 +217,7 @@ class MutexLocker: public StackObj {
   }
 
   ~MutexLocker() {
-    if (_mutex != NULL) {
+    if (_mutex != nullptr) {
       assert_lock_strong(_mutex);
       _mutex->unlock();
     }
@@ -228,7 +228,7 @@ class MutexLocker: public StackObj {
 
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
-// It also disallows NULL.
+// It also disallows null.
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
@@ -242,13 +242,13 @@ class MonitorLocker: public MutexLocker {
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != nullptr, "null monitor not allowed");
   }
 
   MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     MutexLocker(thread, monitor, flag), _flag(flag) {
     // Superclass constructor did locking
-    assert(monitor != NULL, "NULL monitor not allowed");
+    assert(monitor != nullptr, "null monitor not allowed");
   }
 
   bool wait(int64_t timeout = 0) {

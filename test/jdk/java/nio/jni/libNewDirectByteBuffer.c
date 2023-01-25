@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#include <jni.h>
-#include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include "jni.h"
 
-JNIEXPORT jlong JNICALL
-Java_TestStringCriticalWithDedup_pin(JNIEnv *env, jclass unused, jstring s) {
-  const jchar* a = (*env)->GetStringCritical(env, s, NULL);
-  return (jlong)(uintptr_t)a;
+// private static native ByteBuffer newDirectByteBuffer(long addr, long size)
+JNIEXPORT jobject JNICALL
+Java_NewDirectByteBuffer_newDirectByteBuffer
+    (JNIEnv *env, jclass cls, jlong addr, jlong size)
+{
+    // Create the direct byte buffer, freeing the native memory if an exception
+    // is thrown while constructing the buffer
+    return (*env)->NewDirectByteBuffer(env, (void*)(uintptr_t)addr, size);
 }
 
-JNIEXPORT void JNICALL
-Java_TestStringCriticalWithDedup_unpin(JNIEnv *env, jclass unused, jstring s, jlong v) {
-  jchar* a = (jchar*)(uintptr_t)v;
-  (*env)->ReleaseStringCritical(env, s, a);
+// private static native long getDirectByteBufferCapacity(ByteBuffer buf)
+JNIEXPORT jlong JNICALL
+Java_NewDirectByteBuffer_getDirectByteBufferCapacity
+    (JNIEnv *env, jclass cls, jobject buf)
+{
+    return (*env)->GetDirectBufferCapacity(env, buf);
+}
+
+// private static native long getDirectBufferAddress(ByteBuffer buf)
+JNIEXPORT jlong JNICALL
+Java_NewDirectByteBuffer_getDirectBufferAddress
+    (JNIEnv *env, jclass cls, jobject buf)
+{
+    return (jlong)(uintptr_t)(*env)->GetDirectBufferAddress(env, buf);
 }

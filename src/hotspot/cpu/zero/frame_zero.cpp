@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2007, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -156,7 +156,7 @@ bool frame::is_interpreted_frame_valid(JavaThread *thread) const {
   }
 
   // validate locals
-  address locals = (address) *interpreter_frame_locals_addr();
+  address locals = (address)interpreter_frame_locals();
   if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
     return false;
   }

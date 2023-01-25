@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ class outputStream;
 //  /* If you use a wrong type, a run-time assertion will happen */
 //  intx v = flag->read<intx>();
 //
-//  /* If you use a wrong type, or a NULL flag, an error code is returned */
+//  /* If you use a wrong type, or a null flag, an error code is returned */
 //  JVMFlag::Error err = JVMFlagAccess::get<JVM_FLAG_TYPE(intx)>(flag, &v, origin);
 
 #define JVM_FLAG_TYPE(t) \
@@ -80,7 +80,7 @@ public:
     // set<double, JVMFlag::TYPE_int>(flag, double_ptr);
     assert(JVMFlag::is_compatible_type<T>(type_enum), "must be");
 
-    if (flag == NULL) {
+    if (flag == nullptr) {
       return JVMFlag::INVALID_FLAG;
     }
     if (!is_correct_type(flag, type_enum)) {
@@ -110,7 +110,7 @@ public:
     // set<double, JVMFlag::TYPE_int>(flag, double_ptr);
     assert(JVMFlag::is_compatible_type<T>(type_enum), "must be");
 
-    if (flag == NULL) {
+    if (flag == nullptr) {
       return JVMFlag::INVALID_FLAG;
     }
     if (!is_correct_type(flag, type_enum)) {

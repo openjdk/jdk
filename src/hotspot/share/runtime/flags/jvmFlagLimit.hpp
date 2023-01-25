@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,12 @@ template <typename T> class JVMTypedFlagLimit;
 // To query the range information of a JVMFlag:
 //     JVMFlagLimit::get_range(JVMFlag*)
 //     JVMFlagLimit::get_range_at(int flag_enum)
-// If the given flag doesn't have a range, NULL is returned.
+// If the given flag doesn't have a range, null is returned.
 //
 // To query the constraint information of a JVMFlag:
 //     JVMFlagLimit::get_constraint(JVMFlag*)
 //     JVMFlagLimit::get_constraint_at(int flag_enum)
-// If the given flag doesn't have a constraint, NULL is returned.
+// If the given flag doesn't have a constraint, null is returned.
 
 class JVMFlagLimit {
   short _constraint_func;
@@ -85,11 +85,11 @@ protected:
 private:
   static const JVMFlagLimit* get_kind_at(JVMFlagsEnum flag_enum, int required_kind) {
     const JVMFlagLimit* limit = at(flag_enum);
-    if (limit != NULL && (limit->_kind & required_kind) != 0) {
+    if (limit != nullptr && (limit->_kind & required_kind) != 0) {
       _last_checked = flag_enum;
       return limit;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

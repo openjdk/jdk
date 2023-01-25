@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #ifdef ASSERT
 #define VERIFY_OOP(o_) \
       if (VerifyOops) { \
-        assert(oopDesc::is_oop_or_null(oop(o_)), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(o_))); \
+        assert(oopDesc::is_oop_or_null(oop(o_)), "Expected an oop or null at " PTR_FORMAT, p2i(oop(o_))); \
         StubRoutines::_verify_oop_count++;  \
       }
 #else

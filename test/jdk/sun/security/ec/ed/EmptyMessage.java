@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,20 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_METAPROGRAMMING_ISSIGNED_HPP
-#define SHARE_METAPROGRAMMING_ISSIGNED_HPP
+/*
+ * @test
+ * @bug 8300399
+ * @summary EdDSA does not verify when there is no message
+ * @run main EmptyMessage
+ */
+import java.security.KeyPairGenerator;
+import java.security.Signature;
+import java.security.spec.NamedParameterSpec;
 
-#include "metaprogramming/integralConstant.hpp"
+public class EmptyMessage {
+    public static void main(String[] args) throws Exception {
+        var g = KeyPairGenerator.getInstance("EdDSA");
+        g.initialize(NamedParameterSpec.ED25519);
+        var kp = g.generateKeyPair();
 
-#include <limits>
-#include <type_traits>
+        var ss = Signature.getInstance("EdDSA");
+        ss.initSign(kp.getPrivate());
+        var sig = ss.sign();
 
-template<typename T>
-struct IsSigned
-  : public IntegralConstant<bool, std::numeric_limits<typename std::remove_cv<T>::type>::is_signed>
-{};
-
-#endif // SHARE_METAPROGRAMMING_ISSIGNED_HPP
+        var ps = Signature.getInstance("EdDSA");
+        ps.initVerify(kp.getPublic());
+        if (!ps.verify(sig)) {
+            throw new RuntimeException();
+        }
+    }
+}

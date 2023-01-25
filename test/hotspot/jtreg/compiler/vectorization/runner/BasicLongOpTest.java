@@ -35,6 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicLongOpTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
@@ -118,9 +119,9 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
         counts = {IRNode.ADD_V, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx512dq", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public long[] vectorMulAdd() {
         long[] res = new long[SIZE];
@@ -131,7 +132,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];

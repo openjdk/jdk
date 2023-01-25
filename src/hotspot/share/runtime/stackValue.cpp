@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     // When compressed oops is enabled, an oop location may
     // contain narrow oop values - we deal with that here
 
-    if (chunk != NULL && chunk->has_bitmap()) {
+    if (chunk != nullptr && chunk->has_bitmap()) {
       // Transformed stack chunk with narrow oops
       return chunk->load_oop((narrowOop*)addr);
     }
@@ -67,14 +67,14 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     if (CompressedOops::is_base(*(void**)addr)) {
       // Compiled code may produce decoded oop = narrow_oop_base
       // when a narrow oop implicit null check is used.
-      // The narrow_oop_base could be NULL or be the address
-      // of the page below heap. Use NULL value for both cases.
+      // The narrow_oop_base could be null or be the address
+      // of the page below heap. Use null value for both cases.
       return nullptr;
     }
 #endif
   }
 
-  if (chunk != NULL) {
+  if (chunk != nullptr) {
     // Load oop from chunk
     return chunk->load_oop((oop*)addr);
   }
@@ -99,7 +99,7 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
     narrow_addr = (narrowOop*)addr;
   }
 
-  if (chunk != NULL) {
+  if (chunk != nullptr) {
     // Load oop from chunk
     return chunk->load_oop(narrow_addr);
   }
@@ -111,7 +111,7 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
 StackValue* StackValue::create_stack_value_from_oop_location(stackChunkOop chunk, void* addr) {
   oop val = oop_from_oop_location(chunk, addr);
   assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
-         p2i(addr), chunk != NULL, chunk != NULL && chunk->has_bitmap() && UseCompressedOops);
+         p2i(addr), chunk != nullptr, chunk != nullptr && chunk->has_bitmap() && UseCompressedOops);
   Handle h(Thread::current(), val); // Wrap a handle around the oop
   return new StackValue(h);
 }
@@ -119,7 +119,7 @@ StackValue* StackValue::create_stack_value_from_oop_location(stackChunkOop chunk
 StackValue* StackValue::create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register) {
   oop val = oop_from_narrowOop_location(chunk, addr, is_register);
   assert(oopDesc::is_oop_or_null(val), "bad oop found at " INTPTR_FORMAT " in_cont: %d compressed: %d",
-         p2i(addr), chunk != NULL, chunk != NULL && chunk->has_bitmap() && UseCompressedOops);
+         p2i(addr), chunk != nullptr, chunk != nullptr && chunk->has_bitmap() && UseCompressedOops);
   Handle h(Thread::current(), val); // Wrap a handle around the oop
   return new StackValue(h);
 }
@@ -241,11 +241,11 @@ template address StackValue::stack_value_address(const frame* fr, const SmallReg
 template<typename RegisterMapT>
 address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv) {
   if (!sv->is_location()) {
-    return NULL;
+    return nullptr;
   }
   Location loc = ((LocationValue *)sv)->location();
   if (loc.type() == Location::invalid) {
-    return NULL;
+    return nullptr;
   }
 
   if (!reg_map->in_cont()) {
@@ -256,7 +256,7 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
       // before any extension by its callee (due to Compiler1 linkage on SPARC), must be used.
       : ((address)fr->unextended_sp()) + loc.stack_offset();
 
-    assert(value_addr == NULL || reg_map->thread() == NULL || reg_map->thread()->is_in_usable_stack(value_addr), INTPTR_FORMAT, p2i(value_addr));
+    assert(value_addr == nullptr || reg_map->thread() == nullptr || reg_map->thread()->is_in_usable_stack(value_addr), INTPTR_FORMAT, p2i(value_addr));
     return value_addr;
   }
 
@@ -264,7 +264,7 @@ address StackValue::stack_value_address(const frame* fr, const RegisterMapT* reg
     ? reg_map->as_RegisterMap()->stack_chunk()->reg_to_location(*fr, reg_map->as_RegisterMap(), VMRegImpl::as_VMReg(loc.register_number()))
     : reg_map->as_RegisterMap()->stack_chunk()->usp_offset_to_location(*fr, loc.stack_offset());
 
-  assert(value_addr == NULL || Continuation::is_in_usable_stack(value_addr, reg_map->as_RegisterMap()) || (reg_map->thread() != NULL && reg_map->thread()->is_in_usable_stack(value_addr)), INTPTR_FORMAT, p2i(value_addr));
+  assert(value_addr == nullptr || Continuation::is_in_usable_stack(value_addr, reg_map->as_RegisterMap()) || (reg_map->thread() != nullptr && reg_map->thread()->is_in_usable_stack(value_addr)), INTPTR_FORMAT, p2i(value_addr));
   return value_addr;
 }
 
@@ -292,10 +292,10 @@ void StackValue::print_on(outputStream* st) const {
       break;
 
     case T_OBJECT:
-      if (_handle_value() != NULL) {
+      if (_handle_value() != nullptr) {
         _handle_value()->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("null");
       }
       st->print(" <" INTPTR_FORMAT ">", p2i(_handle_value()));
       break;

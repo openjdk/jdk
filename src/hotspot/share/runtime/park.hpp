@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,9 +137,9 @@ class ParkEvent : public PlatformEvent {
     ~ParkEvent() { guarantee (0, "invariant") ; }
 
     ParkEvent() : PlatformEvent() {
-       AssociatedWith = NULL ;
-       FreeNext       = NULL ;
-       ListNext       = NULL ;
+       AssociatedWith = nullptr ;
+       FreeNext       = nullptr ;
+       ListNext       = nullptr ;
        TState         = 0 ;
        Notified       = 0 ;
     }

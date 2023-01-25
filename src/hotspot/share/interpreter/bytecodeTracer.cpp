@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,8 +201,8 @@ void print_symbol(Symbol* sym, outputStream* st) {
 }
 
 void print_oop(oop value, outputStream* st) {
-  if (value == NULL) {
-    st->print_cr(" NULL");
+  if (value == nullptr) {
+    st->print_cr(" null");
   } else if (java_lang_String::is_instance(value)) {
     char buf[40];
     int len = java_lang_String::utf8_length(value);
@@ -256,7 +256,7 @@ bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* s
 
   ConstantPoolCache* cache = constants->cache();
   // If rewriter hasn't run, the index is the cp_index
-  if (cache == NULL) {
+  if (cache == nullptr) {
     cp_index = i;
     return true;
   }
@@ -503,7 +503,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_newarray: {
         BasicType atype = (BasicType)get_index_u1();
         const char* str = type2name(atype);
-        if (str == NULL || is_reference_type(atype)) {
+        if (str == nullptr || is_reference_type(atype)) {
           assert(false, "Unidentified basic type");
         }
         st->print_cr(" %s", str);
@@ -649,9 +649,9 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
 
 void BytecodePrinter::bytecode_epilog(int bci, outputStream* st) {
   MethodData* mdo = method()->method_data();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     ProfileData* data = mdo->bci_to_data(bci);
-    if (data != NULL) {
+    if (data != nullptr) {
       st->print("  %d", mdo->dp_to_di(data->dp()));
       st->fill_to(6);
       data->print_data_on(st, mdo);
