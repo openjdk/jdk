@@ -61,6 +61,7 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaSecurityAccess;
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -1986,14 +1987,14 @@ public final class ObjectStreamClass implements Serializable {
                 long key = readKeys[i];
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> Bits.putBoolean(buf, off, UNSAFE.getBoolean(obj, key));
+                    case 'Z' -> ByteArray.setBoolean(buf, off, UNSAFE.getBoolean(obj, key));
                     case 'B' -> buf[off] = UNSAFE.getByte(obj, key);
-                    case 'C' -> Bits.putChar(buf, off, UNSAFE.getChar(obj, key));
-                    case 'S' -> Bits.putShort(buf, off, UNSAFE.getShort(obj, key));
-                    case 'I' -> Bits.putInt(buf, off, UNSAFE.getInt(obj, key));
-                    case 'F' -> Bits.putFloat(buf, off, UNSAFE.getFloat(obj, key));
-                    case 'J' -> Bits.putLong(buf, off, UNSAFE.getLong(obj, key));
-                    case 'D' -> Bits.putDouble(buf, off, UNSAFE.getDouble(obj, key));
+                    case 'C' -> ByteArray.setChar(buf, off, UNSAFE.getChar(obj, key));
+                    case 'S' -> ByteArray.setShort(buf, off, UNSAFE.getShort(obj, key));
+                    case 'I' -> ByteArray.setInt(buf, off, UNSAFE.getInt(obj, key));
+                    case 'F' -> ByteArray.setFloat(buf, off, UNSAFE.getFloat(obj, key));
+                    case 'J' -> ByteArray.setLong(buf, off, UNSAFE.getLong(obj, key));
+                    case 'D' -> ByteArray.setDouble(buf, off, UNSAFE.getDouble(obj, key));
                     default  -> throw new InternalError();
                 }
             }
@@ -2015,14 +2016,14 @@ public final class ObjectStreamClass implements Serializable {
                 }
                 int off = offsets[i];
                 switch (typeCodes[i]) {
-                    case 'Z' -> UNSAFE.putBoolean(obj, key, Bits.getBoolean(buf, off));
+                    case 'Z' -> UNSAFE.putBoolean(obj, key, ByteArray.getBoolean(buf, off));
                     case 'B' -> UNSAFE.putByte(obj, key, buf[off]);
-                    case 'C' -> UNSAFE.putChar(obj, key, Bits.getChar(buf, off));
-                    case 'S' -> UNSAFE.putShort(obj, key, Bits.getShort(buf, off));
-                    case 'I' -> UNSAFE.putInt(obj, key, Bits.getInt(buf, off));
-                    case 'F' -> UNSAFE.putFloat(obj, key, Bits.getFloat(buf, off));
-                    case 'J' -> UNSAFE.putLong(obj, key, Bits.getLong(buf, off));
-                    case 'D' -> UNSAFE.putDouble(obj, key, Bits.getDouble(buf, off));
+                    case 'C' -> UNSAFE.putChar(obj, key, ByteArray.getChar(buf, off));
+                    case 'S' -> UNSAFE.putShort(obj, key, ByteArray.getShort(buf, off));
+                    case 'I' -> UNSAFE.putInt(obj, key, ByteArray.getInt(buf, off));
+                    case 'F' -> UNSAFE.putFloat(obj, key, ByteArray.getFloat(buf, off));
+                    case 'J' -> UNSAFE.putLong(obj, key, ByteArray.getLong(buf, off));
+                    case 'D' -> UNSAFE.putDouble(obj, key, ByteArray.getDouble(buf, off));
                     default  -> throw new InternalError();
                 }
             }
@@ -2473,16 +2474,16 @@ public final class ObjectStreamClass implements Serializable {
             try {
                 PRIM_VALUE_EXTRACTORS = Map.of(
                     byte.class, MethodHandles.arrayElementGetter(byte[].class),
-                    short.class, lkp.findStatic(Bits.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
-                    int.class, lkp.findStatic(Bits.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
-                    long.class, lkp.findStatic(Bits.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
-                    float.class, lkp.findStatic(Bits.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
-                    double.class, lkp.findStatic(Bits.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
-                    char.class, lkp.findStatic(Bits.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
-                    boolean.class, lkp.findStatic(Bits.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
+                    short.class, lkp.findStatic(ByteArray.class, "getShort", MethodType.methodType(short.class, byte[].class, int.class)),
+                    int.class, lkp.findStatic(ByteArray.class, "getInt", MethodType.methodType(int.class, byte[].class, int.class)),
+                    long.class, lkp.findStatic(ByteArray.class, "getLong", MethodType.methodType(long.class, byte[].class, int.class)),
+                    float.class, lkp.findStatic(ByteArray.class, "getFloat", MethodType.methodType(float.class, byte[].class, int.class)),
+                    double.class, lkp.findStatic(ByteArray.class, "getDouble", MethodType.methodType(double.class, byte[].class, int.class)),
+                    char.class, lkp.findStatic(ByteArray.class, "getChar", MethodType.methodType(char.class, byte[].class, int.class)),
+                    boolean.class, lkp.findStatic(ByteArray.class, "getBoolean", MethodType.methodType(boolean.class, byte[].class, int.class))
                 );
             } catch (NoSuchMethodException | IllegalAccessException e) {
-                throw new InternalError("Can't lookup Bits.getXXX", e);
+                throw new InternalError("Can't lookup " + ByteArray.class.getName() + ".getXXX", e);
             }
         }
     }

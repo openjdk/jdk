@@ -45,6 +45,7 @@ import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.DeserializationEvent;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ByteArray;
 import sun.reflect.misc.ReflectUtil;
 import sun.security.action.GetBooleanAction;
 import sun.security.action.GetIntegerAction;
@@ -2631,7 +2632,7 @@ public class ObjectInputStream
 
         public boolean get(String name, boolean val) {
             int off = getFieldOffset(name, Boolean.TYPE);
-            return (off >= 0) ? Bits.getBoolean(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getBoolean(primValues, off) : val;
         }
 
         public byte get(String name, byte val) {
@@ -2641,32 +2642,32 @@ public class ObjectInputStream
 
         public char get(String name, char val) {
             int off = getFieldOffset(name, Character.TYPE);
-            return (off >= 0) ? Bits.getChar(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getChar(primValues, off) : val;
         }
 
         public short get(String name, short val) {
             int off = getFieldOffset(name, Short.TYPE);
-            return (off >= 0) ? Bits.getShort(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getShort(primValues, off) : val;
         }
 
         public int get(String name, int val) {
             int off = getFieldOffset(name, Integer.TYPE);
-            return (off >= 0) ? Bits.getInt(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getInt(primValues, off) : val;
         }
 
         public float get(String name, float val) {
             int off = getFieldOffset(name, Float.TYPE);
-            return (off >= 0) ? Bits.getFloat(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getFloat(primValues, off) : val;
         }
 
         public long get(String name, long val) {
             int off = getFieldOffset(name, Long.TYPE);
-            return (off >= 0) ? Bits.getLong(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getLong(primValues, off) : val;
         }
 
         public double get(String name, double val) {
             int off = getFieldOffset(name, Double.TYPE);
-            return (off >= 0) ? Bits.getDouble(primValues, off) : val;
+            return (off >= 0) ? ByteArray.getDouble(primValues, off) : val;
         }
 
         public Object get(String name, Object val) throws ClassNotFoundException {
@@ -3114,7 +3115,7 @@ public class ObjectInputStream
                                 return HEADER_BLOCKED;
                             }
                             in.readFully(hbuf, 0, 5);
-                            int len = Bits.getInt(hbuf, 1);
+                            int len = ByteArray.getInt(hbuf, 1);
                             if (len < 0) {
                                 throw new StreamCorruptedException(
                                     "illegal block data header length: " +
@@ -3413,7 +3414,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readChar();
             }
-            char v = Bits.getChar(buf, pos);
+            char v = ByteArray.getChar(buf, pos);
             pos += 2;
             return v;
         }
@@ -3425,7 +3426,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readShort();
             }
-            short v = Bits.getShort(buf, pos);
+            short v = ByteArray.getShort(buf, pos);
             pos += 2;
             return v;
         }
@@ -3437,7 +3438,7 @@ public class ObjectInputStream
             } else if (end - pos < 2) {
                 return din.readUnsignedShort();
             }
-            int v = Bits.getShort(buf, pos) & 0xFFFF;
+            int v = ByteArray.getShort(buf, pos) & 0xFFFF;
             pos += 2;
             return v;
         }
@@ -3449,7 +3450,7 @@ public class ObjectInputStream
             } else if (end - pos < 4) {
                 return din.readInt();
             }
-            int v = Bits.getInt(buf, pos);
+            int v = ByteArray.getInt(buf, pos);
             pos += 4;
             return v;
         }
@@ -3461,7 +3462,7 @@ public class ObjectInputStream
             } else if (end - pos < 4) {
                 return din.readFloat();
             }
-            float v = Bits.getFloat(buf, pos);
+            float v = ByteArray.getFloat(buf, pos);
             pos += 4;
             return v;
         }
@@ -3473,7 +3474,7 @@ public class ObjectInputStream
             } else if (end - pos < 8) {
                 return din.readLong();
             }
-            long v = Bits.getLong(buf, pos);
+            long v = ByteArray.getLong(buf, pos);
             pos += 8;
             return v;
         }
@@ -3485,7 +3486,7 @@ public class ObjectInputStream
             } else if (end - pos < 8) {
                 return din.readDouble();
             }
-            double v = Bits.getDouble(buf, pos);
+            double v = ByteArray.getDouble(buf, pos);
             pos += 8;
             return v;
         }
@@ -3523,7 +3524,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getBoolean(buf, pos++);
+                    v[off++] = ByteArray.getBoolean(buf, pos++);
                 }
             }
         }
@@ -3544,7 +3545,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getChar(buf, pos);
+                    v[off++] = ByteArray.getChar(buf, pos);
                     pos += 2;
                 }
             }
@@ -3566,7 +3567,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getShort(buf, pos);
+                    v[off++] = ByteArray.getShort(buf, pos);
                     pos += 2;
                 }
             }
@@ -3588,7 +3589,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getInt(buf, pos);
+                    v[off++] = ByteArray.getInt(buf, pos);
                     pos += 4;
                 }
             }
@@ -3610,7 +3611,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getFloat(buf, pos);
+                    v[off++] = ByteArray.getFloat(buf, pos);
                     pos += 4;
                 }
             }
@@ -3632,7 +3633,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getLong(buf, pos);
+                    v[off++] = ByteArray.getLong(buf, pos);
                     pos += 8;
                 }
             }
@@ -3654,7 +3655,7 @@ public class ObjectInputStream
                 }
 
                 while (off < stop) {
-                    v[off++] = Bits.getDouble(buf, pos);
+                    v[off++] = ByteArray.getDouble(buf, pos);
                     pos += 8;
                 }
             }
