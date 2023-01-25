@@ -26,7 +26,6 @@
 #define SHARE_RUNTIME_OS_HPP
 
 #include "jvm_md.h"
-#include "metaprogramming/integralConstant.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/ostream.hpp"
