@@ -482,7 +482,7 @@ public class TransPatterns extends TreeTranslator {
             LoadableConstant[] staticArgValues =
                     cases.stream()
                          .flatMap(c -> c.labels.stream())
-                         .map(l -> toLoadableConstant(l, seltype))
+                         .map(l -> toLoadableConstant(l, types.classBound(seltype)))
                          .filter(c -> c != null)
                          .toArray(s -> new LoadableConstant[s]);
 
