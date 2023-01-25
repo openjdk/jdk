@@ -58,7 +58,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
       // card spans the entire card, and that the store happened on a
       // later card.  Figure out where the object ends.
       assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
-        "Block size and object size mismatch");
+             "Block size and object size mismatch");
       top = top_obj + cast_to_oop(top_obj)->size();
     }
   } else {
@@ -144,22 +144,22 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 // (see above) is apparent at the oop_iterate calls.
 #define DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(ClosureType) \
 void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,        \
-                                                   HeapWord* bottom,    \
-                                                   HeapWord* top,       \
-                                                   ClosureType* cl) {   \
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);              \
-  if (bottom < top) {                                                   \
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();          \
-    while (next_obj < top) {                                            \
-      /* Bottom lies entirely below top, so we can call the */          \
-      /* non-memRegion version of oop_iterate below. */                 \
-      cast_to_oop(bottom)->oop_iterate(cl);                             \
-      bottom = next_obj;                                                \
-      next_obj = bottom + cast_to_oop(bottom)->size();                  \
-    }                                                                   \
-    /* Last object. */                                                  \
-    cast_to_oop(bottom)->oop_iterate(cl, mr);                           \
-  }                                                                     \
+                                                    HeapWord* bottom,    \
+                                                    HeapWord* top,       \
+                                                    ClosureType* cl) {   \
+  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);               \
+  if (bottom < top) {                                                    \
+    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();           \
+    while (next_obj < top) {                                             \
+      /* Bottom lies entirely below top, so we can call the */           \
+      /* non-memRegion version of oop_iterate below. */                  \
+      cast_to_oop(bottom)->oop_iterate(cl);                              \
+      bottom = next_obj;                                                 \
+      next_obj = bottom + cast_to_oop(bottom)->size();                   \
+    }                                                                    \
+    /* Last object. */                                                   \
+    cast_to_oop(bottom)->oop_iterate(cl, mr);                            \
+  }                                                                      \
 }
 
 // (There are only two of these, rather than N, because the split is due
