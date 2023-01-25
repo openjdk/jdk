@@ -663,7 +663,7 @@ void CodeHeap::add_to_freelist(HeapBlock* a) {
 
 /**
  * Search freelist for an entry on the list with the best fit.
- * @return nullptr, if no one was found
+ * @return null, if no one was found
  */
 HeapBlock* CodeHeap::search_freelist(size_t length) {
   FreeBlock* found_block  = nullptr;
