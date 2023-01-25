@@ -7042,18 +7042,143 @@ typedef uint32_t u32;
     return start;
   }
 
+  // void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
+  //   __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
+  //   __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
+  //   __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
+  //   __ orr(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
+
+  //   __ orr(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
+  //   __ orr(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
+  //   __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
+  //   __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+
+  //   __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+  // }
+
+  // void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+  //   __ mul(prod_lo, n, m);
+  //   __ umulh(prod_hi, n, m);
+  // }
+  // void wide_madd(Register sum_lo, Register sum_hi, Register n, Register m) {
+  //   wide_mul(rscratch1, rscratch2, n, m);
+  //   __ adds(sum_lo, sum_lo, rscratch1);
+  //   __ adc(sum_hi, sum_hi, rscratch2);
+  // }
+
+  // address generate_poly1305_processBlocks1() {
+  //   __ align(CodeEntryAlignment);
+  //   StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+  //   address start = __ pc();
+  //   Label here;
+  //   __ enter();
+  //   RegSet callee_saved = RegSet::range(r19, r28);
+  //   __ push(callee_saved, sp);
+
+  //   RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
+
+  //   // Arguments
+  //   const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+
+  //   // R_n is the randomly-generated key, packed into three registers
+  //   const Register R_0 = *++regs, R_1 = *++regs, R_2 = *++regs;
+  //   pack_26(R_0, R_1, R_2, r_start);
+
+  //   // RR_n is (R_n >> 2) * 5
+  //   const Register RR_0 = *++regs, RR_1 = *++regs;
+  //   __ lsr(RR_0, R_0, 2);
+  //   __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
+  //   __ lsr(RR_1, R_1, 2);
+  //   __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
+
+  //   // U_n is the current checksum
+  //   const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+  //   pack_26(U_0, U_1, U_2, acc_start);
+
+  //   static constexpr int BLOCK_LENGTH = 16;
+  //   Label DONE, LOOP;
+
+  //   __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+  //   __ br(Assembler::LT, DONE); {
+  //     __ bind(LOOP);
+
+  //     // S_n is to be the sum of U_n and the next block of data
+  //     const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+  //     __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
+  //     __ adds(S_0, U_0, S_0);
+  //     __ adcs(S_1, U_1, S_1);
+  //     __ adc(S_2, U_2, zr);
+  //     __ add(S_2, S_2, 1);
+
+  //     const Register U_0HI = *++regs, U_1HI = *++regs;
+
+  //     wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
+  //     wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
+  //     __ andr(U_2, R_0, 3);
+  //     __ mul(U_2, S_2, U_2);
+
+  //     // Recycle registers S_0, S_1, S_2
+  //     regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
+
+  //     // Partial reduction mod 2**130 - 5
+  //     __ adds(U_1, U_0HI, U_1);
+  //     __ adc(U_2, U_1HI, U_2);
+  //     // Sum now in U_2:U_1, U_0.
+  //     // Dead: U_0HI, U_1HI.
+  //     regs = (regs.remaining() + U_0HI + U_1HI).begin();
+
+  //     // U_2:U_1:U_0 += (U_1HI >> 2)
+  //     __ lsr(rscratch1, U_2, 2);
+  //     __ andr(U_2, U_2, (u8)3);
+  //     __ adds(U_0, U_0, rscratch1);
+  //     __ adcs(U_1, U_1, zr);
+  //     __ adc(U_2, U_2, zr);
+
+  //     // U_1HI:U_0HI, U_0 += (U_1HI >> 2) << 2
+  //     __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
+  //     __ adcs(U_1, U_1, zr);
+  //     __ adc(U_2, U_2, zr);
+
+  //     __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
+  //     __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+  //     __ br(~ Assembler::LT, LOOP);
+  //   }
+
+  //   // Fully reduce modulo 2^130 - 5
+  //   __ lsr(rscratch1, U_2, 2);
+  //   __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
+  //   __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
+  //   __ adcs(U_1, U_1, zr);
+  //   __ andr(U_2, U_2, (u1)3);
+  //   __ adc(U_2, U_2, zr);
+
+  //   __ ubfiz(rscratch1, U_0, 0, 26);
+  //   __ ubfx(rscratch2, U_0, 26, 26);
+  //   __ stp(rscratch1, rscratch2, Address(acc_start));
+  //   __ ubfx(rscratch1, U_0, 52, 12);
+  //   __ bfi(rscratch1, U_1, 12, 14);
+  //   __ ubfx(rscratch2, U_1, 14, 26);
+  //   __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+  //   __ ubfx(rscratch1, U_1, 40, 24);
+  //   __ bfi(rscratch1, U_2, 24, 2);
+  //   __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+  //   __ bind(DONE);
+  //   __ pop(callee_saved, sp);
+  //   __ leave();
+  //   __ ret(lr);
+
+  //   return start;
+  // }
+
   void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
-    __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
-    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
-    __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
-    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
+    __ ldp(dest0, rscratch1, Address(src, 0));
+    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);
 
-    __ orr(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
-    __ orr(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
-    __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
-    __ orr(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+    __ ldp(dest1, rscratch1, Address(src, 2 * sizeof (jlong)));
+    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 12 bits
 
-    __ orr(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    __ ldr(dest2, Address(src, 4 * sizeof (jlong)));
   }
 
   void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
@@ -7085,11 +7210,10 @@ typedef uint32_t u32;
     pack_26(R_0, R_1, R_2, r_start);
 
     // RR_n is (R_n >> 2) * 5
-    const Register RR_0 = *++regs, RR_1 = *++regs;
-    __ lsr(RR_0, R_0, 2);
-    __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
-    __ lsr(RR_1, R_1, 2);
-    __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
+    const Register RR_0 = *++regs, RR_1 = *++regs, RR_2 = *++regs;
+    __ lsr(RR_0, R_0, 2); __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
+    __ lsr(RR_1, R_1, 2); __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
+    __ lsr(RR_2, R_2, 2); __ add(RR_2, RR_2, RR_2, Assembler::LSL, 2);
 
     // U_n is the current checksum
     const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
@@ -7104,40 +7228,40 @@ typedef uint32_t u32;
 
       // S_n is to be the sum of U_n and the next block of data
       const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
-      __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
+      __ ldr(rscratch1, __ post(input_start, wordSize));
+      __ ubfiz(S_0, rscratch1, 0, 52);
+      __ ldp(rscratch1, rscratch2, __ post(input_start, 2 * wordSize));
+      __ extr(S_1, rscratch1, rscratch2, 52);
+      __ ubfiz(rscratch1, rscratch1, 0, 52);
+      __ ubfiz(S_2, rscratch2, 40, 24);
+
       __ adds(S_0, U_0, S_0);
       __ adcs(S_1, U_1, S_1);
+      __ adcs(S_2, U_2, S_2);
       __ adc(S_2, U_2, zr);
       __ add(S_2, S_2, 1);
 
-      const Register U_0HI = *++regs, U_1HI = *++regs;
+      const Register U_0HI = *++regs, U_1HI = *++regs, U_2HI = *++regs;
 
-      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
-      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
-      __ andr(U_2, R_0, 3);
-      __ mul(U_2, S_2, U_2);
+      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_2);  wide_madd(U_0, U_0HI, S_2, RR_1);
+      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);   wide_madd(U_1, U_1HI, S_2, RR_2);
+      wide_mul(U_2, U_2HI, S_0, R_2);  wide_madd(U_2, U_2HI, S_1, R_1);   wide_madd(U_2, U_2HI, S_2, R_0);
 
       // Recycle registers S_0, S_1, S_2
       regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
 
       // Partial reduction mod 2**130 - 5
-      __ adds(U_1, U_0HI, U_1);
-      __ adc(U_2, U_1HI, U_2);
+      __ add(U_1, U_0HI, U_1);
+      __ add(U_2, U_1HI, U_2);
       // Sum now in U_2:U_1, U_0.
       // Dead: U_0HI, U_1HI.
       regs = (regs.remaining() + U_0HI + U_1HI).begin();
 
-      // U_2:U_1:U_0 += (U_1HI >> 2)
-      __ lsr(rscratch1, U_2, 2);
-      __ andr(U_2, U_2, (u8)3);
-      __ adds(U_0, U_0, rscratch1);
-      __ adcs(U_1, U_1, zr);
-      __ adc(U_2, U_2, zr);
-
-      // U_1HI:U_0HI, U_0 += (U_1HI >> 2) << 2
-      __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
-      __ adcs(U_1, U_1, zr);
-      __ adc(U_2, U_2, zr);
+      // U_1:U_0 += (U_2 >> 26) * 5
+      __ lsr(rscratch1, U_2, 26);
+      __ ubfx(U_2, U_2, 0, 26);
+      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      __ add(U_0, U_0, rscratch1);
 
       __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
       __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
@@ -7145,23 +7269,33 @@ typedef uint32_t u32;
     }
 
     // Fully reduce modulo 2^130 - 5
-    __ lsr(rscratch1, U_2, 2);
-    __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
-    __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
-    __ adcs(U_1, U_1, zr);
-    __ andr(U_2, U_2, (u1)3);
-    __ adc(U_2, U_2, zr);
+    __ add(U_1, U_1, U_0, __ LSR, 52);
+    __ ubfx(U_0, U_0, 0, 52);
+    __ add(U_2, U_2, U_1, __ LSR, 52);
+    __ ubfx(U_1, U_1, 0, 52);
+    __ lsr(rscratch1, U_2, 26);
+    __ ubfx(U_2, U_2, 0, 26);
+    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+    __ add(U_0, U_0, rscratch1);
 
-    __ ubfiz(rscratch1, U_0, 0, 26);
+    __ add(U_1, U_1, U_0, __ LSR, 52);
+    __ ubfx(U_0, U_0, 0, 52);
+    __ add(U_2, U_2, U_1, __ LSR, 52);
+    __ ubfx(U_1, U_1, 0, 52);
+    __ lsr(rscratch1, U_2, 26);
+    __ ubfx(U_2, U_2, 0, 26);
+    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+    __ add(U_0, U_0, rscratch1);
+
+    __ ubfx(rscratch1, U_0, 0, 26);
     __ ubfx(rscratch2, U_0, 26, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start));
-    __ ubfx(rscratch1, U_0, 52, 12);
-    __ bfi(rscratch1, U_1, 12, 14);
-    __ ubfx(rscratch2, U_1, 14, 26);
-    __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
-    __ ubfx(rscratch1, U_1, 40, 24);
-    __ bfi(rscratch1, U_2, 24, 2);
-    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+    __ ubfx(rscratch1, U_1, 0, 26);
+    __ ubfx(rscratch2, U_1, 26, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start));
+
+    __ str(U_2, Address(acc_start, 4 * sizeof (jlong)));
 
     __ bind(DONE);
     __ pop(callee_saved, sp);
