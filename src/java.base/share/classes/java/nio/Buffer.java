@@ -33,6 +33,7 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM.BufferPool;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.io.FileDescriptor;
@@ -747,7 +748,14 @@ public abstract sealed class Buffer
     }
 
     final int checkIndex(int i, int nb) {               // package-private
-        return Objects.checkIndex(i, limit - nb + 1);
+        return Preconditions.checkIndex(i, limit - nb + 1,
+            (x, y) -> {
+                String msg = i < 0
+                    ? "position (" + i + ") < 0"
+                    : "position (" + i + ") + length (" + nb + ") > limit (" + limit + ")";
+                return new IndexOutOfBoundsException(msg);
+            }
+        );
     }
 
     final int markValue() {                             // package-private
