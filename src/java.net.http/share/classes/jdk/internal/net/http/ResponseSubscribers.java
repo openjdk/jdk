@@ -562,7 +562,7 @@ public class ResponseSubscribers {
                             // should contain at least 2
                             assert buffers.remainingCapacity() > 1
                                     : "buffers capacity: " + buffers.remainingCapacity()
-                                    + "closed: " + closed + "failed: " + failed;
+                                    + " closed: " + closed + "failed: " + failed;
                         }
                     }
                     if (closed) {
