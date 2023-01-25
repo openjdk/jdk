@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,15 +73,12 @@ class MutableNUMASpace : public MutableSpace {
 
     struct SpaceStats {
       size_t _local_space, _remote_space, _unbiased_space, _uncommited_space;
-      size_t _large_pages, _small_pages;
 
       SpaceStats() {
         _local_space = 0;
         _remote_space = 0;
         _unbiased_space = 0;
         _uncommited_space = 0;
-        _large_pages = 0;
-        _small_pages = 0;
       }
     };
 

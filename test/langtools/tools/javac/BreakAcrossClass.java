@@ -8,7 +8,7 @@
  */
 
 class BreakAcrossClass {
-     public static void main(String argv[]) {
+     public static void meth() {
         final int i = 6;
     M:  {
             class A {

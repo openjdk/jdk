@@ -142,8 +142,8 @@ static JavaThread* get_current_thread(bool allow_null=true) {
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
     return;                                              \
   }                                                      \
-  JVMCITraceMark jtm("CompilerToVM::" #name);            \
-  C2V_BLOCK(result_type, name, signature)
+  C2V_BLOCK(result_type, name, signature)                \
+  JVMCITraceMark jtm("CompilerToVM::" #name);
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
@@ -153,8 +153,8 @@ static JavaThread* get_current_thread(bool allow_null=true) {
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
     return result;                                       \
   }                                                      \
-  JVMCITraceMark jtm("CompilerToVM::" #name);            \
-  C2V_BLOCK(result_type, name, signature)
+  C2V_BLOCK(result_type, name, signature)                \
+  JVMCITraceMark jtm("CompilerToVM::" #name);
 
 #define C2V_VMENTRY_NULL(result_type, name, signature) C2V_VMENTRY_(result_type, name, signature, NULL)
 #define C2V_VMENTRY_0(result_type, name, signature) C2V_VMENTRY_(result_type, name, signature, 0)
@@ -503,7 +503,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   } else {
     // Use the System class loader
     class_loader = Handle(THREAD, SystemDictionary::java_system_loader());
-    JVMCIENV->runtime()->initialize(JVMCIENV);
+    JVMCIENV->runtime()->initialize(JVMCI_CHECK_NULL);
   }
 
   if (resolve) {
@@ -1609,12 +1609,12 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
   for (int frame_index = 0; frame_index < virtualFrames->length(); frame_index++) {
     compiledVFrame* cvf = virtualFrames->at(frame_index);
 
-    GrowableArray<ScopeValue*>* extentLocals = cvf->scope()->locals();
+    GrowableArray<ScopeValue*>* scopedValues = cvf->scope()->locals();
     StackValueCollection* locals = cvf->locals();
     if (locals != NULL) {
       for (int i2 = 0; i2 < locals->size(); i2++) {
         StackValue* var = locals->at(i2);
-        if (var->type() == T_OBJECT && extentLocals->at(i2)->is_object()) {
+        if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
           cvf->update_local(T_OBJECT, i2, val);
@@ -2312,9 +2312,9 @@ C2V_VMENTRY_PREFIX(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject c2vm
     // Called from unattached JVMCI shared library thread
     return false;
   }
-  JVMCITraceMark jtm("isCurrentThreadAttached");
   if (thread->jni_environment() == env) {
     C2V_BLOCK(jboolean, isCurrentThreadAttached, (JNIEnv* env, jobject))
+    JVMCITraceMark jtm("isCurrentThreadAttached");
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
     JVMCIRuntime* runtime = thread->libjvmci_runtime();
     if (runtime == nullptr || !runtime->has_shared_library_javavm()) {
@@ -2331,7 +2331,6 @@ C2V_VMENTRY_PREFIX(jlong, getCurrentJavaThread, (JNIEnv* env, jobject c2vm))
     // Called from unattached JVMCI shared library thread
     return 0L;
   }
-  JVMCITraceMark jtm("getCurrentJavaThread");
   return (jlong) p2i(thread);
 C2V_END
 
@@ -2377,10 +2376,10 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     attachSharedLibraryThread(env, name, as_daemon);
     return true;
   }
-  JVMCITraceMark jtm("attachCurrentThread");
   if (thread->jni_environment() == env) {
     // Called from HotSpot
     C2V_BLOCK(jboolean, attachCurrentThread, (JNIEnv* env, jobject, jboolean))
+    JVMCITraceMark jtm("attachCurrentThread");
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
 
     JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread);
@@ -2435,10 +2434,10 @@ C2V_VMENTRY_PREFIX(jboolean, detachCurrentThread, (JNIEnv* env, jobject c2vm, jb
     // Called from unattached JVMCI shared library thread
     JNI_THROW_("detachCurrentThread", IllegalStateException, "Cannot detach non-attached thread", false);
   }
-  JVMCITraceMark jtm("detachCurrentThread");
   if (thread->jni_environment() == env) {
     // Called from HotSpot
     C2V_BLOCK(void, detachCurrentThread, (JNIEnv* env, jobject))
+    JVMCITraceMark jtm("detachCurrentThread");
     requireJVMCINativeLibrary(JVMCI_CHECK_0);
     requireInHotSpot("detachCurrentThread", JVMCI_CHECK_0);
     JVMCIRuntime* runtime = thread->libjvmci_runtime();

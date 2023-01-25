@@ -62,6 +62,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
  */
 public final class SunPKCS11 extends AuthProvider {
 
+    @Serial
     private static final long serialVersionUID = -1354835039035306505L;
 
     static final Debug debug = Debug.getInstance("sunpkcs11");
@@ -188,7 +189,7 @@ public final class SunPKCS11 extends AuthProvider {
                     if (nssSecmodDirectory != null) {
                         String s = secmod.getConfigDir();
                         if ((s != null) &&
-                                (s.equals(nssSecmodDirectory) == false)) {
+                                (!s.equals(nssSecmodDirectory))) {
                             throw new ProviderException("Secmod directory "
                                 + nssSecmodDirectory
                                 + " invalid, NSS already initialized with "
@@ -198,7 +199,7 @@ public final class SunPKCS11 extends AuthProvider {
                     if (nssLibraryDirectory != null) {
                         String s = secmod.getLibDir();
                         if ((s != null) &&
-                                (s.equals(nssLibraryDirectory) == false)) {
+                                (!s.equals(nssLibraryDirectory))) {
                             throw new ProviderException("NSS library directory "
                                 + nssLibraryDirectory
                                 + " invalid, NSS already initialized with "
@@ -301,8 +302,8 @@ public final class SunPKCS11 extends AuthProvider {
         // (e.g. "libpkcs11.so"), it may refer to a library somewhere on the
         // OS library search path. Omit the test for file existence as that
         // only looks in the current directory.
-        if (libraryFile.getName().equals(library) == false) {
-            if (new File(library).isFile() == false) {
+        if (!libraryFile.getName().equals(library)) {
+            if (!new File(library).isFile()) {
                 String msg = "Library " + library + " does not exist";
                 if (config.getHandleStartupErrors() == Config.ERR_HALT) {
                     throw new ProviderException(msg);
@@ -331,7 +332,7 @@ public final class SunPKCS11 extends AuthProvider {
                 if (debug != null) {
                     debug.println("Multi-threaded initialization failed: " + e);
                 }
-                if (config.getAllowSingleThreadedModules() == false) {
+                if (!config.getAllowSingleThreadedModules()) {
                     throw e;
                 }
                 // fall back to single threaded access
@@ -479,11 +480,7 @@ public final class SunPKCS11 extends AuthProvider {
         for (int i = 0; i < d.mechanisms.length; i++) {
             int m = d.mechanisms[i];
             Integer key = Integer.valueOf(m);
-            List<Descriptor> list = descriptors.get(key);
-            if (list == null) {
-                list = new ArrayList<Descriptor>();
-                descriptors.put(key, list);
-            }
+            List<Descriptor> list = descriptors.computeIfAbsent(key, k -> new ArrayList<>());
             list.add(d);
         }
     }
@@ -953,7 +950,7 @@ public final class SunPKCS11 extends AuthProvider {
                 } catch (InterruptedException e) {
                     break;
                 }
-                if (enabled == false) {
+                if (!enabled) {
                     break;
                 }
                 try {
@@ -1250,7 +1247,7 @@ public final class SunPKCS11 extends AuthProvider {
         @Override
         public Object newInstance(Object param)
                 throws NoSuchAlgorithmException {
-            if (token.isValid() == false) {
+            if (!token.isValid()) {
                 throw new NoSuchAlgorithmException("Token has been removed");
             }
             try {
@@ -1272,14 +1269,14 @@ public final class SunPKCS11 extends AuthProvider {
                 } else if (algorithm.endsWith("GCM/NoPadding") ||
                            algorithm.startsWith("ChaCha20-Poly1305")) {
                     return new P11AEADCipher(token, algorithm, mechanism);
-                } else if (algorithm.indexOf("/KW/") != -1 ||
-                        algorithm.indexOf("/KWP/") != -1) {
+                } else if (algorithm.contains("/KW/") ||
+                        algorithm.contains("/KWP/")) {
                     return new P11KeyWrapCipher(token, algorithm, mechanism);
                 } else {
                     return new P11Cipher(token, algorithm, mechanism);
                 }
             } else if (type == SIG) {
-                if (algorithm.indexOf("RSASSA-PSS") != -1) {
+                if (algorithm.contains("RSASSA-PSS")) {
                     return new P11PSSSignature(token, algorithm, mechanism);
                 } else {
                     return new P11Signature(token, algorithm, mechanism);
@@ -1338,20 +1335,19 @@ public final class SunPKCS11 extends AuthProvider {
         }
 
         public boolean supportsParameter(Object param) {
-            if ((param == null) || (token.isValid() == false)) {
+            if ((param == null) || (!token.isValid())) {
                 return false;
             }
-            if (param instanceof Key == false) {
+            if (!(param instanceof Key key)) {
                 throw new InvalidParameterException("Parameter must be a Key");
             }
             String algorithm = getAlgorithm();
             String type = getType();
-            Key key = (Key)param;
             String keyAlgorithm = key.getAlgorithm();
             // RSA signatures and cipher
             if (((type == CIP) && algorithm.startsWith("RSA"))
-                    || (type == SIG) && (algorithm.indexOf("RSA") != -1)) {
-                if (keyAlgorithm.equals("RSA") == false) {
+                    || (type == SIG) && (algorithm.contains("RSA"))) {
+                if (!keyAlgorithm.equals("RSA")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1361,7 +1357,7 @@ public final class SunPKCS11 extends AuthProvider {
             // EC
             if (((type == KA) && algorithm.equals("ECDH"))
                     || ((type == SIG) && algorithm.contains("ECDSA"))) {
-                if (keyAlgorithm.equals("EC") == false) {
+                if (!keyAlgorithm.equals("EC")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1371,7 +1367,7 @@ public final class SunPKCS11 extends AuthProvider {
             // DSA signatures
             if ((type == SIG) && algorithm.contains("DSA") &&
                     !algorithm.contains("ECDSA")) {
-                if (keyAlgorithm.equals("DSA") == false) {
+                if (!keyAlgorithm.equals("DSA")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1385,7 +1381,7 @@ public final class SunPKCS11 extends AuthProvider {
             }
             // DH key agreement
             if (type == KA) {
-                if (keyAlgorithm.equals("DH") == false) {
+                if (!keyAlgorithm.equals("DH")) {
                     return false;
                 }
                 return isLocalKey(key)
@@ -1576,7 +1572,7 @@ public final class SunPKCS11 extends AuthProvider {
                 (new SecurityPermission("authProvider." + this.getName()));
         }
 
-        if (hasValidToken() == false) {
+        if (!hasValidToken()) {
             // app may call logout for cleanup, allow
             return;
         }
@@ -1774,7 +1770,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         private Object readResolve() throws ObjectStreamException {
             SunPKCS11 p = (SunPKCS11)Security.getProvider(providerName);
-            if ((p == null) || (p.config.getFileName().equals(configName) == false)) {
+            if ((p == null) || (!p.config.getFileName().equals(configName))) {
                 throw new NotSerializableException("Could not find "
                         + providerName + " in installed providers");
             }

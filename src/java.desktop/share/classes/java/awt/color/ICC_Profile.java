@@ -52,6 +52,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.StringTokenizer;
 
+import sun.awt.AWTAccessor;
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
@@ -132,6 +133,10 @@ public sealed class ICC_Profile implements Serializable
 
         ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
+    }
+
+    static {
+        AWTAccessor.setICC_ProfileAccessor(ICC_Profile::cmmProfile);
     }
 
     /**

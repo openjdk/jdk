@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
@@ -213,36 +213,62 @@ static void cht_getinsert_bulkdelete_insert_verified(Thread* thr, SimpleTestTabl
 }
 
 static void cht_getinsert_bulkdelete(Thread* thr) {
-  uintptr_t val1 = 1;
-  uintptr_t val2 = 2;
-  uintptr_t val3 = 3;
-  SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+  SimpleTestTable a[] = {SimpleTestTable(), SimpleTestTable(2, 2, 14) /* force long lists in the buckets*/ };
+  const unsigned iter = 1000;
+  for (auto& table: a) {
+    for (unsigned i = 0; i < iter; ++i) {
+      uintptr_t val1 = i * 10 + 1;
+      uintptr_t val2 = i * 10 + 2;
+      uintptr_t val3 = i * 10 + 3;
+      SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val1, false, true);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val2, false, true);
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val3, false, true);
 
-  SimpleTestTable* cht = new SimpleTestTable();
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val1, false, true);
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val2, false, true);
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val3, false, true);
+      EXPECT_TRUE(table.remove(thr, stl2)) << "Remove did not find value.";
 
-  EXPECT_TRUE(cht->remove(thr, stl2)) << "Remove did not find value.";
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val1, true, false); // val1 should be present
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val2, false, true); // val2 should be inserted
+      cht_getinsert_bulkdelete_insert_verified(thr, &table, val3, true, false); // val3 should be present
 
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val1, true, false); // val1 should be present
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val2, false, true); // val2 should be inserted
-  cht_getinsert_bulkdelete_insert_verified(thr, cht, val3, true, false); // val3 should be present
+      EXPECT_EQ(cht_get_copy(&table, thr, stl1), val1) << "Get did not find value.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl2), val2) << "Get did not find value.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl3), val3) << "Get did not find value.";
+    }
 
-  EXPECT_EQ(cht_get_copy(cht, thr, stl1), val1) << "Get did not find value.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl2), val2) << "Get did not find value.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl3), val3) << "Get did not find value.";
+    unsigned delete_count = 0;
+    unsigned scan_count = 0;
+    auto eval_odd_f = [](uintptr_t* val)                  { return *val & 0x1; };
+    auto eval_true_f = [](uintptr_t* val)                 { return true; };
+    auto scan_count_f = [&scan_count](uintptr_t* val)     { scan_count++; return true; };
+    auto delete_count_f = [&delete_count](uintptr_t* val) { delete_count++; };
+    table.bulk_delete(thr, eval_odd_f, delete_count_f);
+    EXPECT_EQ(iter*2, delete_count) << "All odd values should have been deleted";
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(iter, scan_count) << "All odd values should have been deleted";
 
-  // Removes all odd values.
-  cht->bulk_delete(thr, getinsert_bulkdelete_eval, getinsert_bulkdelete_del);
+    for (unsigned i = 0; i < iter; ++i) {
+      uintptr_t val1 = i * 10 + 1;
+      uintptr_t val2 = i * 10 + 2;
+      uintptr_t val3 = i * 10 + 3;
+      SimpleTestLookup stl1(val1), stl2(val2), stl3(val3);
+      EXPECT_EQ(cht_get_copy(&table, thr, stl1), (uintptr_t)0) << "Odd value should not exist.";
+      EXPECT_FALSE(table.remove(thr, stl1)) << "Odd value should not exist.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl2), val2) << "Even value should not have been removed.";
+      EXPECT_EQ(cht_get_copy(&table, thr, stl3), (uintptr_t)0) << "Add value should not exists.";
+      EXPECT_FALSE(table.remove(thr, stl3)) << "Odd value should not exists.";
+    }
 
-  EXPECT_EQ(cht_get_copy(cht, thr, stl1), (uintptr_t)0) << "Odd value should not exist.";
-  EXPECT_FALSE(cht->remove(thr, stl1)) << "Odd value should not exist.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl2), val2) << "Even value should not have been removed.";
-  EXPECT_EQ(cht_get_copy(cht, thr, stl3), (uintptr_t)0) << "Add value should not exists.";
-  EXPECT_FALSE(cht->remove(thr, stl3)) << "Odd value should not exists.";
-
-  delete cht;
+    scan_count = 0;
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(iter, scan_count) << "All values should have been deleted";
+    delete_count = 0;
+    table.bulk_delete(thr, eval_true_f, delete_count_f);
+    EXPECT_EQ(iter, delete_count) << "All odd values should have been deleted";
+    scan_count = 0;
+    table.do_scan(thr, scan_count_f);
+    EXPECT_EQ(0u, scan_count) << "All values should have been deleted";
+  }
 }
 
 static void cht_getinsert_bulkdelete_task(Thread* thr) {

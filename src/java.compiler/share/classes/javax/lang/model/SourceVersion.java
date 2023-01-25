@@ -69,6 +69,9 @@ public enum SourceVersion {
      *  18: no changes (pattern matching for switch in second preview)
      *  19: no changes (pattern matching for switch in third preview,
      *      record patterns in preview)
+     *  20: no changes (pattern matching for switch in fourth preview,
+     *      record patterns in second preview)
+     *  21: tbd
      */
 
     /**
@@ -362,13 +365,27 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 20.
      *
+     * No major changes from the prior release.
+     *
      * @since 20
      *
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
      * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
      */
-    RELEASE_20;
+    RELEASE_20,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 21.
+     *
+     * @since 21
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
+     * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
+     */
+    RELEASE_21;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -377,7 +394,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_20;
+        return RELEASE_21;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -392,7 +409,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(20, intVersion)):
+            valueOf("RELEASE_" + Math.min(21, intVersion)):
             RELEASE_10;
     }
 

@@ -52,8 +52,8 @@ public class TestLayouts {
     @Test
     public void testIndexedSequencePath() {
         MemoryLayout seq = MemoryLayout.sequenceLayout(10, ValueLayout.JAVA_INT);
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(seq, session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(seq, arena.scope());;
             VarHandle indexHandle = seq.varHandle(MemoryLayout.PathElement.sequenceElement());
             // init segment
             for (int i = 0 ; i < 10 ; i++) {
@@ -138,8 +138,13 @@ public class TestLayouts {
 
     @Test(dataProvider = "basicLayouts")
     public void testSequenceInferredCount(MemoryLayout layout) {
-        assertEquals(MemoryLayout.sequenceLayout(-1, layout),
+        assertEquals(MemoryLayout.sequenceLayout(layout),
                      MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.bitSize(), layout));
+    }
+
+    public void testSequenceNegativeElementCount() {
+        assertThrows(IllegalArgumentException.class, // negative
+                () -> MemoryLayout.sequenceLayout(-1, JAVA_SHORT));
     }
 
     @Test
@@ -163,7 +168,7 @@ public class TestLayouts {
 
     @Test(dataProvider = "layoutKinds")
     public void testPadding(LayoutKind kind) {
-        assertEquals(kind == LayoutKind.PADDING, kind.layout.isPadding());
+        assertEquals(kind == LayoutKind.PADDING, kind.layout instanceof PaddingLayout);
     }
 
     @Test(dataProvider="layoutsAndAlignments")

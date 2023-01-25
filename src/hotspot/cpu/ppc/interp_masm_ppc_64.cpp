@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -894,6 +894,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
   merge_frames(/*top_frame_sp*/ R21_sender_SP, /*return_pc*/ R0, R11_scratch1, R12_scratch2);
   mtlr(R0);
+  pop_cont_fastpath();
   BLOCK_COMMENT("} remove_activation");
 }
 
@@ -927,7 +928,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     const Register current_header   = R9_ARG7;
     const Register tmp              = R10_ARG8;
 
-    Label done;
+    Label count_locking, done;
     Label cas_failed, slow_case;
 
     assert_different_registers(displaced_header, object_mark_addr, current_header, tmp);
@@ -972,7 +973,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // If the compare-and-exchange succeeded, then we found an unlocked
     // object and we have now locked it.
-    b(done);
+    b(count_locking);
     bind(cas_failed);
 
     // } else if (THREAD->is_lock_owned((address)displaced_header))
@@ -994,7 +995,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     bne(CCR0, slow_case);
     std(R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
         BasicLock::displaced_header_offset_in_bytes(), monitor);
-    b(done);
+    b(count_locking);
 
     // } else {
     //   // Slow path.
@@ -1004,8 +1005,11 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // slow case of monitor enter.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
+    b(done);
     // }
     align(32, 12);
+    bind(count_locking);
+    inc_held_monitor_count(current_header /*tmp*/);
     bind(done);
   }
 }
@@ -1095,6 +1099,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     bind(free_slot);
     li(R0, 0);
     std(R0, BasicObjectLock::obj_offset_in_bytes(), monitor);
+    dec_held_monitor_count(current_header /*tmp*/);
     bind(done);
   }
 }
@@ -1769,7 +1774,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee,
     if (MethodData::profile_arguments()) {
       Label done;
       int off_to_args = in_bytes(TypeEntriesAtCall::args_data_offset());
-      add(R28_mdx, off_to_args, R28_mdx);
+      addi(R28_mdx, R28_mdx, off_to_args);
 
       for (int i = 0; i < TypeProfileArgsLimit; i++) {
         if (i > 0 || MethodData::profile_return()) {
@@ -2164,8 +2169,17 @@ void InterpreterMacroAssembler::save_interpreter_state(Register scratch) {
   // Other entries should be unchanged.
 }
 
-void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only) {
-  ld(scratch, 0, R1_SP);
+void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool bcp_and_mdx_only, bool restore_top_frame_sp) {
+  ld_ptr(scratch, _abi0(callers_sp), R1_SP);   // Load frame pointer.
+  if (restore_top_frame_sp) {
+    // After thawing the top frame of a continuation we reach here with frame::abi_minframe.
+    // therefore we have to restore top_frame_sp before the assertion below.
+    assert(!bcp_and_mdx_only, "chose other registers");
+    Register tfsp = R18_locals;
+    Register scratch2 = R26_monitor;
+    ld(tfsp, _ijava_state_neg(top_frame_sp), scratch);
+    resize_frame_absolute(tfsp, scratch2, R0);
+  }
   ld(R14_bcp, _ijava_state_neg(bcp), scratch); // Changed by VM code (exception).
   if (ProfileInterpreter) { ld(R28_mdx, _ijava_state_neg(mdx), scratch); } // Changed by VM code.
   if (!bcp_and_mdx_only) {
@@ -2175,6 +2189,8 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
     // Following ones are stack addresses and don't require reload.
     ld(R15_esp, _ijava_state_neg(esp), scratch);
     ld(R18_locals, _ijava_state_neg(locals), scratch);
+    sldi(R18_locals, R18_locals, Interpreter::logStackElementSize);
+    add(R18_locals, R18_locals, scratch);
     ld(R26_monitor, _ijava_state_neg(monitors), scratch);
   }
 #ifdef ASSERT

@@ -34,7 +34,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_zero.inline.hpp"
-
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif

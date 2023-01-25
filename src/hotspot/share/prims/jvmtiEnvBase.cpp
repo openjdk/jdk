@@ -54,6 +54,7 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -634,6 +635,12 @@ JavaThread* JvmtiEnvBase::get_JavaThread_or_null(oop vthread) {
   }
 
   JavaThread* java_thread = java_lang_Thread::thread(carrier_thread);
+
+  // This could be a different thread to the current one. So we need to ensure that
+  // processing has started before we are allowed to read the continuation oop of
+  // another thread, as it is a direct root of that other thread.
+  StackWatermarkSet::start_processing(java_thread, StackWatermarkKind::gc);
+
   oop cont = java_lang_VirtualThread::continuation(vthread);
   assert(cont != NULL, "must be");
   assert(Continuation::continuation_scope(cont) == java_lang_VirtualThread::vthread_scope(), "must be");
@@ -2326,7 +2333,7 @@ VirtualThreadGetOwnedMonitorInfoClosure::do_thread(Thread *target) {
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
   if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
-    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors((JavaThread*)target,
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(java_thread,
                                                          java_thread,
                                                          jvf,
                                                          _owned_monitors_list);

@@ -47,6 +47,7 @@
 
 package sun.security.pkcs11.wrapper;
 
+import java.io.Serial;
 import java.util.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
@@ -63,6 +64,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * @invariants
  */
 public class PKCS11Exception extends Exception {
+    @Serial
     private static final long serialVersionUID = 4077027363729192L;
 
     /**

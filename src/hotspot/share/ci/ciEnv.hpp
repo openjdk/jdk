@@ -366,7 +366,7 @@ public:
 
   // Handy forwards to the task:
   int comp_level();   // task()->comp_level()
-  uint compile_id();  // task()->compile_id()
+  int compile_id();  // task()->compile_id()
 
   // Register the result of a compilation.
   void register_method(ciMethod*                 target,

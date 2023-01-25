@@ -538,7 +538,6 @@ void StubGenerator::poly1305_limbs_out(
 //   t0  = r13
 //   t1  = r14
 //   t2  = r15
-//   rscratch = r13
 //   stack(rsp, rbp)
 //   mulq(rax, rdx) in poly1305_multiply_scalar
 //
@@ -559,7 +558,6 @@ void StubGenerator::poly1305_process_blocks_avx512(
   const Register t0 = r13;
   const Register t1 = r14;
   const Register t2 = r15;
-  const Register rscratch = r13;
   const Register mulql = rax;
   const Register mulqh = rdx;
 
@@ -603,16 +601,16 @@ void StubGenerator::poly1305_process_blocks_avx512(
 
   // Spread accumulator into 44-bit limbs in quadwords C0,C1,C2
   __ movq(t0, a0);
-  __ andq(t0, ExternalAddress(poly1305_mask44()), rscratch); // First limb (Acc[43:0])
+  __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // First limb (Acc[43:0])
   __ movq(C0, t0);
 
   __ movq(t0, a1);
   __ shrdq(a0, t0, 44);
-  __ andq(a0, ExternalAddress(poly1305_mask44()), rscratch); // Second limb (Acc[77:52])
+  __ andq(a0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // Second limb (Acc[77:52])
   __ movq(C1, a0);
 
   __ shrdq(a1, a2, 24);
-  __ andq(a1, ExternalAddress(poly1305_mask42()), rscratch); // Third limb (Acc[129:88])
+  __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/); // Third limb (Acc[129:88])
   __ movq(C2, a1);
 
   // To add accumulator, we must unroll first loop iteration
@@ -623,7 +621,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // A2 to have bits 127-88 of all 8 blocks in 8 qwords
   __ evmovdquq(D0, Address(input, 0), Assembler::AVX_512bit);
   __ evmovdquq(D1, Address(input, 64), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(D0, D1, A0, A1, A2, true, TMP, rscratch);
+  poly1305_limbs_avx512(D0, D1, A0, A1, A2, true, TMP, t1 /*rscratch*/);
 
   // Add accumulator to the fist message block
   __ vpaddq(A0, A0, C0, Assembler::AVX_512bit);
@@ -636,7 +634,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // A5 to have bits 127-88 of all 8 blocks in 8 qwords
   __ evmovdquq(D0, Address(input, 64*2), Assembler::AVX_512bit);
   __ evmovdquq(D1, Address(input, 64*3), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(D0, D1, A3, A4, A5, true, TMP, rscratch);
+  poly1305_limbs_avx512(D0, D1, A3, A4, A5, true, TMP, t1 /*rscratch*/);
 
   __ subl(length, 16*16);
   __ lea(input, Address(input,16*16));
@@ -690,7 +688,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // B1 to have bits 87-44 of all 4 blocks in alternating 8 qwords
   // B2 to have bits 127-88 of all 4 blocks in alternating 8 qwords
   __ vpxorq(T2, T2, T2, Assembler::AVX_512bit);
-  poly1305_limbs_avx512(T0, T2, B0, B1, B2, false, TMP, rscratch);
+  poly1305_limbs_avx512(T0, T2, B0, B1, B2, false, TMP, t1 /*rscratch*/);
 
   // T1 contains the 2 highest bits of the powers of R
   __ vpsllq(T1, T1, 40, Assembler::AVX_512bit);
@@ -698,16 +696,16 @@ void StubGenerator::poly1305_process_blocks_avx512(
 
   // Broadcast 44-bit limbs of R^4 into R0,R1,R2
   __ mov(t0, a0);
-  __ andq(t0, ExternalAddress(poly1305_mask44()), rscratch); // First limb (R^4[43:0])
+  __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // First limb (R^4[43:0])
   __ evpbroadcastq(R0, t0, Assembler::AVX_512bit);
 
   __ movq(t0, a1);
   __ shrdq(a0, t0, 44);
-  __ andq(a0, ExternalAddress(poly1305_mask44()), rscratch); // Second limb (R^4[87:44])
+  __ andq(a0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/); // Second limb (R^4[87:44])
   __ evpbroadcastq(R1, a0, Assembler::AVX_512bit);
 
   __ shrdq(a1, a2, 24);
-  __ andq(a1, ExternalAddress(poly1305_mask42()), rscratch); // Third limb (R^4[129:88])
+  __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/); // Third limb (R^4[129:88])
   __ evpbroadcastq(R2, a1, Assembler::AVX_512bit);
 
   // Generate 4*5*R^4 into {R2P,R1P}
@@ -728,7 +726,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // Calculate R^8-R^5
   poly1305_multiply8_avx512(B0, B1, B2,             // ACC=R^4..R^1
                             R0, R1, R2, R1P, R2P,   // R^4..R^4, 4*5*R^4
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
 
   // Interleave powers of R: R^8 R^4 R^7 R^3 R^6 R^2 R^5 R
   __ evporq(B0, B0, C0, Assembler::AVX_512bit);
@@ -756,7 +754,7 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // Calculate R^16-R^9
   poly1305_multiply8_avx512(B0, B1, B2,            // ACC=R^8..R^1
                             R0, R1, R2, R1P, R2P,  // R^8..R^8, 4*5*R^8
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
 
   // Store R^16-R^9 for later use
   __ evmovdquq(C3, B0, Assembler::AVX_512bit);
@@ -784,19 +782,19 @@ void StubGenerator::poly1305_process_blocks_avx512(
   // Load and interleave next block of data (128 bytes)
   __ evmovdquq(D0, Address(input, 0), Assembler::AVX_512bit);
   __ evmovdquq(D1, Address(input, 64), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(D0, D1, B0, B1, B2, true, TMP, rscratch);
+  poly1305_limbs_avx512(D0, D1, B0, B1, B2, true, TMP, t1 /*rscratch*/);
 
   // Load and interleave next block of data (128 bytes)
   __ evmovdquq(D0, Address(input, 64*2), Assembler::AVX_512bit);
   __ evmovdquq(D1, Address(input, 64*3), Assembler::AVX_512bit);
-  poly1305_limbs_avx512(D0, D1, B3, B4, B5, true, TMP, rscratch);
+  poly1305_limbs_avx512(D0, D1, B3, B4, B5, true, TMP, t1 /*rscratch*/);
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
                             R0, R1, R2, R1P, R2P,  // R^16..R^16, 4*5*R^16
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
   poly1305_multiply8_avx512(A3, A4, A5,            // MSG/ACC 16 blocks
                             R0, R1, R2, R1P, R2P,  // R^16..R^16, 4*5*R^16
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
 
   __ vpaddq(A0, A0, B0, Assembler::AVX_512bit); // Add low 42-bit bits from new blocks to accumulator
   __ vpaddq(A1, A1, B1, Assembler::AVX_512bit); // Add medium 42-bit bits from new blocks to accumulator
@@ -831,10 +829,10 @@ void StubGenerator::poly1305_process_blocks_avx512(
 
   poly1305_multiply8_avx512(A0, A1, A2,            // MSG/ACC 16 blocks
                             C3, C4, C5, D0, D1,    // R^16-R^9, R1P, R2P
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
   poly1305_multiply8_avx512(A3, A4, A5,            // MSG/ACC 16 blocks
                             C0, C1, C2, R1P, R2P,  // R^8-R, R1P, R2P
-                            T0, T1, T2, T3, T4, T5, TMP, rscratch);
+                            T0, T1, T2, T3, T4, T5, TMP, t1 /*rscratch*/);
 
   // Add all blocks (horizontally)
   // 16->8 blocks
@@ -872,13 +870,13 @@ void StubGenerator::poly1305_process_blocks_avx512(
 
   // Carry propagation
   __ vpsrlq(D0, A0, 44, Assembler::AVX_512bit);
-  __ evpandq(A0, A0, ExternalAddress(poly1305_mask44()), Assembler::AVX_512bit, rscratch); // Clear top 20 bits
+  __ evpandq(A0, A0, ExternalAddress(poly1305_mask44()), Assembler::AVX_512bit, t1 /*rscratch*/); // Clear top 20 bits
   __ vpaddq(A1, A1, D0, Assembler::AVX_512bit);
   __ vpsrlq(D0, A1, 44, Assembler::AVX_512bit);
-  __ evpandq(A1, A1, ExternalAddress(poly1305_mask44()), Assembler::AVX_512bit, rscratch); // Clear top 20 bits
+  __ evpandq(A1, A1, ExternalAddress(poly1305_mask44()), Assembler::AVX_512bit, t1 /*rscratch*/); // Clear top 20 bits
   __ vpaddq(A2, A2, D0, Assembler::AVX_512bit);
   __ vpsrlq(D0, A2, 42, Assembler::AVX_512bit);
-  __ evpandq(A2, A2, ExternalAddress(poly1305_mask42()), Assembler::AVX_512bit, rscratch); // Clear top 22 bits
+  __ evpandq(A2, A2, ExternalAddress(poly1305_mask42()), Assembler::AVX_512bit, t1 /*rscratch*/); // Clear top 22 bits
   __ vpsllq(D1, D0, 2, Assembler::AVX_512bit);
   __ vpaddq(D0, D0, D1, Assembler::AVX_512bit);
   __ vpaddq(A0, A0, D0, Assembler::AVX_512bit);

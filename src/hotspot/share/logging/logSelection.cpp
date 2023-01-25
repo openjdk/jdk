@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 #include "precompiled.hpp"
 #include "jvm_io.h"
-#include "utilities/ostream.hpp"
 #include "logging/log.hpp"
 #include "logging/logSelection.hpp"
 #include "logging/logTagSet.hpp"
@@ -44,7 +43,7 @@ LogSelection::LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard
     _ntags++;
   }
 
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     if (selects(*ts)) {
       _tag_sets_selected++;
     }
@@ -74,11 +73,11 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Parse the level, if specified
   LogLevelType level = LogLevel::Unspecified;
   char* equals = strchr(str, '=');
-  if (equals != NULL) {
+  if (equals != nullptr) {
     const char* levelstr = equals + 1;
     level = LogLevel::from_string(levelstr);
     if (level == LogLevel::Invalid) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print("Invalid level '%s' in log selection.", levelstr);
         LogLevelType match = LogLevel::fuzzy_match(levelstr);
         if (match != LogLevel::Invalid) {
@@ -102,7 +101,7 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Check for '*' suffix
   bool wildcard = false;
   char* asterisk_pos = strchr(str, '*');
-  if (asterisk_pos != NULL && asterisk_pos[1] == '\0') {
+  if (asterisk_pos != nullptr && asterisk_pos[1] == '\0') {
     wildcard = true;
     *asterisk_pos = '\0';
   }
@@ -112,12 +111,12 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
   char* cur_tag = str;
   do {
     plus_pos = strchr(cur_tag, '+');
-    if (plus_pos != NULL) {
+    if (plus_pos != nullptr) {
       *plus_pos = '\0';
     }
     LogTagType tag = LogTag::from_string(cur_tag);
     if (tag == LogTag::__NO_TAG) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print("Invalid tag '%s' in log selection.", cur_tag);
         LogTagType match =  LogTag::fuzzy_match(cur_tag);
         if (match != LogTag::__NO_TAG) {
@@ -128,7 +127,7 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
       return LogSelection::Invalid;
     }
     if (ntags == LogTag::MaxTags) {
-      if (errstream != NULL) {
+      if (errstream != nullptr) {
         errstream->print_cr("Too many tags in log selection '%s' (can only have up to " SIZE_FORMAT " tags).",
                                str, LogTag::MaxTags);
       }
@@ -136,12 +135,12 @@ static LogSelection parse_internal(char *str, outputStream* errstream) {
     }
     tags[ntags++] = tag;
     cur_tag = plus_pos + 1;
-  } while (plus_pos != NULL);
+  } while (plus_pos != nullptr);
 
   for (size_t i = 0; i < ntags; i++) {
     for (size_t j = 0; j < ntags; j++) {
       if (i != j && tags[i] == tags[j]) {
-        if (errstream != NULL) {
+        if (errstream != nullptr) {
           errstream->print_cr("Log selection contains duplicates of tag %s.", LogTag::name(tags[i]));
         }
         return LogSelection::Invalid;
@@ -276,7 +275,7 @@ void LogSelection::suggest_similar_matching(outputStream* out) const {
   }
 
   // Check for matching tag sets with a single tag mismatching (a tag too many or short a tag)
-  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+  for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
     LogTagType tags[LogTag::MaxTags] = { LogTag::__NO_TAG };
     for (size_t i = 0; i < ts->ntags(); i++) {
       tags[i] = ts->tag(i);

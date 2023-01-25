@@ -62,7 +62,7 @@ public class PolicyConstraintsExtension extends Extension {
     private int inhibit = -1;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (require == -1 && inhibit == -1) {
             this.extensionValue = null;
             return;
@@ -94,8 +94,7 @@ public class PolicyConstraintsExtension extends Extension {
      * @param require require explicit policy (-1 for optional).
      * @param inhibit inhibit policy mapping (-1 for optional).
      */
-    public PolicyConstraintsExtension(int require, int inhibit)
-    throws IOException {
+    public PolicyConstraintsExtension(int require, int inhibit) {
         this(Boolean.TRUE, require, inhibit);
     }
 
@@ -108,8 +107,7 @@ public class PolicyConstraintsExtension extends Extension {
      * @param require require explicit policy (-1 for optional).
      * @param inhibit inhibit policy mapping (-1 for optional).
      */
-    public PolicyConstraintsExtension(Boolean critical, int require, int inhibit)
-            throws IOException {
+    public PolicyConstraintsExtension(Boolean critical, int require, int inhibit) {
         if (require == -1 && inhibit == -1) {
             throw new IllegalArgumentException(
                     "require and inhibit cannot both be -1");
@@ -190,10 +188,9 @@ public class PolicyConstraintsExtension extends Extension {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.PolicyConstraints_Id;
           critical = true;

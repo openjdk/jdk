@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jimage.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "classfile/classFileStream.hpp"
@@ -44,6 +43,7 @@
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "jimage.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -671,6 +671,18 @@ void ClassLoader::setup_bootstrap_search_path_impl(JavaThread* current, const ch
   }
 }
 
+// Gets the exploded path for the named module. The memory for the path
+// is allocated on the C heap if `c_heap` is true otherwise in the resource area.
+static const char* get_exploded_module_path(const char* module_name, bool c_heap) {
+  const char *home = Arguments::get_java_home();
+  const char file_sep = os::file_separator()[0];
+  // 10 represents the length of "modules" + 2 file separators + \0
+  size_t len = strlen(home) + strlen(module_name) + 10;
+  char *path = c_heap ? NEW_C_HEAP_ARRAY(char, len, mtModule) : NEW_RESOURCE_ARRAY(char, len);
+  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+  return path;
+}
+
 // During an exploded modules build, each module defined to the boot loader
 // will be added to the ClassLoader::_exploded_entries array.
 void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module_sym) {
@@ -680,12 +692,7 @@ void ClassLoader::add_to_exploded_build_list(JavaThread* current, Symbol* module
   // Find the module's symbol
   ResourceMark rm(current);
   const char *module_name = module_sym->as_C_string();
-  const char *home = Arguments::get_java_home();
-  const char file_sep = os::file_separator()[0];
-  // 10 represents the length of "modules" + 2 file separators + \0
-  size_t len = strlen(home) + strlen(module_name) + 10;
-  char *path = NEW_RESOURCE_ARRAY(char, len);
-  jio_snprintf(path, len, "%s%cmodules%c%s", home, file_sep, file_sep, module_name);
+  const char *path = get_exploded_module_path(module_name, false);
 
   struct stat st;
   if (os::stat(path, &st) == 0) {
@@ -1413,6 +1420,20 @@ char* ClassLoader::lookup_vm_options() {
   const char *jimage_version = get_jimage_version_string();
   char *options = lookup_vm_resource(JImage_file, jimage_version, "jdk/internal/vm/options");
   return options;
+}
+
+bool ClassLoader::is_module_observable(const char* module_name) {
+  assert(JImageOpen != NULL, "jimage library should have been opened");
+  if (JImage_file == NULL) {
+    struct stat st;
+    const char *path = get_exploded_module_path(module_name, true);
+    bool res = os::stat(path, &st) == 0;
+    FREE_C_HEAP_ARRAY(char, path);
+    return res;
+  }
+  jlong size;
+  const char *jimage_version = get_jimage_version_string();
+  return (*JImageFindResource)(JImage_file, module_name, jimage_version, "module-info.class", &size) != 0;
 }
 
 #if INCLUDE_CDS

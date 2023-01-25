@@ -28,7 +28,7 @@ package jdk.internal.foreign.abi;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -61,7 +61,7 @@ public class UpcallLinker {
         }
     }
 
-    public static MemorySegment make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, MemorySession session) {
+    public static MemorySegment make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, SegmentScope scope) {
         assert callingSequence.forUpcall();
         Binding.VMLoad[] argMoves = argMoveBindings(callingSequence);
         Binding.VMStore[] retMoves = retMoveBindings(callingSequence);
@@ -93,7 +93,7 @@ public class UpcallLinker {
         CallRegs conv = new CallRegs(args, rets);
         long entryPoint = makeUpcallStub(doBindings, abi, conv,
                 callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
-        return UpcallStubs.makeUpcall(entryPoint, session);
+        return UpcallStubs.makeUpcall(entryPoint, scope);
     }
 
     private static void checkPrimitive(MethodType type) {
@@ -130,7 +130,7 @@ public class UpcallLinker {
     private static Object invokeInterpBindings(Object[] lowLevelArgs, InvocationData invData) throws Throwable {
         Binding.Context allocator = invData.callingSequence.allocationSize() != 0
                 ? Binding.Context.ofBoundedAllocator(invData.callingSequence.allocationSize())
-                : Binding.Context.ofSession();
+                : Binding.Context.ofScope();
         try (allocator) {
             /// Invoke interpreter, got array of high-level arguments back
             Object[] highLevelArgs = new Object[invData.callingSequence.calleeMethodType().parameterCount()];
@@ -196,7 +196,7 @@ public class UpcallLinker {
     }
 
     // used for transporting data into native code
-    private static record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
+    private record CallRegs(VMStorage[] argRegs, VMStorage[] retRegs) {}
 
     static native long makeUpcallStub(MethodHandle mh, ABIDescriptor abi, CallRegs conv,
                                       boolean needsReturnBuffer, long returnBufferSize);

@@ -1637,17 +1637,17 @@ bool TypeInt::is_finite() const {
 //------------------------------dump2------------------------------------------
 // Dump TypeInt
 #ifndef PRODUCT
-static const char* intname(char* buf, jint n) {
+static const char* intname(char* buf, size_t buf_size, jint n) {
   if (n == min_jint)
     return "min";
   else if (n < min_jint + 10000)
-    sprintf(buf, "min+" INT32_FORMAT, n - min_jint);
+    os::snprintf_checked(buf, buf_size, "min+" INT32_FORMAT, n - min_jint);
   else if (n == max_jint)
     return "max";
   else if (n > max_jint - 10000)
-    sprintf(buf, "max-" INT32_FORMAT, max_jint - n);
+    os::snprintf_checked(buf, buf_size, "max-" INT32_FORMAT, max_jint - n);
   else
-    sprintf(buf, INT32_FORMAT, n);
+    os::snprintf_checked(buf, buf_size, INT32_FORMAT, n);
   return buf;
 }
 
@@ -1656,7 +1656,7 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_lo == min_jint && _hi == max_jint)
     st->print("int");
   else if (is_con())
-    st->print("int:%s", intname(buf, get_con()));
+    st->print("int:%s", intname(buf, sizeof(buf), get_con()));
   else if (_lo == BOOL->_lo && _hi == BOOL->_hi)
     st->print("bool");
   else if (_lo == BYTE->_lo && _hi == BYTE->_hi)
@@ -1666,11 +1666,11 @@ void TypeInt::dump2( Dict &d, uint depth, outputStream *st ) const {
   else if (_lo == SHORT->_lo && _hi == SHORT->_hi)
     st->print("short");
   else if (_hi == max_jint)
-    st->print("int:>=%s", intname(buf, _lo));
+    st->print("int:>=%s", intname(buf, sizeof(buf), _lo));
   else if (_lo == min_jint)
-    st->print("int:<=%s", intname(buf, _hi));
+    st->print("int:<=%s", intname(buf, sizeof(buf), _hi));
   else
-    st->print("int:%s..%s", intname(buf, _lo), intname(buf2, _hi));
+    st->print("int:%s..%s", intname(buf, sizeof(buf), _lo), intname(buf2, sizeof(buf2), _hi));
 
   if (_widen != 0 && this != TypeInt::INT)
     st->print(":%.*s", _widen, "wwww");
@@ -1903,37 +1903,37 @@ bool TypeLong::is_finite() const {
 //------------------------------dump2------------------------------------------
 // Dump TypeLong
 #ifndef PRODUCT
-static const char* longnamenear(jlong x, const char* xname, char* buf, jlong n) {
+static const char* longnamenear(jlong x, const char* xname, char* buf, size_t buf_size, jlong n) {
   if (n > x) {
     if (n >= x + 10000)  return NULL;
-    sprintf(buf, "%s+" JLONG_FORMAT, xname, n - x);
+    os::snprintf_checked(buf, buf_size, "%s+" JLONG_FORMAT, xname, n - x);
   } else if (n < x) {
     if (n <= x - 10000)  return NULL;
-    sprintf(buf, "%s-" JLONG_FORMAT, xname, x - n);
+    os::snprintf_checked(buf, buf_size, "%s-" JLONG_FORMAT, xname, x - n);
   } else {
     return xname;
   }
   return buf;
 }
 
-static const char* longname(char* buf, jlong n) {
+static const char* longname(char* buf, size_t buf_size, jlong n) {
   const char* str;
   if (n == min_jlong)
     return "min";
   else if (n < min_jlong + 10000)
-    sprintf(buf, "min+" JLONG_FORMAT, n - min_jlong);
+    os::snprintf_checked(buf, buf_size, "min+" JLONG_FORMAT, n - min_jlong);
   else if (n == max_jlong)
     return "max";
   else if (n > max_jlong - 10000)
-    sprintf(buf, "max-" JLONG_FORMAT, max_jlong - n);
-  else if ((str = longnamenear(max_juint, "maxuint", buf, n)) != NULL)
+    os::snprintf_checked(buf, buf_size, "max-" JLONG_FORMAT, max_jlong - n);
+  else if ((str = longnamenear(max_juint, "maxuint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(max_jint, "maxint", buf, n)) != NULL)
+  else if ((str = longnamenear(max_jint, "maxint", buf, buf_size, n)) != NULL)
     return str;
-  else if ((str = longnamenear(min_jint, "minint", buf, n)) != NULL)
+  else if ((str = longnamenear(min_jint, "minint", buf, buf_size, n)) != NULL)
     return str;
   else
-    sprintf(buf, JLONG_FORMAT, n);
+    os::snprintf_checked(buf, buf_size, JLONG_FORMAT, n);
   return buf;
 }
 
@@ -1942,13 +1942,13 @@ void TypeLong::dump2( Dict &d, uint depth, outputStream *st ) const {
   if (_lo == min_jlong && _hi == max_jlong)
     st->print("long");
   else if (is_con())
-    st->print("long:%s", longname(buf, get_con()));
+    st->print("long:%s", longname(buf, sizeof(buf), get_con()));
   else if (_hi == max_jlong)
-    st->print("long:>=%s", longname(buf, _lo));
+    st->print("long:>=%s", longname(buf, sizeof(buf), _lo));
   else if (_lo == min_jlong)
-    st->print("long:<=%s", longname(buf, _hi));
+    st->print("long:<=%s", longname(buf, sizeof(buf), _hi));
   else
-    st->print("long:%s..%s", longname(buf, _lo), longname(buf2, _hi));
+    st->print("long:%s..%s", longname(buf, sizeof(buf), _lo), longname(buf2,sizeof(buf2),  _hi));
 
   if (_widen != 0 && this != TypeLong::LONG)
     st->print(":%.*s", _widen, "wwww");
@@ -2314,16 +2314,14 @@ bool TypeAry::ary_must_be_exact() const {
     toop = _elem->isa_oopptr();
   }
   if (!toop)                return true;   // a primitive type, like int
-  ciKlass* tklass = toop->klass();
-  if (tklass == NULL)       return false;  // unloaded class
-  if (!tklass->is_loaded()) return false;  // unloaded class
+  if (!toop->is_loaded())   return false;  // unloaded class
   const TypeInstPtr* tinst;
   if (_elem->isa_narrowoop())
     tinst = _elem->make_ptr()->isa_instptr();
   else
     tinst = _elem->isa_instptr();
   if (tinst)
-    return tklass->as_instance_klass()->is_final();
+    return tinst->instance_klass()->is_final();
   const TypeAryPtr*  tap;
   if (_elem->isa_narrowoop())
     tap = _elem->make_ptr()->isa_aryptr();
@@ -3182,16 +3180,25 @@ void TypePtr::InterfaceSet::compute_hash() {
   _hash = hash;
 }
 
+static int compare_interfaces(ciKlass** k1, ciKlass** k2) {
+  return (int)((*k1)->ident() - (*k2)->ident());
+}
+
 void TypePtr::InterfaceSet::dump(outputStream *st) const {
   if (_list.length() == 0) {
     return;
   }
+  ResourceMark rm;
   st->print(" (");
-  for (int i = 0; i < _list.length(); i++) {
+  GrowableArray<ciKlass*> interfaces;
+  interfaces.appendAll(&_list);
+  // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
+  interfaces.sort(compare_interfaces);
+  for (int i = 0; i < interfaces.length(); i++) {
     if (i > 0) {
       st->print(",");
     }
-    ciKlass* k = _list.at(i);
+    ciKlass* k = interfaces.at(i);
     k->print_name_on(st);
   }
   st->print(")");
@@ -3571,7 +3578,7 @@ const TypeOopPtr* TypeOopPtr::make_from_klass_common(ciKlass* klass, bool klass_
   } else if (klass->is_obj_array_klass()) {
     // Element is an object array. Recursively call ourself.
     ciKlass* eklass = klass->as_obj_array_klass()->element_klass();
-    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, try_for_exact, false, interface_handling);
+    const TypeOopPtr *etype = TypeOopPtr::make_from_klass_common(eklass, false, try_for_exact, interface_handling);
     bool xk = etype->klass_is_exact();
     const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
     // We used to pass NotNull in here, asserting that the sub-arrays
@@ -4880,6 +4887,9 @@ const Type *TypeAryPtr::xmeet_helper(const Type *t) const {
 
 template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*& elem, const T* this_ary,
                                                            const T* other_ary, ciKlass*& res_klass, bool& res_xk) {
+  int dummy;
+  bool this_top_or_bottom = (this_ary->base_element_type(dummy) == Type::TOP || this_ary->base_element_type(dummy) == Type::BOTTOM);
+  bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
   ciKlass* this_klass = this_ary->klass();
   ciKlass* other_klass = other_ary->klass();
   bool this_xk = this_ary->klass_is_exact();
@@ -4891,9 +4901,9 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   if (elem->isa_int()) {
     // Integral array element types have irrelevant lattice relations.
     // It is the klass that determines array layout, not the element type.
-    if (this_klass == NULL)
+    if (this_top_or_bottom)
       res_klass = other_klass;
-    else if (other_klass == NULL || other_klass == this_klass) {
+    else if (other_top_or_bottom || other_klass == this_klass) {
       res_klass = this_klass;
     } else {
       // Something like byte[int+] meets char[int+].
@@ -4905,9 +4915,6 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
   } else {// Non integral arrays.
     // Must fall to bottom if exact klasses in upper lattice
     // are not equal or super klass is exact.
-    int dummy;
-    bool this_top_or_bottom = (this_ary->base_element_type(dummy) == Type::TOP || this_ary->base_element_type(dummy) == Type::BOTTOM);
-    bool other_top_or_bottom = (other_ary->base_element_type(dummy) == Type::TOP || other_ary->base_element_type(dummy) == Type::BOTTOM);
     if ((above_centerline(ptr) || ptr == Constant) && !this_ary->is_same_java_type_as(other_ary) &&
         // meet with top[] and bottom[] are processed further down:
         !this_top_or_bottom && !other_top_or_bottom &&
@@ -4944,7 +4951,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
         res_xk = true;
       } else {
         // Only precise for identical arrays
-        res_xk = this_xk && this_ary->is_same_java_type_as(other_ary);
+        res_xk = this_xk && (this_ary->is_same_java_type_as(other_ary) || (this_top_or_bottom && other_top_or_bottom));
       }
       return result;
     }
@@ -4955,7 +4962,7 @@ template<class T> TypePtr::MeetResult TypePtr::meet_aryptr(PTR& ptr, const Type*
         res_xk = other_xk;
       } else {
         res_xk = (other_xk && this_xk) &&
-                 (this_ary->is_same_java_type_as(other_ary)); // Only precise for identical arrays
+                 (this_ary->is_same_java_type_as(other_ary) || (this_top_or_bottom && other_top_or_bottom)); // Only precise for identical arrays
       }
       return result;
     default:  {

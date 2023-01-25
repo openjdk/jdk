@@ -46,8 +46,12 @@ class MallocSite : public AllocationSite {
 
   // Memory allocated from this code path
   size_t size()  const { return _c.size(); }
+  // Peak memory ever allocated from this code path
+  size_t peak_size()  const { return _c.peak_size(); }
   // The number of calls were made
   size_t count() const { return _c.count(); }
+
+  const MemoryCounter* counter() const { return &_c; }
 };
 
 // Malloc site hashtable entry

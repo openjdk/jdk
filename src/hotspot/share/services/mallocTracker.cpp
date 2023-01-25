@@ -22,10 +22,12 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "services/mallocHeader.inline.hpp"
@@ -41,34 +43,20 @@ size_t MallocMemorySummary::_limits_per_category[mt_number_of_types] = { 0 };
 size_t MallocMemorySummary::_total_limit = 0;
 
 #ifdef ASSERT
-void MemoryCounter::update_peak_count(size_t count) {
-  size_t peak_cnt = peak_count();
-  while (peak_cnt < count) {
-    size_t old_cnt = Atomic::cmpxchg(&_peak_count, peak_cnt, count, memory_order_relaxed);
-    if (old_cnt != peak_cnt) {
-      peak_cnt = old_cnt;
-    }
-  }
-}
-
-void MemoryCounter::update_peak_size(size_t sz) {
+void MemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
-  while (peak_sz < sz) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, sz, memory_order_relaxed);
-    if (old_sz != peak_sz) {
+  while (peak_sz < size) {
+    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    if (old_sz == peak_sz) {
+      // I won
+      _peak_count = cnt;
+      break;
+    } else {
       peak_sz = old_sz;
     }
   }
 }
-
-size_t MemoryCounter::peak_count() const {
-  return Atomic::load(&_peak_count);
-}
-
-size_t MemoryCounter::peak_size() const {
-  return Atomic::load(&_peak_size);
-}
-#endif
+#endif // ASSERT
 
 // Total malloc'd memory used by arenas
 size_t MallocMemorySnapshot::total_arena() const {
@@ -192,21 +180,25 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   return memblock;
 }
 
-void* MallocTracker::record_free(void* memblock) {
+void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
   assert(memblock != NULL, "precondition");
 
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();
 
-  MallocMemorySummary::record_free(header->size(), header->flags());
-  if (MemTracker::tracking_level() == NMT_detail) {
-    MallocSiteTable::deallocation_at(header->size(), header->mst_marker());
-  }
+  deaccount(header->free_info());
 
   header->mark_block_as_dead();
 
   return (void*)header;
+}
+
+void MallocTracker::deaccount(MallocHeader::FreeInfo free_info) {
+  MallocMemorySummary::record_free(free_info.size, free_info.flags);
+  if (MemTracker::tracking_level() == NMT_detail) {
+    MallocSiteTable::deallocation_at(free_info.size, free_info.mst_marker);
+  }
 }
 
 // Given a pointer, if it seems to point to the start of a valid malloced block,

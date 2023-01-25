@@ -37,8 +37,9 @@ import static org.testng.Assert.fail;
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} SwitchBootstrapsTest.java
- * @run testng/othervm --enable-preview SwitchBootstrapsTest
+ * @enablePreview
+ * @compile SwitchBootstrapsTest.java
+ * @run testng/othervm SwitchBootstrapsTest
  */
 @Test
 public class SwitchBootstrapsTest {

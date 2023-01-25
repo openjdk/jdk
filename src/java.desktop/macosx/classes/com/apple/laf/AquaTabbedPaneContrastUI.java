@@ -106,7 +106,7 @@ public class AquaTabbedPaneContrastUI extends AquaTabbedPaneUI {
     }
 
     protected State getState(final int index, final boolean frameActive, final boolean isSelected) {
-        isFrameActive = frameActive;;
+        isFrameActive = frameActive;
         if (!frameActive) return State.INACTIVE;
         if (!tabPane.isEnabled()) return State.DISABLED;
         if (pressedTab == index) return State.PRESSED;

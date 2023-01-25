@@ -42,7 +42,7 @@ public class CombinationsTargetTest2 extends ClassfileTestHelper {
 
     // Base test case template descriptions;true==annotations in code attribute.
     enum srce  {
-        src1("(repeating) type annotations on on field in method body",true),
+        src1("(repeating) type annotations on field in method body",true),
         src2("(repeating) type annotations on type parameters, bounds and  type arguments", true),
         src3("(repeating) type annotations on type parameters of class, method return value in method", true),
         src4("(repeating) type annotations on field in anonymous class", false),

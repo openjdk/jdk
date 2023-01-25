@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1177,6 +1177,13 @@ public interface HttpResponse<T> {
          * Calling {@code close} before exhausting the stream may cause
          * the underlying HTTP connection to be closed and prevent it
          * from being reused for subsequent operations.
+         *
+         * @implNote The {@code read} method of the {@code InputStream}
+         * returned by the default implementation of this method will
+         * throw an {@code IOException} with the {@linkplain Thread#isInterrupted()
+         * thread interrupt status set} if the thread is interrupted
+         * while blocking on read. In that case, the request will also be
+         * cancelled and the {@code InputStream} will be closed.
          *
          * @return a body subscriber that streams the response body as an
          *         {@link InputStream}.

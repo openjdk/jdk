@@ -620,10 +620,13 @@ static bool no_flip_branch(Block *b) {
 // fake exit path to infinite loops.  At this late stage they need to turn
 // into Goto's so that when you enter the infinite loop you indeed hang.
 void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
-  // Find true target
   int end_idx = b->end_idx();
-  int idx = b->get_node(end_idx+1)->as_Proj()->_con;
-  Block *succ = b->_succs[idx];
+  NeverBranchNode* never_branch = b->get_node(end_idx)->as_NeverBranch();
+  Block* succ = get_block_for_node(never_branch->proj_out(0)->unique_ctrl_out_or_null());
+  Block* dead = get_block_for_node(never_branch->proj_out(1)->unique_ctrl_out_or_null());
+  assert(succ == b->_succs[0] || succ == b->_succs[1], "succ is a successor");
+  assert(dead == b->_succs[0] || dead == b->_succs[1], "dead is a successor");
+
   Node* gto = _goto->clone(); // get a new goto node
   gto->set_req(0, b->head());
   Node *bp = b->get_node(end_idx);
@@ -642,7 +645,6 @@ void PhaseCFG::convert_NeverBranch_to_Goto(Block *b) {
     }
   }
   // Kill alternate exit path
-  Block* dead = b->_succs[1 - idx];
   for (j = 1; j < dead->num_preds(); j++) {
     if (dead->pred(j)->in(0) == bp) {
       break;
@@ -740,7 +742,7 @@ void PhaseCFG::remove_empty_blocks() {
     // to give a fake exit path to infinite loops.  At this late stage they
     // need to turn into Goto's so that when you enter the infinite loop you
     // indeed hang.
-    if (block->get_node(block->end_idx())->Opcode() == Op_NeverBranch) {
+    if (block->get_node(block->end_idx())->is_NeverBranch()) {
       convert_NeverBranch_to_Goto(block);
     }
 
@@ -1373,7 +1375,13 @@ void PhaseCFG::verify() const {
                 }
               }
             }
-            assert(is_loop || block->find_node(def) < j, "uses must follow definitions");
+            // Uses must be before definition, except if:
+            // - We are in some kind of loop we already detected
+            // - We are in infinite loop, where Region may not have been turned into LoopNode
+            assert(block->find_node(def) < j ||
+                   is_loop ||
+                   (n->is_Phi() && block->head()->as_Region()->is_in_infinite_subgraph()),
+                   "uses must follow definitions (except in loops)");
           }
         }
       }

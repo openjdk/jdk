@@ -152,47 +152,40 @@ public class X509CRLEntryImpl extends X509CRLEntry
      *
      * @param outStrm an output stream to which the encoded revoked
      * certificate is written.
-     * @exception CRLException on encoding errors.
      */
-    public void encode(DerOutputStream outStrm) throws CRLException {
-        try {
-            if (revokedCert == null) {
-                DerOutputStream tmp = new DerOutputStream();
-                // sequence { serialNumber, revocationDate, extensions }
-                serialNumber.encode(tmp);
+    public void encode(DerOutputStream outStrm) {
+        if (revokedCert == null) {
+            DerOutputStream tmp = new DerOutputStream();
+            // sequence { serialNumber, revocationDate, extensions }
+            serialNumber.encode(tmp);
 
-                if (revocationDate.getTime() < CertificateValidity.YR_2050) {
-                    tmp.putUTCTime(revocationDate);
-                } else {
-                    tmp.putGeneralizedTime(revocationDate);
-                }
-
-                if (extensions != null)
-                    extensions.encode(tmp, isExplicit);
-
-                DerOutputStream seq = new DerOutputStream();
-                seq.write(DerValue.tag_Sequence, tmp);
-
-                revokedCert = seq.toByteArray();
+            if (revocationDate.getTime() < CertificateValidity.YR_2050) {
+                tmp.putUTCTime(revocationDate);
+            } else {
+                tmp.putGeneralizedTime(revocationDate);
             }
-            outStrm.write(revokedCert);
-        } catch (IOException e) {
-             throw new CRLException("Encoding error: " + e.toString());
+
+            if (extensions != null)
+                extensions.encode(tmp, isExplicit);
+
+            DerOutputStream seq = new DerOutputStream();
+            seq.write(DerValue.tag_Sequence, tmp);
+
+            revokedCert = seq.toByteArray();
         }
+        outStrm.writeBytes(revokedCert);
     }
 
     /**
      * Returns the ASN.1 DER-encoded form of this CRL Entry,
      * which corresponds to the inner SEQUENCE.
-     *
-     * @exception CRLException if an encoding error occurs.
      */
-    public byte[] getEncoded() throws CRLException {
+    public byte[] getEncoded() {
         return getEncoded0().clone();
     }
 
     // Called internally to avoid clone
-    private byte[] getEncoded0() throws CRLException {
+    private byte[] getEncoded0() {
         if (revokedCert == null)
             this.encode(new DerOutputStream());
         return revokedCert;
@@ -523,17 +516,13 @@ public class X509CRLEntryImpl extends X509CRLEntry
         if (compSerial != 0) {
             return compSerial;
         }
-        try {
-            byte[] thisEncoded = this.getEncoded0();
-            byte[] thatEncoded = that.getEncoded0();
-            for (int i=0; i<thisEncoded.length && i<thatEncoded.length; i++) {
-                int a = thisEncoded[i] & 0xff;
-                int b = thatEncoded[i] & 0xff;
-                if (a != b) return a-b;
-            }
-            return thisEncoded.length -thatEncoded.length;
-        } catch (CRLException ce) {
-            return -1;
+        byte[] thisEncoded = this.getEncoded0();
+        byte[] thatEncoded = that.getEncoded0();
+        for (int i=0; i<thisEncoded.length && i<thatEncoded.length; i++) {
+            int a = thisEncoded[i] & 0xff;
+            int b = thatEncoded[i] & 0xff;
+            if (a != b) return a-b;
         }
+        return thisEncoded.length -thatEncoded.length;
     }
 }

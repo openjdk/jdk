@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ class GCCause : public AllStatic {
     _heap_inspection,
     _heap_dump,
     _wb_young_gc,
-    _wb_conc_mark,
     _wb_full_gc,
     _wb_breakpoint,
     _archive_time_gc,
@@ -74,7 +73,6 @@ class GCCause : public AllStatic {
     _g1_compaction_pause,
     _g1_humongous_allocation,
     _g1_periodic_collection,
-    _g1_preventive_collection,
 
     _dcmd_gc_run,
 

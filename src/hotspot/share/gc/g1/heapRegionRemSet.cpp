@@ -59,7 +59,7 @@ HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _m(Mutex::service - 1, FormatBuffer<128>("HeapRegionRemSet#%u_lock", hr->hrm_index())),
   _code_roots(),
-  _card_set_mm(config, G1MonotonicArenaFreePool::free_list_pool()),
+  _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
   _card_set(config, &_card_set_mm),
   _hr(hr),
   _state(Untracked) { }
@@ -81,6 +81,10 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   _card_set.clear();
   set_state_empty();
   assert(occupied() == 0, "Should be clear.");
+}
+
+void HeapRegionRemSet::reset_table_scanner() {
+  _card_set.reset_table_scanner();
 }
 
 G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {

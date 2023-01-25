@@ -824,20 +824,12 @@ class CompileReplay : public StackObj {
     /* just copied from Method, to build interpret data*/
 
     // To be properly initialized, some profiling in the MDO needs the
-    // method to be rewritten (number of arguments at a call for
-    // instance)
+    // method to be rewritten (number of arguments at a call for instance)
     method->method_holder()->link_class(CHECK);
-    // Method::build_profiling_method_data(method, CHECK);
-    {
-      // Grab a lock here to prevent multiple
-      // MethodData*s from being created.
-      MutexLocker ml(THREAD, MethodData_lock);
-      if (method->method_data() == NULL) {
-        ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
-        MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
-        method->set_method_data(method_data);
-      }
-    }
+    assert(method->method_data() == NULL, "Should only be initialized once");
+    ClassLoaderData* loader_data = method->method_holder()->class_loader_data();
+    MethodData* method_data = MethodData::allocate(loader_data, methodHandle(THREAD, method), CHECK);
+    method->set_method_data(method_data);
 
     // collect and record all the needed information for later
     ciMethodDataRecord* rec = new_ciMethodData(method);
@@ -1537,7 +1529,7 @@ void ciReplay::initialize(ciMethod* m) {
   } else {
     EXCEPTION_CONTEXT;
     // m->_instructions_size = rec->_instructions_size;
-    m->_instructions_size = -1;
+    m->_inline_instructions_size = -1;
     m->_interpreter_invocation_count = rec->_interpreter_invocation_count;
     m->_interpreter_throwout_count = rec->_interpreter_throwout_count;
     MethodCounters* mcs = method->get_method_counters(CHECK_AND_CLEAR);

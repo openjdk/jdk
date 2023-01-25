@@ -113,17 +113,6 @@ public:
   virtual ~CardTable();
   virtual void initialize();
 
-  // The kinds of precision a CardTable may offer.
-  enum PrecisionStyle {
-    Precise,
-    ObjHeadPreciseArray
-  };
-
-  // Tells what style of precision this card table offers.
-  PrecisionStyle precision() {
-    return ObjHeadPreciseArray; // Only one supported for now.
-  }
-
   // *** Barrier set functions.
 
   // Initialization utilities; covered_words is the size of the covered region

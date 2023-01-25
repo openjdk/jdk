@@ -123,6 +123,12 @@ public:
   virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
 };
 
+// Interface for applying an OopClosure to a set of oops.
+class OopIterator {
+public:
+  virtual void oops_do(OopClosure* cl) = 0;
+};
+
 enum class derived_pointer : intptr_t;
 class DerivedOopClosure : public Closure {
  public:
