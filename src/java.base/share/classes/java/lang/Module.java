@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ public final class Module implements AnnotatedElement {
     }
 
     private static boolean casLateEnableNativeAccess(Module target) {
-        // Tentatively first check if already enabled. If so, we do not need to enter the
+        // Tentatively, first check if already enabled. If so, we do not need to enter the
         // synchronization block as we are dealing with a @Stable boolean variable.
         // This is a form of double-checked locking but, we do not need to declare
         // the primitive boolean variable `volatile` as it is a @Stable primitive, and
