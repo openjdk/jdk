@@ -306,7 +306,7 @@ public final class Module implements AnnotatedElement {
         // synchronization block as we are dealing with a @Stable boolean variable.
         // This is a form of double-checked locking but, we do not need to declare
         // the primitive boolean variable `volatile` as it is a @Stable primitive, and
-        // we do not need strict guarantees only enter the synchronized area at most
+        // we do not need strict guarantees only to enter the synchronized area at most
         // once.
         if (!target.lateEnableNativeAccess) {
             synchronized (target) {
