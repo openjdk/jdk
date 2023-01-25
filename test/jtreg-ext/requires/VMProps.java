@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -87,6 +88,7 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     @Override
     public Map<String, String> call() {
+        log("Entering call()");
         SafeMap map = new SafeMap();
         map.put("vm.flavor", this::vmFlavor);
         map.put("vm.compMode", this::vmCompMode);
@@ -127,6 +129,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlags(map);
 
         dump(map.map);
+        log("Leaving call()");
         return map.map;
     }
 
@@ -473,6 +476,8 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if docker is supported in a given environment
      */
     protected String dockerSupport() {
+        log("Entering dockerSupport()");
+
         boolean isSupported = false;
         if (Platform.isLinux()) {
            // currently docker testing is only supported for Linux,
@@ -490,6 +495,8 @@ public class VMProps implements Callable<Map<String, String>> {
               isSupported = true;
            }
         }
+
+        log("dockerSupport(): isSupported = " + isSupported);
 
         if (isSupported) {
            try {
@@ -619,6 +626,38 @@ public class VMProps implements Callable<Map<String, String>> {
         } catch (IOException e) {
             throw new RuntimeException("Failed to dump properties into '"
                     + dumpFileName + "'", e);
+        }
+    }
+
+    /**
+     * Logs diagnostic message.
+     *
+     * @param msg
+     */
+    protected static void log(String msg) {
+        logToFile(msg);
+    }
+
+    /**
+     * Logs diagnostic message into a file.
+     * Use a property -Djtreg.ext.at.requires.logfile to specify file name.
+     * E.g.: jtreg -Djtreg.ext.at.requires.logfile="/tmp/jtreg-at-requires.log".
+     * If a property is not specified method returns w/o any action.
+     *
+     * @param msg
+     */
+    protected static void logToFile(String msg) {
+        String fileName = System.getProperty("jtreg.ext.at.requires.logfile");
+        if (fileName == null) {
+            return;
+        }
+
+        try {
+            Files.writeString(Paths.get(fileName), msg + "\n", Charset.forName("ISO-8859-1"),
+                    StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to log into '"
+                    + fileName + "'", e);
         }
     }
 
