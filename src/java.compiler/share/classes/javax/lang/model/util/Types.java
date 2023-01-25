@@ -45,19 +45,18 @@ public interface Types {
 
     /**
      * Returns the element corresponding to a type.
-     * The type may be a {@code DeclaredType} or {@code TypeVariable}.
+     * The type may be a {@link DeclaredType} or {@link TypeVariable},
+     * or a pseudo-type for a {@linkplain TypeKind#PACKAGE package} or
+     * {@linkplain TypeKind#MODULE module}.
      * Returns {@code null} if the type is not one with a
      * corresponding element.
      *
-     * <p>Types without corresponding elements include:
+     * <p>Types <em>without</em> corresponding elements include:
      * <ul>
      * <li>{@linkplain TypeKind#isPrimitive() primitive types}
      * <li>{@linkplain TypeKind#EXECUTABLE executable types}
-     * <li>{@linkplain TypeKind#MODULE module pseudo-types}
      * <li>{@linkplain TypeKind#NONE "none" pseudo-types}
-     * <li>{@linkplain TypeKind#NULL  null types}
-     * <li>{@linkplain TypeKind#PACKAGE package pseudo-types}
-     * <li>{@linkplain TypeKind#UNION union types}
+     * <li>{@linkplain TypeKind#NULL null types}
      * <li>{@link TypeKind#VOID void}
      * <li>{@linkplain TypeKind#WILDCARD wildcard type argument}
      * </ul>

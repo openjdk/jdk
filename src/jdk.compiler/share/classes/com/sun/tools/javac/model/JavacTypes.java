@@ -76,6 +76,8 @@ public class JavacTypes implements javax.lang.model.util.Types {
             case INTERSECTION:
             case ERROR:
             case TYPEVAR:
+            case PACKAGE:
+            case MODULE:
                 Type type = cast(Type.class, t);
                 return type.asElement();
             default:
