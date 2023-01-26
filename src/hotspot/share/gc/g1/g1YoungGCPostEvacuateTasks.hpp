@@ -73,7 +73,6 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class RestorePreservedMarksTask;
   class ResizeTLABsTask;
   class FreeCollectionSetTask;
-  class ResizeTLABTask;
 
 public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,

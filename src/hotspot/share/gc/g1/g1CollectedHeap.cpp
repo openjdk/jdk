@@ -2761,7 +2761,7 @@ G1JFRTracerMark::~G1JFRTracerMark() {
 }
 
 void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
-  double start = os::elapsedTime();
+  Ticks start = Ticks::now();
 
   _survivor_evac_stats.adjust_desired_plab_size();
   _old_evac_stats.adjust_desired_plab_size();
@@ -2771,7 +2771,7 @@ void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
   allocate_dummy_regions();
   _allocator->init_mutator_alloc_regions();
 
-  phase_times()->record_prepare_for_mutator_time_ms((os::elapsedTime() - start) * 1000.0);
+  phase_times()->record_prepare_for_mutator_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }
 
 void G1CollectedHeap::retire_tlabs() {

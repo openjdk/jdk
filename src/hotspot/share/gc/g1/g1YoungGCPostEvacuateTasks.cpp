@@ -753,7 +753,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
   add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
   if (UseTLAB && ResizeTLAB) {
-    add_serial_task(new ResizeTLABsTask());
+    add_parallel_task(new ResizeTLABsTask());
   }
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
                                               per_thread_states->surviving_young_words(),
