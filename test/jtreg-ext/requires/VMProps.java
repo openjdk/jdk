@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -512,21 +513,32 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + isSupported;
     }
 
+    private String redirectOutputToLogFile(ProcessBuilder pb, String fileNameBase) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
+            return "";
+        }
+
+        String fileName = "./" + fileNameBase + Instant.now().toString() + ".log";
+        pb.redirectOutput(new File(fileName));
+        return fileName;
+   }
+
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
 
         // TODO: use property for file path if defined, plus timestamp
-        File out = new File("./container-ps-stdout.log");
-        pb.redirectOutput(out);
-        File err = new File("./container-ps-stderr.log");
-        pb.redirectError(err);
+        String stdoutFn = redirectOutputToLogFile(pb, "container-ps-stdout");
+        String stderrFn = redirectOutputToLogFile(pb, "container-ps-stderr");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 
-        // TODO: log stdout and stderr file names
         log("checkDockerSupport(): exitValue = " + exitValue);
+        log(String.format("checkDockerSupport(): child process stdout for pid %s was logged into %s",
+                          p.pid(), stdoutFn));
+        log(String.format("checkDockerSupport(): child process stderr for pid %s was logged into %s",
+                          p.pid(), stderrFn));
 
         return (exitValue == 0);
     }
@@ -652,33 +664,27 @@ public class VMProps implements Callable<Map<String, String>> {
         logToFile(msg);
     }
 
+
     /**
      * Logs diagnostic message into a file.
-     * Use a property -Djtreg.ext.at.requires.logfile to specify file name.
-     * E.g.: jtreg -Djtreg.ext.at.requires.logfile="/tmp/jtreg-at-requires.log".
+     * Use a property -Djtreg.log.vmprops to turn on vmprops logging.
+     * E.g.: jtreg -Djtreg.log.vmprops=true
      * If a property is not specified method returns w/o any action.
+     * Log will be writtent into current jtreg's workdir.
      *
      * @param msg
      */
     protected static void logToFile(String msg) {
-        String fileName = System.getProperty("jtreg.ext.at.requires.logfile");
-        if (fileName == null) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
             return;
         }
 
-        // If path starts with the separator it will be used as is, as an absolute path.
-        // Otherwise it will be treated as a path relative to the jtreg current working directory.
-        String currentWorkDir = ".";
-        if(!fileName.startsWith(File.separator)) {
-            fileName = currentWorkDir + File.separator + fileName;
-        }
-
+        String fileName = "./jtreg-vm-props.log";
         try {
             Files.writeString(Paths.get(fileName), msg + "\n", Charset.forName("ISO-8859-1"),
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to log into '"
-                    + fileName + "'", e);
+            throw new RuntimeException("Failed to log into '" + fileName + "'", e);
         }
     }
 
