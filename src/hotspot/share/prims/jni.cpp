@@ -2231,7 +2231,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
   typeArrayOop s_value = java_lang_String::value(java_string);
   if (s_value != nullptr) {
     size_t length = java_lang_String::utf8_length(java_string, s_value);
-    /* JNI Specification states return nullptr on OOM */
+    /* JNI Specification states return null on OOM */
     result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
     if (result != nullptr) {
       java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
@@ -2417,14 +2417,14 @@ JNI_ENTRY_NO_PRESERVE(ElementType*, \
     if (isCopy != nullptr) { \
       *isCopy = JNI_FALSE; \
     } \
-    /* Empty array: legal but useless, can't return nullptr. \
+    /* Empty array: legal but useless, can't return null. \
      * Return a pointer to something useless. \
      * Avoid asserts in typeArrayOop. */ \
     result = (ElementType*)get_bad_address(); \
   } else { \
-    /* JNI Specification states return nullptr on OOM */                    \
+    /* JNI Specification states return null on OOM */                    \
     result = NEW_C_HEAP_ARRAY_RETURN_NULL(ElementType, len, mtInternal); \
-    if (result != nullptr) {                                                \
+    if (result != nullptr) {                                             \
       /* copy the array to the c chunk */                                \
       ArrayAccess<>::arraycopy_to_native(a, typeArrayOopDesc::element_offset<ElementType>(0), \
                                          result, len);                   \
@@ -2836,7 +2836,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
     typeArrayOop s_value = java_lang_String::value(s);
     int s_len = java_lang_String::length(s, s_value);
     ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
-    /* JNI Specification states return nullptr on OOM */
+    /* JNI Specification states return null on OOM */
     if (ret != nullptr) {
       for (int i = 0; i < s_len; i++) {
         ret[i] = ((jchar) s_value->byte_at(i)) & 0xff;

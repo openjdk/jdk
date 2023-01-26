@@ -92,7 +92,7 @@ static struct JNINativeInterface_ * unchecked_jni_NativeInterface;
 extern "C" {                                                             \
   result_type JNICALL header {                                           \
     Thread* cur = Thread::current_or_null();                             \
-    if (cur == nullptr || !cur->is_Java_thread()) {                         \
+    if (cur == nullptr || !cur->is_Java_thread()) {                      \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
@@ -101,7 +101,7 @@ extern "C" {                                                             \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thr));         \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thr));               \
     VM_ENTRY_BASE(result_type, header, thr)
 
 
