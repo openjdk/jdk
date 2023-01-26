@@ -62,11 +62,11 @@ private:
   // Cache constant value lookups to ensure that consistent values are observed during compilation.
   class ConstantValue {
     private:
-      int _off;
       ciConstant _value;
+      int _off;
 
     public:
-      ConstantValue() : _off(0), _value(ciConstant()) { }
+      ConstantValue() : _value(ciConstant(), _off(0)) { }
       ConstantValue(int off, ciConstant value) : _off(off), _value(value) { }
 
       int off() const { return _off; }
