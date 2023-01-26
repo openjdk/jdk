@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class JvmtiBreakpoints;
 //
 // GrowableCache is a permanent CHeap growable array of <GrowableElement *>
 //
-// In addition, the GrowableCache maintains a NULL terminated cache array of type address
+// In addition, the GrowableCache maintains a null terminated cache array of type address
 // that's created from the element array using the function:
 //     address GrowableElement::getCacheValue().
 //
@@ -162,7 +162,7 @@ private:
   OopHandle             _class_holder;  // keeps _method memory from being deallocated
 
 public:
-  JvmtiBreakpoint() : _method(NULL), _bci(0) {}
+  JvmtiBreakpoint() : _method(nullptr), _bci(0) {}
   JvmtiBreakpoint(Method* m_method, jlocation location);
   virtual ~JvmtiBreakpoint();
   bool equals(JvmtiBreakpoint& bp);
@@ -248,7 +248,7 @@ private:
   // Current breakpoints, lazily initialized by get_jvmti_breakpoints();
   static JvmtiBreakpoints *_jvmti_breakpoints;
 
-  // NULL terminated cache of byte-code pointers corresponding to current breakpoints.
+  // null terminated cache of byte-code pointers corresponding to current breakpoints.
   // Updated only at safepoints (with listener_fun) when the cache is moved.
   // It exists only to make is_breakpoint fast.
   static address          *_breakpoint_list;
@@ -289,7 +289,7 @@ public:
     _breakpoints = &current_bps;
     _bp = bp;
     _operation = operation;
-    assert(bp != NULL, "bp != NULL");
+    assert(bp != nullptr, "bp != null");
   }
 
   VMOp_Type type() const { return VMOp_ChangeBreakpoints; }
@@ -521,7 +521,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
 
    public:
     QueueNode(const JvmtiDeferredEvent& event)
-      : _event(event), _next(NULL) {}
+      : _event(event), _next(nullptr) {}
 
     JvmtiDeferredEvent& event() { return _event; }
     QueueNode* next() const { return _next; }
@@ -533,7 +533,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   QueueNode* _queue_tail;
 
  public:
-  JvmtiDeferredEventQueue() : _queue_head(NULL), _queue_tail(NULL) {}
+  JvmtiDeferredEventQueue() : _queue_head(nullptr), _queue_tail(nullptr) {}
 
   bool has_events() NOT_JVMTI_RETURN_(false);
   JvmtiDeferredEvent dequeue() NOT_JVMTI_RETURN_(JvmtiDeferredEvent());
@@ -549,7 +549,7 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
   void oops_do(OopClosure* f, CodeBlobClosure* cf) NOT_JVMTI_RETURN;
 };
 
-// Utility macro that checks for NULL pointers:
-#define NULL_CHECK(X, Y) if ((X) == NULL) { return (Y); }
+// Utility macro that checks for null pointers:
+#define nullptr_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
 
 #endif // SHARE_PRIMS_JVMTIIMPL_HPP

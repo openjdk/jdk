@@ -137,8 +137,8 @@ void JvmtiTagMapTable::remove_dead_entries(GrowableArray<jlong>* objects) {
     GrowableArray<jlong>* _objects;
     IsDead(GrowableArray<jlong>* objects) : _objects(objects) {}
     bool do_entry(const JvmtiTagMapKey& entry, jlong tag) {
-      if (entry.object_no_keepalive() == NULL) {
-        if (_objects != NULL) {
+      if (entry.object_no_keepalive() == nullptr) {
+        if (_objects != nullptr) {
           _objects->append(tag);
         }
         return true;

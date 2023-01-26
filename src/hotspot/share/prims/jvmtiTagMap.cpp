@@ -80,7 +80,7 @@ JvmtiTagMap::JvmtiTagMap(JvmtiEnv* env) :
   _posting_events(false) {
 
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
-  assert(((JvmtiEnvBase *)env)->tag_map() == NULL, "tag map already exists for environment");
+  assert(((JvmtiEnvBase *)env)->tag_map() == nullptr, "tag map already exists for environment");
 
   _hashmap = new JvmtiTagMapTable();
 
@@ -93,11 +93,11 @@ JvmtiTagMap::~JvmtiTagMap() {
 
   // no lock acquired as we assume the enclosing environment is
   // also being destroyed.
-  ((JvmtiEnvBase *)_env)->set_tag_map(NULL);
+  ((JvmtiEnvBase *)_env)->set_tag_map(nullptr);
 
   // finally destroy the hashmap
   delete _hashmap;
-  _hashmap = NULL;
+  _hashmap = nullptr;
 }
 
 // Called by env_dispose() to reclaim memory before deallocation.
@@ -112,10 +112,10 @@ void JvmtiTagMap::clear() {
 // doesn't exist then it is created.
 JvmtiTagMap* JvmtiTagMap::tag_map_for(JvmtiEnv* env) {
   JvmtiTagMap* tag_map = ((JvmtiEnvBase*)env)->tag_map_acquire();
-  if (tag_map == NULL) {
+  if (tag_map == nullptr) {
     MutexLocker mu(JvmtiThreadState_lock);
     tag_map = ((JvmtiEnvBase*)env)->tag_map();
-    if (tag_map == NULL) {
+    if (tag_map == nullptr) {
       tag_map = new JvmtiTagMap(env);
     }
   } else {
@@ -143,7 +143,7 @@ void JvmtiTagMap::check_hashmap(GrowableArray<jlong>* objects) {
   if (is_empty()) { return; }
 
   if (_needs_cleaning &&
-      objects != NULL &&
+      objects != nullptr &&
       env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
     remove_dead_entries_locked(objects);
   }
@@ -156,9 +156,9 @@ void JvmtiTagMap::check_hashmaps_for_heapwalk(GrowableArray<jlong>* objects) {
   // Verify that the tag map tables are valid and unconditionally post events
   // that are expected to be posted before gc_notification.
   JvmtiEnvIterator it;
-  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+  for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     JvmtiTagMap* tag_map = env->tag_map_acquire();
-    if (tag_map != NULL) {
+    if (tag_map != nullptr) {
       // The ZDriver may be walking the hashmaps concurrently so this lock is needed.
       MutexLocker ml(tag_map->lock(), Mutex::_no_safepoint_check_flag);
       tag_map->check_hashmap(objects);
@@ -340,7 +340,7 @@ void JvmtiTagMap::set_tag(jobject object, jlong tag) {
   // SetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(NULL);  /* don't collect dead objects */
+  check_hashmap(nullptr);  /* don't collect dead objects */
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -375,7 +375,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
   // GetTag should not post events because the JavaThread has to
   // transition to native for the callback and this cannot stop for
   // safepoints with the hashmap lock held.
-  check_hashmap(NULL); /* don't collect dead objects */
+  check_hashmap(nullptr); /* don't collect dead objects */
 
   // resolve the object
   oop o = JNIHandles::resolve_non_null(object);
@@ -535,7 +535,7 @@ JvmtiCachedClassFieldMap::JvmtiCachedClassFieldMap(ClassFieldMap* field_map) {
 }
 
 JvmtiCachedClassFieldMap::~JvmtiCachedClassFieldMap() {
-  if (_field_map != NULL) {
+  if (_field_map != nullptr) {
     delete _field_map;
   }
 }
@@ -563,7 +563,7 @@ bool ClassFieldMapCacheMark::_is_active;
 
 // record that the given InstanceKlass is caching a field map
 void JvmtiCachedClassFieldMap::add_to_class_list(InstanceKlass* ik) {
-  if (_class_list == NULL) {
+  if (_class_list == nullptr) {
     _class_list = new (mtServiceability)
       GrowableArray<InstanceKlass*>(initial_class_count, mtServiceability);
   }
@@ -581,8 +581,8 @@ ClassFieldMap* JvmtiCachedClassFieldMap::get_map_of_instance_fields(oop obj) {
 
   // return cached map if possible
   JvmtiCachedClassFieldMap* cached_map = ik->jvmti_cached_class_field_map();
-  if (cached_map != NULL) {
-    assert(cached_map->field_map() != NULL, "missing field list");
+  if (cached_map != nullptr) {
+    assert(cached_map->field_map() != nullptr, "missing field list");
     return cached_map->field_map();
   } else {
     ClassFieldMap* field_map = ClassFieldMap::create_map_of_instance_fields(obj);
@@ -596,22 +596,22 @@ ClassFieldMap* JvmtiCachedClassFieldMap::get_map_of_instance_fields(oop obj) {
 // remove the fields maps cached from all instanceKlasses
 void JvmtiCachedClassFieldMap::clear_cache() {
   assert(Thread::current()->is_VM_thread(), "must be VMThread");
-  if (_class_list != NULL) {
+  if (_class_list != nullptr) {
     for (int i = 0; i < _class_list->length(); i++) {
       InstanceKlass* ik = _class_list->at(i);
       JvmtiCachedClassFieldMap* cached_map = ik->jvmti_cached_class_field_map();
-      assert(cached_map != NULL, "should not be NULL");
-      ik->set_jvmti_cached_class_field_map(NULL);
+      assert(cached_map != nullptr, "should not be null");
+      ik->set_jvmti_cached_class_field_map(nullptr);
       delete cached_map;  // deletes the encapsulated field map
     }
     delete _class_list;
-    _class_list = NULL;
+    _class_list = nullptr;
   }
 }
 
 // returns the number of ClassFieldMap cached by instanceKlasses
 int JvmtiCachedClassFieldMap::cached_field_map_count() {
-  return (_class_list == NULL) ? 0 : _class_list->length();
+  return (_class_list == nullptr) ? 0 : _class_list->length();
 }
 
 // helper function to indicate if an object is filtered by its tag or class tag
@@ -638,7 +638,7 @@ static inline bool is_filtered_by_heap_filter(jlong obj_tag,
 
 // helper function to indicate if an object is filtered by a klass filter
 static inline bool is_filtered_by_klass_filter(oop obj, Klass* klass_filter) {
-  if (klass_filter != NULL) {
+  if (klass_filter != nullptr) {
     if (obj->klass() != klass_filter) {
       return true;
     }
@@ -679,7 +679,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
 
   // JDK-6584008: the value field may be null if a String instance is
   // partially constructed.
-  if (s_value == NULL) {
+  if (s_value == nullptr) {
     return 0;
   }
   // get the string value and length
@@ -942,12 +942,12 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   if (is_iteration_aborted()) return;
 
   // instanceof check when filtering by klass
-  if (klass() != NULL && !o->is_a(klass())) {
+  if (klass() != nullptr && !o->is_a(klass())) {
     return;
   }
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (o != NULL && o->klass()->java_mirror() == NULL) {
+  if (o != nullptr && o->klass()->java_mirror() == nullptr) {
     log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
                          o->klass()->external_name());
     return;
@@ -1033,7 +1033,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (is_filtered_by_klass_filter(obj, klass())) return;
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (obj != NULL &&   obj->klass()->java_mirror() == NULL) {
+  if (obj != nullptr &&   obj->klass()->java_mirror() == nullptr) {
     log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
@@ -1052,7 +1052,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   int len = is_array ? arrayOop(obj)->length() : -1;
 
   // invoke the object callback (if callback is provided)
-  if (callbacks()->heap_iteration_callback != NULL) {
+  if (callbacks()->heap_iteration_callback != nullptr) {
     jvmtiHeapIterationCallback cb = callbacks()->heap_iteration_callback;
     jint res = (*cb)(wrapper.klass_tag(),
                      wrapper.obj_size(),
@@ -1063,7 +1063,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   }
 
   // for objects and classes we report primitive fields if callback provided
-  if (callbacks()->primitive_field_callback != NULL && obj->is_instance()) {
+  if (callbacks()->primitive_field_callback != nullptr && obj->is_instance()) {
     jint res;
     jvmtiPrimitiveFieldCallback cb = callbacks()->primitive_field_callback;
     if (obj->klass() == vmClasses::Class_klass()) {
@@ -1082,7 +1082,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 
   // string callback
   if (!is_array &&
-      callbacks()->string_primitive_value_callback != NULL &&
+      callbacks()->string_primitive_value_callback != nullptr &&
       obj->klass() == vmClasses::String_klass()) {
     jint res = invoke_string_value_callback(
                 callbacks()->string_primitive_value_callback,
@@ -1094,7 +1094,7 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
 
   // array callback
   if (is_array &&
-      callbacks()->array_primitive_value_callback != NULL &&
+      callbacks()->array_primitive_value_callback != nullptr &&
       obj->is_typeArray()) {
     jint res = invoke_array_primitive_value_callback(
                callbacks()->array_primitive_value_callback,
@@ -1166,10 +1166,10 @@ void JvmtiTagMap::remove_dead_entries_locked(GrowableArray<jlong>* objects) {
   if (_needs_cleaning) {
     // Recheck whether to post object free events under the lock.
     if (!env()->is_enabled(JVMTI_EVENT_OBJECT_FREE)) {
-      objects = NULL;
+      objects = nullptr;
     }
     log_info(jvmti, table)("TagMap table needs cleaning%s",
-                           ((objects != NULL) ? " and posting" : ""));
+                           ((objects != nullptr) ? " and posting" : ""));
     hashmap()->remove_dead_entries(objects);
     _needs_cleaning = false;
   }
@@ -1182,7 +1182,7 @@ void JvmtiTagMap::remove_dead_entries(GrowableArray<jlong>* objects) {
 
 void JvmtiTagMap::post_dead_objects(GrowableArray<jlong>* const objects) {
   assert(Thread::current()->is_Java_thread(), "Must post from JavaThread");
-  if (objects != NULL && objects->length() > 0) {
+  if (objects != nullptr && objects->length() > 0) {
     JvmtiExport::post_object_free(env(), objects);
     log_info(jvmti)("%d free object posted", objects->length());
   }
@@ -1220,7 +1220,7 @@ void JvmtiTagMap::flush_object_free_events() {
       ml.notify_all();
     }
   } else {
-    remove_dead_entries(NULL);
+    remove_dead_entries(nullptr);
   }
 }
 
@@ -1266,12 +1266,12 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
         // SATB marking similar to other j.l.ref.Reference referents. This is
         // achieved by using a phantom load in the object() accessor.
         oop o = key.object();
-        if (o == NULL) {
+        if (o == nullptr) {
           _some_dead_found = true;
           // skip this whole entry
           return true;
         }
-        assert(o != NULL && Universe::heap()->is_in(o), "sanity check");
+        assert(o != nullptr && Universe::heap()->is_in(o), "sanity check");
         jobject ref = JNIHandles::make_local(_thread, o);
         _object_results->append(ref);
         _tag_results->append(value);
@@ -1287,9 +1287,9 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
     int count = _object_results->length();
     assert(count >= 0, "sanity check");
 
-    // if object_result_ptr is not NULL then allocate the result and copy
+    // if object_result_ptr is not null then allocate the result and copy
     // in the object references.
-    if (object_result_ptr != NULL) {
+    if (object_result_ptr != nullptr) {
       error = _env->Allocate(count * sizeof(jobject), (unsigned char**)object_result_ptr);
       if (error != JVMTI_ERROR_NONE) {
         return error;
@@ -1299,12 +1299,12 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
       }
     }
 
-    // if tag_result_ptr is not NULL then allocate the result and copy
+    // if tag_result_ptr is not null then allocate the result and copy
     // in the tag values.
-    if (tag_result_ptr != NULL) {
+    if (tag_result_ptr != nullptr) {
       error = _env->Allocate(count * sizeof(jlong), (unsigned char**)tag_result_ptr);
       if (error != JVMTI_ERROR_NONE) {
-        if (object_result_ptr != NULL) {
+        if (object_result_ptr != nullptr) {
           _env->Deallocate((unsigned char*)object_result_ptr);
         }
         return error;
@@ -1384,7 +1384,7 @@ class BasicHeapWalkContext: public HeapWalkContext {
     _heap_root_callback(heap_root_callback),
     _stack_ref_callback(stack_ref_callback),
     _object_ref_callback(object_ref_callback),
-    _last_referrer(NULL),
+    _last_referrer(nullptr),
     _last_referrer_tag(0) {
   }
 
@@ -1587,7 +1587,7 @@ void CallbackInvoker::initialize_for_advanced_heap_walk(JvmtiTagMap* tag_map,
 inline bool CallbackInvoker::invoke_basic_heap_root_callback(jvmtiHeapRootKind root_kind, oop obj) {
   // if we heap roots should be reported
   jvmtiHeapRootCallback cb = basic_context()->heap_root_callback();
-  if (cb == NULL) {
+  if (cb == nullptr) {
     return check_for_visit(obj);
   }
 
@@ -1599,7 +1599,7 @@ inline bool CallbackInvoker::invoke_basic_heap_root_callback(jvmtiHeapRootKind r
                                         (void*)user_data());
   // push root to visit stack when following references
   if (control == JVMTI_ITERATION_CONTINUE &&
-      basic_context()->object_ref_callback() != NULL) {
+      basic_context()->object_ref_callback() != nullptr) {
     visit_stack()->push(obj);
   }
   return control != JVMTI_ITERATION_ABORT;
@@ -1614,7 +1614,7 @@ inline bool CallbackInvoker::invoke_basic_stack_ref_callback(jvmtiHeapRootKind r
                                                              oop obj) {
   // if we stack refs should be reported
   jvmtiStackReferenceCallback cb = basic_context()->stack_ref_callback();
-  if (cb == NULL) {
+  if (cb == nullptr) {
     return check_for_visit(obj);
   }
 
@@ -1630,7 +1630,7 @@ inline bool CallbackInvoker::invoke_basic_stack_ref_callback(jvmtiHeapRootKind r
                                         (void*)user_data());
   // push root to visit stack when following references
   if (control == JVMTI_ITERATION_CONTINUE &&
-      basic_context()->object_ref_callback() != NULL) {
+      basic_context()->object_ref_callback() != nullptr) {
     visit_stack()->push(obj);
   }
   return control != JVMTI_ITERATION_ABORT;
@@ -1687,7 +1687,7 @@ inline bool CallbackInvoker::invoke_advanced_heap_root_callback(jvmtiHeapReferen
 
   // check that callback is provided
   jvmtiHeapReferenceCallback cb = context->heap_reference_callback();
-  if (cb == NULL) {
+  if (cb == nullptr) {
     return check_for_visit(obj);
   }
 
@@ -1711,12 +1711,12 @@ inline bool CallbackInvoker::invoke_advanced_heap_root_callback(jvmtiHeapReferen
 
   // invoke the callback
   jint res  = (*cb)(ref_kind,
-                    NULL, // referrer info
+                    nullptr, // referrer info
                     wrapper.klass_tag(),
                     0,    // referrer_class_tag is 0 for heap root
                     wrapper.obj_size(),
                     wrapper.obj_tag_p(),
-                    NULL, // referrer_tag_p
+                    nullptr, // referrer_tag_p
                     len,
                     (void*)user_data());
   if (res & JVMTI_VISIT_ABORT) {
@@ -1741,7 +1741,7 @@ inline bool CallbackInvoker::invoke_advanced_stack_ref_callback(jvmtiHeapReferen
 
   // check that callback is provider
   jvmtiHeapReferenceCallback cb = context->heap_reference_callback();
-  if (cb == NULL) {
+  if (cb == nullptr) {
     return check_for_visit(obj);
   }
 
@@ -1779,7 +1779,7 @@ inline bool CallbackInvoker::invoke_advanced_stack_ref_callback(jvmtiHeapReferen
                   0,    // referrer_class_tag is 0 for heap root (stack)
                   wrapper.obj_size(),
                   wrapper.obj_tag_p(),
-                  NULL, // referrer_tag is 0 for root
+                  nullptr, // referrer_tag is 0 for root
                   len,
                   (void*)user_data());
 
@@ -1793,7 +1793,7 @@ inline bool CallbackInvoker::invoke_advanced_stack_ref_callback(jvmtiHeapReferen
 }
 
 // This mask is used to pass reference_info to a jvmtiHeapReferenceCallback
-// only for ref_kinds defined by the JVM TI spec. Otherwise, NULL is passed.
+// only for ref_kinds defined by the JVM TI spec. Otherwise, null is passed.
 #define REF_INFO_MASK  ((1 << JVMTI_HEAP_REFERENCE_FIELD)         \
                       | (1 << JVMTI_HEAP_REFERENCE_STATIC_FIELD)  \
                       | (1 << JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT) \
@@ -1814,7 +1814,7 @@ inline bool CallbackInvoker::invoke_advanced_object_reference_callback(jvmtiHeap
 
   // check that callback is provider
   jvmtiHeapReferenceCallback cb = context->heap_reference_callback();
-  if (cb == NULL) {
+  if (cb == nullptr) {
     return check_for_visit(obj);
   }
 
@@ -1841,7 +1841,7 @@ inline bool CallbackInvoker::invoke_advanced_object_reference_callback(jvmtiHeap
 
   // invoke the callback
   int res = (*cb)(ref_kind,
-                  (REF_INFO_MASK & (1 << ref_kind)) ? &reference_info : NULL,
+                  (REF_INFO_MASK & (1 << ref_kind)) ? &reference_info : nullptr,
                   wrapper.klass_tag(),
                   wrapper.referrer_klass_tag(),
                   wrapper.obj_size(),
@@ -1880,7 +1880,7 @@ inline bool CallbackInvoker::report_primitive_array_values(oop obj) {
   assert(obj->is_typeArray(), "not a primitive array");
 
   AdvancedHeapWalkContext* context = advanced_context();
-  assert(context->array_primitive_value_callback() != NULL, "no callback");
+  assert(context->array_primitive_value_callback() != nullptr, "no callback");
 
   // apply class filter
   if (is_filtered_by_klass_filter(obj, context->klass_filter())) {
@@ -1909,7 +1909,7 @@ inline bool CallbackInvoker::report_string_value(oop str) {
   assert(str->klass() == vmClasses::String_klass(), "not a string");
 
   AdvancedHeapWalkContext* context = advanced_context();
-  assert(context->string_primitive_value_callback() != NULL, "no callback");
+  assert(context->string_primitive_value_callback() != nullptr, "no callback");
 
   // apply class filter
   if (is_filtered_by_klass_filter(str, context->klass_filter())) {
@@ -1944,7 +1944,7 @@ inline bool CallbackInvoker::report_primitive_field(jvmtiHeapReferenceKind ref_k
   static jvmtiHeapReferenceInfo reference_info = { 0 };
 
   AdvancedHeapWalkContext* context = advanced_context();
-  assert(context->primitive_field_callback() != NULL, "no callback");
+  assert(context->primitive_field_callback() != nullptr, "no callback");
 
   // apply class filter
   if (is_filtered_by_klass_filter(obj, context->klass_filter())) {
@@ -2171,7 +2171,7 @@ class SimpleRootsClosure : public OopClosure {
 
     oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
     // ignore null
-    if (o == NULL) {
+    if (o == nullptr) {
       return;
     }
 
@@ -2215,7 +2215,7 @@ class JNILocalRootsClosure : public OopClosure {
 
     oop o = *obj_p;
     // ignore null
-    if (o == NULL) {
+    if (o == nullptr) {
       return;
     }
 
@@ -2321,7 +2321,7 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _is_advanced_heap_walk = false;
   _tag_map = tag_map;
   _initial_object = initial_object;
-  _following_object_refs = (callbacks.object_ref_callback() != NULL);
+  _following_object_refs = (callbacks.object_ref_callback() != nullptr);
   _reporting_primitive_fields = false;
   _reporting_primitive_array_values = false;
   _reporting_string_values = false;
@@ -2340,9 +2340,9 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
   _tag_map = tag_map;
   _initial_object = initial_object;
   _following_object_refs = true;
-  _reporting_primitive_fields = (callbacks.primitive_field_callback() != NULL);;
-  _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != NULL);;
-  _reporting_string_values = (callbacks.string_primitive_value_callback() != NULL);;
+  _reporting_primitive_fields = (callbacks.primitive_field_callback() != nullptr);;
+  _reporting_primitive_array_values = (callbacks.array_primitive_value_callback() != nullptr);;
+  _reporting_string_values = (callbacks.string_primitive_value_callback() != nullptr);;
   _visit_stack = create_visit_stack();
   _dead_objects = objects;
   CallbackInvoker::initialize_for_advanced_heap_walk(tag_map, _visit_stack, user_data, callbacks, &_bitset);
@@ -2350,9 +2350,9 @@ VM_HeapWalkOperation::VM_HeapWalkOperation(JvmtiTagMap* tag_map,
 
 VM_HeapWalkOperation::~VM_HeapWalkOperation() {
   if (_following_object_refs) {
-    assert(_visit_stack != NULL, "checking");
+    assert(_visit_stack != nullptr, "checking");
     delete _visit_stack;
-    _visit_stack = NULL;
+    _visit_stack = nullptr;
   }
 }
 
@@ -2371,7 +2371,7 @@ inline bool VM_HeapWalkOperation::iterate_over_array(oop o) {
   // non-null element
   for (int index=0; index<array->length(); index++) {
     oop elem = array->obj_at(index);
-    if (elem == NULL) {
+    if (elem == nullptr) {
       continue;
     }
 
@@ -2436,7 +2436,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // super (only if something more interesting than java.lang.Object)
     InstanceKlass* java_super = ik->java_super();
-    if (java_super != NULL && java_super != vmClasses::Object_klass()) {
+    if (java_super != nullptr && java_super != vmClasses::Object_klass()) {
       oop super = java_super->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
         return false;
@@ -2445,7 +2445,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // class loader
     oop cl = ik->class_loader();
-    if (cl != NULL) {
+    if (cl != nullptr) {
       if (!CallbackInvoker::report_class_loader_reference(mirror, cl)) {
         return false;
       }
@@ -2453,7 +2453,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // protection domain
     oop pd = ik->protection_domain();
-    if (pd != NULL) {
+    if (pd != nullptr) {
       if (!CallbackInvoker::report_protection_domain_reference(mirror, pd)) {
         return false;
       }
@@ -2461,7 +2461,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
 
     // signers
     oop signers = ik->signers();
-    if (signers != NULL) {
+    if (signers != nullptr) {
       if (!CallbackInvoker::report_signers_reference(mirror, signers)) {
         return false;
       }
@@ -2477,7 +2477,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
           if (tag.is_string()) {
             entry = pool->resolved_string_at(i);
             // If the entry is non-null it is resolved.
-            if (entry == NULL) {
+            if (entry == nullptr) {
               continue;
             }
           } else if (tag.is_klass()) {
@@ -2488,7 +2488,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
             assert(tag.is_unresolved_klass(), "must be");
             constantPoolHandle cp(Thread::current(), pool);
             Klass* klass = ConstantPool::klass_at_if_loaded(cp, i);
-            if (klass == NULL) {
+            if (klass == nullptr) {
               continue;
             }
             entry = klass->java_mirror();
@@ -2506,7 +2506,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     Array<InstanceKlass*>* interfaces = ik->local_interfaces();
     for (i = 0; i < interfaces->length(); i++) {
       oop interf = interfaces->at(i)->java_mirror();
-      if (interf == NULL) {
+      if (interf == nullptr) {
         continue;
       }
       if (!CallbackInvoker::report_interface_reference(mirror, interf)) {
@@ -2523,7 +2523,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
       if (!is_primitive_field_type(type)) {
         oop fld_o = mirror->obj_field(field->field_offset());
         assert(verify_static_oop(ik, mirror, field->field_offset()), "sanity check");
-        if (fld_o != NULL) {
+        if (fld_o != nullptr) {
           int slot = field->field_index();
           if (!CallbackInvoker::report_static_field_reference(mirror, fld_o, slot)) {
             delete field_map;
@@ -2566,7 +2566,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(oop o) {
     if (!is_primitive_field_type(type)) {
       oop fld_o = o->obj_field_access<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>(field->field_offset());
       // ignore any objects that aren't visible to profiler
-      if (fld_o != NULL) {
+      if (fld_o != nullptr) {
         assert(Universe::heap()->is_in(fld_o), "unsafe code should not "
                "have references to Klass* anymore");
         int slot = field->field_index();
@@ -2643,7 +2643,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
                                                       JNILocalRootsClosure* blk)
 {
   oop threadObj = java_thread->threadObj();
-  assert(threadObj != NULL, "sanity check");
+  assert(threadObj != nullptr, "sanity check");
 
   // only need to get the thread's tag once per thread
   jlong thread_tag = tag_for(_tag_map, threadObj);
@@ -2668,9 +2668,9 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
 
     bool is_top_frame = true;
     int depth = 0;
-    frame* last_entry_frame = NULL;
+    frame* last_entry_frame = nullptr;
 
-    while (vf != NULL) {
+    while (vf != nullptr) {
       if (vf->is_java_frame()) {
 
         // java frame (interpreted, compiled, ...)
@@ -2685,7 +2685,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
           for (int slot=0; slot<locals->size(); slot++) {
             if (locals->at(slot)->type() == T_OBJECT) {
               oop o = locals->obj_at(slot)();
-              if (o == NULL) {
+              if (o == nullptr) {
                 continue;
               }
 
@@ -2701,7 +2701,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
           for (int index=0; index < exprs->size(); index++) {
             if (exprs->at(index)->type() == T_OBJECT) {
               oop o = exprs->obj_at(index)();
-              if (o == NULL) {
+              if (o == nullptr) {
                 continue;
               }
 
@@ -2714,7 +2714,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
           }
 
           // Follow oops from compiled nmethod
-          if (jvf->cb() != NULL && jvf->cb()->is_nmethod()) {
+          if (jvf->cb() != nullptr && jvf->cb()->is_nmethod()) {
             blk->set_context(thread_tag, tid, depth, method);
             jvf->cb()->as_nmethod()->oops_do(blk);
           }
@@ -2724,20 +2724,20 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
             // JNI locals for the top frame.
             java_thread->active_handles()->oops_do(blk);
           } else {
-            if (last_entry_frame != NULL) {
+            if (last_entry_frame != nullptr) {
               // JNI locals for the entry frame
               assert(last_entry_frame->is_entry_frame(), "checking");
               last_entry_frame->entry_frame_call_wrapper()->handles()->oops_do(blk);
             }
           }
         }
-        last_entry_frame = NULL;
+        last_entry_frame = nullptr;
         depth++;
       } else {
         // externalVFrame - for an entry frame then we report the JNI locals
         // when we find the corresponding javaVFrame
         frame* fr = vf->frame_pointer();
-        assert(fr != NULL, "sanity check");
+        assert(fr != nullptr, "sanity check");
         if (fr->is_entry_frame()) {
           last_entry_frame = fr;
         }
@@ -2748,7 +2748,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots(JavaThread* java_thread,
     }
   } else {
     // no last java frame but there may be JNI locals
-    blk->set_context(thread_tag, tid, 0, (jmethodID)NULL);
+    blk->set_context(thread_tag, tid, 0, (jmethodID)nullptr);
     java_thread->active_handles()->oops_do(blk);
   }
   return true;
@@ -2762,7 +2762,7 @@ inline bool VM_HeapWalkOperation::collect_stack_roots() {
   JNILocalRootsClosure blk;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     oop threadObj = thread->threadObj();
-    if (threadObj != NULL && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
+    if (threadObj != nullptr && !thread->is_exiting() && !thread->is_hidden_from_external_view()) {
       // Collect the simple root for this thread before we
       // collect its stack roots
       if (!CallbackInvoker::report_simple_root(JVMTI_HEAP_REFERENCE_THREAD,
@@ -2878,7 +2878,7 @@ void JvmtiTagMap::iterate_over_objects_reachable_from_object(jobject object,
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
   {
     MutexLocker ml(Heap_lock);
-    BasicHeapWalkContext context(NULL, NULL, object_ref_callback);
+    BasicHeapWalkContext context(nullptr, nullptr, object_ref_callback);
     VM_HeapWalkOperation op(this, initial_object, context, user_data, &dead_objects);
     VMThread::execute(&op);
   }
@@ -2925,9 +2925,9 @@ void JvmtiTagMap::set_needs_cleaning() {
   DEBUG_ONLY(notified_needs_cleaning = true;)
 
   JvmtiEnvIterator it;
-  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+  for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     JvmtiTagMap* tag_map = env->tag_map_acquire();
-    if (tag_map != NULL) {
+    if (tag_map != nullptr) {
       tag_map->_needs_cleaning = !tag_map->is_empty();
     }
   }
@@ -2947,9 +2947,9 @@ void JvmtiTagMap::gc_notification(size_t num_dead_entries) {
   // If no dead entries then cancel cleaning requests.
   if (num_dead_entries == 0) {
     JvmtiEnvIterator it;
-    for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+    for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map_acquire();
-      if (tag_map != NULL) {
+      if (tag_map != nullptr) {
         MutexLocker ml (tag_map->lock(), Mutex::_no_safepoint_check_flag);
         tag_map->_needs_cleaning = false;
       }
@@ -2969,9 +2969,9 @@ bool JvmtiTagMap::has_object_free_events_and_reset() {
 void JvmtiTagMap::flush_all_object_free_events() {
   JavaThread* thread = JavaThread::current();
   JvmtiEnvIterator it;
-  for (JvmtiEnv* env = it.first(); env != NULL; env = it.next(env)) {
+  for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     JvmtiTagMap* tag_map = env->tag_map_acquire();
-    if (tag_map != NULL) {
+    if (tag_map != nullptr) {
       tag_map->flush_object_free_events();
       ThreadBlockInVM tbiv(thread); // Be safepoint-polite while looping.
     }
