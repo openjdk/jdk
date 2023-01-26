@@ -193,7 +193,7 @@ protected:
    * @return user data pointer (inner pointer to supplied "base_ptr").
    */
   void* wrap_with_guards(void* base_ptr, size_t user_size, const void* tag = nullptr) {
-    assert(base_ptr != nullptr, "Attempt to wrap nullptr with memory guard");
+    assert(base_ptr != nullptr, "Attempt to wrap null with memory guard");
     _base_addr = (u_char*)base_ptr;
     get_head_guard()->build();
     get_head_guard()->set_user_size(user_size);
@@ -226,7 +226,7 @@ protected:
   /**
    * Return the general purpose tag.
    *
-   * @return the general purpose tag, defaults to nullptr.
+   * @return the general purpose tag, defaults to null.
    */
   void* get_tag() const { return get_head_guard()->get_tag(); }
 
@@ -303,7 +303,7 @@ protected:
    * @param len the length of the copy
    * @param tag optional general purpose tag (see GuardedMemory::get_tag())
    *
-   * @return guarded wrapped memory pointer to the user area, or nullptr if OOM.
+   * @return guarded wrapped memory pointer to the user area, or null if OOM.
    */
   static void* wrap_copy(const void* p, const size_t len, const void* tag = nullptr);
 
