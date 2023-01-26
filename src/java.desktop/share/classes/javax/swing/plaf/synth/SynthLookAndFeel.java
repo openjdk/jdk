@@ -622,7 +622,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * from remote resources, particularly any which may have a lower level of
      * trust, is strongly discouraged.
      * The alternative mechanisms to load styles from an {@code InputStream}
-     * located as a resource co-located with the application or by
+     * using a resource co-located with the application or by
      * providing a {@code SynthStyleFactory} are preferred.
      * Consequently this method is deprecated and will be removed in a future release.
      *
