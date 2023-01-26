@@ -598,12 +598,10 @@ public final class Module implements AnnotatedElement {
      * <p> This method does not check if the given module reads this module. </p>
      *
      * <p> A package {@code p} opened to module {@code M} means that code in
-     * {@code M} can do deep reflection on all types in the package and all
-     * their members for example via
-     * {@link java.lang.reflect.AccessibleObject#setAccessible(boolean) setAccessible},
-     * and if {@code M} reads this module, it can also obtain a
-     * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that can be used to
-     * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) inject classes}
+     * {@code M} can do deep reflection on all types in the package.
+     * Further, if {@code M} reads this module, it can obtain a
+     * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
+     * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
      * in package {@code p}. </p>
      *
      * @param  pn

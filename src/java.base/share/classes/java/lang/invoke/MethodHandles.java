@@ -233,10 +233,10 @@ public class MethodHandles {
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
      * <p>
-     * The {@code Lookup} object returned by this method has the access to
-     * {@linkplain Lookup#defineClass(byte[]) inject classes} in the runtime package
+     * The {@code Lookup} object returned by this method is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
      * of {@code targetClass}. Extreme caution should be taken when opening a package
-     * to another module.  The injected classes have the same full privilege
+     * to another module as such defined classes have the same full privilege
      * access as other members in the target module.
      *
      * @param targetClass the target class
@@ -876,11 +876,11 @@ public class MethodHandles {
      * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
      * because it has no {@code MODULE} access.
      * <p>
-     * The {@code Lookup} object returned by {@code privateLookupIn} has the access to
-     * {@linkplain Lookup#defineClass(byte[]) inject classes} in the runtime package
+     * The {@code Lookup} object returned by {@code privateLookupIn} is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
      * of {@code T}. Extreme caution should be taken when opening a package
-     * to another module.  The injected classes have the same full privilege
-     * access as other members in the target module.
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code M2}.
      *
      * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
      *
