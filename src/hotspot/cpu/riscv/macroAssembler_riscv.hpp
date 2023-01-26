@@ -1261,6 +1261,18 @@ public:
     vfsgnjn_vv(vd, vs, vs);
   }
 
+  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
+  }
+
+  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+    vmsleu_vi(Vd, Vs2, imm-1, vm);
+  }
+
+  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, int32_t imm, VectorMask vm = unmasked) {
+    vmsgtu_vi(Vd, Vs2, imm-1, vm);
+  }
+
   static const int zero_words_block_size;
 
   void cast_primitive_type(BasicType type, Register Rt) {
