@@ -2400,7 +2400,7 @@ class StubGenerator: public StubCodeGenerator {
         storeSize = round_up_power_of_2(tail); // recalculate
       }
       int finalOffset = end - storeSize;
-      if (storeSize < maxStore || (finalOffset & ((maxStore >> 1) - 1) == 0)) {
+      if (storeSize < maxStore || ((finalOffset & ((maxStore >> 1) - 1)) == 0)) {
         gen_fill_store(storeSize, value, simdValue, Address(to, finalOffset));
       } else {
         if (UseSIMDForArrayFill) {
