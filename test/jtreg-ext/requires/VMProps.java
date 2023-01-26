@@ -498,7 +498,7 @@ public class VMProps implements Callable<Map<String, String>> {
            }
         }
 
-        log("dockerSupport(): isSupported = " + isSupported);
+        log("dockerSupport(): platform check: isSupported = " + isSupported);
 
         if (isSupported) {
            try {
@@ -508,15 +508,19 @@ public class VMProps implements Callable<Map<String, String>> {
            }
          }
 
+        log("dockerSupport(): returning isSupported = " + isSupported);
         return "" + isSupported;
     }
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
+        log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
+        int exitValue = p.exitValue();
+        log("checkDockerSupport(): exitValue = " + exitValue);
 
-        return (p.exitValue() == 0);
+        return (exitValue == 0);
     }
 
     /**
