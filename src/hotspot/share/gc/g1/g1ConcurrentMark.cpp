@@ -792,7 +792,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
-  G1CollectedHeap::start_codecache_marking_cycle();
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive(false /* full_gc */);
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
@@ -824,7 +824,6 @@ void G1ConcurrentMark::post_concurrent_mark_start() {
 
 void G1ConcurrentMark::post_concurrent_undo_start() {
   root_regions()->cancel_scan();
-  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 /*
