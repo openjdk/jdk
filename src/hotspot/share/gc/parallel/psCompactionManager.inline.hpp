@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
     cm->push_objarray(obj, end_index); // Push the continuation.
   }
 
-  // Push the non-NULL elements of the next stride on the marking stack.
+  // Push the non-null elements of the next stride on the marking stack.
   for (T* e = beg; e < end; e++) {
     cm->mark_and_push<T>(e);
   }

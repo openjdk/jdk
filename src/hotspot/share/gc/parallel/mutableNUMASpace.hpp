@@ -88,7 +88,7 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(NULL) {
+    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
@@ -198,7 +198,7 @@ class MutableNUMASpace : public MutableSpace {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkerThreads* pretouch_workers = NULL);
+                          WorkerThreads* pretouch_workers = nullptr);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
@@ -223,7 +223,7 @@ class MutableNUMASpace : public MutableSpace {
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
