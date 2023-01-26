@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,6 +45,7 @@ address StubRoutines::aarch64::_float_sign_flip = NULL;
 address StubRoutines::aarch64::_double_sign_mask = NULL;
 address StubRoutines::aarch64::_double_sign_flip = NULL;
 address StubRoutines::aarch64::_zero_blocks = NULL;
+address StubRoutines::aarch64::_array_fill_fixed_implementations = NULL;
 address StubRoutines::aarch64::_count_positives = NULL;
 address StubRoutines::aarch64::_count_positives_long = NULL;
 address StubRoutines::aarch64::_large_array_equals = NULL;

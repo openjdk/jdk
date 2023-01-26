@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@ static bool    returns_to_call_stub(address return_pc)   {
 
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 45000           // simply increase if too small (assembler will crash if too small)
+  code_size2 = 53000           // simply increase if too small (assembler will crash if too small)
 };
 
 class aarch64 {
@@ -57,6 +57,7 @@ class aarch64 {
   static address _double_sign_flip;
 
   static address _zero_blocks;
+  static address _array_fill_fixed_implementations;
 
   static address _large_array_equals;
   static address _compare_long_string_LL;
@@ -130,6 +131,10 @@ class aarch64 {
 
   static address zero_blocks() {
     return _zero_blocks;
+  }
+
+  static address array_fill_fixed_implementations() {
+    return _array_fill_fixed_implementations;
   }
 
   static address count_positives() {

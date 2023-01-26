@@ -644,6 +644,76 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void generate_arrays_fill() {
+    const Register to        = c_rarg0;   // source array address
+    const Register value     = c_rarg1;   // value
+    const Register count     = c_rarg2;   // elements count
+    const Register end       = rscratch1; // register to keep end of array
+    const FloatRegister simdValue = v0;   // simd register to use as tmp
+    const Register tmpReg1 = r10;         // tmp register
+    const Register tmpReg2 = r11;         // another tmp register
+
+    const int IMPL_SIZE = (UseSIMDForArrayFill ? 32 : 64); // table implementation size limit
+    const int IMPL_MAX = 160; // max array byte size supported by table implementations
+    const int MAX_STORE = (UseSIMDForArrayFill ? 32 : 16); // max available store
+
+    address implTable = StubRoutines::aarch64::_array_fill_fixed_implementations
+        = generate_fill_table(to, value, end, simdValue, IMPL_SIZE, IMPL_MAX, MAX_STORE);
+
+    StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+
+    StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+
+    StubRoutines::_jint_fill = generate_fill(T_INT, false, "jint_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+
+    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+
+    StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill", to,
+        value, count, simdValue, end, tmpReg1, tmpReg2, IMPL_SIZE, IMPL_MAX, implTable, MAX_STORE);
+  }
+
+  // Generate table with fill implementations for various fixed lengths.
+  //
+  // <table start>:
+  // <implementation for 0 bytes length>;
+  // <implementation for 1 bytes length>;
+  // ...
+  // <implementation for IMPL_MAX bytes length>;
+  //
+  // Arguments:
+  //    to:        Start address.
+  //    value:     GPR register with cloned fill pattern. Initialized when
+  //                UseSIMDForArrayFill is false.
+  //    end:       End address.
+  //    simdValue: SIMD register with cloned fill pattern. Initialized when
+  //                UseSIMDForArrayFill is true.
+  //    implSize:  Size limit for implementation in bytes. Also used as an alignment.
+  //    implMax:   The maximum size of the array, in bytes, for which the code is generated.
+  //    maxStore:  The maximum available store size in bytes.
+  address generate_fill_table(const Register to, const Register value,
+      const Register end, const FloatRegister simdValue, const int implSize,
+      const int implMax, const int maxStore) {
+
+    assert(is_power_of_2(implSize), "arrays fill table implementation requirement");
+
+    __ align(implSize);
+    StubCodeMark mark(this, "StubRoutines", "fill_table");
+    address start = __ pc();
+    for (int i = 0; i <= implMax; i++) {
+      __ align(implSize);
+      generate_fixed_fill_tail_implementation(i, to, value, simdValue, end, maxStore,
+          implSize, start);
+    }
+    return start;
+  }
+
   // The inner part of zero_words().  This is the bulk operation,
   // zeroing words in blocks, possibly using DC ZVA to do it.  The
   // caller is responsible for zeroing the last few words.
@@ -2270,151 +2340,523 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Generate store of size bytes at address "a" using gpr or simd register
+  // depending on the value of "UseSIMDForArrayFill".
+  void gen_fill_store(int size, Register gpr, FloatRegister simd, const Address &a) {
+    if (UseSIMDForArrayFill) {
+      switch (size) {
+        case 1: __ str(simd, __ B, a); break;
+        case 2: __ str(simd, __ H, a); break;
+        case 4: __ strs(simd, a); break;
+        case 8: __ strd(simd, a); break;
+        case 16: __ strq(simd, a); break;
+        case 32: __ stpq(simd, simd, a); break;
+        default: ShouldNotReachHere();
+      }
+    } else {
+      switch (size) {
+        case 1: __ strb(gpr, a); break;
+        case 2: __ strh(gpr, a); break;
+        case 4: __ strw(gpr, a); break;
+        case 8: __ str(gpr, a); break;
+        case 16: __ stp(gpr, gpr, a); break;
+        default: ShouldNotReachHere();
+      }
+    }
+  }
+
+  // Generate array tail fill implementation. A set of stores with an epilogue,
+  // where the last store will overlap with the previous store if there are more
+  // than one stores and the remaining amount of bytes is not a power of 2.
   //
-  // Generate stub for array fill. If "aligned" is true, the
-  // "to" address is assumed to be heapword aligned.
+  // Arguments:
+  //    tail:        Total store size in bytes.
+  //    to:          Register with start address.
+  //    value:       Register with fill pattern.
+  //    simdValue:   SIMD register with fill pattern.
+  //    endAddr:     Register with end address (for simd implementation only).
+  //    maxStore:    The maximum available store size in bytes.
+  //    maxImplSize: Implementation code size limit.
+  //    tableStart:  First (0 byte size) implementation address.
+  void generate_fixed_fill_tail_implementation(int tail, Register to, Register value,
+      FloatRegister simdValue, Register endAddr, const int maxStore,
+      const int maxImplSize, address tableStart) {
+    int initialTail = tail;
+    int offset = 0;
+    address start = __ pc();
+    while (tail >= maxStore) {
+      gen_fill_store(maxStore, value, simdValue, Address(to, offset));
+      offset += maxStore;
+      tail -= maxStore;
+    }
+    if (tail != 0) {
+      int end = offset + tail;
+      int storeSize = round_up_power_of_2(tail);
+      if (storeSize > initialTail) {
+        int halfStore = (storeSize >> 1);
+        gen_fill_store(halfStore, value, simdValue, Address(to, offset));
+        offset += halfStore;
+        tail -= halfStore;
+        storeSize = round_up_power_of_2(tail); // recalculate
+      }
+      int finalOffset = end - storeSize;
+      if (storeSize < maxStore || (finalOffset & ((maxStore >> 1) - 1) == 0)) {
+        gen_fill_store(storeSize, value, simdValue, Address(to, finalOffset));
+      } else {
+        if (UseSIMDForArrayFill) {
+          gen_fill_store(storeSize, value, simdValue, Address(endAddr, -storeSize));
+        } else {
+          __ add(to, to, finalOffset);
+          gen_fill_store(storeSize, value, simdValue, Address(to));
+        }
+      }
+    }
+    int bytesLimitLeft = maxImplSize + (__ pc() - start);
+    int instructionsLimitLeft = bytesLimitLeft / NativeInstruction::instruction_size;
+    assert(instructionsLimitLeft >= 1, "out of table size");
+    int epilogueInstructionsCount = (VM_Version::use_rop_protection() ? 5 : 3);
+    if (epilogueInstructionsCount > instructionsLimitLeft) {
+      // reuse epilogue from "0-byte-case"
+      __ b(tableStart);
+    } else {
+      // normal epilogue generation
+      __ leave();
+      __ ret(lr);
+    }
+  }
+
+  // Generate code that fills in the tail by checking count bit and using the appropriate store
+  // Assume less than 64 bytes are available for store. Also suppose that leave() + ret(lr)
+  // are generated later by the caller. The last store will overwrite one element in case
+  // when there is an even number of array elements left.
+  //
+  // Arguments:
+  //    t:         Array element type.
+  //    to:        Register with start address.
+  //    end:       Register with end address.
+  //    value:     Register with fill pattern.
+  //    count:     Counter register.
+  //    simdvalue: SIMD register with fill pattern.
+  //    maxStore:  max available store to use
+  void generate_fill_tail_impl(BasicType t, const Register to, const Register end,
+      const Register value, const Register count, const FloatRegister simdValue,
+      const int maxStore) {
+
+    Label L_tailCheck16, L_tailCheck8, L_tailCheck4, L_tailCheck2, L_done;
+
+    __ tbz(count, exact_log2(32), L_tailCheck16);
+    if (maxStore == 32) {
+      gen_fill_store(maxStore, value, simdValue, Address(__ post(to, maxStore)));
+    } else {
+      gen_fill_store(maxStore, value, simdValue, Address(__ post(to, maxStore)));
+      gen_fill_store(maxStore, value, simdValue, Address(__ post(to, maxStore)));
+    }
+    __ bind(L_tailCheck16);
+    __ tbz(count, exact_log2(16), L_tailCheck8);
+    gen_fill_store(16, value, simdValue, Address(__ post(to, 16)));
+    __ bind(L_tailCheck8);
+    __ tbz(count, exact_log2(8), L_tailCheck4);
+    gen_fill_store(8, value, simdValue, Address(to));
+    int under8bStore = (t == T_INT ? 4 : 8);
+    gen_fill_store(under8bStore, value, simdValue, Address(end, -under8bStore));
+    __ leave();
+    __ ret(lr);
+
+    __ bind(L_tailCheck4);
+    __ tbz(count, exact_log2(4), t == T_INT ? L_done : L_tailCheck2);
+    gen_fill_store(4, value, simdValue, Address(to));
+
+    if (t != T_INT) {
+      int under4bStore = ((t == T_BYTE) ? 4 : 2); // 0..1 short or 0..3 bytes
+      gen_fill_store(under4bStore, value, simdValue, Address(end, -under4bStore));
+      __ leave();
+      __ ret(lr);
+
+      Label L_tailCheck1;
+      __ bind(L_tailCheck2);
+      __ tbz(count, exact_log2(2), t == T_SHORT ? L_done : L_tailCheck1);
+      gen_fill_store(2, value, simdValue, Address(to));
+      if (t == T_BYTE) {
+        Label L_lastByte;
+        __ bind(L_lastByte);
+        gen_fill_store(1, value, simdValue, Address(end, -1));
+        __ leave();
+        __ ret(lr);
+        __ bind(L_tailCheck1);
+        __ tbnz(count, exact_log2(1), L_lastByte);
+      }
+    }
+    __ bind(L_done);
+  }
+
+  //
+  // Generate stub for array fill.
   //
   // Arguments for generated stub:
-  //   to:    c_rarg0
-  //   value: c_rarg1
-  //   count: c_rarg2 treated as signed
-  //
-  address generate_fill(BasicType t, bool aligned, const char *name) {
+  //   t:                Array element type.
+  //   aligned:          True if data is aligned at 8 bytes.
+  //   name:             Stub name.
+  //   to:               Start address.
+  //   value:            Value to fill array with.
+  //   count:            Treated as signed, number of elements to fill.
+  //   simdValue:        Tmp simd register to use for simd implementation.
+  //   end:              Tmp register to keep the end address.
+  //   implTableAddress: Tmp register to keep the implementation table address.
+  //   tmpReg:           Tmp register for various purposes.
+  //   implSize:         Size of the table implementation.
+  //   implMax:          Maximum array byte size supported by table implementation.
+  //   implTable:        Implementation table address.
+  //   maxStore:         Maximum available store byte size.
+  address generate_fill(BasicType t, bool aligned, const char *name, const Register to,
+      const Register value, const Register count, const FloatRegister simdValue,
+      const Register end, const Register implTableAddress, const Register tmpReg,
+      const int implSize, const int implMax, address implTable, const int maxStore) {
+    // Stub code below is implementation of Arrays.fill intrinsic for 12 cases:
+    //   1) gpr implementation for int array, start is 8-byte aligned
+    //   2) gpr implementation for short array, start is 8-byte aligned
+    //   3) gpr implementation for byte array, start is 8-byte aligned
+    //   4) gpr implementation for int array, start alignment is unknown
+    //   5) gpr implementation for short array, start alignment is unknown
+    //   6) gpr implementation for byte array, start alignment is unknown
+    //   7) simd implementation for int array, start is 8-byte aligned
+    //   8) simd implementation for short array, start is 8-byte aligned
+    //   9) simd implementation for byte array, start is 8-byte aligned
+    //   10) simd implementation for int array, start alignment is unknown
+    //   11) simd implementation for short array, start alignment is unknown
+    //   12) simd implementation for byte array, start alignment is unknown
+    //
+    // GPR and SIMD implementations are almost identical. Most different parts are
+    //   gpr/simd register initialization and gpr/simd stores usage. Another natural
+    //   difference is the maximum possible store.
+    //
+    // Very small arrays are handled separately for all cases except 9) and 12) where
+    //   not having separate code for small case gives better results according to benchmarks.
+    //
+    // Medium size arrays are handled uniformly by using a table of implementations
+    //   for each medium size in bytes. Thresholds for considering size as medium are
+    //   selected based on benchmarking on various platforms and are:
+    //   1) 160 bytes for cases 1,2,3,7,8,9.
+    //   2) 127 bytes for cases 5, 11
+    //   3) 63 bytes for cases 6, 12
+    //
+    // All larger than medium arrays are accessed in an aligned way by applying one of the
+    //   alignment procedures selected after benchmarking:
+    //     1) single branch checking 16-byte alignment for cases 1,2,3,7,8,9
+    //     2) 2 consequent branches with 8-byte alignment and 16-byte alignment for cases 4, 10
+    //     3) large branchless store for cases 5, 6, 11, 12
+    //
+    // Large arrays are handled differently depending on the pattern value. For zero a separate
+    //   implementation with cache line zeroing (dc zva instruction) is used, dc zva loop is
+    //   unrolled by factor 2. For other values a common loop unrolled to store 128 bytes is used.
+    //
+    // Post-loop processing based on branching, which shows better results in benchmarking
+    //   than existing table implementation.
+    //
+    //
+    //
+    // High-level pseudo-code of the algorithm:
+    //
+    // int smallThreshold = 0;
+    // if (UseSIMDForArrayFill) {
+    //   if (t == T_INT) smallThreshold = 1;
+    //   if (t == T_SHORT) smallthreshold = 2;
+    // } else {
+    //   if (t == T_INT) smallThreshold = 1;
+    //   if (t == T_SHORT) smallthreshold = 3;
+    //   if (t == T_BYTE) smallThreshold = 6;
+    // }
+    // if (smallThreshold != 0 && count <= smallThreshold) {
+    //   goto implTable + count * implSize; // see generate_fixed_fill_tail_implementation(...)
+    // }
+    // [align data at 16 bytes];
+    // count = count * ELEMENT_SIZE; // count in bytes
+    // if (UseBlockZeroing && value == 0 && count >= BlockZeroingLowLimit) {
+    //   goto specialZeroingImplementation;
+    // }
+    // while(count > 128) {
+    //   [store 128 bytes];
+    //   count -= 128;
+    // }
+    // [store tail of 0..127 bytes]; // see generate_fill_tail_impl(...)
+    // return;
+    //
+    // specialZeroingImplementation:
+    // [align at zva_length];
+    // while(count >= 2 * zva_length) {
+    //   [clear cache line with zva_length bytes];
+    //   [clear cache line with zva_length bytes];
+    //   count -= 2 * zva_length;
+    // }
+    // if (count >= zva_length) {
+    //   [clear cache line with zva_length bytes];
+    // }
+    // [store tail of 0..zva_length-1 bytes]; // see generate_fill_tail_impl(...)
+    //
+
+    assert(t == T_BYTE || t == T_SHORT || t == T_INT, "unsupported");
+
+    assert_different_registers(to, value, count, end, rscratch2, implTableAddress, tmpReg);
+
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
     BLOCK_COMMENT("Entry:");
 
-    const Register to        = c_rarg0;  // source array address
-    const Register value     = c_rarg1;  // value
-    const Register count     = c_rarg2;  // elements count
+    const int LOOP_BYTE_SIZE = 128; // bytes stored in loop iteration
+    const int LOG_MAX_STORE = exact_log2(maxStore);
+    const int LOG_INSTR_SIZE = exact_log2(NativeInstruction::instruction_size);
+    // Use different threshold for different element types. Selected according
+    // to benchmarking.
+    const int ALIGNMENT_THRESHOLD = ((aligned || t == T_INT) ? implMax : (t == T_SHORT ? 127 : 63));
+    const int MAX_SUPPORTED_TAIL_SIZE = 63; // generate_fill_tail_impl limitation
+    const int ELEMENT_SIZE = type2aelembytes(t);
+    const int ZVA_LENGTH = VM_Version::zva_length();
 
-    const Register bz_base = r10;        // base for block_zero routine
-    const Register cnt_words = r11;      // temp register
+    assert(is_power_of_2(LOOP_BYTE_SIZE), "check size of data stored in loop");
+    assert(implMax >= maxStore, "code requirement");
+    assert(ALIGNMENT_THRESHOLD > (32 + 16), "code requirement");
+    assert(BlockZeroingLowLimit >= 2 * ZVA_LENGTH, "code requirement");
+
+    Label L_loop, L_under64bytes, L_under128bytes,  L_small, L_large, L_zero, L_done;
+
+    int shift = exact_log2(ELEMENT_SIZE);
 
     __ enter();
-
-    Label L_fill_elements, L_exit1;
-
-    int shift = -1;
-    switch (t) {
-      case T_BYTE:
-        shift = 0;
-        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ bfi(value, value, 8, 8);   // 8 bit -> 16 bit
-        __ bfi(value, value, 16, 16); // 16 bit -> 32 bit
-        __ br(Assembler::LO, L_fill_elements);
-        break;
-      case T_SHORT:
-        shift = 1;
-        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ bfi(value, value, 16, 16); // 16 bit -> 32 bit
-        __ br(Assembler::LO, L_fill_elements);
-        break;
-      case T_INT:
-        shift = 2;
-        __ cmpw(count, 8 >> shift); // Short arrays (< 8 bytes) fill by element
-        __ br(Assembler::LO, L_fill_elements);
-        break;
-      default: ShouldNotReachHere();
-    }
-
-    // Align source address at 8 bytes address boundary.
-    Label L_skip_align1, L_skip_align2, L_skip_align4;
-    if (!aligned) {
-      switch (t) {
-        case T_BYTE:
-          // One byte misalignment happens only for byte arrays.
-          __ tbz(to, 0, L_skip_align1);
-          __ strb(value, Address(__ post(to, 1)));
-          __ subw(count, count, 1);
-          __ bind(L_skip_align1);
-          // Fallthrough
-        case T_SHORT:
-          // Two bytes misalignment happens only for byte and short (char) arrays.
-          __ tbz(to, 1, L_skip_align2);
-          __ strh(value, Address(__ post(to, 2)));
-          __ subw(count, count, 2 >> shift);
-          __ bind(L_skip_align2);
-          // Fallthrough
-        case T_INT:
-          // Align to 8 bytes, we know we are 4 byte aligned to start.
-          __ tbz(to, 2, L_skip_align4);
-          __ strw(value, Address(__ post(to, 4)));
-          __ subw(count, count, 4 >> shift);
-          __ bind(L_skip_align4);
-          break;
-        default: ShouldNotReachHere();
+    if (UseSIMDForArrayFill) {
+      if (t == T_INT) {
+        // Handle size=1 specifically to avoid performance degradation in this case
+        // at the cost of some performance for all other cases.
+        Label L_not1;
+        __ cmp(count, (u1)1);
+        __ br(__ NE, L_not1);
+        __ strw(value, Address(to));
+        __ leave();
+        __ ret(lr);
+        __ bind(L_not1);
       }
-    }
-
-    //
-    //  Fill large chunks
-    //
-    __ lsrw(cnt_words, count, 3 - shift); // number of words
-    __ bfi(value, value, 32, 32);         // 32 bit -> 64 bit
-    __ subw(count, count, cnt_words, Assembler::LSL, 3 - shift);
-    if (UseBlockZeroing) {
-      Label non_block_zeroing, rest;
-      // If the fill value is zero we can use the fast zero_words().
-      __ cbnz(value, non_block_zeroing);
-      __ mov(bz_base, to);
-      __ add(to, to, cnt_words, Assembler::LSL, LogBytesPerWord);
-      address tpc = __ zero_words(bz_base, cnt_words);
-      if (tpc == nullptr) {
-        fatal("CodeCache is full at generate_fill");
+      __ dup(simdValue, __ esize2arrangement(ELEMENT_SIZE, true), value);
+      if (t == T_SHORT) {
+        // As above, handle short arrays of one or two elements to avoid performance
+        // degradation of this case, despite some performance loss for all other cases.
+        Label L_proceed;
+        __ cmp(count, (u1)2);
+        __ br(__ GT, L_proceed);
+        __ br(__ EQ, implTable + 2 * ELEMENT_SIZE * implSize);
+        __ tbnz(count, 0, implTable + ELEMENT_SIZE * implSize);
+        __ bind(L_proceed);
       }
-      __ b(rest);
-      __ bind(non_block_zeroing);
-      __ fill_words(to, cnt_words, value);
-      __ bind(rest);
+      __ adr(implTableAddress, implTable);
+      __ add(end, to, count, __ LSL, shift); // keep end address, because simd-version table uses it
+      __ cmp(count, (u1)(ALIGNMENT_THRESHOLD >> shift));
     } else {
-      __ fill_words(to, cnt_words, value);
+      // Similar to cases above, handle small byte arrays.
+      if (t == T_BYTE) {
+        __ cmp(count, (u1)6);
+        __ bfi(value, value, BitsPerByte, BitsPerByte);
+        __ bfi(value, value, 2 * BitsPerByte, 2 * BitsPerByte);
+        __ br(__ LE, L_small);
+      } else if (t == T_SHORT) {
+        __ cmp(count, (u1)4);
+        __ bfi(value, value, ELEMENT_SIZE * BitsPerByte, ELEMENT_SIZE * BitsPerByte);
+        __ br(__ LT, L_small);
+      } else {
+        __ cmp(count, (u1)1);
+        __ br(__ EQ, L_small);
+      }
+      __ cmp(count, (u1)(ALIGNMENT_THRESHOLD >> shift));
+      __ adr(implTableAddress, implTable);
+      __ bfi(value, value, 4 * BitsPerByte, 4 * BitsPerByte);
     }
+    __ br(__ GT, L_large);
+    // jump to table implementation
+    __ add(implTableAddress, implTableAddress, count, __ LSL, exact_log2(implSize) + shift);
+    __ br(implTableAddress);
 
-    // Remaining count is less than 8 bytes. Fill it by a single store.
-    // Note that the total length is no less than 8 bytes.
-    if (t == T_BYTE || t == T_SHORT) {
-      Label L_exit1;
-      __ cbzw(count, L_exit1);
-      __ add(to, to, count, Assembler::LSL, shift); // points to the end
-      __ str(value, Address(to, -8));    // overwrite some elements
-      __ bind(L_exit1);
+    if (!UseSIMDForArrayFill) {
+      // separate block with small-size implementation for non-simd case
+      Label L_check4bytes, L_smallDone;
+      __ align(OptoLoopAlignment);
+      __ bind(L_small);
+      if (t == T_BYTE) {
+        Label L_check2bytes;
+        __ tbz(count, 0, L_check2bytes);
+        __ strb(value, Address(__ post(to, 1)));
+        __ bind(L_check2bytes);
+      }
+      if (t != T_INT) {
+        __ tbz(count, 1 - shift, L_check4bytes);
+        __ strh(value, Address(__ post(to, 2)));
+        __ bind(L_check4bytes);
+        __ tbz(count, 2 - shift, L_smallDone);
+      }
+      __ strw(value, Address(to));
+      __ bind(L_smallDone);
       __ leave();
       __ ret(lr);
     }
 
-    // Handle copies less than 8 bytes.
-    Label L_fill_2, L_fill_4, L_exit2;
-    __ bind(L_fill_elements);
-    switch (t) {
-      case T_BYTE:
-        __ tbz(count, 0, L_fill_2);
-        __ strb(value, Address(__ post(to, 1)));
-        __ bind(L_fill_2);
-        __ tbz(count, 1, L_fill_4);
-        __ strh(value, Address(__ post(to, 2)));
-        __ bind(L_fill_4);
-        __ tbz(count, 2, L_exit2);
-        __ strw(value, Address(to));
-        break;
-      case T_SHORT:
-        __ tbz(count, 0, L_fill_4);
-        __ strh(value, Address(__ post(to, 2)));
-        __ bind(L_fill_4);
-        __ tbz(count, 1, L_exit2);
-        __ strw(value, Address(to));
-        break;
-      case T_INT:
-        __ cbzw(count, L_exit2);
-        __ strw(value, Address(to));
-        break;
-      default: ShouldNotReachHere();
+    // align data at 16 bytes
+    __ align(OptoLoopAlignment);
+    __ bind(L_large);
+    if (!UseSIMDForArrayFill) {
+      __ add(end, to, count, __ LSL, shift);
     }
-    __ bind(L_exit2);
+    if (aligned) {
+      Label L_aligned16;
+      __ tbz(to, exact_log2(8), L_aligned16);
+      gen_fill_store(8, value, simdValue, Address(__ post(to, 8)));
+      __ sub(count, count, 8 >> shift);
+      __ bind(L_aligned16);
+      if (shift != 0) {
+        __ lslw(count, count, shift);
+      }
+    } else {
+      if (t == T_INT) {
+        Label L_aligned8;
+        __ tbz(to, exact_log2(4), L_aligned8);
+        gen_fill_store(4, value, simdValue, Address(__ post(to, 4)));
+        __ sub(count, count, 4 >> shift);
+        __ bind(L_aligned8);
+        Label L_aligned16;
+        __ tbz(to, exact_log2(8), L_aligned16);
+        gen_fill_store(8, value, simdValue, Address(__ post(to, 8)));
+        __ bind(L_aligned16);
+      } else {
+        gen_fill_store(16, value, simdValue, Address(__ post(to, 16)));
+        __ bfi(to, zr, 0, exact_log2(16));
+      }
+      __ sub(count, end, to);
+      shift = 0;
+    }
+
+    // check and jump to block zeroing code if applicable
+    if (UseBlockZeroing) {
+      if (ALIGNMENT_THRESHOLD < BlockZeroingLowLimit) {
+        Label L_non_zero;
+        __ cbnz(value, L_non_zero);
+        __ subs(zr, count, BlockZeroingLowLimit);
+        __ br(__ GE, L_zero);
+        __ bind(L_non_zero);
+      } else {
+        __ cbz(value, L_zero);
+      }
+    }
+
+    // main non-zero fill code for large arrays
+    int minRemainingBytes = ALIGNMENT_THRESHOLD - 16;
+    if (minRemainingBytes > LOOP_BYTE_SIZE) {
+      __ lsrw(rscratch2, count, exact_log2(LOOP_BYTE_SIZE));
+    } else {
+      __ adds(rscratch2, zr, count, __ LSR, exact_log2(LOOP_BYTE_SIZE));
+      __ br(__ EQ, L_under128bytes);
+    }
+
+    __ bind(L_loop); // loop begin
+    __ add(to, to, LOOP_BYTE_SIZE);
+    __ sub(rscratch2, rscratch2, 1);
+    for (int i = 0; i < LOOP_BYTE_SIZE; i += maxStore) {
+      gen_fill_store(maxStore, value, simdValue, Address(to, i - LOOP_BYTE_SIZE));
+    }
+    __ cbnz(rscratch2, L_loop); // loop end
+    // 0..(LOOP_BYTE_SIZE/2 - 1) bytes left
+    if (aligned) {
+      // Take a chance that the large array is a power of two long and already properly aligned.
+      __ tst(count, LOOP_BYTE_SIZE - 1);
+      __ br(__ EQ, L_done);
+    }
+    __ bind(L_under128bytes);
+    __ tbz(count, exact_log2(LOOP_BYTE_SIZE) - 1, L_under64bytes);
+    for (int i = 0; i < LOOP_BYTE_SIZE/2; i += maxStore) {
+      gen_fill_store(maxStore, value, simdValue, Address(to, i));
+    }
+    __ add(to, to, LOOP_BYTE_SIZE/2);
+    __ bind(L_under64bytes);
+    generate_fill_tail_impl(t, to, end, value, count, simdValue, maxStore);
+    __ bind(L_done);
     __ leave();
     __ ret(lr);
+
+    // block zeroing code
+    if (UseBlockZeroing) {
+      Label L_loop_zva, L_post_loop_zva, L_zva_tail, L_aligned;
+      __ align(OptoLoopAlignment);
+      __ bind(L_zero);
+
+      // align at zva_length.
+      if (ZVA_LENGTH == 64) {
+        Label L_aligned32;
+        __ tbz(to, exact_log2(16), L_aligned32);
+        gen_fill_store(16, zr, simdValue, Address(__ post(to, 16)));
+        __ bind(L_aligned32);
+        __ tbz(to, exact_log2(32), L_aligned);
+        if (maxStore == 32) {
+          gen_fill_store(maxStore, zr, simdValue, Address(__ post(to, maxStore)));
+        } else {
+          gen_fill_store(maxStore, zr, simdValue, Address(__ post(to, maxStore)));
+          gen_fill_store(maxStore, zr, simdValue, Address(__ post(to, maxStore)));
+        }
+      } else { // generic code
+        if (maxStore == 32) {
+          // align to maxStore
+          Label L_aligned32;
+          __ tbz(to, exact_log2(16), L_aligned32);
+          gen_fill_store(16, zr, simdValue, Address(__ post(to, 16)));
+          __ bind(L_aligned32);
+        }
+        __ neg(tmpReg, to);
+        __ andr(tmpReg, tmpReg, ZVA_LENGTH - 1);
+        __ adr(rscratch2, L_aligned);
+        __ add(to, to, tmpReg);
+        __ sub(rscratch2, rscratch2, tmpReg, __ LSR, exact_log2(maxStore) - LOG_INSTR_SIZE);
+        __ br(rscratch2);
+        for (int i = -ZVA_LENGTH + maxStore; i < 0; i += maxStore) {
+          gen_fill_store(maxStore, zr, simdValue, Address(to, i));
+        }
+      }
+      __ bind(L_aligned);
+      if (BlockZeroingLowLimit < 3 * ZVA_LENGTH) { // no known platform so far
+        __ sub(count, end, to);
+        // zva loop is unrolled by 2 zva instructions
+        __ lsrw(tmpReg, count, exact_log2(ZVA_LENGTH) + 1);
+        __ cbz(tmpReg, L_post_loop_zva);
+      } else {
+        // at least 2 zva needed. Issue as early as possible
+        __ dc(Assembler::ZVA, to);
+        __ add(to, to, ZVA_LENGTH);
+        __ dc(Assembler::ZVA, to);
+        __ add(to, to, ZVA_LENGTH);
+        __ sub(count, end, to);
+        __ lsrw(tmpReg, count, exact_log2(ZVA_LENGTH) + 1);
+        __ cbz(tmpReg, L_post_loop_zva);
+      }
+      __ bind(L_loop_zva);
+      __ dc(Assembler::ZVA, to);
+      __ add(to, to, ZVA_LENGTH);
+      __ dc(Assembler::ZVA, to);
+      __ sub(tmpReg, tmpReg, 1);
+      __ add(to, to, ZVA_LENGTH);
+      __ cbnz(tmpReg, L_loop_zva);
+      __ bind(L_post_loop_zva);
+      __ tbz(count, exact_log2(ZVA_LENGTH), L_zva_tail);
+      __ dc(Assembler::ZVA, to);
+      __ add(to, to, ZVA_LENGTH);
+      __ bind(L_zva_tail);
+      if ((ZVA_LENGTH - 1) > MAX_SUPPORTED_TAIL_SIZE) { // most CPUs have zva_length == 64
+        __ sub(count, end, to);
+        Label L_proceed, L_recheck;
+        __ bind(L_recheck);
+        __ cmp(count, (u1)MAX_SUPPORTED_TAIL_SIZE);
+        __ br(__ LT, L_proceed);
+        gen_fill_store(maxStore, zr, simdValue, Address(__ post(to, maxStore)));
+        __ sub(count, count, maxStore);
+        __ b(L_recheck);
+        __ bind(L_proceed);
+      }
+      generate_fill_tail_impl(t, to, end, zr, count, simdValue, maxStore);
+      __ leave();
+      __ ret(lr);
+    }
     return start;
   }
 
@@ -2561,12 +3003,7 @@ class StubGenerator: public StubCodeGenerator {
                                                                entry_jlong_arraycopy,
                                                                entry_checkcast_arraycopy);
 
-    StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill");
-    StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill");
-    StubRoutines::_jint_fill = generate_fill(T_INT, false, "jint_fill");
-    StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
-    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
-    StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
+    generate_arrays_fill();
   }
 
   void generate_math_stubs() { Unimplemented(); }

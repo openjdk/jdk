@@ -220,6 +220,12 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
     }
+
+    if (FLAG_IS_DEFAULT(UseSIMDForArrayFill)) {
+      if (_model == 0xd40 || _model2 == 0xd40) { // Neoverse N2
+        FLAG_SET_DEFAULT(UseSIMDForArrayFill, true);
+      }
+    }
   }
 
   if (_cpu == CPU_ARM) {
