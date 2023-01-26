@@ -76,16 +76,7 @@ void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
   // examining cards here.
   assert(bottom < top, "ought to be at least one obj on a dirty card.");
 
-  if (_boundary != NULL) {
-    // We have a boundary outside of which we don't want to look
-    // at objects, so create a filtering closure around the
-    // oop closure before walking the region.
-    FilteringClosure filter(_boundary, _cl);
-    walk_mem_region_with_cl(mr, bottom, top, &filter);
-  } else {
-    // No boundary, simply walk the heap with the oop closure.
-    walk_mem_region_with_cl(mr, bottom, top, _cl);
-  }
+  walk_mem_region_with_cl(mr, bottom, top, _cl);
 }
 
 // We get called with "mr" representing the dirty region
@@ -140,38 +131,28 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   _min_done = bottom;
 }
 
-// We must replicate this so that the static type of "FilteringClosure"
-// (see above) is apparent at the oop_iterate calls.
-#define DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(ClosureType) \
-void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,        \
-                                                    HeapWord* bottom,    \
-                                                    HeapWord* top,       \
-                                                    ClosureType* cl) {   \
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);               \
-  if (bottom < top) {                                                    \
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();           \
-    while (next_obj < top) {                                             \
-      /* Bottom lies entirely below top, so we can call the */           \
-      /* non-memRegion version of oop_iterate below. */                  \
-      cast_to_oop(bottom)->oop_iterate(cl);                              \
-      bottom = next_obj;                                                 \
-      next_obj = bottom + cast_to_oop(bottom)->size();                   \
-    }                                                                    \
-    /* Last object. */                                                   \
-    cast_to_oop(bottom)->oop_iterate(cl, mr);                            \
-  }                                                                      \
+void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
+                                                    HeapWord* bottom,
+                                                    HeapWord* top,
+                                                    OopIterateClosure* cl) {
+  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);
+  if (bottom < top) {
+    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();
+    while (next_obj < top) {
+      /* Bottom lies entirely below top, so we can call the */
+      /* non-memRegion version of oop_iterate below. */
+      cast_to_oop(bottom)->oop_iterate(cl);
+      bottom = next_obj;
+      next_obj = bottom + cast_to_oop(bottom)->size();
+    }
+    /* Last object. */
+    cast_to_oop(bottom)->oop_iterate(cl, mr);
+  }
 }
 
-// (There are only two of these, rather than N, because the split is due
-// only to the introduction of the FilteringClosure, a local part of the
-// impl of this abstraction.)
-DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(OopIterateClosure)
-DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(FilteringClosure)
-
 DirtyCardToOopClosure*
-ContiguousSpace::new_dcto_cl(OopIterateClosure* cl,
-                             HeapWord* boundary) {
-  return new DirtyCardToOopClosure(this, cl, boundary);
+ContiguousSpace::new_dcto_cl(OopIterateClosure* cl) {
+  return new DirtyCardToOopClosure(this, cl);
 }
 
 void Space::initialize(MemRegion mr,

@@ -282,8 +282,7 @@ void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
   // iterations; objects allocated as a result of applying the closure are
   // not included.
 
-  HeapWord* gen_boundary = reserved().start();
-  _rs->younger_refs_in_space_iterate(space(), gen_boundary, blk);
+  _rs->younger_refs_in_space_iterate(space(), blk);
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
