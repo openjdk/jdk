@@ -307,7 +307,13 @@ bool ArrayCopyNode::prepare_array_copy(PhaseGVN *phase, bool can_reshape,
       return false;
     }
 
+    Node* hook = new Node(1);
+    hook->init_req(0, dest_offset);
+
     Node* src_scale  = phase->transform(new LShiftXNode(src_offset, phase->intcon(shift)));
+
+    hook->destruct(phase);
+
     Node* dest_scale = phase->transform(new LShiftXNode(dest_offset, phase->intcon(shift)));
 
     adr_src          = phase->transform(new AddPNode(base_src, base_src, src_scale));

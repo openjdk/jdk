@@ -36,9 +36,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateSerialNumber implements CertAttrSet {
+public class CertificateSerialNumber implements DerEncoder {
 
     public static final String NAME = "serialNumber";
 
@@ -104,10 +104,9 @@ public class CertificateSerialNumber implements CertAttrSet {
      * Encode the serial number in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         serial.encode(out);
     }
 

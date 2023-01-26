@@ -53,7 +53,7 @@ final class LCMS implements PCMM {
         return null;
     }
 
-    private static LCMSProfile getLcmsProfile(Profile p) {
+    static LCMSProfile getLcmsProfile(Profile p) {
         if (p instanceof LCMSProfile) {
             return (LCMSProfile)p;
         }
@@ -95,14 +95,10 @@ final class LCMS implements PCMM {
         }
     }
 
-    static synchronized native LCMSProfile getProfileID(ICC_Profile profile);
-
     /* Helper method used from LCMSColorTransfrom */
-    static long createTransform(
-        LCMSProfile[] profiles, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef)
+    static long createTransform(LCMSProfile[] profiles, int renderingIntent,
+                                int inFormatter, int outFormatter,
+                                Object disposerRef)
     {
         long[] ptrs = new long[profiles.length];
         long stamp = lock.readLock();
@@ -115,17 +111,17 @@ final class LCMS implements PCMM {
             }
 
             return createNativeTransform(ptrs, renderingIntent, inFormatter,
-                    isInIntPacked, outFormatter, isOutIntPacked, disposerRef);
+                                         outFormatter, disposerRef);
         } finally {
             lock.unlockRead(stamp);
         }
     }
 
-    private static native long createNativeTransform(
-        long[] profileIDs, int renderingIntent,
-        int inFormatter, boolean isInIntPacked,
-        int outFormatter, boolean isOutIntPacked,
-        Object disposerRef);
+    private static native long createNativeTransform(long[] profileIDs,
+                                                     int renderingIntent,
+                                                     int inFormatter,
+                                                     int outFormatter,
+                                                     Object disposerRef);
 
     /**
      * Constructs ColorTransform object corresponding to the ICC_profiles.
@@ -140,11 +136,10 @@ final class LCMS implements PCMM {
     static native void colorConvert(long trans, int width, int height,
                                     int srcOffset, int srcNextRowOffset,
                                     int dstOffset, int dstNextRowOffset,
-                                    boolean srcAtOnce, boolean dstAtOnce,
                                     Object srcData, Object dstData,
                                     int srcType, int dstType);
 
-    private LCMS() {};
+    private LCMS() {}
 
     private static LCMS theLcms = null;
 

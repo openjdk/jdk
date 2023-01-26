@@ -48,11 +48,5 @@ public interface DeconstructionPatternTree extends PatternTree {
      */
     List<? extends PatternTree> getNestedPatterns();
 
-    /**
-     * Returns the binding variable.
-     * @return the binding variable
-     */
-    VariableTree getVariable();
-
 }
 

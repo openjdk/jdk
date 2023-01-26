@@ -165,9 +165,6 @@ public:
   static void set_is_at_safepoint()             { _state = _synchronized; }
   static void set_is_not_at_safepoint()         { _state = _not_synchronized; }
 
-  // Assembly support
-  static address address_of_state()             { return (address)&_state; }
-
   // Only used for making sure that no safepoint has happened in
   // JNI_FastGetField. Therefore only the low 32-bits are needed
   // even if this is a 64-bit counter.
@@ -259,6 +256,7 @@ private:
 
   static VM_Operation::VMOp_Type _current_type;
   static jlong     _max_sync_time;
+  static jlong     _max_cleanup_time;
   static jlong     _max_vmop_time;
   static uint64_t  _op_count[VM_Operation::VMOp_Terminating];
 

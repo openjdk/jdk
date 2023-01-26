@@ -374,6 +374,10 @@ class ClassLoader: AllStatic {
 
   static char* lookup_vm_options();
 
+  // Determines if the named module is present in the
+  // modules jimage file or in the exploded modules directory.
+  static bool is_module_observable(const char* module_name);
+
   static JImageLocationRef jimage_find_resource(JImageFile* jf, const char* module_name,
                                                 const char* file_name, jlong &size);
 

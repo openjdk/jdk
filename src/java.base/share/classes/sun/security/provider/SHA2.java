@@ -195,10 +195,12 @@ abstract class SHA2 extends DigestBase {
                     Integer.rotateRight(e, 25);
 
             // ch(x,y,z) = (x and y) xor ((complement x) and z)
-            int ch_efg = (e & f) ^ ((~e) & g);
+            //           = z xor (x and (y xor z));
+            int ch_efg = g ^ (e & (f ^ g));
 
             // maj(x,y,z) = (x and y) xor (x and z) xor (y and z)
-            int maj_abc = (a & b) ^ (a & c) ^ (b & c);
+            //            = (x and y) xor ((x xor y) and z)
+            int maj_abc = (a & b) ^ ((a ^ b) & c);
 
             int T1 = h + sigma1_e + ch_efg + ROUND_CONSTS[i] + W[i];
             int T2 = sigma0_a + maj_abc;

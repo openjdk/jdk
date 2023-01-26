@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-
 #include "gc/g1/g1MonotonicArena.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"

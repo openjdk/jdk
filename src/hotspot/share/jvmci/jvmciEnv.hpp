@@ -180,6 +180,12 @@ class JVMCIEnv : public ResourceObj {
   // The translated exception is pending in hotspot_env upon returning.
   static void translate_from_jni_exception(JavaThread* THREAD, jthrowable throwable, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
+  // Used by copy_saved_properties() to avoid OutOfMemoryErrors when
+  // initializing a libjvmci runtime in low HotSpot heap conditions.
+  // Must hold JVMCI_lock when initializing.
+  static jbyte* _serialized_saved_properties;
+  static int _serialized_saved_properties_len;
+
 public:
   // Opens a JVMCIEnv scope for a Java to VM call (e.g., via CompilerToVM).
   // An exception occurring within the scope is left pending when the
@@ -221,9 +227,13 @@ public:
     return _runtime;
   }
 
-  // Initializes Services.savedProperties in the shared library by copying
-  // the values from the same field in the HotSpot heap.
-  void copy_saved_properties();
+  // Gets the serialized saved properties from the HotSpot heap.
+  // The length of the returned array is saved in `len`.
+  jbyte* get_serialized_saved_properties(int& len, TRAPS);
+
+  // Initializes Services.savedProperties in the shared library from the given
+  // properties in the format produced by `get_serialized_saved_properties`.
+  void copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS);
 
   jboolean has_pending_exception();
   void clear_pending_exception();
@@ -232,6 +242,11 @@ public:
   // exception in `peer_env` and is cleared from this env. Returns true
   // if a pending exception was transferred, false otherwise.
   jboolean transfer_pending_exception(JavaThread* THREAD, JVMCIEnv* peer_env);
+
+  // If there is a pending HotSpot exception, clears it and translates it to the shared library heap.
+  // The translated exception is pending in the shared library upon returning.
+  // Returns true if a pending exception was transferred, false otherwise.
+  static jboolean transfer_pending_exception_to_jni(JavaThread* THREAD, JVMCIEnv* hotspot_env, JVMCIEnv* jni_env);
 
   // Prints an exception and stack trace of a pending exception.
   void describe_pending_exception(bool clear);

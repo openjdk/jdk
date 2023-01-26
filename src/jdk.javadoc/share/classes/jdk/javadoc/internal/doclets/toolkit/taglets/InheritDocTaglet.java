@@ -26,6 +26,8 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -38,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -61,45 +64,68 @@ public class InheritDocTaglet extends BaseTaglet {
      * such tag.</p>
      *
      * @param writer the writer that is writing the output.
-     * @param e the {@link Element} that we are documenting.
+     * @param method the method that we are documenting.
      * @param inheritDoc the {@code {@inheritDoc}} tag
      * @param isFirstSentence true if we only want to inherit the first sentence
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
-                                                   Element e,
+                                                   ExecutableElement method,
                                                    DocTree inheritDoc,
                                                    boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
         BaseConfiguration configuration = writer.configuration();
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
-        CommentHelper ch = utils.getCommentHelper(e);
+        CommentHelper ch = utils.getCommentHelper(method);
         var path = ch.getDocTreePath(inheritDoc).getParentPath();
         DocTree holderTag = path.getLeaf();
-        Taglet taglet = holderTag.getKind() == DocTree.Kind.DOC_COMMENT
-                ? null
-                : configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
+        if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
+            try {
+                var docFinder = utils.docFinder();
+                Optional<Documentation> r = docFinder.trySearch(method,
+                        m -> Result.fromOptional(extractMainDescription(m, isFirstSentence, utils))).toOptional();
+                if (r.isPresent()) {
+                    replacement = writer.commentTagsToOutput(r.get().method, null,
+                            r.get().mainDescription, isFirstSentence);
+                }
+            } catch (DocFinder.NoOverriddenMethodsFound e) {
+                String signature = utils.getSimpleName(method)
+                        + utils.flatSignature(method, writer.getCurrentPageElement());
+                messages.warning(method, "doclet.noInheritedDoc", signature);
+            }
+            return replacement;
+        }
+
+        Taglet taglet = configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
         if (taglet != null && !(taglet instanceof InheritableTaglet)) {
             // This tag does not support inheritance.
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
-        var input = new DocFinder.Input(utils, e, (InheritableTaglet) taglet,
-                new DocFinder.DocTreeInfo(holderTag, e), isFirstSentence, true);
-        DocFinder.Output inheritedDoc = DocFinder.search(configuration, input);
-        if (inheritedDoc.isValidInheritDocTag) {
-            if (!inheritedDoc.inlineTags.isEmpty()) {
-                replacement = writer.commentTagsToOutput(inheritedDoc.holder, inheritedDoc.holderTag,
-                        inheritedDoc.inlineTags, isFirstSentence);
+
+        InheritableTaglet.Output inheritedDoc = ((InheritableTaglet) taglet).inherit(method, holderTag, isFirstSentence, configuration);
+        if (inheritedDoc.isValidInheritDocTag()) {
+            if (!inheritedDoc.inlineTags().isEmpty()) {
+                replacement = writer.commentTagsToOutput(inheritedDoc.holder(), inheritedDoc.holderTag(),
+                        inheritedDoc.inlineTags(), isFirstSentence);
             }
         } else {
-            String signature = utils.getSimpleName(e) +
-                    ((utils.isExecutableElement(e))
-                            ? utils.flatSignature((ExecutableElement) e, writer.getCurrentPageElement())
-                            : e.toString());
-            messages.warning(e, "doclet.noInheritedDoc", signature);
+            String signature = utils.getSimpleName(method)
+                    + utils.flatSignature(method, writer.getCurrentPageElement());
+            messages.warning(method, "doclet.noInheritedDoc", signature);
         }
         return replacement;
+    }
+
+    private record Documentation(List<? extends DocTree> mainDescription, ExecutableElement method) { }
+
+    private static Optional<Documentation> extractMainDescription(ExecutableElement m,
+                                                                boolean extractFirstSentenceOnly,
+                                                                Utils utils) {
+        List<? extends DocTree> docTrees = extractFirstSentenceOnly
+                ? utils.getFirstSentenceTrees(m)
+                : utils.getFullBody(m);
+        return docTrees.isEmpty() ? Optional.empty() : Optional.of(new Documentation(docTrees, m));
     }
 
     @Override
@@ -107,6 +133,6 @@ public class InheritDocTaglet extends BaseTaglet {
         if (e.getKind() != ElementKind.METHOD) {
             return tagletWriter.getOutputInstance();
         }
-        return retrieveInheritedDocumentation(tagletWriter, e, inheritDoc, tagletWriter.isFirstSentence);
+        return retrieveInheritedDocumentation(tagletWriter, (ExecutableElement) e, inheritDoc, tagletWriter.isFirstSentence);
     }
 }

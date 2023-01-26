@@ -26,7 +26,6 @@
 package sun.security.x509;
 
 import java.io.IOException;
-import java.util.*;
 
 import sun.security.util.*;
 
@@ -44,11 +43,9 @@ import sun.security.util.*;
  *
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
 
-public class NetscapeCertTypeExtension extends Extension
-        implements CertAttrSet {
+public class NetscapeCertTypeExtension extends Extension {
 
     public static final String NAME = "NetscapeCertType";
     public static final String SSL_CLIENT = "ssl_client";
@@ -88,24 +85,17 @@ public class NetscapeCertTypeExtension extends Extension
         new MapEntry(OBJECT_SIGNING_CA, 7),
     };
 
-    private static final Vector<String> mAttributeNames = new Vector<>();
-    static {
-        for (MapEntry entry : mMapData) {
-            mAttributeNames.add(entry.mName);
-        }
-    }
-
     private static int getPosition(String name) throws IOException {
         for (int i = 0; i < mMapData.length; i++) {
             if (name.equalsIgnoreCase(mMapData[i].mName))
                 return mMapData[i].mPosition;
         }
         throw new IOException("Attribute name [" + name
-                             + "] not recognized by CertAttrSet:NetscapeCertType.");
+                             + "] not recognized by NetscapeCertType.");
     }
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         DerOutputStream os = new DerOutputStream();
         os.putTruncatedUnalignedBitString(new BitArray(this.bitString));
         this.extensionValue = os.toByteArray();
@@ -140,7 +130,7 @@ public class NetscapeCertTypeExtension extends Extension
      *
      * @param bitString the bits to be set for the extension.
      */
-    public NetscapeCertTypeExtension(byte[] bitString) throws IOException {
+    public NetscapeCertTypeExtension(byte[] bitString) {
         this.bitString =
             new BitArray(bitString.length*8, bitString).toBooleanArray();
         this.extensionId = NetscapeCertType_Id;
@@ -154,7 +144,7 @@ public class NetscapeCertTypeExtension extends Extension
      *
      * @param bitString the bits to be set for the extension.
      */
-    public NetscapeCertTypeExtension(boolean[] bitString) throws IOException {
+    public NetscapeCertTypeExtension(boolean[] bitString) {
         this.bitString = bitString;
         this.extensionId = NetscapeCertType_Id;
         this.critical = true;
@@ -240,10 +230,9 @@ public class NetscapeCertTypeExtension extends Extension
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = NetscapeCertType_Id;
             this.critical = true;

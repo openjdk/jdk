@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,6 @@ extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_s
   return (char*)Thread::current()->resource_area()->Arealloc(old, old_size, new_size, alloc_failmode);
 }
 
-extern void resource_free_bytes( char *old, size_t size ) {
-  Thread::current()->resource_area()->Afree(old, size);
+extern void resource_free_bytes( Thread* thread, char *old, size_t size ) {
+  thread->resource_area()->Afree(old, size);
 }

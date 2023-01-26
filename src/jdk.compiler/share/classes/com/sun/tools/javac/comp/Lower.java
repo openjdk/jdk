@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -54,6 +55,7 @@ import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
+import com.sun.tools.javac.code.Source.Feature;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
@@ -100,6 +102,7 @@ public class Lower extends TreeTranslator {
     private final boolean disableProtectedAccessors; // experimental
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
+    private final boolean useMatchException;
 
     protected Lower(Context context) {
         context.put(lowerKey, this);
@@ -126,6 +129,10 @@ public class Lower extends TreeTranslator {
             target.optimizeOuterThis() ||
             options.getBoolean("optimizeOuterThis", false);
         disableProtectedAccessors = options.isSet("disableProtectedAccessors");
+        Source source = Source.instance(context);
+        Preview preview = Preview.instance(context);
+        useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
+                            (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
     }
 
     /** The currently enclosing class.
@@ -3461,13 +3468,18 @@ public class Lower extends TreeTranslator {
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
-            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
-                                                  tree.var.name,
-                                                  tree.var.vartype,
-                                                  loopvarinit).setType(tree.var.type);
-            loopvardef.sym = tree.var.sym;
+
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+            JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
+
+            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
+                    jcVariableDecl.name,
+                    jcVariableDecl.vartype,
+                    loopvarinit).setType(jcVariableDecl.type);
+            loopvardef.sym = jcVariableDecl.sym;
             JCBlock body = make.
-                Block(0, List.of(loopvardef, tree.body));
+                    Block(0, List.of(loopvardef, tree.body));
+
 
             result = translate(make.
                                ForLoop(loopinit,
@@ -3546,22 +3558,26 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-            if (tree.var.type.isPrimitive())
+
+            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
+
+            JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
+            if (var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(tree.var.type, vardefinit);
-            JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
-                                                  tree.var.name,
-                                                  tree.var.vartype,
-                                                  vardefinit).setType(tree.var.type);
-            indexDef.sym = tree.var.sym;
+                vardefinit = make.TypeCast(var.type, vardefinit);
+            JCVariableDecl indexDef = (JCVariableDecl) make.VarDef(var.mods,
+                    var.name,
+                    var.vartype,
+                    vardefinit).setType(var.type);
+            indexDef.sym = var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.endpos = TreeInfo.endPos(tree.body);
             result = translate(make.
-                ForLoop(List.of(init),
-                        cond,
-                        List.nil(),
-                        body));
+                    ForLoop(List.of(init),
+                            cond,
+                            List.nil(),
+                            body));
             patchTargets(body, tree, result);
         }
 
@@ -3624,21 +3640,24 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
-        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
-        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(matchException, tree.cases)
+        List<JCCase> cases = tree.patternSwitch ? addDefaultIfNeeded(tree.patternSwitch,
+                                                                     tree.wasEnumSelector,
+                                                                     tree.cases)
                                                 : tree.cases;
         handleSwitch(tree, tree.selector, cases);
     }
 
     @Override
     public void visitSwitchExpression(JCSwitchExpression tree) {
-        boolean matchException = tree.patternSwitch && !tree.wasEnumSelector;
-        List<JCCase> cases = addDefaultIfNeeded(matchException, tree.cases);
+        List<JCCase> cases = addDefaultIfNeeded(tree.patternSwitch, tree.wasEnumSelector, tree.cases);
         handleSwitch(tree, tree.selector, cases);
     }
 
-    private List<JCCase> addDefaultIfNeeded(boolean matchException, List<JCCase> cases) {
+    private List<JCCase> addDefaultIfNeeded(boolean patternSwitch, boolean wasEnumSelector,
+                                            List<JCCase> cases) {
         if (cases.stream().flatMap(c -> c.labels.stream()).noneMatch(p -> p.hasTag(Tag.DEFAULTCASELABEL))) {
+            boolean matchException = useMatchException;
+            matchException |= patternSwitch && !wasEnumSelector;
             Type exception = matchException ? syms.matchExceptionType
                                             : syms.incompatibleClassChangeErrorType;
             List<JCExpression> params = matchException ? List.of(makeNull(), makeNull())

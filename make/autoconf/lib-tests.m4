@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 # Setup libraries and functionalities needed to test the JDK.
 ################################################################################
 
-# Minimum supported version
-JTREG_MINIMUM_VERSION=7
+# Minimum supported versions
+JTREG_MINIMUM_VERSION=7.1.1
+GTEST_MINIMUM_VERSION=1.13.0
 
 ###############################################################################
 #
@@ -58,20 +59,13 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
         AC_MSG_RESULT([$GTEST_FRAMEWORK_SRC])
         UTIL_FIXUP_PATH([GTEST_FRAMEWORK_SRC])
 
-        # Try to verify version. We require 1.8.1, but this can not be directly
-        # determined. :-( Instead, there are different, incorrect version
-        # numbers we can look for.
-        GTEST_VERSION_1="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
-        if test "x$GTEST_VERSION_1" != "x1.9.0"; then
-          AC_MSG_ERROR([gtest at $GTEST_FRAMEWORK_SRC does not seem to be version 1.8.1])
-        fi
-
-        # We cannot grep for "AC_IN*T" as a literal since then m4 will treat it as a macro
-        # and expand it.
-        # Additional [] needed to keep m4 from mangling shell constructs.
-        [ GTEST_VERSION_2="`$GREP -A1 ^.C_INIT $GTEST_FRAMEWORK_SRC/configure.ac | $TAIL -n 1 | $SED -E -e 's/ +\[(.*)],/\1/'`" ]
-        if test "x$GTEST_VERSION_2" != "x1.8.0"; then
-          AC_MSG_ERROR([gtest at $GTEST_FRAMEWORK_SRC does not seem to be version 1.8.1 B])
+        # Verify that the version is the required one.
+        # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+        gtest_version="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
+        comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$gtest_version"`
+        comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$GTEST_MINIMUM_VERSION"`
+        if test $comparable_actual_version -lt $comparable_minimum_version ; then
+          AC_MSG_ERROR([gtest version is too old, at least version $GTEST_MINIMUM_VERSION is required])
         fi
       fi
     fi
@@ -285,10 +279,16 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JIB],
 #
 AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
 [
-  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
+  if test "x$BUILD_ENV" = "xci"; then
+    BUILD_FAILURE_HANDLER_DEFAULT=auto
+  else
+    BUILD_FAILURE_HANDLER_DEFAULT=false
+  fi
+
+  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: $BUILD_FAILURE_HANDLER_DEFAULT,
       RESULT: BUILD_FAILURE_HANDLER,
       DESC: [enable building of the jtreg failure handler],
-      DEFAULT_DESC: [enabled if jtreg is present],
+      DEFAULT_DESC: [enabled if jtreg is present and build env is CI],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if the jtreg failure handler is available])

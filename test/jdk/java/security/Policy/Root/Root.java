@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,46 @@
  */
 
 /*
- *
+ * @test
  * @bug 4619757
  * @summary User Policy Setting is not recognized on Netscape 6
  *          when invoked as root.
- * @run main/manual Root
+ * @library /test/lib
+ * @run testng/othervm Root
  */
 
-/*
- * Place Root.policy in the root home directory (/),
- * as /.java.policy and run as test as root user.
- */
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.*;
 
 public class Root {
-    public static void main(String[] args) {
+    private static final String SRC = System.getProperty("test.src");
+    private static final String ROOT = System.getProperty("user.home");
+    private static final Path SOURCE = Paths.get(SRC, "Root.policy");
+    private static final Path TARGET = Paths.get(ROOT, ".java.policy");
+
+    @BeforeTest
+    public void setup() throws IOException {
+        Files.copy(SOURCE, TARGET, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @AfterTest
+    public void cleanUp() throws IOException {
+        Files.delete(TARGET);
+    }
+
+    @Test
+    private void test() {
         Policy p = Policy.getPolicy();
-        if (p.implies(Root.class.getProtectionDomain(), new AllPermission())) {
-            System.out.println("Test succeeded");
-        } else {
-            throw new SecurityException("Test failed");
-        }
+        Assert.assertTrue(p.implies(Root.class.getProtectionDomain(),
+                new AllPermission()));
     }
 }

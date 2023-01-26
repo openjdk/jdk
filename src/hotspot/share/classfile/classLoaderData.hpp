@@ -202,10 +202,12 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // The "claim" is typically used to check if oops_do needs to be applied on
   // the CLD or not. Most GCs only perform strong marking during the marking phase.
   enum Claim {
-    _claim_none         = 0,
-    _claim_finalizable  = 2,
-    _claim_strong       = 3,
-    _claim_other        = 4
+    _claim_none              = 0,
+    _claim_finalizable       = 2,
+    _claim_strong            = 3,
+    _claim_stw_fullgc_mark   = 4,
+    _claim_stw_fullgc_adjust = 8,
+    _claim_other             = 16
   };
   void clear_claim() { _claim = 0; }
   void clear_claim(int claim);

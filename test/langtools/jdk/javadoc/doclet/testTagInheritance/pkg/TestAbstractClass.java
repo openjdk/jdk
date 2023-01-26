@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ java.lang.NullPointerException {
      * @param <Q> Test 33 passes.
      * @param x2 Test 35 passes.
      * @throws java.io.IOException Test 37 passes.
-     * @throws java.util.zip.ZipException Test 39 passes.
      */
     public <P,Q> String testSuperSuperMethod2(int x1, int x2) {
         return null;

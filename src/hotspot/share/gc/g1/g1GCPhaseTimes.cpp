@@ -185,7 +185,6 @@ void G1GCPhaseTimes::reset() {
   _recorded_prepare_heap_roots_time_ms = 0.0;
   _recorded_young_cset_choice_time_ms = 0.0;
   _recorded_non_young_cset_choice_time_ms = 0.0;
-  _recorded_preserve_cm_referents_time_ms = 0.0;
   _recorded_start_new_cset_time_ms = 0.0;
   _recorded_serial_free_cset_time_ms = 0.0;
   _recorded_total_rebuild_freelist_time_ms = 0.0;
@@ -319,11 +318,7 @@ void G1GCPhaseTimes::details(T* phase, uint indent_level) const {
   }
 }
 
-void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const {
-  out->sp(indent_level * 2);
-  phase->print_summary_on(out, print_sum);
-  details(phase, indent_level);
-
+void G1GCPhaseTimes::print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const {
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
     if (work_items != NULL) {
@@ -332,6 +327,37 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
       details(work_items, indent_level + 1);
     }
   }
+}
+
+void G1GCPhaseTimes::debug_phase_merge_remset() const {
+  LogTarget(Debug, gc, phases) lt;
+  if (!lt.is_enabled()) {
+    return;
+  }
+
+  ResourceMark rm;
+  LogStream ls(lt);
+
+  WorkerDataArray<double>* phase = _gc_par_phases[MergeRS];
+  WorkerDataArray<double>* sub_phase = _gc_par_phases[MergeER];
+
+  uint indent_level = 2;
+
+  ls.sp(indent_level * 2);
+  phase->print_summary_on(&ls, true);
+  details(phase, indent_level);
+
+  log_phase(sub_phase, (indent_level + 1), &ls, true);
+
+  print_thread_work_items(phase, indent_level, &ls);
+}
+
+void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const {
+  out->sp(indent_level * 2);
+  phase->print_summary_on(out, print_sum);
+  details(phase, indent_level);
+
+  print_thread_work_items(phase, indent_level, out);
 }
 
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
@@ -386,8 +412,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _root_region_scan_wait_time_ms +
-                        _cur_prepare_tlab_time_ms +
+  const double sum_ms = _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -397,9 +422,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (_root_region_scan_wait_time_ms > 0.0) {
-    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
-  }
   debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
@@ -436,8 +458,8 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   info_time("Merge Heap Roots", _cur_merge_heap_roots_time_ms);
 
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
-  debug_phase(_gc_par_phases[MergeER]);
-  debug_phase(_gc_par_phases[MergeRS]);
+  debug_phase_merge_remset();
+
   if (G1HotCardCache::use_cache()) {
     debug_phase(_gc_par_phases[MergeHCC]);
   }
@@ -463,7 +485,6 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
 
 double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
-                        _recorded_preserve_cm_referents_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
                         _cur_post_evacuate_cleanup_1_time_ms +
@@ -532,6 +553,10 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print(bool evacuation_failed) {
+  if (_root_region_scan_wait_time_ms > 0.0) {
+    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  }
+
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -540,10 +565,17 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
   }
 
   double accounted_ms = 0.0;
+
+  accounted_ms += _root_region_scan_wait_time_ms;
+  accounted_ms += _cur_verify_before_time_ms;
+
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
+
+  accounted_ms += _cur_verify_after_time_ms;
+
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.

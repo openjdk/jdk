@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.management.EventSettingsModifier;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamBarrier;
 import jdk.management.jfr.DiskRepository.DiskChunk;
 import jdk.jfr.internal.management.EventByteStream;
 
@@ -156,7 +157,10 @@ public final class RemoteRecordingStream implements EventStream {
     volatile Instant startTime;
     volatile Instant endTime;
     volatile boolean closed;
-    private boolean started; // always guarded by lock
+    // always guarded by lock
+    private boolean started;
+    private Duration maxAge;
+    private long maxSize;
 
     /**
      * Creates an event stream that operates against a {@link MBeanServerConnection}
@@ -291,14 +295,6 @@ public final class RemoteRecordingStream implements EventStream {
         }
     }
 
-    private Map<String, String> getRecordingOptions() throws IOException {
-        try {
-            return mbean.getRecordingOptions(recordingId);
-        } catch (Exception e) {
-            throw new IOException("Could not get recording options: " + e.getMessage(), e);
-        }
-    }
-
     /**
      * Replaces all settings for this recording stream.
      * <p>
@@ -415,7 +411,11 @@ public final class RemoteRecordingStream implements EventStream {
      */
     public void setMaxAge(Duration maxAge) {
         Objects.requireNonNull(maxAge);
-        repository.setMaxAge(maxAge);
+        synchronized (lock) {
+            repository.setMaxAge(maxAge);
+            this.maxAge = maxAge;
+            updateOnCompleteHandler();
+        }
     }
 
     /**
@@ -441,7 +441,11 @@ public final class RemoteRecordingStream implements EventStream {
         if (maxSize < 0) {
             throw new IllegalArgumentException("Max size of recording can't be negative");
         }
-        repository.setMaxSize(maxSize);
+        synchronized (lock) {
+            repository.setMaxSize(maxSize);
+            this.maxSize = maxSize;
+            updateOnCompleteHandler();
+        }
     }
 
     @Override
@@ -549,6 +553,75 @@ public final class RemoteRecordingStream implements EventStream {
         }
     }
 
+    /**
+     * Stops the recording stream.
+     * <p>
+     * Stops a started stream and waits until all events in the recording have
+     * been consumed.
+     * <p>
+     * Invoking this method in an action, for example in the
+     * {@link #onEvent(Consumer)} method, could block the stream indefinitely.
+     * To stop the stream abruptly, use the {@link #close} method.
+     * <p>
+     * The following code snippet illustrates how this method can be used in
+     * conjunction with the {@link #startAsync()} method to monitor what happens
+     * during a test method:
+     * <p>
+     * {@snippet :
+     *   AtomicLong bytesWritten = new AtomicLong();
+     *   try (var r = new RemoteRecordingStream(connection)) {
+     *     r.setMaxSize(Long.MAX_VALUE);
+     *     r.enable("jdk.FileWrite").withoutThreshold();
+     *     r.onEvent(event ->
+     *       bytesWritten.addAndGet(event.getLong("bytesWritten"))
+     *     );
+     *     r.startAsync();
+     *     testFoo();
+     *     r.stop();
+     *     if (bytesWritten.get() > 1_000_000L) {
+     *       r.dump(Path.of("file-write-events.jfr"));
+     *       throw new AssertionError("testFoo() writes too much data to disk");
+     *     }
+     *   }
+     * }
+     * @return {@code true} if recording is stopped, {@code false} otherwise
+     *
+     * @throws IllegalStateException if the recording is not started or is already stopped
+     *
+     * @since 20
+     */
+    public boolean stop() {
+        synchronized (lock) {
+            if (closed) {
+                throw new IllegalStateException("Event stream is closed");
+            }
+            if (!started) {
+                throw new IllegalStateException("Event stream must be started before it can stopped");
+            }
+            try {
+                boolean stopped = false;
+                try (StreamBarrier pb = ManagementSupport.activateStreamBarrier(stream)) {
+                    try (StreamBarrier rb = repository.activateStreamBarrier()) {
+                        stopped = mbean.stopRecording(recordingId);
+                        ManagementSupport.setCloseOnComplete(stream, false);
+                        long stopTime = getRecordingInfo(mbean.getRecordings(), recordingId).getStopTime();
+                        pb.setStreamEnd(stopTime);
+                        rb.setStreamEnd(stopTime);
+                    }
+                }
+                try {
+                    stream.awaitTermination();
+                } catch (InterruptedException e) {
+                    // OK
+                }
+                return stopped;
+            } catch (Exception e) {
+                ManagementSupport.logDebug(e.getMessage());
+                return false;
+            }
+        }
+    }
+
     private void ensureStartable() {
         synchronized (lock) {
             if (closed) {
@@ -643,6 +716,15 @@ public final class RemoteRecordingStream implements EventStream {
 
     private static Path makeTempDirectory() throws IOException {
         return Files.createTempDirectory("jfr-streaming");
+    }
+
+    private void updateOnCompleteHandler() {
+        if (maxAge != null || maxSize != 0) {
+            // User has set a chunk removal policy
+            ManagementSupport.setOnChunkCompleteHandler(stream, null);
+        } else {
+            ManagementSupport.setOnChunkCompleteHandler(stream, new ChunkConsumer(repository));
+        }
     }
 
     private void startDownload() {

@@ -378,6 +378,8 @@ public:
   // Clear the entire contents of this remembered set.
   void clear();
 
+  void reset_table_scanner();
+
   // Iterate over the container, calling a method on every card or card range contained
   // in the card container.
   // For every container, first calls
@@ -413,19 +415,5 @@ public:
 
   G1CardSetHashTableValue(uint region_idx, ContainerPtr container) : _region_idx(region_idx), _num_occupied(0), _container(container) { }
 };
-
-class G1CardSetHashTableConfig : public StackObj {
-public:
-  using Value = G1CardSetHashTableValue;
-
-  static uintx get_hash(Value const& value, bool* is_dead) {
-    *is_dead = false;
-    return value._region_idx;
-  }
-  static void* allocate_node(void* context, size_t size, Value const& value);
-  static void free_node(void* context, void* memory, Value const& value);
-};
-
-using CardSetHash = ConcurrentHashTable<G1CardSetHashTableConfig, mtGCCardSet>;
 
 #endif // SHARE_GC_G1_G1CARDSET_HPP

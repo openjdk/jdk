@@ -27,6 +27,7 @@ package sun.security.x509;
 import java.io.IOException;
 import java.security.cert.*;
 import java.util.Date;
+import java.util.Objects;
 
 import sun.security.util.*;
 
@@ -35,9 +36,9 @@ import sun.security.util.*;
  *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
- * @see CertAttrSet
+ * @see DerEncoder
  */
-public class CertificateValidity implements CertAttrSet {
+public class CertificateValidity implements DerEncoder {
 
     public static final String NAME = "validity";
     /**
@@ -46,8 +47,8 @@ public class CertificateValidity implements CertAttrSet {
     static final long YR_2050 = 2524608000000L;
 
     // Private data members
-    private Date        notBefore;
-    private Date        notAfter;
+    private final Date        notBefore;
+    private final Date        notAfter;
 
     // Returns the first time the certificate is valid.
     public Date getNotBefore() {
@@ -59,8 +60,27 @@ public class CertificateValidity implements CertAttrSet {
        return new Date(notAfter.getTime());
     }
 
-    // Construct the class from the DerValue
-    private void construct(DerValue derVal) throws IOException {
+    /**
+     * The constructor for this class for the specified interval.
+     *
+     * @param notBefore the date and time before which the certificate
+     *                   is not valid
+     * @param notAfter the date and time after which the certificate is
+     *                  not valid
+     */
+    public CertificateValidity(Date notBefore, Date notAfter) {
+        this.notBefore = Objects.requireNonNull(notBefore);
+        this.notAfter = Objects.requireNonNull(notAfter);
+    }
+
+    /**
+     * Create the object, decoding the values from the passed DER stream.
+     *
+     * @param in the DerInputStream to read the CertificateValidity from
+     * @exception IOException on decoding errors.
+     */
+    public CertificateValidity(DerInputStream in) throws IOException {
+        DerValue derVal = in.getDerValue();
         if (derVal.tag != DerValue.tag_Sequence) {
             throw new IOException("Invalid encoded CertificateValidity, " +
                                   "starting sequence tag missing.");
@@ -92,40 +112,9 @@ public class CertificateValidity implements CertAttrSet {
     }
 
     /**
-     * Default constructor for the class.
-     */
-    public CertificateValidity() { }
-
-    /**
-     * The default constructor for this class for the specified interval.
-     *
-     * @param notBefore the date and time before which the certificate
-     *                   is not valid.
-     * @param notAfter the date and time after which the certificate is
-     *                  not valid.
-     */
-    public CertificateValidity(Date notBefore, Date notAfter) {
-        this.notBefore = notBefore;
-        this.notAfter = notAfter;
-    }
-
-    /**
-     * Create the object, decoding the values from the passed DER stream.
-     *
-     * @param in the DerInputStream to read the CertificateValidity from.
-     * @exception IOException on decoding errors.
-     */
-    public CertificateValidity(DerInputStream in) throws IOException {
-        DerValue derVal = in.getDerValue();
-        construct(derVal);
-    }
-
-    /**
      * Return the validity period as user readable string.
      */
     public String toString() {
-        if (notBefore == null || notAfter == null)
-            return "";
         return "Validity: [From: " + notBefore +
                ",\n               To: " + notAfter + ']';
     }
@@ -134,17 +123,10 @@ public class CertificateValidity implements CertAttrSet {
      * Encode the CertificateValidity period in DER form to the stream.
      *
      * @param out the DerOutputStream to marshal the contents to.
-     * @exception IOException on errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
 
-        // in cases where default constructor is used check for
-        // null values
-        if (notBefore == null || notAfter == null) {
-            throw new IOException("CertAttrSet:CertificateValidity:" +
-                                  " null values to encode.\n");
-        }
         DerOutputStream pair = new DerOutputStream();
 
         if (notBefore.getTime() < YR_2050) {

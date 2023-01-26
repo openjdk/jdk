@@ -22,17 +22,20 @@
  *
  */
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 
 public class NativeTestHelper {
+
+    public static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
 
     public static boolean isIntegral(MemoryLayout layout) {
         return layout instanceof ValueLayout valueLayout && isIntegral(valueLayout.carrier());
@@ -44,7 +47,7 @@ public class NativeTestHelper {
     }
 
     public static boolean isPointer(MemoryLayout layout) {
-        return layout instanceof ValueLayout valueLayout && valueLayout.carrier() == MemoryAddress.class;
+        return layout instanceof ValueLayout valueLayout && valueLayout.carrier() == MemorySegment.class;
     }
 
     // the constants below are useful aliases for C types. The type/carrier association is only valid for 64-bit platforms.
@@ -81,17 +84,17 @@ public class NativeTestHelper {
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64);
+    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64).asUnbounded();
 
-    private static Linker LINKER = Linker.nativeLinker();
+    private static final Linker LINKER = Linker.nativeLinker();
 
     private static final MethodHandle FREE = LINKER.downcallHandle(
-            LINKER.defaultLookup().lookup("free").get(), FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+            LINKER.defaultLookup().find("free").get(), FunctionDescriptor.ofVoid(C_POINTER));
 
     private static final MethodHandle MALLOC = LINKER.downcallHandle(
-            LINKER.defaultLookup().lookup("malloc").get(), FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.JAVA_LONG));
+            LINKER.defaultLookup().find("malloc").get(), FunctionDescriptor.of(C_POINTER, C_LONG_LONG));
 
-    public static void freeMemory(Addressable address) {
+    public static void freeMemory(MemorySegment address) {
         try {
             FREE.invokeExact(address);
         } catch (Throwable ex) {
@@ -99,15 +102,28 @@ public class NativeTestHelper {
         }
     }
 
-    public static MemoryAddress allocateMemory(long size) {
+    public static MemorySegment allocateMemory(long size) {
         try {
-            return (MemoryAddress)MALLOC.invokeExact(size);
+            return (MemorySegment) MALLOC.invokeExact(size);
         } catch (Throwable ex) {
             throw new IllegalStateException(ex);
         }
     }
 
-    public static Addressable findNativeOrThrow(String name) {
-        return SymbolLookup.loaderLookup().lookup(name).orElseThrow();
+    public static MemorySegment findNativeOrThrow(String name) {
+        return SymbolLookup.loaderLookup().find(name).orElseThrow();
+    }
+
+    public static MethodHandle downcallHandle(String symbol, FunctionDescriptor desc, Linker.Option... options) {
+        return LINKER.downcallHandle(findNativeOrThrow(symbol), desc, options);
+    }
+
+    public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
+        try {
+            MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
+            return LINKER.upcallStub(target, descriptor, SegmentScope.auto());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

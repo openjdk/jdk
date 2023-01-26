@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,7 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Stroke;
 import java.awt.Window;
-import java.awt.geom.AffineTransform;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -62,8 +60,11 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
+import com.sun.java.swing.SwingUtilities3;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
+
+import static sun.java2d.pipe.Region.clipRound;
 
 /**
  * Factory object that can vend Borders appropriate for the metal L &amp; F.
@@ -246,21 +247,16 @@ public class MetalBorders {
          */
         public InternalFrameBorder() {}
 
-        /**
-         * Rounds a double to the nearest integer. It rounds 0.5 down,
-         * for example 1.5 is rounded to 1.0.
-         *
-         * @param d number to be rounded
-         * @return the rounded value
-         */
-        private static int roundHalfDown(double d) {
-            double decP = (Math.ceil(d) - d);
-            return (int)((decP == 0.5) ?  Math.floor(d) :  Math.round(d));
-        }
-
-
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
+            SwingUtilities3.paintBorder(c, g,
+                                        x, y, w, h,
+                                        this::paintUnscaledBorder);
+        }
+
+        private void paintUnscaledBorder(Component c, Graphics g,
+                                         int width, int height,
+                                         double scaleFactor) {
             Color background;
             Color highlight;
             Color shadow;
@@ -275,41 +271,8 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-            Graphics2D g2d = (Graphics2D) g;
-            AffineTransform at = g2d.getTransform();
-            Stroke oldStk = g2d.getStroke();
-            Color oldColor = g2d.getColor();
-            int stkWidth = 1;
-
-            // if m01 or m10 is non-zero, then there is a rotation or shear
-            // skip resetting the transform
-            boolean resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
-
-            int xtranslation;
-            int ytranslation;
-            int width;
-            int height;
-
-            if (resetTransform) {
-                g2d.setTransform(new AffineTransform());
-                stkWidth = roundHalfDown(Math.min(at.getScaleX(), at.getScaleY()));
-
-                double xx = at.getScaleX() * x + at.getTranslateX();
-                double yy = at.getScaleY() * y + at.getTranslateY();
-                xtranslation = roundHalfDown(xx);
-                ytranslation = roundHalfDown(yy);
-                width = roundHalfDown(at.getScaleX() * w + xx) - xtranslation;
-                height = roundHalfDown(at.getScaleY() * h + yy) - ytranslation;
-            } else {
-                width = w;
-                height = h;
-                xtranslation = x;
-                ytranslation = y;
-            }
-            g2d.translate(xtranslation, ytranslation);
-
             // scaled border
-            int thickness = (int) Math.ceil(4 * at.getScaleX());
+            int thickness = (int) Math.ceil(4 * scaleFactor);
 
             g.setColor(background);
             // Draw the bulk of the border
@@ -318,17 +281,19 @@ public class MetalBorders {
             }
 
             if (c instanceof JInternalFrame && ((JInternalFrame)c).isResizable()) {
-                // set new stroke to draw shadow and highlight lines
-                g2d.setStroke(new BasicStroke((float) stkWidth));
-
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
-                int offset = ((at.getScaleX() - stkWidth) >= 0 && stkWidth % 2 != 0) ? 1 : 0;
+                int stkWidth = clipRound(scaleFactor);
+                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
                 int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
                 int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
                 // scaled corner
-                int corner = (int) Math.round(CORNER * at.getScaleX());
+                int corner = (int) Math.round(CORNER * scaleFactor);
+
+                if (g instanceof Graphics2D) {
+                    ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+                }
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
@@ -347,14 +312,6 @@ public class MetalBorders {
                         (width - offset) - loc2, height - corner - 1);
                 g.drawLine(corner, (height - offset) - loc2,
                         width - corner - 1, (height - offset) - loc2);
-            }
-
-            // restore previous transform
-            g2d.translate(-xtranslation, -ytranslation);
-            if (resetTransform) {
-                g2d.setColor(oldColor);
-                g2d.setTransform(at);
-                g2d.setStroke(oldStk);
             }
         }
 

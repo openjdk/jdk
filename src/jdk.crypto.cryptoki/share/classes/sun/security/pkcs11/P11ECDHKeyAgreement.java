@@ -71,7 +71,7 @@ final class P11ECDHKeyAgreement extends KeyAgreementSpi {
     // see JCE spec
     protected void engineInit(Key key, SecureRandom random)
             throws InvalidKeyException {
-        if (key instanceof PrivateKey == false) {
+        if (!(key instanceof PrivateKey)) {
             throw new InvalidKeyException
                         ("Key must be instance of PrivateKey");
         }
@@ -99,15 +99,14 @@ final class P11ECDHKeyAgreement extends KeyAgreementSpi {
         if (publicValue != null) {
             throw new IllegalStateException("Phase already executed");
         }
-        if (lastPhase == false) {
+        if (!lastPhase) {
             throw new IllegalStateException
                 ("Only two party agreement supported, lastPhase must be true");
         }
-        if (key instanceof ECPublicKey == false) {
+        if (!(key instanceof ECPublicKey ecKey)) {
             throw new InvalidKeyException
                 ("Key must be a PublicKey with algorithm EC");
         }
-        ECPublicKey ecKey = (ECPublicKey)key;
         int keyLenBits = ecKey.getParams().getCurve().getField().getFieldSize();
         secretLen = (keyLenBits + 7) >> 3;
         publicValue = P11ECKeyFactory.getEncodedPublicValue(ecKey);
@@ -169,7 +168,7 @@ final class P11ECDHKeyAgreement extends KeyAgreementSpi {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("Algorithm must not be null");
         }
-        if (algorithm.equals("TlsPremasterSecret") == false) {
+        if (!algorithm.equals("TlsPremasterSecret")) {
             throw new NoSuchAlgorithmException
                 ("Only supported for algorithm TlsPremasterSecret");
         }

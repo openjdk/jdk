@@ -200,8 +200,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
-  double _recorded_preserve_cm_referents_time_ms;
-
   double _recorded_start_new_cset_time_ms;
 
   double _recorded_serial_free_cset_time_ms;
@@ -223,6 +221,9 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   template <class T>
   void details(T* phase, uint indent_level) const;
+
+  void print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const;
+  void debug_phase_merge_remset() const;
 
   void log_work_items(WorkerDataArray<double>* phase, uint indent, outputStream* out) const;
   void log_phase(WorkerDataArray<double>* phase, uint indent_level, outputStream* out, bool print_sum) const;
@@ -354,10 +355,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_cset_choice_time_ms(double time_ms) {
     _recorded_non_young_cset_choice_time_ms = time_ms;
-  }
-
-  void record_preserve_cm_referents_time_ms(double time_ms) {
-    _recorded_preserve_cm_referents_time_ms = time_ms;
   }
 
   void record_start_new_cset_time_ms(double time_ms) {

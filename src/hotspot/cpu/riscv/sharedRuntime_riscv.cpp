@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -639,7 +639,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   {
     __ block_comment("c2i_unverified_entry {");
-    __ load_klass(t0, receiver);
+    __ load_klass(t0, receiver, tmp);
     __ ld(tmp, Address(holder, CompiledICHolder::holder_klass_offset()));
     __ ld(xmethod, Address(holder, CompiledICHolder::holder_metadata_offset()));
     __ beq(t0, tmp, ok);
@@ -873,7 +873,6 @@ static OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) 
   __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
 
   OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize) / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
 
   __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
   __ sd(t0, Address(sp, ContinuationEntry::parent_offset()));
@@ -979,6 +978,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ align(NativeInstruction::instruction_size);
 
     const address tr_call = __ trampoline_call(resolve);
+    if (tr_call == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
 
     oop_maps->add_gc_map(__ pc() - start, map);
     __ post_call_nop();
@@ -986,7 +988,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ j(exit);
 
     CodeBuffer* cbuf = masm->code_section()->outer();
-    CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+    if (stub == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
   }
 
   // compiled entry
@@ -1006,6 +1011,9 @@ static void gen_continuation_enter(MacroAssembler* masm,
   __ align(NativeInstruction::instruction_size);
 
   const address tr_call = __ trampoline_call(resolve);
+  if (tr_call == nullptr) {
+    fatal("CodeCache is full at gen_continuation_enter");
+  }
 
   oop_maps->add_gc_map(__ pc() - start, map);
   __ post_call_nop();
@@ -1046,7 +1054,10 @@ static void gen_continuation_enter(MacroAssembler* masm,
   }
 
   CodeBuffer* cbuf = masm->code_section()->outer();
-  CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, tr_call);
+  if (stub == nullptr) {
+    fatal("CodeCache is full at gen_continuation_enter");
+  }
 }
 
 static void gen_continuation_yield(MacroAssembler* masm,
@@ -1095,6 +1106,15 @@ static void gen_continuation_yield(MacroAssembler* masm,
   continuation_enter_cleanup(masm);
 
   __ bind(pinned); // pinned -- return to caller
+
+  // handle pending exception thrown by freeze
+  __ ld(t0, Address(xthread, in_bytes(Thread::pending_exception_offset())));
+  Label ok;
+  __ beqz(t0, ok);
+  __ leave();
+  __ la(t0, RuntimeAddress(StubRoutines::forward_exception_entry()));
+  __ jr(t0);
+  __ bind(ok);
 
   __ leave();
   __ ret();
@@ -1410,9 +1430,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label hit;
   Label exception_pending;
 
-  assert_different_registers(ic_reg, receiver, t0);
   __ verify_oop(receiver);
-  __ cmp_klass(receiver, ic_reg, t0, hit);
+  assert_different_registers(ic_reg, receiver, t0, t2);
+  __ cmp_klass(receiver, ic_reg, t0, t2 /* call-clobbered t2 as a tmp */, hit);
 
   __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
 

@@ -23,6 +23,7 @@
 
 #include "precompiled.hpp"
 #include "logging/logStream.hpp"
+#include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "unittest.hpp"
@@ -83,25 +84,25 @@ class BitMapTest {
     EXPECT_TRUE(map.is_same(map2));
   }
 
-
+  template <class ReinitializableBitMapClass>
   static void testReinitialize(BitMap::idx_t init_size) {
     ResourceMark rm;
 
-    ResourceBitMap map(init_size);
+    ReinitializableBitMapClass  map(init_size);
     map.reinitialize(BITMAP_SIZE);
     fillBitMap(map);
 
-    ResourceBitMap map2(BITMAP_SIZE);
+    ReinitializableBitMapClass map2(BITMAP_SIZE);
     fillBitMap(map2);
     EXPECT_TRUE(map.is_same(map2)) << "With init_size " << init_size;
   }
 
 #ifdef ASSERT
-
+  template <class PrintableBitMapClass>
   static void testPrintOn(BitMap::idx_t size) {
     ResourceMark rm;
 
-    ResourceBitMap map(size);
+    PrintableBitMapClass map(size);
     if (size > 0) {
       map.set_bit(size / 2);
     }
@@ -113,9 +114,19 @@ class BitMapTest {
 #endif
 };
 
+// TestArenaBitMap is the shorthand combination of Arena and ArenaBitMap.
+// Multiple inheritance guarantees to construct Arena first.
+class TestArenaBitMap : private Arena, public ArenaBitMap {
+ public:
+  TestArenaBitMap() : TestArenaBitMap(0) {}
+  TestArenaBitMap(idx_t size_in_bits, bool clear = true) : Arena(mtTest),
+                                                           ArenaBitMap(static_cast<Arena*>(this), size_in_bits, clear) {}
+};
+
 class TestCHeapBitMap : public CHeapBitMap {
 public:
   TestCHeapBitMap(size_t size = 0) : CHeapBitMap(size, mtTest) {}
+
 };
 
 TEST_VM(BitMap, resize_grow) {
@@ -123,6 +134,8 @@ TEST_VM(BitMap, resize_grow) {
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
   BitMapTest::testResizeGrow<TestCHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTest::testResizeGrow<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMap, resize_shrink) {
@@ -130,6 +143,8 @@ TEST_VM(BitMap, resize_shrink) {
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
   BitMapTest::testResizeShrink<TestCHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTest::testResizeShrink<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMap, resize_same) {
@@ -137,6 +152,8 @@ TEST_VM(BitMap, resize_same) {
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
   BitMapTest::testResizeSame<TestCHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTest::testResizeSame<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 // Verify that when growing with clear, all added bits get cleared,
@@ -162,20 +179,28 @@ TEST_VM(BitMap, initialize) {
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
   BitMapTest::testInitialize<TestCHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTest::testInitialize<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMap, reinitialize) {
-  BitMapTest::testReinitialize(0);
-  BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE >> 3);
-  BitMapTest::testReinitialize(BitMapTest::BITMAP_SIZE);
+  constexpr BitMap::idx_t sizes[] = {0, BitMapTest::BITMAP_SIZE >> 3, BitMapTest::BITMAP_SIZE};
+
+  for (auto size : sizes) {
+    BitMapTest::testReinitialize<ResourceBitMap>(size);
+    BitMapTest::testReinitialize<TestArenaBitMap>(size);
+  }
 }
 
 #ifdef ASSERT
 
 TEST_VM(BitMap, print_on) {
-  BitMapTest::testPrintOn(0);
-  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE >> 3);
-  BitMapTest::testPrintOn(BitMapTest::BITMAP_SIZE);
+  constexpr BitMap::idx_t sizes[] = {0, BitMapTest::BITMAP_SIZE >> 3, BitMapTest::BITMAP_SIZE};
+
+  for (auto size : sizes) {
+    BitMapTest::testPrintOn<ResourceBitMap>(size);
+    BitMapTest::testPrintOn<TestArenaBitMap>(size);
+  }
 }
 
 #endif

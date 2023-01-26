@@ -58,7 +58,7 @@ import java.util.Set;
  */
 public class TestJavadocTesterCrash extends TestJavadocTester {
     public static void main(String... args) throws Exception {
-        TestJavadocTesterCrash tester = new TestJavadocTesterCrash();
+        var tester = new TestJavadocTesterCrash();
         tester.runTests();
     }
 

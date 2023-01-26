@@ -115,7 +115,7 @@ public class SignerOrder {
 
     static void printSignerInfos(SignerInfo signerInfo) throws IOException {
         DerOutputStream strm = new DerOutputStream();
-        signerInfo.derEncode(strm);
+        signerInfo.encode(strm);
         System.out.println("SignerInfo, length: "
                 + strm.toByteArray().length);
         HexPrinter.simple().format(strm.toByteArray());
@@ -126,7 +126,7 @@ public class SignerOrder {
     static void printSignerInfos(SignerInfo[] signerInfos) throws IOException {
         DerOutputStream strm = new DerOutputStream();
         for (int i = 0; i < signerInfos.length; i++) {
-            signerInfos[i].derEncode(strm);
+            signerInfos[i].encode(strm);
             System.out.println("SignerInfo[" + i + "], length: "
                     + strm.toByteArray().length);
             HexPrinter.simple().format(strm.toByteArray());
@@ -254,8 +254,7 @@ class SimpleSigner {
         info.setValidity(interval);
         info.setIssuer(agent);
 
-        certLocal = new X509CertImpl(info);
-        certLocal.sign(privateKey, algId.getName());
+        certLocal = X509CertImpl.newSigned(info, privateKey, algId.getName());
 
         return certLocal;
     }

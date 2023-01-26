@@ -61,6 +61,7 @@ import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.ImplicitAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndExplicitNotAllowed;
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.VarAndImplicitNotAllowed;
+import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import java.util.function.BiFunction;
 
 /**
@@ -759,7 +760,6 @@ public class JavacParser implements Parser {
 
     /** parses patterns.
      */
-
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
@@ -796,18 +796,7 @@ public class JavacParser implements Parser {
                     nextToken();
                 }
                 accept(RPAREN);
-                JCVariableDecl var;
-                if (token.kind == IDENTIFIER) {
-                    if (!checkGuard || token.name() != names.when) {
-                        var = to(F.at(token.pos).VarDef(F.Modifiers(0), token.name(), e, null));
-                        nextToken();
-                    } else {
-                        var = null;
-                    }
-                } else {
-                    var = null;
-                }
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList(), var));
+                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
             } else {
                 //type test pattern:
                 JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
@@ -1536,12 +1525,14 @@ public class JavacParser implements Parser {
             pats.append(toP(F.at(casePos).DefaultCaseLabel()));
         } else {
             accept(CASE);
+            boolean allowDefault = false;
             while (true) {
-                JCCaseLabel label = parseCaseLabel();
+                JCCaseLabel label = parseCaseLabel(allowDefault);
                 pats.append(label);
                 if (token.kind != COMMA) break;
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
                 nextToken();
+                allowDefault = TreeInfo.isNullCaseLabel(label);
             };
         }
         List<JCStatement> stats = null;
@@ -2826,25 +2817,47 @@ public class JavacParser implements Parser {
         case FOR: {
             nextToken();
             accept(LPAREN);
-            List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
-            if (inits.length() == 1 &&
-                inits.head.hasTag(VARDEF) &&
-                ((JCVariableDecl) inits.head).init == null &&
-                token.kind == COLON) {
-                JCVariableDecl var = (JCVariableDecl)inits.head;
+            JCTree pattern;
+
+            ForInitResult initResult = analyzeForInit();
+
+            if (initResult == ForInitResult.RecordPattern) {
+                int patternPos = token.pos;
+                JCModifiers mods = optFinal(0);
+                int typePos = token.pos;
+                JCExpression type = unannotatedType(false);
+
+                pattern = parsePattern(patternPos, mods, type, false, false);
+
+                if (pattern != null) {
+                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+                }
                 accept(COLON);
                 JCExpression expr = parseExpression();
                 accept(RPAREN);
                 JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForeachLoop(var, expr, body);
+                return F.at(pos).ForeachLoop(pattern, expr, body);
             } else {
-                accept(SEMI);
-                JCExpression cond = token.kind == SEMI ? null : parseExpression();
-                accept(SEMI);
-                List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
-                accept(RPAREN);
-                JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForLoop(inits, cond, steps, body);
+                List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
+                if (inits.length() == 1 &&
+                        inits.head.hasTag(VARDEF) &&
+                        ((JCVariableDecl) inits.head).init == null &&
+                        token.kind == COLON) {
+                    JCVariableDecl var = (JCVariableDecl) inits.head;
+                    accept(COLON);
+                    JCExpression expr = parseExpression();
+                    accept(RPAREN);
+                    JCStatement body = parseStatementAsBlock();
+                    return F.at(pos).ForeachLoop(var, expr, body);
+                } else {
+                    accept(SEMI);
+                    JCExpression cond = token.kind == SEMI ? null : parseExpression();
+                    accept(SEMI);
+                    List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
+                    accept(RPAREN);
+                    JCStatement body = parseStatementAsBlock();
+                    return F.at(pos).ForLoop(inits, cond, steps, body);
+                }
             }
         }
         case WHILE: {
@@ -2961,6 +2974,91 @@ public class JavacParser implements Parser {
         }
     }
 
+    private enum ForInitResult {
+        LocalVarDecl,
+        RecordPattern
+    }
+
+    @SuppressWarnings("fallthrough")
+    ForInitResult analyzeForInit() {
+        boolean inType = false;
+        boolean inSelectionAndParenthesis = false;
+        int typeParameterPossibleStart = -1;
+        outer: for (int lookahead = 0; ; lookahead++) {
+            TokenKind tk = S.token(lookahead).kind;
+            switch (tk) {
+                case DOT:
+                    if (inType) break; // in qualified type
+                case COMMA:
+                    typeParameterPossibleStart = lookahead;
+                    break;
+                case QUES:
+                    // "?" only allowed in a type parameter position - otherwise it's an expression
+                    if (typeParameterPossibleStart == lookahead - 1) break;
+                    else return ForInitResult.LocalVarDecl;
+                case EXTENDS: case SUPER: case AMP:
+                case GTGTGT: case GTGT: case GT:
+                case FINAL: case ELLIPSIS:
+                    break;
+                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
+                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
+                    if (peekToken(lookahead, IDENTIFIER)) {
+                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
+                                                         : ForInitResult.LocalVarDecl;
+                    }
+                    break;
+                case LPAREN:
+                    if (lookahead != 0 && inType) {
+                        inSelectionAndParenthesis = true;
+                        inType = false;
+                    }
+                    break;
+                case RPAREN:
+                    // a method call in the init part or a record pattern?
+                    if (inSelectionAndParenthesis) {
+                        if (peekToken(lookahead, DOT)  ||
+                                peekToken(lookahead, SEMI) ||
+                                peekToken(lookahead, ARROW)) {
+                            return ForInitResult.LocalVarDecl;
+                        }
+                        else if(peekToken(lookahead, COLON)) {
+                            return ForInitResult.RecordPattern;
+                        }
+                        break;
+                    }
+                case UNDERSCORE:
+                case ASSERT:
+                case ENUM:
+                case IDENTIFIER:
+                    if (lookahead == 0) {
+                        inType = true;
+                    }
+                    break;
+                case MONKEYS_AT: {
+                    int prevLookahead = lookahead;
+                    lookahead = skipAnnotation(lookahead);
+                    if (typeParameterPossibleStart == prevLookahead - 1) {
+                        // move possible start of type param after the anno
+                        typeParameterPossibleStart = lookahead;
+                    }
+                    break;
+                }
+                case LBRACKET:
+                    if (peekToken(lookahead, RBRACKET)) {
+                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
+                                                         : ForInitResult.LocalVarDecl;
+                    }
+                    return ForInitResult.LocalVarDecl;
+                case LT:
+                    typeParameterPossibleStart = lookahead;
+                    break;
+                default:
+                    //this includes EOF
+                    return ForInitResult.LocalVarDecl;
+            }
+        }
+    }
+
     @Override
     public JCStatement parseStatement() {
         return parseStatementAsBlock();
@@ -3034,11 +3132,14 @@ public class JavacParser implements Parser {
         case CASE: {
             nextToken();
             ListBuffer<JCCaseLabel> pats = new ListBuffer<>();
+            boolean allowDefault = false;
             while (true) {
-                pats.append(parseCaseLabel());
+                JCCaseLabel label = parseCaseLabel(allowDefault);
+                pats.append(label);
                 if (token.kind != COMMA) break;
                 nextToken();
                 checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
+                allowDefault = TreeInfo.isNullCaseLabel(label);
             };
             CaseTree.CaseKind caseKind;
             JCTree body = null;
@@ -3091,12 +3192,16 @@ public class JavacParser implements Parser {
         throw new AssertionError("should not reach here");
     }
 
-    private JCCaseLabel parseCaseLabel() {
+    private JCCaseLabel parseCaseLabel(boolean allowDefault) {
         int patternPos = token.pos;
         JCCaseLabel label;
 
         if (token.kind == DEFAULT) {
             checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
+            if (!allowDefault) {
+                reportSyntaxError(new SimpleDiagnosticPosition(token.pos),
+                                  Errors.DefaultLabelNotAllowed);
+            }
             nextToken();
             label = toP(F.at(patternPos).DefaultCaseLabel());
         } else {
@@ -3846,15 +3951,16 @@ public class JavacParser implements Parser {
             } else if (token.name() == names.provides) {
                 nextToken();
                 JCExpression serviceName = qualident(false);
+                List<JCExpression> implNames;
                 if (token.kind == IDENTIFIER && token.name() == names.with) {
                     nextToken();
-                    List<JCExpression> implNames = qualidentList(false);
-                    accept(SEMI);
-                    defs.append(toP(F.at(pos).Provides(serviceName, implNames)));
+                    implNames = qualidentList(false);
                 } else {
                     log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.ExpectedStr("'" + names.with + "'"));
-                    skip(false, false, false, false);
+                    implNames = List.nil();
                 }
+                accept(SEMI);
+                defs.append(toP(F.at(pos).Provides(serviceName, implNames)));
             } else if (token.name() == names.uses) {
                 nextToken();
                 JCExpression service = qualident(false);

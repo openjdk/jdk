@@ -52,7 +52,14 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
   bool p_succeeded = true;
   auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
     masm.set_code_section(cb->stubs());
-    masm.align(wordSize);
+    if (!is_aligned(masm.offset(), wordSize)) {
+      if (cb->stubs()->maybe_expand_to_ensure_remaining(NativeInstruction::instruction_size) && cb->blob() == NULL) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        p_succeeded = false;
+        return p_succeeded;
+      }
+      masm.align(wordSize);
+    }
 
     LinkedListIterator<int> it(offsets.head());
     int offset = *it.next();

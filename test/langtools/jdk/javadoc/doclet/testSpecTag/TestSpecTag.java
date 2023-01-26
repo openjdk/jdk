@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6251738 8226279
+ * @bug 6251738 8226279 8297802
  * @summary JDK-8226279 javadoc should support a new at-spec tag
  * @library /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -41,8 +41,8 @@ import toolbox.ToolBox;
 
 public class TestSpecTag extends JavadocTester {
     public static void main(String... args) throws Exception {
-        TestSpecTag tester = new TestSpecTag();
-        tester.runTests(m -> new Object[] { Path.of(m.getName()) });
+        var tester = new TestSpecTag();
+        tester.runTests();
     }
 
     ToolBox tb = new ToolBox();
@@ -79,11 +79,15 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <dl class="notes">
-                    <dt>External Specifications</dt>
-                    <dd><span id="label" class="search-tag-result">label</span></dd>
-                    </dl>
-                    """);
+                        <dl class="notes">
+                        <dt>External Specifications</dt>
+                        <dd>
+                        <ul class="tag-list">
+                        <li><span id="label" class="search-tag-result">label</span></li>
+                        </ul>
+                        </dd>
+                        </dl>
+                        """);
 
         checkOutput("external-specs.html", true,
                 """
@@ -155,14 +159,18 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <dl class="notes">
-                    <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/a+b"><span id="space:plus" class="search-tag-result">space: plus</span></a>,\s
-                    <a href="http://example.com/a%20b"><span id="space:percent" class="search-tag-result">space: percent</span></a>,\s
-                    <a href="http://example.com/a%C2%A7b"><span id="other:section;U+00A7,UTF-8c2a7" class="search-tag-result">other: section; U+00A7, UTF-8 c2 a7</span></a>,\s
-                    <a href="http://example.com/a%C2%B1b"><span id="unicode:plusorminus;U+00B1,UTF-8c2b1" class="search-tag-result">unicode: plus or minus; U+00B1, UTF-8 c2 b1</span></a></dd>
-                    </dl>
-                    """);
+                        <dl class="notes">
+                        <dt>External Specifications</dt>
+                        <dd>
+                        <ul class="tag-list-long">
+                        <li><a href="http://example.com/a+b"><span id="space:plus" class="search-tag-result">space: plus</span></a></li>
+                        <li><a href="http://example.com/a%20b"><span id="space:percent" class="search-tag-result">space: percent</span></a></li>
+                        <li><a href="http://example.com/a%C2%A7b"><span id="other:section;U+00A7,UTF-8c2a7" class="search-tag-result">other: section; U+00A7, UTF-8 c2 a7</span></a></li>
+                        <li><a href="http://example.com/a%C2%B1b"><span id="unicode:plusorminus;U+00B1,UTF-8c2b1" class="search-tag-result">unicode: plus or minus; U+00B1, UTF-8 c2 b1</span></a></li>
+                        </ul>
+                        </dd>
+                        </dl>
+                        """);
 
         checkOutput("external-specs.html", true,
                 """
@@ -223,17 +231,29 @@ public class TestSpecTag extends JavadocTester {
                 "<h1 title=\"Class C\" class=\"title\">Class C</h1>",
                 """
                     <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></dd>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="http://example.com/"><span id="example" class="search-tag-result">example</span></a></li>
+                    </ul>
+                    </dd>
                     """,
                 "<section class=\"field-details\" id=\"field-detail\">",
                 """
                     <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/"><span id="example-1" class="search-tag-result">example</span></a></dd>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="http://example.com/"><span id="example-1" class="search-tag-result">example</span></a></li>
+                    </ul>
+                    </dd>
                     """,
                 "<section class=\"detail\" id=\"m()\">",
                 """
                     <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/"><span id="example-2" class="search-tag-result">example</span></a></dd>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="http://example.com/"><span id="example-2" class="search-tag-result">example</span></a></li>
+                    </ul>
+                    </dd>
                     """);
 
         checkOutput("external-specs.html", true,
@@ -270,8 +290,12 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a>,\s
-                    <a href="http://example.com/2"><span id="example-2" class="search-tag-result">example-2</span></a></dd>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a></li>
+                    <li><a href="http://example.com/2"><span id="example-2" class="search-tag-result">example-2</span></a></li>
+                    </ul>
+                    </dd>
                     """);
 
         checkOutput("external-specs.html", true,
@@ -311,8 +335,12 @@ public class TestSpecTag extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a>,\s
-                    <a href="http://example.net/2"><span id="example-2" class="search-tag-result">example-2</span></a></dd>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="http://example.com/1"><span id="example-1" class="search-tag-result">example-1</span></a></li>
+                    <li><a href="http://example.net/2"><span id="example-2" class="search-tag-result">example-2</span></a></li>
+                    </ul>
+                    </dd>
                     """);
 
         checkOutput("external-specs.html", true,
@@ -447,11 +475,14 @@ public class TestSpecTag extends JavadocTester {
 
         checkOutput("p/C.html", true,
                 """
-                    <dl class="notes">
-                    <dt>External Specifications</dt>
-                    <dd><a href="http://example.com/#LK#"><span id="#LK#reference" \
-                    class="search-tag-result">#LK# reference</span></a></dd>
-                    </dl>"""
+                        <dl class="notes">
+                        <dt>External Specifications</dt>
+                        <dd>
+                        <ul class="tag-list">
+                        <li><a href="http://example.com/#LK#"><span id="#LK#reference" class="search-tag-result">#LK# reference</span></a></li>
+                        </ul>
+                        </dd>
+                        </dl>"""
                 .replaceAll("#LK#", lk.toString().toLowerCase()));
 
         checkOutput("external-specs.html", true,

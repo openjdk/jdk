@@ -169,10 +169,18 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseL:
     return (is_integral_type(bt) ? Op_ReverseV : 0);
   case Op_ReverseBytesS:
-  case Op_ReverseBytesI:
-  case Op_ReverseBytesL:
   case Op_ReverseBytesUS:
-    return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
+    // Subword operations in superword usually don't have precise info
+    // about signedness. But the behavior of reverseBytes for short and
+    // char are exactly the same.
+    return ((bt == T_SHORT || bt == T_CHAR) ? Op_ReverseBytesV : 0);
+  case Op_ReverseBytesI:
+    // There is no reverseBytes() in Byte class but T_BYTE may appear
+    // in VectorAPI calls. We still use ReverseBytesI for T_BYTE to
+    // ensure vector intrinsification succeeds.
+    return ((bt == T_INT || bt == T_BYTE) ? Op_ReverseBytesV : 0);
+  case Op_ReverseBytesL:
+    return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
     // Not implemented. Returning 0 temporarily
     return 0;
@@ -335,17 +343,6 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_type_transition_long_to_int(Node* n) {
-  switch(n->Opcode()) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-       return true;
-    default:
-       return false;
-  }
-}
-
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
     return true;
@@ -470,6 +467,8 @@ bool VectorNode::is_convert_opcode(int opc) {
     case Op_ConvD2F:
     case Op_ConvF2D:
     case Op_ConvD2I:
+    case Op_ConvF2HF:
+    case Op_ConvHF2F:
       return true;
     default:
       return false;
@@ -1331,14 +1330,31 @@ VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen
     case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
     case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
     case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
+    case Op_VectorCastHF2F: return new VectorCastHF2FNode(n1, vt);
+    case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
     default:
       assert(false, "unknown node: %s", NodeClassNames[vopc]);
       return NULL;
   }
 }
 
-int VectorCastNode::opcode(BasicType bt, bool is_signed) {
+int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
   assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "");
+
+  // Handle special case for to/from Half Float conversions
+  switch (sopc) {
+    case Op_ConvHF2F:
+      assert(bt == T_SHORT, "");
+      return Op_VectorCastHF2F;
+    case Op_ConvF2HF:
+      assert(bt == T_FLOAT, "");
+      return Op_VectorCastF2HF;
+    default:
+      // Handled normally below
+      break;
+  }
+
+  // Handle normal conversions
   switch (bt) {
     case T_BYTE:   return is_signed ? Op_VectorCastB2X : Op_VectorUCastB2X;
     case T_SHORT:  return is_signed ? Op_VectorCastS2X : Op_VectorUCastS2X;
@@ -1357,7 +1373,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(dst_type, vlen)) {
-    int vopc = VectorCastNode::opcode(src_type);
+    int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
   }
   return false;

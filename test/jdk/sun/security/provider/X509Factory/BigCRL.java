@@ -69,8 +69,9 @@ public class BigCRL {
             badCerts[i] = new X509CRLEntryImpl(
                     BigInteger.valueOf(i), date, ext);
         }
-        X509CRLImpl crl = new X509CRLImpl(owner, date, date, badCerts);
-        crl.sign(privateKey, sigAlgName);
+        X509CRLImpl crl = X509CRLImpl.newSigned(
+                new X509CRLImpl.TBSCertList(owner, date, date, badCerts),
+                privateKey, sigAlgName);
         byte[] data = crl.getEncodedInternal();
 
         // Make sure the CRL is big enough
