@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -103,10 +103,10 @@ class BlockTree: public CHeapObj<mtMetaspace> {
 
     Node(size_t word_size) :
       _canary(_canary_value),
-      _parent(NULL),
-      _left(NULL),
-      _right(NULL),
-      _next(NULL),
+      _parent(nullptr),
+      _left(nullptr),
+      _right(nullptr),
+      _next(nullptr),
       _word_size(word_size)
     {}
 
@@ -144,7 +144,7 @@ private:
     assert(head->_word_size == n->_word_size, "sanity");
     n->_next = head->_next;
     head->_next = n;
-    DEBUG_ONLY(n->_left = n->_right = n->_parent = NULL;)
+    DEBUG_ONLY(n->_left = n->_right = n->_parent = nullptr;)
   }
 
   // Given a node list starting at head, remove one of the follow up nodes from
@@ -152,7 +152,7 @@ private:
   //  tree.
   // List must contain at least one other node.
   static Node* remove_from_list(Node* head) {
-    assert(head->_next != NULL, "sanity");
+    assert(head->_next != nullptr, "sanity");
     Node* n = head->_next;
     head->_next = n->_next;
     return n;
@@ -161,7 +161,7 @@ private:
   // Given a node c and a node p, wire up c as left child of p.
   static void set_left_child(Node* p, Node* c) {
     p->_left = c;
-    if (c != NULL) {
+    if (c != nullptr) {
       assert(c->_word_size < p->_word_size, "sanity");
       c->_parent = p;
     }
@@ -170,7 +170,7 @@ private:
   // Given a node c and a node p, wire up c as right child of p.
   static void set_right_child(Node* p, Node* c) {
     p->_right = c;
-    if (c != NULL) {
+    if (c != nullptr) {
       assert(c->_word_size > p->_word_size, "sanity");
       c->_parent = p;
     }
@@ -179,19 +179,19 @@ private:
   // Given a node n, return its successor in the tree
   // (node with the next-larger size).
   static Node* successor(Node* n) {
-    Node* succ = NULL;
-    if (n->_right != NULL) {
+    Node* succ = nullptr;
+    if (n->_right != nullptr) {
       // If there is a right child, search the left-most
       // child of that child.
       succ = n->_right;
-      while (succ->_left != NULL) {
+      while (succ->_left != nullptr) {
         succ = succ->_left;
       }
     } else {
       succ = n->_parent;
       Node* n2 = n;
       // As long as I am the right child of my parent, search upward
-      while (succ != NULL && n2 == succ->_right) {
+      while (succ != nullptr && n2 == succ->_right) {
         n2 = succ;
         succ = succ->_parent;
       }
@@ -203,7 +203,7 @@ private:
   // If the node is root and has no parent, sets it as root.
   void replace_node_in_parent(Node* child, Node* replace) {
     Node* parent = child->_parent;
-    if (parent != NULL) {
+    if (parent != nullptr) {
       if (parent->_left == child) { // Child is left child
         set_left_child(parent, replace);
       } else {
@@ -212,8 +212,8 @@ private:
     } else {
       assert(child == _root, "must be root");
       _root = replace;
-      if (replace != NULL) {
-        replace->_parent = NULL;
+      if (replace != nullptr) {
+        replace->_parent = nullptr;
       }
     }
     return;
@@ -221,21 +221,21 @@ private:
 
   // Given a node n and an insertion point, insert n under insertion point.
   void insert(Node* insertion_point, Node* n) {
-    assert(n->_parent == NULL, "Sanity");
+    assert(n->_parent == nullptr, "Sanity");
     for (;;) {
       DEBUG_ONLY(check_node(insertion_point);)
       if (n->_word_size == insertion_point->_word_size) {
-        add_to_list(n, insertion_point); // parent stays NULL in this case.
+        add_to_list(n, insertion_point); // parent stays null in this case.
         break;
       } else if (n->_word_size > insertion_point->_word_size) {
-        if (insertion_point->_right == NULL) {
+        if (insertion_point->_right == nullptr) {
           set_right_child(insertion_point, n);
           break;
         } else {
           insertion_point = insertion_point->_right;
         }
       } else {
-        if (insertion_point->_left == NULL) {
+        if (insertion_point->_left == nullptr) {
           set_left_child(insertion_point, n);
           break;
         } else {
@@ -248,8 +248,8 @@ private:
   // Given a node and a wish size, search this node and all children for
   // the node closest (equal or larger sized) to the size s.
   Node* find_closest_fit(Node* n, size_t s) {
-    Node* best_match = NULL;
-    while (n != NULL) {
+    Node* best_match = nullptr;
+    while (n != nullptr) {
       DEBUG_ONLY(check_node(n);)
       if (n->_word_size >= s) {
         best_match = n;
@@ -267,23 +267,23 @@ private:
   // Given a wish size, search the whole tree for a
   // node closest (equal or larger sized) to the size s.
   Node* find_closest_fit(size_t s) {
-    if (_root != NULL) {
+    if (_root != nullptr) {
       return find_closest_fit(_root, s);
     }
-    return NULL;
+    return nullptr;
   }
 
   // Given a node n, remove it from the tree and repair tree.
   void remove_node_from_tree(Node* n) {
-    assert(n->_next == NULL, "do not delete a node which has a non-empty list");
+    assert(n->_next == nullptr, "do not delete a node which has a non-empty list");
 
-    if (n->_left == NULL && n->_right == NULL) {
-      replace_node_in_parent(n, NULL);
+    if (n->_left == nullptr && n->_right == nullptr) {
+      replace_node_in_parent(n, nullptr);
 
-    } else if (n->_left == NULL && n->_right != NULL) {
+    } else if (n->_left == nullptr && n->_right != nullptr) {
       replace_node_in_parent(n, n->_right);
 
-    } else if (n->_left != NULL && n->_right == NULL) {
+    } else if (n->_left != nullptr && n->_right == nullptr) {
       replace_node_in_parent(n, n->_left);
 
     } else {
@@ -292,13 +292,13 @@ private:
       // 1) Find direct successor (the next larger node).
       Node* succ = successor(n);
 
-      // There has to be a successor since n->right was != NULL...
-      assert(succ != NULL, "must be");
+      // There has to be a successor since n->right was != null...
+      assert(succ != nullptr, "must be");
 
       // ... and it should not have a left child since successor
       //     is supposed to be the next larger node, so it must be the mostleft node
       //     in the sub tree rooted at n->right
-      assert(succ->_left == NULL, "must be");
+      assert(succ->_left == nullptr, "must be");
       assert(succ->_word_size > n->_word_size, "sanity");
 
       Node* successor_parent = succ->_parent;
@@ -343,14 +343,14 @@ private:
 
 public:
 
-  BlockTree() : _root(NULL) {}
+  BlockTree() : _root(nullptr) {}
 
   // Add a memory block to the tree. Its content will be overwritten.
   void add_block(MetaWord* p, size_t word_size) {
     DEBUG_ONLY(zap_range(p, word_size));
     assert(word_size >= MinWordSize, "invalid block size " SIZE_FORMAT, word_size);
     Node* n = new(p) Node(word_size);
-    if (_root == NULL) {
+    if (_root == nullptr) {
       _root = n;
     } else {
       insert(_root, n);
@@ -366,11 +366,11 @@ public:
 
     Node* n = find_closest_fit(word_size);
 
-    if (n != NULL) {
+    if (n != nullptr) {
       DEBUG_ONLY(check_node(n);)
       assert(n->_word_size >= word_size, "sanity");
 
-      if (n->_next != NULL) {
+      if (n->_next != nullptr) {
         // If the node is head of a chain of same sized nodes, we leave it alone
         //  and instead remove one of the follow up nodes (which is simpler than
         //  removing the chain head node and then having to graft the follow up
@@ -388,7 +388,7 @@ public:
       DEBUG_ONLY(zap_range(p, n->_word_size));
       return p;
     }
-    return NULL;
+    return nullptr;
   }
 
   // Returns number of blocks in this structure
@@ -397,7 +397,7 @@ public:
   // Returns total size, in words, of all elements.
   size_t total_size() const { return _counter.total_size(); }
 
-  bool is_empty() const { return _root == NULL; }
+  bool is_empty() const { return _root == nullptr; }
 
   DEBUG_ONLY(void print_tree(outputStream* st) const;)
   DEBUG_ONLY(void verify() const;)
