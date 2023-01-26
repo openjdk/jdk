@@ -1880,7 +1880,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
               ObjectState* pred_os = pred_as.get_object_state(id);
               if (pred_os->is_virtual()) {
-                as.update(id, pred_os);
+                as.update(id, pred_os->clone());
               } else {
                 as.update(id, new EscapedState(phi));
               }
