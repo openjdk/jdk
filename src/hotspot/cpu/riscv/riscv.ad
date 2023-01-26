@@ -4268,7 +4268,7 @@ pipe_class imul_reg_reg(iRegI dst, iRegI src1, iRegI src2)
 %}
 
 // E.g. MUL   RD, Rs1, Rs2
-pipe_class lmul_reg_reg(iRegI dst, iRegI src1, iRegI src2)
+pipe_class lmul_reg_reg(iRegL dst, iRegL src1, iRegL src2)
 %{
   single_instruction;
   fixed_latency(3); // Maximum latency for 64 bit mul
@@ -4294,7 +4294,7 @@ pipe_class idiv_reg_reg(iRegI dst, iRegI src1, iRegI src2)
 %}
 
 // E.g. DIV   RD, Rs1, Rs2
-pipe_class ldiv_reg_reg(iRegI dst, iRegI src1, iRegI src2)
+pipe_class ldiv_reg_reg(iRegL dst, iRegL src1, iRegL src2)
 %{
   single_instruction;
   fixed_latency(16); // Maximum latency for 64 bit divide
@@ -7434,7 +7434,7 @@ instruct absI_reg(iRegINoSp dst, iRegIorL2I src) %{
     __ xorr(as_Register($dst$$reg), as_Register($dst$$reg), t0);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct absL_reg(iRegLNoSp dst, iRegL src) %{
@@ -7453,7 +7453,7 @@ instruct absL_reg(iRegLNoSp dst, iRegL src) %{
     __ xorr(as_Register($dst$$reg), as_Register($dst$$reg), t0);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct absF_reg(fRegF dst, fRegF src) %{
@@ -7710,7 +7710,7 @@ instruct xorL_reg_imm(iRegLNoSp dst, iRegL src1, immLAdd src2) %{
 
 instruct bytes_reverse_int(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr) %{
   match(Set dst (ReverseBytesI src));
-  effect(TEMP cr);
+  effect(KILL cr);
 
   ins_cost(ALU_COST * 13);
   format %{ "revb_w_w  $dst, $src\t#@bytes_reverse_int" %}
@@ -7719,12 +7719,12 @@ instruct bytes_reverse_int(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr) %{
     __ revb_w_w(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct bytes_reverse_long(iRegLNoSp dst, iRegL src, rFlagsReg cr) %{
   match(Set dst (ReverseBytesL src));
-  effect(TEMP cr);
+  effect(KILL cr);
 
   ins_cost(ALU_COST * 29);
   format %{ "revb  $dst, $src\t#@bytes_reverse_long" %}
@@ -7733,7 +7733,7 @@ instruct bytes_reverse_long(iRegLNoSp dst, iRegL src, rFlagsReg cr) %{
     __ revb(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
@@ -7746,7 +7746,7 @@ instruct bytes_reverse_unsigned_short(iRegINoSp dst, iRegIorL2I src) %{
     __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
@@ -7759,7 +7759,7 @@ instruct bytes_reverse_short(iRegINoSp dst, iRegIorL2I src) %{
     __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 // ============================================================================
@@ -8276,7 +8276,7 @@ instruct encodeHeapOop(iRegNNoSp dst, iRegP src) %{
     Register d = $dst$$Register;
     __ encode_heap_oop(d, s);
   %}
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
@@ -8291,7 +8291,7 @@ instruct decodeHeapOop(iRegPNoSp dst, iRegN src) %{
     Register d = $dst$$Register;
     __ decode_heap_oop(d, s);
   %}
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
@@ -8306,7 +8306,7 @@ instruct decodeHeapOop_not_null(iRegPNoSp dst, iRegN src) %{
     Register d = $dst$$Register;
     __ decode_heap_oop_not_null(d, s);
   %}
-  ins_pipe(ialu_reg);
+  ins_pipe(pipe_class_default);
 %}
 
 // Convert klass pointer into compressed form.
@@ -8322,7 +8322,7 @@ instruct encodeKlass_not_null(iRegNNoSp dst, iRegP src) %{
     __ encode_klass_not_null(dst_reg, src_reg, t0);
   %}
 
-   ins_pipe(ialu_reg);
+   ins_pipe(pipe_class_default);
 %}
 
 instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src, iRegPNoSp tmp) %{
@@ -8340,7 +8340,7 @@ instruct decodeKlass_not_null(iRegPNoSp dst, iRegN src, iRegPNoSp tmp) %{
     __ decode_klass_not_null(dst_reg, src_reg, tmp_reg);
   %}
 
-   ins_pipe(ialu_reg);
+   ins_pipe(pipe_class_default);
 %}
 
 // stack <-> reg and reg <-> reg shuffles with no conversion
@@ -8377,7 +8377,7 @@ instruct MoveI2F_stack_reg(fRegF dst, stackSlotI src) %{
     __ flw(as_FloatRegister($dst$$reg), Address(sp, $src$$disp));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_load_mem_s);
 
 %}
 
@@ -8413,7 +8413,7 @@ instruct MoveL2D_stack_reg(fRegD dst, stackSlotL src) %{
     __ fld(as_FloatRegister($dst$$reg), Address(sp, $src$$disp));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_load_mem_d);
 
 %}
 
@@ -8431,7 +8431,7 @@ instruct MoveF2I_reg_stack(stackSlotI dst, fRegF src) %{
     __ fsw(as_FloatRegister($src$$reg), Address(sp, $dst$$disp));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_store_reg_s);
 
 %}
 
@@ -8467,7 +8467,7 @@ instruct MoveD2L_reg_stack(stackSlotL dst, fRegD src) %{
     __ fsd(as_FloatRegister($src$$reg), Address(sp, $dst$$disp));
   %}
 
-  ins_pipe(pipe_class_memory);
+  ins_pipe(fp_store_reg_d);
 
 %}
 
@@ -8558,6 +8558,7 @@ instruct MoveL2D_reg_reg(fRegD dst, iRegL src) %{
   %}
 
   ins_pipe(fp_l2d);
+
 %}
 
 // ============================================================================
