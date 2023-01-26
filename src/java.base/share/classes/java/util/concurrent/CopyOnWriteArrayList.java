@@ -743,8 +743,7 @@ public class CopyOnWriteArrayList<E>
             Object[] es = getArray();
             int len = es.length;
             Object[] newElements;
-            if (len == 0 && (c.getClass() == CopyOnWriteArrayList.class ||
-                             c.getClass() == ArrayList.class)) {
+            if (len == 0 && c.getClass().getModule() == Object.class.getModule()) {
                 newElements = cs;
             } else {
                 newElements = Arrays.copyOf(es, len + cs.length);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class Vector<E>
     public Vector(Collection<? extends E> c) {
         Object[] a = c.toArray();
         elementCount = a.length;
-        if (c.getClass() == ArrayList.class) {
+        if (c.getClass().getModule() == Object.class.getModule()) {
             elementData = a;
         } else {
             elementData = Arrays.copyOf(a, elementCount, Object[].class);
