@@ -81,7 +81,7 @@ void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_class_annotations);
   it->push(&_fields_annotations);
   it->push(&_class_type_annotations);
-  it->push(&_fields_type_annotations); // FIXME: need a test case where _fields_type_annotations != null
+  it->push(&_fields_type_annotations); // FIXME: need a test case where _fields_type_annotations != nullptr
 }
 
 void Annotations::print_value_on(outputStream* st) const {

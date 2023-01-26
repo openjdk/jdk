@@ -1614,7 +1614,7 @@ methodHandle Method::clone_with_new_data(const methodHandle& m, u_char* new_code
 }
 
 vmSymbolID Method::klass_id_for_intrinsics(const Klass* holder) {
-  // if loader is not the default loader (i.e., != null), we can't know the intrinsics
+  // if loader is not the default loader (i.e., non-null), we can't know the intrinsics
   // because we are not loading from core libraries
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here

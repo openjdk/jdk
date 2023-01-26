@@ -111,10 +111,10 @@
 #define HOTSPOT_CLASS_INITIALIZATION_end HOTSPOT_CLASS_INITIALIZATION_END
 #define DTRACE_CLASSINIT_PROBE(type, thread_type)                \
   {                                                              \
-    char* data = nullptr;                                           \
+    char* data = nullptr;                                        \
     int len = 0;                                                 \
     Symbol* clss_name = name();                                  \
-    if (clss_name != nullptr) {                                     \
+    if (clss_name != nullptr) {                                  \
       data = (char*)clss_name->bytes();                          \
       len = clss_name->utf8_length();                            \
     }                                                            \
@@ -124,10 +124,10 @@
 
 #define DTRACE_CLASSINIT_PROBE_WAIT(type, thread_type, wait)     \
   {                                                              \
-    char* data = nullptr;                                           \
+    char* data = nullptr;                                        \
     int len = 0;                                                 \
     Symbol* clss_name = name();                                  \
-    if (clss_name != nullptr) {                                     \
+    if (clss_name != nullptr) {                                  \
       data = (char*)clss_name->bytes();                          \
       len = clss_name->utf8_length();                            \
     }                                                            \
