@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,23 +23,8 @@
  * questions.
  */
 
-import java.io.*;
-import static java.lang.System.out;
+extern "C" {
 
-public class NoBodyHandler implements Http2Handler {
+#include "./asan_default_options.c"
 
-    @Override
-    public void handle(Http2TestExchange t) throws IOException {
-        try {
-            out.println("NoBodyHandler received request to " + t.getRequestURI());
-            try (InputStream is = t.getRequestBody()) {
-                byte[] ba = is.readAllBytes();
-                out.println(Thread.currentThread().getName() + ": Read " + ba.length);
-            }
-            t.sendResponseHeaders(200, 0);
-        } catch (Throwable e) {
-            e.printStackTrace();
-            throw new IOException(e);
-        }
-    }
-}
+} // extern "C"

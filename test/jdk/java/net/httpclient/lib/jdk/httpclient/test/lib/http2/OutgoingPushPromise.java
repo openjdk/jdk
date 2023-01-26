@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.httpclient.test.lib.http2;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpHeaders;
@@ -31,7 +33,7 @@ import jdk.internal.net.http.frame.Http2Frame;
 
 // will be converted to a PushPromiseFrame in the writeLoop
 // a thread is then created to produce the DataFrames from the InputStream
-class OutgoingPushPromise extends Http2Frame {
+public class OutgoingPushPromise extends Http2Frame {
     final HttpHeaders headers;
     final URI uri;
     final InputStream is;

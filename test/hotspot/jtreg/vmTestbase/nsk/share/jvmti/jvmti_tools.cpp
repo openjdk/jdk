@@ -466,7 +466,7 @@ int nsk_jvmti_redefineClass(jvmtiEnv * jvmti,
     {
         char file [1024];
         //= "DEFAULT";
-        sprintf(file,"%s/%s.class",
+        snprintf(file, sizeof(file), "%s/%s.class",
                 nsk_jvmti_findOptionValue(NSK_JVMTI_OPT_PATH_TO_NEW_BYTE_CODE),
                 fileName);
         nsk_printf("# info :: File = %s \n",file);
