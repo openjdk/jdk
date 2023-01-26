@@ -108,6 +108,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
+  product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
+  product(bool, UseZvkb, false, EXPERIMENTAL, "Use Zvkb instructions")           \
+  product(bool, UseZvknha, false, EXPERIMENTAL, "Use Zvknha instructions")       \
+  product(bool, UseZvknhb, false, EXPERIMENTAL, "Use Zvknhb instructions")       \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
           "Use RVV instructions for left/right shift of BigInteger")
 
