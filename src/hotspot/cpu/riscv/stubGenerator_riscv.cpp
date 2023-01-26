@@ -4152,6 +4152,478 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - int[]   SHA.state
+  //   c_rarg2   - int     offset
+  //   c_rarg3   - int     limit
+  //
+  address generate_sha512_implCompress(bool multi_block, const char *name) {
+    static const uint64_t round_consts[80] = {
+      0x428a2f98d728ae22l, 0x7137449123ef65cdl, 0xb5c0fbcfec4d3b2fl,
+      0xe9b5dba58189dbbcl, 0x3956c25bf348b538l, 0x59f111f1b605d019l,
+      0x923f82a4af194f9bl, 0xab1c5ed5da6d8118l, 0xd807aa98a3030242l,
+      0x12835b0145706fbel, 0x243185be4ee4b28cl, 0x550c7dc3d5ffb4e2l,
+      0x72be5d74f27b896fl, 0x80deb1fe3b1696b1l, 0x9bdc06a725c71235l,
+      0xc19bf174cf692694l, 0xe49b69c19ef14ad2l, 0xefbe4786384f25e3l,
+      0x0fc19dc68b8cd5b5l, 0x240ca1cc77ac9c65l, 0x2de92c6f592b0275l,
+      0x4a7484aa6ea6e483l, 0x5cb0a9dcbd41fbd4l, 0x76f988da831153b5l,
+      0x983e5152ee66dfabl, 0xa831c66d2db43210l, 0xb00327c898fb213fl,
+      0xbf597fc7beef0ee4l, 0xc6e00bf33da88fc2l, 0xd5a79147930aa725l,
+      0x06ca6351e003826fl, 0x142929670a0e6e70l, 0x27b70a8546d22ffcl,
+      0x2e1b21385c26c926l, 0x4d2c6dfc5ac42aedl, 0x53380d139d95b3dfl,
+      0x650a73548baf63del, 0x766a0abb3c77b2a8l, 0x81c2c92e47edaee6l,
+      0x92722c851482353bl, 0xa2bfe8a14cf10364l, 0xa81a664bbc423001l,
+      0xc24b8b70d0f89791l, 0xc76c51a30654be30l, 0xd192e819d6ef5218l,
+      0xd69906245565a910l, 0xf40e35855771202al, 0x106aa07032bbd1b8l,
+      0x19a4c116b8d2d0c8l, 0x1e376c085141ab53l, 0x2748774cdf8eeb99l,
+      0x34b0bcb5e19b48a8l, 0x391c0cb3c5c95a63l, 0x4ed8aa4ae3418acbl,
+      0x5b9cca4f7763e373l, 0x682e6ff3d6b2b8a3l, 0x748f82ee5defb2fcl,
+      0x78a5636f43172f60l, 0x84c87814a1f0ab72l, 0x8cc702081a6439ecl,
+      0x90befffa23631e28l, 0xa4506cebde82bde9l, 0xbef9a3f7b2c67915l,
+      0xc67178f2e372532bl, 0xca273eceea26619cl, 0xd186b8c721c0c207l,
+      0xeada7dd6cde0eb1el, 0xf57d4f7fee6ed178l, 0x06f067aa72176fbal,
+      0x0a637dc5a2c898a6l, 0x113f9804bef90dael, 0x1b710b35131c471bl,
+      0x28db77f523047d84l, 0x32caab7b40c72493l, 0x3c9ebe0a15c9bebcl,
+      0x431d67c49c100d4cl, 0x4cc5d4becb3e42b6l, 0x597f299cfc657e2al,
+      0x5fcb6fab3ad6faecl, 0x6c44198c4a475817l
+    };
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf   = c_rarg0;
+    Register state = c_rarg1;
+    Register ofs   = c_rarg2;
+    Register limit = c_rarg3;
+    Register consts = t0;
+
+    Label multi_block_loop;
+
+    __ enter();
+
+    // Register use in this function:
+    //
+    // VECTORS
+    //  v10 - v13 (1024-bits / 4*256 bits / 4*4*64 bits), hold the message
+    //             schedule words (Wt). They start with the message block
+    //             content (W0 to W15), then further words in the message
+    //             schedule generated via vsha2ms from previous Wt.
+    //   Initially:
+    //     v10 = W[  3:0] = { W3,  W2,  W1,  W0}
+    //     v11 = W[  7:4] = { W7,  W6,  W5,  W4}
+    //     v12 = W[ 11:8] = {W11, W10,  W9,  W8}
+    //     v13 = W[15:12] = {W15, W14, W13, W12}
+    //
+    //  v16 - v17 hold the working state variables (a, b, ..., h)
+    //    v16 = {f[t],e[t],b[t],a[t]}
+    //    v17 = {h[t],g[t],d[t],c[t]}
+    //   Initially:
+    //    v16 = {H5i-1, H4i-1, H1i-1 , H0i-1}
+    //    v17 = {H7i-i, H6i-1, H3i-1 , H2i-1}
+    //
+    //  v0 = masks for vrgather/vmerge. Single value during the 16 rounds.
+    //
+    //  v14 = temporary, Wt+Kt
+    //  v15 = temporary, Kt
+    //
+    //  v18/v19 = temporaries, in the epilogue, to re-arrange
+    //            and byte-swap v16/v17
+    //
+    //  v26/v27 = hold the initial values of the hash, byte-swapped.
+    //
+    //  v30/v31 = used to generate masks, vrgather indices.
+    //
+    // During most of the function the vector state is configured so that each
+    // vector is interpreted as containing four 64 bits (e64) elements (256 bits).
+
+    // Set vectors as 4 * 64
+    //
+    // e64: vector of 64b/8B elements
+    // m1: LMUL=1
+    // ta: tail agnostic (don't care about those lanes)
+    // ma: mask agnostic (don't care about those lanes)
+    // x0 is not written, we known the number of vector elements, 2.
+    __ vsetivli(x0, 4, Assembler::e64, Assembler::m1, Assembler::ma, Assembler::ta);
+
+    // Load H[0..8] to produce
+    //  v16 = {a,b,e,f}
+    //  v17 = {c,d,g,h}
+    __ vle64_v(v16, state);                          // v16 = {d,c,b,a}
+    __ addi(state, state, 32);
+    __ vle64_v(v17, state);                          // v17 = {h,g,f,e}
+
+    __ vid_v(v30);                                   // v30 = {3,2,1,0}
+    __ vxor_vi(v30, v30, 0x3);                       // v30 = {0,1,2,3}
+    __ vrgather_vv(v26, v16, v30);                   // v26 = {a,b,c,d}
+    __ vrgather_vv(v27, v17, v30);                   // v27 = {e,f,g,h}
+    __ vmsgeu_vi(v0, v30, 2);                        // v0  = {f,f,t,t}
+    // Copy elements [3..2] of v26 ({d,c}) into elements [3..2] of v17.
+    __ vslideup_vi(v17, v26, 2);                     // v17 = {c,d,_,_}
+    // Merge elements [1..0] of v27 ({g,h}) into elements [1..0] of v17
+    __ vmerge_vvm(v17, v17, v27);                    // v17 = {c,d,g,h}
+    // Copy elements [1..0] of v27 ({f,e}) into elements [1..0] of v16.
+    __ vslidedown_vi(v16, v27, 2);                   // v16 = {_,_,e,f}
+    // Merge elements [3..2] of v26 ({a,b}) into elements [3..2] of v16
+    __ vmerge_vvm(v16, v26, v16);                    // v16 = {a,b,e,f}
+
+    __ bind(multi_block_loop);
+
+    // Capture the initial H values in v26 and v27 to allow for computing
+    // the resulting H', since H' = H+{a',b',c',...,h'}.
+    __ vmv_v_v(v26, v16);
+    __ vmv_v_v(v27, v17);
+
+    // Load the 1024-bits of the message block in v10-v13 and perform
+    // an endian swap on each 8 bytes element.
+    //
+    // If Zvkb is not implemented, similar to SHA-256, one can use vrgather
+    // with an index sequence to byte-swap.
+    //  sequence = [3 2 1 0   7 6 5 4  11 10 9 8   15 14 13 12]
+    //   <https://oeis.org/A004444> gives us "N ^ 3" as a nice formula to generate
+    //  this sequence. 'vid' gives us the N.
+    __ vle64_v(v10, buf);
+    __ vrev8_v(v10, v10);
+    __ add(buf, buf, 32);
+    __ vle64_v(v11, buf);
+    __ vrev8_v(v11, v11);
+    __ add(buf, buf, 32);
+    __ vle64_v(v12, buf);
+    __ vrev8_v(v12, v12);
+    __ add(buf, buf, 32);
+    __ vle64_v(v13, buf);
+    __ vrev8_v(v13, v13);
+
+    // Set v0 up for the vmerge that replaces the first word (idx==0)
+    __ vid_v(v0);
+    __ vmseq_vi(v0, v0, 0x0);  // v0.mask[i] = (i == 0 ? 1 : 0)
+
+    __ la(consts, ExternalAddress((address)round_consts));
+
+    // Overview of the logic in each "quad round".
+    //
+    // The code below repeats 20 times the logic implementing four rounds
+    // of the SHA-512 core loop as documented by NIST. 20 "quad rounds"
+    // to implementing the 80 single rounds.
+    //
+    //    // Load four word (u64) constants (K[t+3], K[t+2], K[t+1], K[t+0])
+    //    // Output:
+    //    //   v15 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    vl1re32.v v15, (a2)
+    //
+    //    // Increment word contant address by stride (32 bytes, 4*8B, 256b)
+    //    addi consts, consts, 32
+    //
+    //    // Add constants to message schedule words:
+    //    //  Input
+    //    //    v15 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    //    v10 = {W[t+3], W[t+2], W[t+1], W[t+0]}; // Vt0 = W[3:0];
+    //    //  Output
+    //    //    v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    vadd.vv v14, v15, v10
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     v17[t+4] <- v17[t], v16[t], v14[t]
+    //    //  Input:
+    //    //    v17 = {c[t],d[t],g[t],h[t]}   " = v17[t] "
+    //    //    v16 = {a[t],b[t],e[t],f[t]}
+    //    //    v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //    v17 = {f[t+2],e[t+2],b[t+2],a[t+2]}  " = v16[t+2] "
+    //    //        = {h[t+4],g[t+4],d[t+4],c[t+4]}  " = v17[t+4] "
+    //    vsha2cl.vv v17, v16, v14
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     v16[t+4] <- v16[t], v16[t+2], v14[t]
+    //    //  Input
+    //    //   v16 = {a[t],b[t],e[t],f[t]}       " = v16[t] "
+    //    //       = {h[t+2],g[t+2],d[t+2],c[t+2]}   " = v17[t+2] "
+    //    //   v17 = {f[t+2],e[t+2],b[t+2],a[t+2]}   " = v16[t+2] "
+    //    //   v14 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //   v16 = {f[t+4],e[t+4],b[t+4],a[t+4]}   " = v16[t+4] "
+    //    vsha2ch.vv v16, v17, v14
+    //
+    //    // Combine 2QW into 1QW
+    //    //
+    //    // To generate the next 4 words, "new_v10"/"v14" from v10-v13, vsha2ms needs
+    //    //     v10[0..3], v11[0], v12[1..3], v13[0, 2..3]
+    //    // and it can only take 3 vectors as inputs. Hence we need to combine
+    //    // v11[0] and v12[1..3] in a single vector.
+    //    //
+    //    // vmerge Vt4, Vt1, Vt2, V0
+    //    // Input
+    //    //  V0 = mask // first word from v12, 1..3 words from v11
+    //    //  V12 = {Wt-8, Wt-7, Wt-6, Wt-5}
+    //    //  V11 = {Wt-12, Wt-11, Wt-10, Wt-9}
+    //    // Output
+    //    //  Vt4 = {Wt-12, Wt-7, Wt-6, Wt-5}
+    //    vmerge.vvm v14, v12, v11, v0
+    //
+    //    // Generate next Four Message Schedule Words (hence allowing for 4 more rounds)
+    //    // Input
+    //    //  V10 = {W[t+ 3], W[t+ 2], W[t+ 1], W[t+ 0]}     W[ 3: 0]
+    //    //  V13 = {W[t+15], W[t+14], W[t+13], W[t+12]}     W[15:12]
+    //    //  V14 = {W[t+11], W[t+10], W[t+ 9], W[t+ 4]}     W[11: 9,4]
+    //    // Output (next four message schedule words)
+    //    //  v10 = {W[t+19],  W[t+18],  W[t+17],  W[t+16]}  W[19:16]
+    //    vsha2ms.vv v10, v14, v13
+    //
+    // BEFORE
+    //  v10 - v13 hold the message schedule words (initially the block words)
+    //    v10 = W[ 3: 0]   "oldest"
+    //    v11 = W[ 7: 4]
+    //    v12 = W[11: 8]
+    //    v13 = W[15:12]   "newest"
+    //
+    //  vt6 - vt7 hold the working state variables
+    //    v16 = {a[t],b[t],e[t],f[t]}   // initially {H5,H4,H1,H0}
+    //    v17 = {c[t],d[t],g[t],h[t]}   // initially {H7,H6,H3,H2}
+    //
+    // AFTER
+    //  v10 - v13 hold the message schedule words (initially the block words)
+    //    v11 = W[ 7: 4]   "oldest"
+    //    v12 = W[11: 8]
+    //    v13 = W[15:12]
+    //    v10 = W[19:16]   "newest"
+    //
+    //  v16 and v17 hold the working state variables
+    //    v16 = {a[t+4],b[t+4],e[t+4],f[t+4]}
+    //    v17 = {c[t+4],d[t+4],g[t+4],h[t+4]}
+    //
+    //  The group of vectors v10,v11,v12,v13 is "rotated" by one in each quad-round,
+    //  hence the uses of those vectors rotate in each round, and we get back to the
+    //  initial configuration every 4 quad-rounds. We could avoid those changes at
+    //  the cost of moving those vectors at the end of each quad-rounds.
+
+    //--------------------------------------------------------------------------------
+    // Quad-round 0 (+0, v10->v11->v12->v13)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13);
+    //--------------------------------------------------------------------------------
+    // Quad-round 1 (+1, v11->v12->v13->v10)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10);
+    //--------------------------------------------------------------------------------
+    // Quad-round 2 (+2, v12->v13->v10->v11)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11);
+    //--------------------------------------------------------------------------------
+    // Quad-round 3 (+3, v13->v10->v11->v12)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12);
+
+    //--------------------------------------------------------------------------------
+    // Quad-round 4 (+0, v10->v11->v12->v13)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13);
+    //--------------------------------------------------------------------------------
+    // Quad-round 5 (+1, v11->v12->v13->v10)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10);
+    //--------------------------------------------------------------------------------
+    // Quad-round 6 (+2, v12->v13->v10->v11)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11);
+    //--------------------------------------------------------------------------------
+    // Quad-round 7 (+3, v13->v10->v11->v12)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12);
+
+    //--------------------------------------------------------------------------------
+    // Quad-round 8 (+0, v10->v11->v12->v13)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13);
+    //--------------------------------------------------------------------------------
+    // Quad-round 9 (+1, v11->v12->v13->v10)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10);
+    //--------------------------------------------------------------------------------
+    // Quad-round 10 (+2, v12->v13->v10->v11)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11);
+    //--------------------------------------------------------------------------------
+    // Quad-round 11 (+3, v13->v10->v11->v12)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12);
+
+    //--------------------------------------------------------------------------------
+    // Quad-round 12 (+0, v10->v11->v12->v13)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    __ vsha2ms_vv(v10, v14, v13);
+    //--------------------------------------------------------------------------------
+    // Quad-round 13 (+1, v11->v12->v13->v10)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    __ vsha2ms_vv(v11, v14, v10);
+    //--------------------------------------------------------------------------------
+    // Quad-round 14 (+2, v12->v13->v10->v11)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    __ vsha2ms_vv(v12, v14, v11);
+    //--------------------------------------------------------------------------------
+    // Quad-round 15 (+3, v13->v10->v11->v12)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v11, v10);
+    __ vsha2ms_vv(v13, v14, v12);
+
+    //--------------------------------------------------------------------------------
+    // Quad-round 16 (+0, v10->v11->v12->v13)
+    // Note that we stop generating new message schedule words (Wt, v10-13)
+    // as we already generated all the words we end up consuming (i.e., W[79:76]).
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v10);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v12, v11);
+    //--------------------------------------------------------------------------------
+    // Quad-round 17 (+1, v11->v12->v13->v10)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v11);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v13, v12);
+    //--------------------------------------------------------------------------------
+    // Quad-round 18 (+2, v12->v13->v10->v11)
+    __ vl1re64_v(v15, consts);
+    __ addi(consts, consts, 32);
+    __ vadd_vv(v14, v15, v12);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+    __ vmerge_vvm(v14, v10, v13);
+    //--------------------------------------------------------------------------------
+    // Quad-round 19 (+3, v13->v10->v11->v12)
+    __ vl1re64_v(v15, consts);
+    // No consts increment needed.
+    __ vadd_vv(v14, v15, v13);
+    __ vsha2cl_vv(v17, v16, v14);
+    __ vsha2ch_vv(v16, v17, v14);
+
+    //--------------------------------------------------------------------------------
+    // Compute the updated hash value H'
+    //   H' = H + {h',g',...,b',a'}
+    //      = {h,g,...,b,a} + {h',g',...,b',a'}
+    //      = {h+h',g+g',...,b+b',a+a'}
+
+    // H' = H+{a',b',c',...,h'}
+    __ vadd_vv(v16, v26, v16);
+    __ vadd_vv(v17, v27, v17);
+
+    if (multi_block) {
+      __ add(ofs, ofs, 128);
+      __ ble(ofs, limit, multi_block_loop);
+      __ mv(c_rarg0, ofs); // return ofs
+    }
+
+    // Store H[0..8] = {a,b,c,d,e,f,g,h} from
+    //  v16 = {f,e,b,a}
+    //  v17 = {h,g,d,c}
+    __ vid_v(v30);                                   // v30 = {3,2,1,0}
+    __ vxor_vi(v30, v30, 0x3);                       // v30 = {0,1,2,3}
+    __ vrgather_vv(v26, v16, v30);                   // v26 = {f,e,b,a}
+    __ vrgather_vv(v27, v17, v30);                   // v27 = {h,g,d,c}
+    __ vmsgeu_vi(v0, v30, 2);                        // v0  = {f,f,t,t}
+    // Copy elements [3..2] of v26 ({f,e}) into elements [1..0] of v17.
+    __ vslidedown_vi(v17, v26, 2);                   // v17 = {_,_,f,e}
+    // Merge elements [3..2] of v27 ({g,h}) into elements [3..2] of v17
+    __ vmerge_vvm(v17, v27, v17);                    // v17 = {h,g,f,e}
+    // Copy elements [1..0] of v27 ({c,d}) into elements [3..2] of v16.
+    __ vslideup_vi(v16, v27, 2);                     // v16 = {d,c,_,_}
+    // Merge elements [1..0] of v26 ({a,b}) into elements [1..0] of v16
+    __ vmerge_vvm(v16, v16, v26);                    // v16 = {d,c,b,a}
+
+    // Save the  hash
+    __ vse64_v(v17, state);
+    __ addi(state, state, -32);
+    __ vse64_v(v16, state);
+
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -4559,6 +5031,10 @@ class StubGenerator: public StubCodeGenerator {
     if (UseSHA256Intrinsics) {
       StubRoutines::_sha256_implCompress   = generate_sha256_implCompress(false, "sha256_implCompress");
       StubRoutines::_sha256_implCompressMB = generate_sha256_implCompress(true,  "sha256_implCompressMB");
+    }
+    if (UseSHA512Intrinsics) {
+      StubRoutines::_sha512_implCompress   = generate_sha512_implCompress(false, "sha512_implCompress");
+      StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
     }
 
     generate_compare_long_strings();
