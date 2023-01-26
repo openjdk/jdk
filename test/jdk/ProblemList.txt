@@ -587,7 +587,6 @@ sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-a
 
 javax/net/ssl/SSLEngine/TestAllSuites.java                      8298874 generic-all
 javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
-javax/net/ssl/SSLEngine/ConnectionTest.java                     8298869 generic-all
 javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
 
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
