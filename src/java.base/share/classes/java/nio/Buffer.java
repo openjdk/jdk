@@ -39,8 +39,11 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
 import java.lang.ref.Reference;
+import java.util.List;
 import java.util.Objects;
 import java.util.Spliterator;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * A container for data of a specific primitive type.
@@ -739,24 +742,36 @@ public abstract sealed class Buffer
     }
 
     /**
-     * Checks the given index against the limit, throwing an {@link
-     * IndexOutOfBoundsException} if it is not smaller than the limit
-     * or is smaller than zero.
+     * Exception formatter that returns an {@link IndexOutOfBoundsException}
+     * with no detail message.
      */
+    private static final BiFunction<String,List<Number>,IndexOutOfBoundsException>
+        IOOBE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public IndexOutOfBoundsException apply(String s) {
+            return new IndexOutOfBoundsException();
+        }
+    });
+
+    /**
+     * Checks the given index against the limit, throwing an {@link
+     * IndexOutOfBoundsException} if it is greater than the limit
+     * or is negative.
+     */
+    @ForceInline
     final int checkIndex(int i) {                       // package-private
-        return Objects.checkIndex(i, limit);
+        return Preconditions.checkIndex(i, limit, IOOBE_FORMATTER);
     }
 
+    /**
+     * Checks the given index and number of bytes against the range
+     * {@code [0, limit]}, throwing an {@link
+     * IndexOutOfBoundsException} if the index is negative or the index
+     * plus the number of bytes is greater than the limit.
+     */
     @ForceInline
     final int checkIndex(int i, int nb) {               // package-private
-        return Preconditions.checkIndex(i, limit - nb + 1,
-            (x, y) -> {
-                String msg = i < 0
-                    ? "position (" + i + ") < 0"
-                    : "position (" + i + ") + length (" + nb + ") > limit (" + limit + ")";
-                return new IndexOutOfBoundsException(msg);
-            }
-        );
+        return Preconditions.checkIndex(i, limit - nb + 1, IOOBE_FORMATTER);
     }
 
     final int markValue() {                             // package-private
