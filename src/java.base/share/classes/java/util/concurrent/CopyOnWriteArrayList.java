@@ -36,7 +36,6 @@ package java.util.concurrent;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -140,7 +139,7 @@ public class CopyOnWriteArrayList<E>
             es = ((CopyOnWriteArrayList<?>)c).getArray();
         else {
             es = c.toArray();
-            if (c.getClass() != java.util.ArrayList.class)
+            if (c.getClass().getModule() != Object.class.getModule())
                 es = Arrays.copyOf(es, es.length, Object[].class);
         }
         setArray(es);
@@ -689,7 +688,7 @@ public class CopyOnWriteArrayList<E>
      */
     public int addAllAbsent(Collection<? extends E> c) {
         Object[] cs = c.toArray();
-        if (c.getClass() != ArrayList.class) {
+        if (c.getClass().getModule() != Object.class.getModule()) {
             cs = cs.clone();
         }
         if (cs.length == 0)
