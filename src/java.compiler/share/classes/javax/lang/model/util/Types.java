@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,20 @@ public interface Types {
 
     /**
      * Returns the element corresponding to a type.
-     * The type may be a {@link DeclaredType} or {@link TypeVariable},
-     * or a pseudo-type for a {@linkplain TypeKind#PACKAGE package} or
-     * {@linkplain TypeKind#MODULE module}.
-     * Returns {@code null} if the type is not one with a
+     * The type may be one of:
+     * <ul>
+     * <li>a {@link DeclaredType}
+     * <li>a {@link TypeVariable}
+     * <li>a pseudo-type for a {@linkplain TypeKind#PACKAGE package} or
+     * {@linkplain TypeKind#MODULE module}
+     * </ul>
+     * The method returns {@code null} if the type is not one with a
      * corresponding element.
-     *
-     * <p>Types <em>without</em> corresponding elements include:
+     * Types <em>without</em> corresponding elements include:
      * <ul>
      * <li>{@linkplain TypeKind#isPrimitive() primitive types}
      * <li>{@linkplain TypeKind#EXECUTABLE executable types}
-     * <li>{@linkplain TypeKind#NONE "none" pseudo-types}
+     * <li>{@linkplain TypeKind#NONE "none"} pseudo-types
      * <li>{@linkplain TypeKind#NULL null types}
      * <li>{@link TypeKind#VOID void}
      * <li>{@linkplain TypeKind#WILDCARD wildcard type argument}

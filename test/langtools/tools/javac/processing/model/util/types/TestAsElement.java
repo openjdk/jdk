@@ -74,8 +74,6 @@ public class TestAsElement extends JavacTestingAbstractProcessor {
         }
     }
 
-
-
     private void expectNullAsElement(TypeMirror typeMirror) {
         var e = typeUtils.asElement(typeMirror);
         if (e != null) {
@@ -84,6 +82,7 @@ public class TestAsElement extends JavacTestingAbstractProcessor {
     }
 
     private void testRoundTripCases() {
+        expectRoundTrip(eltUtils.getTypeElement("java.lang.String"));
         expectRoundTrip(eltUtils.getPackageElement("java.lang"));
         expectRoundTrip(eltUtils.getModuleElement("java.base"));
     }
@@ -95,5 +94,4 @@ public class TestAsElement extends JavacTestingAbstractProcessor {
             throw new RuntimeException("Did not see round trip elt -> type -> elt on " + e);
         }
     }
-
 }
