@@ -1482,7 +1482,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     LogStream ls(lt);
     ls.print("%d Initializing ", call_class_initializer_counter++);
     name()->print_value_on(&ls);
-    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == null ? "(no method)" : "", p2i(this));
+    ls.print_cr("%s (" PTR_FORMAT ")", h_method() == nullptr ? "(no method)" : "", p2i(this));
   }
   if (h_method() != nullptr) {
     JavaCallArguments args; // No arguments
