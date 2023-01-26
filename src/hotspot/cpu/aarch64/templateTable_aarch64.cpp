@@ -2339,12 +2339,12 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ mov(appendix, sizeof(ResolvedIndyInfo)); // use appendix as temp
   __ mul(index, index, appendix);
   __ add(cache, cache, Array<ResolvedIndyInfo>::base_offset_in_bytes());
-  __ ldr(cache, Address(cache, index));
+  __ lea(cache, Address(cache, index));
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
   // Compare the method to zero
   __ tst(method, method);
-  __ br(Assembler::EQ, resolved);
+  __ br(Assembler::NE, resolved);
 
   Bytecodes::Code code = bytecode();
 
@@ -2360,7 +2360,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ mov(appendix, sizeof(ResolvedIndyInfo)); // use appendix as temp
   __ mul(index, index, appendix);
   __ add(cache, cache, Array<ResolvedIndyInfo>::base_offset_in_bytes());
-  __ ldr(cache, Address(cache, index));
+  __ lea(cache, Address(cache, index));
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyInfo::method_offset())));
 
 #ifdef ASSERT

@@ -2034,7 +2034,6 @@ void ClassVerifier::verify_cp_type(
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   unsigned int tag = cp->tag_at(index).value();
   if ((types & (1 << tag)) == 0) {
-    //fatal("1");
     verify_error(ErrorContext::bad_cp_index(bci, index),
       "Illegal type at constant pool entry %d in class %s",
       index, cp->pool_holder()->external_name());

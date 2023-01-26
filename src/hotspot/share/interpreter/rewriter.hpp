@@ -171,6 +171,9 @@ class Rewriter: public StackObj {
     if (UseNewIndyCode && _pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic) {
       _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
     }
+    if (!UseNewIndyCode) {
+      _invokedynamic_references_map.at_put_grow(ref_index, cache_index, -1);
+    }
     return ref_index;
   }
 
