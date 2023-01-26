@@ -250,7 +250,7 @@ class ResourceHashtableBase : public STORAGE {
     const unsigned sz = table_size();
     int cnt = _number_of_entries;
 
-    for (unsigned index = 0; index < sz; index++) {
+    for (unsigned index = 0; cnt > 0 && index < sz; index++) {
       Node** ptr = bucket_at(index);
 
       while (*ptr != nullptr) {
