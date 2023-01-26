@@ -1847,7 +1847,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   }
 
   void prepare_parallel_dump(uint num_total) {
-    assert (_dumper_controller == nullptr, "dumper controller must be nullptr");
+    assert (_dumper_controller == nullptr, "dumper controller must be null");
     assert (num_total > 0, "active workers number must >= 1");
     // Dumper threads number must not be larger than active workers number.
     if (num_total < _num_dumper_threads) {

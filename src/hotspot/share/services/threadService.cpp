@@ -221,7 +221,7 @@ void ThreadService::current_thread_exiting(JavaThread* jt, bool daemon) {
 
 // FIXME: JVMTI should call this function
 Handle ThreadService::get_current_contended_monitor(JavaThread* thread) {
-  assert(thread != nullptr, "should be non-nullptr");
+  assert(thread != nullptr, "should be non-null");
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 
   // This function can be called on a target JavaThread that is not

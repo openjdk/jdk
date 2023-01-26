@@ -1642,8 +1642,8 @@ class ThreadTimesClosure: public ThreadClosure {
 
 ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
                                        typeArrayHandle times) {
-  assert(names() != nullptr, "names was nullptr");
-  assert(times() != nullptr, "times was nullptr");
+  assert(names() != nullptr, "names was null");
+  assert(times() != nullptr, "times was null");
   _names_strings = names;
   _names_len = names->length();
   _names_chars = NEW_C_HEAP_ARRAY(char*, _names_len, mtInternal);
@@ -1657,7 +1657,7 @@ ThreadTimesClosure::ThreadTimesClosure(objArrayHandle names,
 //
 void ThreadTimesClosure::do_thread(Thread* thread) {
   assert(Threads_lock->owned_by_self(), "Must hold Threads_lock");
-  assert(thread != nullptr, "thread was nullptr");
+  assert(thread != nullptr, "thread was null");
 
   // exclude externally visible JavaThreads
   if (thread->is_Java_thread() && !thread->is_hidden_from_external_view()) {

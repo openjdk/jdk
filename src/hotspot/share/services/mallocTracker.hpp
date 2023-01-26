@@ -329,11 +329,11 @@ class MallocTracker : AllStatic {
   static bool print_pointer_information(const void* p, outputStream* st);
 
   static inline MallocHeader* malloc_header(void *memblock) {
-    assert(memblock != nullptr, "nullptr pointer");
+    assert(memblock != nullptr, "null pointer");
     return (MallocHeader*)((char*)memblock - sizeof(MallocHeader));
   }
   static inline const MallocHeader* malloc_header(const void *memblock) {
-    assert(memblock != nullptr, "nullptr pointer");
+    assert(memblock != nullptr, "null pointer");
     return (const MallocHeader*)((const char*)memblock - sizeof(MallocHeader));
   }
 };
