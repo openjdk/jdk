@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
  * <h3><a id="pkgspec">1.0 Package Specification</a></h3>
  * This package specifies five standard JDBC {@code RowSet} interfaces.
  * All five extend the
- * <a href="{@docRoot}/java.sql/javax/sql/RowSet.html">RowSet</a> interface described in the JDBC 3.0
+ * {@link java.sql/javax.sql.RowSet} interface described in the JDBC 3.0
  * specification.  It is anticipated that additional definitions
  * of more specialized JDBC {@code RowSet} types will emerge as this technology
  * matures. Future definitions <i>should</i> be specified as subinterfaces using
@@ -86,10 +86,10 @@
  * {@code WebRowSet} object is an extension of {@code CachedRowSet}
  * that can read and write a {@code RowSet} object in a well formed XML format.
  * This class calls an <a href="spi/XmlReader.html">{@code XmlReader}</a> object
- * (an extension of the <a href="{@docRoot}/java.sql/javax/sql/RowSetReader.html">{@code RowSetReader}</a>
+ * (an extension of the {@link java.sql/javax.sql.RowSetReader RowSetReader}
  * interface) to read a rowset in XML format. It calls an
  * <a href="spi/XmlWriter.html">{@code XmlWriter}</a> object (an extension of the
- * <a href="{@docRoot}/java.sql/javax/sql/RowSetWriter.html">{@code RowSetWriter}</a> interface)
+ * {@link java.sql/javax.sql.RowSetWriter RowSetWriter} interface)
  * to write a rowset in XML format. The reader and writer required by
  * {@code WebRowSet} objects are provided by the
  * {@code SyncFactory} in the form of {@code SyncProvider}
@@ -106,7 +106,7 @@
  * Solutions to this need vary from providing heavyweight full scale
  * SQL query abilities, to portable components, to more lightweight
  * approaches. A {@code FilteredRowSet} object consumes
- * an implementation of the <a href="Predicate.html">{@code Predicate}</a>
+ * an implementation of the {@link Predicate}
  * interface, which <b>may</b> define a filter at run time. In turn, a
  * {@code FilteredRowSet} object is tasked with enforcing the set filter for both
  * inbound and outbound read and write operations. That is, all filters can be
@@ -146,7 +146,7 @@
  * <p>
  * A compliant JDBC {@code RowSet} implementation <b>must</b> implement one or more
  * standard interfaces specified in this package and <b>may</b> extend the
- * <a href="BaseRowSet.html">{@code BaseRowSet}</a> abstract class. For example, a
+ * {@link BaseRowSet} abstract class. For example, a
  * {@code CachedRowSet} implementation must implement the {@code CachedRowSet}
  * interface and extend the {@code BaseRowSet} abstract class. The
  * {@code BaseRowSet} class provides the standard architecture on which all
@@ -233,7 +233,7 @@
  * <li><b>3.5 Role of RowSetMetaDataImpl</b>
  * <p>
  * The {@code RowsetMetaDataImpl} class is a utility class that provides an implementation of the
- * <a href="{@docRoot}/java.sql/javax/sql/RowSetMetaData.html">RowSetMetaData</a> interface, supplying standard setter
+ * {@link java.sql/javax.sql.RowSetMetaData RowSetMetaData} interface, supplying standard setter
  * method implementations for metadata for both connected and disconnected
  * {@code RowSet} objects. All implementations are free to use this standard
  * implementation but are not required to do so.
@@ -242,7 +242,7 @@
  * <p>
  * The {@code RowSetWarning} class provides warnings that can be set
  * on {@code RowSet} implementations.
- * Similar to <a href="{@docRoot}/java.sql/java/sql/SQLWarning.html">SQLWarning</a> objects,
+ * Similar to {@link java.sql/java.sql.SQLWarning SQLWarning} objects,
  * {@code RowSetWarning}  objects are silently chained to the object whose method
  * caused the warning to be thrown. All {@code RowSet} implementations <b>should</b>
  * ensure that this chaining occurs if a warning is generated and also ensure that the

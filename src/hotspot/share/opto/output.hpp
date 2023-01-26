@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "opto/ad.hpp"
+#include "opto/c2_CodeStubs.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/phase.hpp"
 #include "runtime/vm_version.hpp"
@@ -73,75 +74,6 @@ public:
   { };
 };
 
-class C2SafepointPollStubTable {
-private:
-  struct C2SafepointPollStub: public ResourceObj {
-    uintptr_t _safepoint_offset;
-    Label     _stub_label;
-    Label     _trampoline_label;
-    C2SafepointPollStub(uintptr_t safepoint_offset) :
-      _safepoint_offset(safepoint_offset),
-      _stub_label(),
-      _trampoline_label() {}
-  };
-
-  GrowableArray<C2SafepointPollStub*> _safepoints;
-
-  static volatile int _stub_size;
-
-  void emit_stub_impl(MacroAssembler& masm, C2SafepointPollStub* entry) const;
-
-  // The selection logic below relieves the need to add dummy files to unsupported platforms.
-  template <bool enabled>
-  typename EnableIf<enabled>::type
-  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-    emit_stub_impl(masm, entry);
-  }
-
-  template <bool enabled>
-  typename EnableIf<!enabled>::type
-  select_emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {}
-
-  void emit_stub(MacroAssembler& masm, C2SafepointPollStub* entry) const {
-    select_emit_stub<VM_Version::supports_stack_watermark_barrier()>(masm, entry);
-  }
-
-  int stub_size_lazy() const;
-
-public:
-  Label& add_safepoint(uintptr_t safepoint_offset);
-  int estimate_stub_size() const;
-  void emit(CodeBuffer& cb);
-};
-
-// We move non-hot code of the nmethod entry barrier to an out-of-line stub
-class C2EntryBarrierStub: public ResourceObj {
-  Label _slow_path;
-  Label _continuation;
-  Label _guard; // Used on AArch64 and RISCV
-
-public:
-  C2EntryBarrierStub() :
-    _slow_path(),
-    _continuation(),
-    _guard() {}
-
-  Label& slow_path() { return _slow_path; }
-  Label& continuation() { return _continuation; }
-  Label& guard() { return _guard; }
-
-};
-
-class C2EntryBarrierStubTable {
-  C2EntryBarrierStub* _stub;
-
-public:
-  C2EntryBarrierStubTable() : _stub(NULL) {}
-  C2EntryBarrierStub* add_entry_barrier();
-  int estimate_stub_size() const;
-  void emit(CodeBuffer& cb);
-};
-
 class PhaseOutput : public Phase {
 private:
   // Instruction bits passed off to the VM
@@ -150,8 +82,7 @@ private:
   int                    _first_block_size;      // Size of unvalidated entry point code / OSR poison code
   ExceptionHandlerTable  _handler_table;         // Table of native-code exception handlers
   ImplicitExceptionTable _inc_table;             // Table of implicit null checks in native code
-  C2SafepointPollStubTable _safepoint_poll_table;// Table for safepoint polls
-  C2EntryBarrierStubTable _entry_barrier_table;  // Table for entry barrier stubs
+  C2CodeStubList          _stub_list;            // List of code stubs
   OopMapSet*             _oop_map_set;           // Table of oop maps (one for each safepoint location)
   BufferBlob*            _scratch_buffer_blob;   // For temporary code buffers.
   relocInfo*             _scratch_locs_memory;   // For temporary code buffers.
@@ -199,11 +130,8 @@ public:
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
 
-  // Safepoint poll table
-  C2SafepointPollStubTable* safepoint_poll_table() { return &_safepoint_poll_table; }
-
-  // Entry barrier table
-  C2EntryBarrierStubTable* entry_barrier_table() { return &_entry_barrier_table; }
+  // Code stubs list
+  void add_stub(C2CodeStub* stub) { _stub_list.add_stub(stub); }
 
   // Code emission iterator
   Block* block()   { return _block; }

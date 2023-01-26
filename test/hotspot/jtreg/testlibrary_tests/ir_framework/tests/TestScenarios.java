@@ -83,8 +83,6 @@ public class TestScenarios {
             Asserts.assertTrue(s1.getTestVMOutput().contains("Caused by: ir_framework.tests.MyScenarioException"));
             Asserts.assertTrue(s2.getTestVMOutput().contains("Caused by: ir_framework.tests.MyScenarioException"));
             Asserts.assertTrue(s3.getTestVMOutput().contains("Caused by: ir_framework.tests.MyScenarioException"));
-        } catch (Exception e) {
-            Asserts.fail("Should not catch other exceptions");
         }
     }
 

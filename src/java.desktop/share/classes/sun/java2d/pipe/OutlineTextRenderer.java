@@ -59,7 +59,7 @@ import java.awt.font.TextLayout;
 
 public class OutlineTextRenderer implements TextPipe {
 
-    // Text with a height greater than the threshhold will be
+    // Text with a height greater than the threshold will be
     // drawn via this pipe.
     public static final int THRESHHOLD = 100;
 

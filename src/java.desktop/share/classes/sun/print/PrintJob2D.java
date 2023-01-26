@@ -824,7 +824,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             /* In the PrintJob API, the origin is at the upper-
              * left of the imageable area when using the new "printable"
              * origin attribute, otherwise its the physical origin (for
-             * backwards compatibility. We emulate this by createing
+             * backwards compatibility. We emulate this by creating
              * a PageFormat which matches and then performing the
              * translate to the origin. This is a no-op if physical
              * origin is specified.
@@ -976,9 +976,9 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
         /* This method will be called by the PrinterJob on a thread other
          * that the application's thread. We hold on to the graphics
-         * until we can rendevous with the application's thread and
+         * until we can rendezvous with the application's thread and
          * hand over the graphics. The application then does all the
-         * drawing. When the application is done drawing we rendevous
+         * drawing. When the application is done drawing we rendezvous
          * again with the PrinterJob thread and release the Graphics
          * so that it knows we are done.
          */

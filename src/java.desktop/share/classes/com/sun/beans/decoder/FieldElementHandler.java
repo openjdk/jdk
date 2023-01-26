@@ -151,7 +151,7 @@ final class FieldElementHandler extends AccessorElementHandler {
      * @param bean  the context bean that contains field
      * @param name  the name of the field
      * @return the value of the field
-     * @throws IllegalAccessException if the field is not accesible
+     * @throws IllegalAccessException if the field is not accessible
      * @throws NoSuchFieldException   if the field is not found
      */
     static Object getFieldValue(Object bean, String name) throws IllegalAccessException, NoSuchFieldException {
@@ -165,7 +165,7 @@ final class FieldElementHandler extends AccessorElementHandler {
      * @param bean   the context bean that contains field
      * @param name   the name of the field
      * @param value  the new value for the field
-     * @throws IllegalAccessException if the field is not accesible
+     * @throws IllegalAccessException if the field is not accessible
      * @throws NoSuchFieldException   if the field is not found
      */
     private static void setFieldValue(Object bean, String name, Object value) throws IllegalAccessException, NoSuchFieldException {

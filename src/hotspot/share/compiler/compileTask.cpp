@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,22 +36,22 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
 
-CompileTask*  CompileTask::_task_free_list = NULL;
+CompileTask*  CompileTask::_task_free_list = nullptr;
 
 /**
  * Allocate a CompileTask, from the free list if possible.
  */
 CompileTask* CompileTask::allocate() {
   MutexLocker locker(CompileTaskAlloc_lock);
-  CompileTask* task = NULL;
+  CompileTask* task = nullptr;
 
-  if (_task_free_list != NULL) {
+  if (_task_free_list != nullptr) {
     task = _task_free_list;
     _task_free_list = task->next();
-    task->set_next(NULL);
+    task->set_next(nullptr);
   } else {
     task = new CompileTask();
-    task->set_next(NULL);
+    task->set_next(nullptr);
     task->set_is_free(true);
   }
   assert(task->is_free(), "Task must be free.");
@@ -66,18 +66,18 @@ void CompileTask::free(CompileTask* task) {
   MutexLocker locker(CompileTaskAlloc_lock);
   if (!task->is_free()) {
     assert(!task->lock()->is_locked(), "Should not be locked when freed");
-    if ((task->_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
-        (task->_hot_method_holder != NULL && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
+    if ((task->_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_method_holder)) ||
+        (task->_hot_method_holder != nullptr && JNIHandles::is_weak_global_handle(task->_hot_method_holder))) {
       JNIHandles::destroy_weak_global(task->_method_holder);
       JNIHandles::destroy_weak_global(task->_hot_method_holder);
     } else {
       JNIHandles::destroy_global(task->_method_holder);
       JNIHandles::destroy_global(task->_hot_method_holder);
     }
-    if (task->_failure_reason_on_C_heap && task->_failure_reason != NULL) {
+    if (task->_failure_reason_on_C_heap && task->_failure_reason != nullptr) {
       os::free((void*) task->_failure_reason);
     }
-    task->_failure_reason = NULL;
+    task->_failure_reason = nullptr;
     task->_failure_reason_on_C_heap = false;
 
     task->set_is_free(true);
@@ -103,24 +103,25 @@ void CompileTask::initialize(int compile_id,
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
-  JVMCI_ONLY(_blocking_jvmci_compile_state = NULL;)
+  JVMCI_ONLY(_blocking_jvmci_compile_state = nullptr;)
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
   _is_complete = false;
   _is_success = false;
 
-  _hot_method = NULL;
-  _hot_method_holder = NULL;
+  _hot_method = nullptr;
+  _hot_method_holder = nullptr;
   _hot_count = hot_count;
   _time_queued = os::elapsed_counter();
   _time_started = 0;
   _compile_reason = compile_reason;
   _nm_content_size = 0;
-  _directive = NULL;
+  AbstractCompiler* comp = compiler();
+  _directive = DirectivesStack::getMatchingDirective(method, comp);
   _nm_insts_size = 0;
   _nm_total_size = 0;
-  _failure_reason = NULL;
+  _failure_reason = nullptr;
   _failure_reason_on_C_heap = false;
 
   if (LogCompilation) {
@@ -135,7 +136,7 @@ void CompileTask::initialize(int compile_id,
     }
   }
 
-  _next = NULL;
+  _next = nullptr;
 }
 
 /**
@@ -149,7 +150,7 @@ AbstractCompiler* CompileTask::compiler() {
 CompileTask* CompileTask::select_for_compilation() {
   if (is_unloaded()) {
     // Guard against concurrent class unloading
-    return NULL;
+    return nullptr;
   }
   Thread* thread = Thread::current();
   assert(_method->method_holder()->is_loader_alive(), "should be alive");
@@ -157,7 +158,7 @@ CompileTask* CompileTask::select_for_compilation() {
   JNIHandles::destroy_weak_global(_method_holder);
   JNIHandles::destroy_weak_global(_hot_method_holder);
   _method_holder = JNIHandles::make_global(method_holder);
-  if (_hot_method != NULL) {
+  if (_hot_method != nullptr) {
     _hot_method_holder = JNIHandles::make_global(Handle(thread, _hot_method->method_holder()->klass_holder()));
   }
   return this;
@@ -169,13 +170,13 @@ void CompileTask::mark_on_stack() {
   }
   // Mark these methods as something redefine classes cannot remove.
   _method->set_on_stack(true);
-  if (_hot_method != NULL) {
+  if (_hot_method != nullptr) {
     _hot_method->set_on_stack(true);
   }
 }
 
 bool CompileTask::is_unloaded() const {
-  return _method_holder != NULL && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_global_weak_cleared(_method_holder);
+  return _method_holder != nullptr && JNIHandles::is_weak_global_handle(_method_holder) && JNIHandles::is_weak_global_cleared(_method_holder);
 }
 
 // RedefineClasses support
@@ -184,7 +185,7 @@ void CompileTask::metadata_do(MetadataClosure* f) {
     return;
   }
   f->do_metadata(method());
-  if (hot_method() != NULL && hot_method() != method()) {
+  if (hot_method() != nullptr && hot_method() != method()) {
     f->do_metadata(hot_method());
   }
 }
@@ -243,7 +244,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   bool is_synchronized = false;
   bool has_exception_handler = false;
   bool is_native = false;
-  if (method != NULL) {
+  if (method != nullptr) {
     is_synchronized       = method->is_synchronized();
     has_exception_handler = method->has_exception_handler();
     is_native             = method->is_native();
@@ -264,7 +265,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   }
   st->print("     ");  // more indent
 
-  if (method == NULL) {
+  if (method == nullptr) {
     st->print("(method)");
   } else {
     method->print_short_name(st);
@@ -277,7 +278,7 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
       st->print(" (%d bytes)", method->code_size());
   }
 
-  if (msg != NULL) {
+  if (msg != nullptr) {
     st->print("   %s", msg);
   }
   if (cr) {
@@ -304,7 +305,7 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_impl(st, is_unloaded() ? NULL : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
+  print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr, _time_queued, _time_started);
 }
 
 // ------------------------------------------------------------------
@@ -343,7 +344,7 @@ void CompileTask::log_task_queued() {
   assert(_compile_reason > CompileTask::Reason_None && _compile_reason < CompileTask::Reason_Count, "Valid values");
   xtty->print(" comment='%s'", reason_name(_compile_reason));
 
-  if (_hot_method != NULL && _hot_method != _method) {
+  if (_hot_method != nullptr && _hot_method != _method) {
     xtty->method(_hot_method);
   }
   if (_hot_count != 0) {
@@ -370,8 +371,8 @@ void CompileTask::log_task_done(CompileLog* log) {
   ResourceMark rm(thread);
 
   if (!_is_success) {
-    assert(_failure_reason != NULL, "missing");
-    const char* reason = _failure_reason != NULL ? _failure_reason : "unknown";
+    assert(_failure_reason != nullptr, "missing");
+    const char* reason = _failure_reason != nullptr ? _failure_reason : "unknown";
     log->begin_elem("failure reason='");
     log->text("%s", reason);
     log->print("'");
@@ -445,7 +446,7 @@ void CompileTask::print_inlining_inner(outputStream* st, ciMethod* method, int i
   else
     st->print(" (not loaded)");
 
-  if (msg != NULL) {
+  if (msg != nullptr) {
     st->print("   %s", msg);
   }
   st->cr();

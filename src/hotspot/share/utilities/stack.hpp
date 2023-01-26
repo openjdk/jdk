@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public:
                size_t max_cache_size = 4, size_t max_size = 0);
   inline ~Stack() { clear(true); }
 
-  inline bool is_empty() const { return this->_cur_seg == NULL; }
+  inline bool is_empty() const { return this->_cur_seg == nullptr; }
   inline bool is_full()  const { return this->_full_seg_size >= this->max_size(); }
 
   // Performance sensitive code should use is_empty() instead of size() == 0 and
@@ -169,7 +169,7 @@ public:
   ResourceStack(size_t segment_size): Stack<E, F>(segment_size, max_uintx)
     { }
 
-  // Set the segment pointers to NULL so the parent dtor does not free them;
+  // Set the segment pointers to nullptr so the parent dtor does not free them;
   // that must be done by the ResourceMark code.
   ~ResourceStack() { Stack<E, F>::reset(true); }
 
@@ -189,7 +189,7 @@ public:
 
   Stack<E, F>& stack() const { return _stack; }
 
-  bool is_empty() const { return _cur_seg == NULL; }
+  bool is_empty() const { return _cur_seg == nullptr; }
 
   E  next() { return *next_addr(); }
   E* next_addr();

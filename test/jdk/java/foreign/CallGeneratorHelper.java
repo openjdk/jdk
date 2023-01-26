@@ -22,17 +22,9 @@
  *
  */
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.Linker;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
@@ -387,21 +379,21 @@ public class CallGeneratorHelper extends NativeTestHelper {
     @SuppressWarnings("unchecked")
     static Object makeArg(MemoryLayout layout, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         if (layout instanceof GroupLayout) {
-            MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
+            MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
             initStruct(segment, (GroupLayout)layout, checks, check);
             return segment;
         } else if (isPointer(layout)) {
-            MemorySegment segment = MemorySegment.allocateNative(1, MemorySession.openImplicit());
+            MemorySegment segment = MemorySegment.allocateNative(1L, SegmentScope.auto());
             if (check) {
                 checks.add(o -> {
                     try {
-                        assertEquals(o, segment.address());
+                        assertEquals(o, segment);
                     } catch (Throwable ex) {
                         throw new IllegalStateException(ex);
                     }
                 });
             }
-            return segment.address();
+            return segment;
         } else if (layout instanceof ValueLayout) {
             if (isIntegral(layout)) {
                 if (check) {
@@ -426,7 +418,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     static void initStruct(MemorySegment str, GroupLayout g, List<Consumer<Object>> checks, boolean check) throws ReflectiveOperationException {
         for (MemoryLayout l : g.memberLayouts()) {
-            if (l.isPadding()) continue;
+            if (l instanceof PaddingLayout) continue;
             VarHandle accessor = g.varHandle(MemoryLayout.PathElement.groupElement(l.name().get()));
             List<Consumer<Object>> fieldsCheck = new ArrayList<>();
             Object value = makeArg(l, fieldsCheck, check);
@@ -447,19 +439,17 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
-    static Class<?> carrier(MemoryLayout layout, boolean param) {
+    static Class<?> carrier(MemoryLayout layout) {
         if (layout instanceof GroupLayout) {
             return MemorySegment.class;
-        } if (isPointer(layout)) {
-            return param ? Addressable.class : MemoryAddress.class;
-        } else if (layout instanceof ValueLayout valueLayout) {
+        } if (layout instanceof ValueLayout valueLayout) {
             return valueLayout.carrier();
         } else {
             throw new IllegalStateException("Unexpected layout: " + layout);
         }
     }
 
-    MethodHandle downcallHandle(Linker abi, Addressable symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
+    MethodHandle downcallHandle(Linker abi, MemorySegment symbol, SegmentAllocator allocator, FunctionDescriptor descriptor) {
         MethodHandle mh = abi.downcallHandle(symbol, descriptor);
         if (descriptor.returnLayout().isPresent() && descriptor.returnLayout().get() instanceof GroupLayout) {
             mh = mh.bindTo(allocator);

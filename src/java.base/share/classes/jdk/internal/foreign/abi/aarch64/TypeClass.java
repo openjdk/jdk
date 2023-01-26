@@ -26,9 +26,8 @@
 package jdk.internal.foreign.abi.aarch64;
 
 import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 
 public enum TypeClass {
@@ -48,7 +47,7 @@ public enum TypeClass {
             return INTEGER;
         } else if (carrier == float.class || carrier == double.class) {
             return FLOAT;
-        } else if (carrier == MemoryAddress.class) {
+        } else if (carrier == MemorySegment.class) {
             return POINTER;
         } else {
             throw new IllegalStateException("Cannot get here: " + carrier.getName());
@@ -60,10 +59,8 @@ public enum TypeClass {
     }
 
     static boolean isHomogeneousFloatAggregate(MemoryLayout type) {
-        if (!(type instanceof GroupLayout))
+        if (!(type instanceof GroupLayout groupLayout))
             return false;
-
-        GroupLayout groupLayout = (GroupLayout)type;
 
         final int numElements = groupLayout.memberLayouts().size();
         if (numElements > 4 || numElements == 0)
@@ -107,10 +104,8 @@ public enum TypeClass {
             return classifyValueType((ValueLayout) type);
         } else if (type instanceof GroupLayout) {
             return classifyStructType(type);
-        } else if (type instanceof SequenceLayout) {
-            return TypeClass.INTEGER;
         } else {
-            throw new IllegalArgumentException("Unhandled type " + type);
+            throw new IllegalArgumentException("Unsupported layout: " + type);
         }
     }
 }

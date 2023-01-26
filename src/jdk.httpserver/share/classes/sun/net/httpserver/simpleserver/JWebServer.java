@@ -26,12 +26,18 @@
 package sun.net.httpserver.simpleserver;
 
 import java.io.PrintWriter;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Programmatic entry point to start the jwebserver tool.
  */
 public class JWebServer {
+
+    private static final String SYS_PROP_MAX_CONNECTIONS = "jdk.httpserver.maxConnections";
+    private static final String DEFAULT_JWEBSERVER_MAX_CONNECTIONS = "200";
 
     /**
      * This constructor should never be called.
@@ -59,6 +65,7 @@ public class JWebServer {
      */
     public static void main(String... args) {
         setMaxReqTime();
+        setMaxConnectionsIfNotSet();
 
         int ec = SimpleFileServerImpl.start(new PrintWriter(System.out, true, UTF_8), "jwebserver", args);
         if (ec != 0) {
@@ -75,5 +82,17 @@ public class JWebServer {
         if (System.getProperty(MAXREQTIME_KEY) == null) {
             System.setProperty(MAXREQTIME_KEY, MAXREQTIME_VAL);
         }
+    }
+
+    @SuppressWarnings("removal")
+    static void setMaxConnectionsIfNotSet() {
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            if (System.getProperty(SYS_PROP_MAX_CONNECTIONS) != null) {
+                // an explicit value has already been set, so we don't override it
+                return null;
+            }
+            System.setProperty(SYS_PROP_MAX_CONNECTIONS, DEFAULT_JWEBSERVER_MAX_CONNECTIONS);
+            return null;
+        });
     }
 }

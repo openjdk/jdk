@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,13 +24,13 @@
  */
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -45,8 +45,8 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/init.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
@@ -169,8 +169,37 @@ const char * os::Linux::_libpthread_version = NULL;
 size_t os::Linux::_default_large_page_size = 0;
 
 #ifdef __GLIBC__
-os::Linux::mallinfo_func_t os::Linux::_mallinfo = NULL;
-os::Linux::mallinfo2_func_t os::Linux::_mallinfo2 = NULL;
+// We want to be buildable and runnable on older and newer glibcs, so resolve both
+// mallinfo and mallinfo2 dynamically.
+struct old_mallinfo {
+  int arena;
+  int ordblks;
+  int smblks;
+  int hblks;
+  int hblkhd;
+  int usmblks;
+  int fsmblks;
+  int uordblks;
+  int fordblks;
+  int keepcost;
+};
+typedef struct old_mallinfo (*mallinfo_func_t)(void);
+static mallinfo_func_t g_mallinfo = NULL;
+
+struct new_mallinfo {
+  size_t arena;
+  size_t ordblks;
+  size_t smblks;
+  size_t hblks;
+  size_t hblkhd;
+  size_t usmblks;
+  size_t fsmblks;
+  size_t uordblks;
+  size_t fordblks;
+  size_t keepcost;
+};
+typedef struct new_mallinfo (*mallinfo2_func_t)(void);
+static mallinfo2_func_t g_mallinfo2 = NULL;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -415,7 +444,7 @@ void os::init_system_properties_values() {
 #define SYS_EXT_DIR     "/usr/java/packages"
 #define EXTENSIONS_DIR  "/lib/ext"
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the colon and the trailing null are provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -470,17 +499,15 @@ void os::init_system_properties_values() {
     const char *v_colon = ":";
     if (v == NULL) { v = ""; v_colon = ""; }
     // That's +1 for the colon and +1 for the trailing '\0'.
-    char *ld_library_path = NEW_C_HEAP_ARRAY(char,
-                                             strlen(v) + 1 +
-                                             sizeof(SYS_EXT_DIR) + sizeof("/lib/") + sizeof(DEFAULT_LIBPATH) + 1,
-                                             mtInternal);
-    sprintf(ld_library_path, "%s%s" SYS_EXT_DIR "/lib:" DEFAULT_LIBPATH, v, v_colon);
+    size_t pathsize = strlen(v) + 1 + sizeof(SYS_EXT_DIR) + sizeof("/lib/") + sizeof(DEFAULT_LIBPATH) + 1;
+    char *ld_library_path = NEW_C_HEAP_ARRAY(char, pathsize, mtInternal);
+    os::snprintf_checked(ld_library_path, pathsize, "%s%s" SYS_EXT_DIR "/lib:" DEFAULT_LIBPATH, v, v_colon);
     Arguments::set_library_path(ld_library_path);
     FREE_C_HEAP_ARRAY(char, ld_library_path);
   }
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR ":" SYS_EXT_DIR EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -1316,8 +1343,6 @@ int os::current_process_id() {
 
 // DLL functions
 
-const char* os::dll_file_extension() { return ".so"; }
-
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
 const char* os::get_temp_directory() { return "/tmp"; }
@@ -2104,26 +2129,17 @@ void os::Linux::print_process_memory_info(outputStream* st) {
   size_t total_allocated = 0;
   size_t free_retained = 0;
   bool might_have_wrapped = false;
-  if (_mallinfo2 != NULL) {
-    struct glibc_mallinfo2 mi = _mallinfo2();
-    total_allocated = mi.uordblks + mi.hblkhd;
-    free_retained = mi.fordblks;
-  } else if (_mallinfo != NULL) {
-    // mallinfo is an old API. Member names mean next to nothing and, beyond that, are 32-bit signed.
-    // So for larger footprints the values may have wrapped around. We try to detect this here: if the
-    // process whole resident set size is smaller than 4G, malloc footprint has to be less than that
-    // and the numbers are reliable.
-    struct glibc_mallinfo mi = _mallinfo();
-    total_allocated = (size_t)(unsigned)mi.uordblks + (size_t)(unsigned)mi.hblkhd;
-    free_retained = (size_t)(unsigned)mi.fordblks;
-    // Since mallinfo members are int, glibc values may have wrapped. Warn about this.
-    might_have_wrapped = (info.vmrss * K) > UINT_MAX && (info.vmrss * K) > (total_allocated + UINT_MAX);
-  }
-  if (_mallinfo2 != NULL || _mallinfo != NULL) {
-    st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
-                 total_allocated / K, free_retained / K,
-                 might_have_wrapped ? " (may have wrapped)" : "");
-  }
+  glibc_mallinfo mi;
+  os::Linux::get_mallinfo(&mi, &might_have_wrapped);
+  total_allocated = mi.uordblks + mi.hblkhd;
+  free_retained = mi.fordblks;
+#ifdef _LP64
+  // If legacy mallinfo(), we can still print the values if we are sure they cannot have wrapped.
+  might_have_wrapped = might_have_wrapped && (info.vmsize * K) > UINT_MAX;
+#endif
+  st->print_cr("C-Heap outstanding allocations: " SIZE_FORMAT "K, retained: " SIZE_FORMAT "K%s",
+               total_allocated / K, free_retained / K,
+               might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
   print_glibc_malloc_tunables(st);
   st->cr();
@@ -2759,6 +2775,11 @@ int os::numa_get_group_id_for_address(const void* address) {
   return id;
 }
 
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
+  void** pages = const_cast<void**>(addresses);
+  return os::Linux::numa_move_pages(0, count, pages, NULL, lgrp_ids, 0) == 0;
+}
+
 int os::Linux::get_existing_num_nodes() {
   int node;
   int highest_node_number = Linux::numa_max_node();
@@ -2787,10 +2808,6 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
     }
   }
   return i;
-}
-
-bool os::get_page_info(char *start, page_info* info) {
-  return false;
 }
 
 char *os::scan_pages(char *start, char* end, page_info* page_expected,
@@ -2919,10 +2936,10 @@ bool os::Linux::libnuma_init() {
         set_numa_interleave_bitmask(_numa_get_interleave_mask());
         set_numa_membind_bitmask(_numa_get_membind());
         // Create an index -> node mapping, since nodes are not always consecutive
-        _nindex_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _nindex_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_nindex_to_node_map();
         // Create a cpu -> node mapping
-        _cpu_to_node = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<int>(0, mtInternal);
+        _cpu_to_node = new (mtInternal) GrowableArray<int>(0, mtInternal);
         rebuild_cpu_to_node_map();
         return true;
       }
@@ -4240,13 +4257,13 @@ static void check_pax(void) {
 #ifndef ZERO
   size_t size = os::vm_page_size();
 
-  void* p = ::mmap(NULL, size, PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+  void* p = ::mmap(NULL, size, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   if (p == MAP_FAILED) {
     log_debug(os)("os_linux.cpp: check_pax: mmap failed (%s)" , os::strerror(errno));
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "failed to allocate memory for PaX check.");
   }
 
-  int res = ::mprotect(p, size, PROT_WRITE|PROT_EXEC);
+  int res = ::mprotect(p, size, PROT_READ|PROT_WRITE|PROT_EXEC);
   if (res == -1) {
     log_debug(os)("os_linux.cpp: check_pax: mprotect failed (%s)" , os::strerror(errno));
     vm_exit_during_initialization(
@@ -4275,8 +4292,8 @@ void os::init(void) {
   Linux::initialize_system_info();
 
 #ifdef __GLIBC__
-  Linux::_mallinfo = CAST_TO_FN_PTR(Linux::mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
-  Linux::_mallinfo2 = CAST_TO_FN_PTR(Linux::mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
+  g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -5332,4 +5349,69 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
     st->cr();
   }
+}
+
+#ifdef __GLIBC__
+void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
+  if (g_mallinfo2) {
+    new_mallinfo mi = g_mallinfo2();
+    out->arena = mi.arena;
+    out->ordblks = mi.ordblks;
+    out->smblks = mi.smblks;
+    out->hblks = mi.hblks;
+    out->hblkhd = mi.hblkhd;
+    out->usmblks = mi.usmblks;
+    out->fsmblks = mi.fsmblks;
+    out->uordblks = mi.uordblks;
+    out->fordblks = mi.fordblks;
+    out->keepcost =  mi.keepcost;
+    *might_have_wrapped = false;
+  } else if (g_mallinfo) {
+    old_mallinfo mi = g_mallinfo();
+    // glibc reports unsigned 32-bit sizes in int form. First make unsigned, then extend.
+    out->arena = (size_t)(unsigned)mi.arena;
+    out->ordblks = (size_t)(unsigned)mi.ordblks;
+    out->smblks = (size_t)(unsigned)mi.smblks;
+    out->hblks = (size_t)(unsigned)mi.hblks;
+    out->hblkhd = (size_t)(unsigned)mi.hblkhd;
+    out->usmblks = (size_t)(unsigned)mi.usmblks;
+    out->fsmblks = (size_t)(unsigned)mi.fsmblks;
+    out->uordblks = (size_t)(unsigned)mi.uordblks;
+    out->fordblks = (size_t)(unsigned)mi.fordblks;
+    out->keepcost = (size_t)(unsigned)mi.keepcost;
+    *might_have_wrapped = NOT_LP64(false) LP64_ONLY(true);
+  } else {
+    // We should have either mallinfo or mallinfo2
+    ShouldNotReachHere();
+  }
+}
+#endif // __GLIBC__
+
+bool os::trim_native_heap(os::size_change_t* rss_change) {
+#ifdef __GLIBC__
+  os::Linux::meminfo_t info1;
+  os::Linux::meminfo_t info2;
+
+  bool have_info1 = rss_change != nullptr &&
+                    os::Linux::query_process_memory_info(&info1);
+  ::malloc_trim(0);
+  bool have_info2 = rss_change != nullptr && have_info1 &&
+                    os::Linux::query_process_memory_info(&info2);
+  ssize_t delta = (ssize_t) -1;
+  if (rss_change != nullptr) {
+    if (have_info1 && have_info2 &&
+        info1.vmrss != -1 && info2.vmrss != -1 &&
+        info1.vmswap != -1 && info2.vmswap != -1) {
+      // Note: query_process_memory_info returns values in K
+      rss_change->before = (info1.vmrss + info1.vmswap) * K;
+      rss_change->after = (info2.vmrss + info2.vmswap) * K;
+    } else {
+      rss_change->after = rss_change->before = SIZE_MAX;
+    }
+  }
+
+  return true;
+#else
+  return false; // musl
+#endif
 }

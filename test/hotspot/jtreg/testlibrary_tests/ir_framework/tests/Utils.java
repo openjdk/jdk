@@ -23,11 +23,8 @@
 
 package ir_framework.tests;
 
-import compiler.lib.ir_framework.Scenario;
 import compiler.lib.ir_framework.driver.irmatching.IRMatcher;
 import jdk.test.lib.Asserts;
-
-import java.util.Arrays;
 
 public class Utils {
     public static void shouldHaveThrownException(String output) {

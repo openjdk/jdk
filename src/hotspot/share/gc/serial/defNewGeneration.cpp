@@ -185,9 +185,9 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _tenuring_threshold = MaxTenuringThreshold;
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
-  _gc_timer = new (ResourceObj::C_HEAP, mtGC) STWGCTimer();
+  _gc_timer = new STWGCTimer();
 
-  _gc_tracer = new (ResourceObj::C_HEAP, mtGC) DefNewTracer();
+  _gc_tracer = new DefNewTracer();
 }
 
 void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
@@ -769,13 +769,6 @@ void DefNewGeneration::save_marks() {
   eden()->set_saved_mark();
   to()->set_saved_mark();
   from()->set_saved_mark();
-}
-
-
-void DefNewGeneration::reset_saved_marks() {
-  eden()->reset_saved_mark();
-  to()->reset_saved_mark();
-  from()->reset_saved_mark();
 }
 
 

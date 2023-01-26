@@ -42,7 +42,7 @@ class Dict;
 typedef int32_t (*CmpKey)(const void* key1, const void* key2);
 typedef int     (*Hash)(const void* key);
 
-class Dict : public ResourceObj { // Dictionary structure
+class Dict : public AnyObj { // Dictionary structure
  private:
   class Arena* _arena;          // Where to draw storage from
   class bucket* _bin;           // Hash table is array of buckets

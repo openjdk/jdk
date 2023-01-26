@@ -223,7 +223,9 @@ class VM_Version : public Abstract_VM_Version {
                avx512dq : 1,
                         : 1,
                     adx : 1,
-                        : 3,
+                        : 1,
+             avx512ifma : 1,
+                        : 1,
              clflushopt : 1,
                    clwb : 1,
                         : 1,
@@ -246,7 +248,7 @@ class VM_Version : public Abstract_VM_Version {
                      ospke : 1,
                            : 1,
               avx512_vbmi2 : 1,
-                           : 1,
+                    cet_ss : 1,
                       gfni : 1,
                       vaes : 1,
          avx512_vpclmulqdq : 1,
@@ -271,7 +273,9 @@ class VM_Version : public Abstract_VM_Version {
         fast_short_rep_mov : 1,
                            : 9,
                  serialize : 1,
-                           : 17;
+                           : 5,
+                   cet_ibt : 1,
+                           : 11;
     } bits;
   };
 
@@ -309,6 +313,11 @@ protected:
   static address   _cpuinfo_segv_addr; // address of instruction which causes SEGV
   static address   _cpuinfo_cont_addr; // address of instruction after the one which causes SEGV
 
+  /*
+   * Update following files when declaring new flags:
+   * test/lib-test/jdk/test/whitebox/CPUInfoTest.java
+   * src/jdk.internal.vm.ci/share/classes/jdk.vm.ci.amd64/src/jdk/vm/ci/amd64/AMD64.java
+   */
   enum Feature_Flag : uint64_t {
 #define CPU_FEATURE_FLAGS(decl) \
     decl(CX8,               "cx8",               0)  /*  next bits are from cpuid 1 (EDX) */ \
@@ -376,7 +385,12 @@ protected:
     decl(FSRM,              "fsrm",              50) /* Fast Short REP MOV */ \
     decl(GFNI,              "gfni",              51) /* Vector GFNI instructions */ \
     decl(AVX512_BITALG,     "avx512_bitalg",     52) /* Vector sub-word popcount and bit gather instructions */\
-    decl(F16C,              "f16c",              53) /* Half-precision and single precision FP conversion instructions*/
+    decl(F16C,              "f16c",              53) /* Half-precision and single precision FP conversion instructions*/ \
+    decl(PKU,               "pku",               54) /* Protection keys for user-mode pages */ \
+    decl(OSPKE,             "ospke",             55) /* OS enables protection keys */ \
+    decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
+    decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
+    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -656,6 +670,7 @@ public:
   static bool supports_adx()          { return (_features & CPU_ADX) != 0; }
   static bool supports_evex()         { return (_features & CPU_AVX512F) != 0; }
   static bool supports_avx512dq()     { return (_features & CPU_AVX512DQ) != 0; }
+  static bool supports_avx512ifma()   { return (_features & CPU_AVX512_IFMA) != 0; }
   static bool supports_avx512pf()     { return (_features & CPU_AVX512PF) != 0; }
   static bool supports_avx512er()     { return (_features & CPU_AVX512ER) != 0; }
   static bool supports_avx512cd()     { return (_features & CPU_AVX512CD) != 0; }
@@ -684,6 +699,10 @@ public:
   static bool supports_hv()           { return (_features & CPU_HV) != 0; }
   static bool supports_serialize()    { return (_features & CPU_SERIALIZE) != 0; }
   static bool supports_f16c()         { return (_features & CPU_F16C) != 0; }
+  static bool supports_pku()          { return (_features & CPU_PKU) != 0; }
+  static bool supports_ospke()        { return (_features & CPU_OSPKE) != 0; }
+  static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
+  static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
 
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&

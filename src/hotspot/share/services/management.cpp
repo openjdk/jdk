@@ -23,12 +23,12 @@
  */
 
 #include "precompiled.hpp"
-#include "jmm.h"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "jmm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/oopFactory.hpp"

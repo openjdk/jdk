@@ -33,8 +33,6 @@
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
 
-#include <cmath>
-
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrRandom.inline.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
@@ -44,8 +42,9 @@
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 #include "unittest.hpp"
+
+#include <cmath>
 
 // #undef SHARE_JFR_SUPPORT_JFRADAPTIVESAMPLER_HPP
 

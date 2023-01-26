@@ -155,7 +155,8 @@ public class KeyStoreUtil {
             try {
                 URL url;
                 try {
-                    url = new URL(arg);
+                    @SuppressWarnings("deprecation")
+                    var _unused = url = new URL(arg);
                 } catch (java.net.MalformedURLException mue) {
                     File f = new File(arg);
                     if (f.exists()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,9 +85,9 @@ public abstract class Server extends NTLM {
      * {@code nonce} is null.
      */
     public byte[] type2(byte[] type1, byte[] nonce) throws NTLMException {
-        if (nonce == null) {
+        if (nonce == null || nonce.length != 8) {
             throw new NTLMException(NTLMException.PROTOCOL,
-                    "nonce cannot be null");
+                    "nonce must be 8-byte long");
         }
         debug("NTLM Server: Type 1 received\n");
         if (type1 != null) debug(type1);

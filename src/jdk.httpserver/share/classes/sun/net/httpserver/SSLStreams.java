@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ class SSLStreams {
 
     SSLContext sslctx;
     SocketChannel chan;
-    TimeSource time;
     ServerImpl server;
     SSLEngine engine;
     EngineWrapper wrapper;
@@ -56,7 +55,6 @@ class SSLStreams {
 
     SSLStreams (ServerImpl server, SSLContext sslctx, SocketChannel chan) throws IOException {
         this.server = server;
-        this.time= (TimeSource)server;
         this.sslctx= sslctx;
         this.chan= chan;
         InetSocketAddress addr =

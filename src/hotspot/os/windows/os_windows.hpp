@@ -32,9 +32,10 @@
 class outputStream;
 class Thread;
 
+typedef void (*signal_handler_t)(int);
+
 class os::win32 {
   friend class os;
-  friend unsigned __stdcall thread_native_entry(Thread*);
 
  protected:
   static int    _processor_type;
@@ -68,6 +69,10 @@ class os::win32 {
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
  private:
+  // The handler passed to _beginthreadex().
+  // Called with the associated Thread* as the argument.
+  static unsigned __stdcall thread_native_entry(void*);
+
   enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
   // Wrapper around _endthreadex(), exit() and _exit()
   static int exit_process_or_thread(Ept what, int exit_code);
@@ -120,6 +125,10 @@ public:
     _thread_ptr_offset = offset;
   }
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
+
+  // signal support
+  static void* install_signal_handler(int sig, signal_handler_t handler);
+  static void* user_handler();
 };
 
 #endif // OS_WINDOWS_OS_WINDOWS_HPP

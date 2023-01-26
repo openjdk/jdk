@@ -141,7 +141,7 @@ void OSContainer::print_container_helper(outputStream* st, jlong j, const char* 
   st->print("%s: ", metrics);
   if (j > 0) {
     if (j >= 1024) {
-      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / 1024);
+      st->print_cr(UINT64_FORMAT " k", uint64_t(j) / K);
     } else {
       st->print_cr(UINT64_FORMAT, uint64_t(j));
     }

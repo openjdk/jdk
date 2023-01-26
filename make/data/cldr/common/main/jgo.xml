@@ -190,7 +190,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yyyyMd">M.d.y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -349,7 +349,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am">mbaꞌmbaꞌ</dayPeriod>
-							<dayPeriod type="pm">ŋka mbɔ́t nji</dayPeriod>
+							<dayPeriod type="pm">ŋka mbɔ́t nji</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">mbaꞌmbaꞌ</dayPeriod>
@@ -447,7 +447,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="yMd">M.d.y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -567,6 +567,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤ #,##0.00</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">

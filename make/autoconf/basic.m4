@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,11 @@ AC_DEFUN_ONCE([BASIC_INIT],
 [
   # Save the original command line. This is passed to us by the wrapper configure script.
   AC_SUBST(CONFIGURE_COMMAND_LINE)
+  # We might have the original command line if the wrapper was called by some
+  # other script.
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_SHORT)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_EXEC_FULL)
+  AC_SUBST(REAL_CONFIGURE_COMMAND_LINE)
   # AUTOCONF might be set in the environment by the user. Preserve for "make reconfigure".
   AC_SUBST(AUTOCONF)
   # Save the path variable before it gets changed
@@ -97,6 +102,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 ])
 
 ###############################################################################
+# Setup what kind of build environment type we have (CI or local developer)
+AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
+[
+  if test "x$CI" = "xtrue"; then
+    DEFAULT_BUILD_ENV="ci"
+    AC_MSG_NOTICE([CI environment variable set to $CI])
+  else
+    DEFAULT_BUILD_ENV="dev"
+  fi
+
+  UTIL_ARG_WITH(NAME: build-env, TYPE: literal,
+      RESULT: BUILD_ENV,
+      VALID_VALUES: [auto dev ci], DEFAULT: auto,
+      CHECKING_MSG: [for build environment type],
+      DESC: [select build environment type (affects certain default values)],
+      IF_AUTO: [
+        RESULT=$DEFAULT_BUILD_ENV
+      ]
+  )
+  AC_SUBST(BUILD_ENV)
+])
+
+###############################################################################
 # Evaluates platform specific overrides for devkit variables.
 # $1: Name of variable
 AC_DEFUN([BASIC_EVAL_DEVKIT_VARIABLE],
@@ -138,6 +166,15 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
+    fi
+  elif test "x$TOOLCHAIN_PATH" != x; then
+    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
+    if test "x$XCODEBUILD" != x; then
+      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
+      if test $? -ne 0; then
+        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
+        XCODEBUILD=
+      fi
     fi
   else
     UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
@@ -288,6 +325,22 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
       [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_toolchain_path)]
   )
 
+  AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
+      [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  if test "x$with_xcode_path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+      UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],
+          $with_xcode_path/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$with_xcode_path/Contents/Developer/usr/bin)
+    else
+      AC_MSG_WARN([Option --with-xcode-path is only valid on Mac OS, ignoring.])
+    fi
+  fi
+
+  AC_MSG_CHECKING([for toolchain path])
+  AC_MSG_RESULT([$TOOLCHAIN_PATH])
+  AC_SUBST(TOOLCHAIN_PATH)
+
   AC_ARG_WITH([extra-path], [AS_HELP_STRING([--with-extra-path],
       [prepend these directories to the default path])],
       [UTIL_PREPEND_TO_PATH([EXTRA_PATH],$with_extra_path)]
@@ -305,10 +358,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
   AC_MSG_CHECKING([for sysroot])
   AC_MSG_RESULT([$SYSROOT])
   AC_SUBST(SYSROOT)
-
-  AC_MSG_CHECKING([for toolchain path])
-  AC_MSG_RESULT([$TOOLCHAIN_PATH])
-  AC_SUBST(TOOLCHAIN_PATH)
 
   AC_MSG_CHECKING([for extra path])
   AC_MSG_RESULT([$EXTRA_PATH])

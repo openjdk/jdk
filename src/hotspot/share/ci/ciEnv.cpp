@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "ci/ciConstant.hpp"
 #include "ci/ciEnv.hpp"
 #include "ci/ciField.hpp"
@@ -52,6 +51,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
@@ -360,14 +360,8 @@ bool ciEnv::jvmti_state_changed() const {
 // Cache DTrace flags
 void ciEnv::cache_dtrace_flags() {
   // Need lock?
-  _dtrace_extended_probes = ExtendedDTraceProbes;
-  if (_dtrace_extended_probes) {
-    _dtrace_method_probes   = true;
-    _dtrace_alloc_probes    = true;
-  } else {
-    _dtrace_method_probes   = DTraceMethodProbes;
-    _dtrace_alloc_probes    = DTraceAllocProbes;
-  }
+  _dtrace_method_probes = DTraceMethodProbes;
+  _dtrace_alloc_probes  = DTraceAllocProbes;
 }
 
 // ------------------------------------------------------------------
@@ -698,7 +692,7 @@ ciConstant ciEnv::unbox_primitive_value(ciObject* cibox, BasicType expected_bt) 
 //
 ciConstant ciEnv::get_resolved_constant(const constantPoolHandle& cpool, int obj_index) {
   assert(obj_index >= 0, "");
-  oop obj = cpool->resolved_references()->obj_at(obj_index);
+  oop obj = cpool->resolved_reference_at(obj_index);
   if (obj == NULL) {
     // Unresolved constant. It is resolved when the corresponding slot contains a non-null reference.
     // Null constant is represented as a sentinel (non-null) value.
@@ -1087,8 +1081,7 @@ void ciEnv::register_method(ciMethod* target,
 
     // Change in DTrace flags may invalidate compilation.
     if (!failing() &&
-        ( (!dtrace_extended_probes() && ExtendedDTraceProbes) ||
-          (!dtrace_method_probes() && DTraceMethodProbes) ||
+        ( (!dtrace_method_probes() && DTraceMethodProbes) ||
           (!dtrace_alloc_probes() && DTraceAllocProbes) )) {
       record_failure("DTrace flags change invalidated dependencies");
     }
@@ -1233,7 +1226,7 @@ int ciEnv::comp_level() {
 
 // ------------------------------------------------------------------
 // ciEnv::compile_id
-uint ciEnv::compile_id() {
+int ciEnv::compile_id() {
   if (task() == NULL)  return 0;
   return task()->compile_id();
 }

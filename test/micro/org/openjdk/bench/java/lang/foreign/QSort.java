@@ -22,13 +22,11 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
-import java.lang.foreign.Addressable;
 import java.lang.foreign.Linker;
 import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -38,6 +36,7 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -56,17 +55,17 @@ public class QSort extends CLayouts {
 
     static final Linker abi = Linker.nativeLinker();
     static final MethodHandle clib_qsort;
-    static final Addressable native_compar;
-    static final Addressable panama_upcall_compar;
+    static final MemorySegment native_compar;
+    static final MemorySegment panama_upcall_compar;
     static final long jni_upcall_compar;
 
     static final int[] INPUT = { 5, 3, 2, 7, 8, 12, 1, 7 };
     static final MemorySegment INPUT_SEGMENT;
 
-    static Addressable qsort_addr = abi.defaultLookup().lookup("qsort").get();
+    static MemorySegment qsort_addr = abi.defaultLookup().find("qsort").get();
 
     static {
-        INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), MemorySession.global());
+        INPUT_SEGMENT = MemorySegment.allocateNative(MemoryLayout.sequenceLayout(INPUT.length, JAVA_INT), SegmentScope.global());
         INPUT_SEGMENT.copyFrom(MemorySegment.ofArray(INPUT));
 
         System.loadLibrary("QSortJNI");
@@ -78,13 +77,13 @@ public class QSort extends CLayouts {
                     FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER)
             );
             System.loadLibrary("QSort");
-            native_compar = SymbolLookup.loaderLookup().lookup("compar").orElseThrow();
+            native_compar = SymbolLookup.loaderLookup().find("compar").orElseThrow();
             panama_upcall_compar = abi.upcallStub(
                     lookup().findStatic(QSort.class,
                             "panama_upcall_compar",
-                            MethodType.methodType(int.class, MemoryAddress.class, MemoryAddress.class)),
+                            MethodType.methodType(int.class, MemorySegment.class, MemorySegment.class)),
                     FunctionDescriptor.of(C_INT, C_POINTER, C_POINTER),
-                    MemorySession.global()
+                    SegmentScope.global()
             );
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
@@ -103,7 +102,7 @@ public class QSort extends CLayouts {
 
     @Benchmark
     public void native_qsort() throws Throwable {
-         clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), (Addressable)native_compar);
+         clib_qsort.invokeExact(INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), native_compar);
     }
 
     @Benchmark
@@ -118,15 +117,11 @@ public class QSort extends CLayouts {
 
     @Benchmark
     public void panama_upcall_qsort() throws Throwable {
-        clib_qsort.invokeExact((Addressable)INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), (Addressable)panama_upcall_compar);
+        clib_qsort.invokeExact(INPUT_SEGMENT, (long) INPUT.length, JAVA_INT.byteSize(), panama_upcall_compar);
     }
 
-    private static int getIntAbsolute(MemoryAddress addr) {
-        return addr.get(JAVA_INT, 0);
-    }
-
-    static int panama_upcall_compar(MemoryAddress e0, MemoryAddress e1) {
-        return Integer.compare(getIntAbsolute(e0), getIntAbsolute(e1));
+    static int panama_upcall_compar(MemorySegment e0, MemorySegment e1) {
+        return Integer.compare(e0.get(JAVA_INT, 0), e1.get(JAVA_INT, 0));
     }
 
     static int jni_upcall_compar(int j0, int j1) {

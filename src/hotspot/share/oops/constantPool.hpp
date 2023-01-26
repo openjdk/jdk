@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ class ConstantPool : public Metadata {
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
+  friend class ClassPrelinker;       // CDS
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -235,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_reference_at(int obj_index) const;
+  oop set_resolved_reference_at(int index, oop new_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -473,7 +477,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_reference_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
@@ -693,9 +697,9 @@ class ConstantPool : public Metadata {
 
 #if INCLUDE_CDS
   // CDS support
-  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
+  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
 #endif
@@ -887,7 +891,7 @@ class ConstantPool : public Metadata {
 
  private:
   class SymbolHash: public CHeapObj<mtSymbol> {
-    ResourceHashtable<const Symbol*, u2, 256, ResourceObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
 
    public:
     void add_if_absent(const Symbol* sym, u2 value) {

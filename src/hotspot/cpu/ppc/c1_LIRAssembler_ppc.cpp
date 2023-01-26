@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2i: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2i) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -601,7 +601,7 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_f2l: {
       bool dst_in_memory = !VM_Version::has_mtfprd();
       FloatRegister rsrc = (code == Bytecodes::_d2l) ? src->as_double_reg() : src->as_float_reg();
-      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : NULL;
+      Address       addr = dst_in_memory ? frame_map()->address_for_slot(dst->double_stack_ix()) : Address();
       Label L;
       // Result must be 0 if value is NaN; test by comparing value to itself.
       __ fcmpu(CCR0, rsrc, rsrc);
@@ -665,6 +665,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ code()->set_insts_mark();
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -692,6 +693,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // serves as dummy and the bl will be patched later.
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
@@ -2876,6 +2878,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     __ bctrl();
     assert(info != NULL, "sanity");
     add_call_info_here(info);
+    __ post_call_nop();
     return;
   }
 
@@ -2883,6 +2886,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 

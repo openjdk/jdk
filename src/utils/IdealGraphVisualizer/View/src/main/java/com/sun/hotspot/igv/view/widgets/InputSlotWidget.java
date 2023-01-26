@@ -58,15 +58,4 @@ public class InputSlotWidget extends SlotWidget {
         return getFigureWidget().getFigure().getDiagram().isCFG() ?
             calculateClientArea().height - 1 : Figure.SLOT_START;
     }
-/*
-    protected Point calculateRelativeLocation() {
-        if (getFigureWidget().getBounds() == null) {
-            return new Point(0, 0);
-        }
-
-        double x = 0;
-        List<InputSlot> slots = inputSlot.getFigure().getInputSlots();
-        assert slots.contains(inputSlot);
-        return new Point((int) x, (int) (calculateRelativeY(slots.size(), slots.indexOf(inputSlot))));
-    }*/
 }

@@ -1035,8 +1035,8 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
         }
         if (!sorted || viewToModel.length == 0 ||
                 (lastRow - firstRow) > viewToModel.length / 10) {
-            // We either weren't sorted, or to much changed, sort it all or
-            // this is the first row added and we have to update diffeent caches
+            // We either weren't sorted, or too much changed, sort it all or
+            // this is the first row added and we have to update different caches
             sort();
             return false;
         }

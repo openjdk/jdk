@@ -149,6 +149,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   bne(CCR0, slow_int);
 
   bind(done);
+
+  inc_held_monitor_count(Rmark /*tmp*/);
 }
 
 
@@ -160,7 +162,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  // Test first it it is a fast recursive unlock.
+  // Test first if it is a fast recursive unlock.
   ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
   cmpdi(CCR0, Rmark, 0);
   beq(CCR0, done);
@@ -186,6 +188,8 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
 
   // Done
   bind(done);
+
+  dec_held_monitor_count(Rmark /*tmp*/);
 }
 
 

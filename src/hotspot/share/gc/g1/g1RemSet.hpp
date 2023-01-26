@@ -70,7 +70,6 @@ private:
   G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
-  G1RemSetSamplingTask*  _sampling_task;
 
   void print_merge_heap_roots_stats();
 
@@ -86,12 +85,6 @@ public:
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
-
-  // Initialize and schedule young remembered set sampling task.
-  void initialize_sampling_task(G1ServiceThread* thread);
-
-  // Accumulated vtime used by the sampling task.
-  double sampling_task_vtime();
 
   // Scan all cards in the non-collection set regions that potentially contain
   // references into the current whole collection set.

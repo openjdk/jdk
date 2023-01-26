@@ -33,6 +33,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import javax.lang.model.element.Element;
@@ -50,6 +51,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -260,19 +262,18 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
                 if (property != null && member instanceof ExecutableElement ee) {
                     configuration.cmtUtils.updatePropertyMethodComment(ee, property);
                 }
-                List<? extends DocTree> firstSentenceTags = utils.getFirstSentenceTrees(member);
-                if (utils.isMethod(member) && firstSentenceTags.isEmpty()) {
-                    //Inherit comments from overridden or implemented method if
-                    //necessary.
-                    DocFinder.Output inheritedDoc =
-                            DocFinder.search(configuration,
-                                    new DocFinder.Input(utils, member));
-                    if (inheritedDoc.holder != null
-                            && !utils.getFirstSentenceTrees(inheritedDoc.holder).isEmpty()) {
-                        firstSentenceTags = utils.getFirstSentenceTrees(inheritedDoc.holder);
-                    }
+                if (utils.isMethod(member)) {
+                    var docFinder = utils.docFinder();
+                    Optional<List<? extends DocTree>> r = docFinder.search((ExecutableElement) member, (m -> {
+                        var firstSentenceTrees = utils.getFirstSentenceTrees(m);
+                        Optional<List<? extends DocTree>> optional = firstSentenceTrees.isEmpty() ? Optional.empty() : Optional.of(firstSentenceTrees);
+                        return Result.fromOptional(optional);
+                    })).toOptional();
+                    // The fact that we use `member` for possibly unrelated tags is suspicious
+                    writer.addMemberSummary(typeElement, member, r.orElse(List.of()));
+                } else {
+                    writer.addMemberSummary(typeElement, member, utils.getFirstSentenceTrees(member));
                 }
-                writer.addMemberSummary(typeElement, member, firstSentenceTags);
             }
             summaryTreeList.add(writer.getSummaryTable(typeElement));
         }

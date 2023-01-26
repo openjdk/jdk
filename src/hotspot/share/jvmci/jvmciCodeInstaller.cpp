@@ -37,7 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -45,13 +45,13 @@
 // Allocate them with new so they are never destroyed (otherwise, a
 // forced exit could destroy these objects while they are still in
 // use).
-ConstantOopWriteValue* CodeInstaller::_oop_null_scope_value = new (ResourceObj::C_HEAP, mtJVMCI) ConstantOopWriteValue(NULL);
-ConstantIntValue*      CodeInstaller::_int_m1_scope_value = new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(-1);
-ConstantIntValue*      CodeInstaller::_int_0_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue((jint)0);
-ConstantIntValue*      CodeInstaller::_int_1_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(1);
-ConstantIntValue*      CodeInstaller::_int_2_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(2);
-LocationValue*         CodeInstaller::_illegal_value = new (ResourceObj::C_HEAP, mtJVMCI) LocationValue(Location());
-MarkerValue*           CodeInstaller::_virtual_byte_array_marker = new (ResourceObj::C_HEAP, mtJVMCI) MarkerValue();
+ConstantOopWriteValue* CodeInstaller::_oop_null_scope_value = new (mtJVMCI) ConstantOopWriteValue(NULL);
+ConstantIntValue*      CodeInstaller::_int_m1_scope_value = new (mtJVMCI) ConstantIntValue(-1);
+ConstantIntValue*      CodeInstaller::_int_0_scope_value =  new (mtJVMCI) ConstantIntValue((jint)0);
+ConstantIntValue*      CodeInstaller::_int_1_scope_value =  new (mtJVMCI) ConstantIntValue(1);
+ConstantIntValue*      CodeInstaller::_int_2_scope_value =  new (mtJVMCI) ConstantIntValue(2);
+LocationValue*         CodeInstaller::_illegal_value = new (mtJVMCI) LocationValue(Location());
+MarkerValue*           CodeInstaller::_virtual_byte_array_marker = new (mtJVMCI) MarkerValue();
 
 static bool is_set(u1 flags, u1 bit) {
   return flags & bit;
@@ -687,7 +687,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   _instructions = buffer.insts();
   _constants = buffer.consts();
 
-  initialize_fields(stream, code_flags, method, JVMCI_CHECK_OK);
+  initialize_fields(stream, code_flags, method, buffer, JVMCI_CHECK_OK);
   JVMCI::CodeInstallResult result = initialize_buffer(compiled_code, buffer, stream, code_flags, JVMCI_CHECK_OK);
 
   u4 available = stream->available();
@@ -770,7 +770,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   return result;
 }
 
-void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, JVMCI_TRAPS) {
+void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS) {
   if (!method.is_null()) {
     _parameter_count = method->size_of_parameters();
     JVMCI_event_2("installing code for %s", method->name_and_sig_as_C_string());
@@ -797,6 +797,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   // Pre-calculate the constants section size.  This is required for PC-relative addressing.
   u4 data_section_size = stream->read_u4("dataSectionSize");
   u1 data_section_alignment = stream->read_u1("dataSectionAlignment");
+  buffer.set_const_section_alignment(data_section_alignment);
   if ((_constants->alignment() % data_section_alignment) != 0) {
     JVMCI_ERROR("invalid data section alignment: %d [constants alignment: %d]%s",
         data_section_alignment, _constants->alignment(), stream->context());
@@ -851,8 +852,8 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_c
   assert((CodeBuffer::SECT_INSTS == CodeBuffer::SECT_STUBS - 1) &&
          (CodeBuffer::SECT_CONSTS == CodeBuffer::SECT_INSTS - 1), "sections order: consts, insts, stubs");
   // buffer content: [constants + code_align] + [code + stubs_align] + [stubs]
-  int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
-                   align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
+  int total_size = align_up(_constants_size, buffer.insts()->alignment()) +
+                   align_up(_code_size, buffer.stubs()->alignment()) +
                    stubs_size;
 
   if (total_size > JVMCINMethodSizeLimit) {

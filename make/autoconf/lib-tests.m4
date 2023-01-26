@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 # Setup libraries and functionalities needed to test the JDK.
 ################################################################################
 
-# Minimum supported version
-JTREG_MINIMUM_VERSION=7
+# Minimum supported versions
+JTREG_MINIMUM_VERSION=7.1.1
+GTEST_MINIMUM_VERSION=1.13.0
 
 ###############################################################################
 #
@@ -54,9 +55,18 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_GTEST],
         AC_MSG_RESULT([no])
         AC_MSG_ERROR([Can't find 'googlemock/include/gmock/gmock.h' under ${with_gtest} given with the --with-gtest option.])
       else
-        GTEST_FRAMEWORK_SRC=${with_gtest}
+        GTEST_FRAMEWORK_SRC=$with_gtest
         AC_MSG_RESULT([$GTEST_FRAMEWORK_SRC])
         UTIL_FIXUP_PATH([GTEST_FRAMEWORK_SRC])
+
+        # Verify that the version is the required one.
+        # This is a simplified version of TOOLCHAIN_CHECK_COMPILER_VERSION
+        gtest_version="`$GREP GOOGLETEST_VERSION $GTEST_FRAMEWORK_SRC/CMakeLists.txt | $SED -E -e 's/set\(GOOGLETEST_VERSION (.*)\)/\1/'`"
+        comparable_actual_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$gtest_version"`
+        comparable_minimum_version=`$AWK -F. '{ printf("%05d%05d%05d%05d\n", [$]1, [$]2, [$]3, [$]4) }' <<< "$GTEST_MINIMUM_VERSION"`
+        if test $comparable_actual_version -lt $comparable_minimum_version ; then
+          AC_MSG_ERROR([gtest version is too old, at least version $GTEST_MINIMUM_VERSION is required])
+        fi
       fi
     fi
   fi
@@ -269,10 +279,16 @@ AC_DEFUN_ONCE([LIB_TESTS_SETUP_JIB],
 #
 AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
 [
-  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: auto,
+  if test "x$BUILD_ENV" = "xci"; then
+    BUILD_FAILURE_HANDLER_DEFAULT=auto
+  else
+    BUILD_FAILURE_HANDLER_DEFAULT=false
+  fi
+
+  UTIL_ARG_ENABLE(NAME: jtreg-failure-handler, DEFAULT: $BUILD_FAILURE_HANDLER_DEFAULT,
       RESULT: BUILD_FAILURE_HANDLER,
       DESC: [enable building of the jtreg failure handler],
-      DEFAULT_DESC: [enabled if jtreg is present],
+      DEFAULT_DESC: [enabled if jtreg is present and build env is CI],
       CHECKING_MSG: [if the jtreg failure handler should be built],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if the jtreg failure handler is available])

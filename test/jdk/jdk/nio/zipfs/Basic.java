@@ -52,7 +52,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
 public class Basic {
     public static void main(String[] args) throws Exception {
-        // Test: zip should should be returned in provider list
+        // Test: zip should be returned in provider list
         boolean found = false;
         for (FileSystemProvider provider: FileSystemProvider.installedProviders()) {
             if (provider.getScheme().equalsIgnoreCase("jar")) {

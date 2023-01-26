@@ -734,7 +734,6 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
 }
 
@@ -2277,11 +2276,11 @@ void PrintBFS::print_node_idx(const Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
-    sprintf(buf,"_");           // null
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
   } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
   } else {
-    sprintf(buf, "o%d", n->_idx); // old node
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
   tty->print("%6s", buf);
 }
@@ -2289,7 +2288,7 @@ void PrintBFS::print_node_idx(const Node* n) {
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
-  sprintf(buf, "B%d", b->_pre_order);
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
   tty->print("%7s", buf);
 }
 
@@ -2392,17 +2391,6 @@ void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
 }
 
-// log10 rounded down
-uint log10(const uint i) {
-  uint v = 10;
-  uint e = 0;
-  while(v <= i) {
-    v *= 10;
-    e++;
-  }
-  return e;
-}
-
 // -----------------------------dump_idx---------------------------------------
 void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
@@ -2412,9 +2400,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = log10(C->unique()) + 2;
+    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
+    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;
@@ -2554,10 +2542,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
-    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
-      st->print("  Interface:");
-    } else if (toop) {
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");
@@ -2680,51 +2665,6 @@ void Node::dump_comp(const char* suffix, outputStream *st) const {
 }
 
 // VERIFICATION CODE
-// For each input edge to a node (ie - for each Use-Def edge), verify that
-// there is a corresponding Def-Use edge.
-//------------------------------verify_edges-----------------------------------
-void Node::verify_edges(Unique_Node_List &visited) {
-  uint i, j, idx;
-  int  cnt;
-  Node *n;
-
-  // Recursive termination test
-  if (visited.member(this))  return;
-  visited.push(this);
-
-  // Walk over all input edges, checking for correspondence
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if (n != NULL && !n->is_top()) {
-      // Count instances of (Node *)this
-      cnt = 0;
-      for (idx = 0; idx < n->_outcnt; idx++ ) {
-        if (n->_out[idx] == (Node *)this)  cnt++;
-      }
-      assert( cnt > 0,"Failed to find Def-Use edge." );
-      // Check for duplicate edges
-      // walk the input array downcounting the input edges to n
-      for( j = 0; j < len(); j++ ) {
-        if( in(j) == n ) cnt--;
-      }
-      assert( cnt == 0,"Mismatched edge count.");
-    } else if (n == NULL) {
-      assert(i >= req() || i == 0 || is_Region() || is_Phi() || is_ArrayCopy() || (is_Unlock() && i == req()-1)
-              || (is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
-              "only region, phi, arraycopy, unlock or membar nodes have null data edges");
-    } else {
-      assert(n->is_top(), "sanity");
-      // Nothing to check.
-    }
-  }
-  // Recursive walk over all input edges
-  for( i = 0; i < len(); i++ ) {
-    n = in(i);
-    if( n != NULL )
-      in(i)->verify_edges(visited);
-  }
-}
-
 // Verify all nodes if verify_depth is negative
 void Node::verify(int verify_depth, VectorSet& visited, Node_List& worklist) {
   assert(verify_depth != 0, "depth should not be 0");

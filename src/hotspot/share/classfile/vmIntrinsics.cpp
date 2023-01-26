@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_constants.h"
-#include "jvm_io.h"
 #include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "jvm_constants.h"
+#include "jvm_io.h"
 #include "utilities/xmlstream.hpp"
 
 // These are flag-matching functions:
@@ -77,7 +77,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_isInstance:
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
-  case vmIntrinsics::_extentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -127,8 +127,8 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_currentCarrierThread:
   case vmIntrinsics::_currentThread:
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -221,6 +221,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsU:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
     case vmIntrinsics::_putCharStringU:
     case vmIntrinsics::_compressStringC:
@@ -265,8 +266,8 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!InlineThreadNatives) return true;
     break;
   case vmIntrinsics::_setCurrentThread:
-  case vmIntrinsics::_extentLocalCache:
-  case vmIntrinsics::_setExtentLocalCache:
+  case vmIntrinsics::_scopedValueCache:
+  case vmIntrinsics::_setScopedValueCache:
   case vmIntrinsics::_floatToRawIntBits:
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
@@ -475,9 +476,15 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_chacha20Block:
+    if (!UseChaCha20Intrinsics) return true;
+    break;
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
     if (!UseBASE64Intrinsics) return true;
+    break;
+  case vmIntrinsics::_poly1305_processBlocks:
+    if (!UsePoly1305Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
@@ -520,6 +527,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_equalsL:
   case vmIntrinsics::_equalsU:
     if (!SpecialStringEquals) return true;
+    break;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!UseVectorizedHashCodeIntrinsic) return true;
     break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:

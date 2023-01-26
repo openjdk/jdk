@@ -128,7 +128,7 @@ class ArraycopyNode;
 class ConnectionGraph;
 
 // ConnectionGraph nodes
-class PointsToNode : public ResourceObj {
+class PointsToNode : public ArenaObj {
   GrowableArray<PointsToNode*> _edges; // List of nodes this node points to
   GrowableArray<PointsToNode*> _uses;  // List of nodes which point to this node
 
@@ -317,7 +317,7 @@ public:
 };
 
 
-class ConnectionGraph: public ResourceObj {
+class ConnectionGraph: public ArenaObj {
   friend class PointsToNode; // to access _compile
   friend class FieldNode;
 private:
@@ -462,6 +462,9 @@ private:
 
   // Adjust scalar_replaceable state after Connection Graph is built.
   void adjust_scalar_replaceable_state(JavaObjectNode* jobj);
+
+  // Propagate NSR (Not scalar replaceable) state.
+  void find_scalar_replaceable_allocs(GrowableArray<JavaObjectNode*>& jobj_worklist);
 
   // Optimize ideal graph.
   void optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklist,

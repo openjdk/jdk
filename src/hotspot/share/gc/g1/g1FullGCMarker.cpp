@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1FullGCMarker.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -40,11 +41,12 @@ G1FullGCMarker::G1FullGCMarker(G1FullCollector* collector,
     _oop_stack(),
     _objarray_stack(),
     _preserved_stack(preserved_stack),
-    _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
+    _mark_closure(worker_id, this, ClassLoaderData::_claim_stw_fullgc_mark, G1CollectedHeap::heap()->ref_processor_stw()),
     _verify_closure(VerifyOption::G1UseFullMarking),
     _stack_closure(this),
-    _cld_closure(mark_closure(), ClassLoaderData::_claim_strong),
+    _cld_closure(mark_closure(), ClassLoaderData::_claim_stw_fullgc_mark),
     _mark_stats_cache(mark_stats, G1RegionMarkStatsCache::RegionMarkStatsCacheSize) {
+  ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_mark);
 }
 
 G1FullGCMarker::~G1FullGCMarker() {

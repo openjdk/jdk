@@ -240,13 +240,19 @@ public class TestIRMatching {
                 System.out.flush();
                 String output = baos.toString();
                 baos.reset();
-                Pattern pattern = Pattern.compile(">>> Compilation.*both\\d.*\\RPrintIdeal:(?:(?!PrintOpto|>>> Compilation)[\\S\\s])+PrintOptoAssembly");
+                Pattern pattern = Pattern.compile(compilationPrefix() + ".*both\\d.*\\R> Phase \""
+                                                  + CompilePhase.PRINT_IDEAL.getName()
+                                                  + "\":(?:(?!PrintOpto|" + compilationPrefix()
+                                                  + ")[\\S\\s])+PrintOptoAssembly");
                 Matcher matcher = pattern.matcher(output);
                 long bothCount = matcher.results().count();
                 if (bothCount != 7L) {
-                    failures.append("- Could not find all both() methods, expected 7 but found ").append(bothCount).append(System.lineSeparator());
+                    failures.append("- Could not find all both() methods, expected 7 but found ").append(bothCount)
+                            .append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(">>> Compilation.*ideal\\d.*\\RPrintIdeal:(?:(?!>>> Compilation)[\\S\\s])+");
+                pattern = Pattern.compile(compilationPrefix() + ".*ideal\\d.*\\R> Phase \""
+                                          + CompilePhase.PRINT_IDEAL.getName()
+                                          + "\":(?:(?!" + compilationPrefix() + ")[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 int count = 0;
                 while (matcher.find()) {
@@ -257,9 +263,11 @@ public class TestIRMatching {
                     count++;
                 }
                 if (count != 7) {
-                    failures.append("- Could not find all ideal() methods, expected 7 but found ").append(count).append(System.lineSeparator());
+                    failures.append("- Could not find all ideal() methods, expected 7 but found ").append(count)
+                            .append(System.lineSeparator());
                 }
-                pattern = Pattern.compile(">>> Compilation.*opto\\d.*\\RPrintOptoAssembly:(?:(?!>>> Compilation)[\\S\\s])+");
+                pattern = Pattern.compile(compilationPrefix() + ".*opto\\d.*\\R> Phase \"PrintOptoAssembly\":(?:(?!"
+                                          + compilationPrefix()  + ")[\\S\\s])+");
                 matcher = pattern.matcher(output);
                 count = 0;
                 while (matcher.find()) {
@@ -324,7 +332,6 @@ public class TestIRMatching {
             System.err.println("***** OVERVIEW *****");
             System.err.println("********************");
             for (Map.Entry<Exception, String> entry : exceptions.entrySet()) {
-                Exception e = entry.getKey();
                 System.err.print((i++) + ") ");
                 entry.getKey().printStackTrace(System.err);
                 System.err.println("********************");
@@ -383,7 +390,11 @@ public class TestIRMatching {
         }
     }
 
-    public static void findIrIds(String output, String method, int... numbers) {
+    private static String compilationPrefix() {
+        return "\\d\\) Compilation";
+    }
+
+    private static void findIrIds(String output, String method, int... numbers) {
         StringBuilder builder = new StringBuilder();
         builder.append(method);
         for (int i = 0; i < numbers.length; i+=2) {
@@ -960,8 +971,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void loop() {
         for (int i = 0; i < limit; i++) {
             dontInline();
@@ -970,8 +981,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void countedLoop() {
         for (int i = 0; i < 2000; i++) {
             dontInline();
@@ -980,8 +991,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void loopAndCountedLoop() {
         for (int i = 0; i < 2000; i++) {
             for (int j = 0; j < limit; j++) {
@@ -992,8 +1003,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP) // fails
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP) // fails
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN) // fails
     public void countedLoopMain() {
         // Cannot unroll completely -> create pre/main/post
         for (int i = 0; i < 100; i++) {
@@ -1003,8 +1014,8 @@ class Loops {
 
     @Test
     @IR(failOn = IRNode.LOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(failOn = IRNode.COUNTEDLOOP_MAIN)
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP_MAIN)
     public void countedLoopUnrolled() {
         // Completely unrolled -> no pre/main/post
         for (int i = 0; i < 8; i++) {
@@ -1244,9 +1255,12 @@ class CheckCastArray {
 }
 
 class CompilationOutputOfFails {
+    private Object obj;
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP + "[\\s\\S]*" + "call")
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = {"call"},
+        phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1254,7 +1268,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP + "|" + "call")
+    @IR(failOn = "CountedLoop|call",
+        phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both2() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1262,8 +1277,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(failOn = "call")
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(failOn = "call", phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both3() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1271,7 +1286,9 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP + "[\\s\\S]*" + "call", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "0"})
+    @IR(counts = {"call", "0"},
+        phase = {CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1279,7 +1296,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP + "|" + "call", "1"})
+    @IR(counts = {"CountedLoop|call", "10"},
+        phase = {CompilePhase.PRINT_IDEAL, CompilePhase.PRINT_OPTO_ASSEMBLY})
     public void both5() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1287,8 +1305,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "0"})
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "0"})
+    @IR(counts = {"call", "0"}, phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both6() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1296,8 +1314,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
-    @IR(counts = {"call", "0"})
+    @IR(failOn = IRNode.COUNTED_LOOP)
+    @IR(counts = {"call", "0"}, phase = CompilePhase.PRINT_OPTO_ASSEMBLY)
     public void both7() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1305,7 +1323,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     public void ideal1() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1313,7 +1331,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(failOn = IRNode.ALLOC) // not fail
     public void ideal2() {
         for (int i = 0; i < 100; i++) {
@@ -1322,7 +1340,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = IRNode.COUNTEDLOOP)
+    @IR(failOn = IRNode.COUNTED_LOOP)
     @IR(counts = {IRNode.ALLOC, "0"}) // not fail
     public void ideal3() {
         for (int i = 0; i < 100; i++) {
@@ -1331,7 +1349,7 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal4() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1340,7 +1358,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(failOn = IRNode.ALLOC) // not fail
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal5() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1349,7 +1367,7 @@ class CompilationOutputOfFails {
 
     @Test
     @IR(counts = {IRNode.ALLOC, "0"}) // not fail
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal6() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1357,8 +1375,8 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(counts = {IRNode.COUNTEDLOOP, "5"})
-    @IR(counts = {IRNode.COUNTEDLOOP, "2"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "5"})
+    @IR(counts = {IRNode.COUNTED_LOOP, "2"})
     public void ideal7() {
         for (int i = 0; i < 100; i++) {
             dontInline();
@@ -1366,64 +1384,52 @@ class CompilationOutputOfFails {
     }
 
     @Test
-    @IR(failOn = "call")
+    @IR(failOn = IRNode.ALLOC)
     public void opto1() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = "call")
-    @IR(failOn = IRNode.STORE) // not fail
+    @IR(failOn = IRNode.ALLOC)
+    @IR(failOn = IRNode.STORE_F) // not fail
     public void opto2() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = "call")
-    @IR(counts = {IRNode.COUNTEDLOOP, "1"}) // not fail
+    @IR(failOn = IRNode.ALLOC)
+    @IR(counts = {IRNode.COUNTED_LOOP, "1"}) // not fail
     public void opto3() {
         for (int i = 0; i < 100; i++) {
-            dontInline();
+            obj = new Object();
         }
     }
 
     @Test
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto4() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(failOn = IRNode.STORE) // not fail
-    @IR(counts = {"call", "0"})
+    @IR(failOn = IRNode.STORE_F) // not fail
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto5() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(counts = {IRNode.STORE, "0"}) // not fail
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.STORE_F, "0"}) // not fail
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto6() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @Test
-    @IR(counts = {"call", "10"})
-    @IR(counts = {"call", "0"})
+    @IR(counts = {IRNode.ALLOC, "10"})
+    @IR(counts = {IRNode.ALLOC, "0"})
     public void opto7() {
-        for (int i = 0; i < 100; i++) {
-            dontInline();
-        }
+        obj = new Object();
     }
 
     @DontInline
@@ -1614,10 +1620,10 @@ abstract class RegexConstraint extends Constraint {
     private static Pattern initIRPattern(String category, int ruleIdx) {
         if (category.equals("failOn")) {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- failOn: Graph contains forbidden nodes.*\\R" +
-                                   ".*Regex \\d+:.*\\R.*Matched forbidden node.*");
+                                   ".*Constraint \\d+:.*\\R.*Matched forbidden node.*");
         } else {
             return Pattern.compile("rule " + ruleIdx + ":.*\\R.*- counts: Graph contains wrong number of nodes:\\R" +
-                                   ".*Regex \\d+:.*\\R.*Expected.*");
+                                   ".*Constraint \\d+:.*\\R.*Expected.*");
         }
     }
 
@@ -1637,14 +1643,14 @@ abstract class RegexConstraint extends Constraint {
         Pattern pattern;
         Matcher matcher;
         for (int regexIndex : this.regexIndexes) {
-            pattern = Pattern.compile("Regex " + regexIndex + ":.*");
+            pattern = Pattern.compile("Constraint " + regexIndex + ":.*");
             matcher = pattern.matcher(categoryString);
             if (isGood) {
-                Asserts.assertFalse(matcher.find(), errorPrefix() + " failed with Regex " + regexIndex);
+                Asserts.assertFalse(matcher.find(), errorPrefix() + " failed with Constraint " + regexIndex);
                 matched = true;
             } else {
-                Asserts.assertTrue(matcher.find(), errorPrefix() + " should have failed at Regex " + regexIndex);
-                String[] splitRegex = categoryString.split("Regex ");
+                Asserts.assertTrue(matcher.find(), errorPrefix() + " should have failed at Constraint " + regexIndex);
+                String[] splitRegex = categoryString.split("Constraint ");
                 if (matches != null) {
                     for (int i = 1; i < splitRegex.length; i++) {
                         String regexString = splitRegex[i];
@@ -1652,7 +1658,7 @@ abstract class RegexConstraint extends Constraint {
                             // Do matching on actual match and not on regex string
                             String actualMatch = regexString.split("\\R", 2)[1];
                             Asserts.assertTrue(matches.stream().allMatch(actualMatch::contains),
-                                               errorPrefix() + " could not find all matches at Regex " + regexIndex);
+                                               errorPrefix() + " could not find all matches at Constraint " + regexIndex);
                             matched = true;
                         }
                     }

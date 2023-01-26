@@ -98,9 +98,9 @@ public abstract class X11InputMethod extends X11InputMethodBase {
            lastXICFocussedComponentPeer = getPeer(lastXICFocussedComponent);
         }
 
-        /* If the last XIC focussed component has a different peer as the
-           current focussed component, change the XIC focus to the newly
-           focussed component.
+        /* If the last XIC focused component has a different peer as the
+           current focused component, change the XIC focus to the newly
+           focused component.
         */
         if (isLastTemporary || lastXICFocussedComponentPeer != awtFocussedComponentPeer ||
             isLastXICActive != haveActiveClient()) {
@@ -125,7 +125,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
         /* Usually as the client component, let's call it component A,
            loses the focus, this method is called. Then when another client
            component, let's call it component B,  gets the focus, activate is first called on
-           the previous focused compoent which is A, then endComposition is called on A,
+           the previous focused component which is A, then endComposition is called on A,
            deactivate is called on A again. And finally activate is called on the newly
            focused component B. Here is the call sequence.
 
@@ -346,7 +346,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
            return.
            setCompositionEnabledNative may throw UnsupportedOperationException.
            Don't try to catch it since the method may be called by clients.
-           Use package private mthod 'resetCompositionState' if you want the
+           Use package private method 'resetCompositionState' if you want the
            exception to be caught.
         */
         if (setCompositionEnabledNative(enable)) {

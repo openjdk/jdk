@@ -324,7 +324,7 @@ SplashRedrawWindow(Splash * splash) {
         //         the 'wait cursor'. So that is undoable.
 
         //TODO: only the first image in an animated gif preserves transparency.
-        //      Loos like the splash->screenData contains inappropriate data
+        //      Looks like the splash->screenData contains inappropriate data
         //      for all but the first frame.
 
         [image release];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -811,7 +811,7 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
   address start = __ pc();
-
+  // B
   __ emit_data64(0x0706050403020100, relocInfo::none);
   __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
   __ emit_data64(0x1716151413121110, relocInfo::none);
@@ -820,7 +820,51 @@ address StubGenerator::generate_iota_indices(const char *stub_name) {
   __ emit_data64(0x2F2E2D2C2B2A2928, relocInfo::none);
   __ emit_data64(0x3736353433323130, relocInfo::none);
   __ emit_data64(0x3F3E3D3C3B3A3938, relocInfo::none);
-
+  // W
+  __ emit_data64(0x0003000200010000, relocInfo::none);
+  __ emit_data64(0x0007000600050004, relocInfo::none);
+  __ emit_data64(0x000B000A00090008, relocInfo::none);
+  __ emit_data64(0x000F000E000D000C, relocInfo::none);
+  __ emit_data64(0x0013001200110010, relocInfo::none);
+  __ emit_data64(0x0017001600150014, relocInfo::none);
+  __ emit_data64(0x001B001A00190018, relocInfo::none);
+  __ emit_data64(0x001F001E001D001C, relocInfo::none);
+  // D
+  __ emit_data64(0x0000000100000000, relocInfo::none);
+  __ emit_data64(0x0000000300000002, relocInfo::none);
+  __ emit_data64(0x0000000500000004, relocInfo::none);
+  __ emit_data64(0x0000000700000006, relocInfo::none);
+  __ emit_data64(0x0000000900000008, relocInfo::none);
+  __ emit_data64(0x0000000B0000000A, relocInfo::none);
+  __ emit_data64(0x0000000D0000000C, relocInfo::none);
+  __ emit_data64(0x0000000F0000000E, relocInfo::none);
+  // Q
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0x0000000000000001, relocInfo::none);
+  __ emit_data64(0x0000000000000002, relocInfo::none);
+  __ emit_data64(0x0000000000000003, relocInfo::none);
+  __ emit_data64(0x0000000000000004, relocInfo::none);
+  __ emit_data64(0x0000000000000005, relocInfo::none);
+  __ emit_data64(0x0000000000000006, relocInfo::none);
+  __ emit_data64(0x0000000000000007, relocInfo::none);
+  // D - FP
+  __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+  __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+  __ emit_data64(0x40A0000040800000, relocInfo::none); // 4.0f, 5.0f
+  __ emit_data64(0x40E0000040C00000, relocInfo::none); // 6.0f, 7.0f
+  __ emit_data64(0x4110000041000000, relocInfo::none); // 8.0f, 9.0f
+  __ emit_data64(0x4130000041200000, relocInfo::none); // 10.0f, 11.0f
+  __ emit_data64(0x4150000041400000, relocInfo::none); // 12.0f, 13.0f
+  __ emit_data64(0x4170000041600000, relocInfo::none); // 14.0f, 15.0f
+  // Q - FP
+  __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+  __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
+  __ emit_data64(0x4000000000000000, relocInfo::none); // 2.0d
+  __ emit_data64(0x4008000000000000, relocInfo::none); // 3.0d
+  __ emit_data64(0x4010000000000000, relocInfo::none); // 4.0d
+  __ emit_data64(0x4014000000000000, relocInfo::none); // 5.0d
+  __ emit_data64(0x4018000000000000, relocInfo::none); // 6.0d
+  __ emit_data64(0x401c000000000000, relocInfo::none); // 7.0d
   return start;
 }
 
@@ -2475,7 +2519,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Decode all bytes within our merged input
     __ evmovdquq(tmp, lookup_lo, Assembler::AVX_512bit);
     __ evpermt2b(tmp, input_initial_valid_b64, lookup_hi, Assembler::AVX_512bit);
-    __ vporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
+    __ evporq(mask, tmp, input_initial_valid_b64, Assembler::AVX_512bit);
 
     // Check for error.  Compare (decoded | initial) to all invalid.
     // If any bytes have their high-order bit set, then we have an error.
@@ -2716,26 +2760,38 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
 
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
+  Label L_continue;
+
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
+    Label L_doSmall;
+
+    __ cmpl(len, 384);
+    __ jcc(Assembler::lessEqual, L_doSmall);
+
     __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
     __ kernel_crc32_avx512(crc, buf, len, j, l, k);
-  } else {
-#ifdef _WIN64
-    __ push(y);
-    __ push(z);
-#endif
-    __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                            a, j, k,
-                            l, y, z,
-                            c_farg0, c_farg1, c_farg2,
-                            is_pclmulqdq_supported);
-#ifdef _WIN64
-    __ pop(z);
-    __ pop(y);
-#endif
+
+    __ jmp(L_continue);
+
+    __ bind(L_doSmall);
   }
+#ifdef _WIN64
+  __ push(y);
+  __ push(z);
+#endif
+  __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                          a, j, k,
+                          l, y, z,
+                          c_farg0, c_farg1, c_farg2,
+                          is_pclmulqdq_supported);
+#ifdef _WIN64
+  __ pop(z);
+  __ pop(y);
+#endif
+
+  __ bind(L_continue);
   __ movl(rax, crc);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -3291,19 +3347,19 @@ void StubGenerator::generate_libm_stubs() {
       StubRoutines::_dcos = generate_libmCos(); // from stubGenerator_x86_64_cos.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
-      StubRoutines::_dtan = generate_libmTan();
+      StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dexp)) {
-      StubRoutines::_dexp = generate_libmExp();
+      StubRoutines::_dexp = generate_libmExp(); // from stubGenerator_x86_64_exp.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dpow)) {
-      StubRoutines::_dpow = generate_libmPow();
+      StubRoutines::_dpow = generate_libmPow(); // from stubGenerator_x86_64_pow.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-      StubRoutines::_dlog = generate_libmLog();
+      StubRoutines::_dlog = generate_libmLog(); // from stubGenerator_x86_64_log.cpp
     }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog10)) {
-      StubRoutines::_dlog10 = generate_libmLog10();
+      StubRoutines::_dlog10 = generate_libmLog10(); // from stubGenerator_x86_64_log.cpp
     }
   }
 }
@@ -3460,7 +3516,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  CodeBuffer code("jfr_write_checkpoint", 512, 64);
+  CodeBuffer code("jfr_write_checkpoint", 1024, 64);
   MacroAssembler* _masm = new MacroAssembler(&code);
   address start = __ pc();
 
@@ -3475,14 +3531,7 @@ RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
   __ reset_last_Java_frame(true);
 
   // rax is jobject handle result, unpack and process it through a barrier.
-  Label L_null_jobject;
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, L_null_jobject);
-
-  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->load_at(_masm, ACCESS_READ | IN_NATIVE, T_OBJECT, rax, Address(rax, 0), c_rarg0, r15_thread);
-
-  __ bind(L_null_jobject);
+  __ resolve_global_jobject(rax, r15_thread, c_rarg0);
 
   __ leave();
   __ ret(0);
@@ -3665,6 +3714,10 @@ void StubGenerator::generate_initial() {
     StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
   }
 
+  if (UsePoly1305Intrinsics) {
+    StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+  }
+
   if (UseCRC32CIntrinsics) {
     bool supports_clmul = VM_Version::supports_clmul();
     StubRoutines::x86::generate_CRC32C_table(supports_clmul);
@@ -3675,6 +3728,8 @@ void StubGenerator::generate_initial() {
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
   }
+
+  generate_libm_stubs();
 }
 
 void StubGenerator::generate_phase1() {
@@ -3758,6 +3813,8 @@ void StubGenerator::generate_all() {
   generate_aes_stubs();
 
   generate_ghash_stubs();
+
+  generate_chacha_stubs();
 
   if (UseMD5Intrinsics) {
     StubRoutines::_md5_implCompress = generate_md5_implCompress(false, "md5_implCompress");

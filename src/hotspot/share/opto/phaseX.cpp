@@ -1248,6 +1248,11 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     assert(!_table.find_index(n->_idx), "found duplicate entry in table");
   }
 
+  // Allow Bool -> Cmp idealisation in late inlining intrinsics that return a bool
+  if (n->is_Cmp()) {
+    add_users_to_worklist(n);
+  }
+
   // Apply the Ideal call in a loop until it no longer applies
   Node* k = n;
   DEBUG_ONLY(dead_loop_check(k);)
@@ -1678,6 +1683,13 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
+    if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+      assert(use->outcnt() <= 1, "OpaqueZeroTripGuard can't be shared");
+      if (use->outcnt() == 1) {
+        Node* cmp = use->unique_out();
+        _worklist.push(cmp);
+      }
+    }
   }
 }
 
@@ -1748,7 +1760,7 @@ PhaseCCP::~PhaseCCP() {
 
 #ifdef ASSERT
 static bool ccp_type_widens(const Type* t, const Type* t0) {
-  assert(t->meet(t0) == t, "Not monotonic");
+  assert(t->meet(t0) == t->remove_speculative(), "Not monotonic");
   switch (t->base() == t0->base() ? t->base() : Type::Top) {
   case Type::Int:
     assert(t0->isa_int()->_widen <= t->isa_int()->_widen, "widen increases");
@@ -1777,6 +1789,7 @@ void PhaseCCP::analyze() {
   // Push root onto worklist
   Unique_Node_List worklist;
   worklist.push(C->root());
+  DEBUG_ONLY(Unique_Node_List worklist_verify;)
 
   assert(_root_and_safepoints.size() == 0, "must be empty (unused)");
   _root_and_safepoints.push(C->root());
@@ -1785,6 +1798,7 @@ void PhaseCCP::analyze() {
   // This loop is the meat of CCP.
   while (worklist.size() != 0) {
     Node* n = fetch_next_node(worklist);
+    DEBUG_ONLY(worklist_verify.push(n);)
     if (n->is_SafePoint()) {
       // Make sure safepoints are processed by PhaseCCP::transform even if they are
       // not reachable from the bottom. Otherwise, infinite loops would be removed.
@@ -1798,7 +1812,53 @@ void PhaseCCP::analyze() {
       push_child_nodes_to_worklist(worklist, n);
     }
   }
+  DEBUG_ONLY(verify_analyze(worklist_verify);)
 }
+
+#ifdef ASSERT
+// For every node n on verify list, check if type(n) == n->Value()
+// We have a list of exceptions, see comments in code.
+void PhaseCCP::verify_analyze(Unique_Node_List& worklist_verify) {
+  bool failure = false;
+  while (worklist_verify.size()) {
+    Node* n = worklist_verify.pop();
+    const Type* told = type(n);
+    const Type* tnew = n->Value(this);
+    if (told != tnew) {
+      // Check special cases that are ok
+      if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
+        const TypeInteger* t0 = told->is_integer(tnew->basic_type());
+        const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
+        if (t0->lo_as_long() == t1->lo_as_long() &&
+            t0->hi_as_long() == t1->hi_as_long()) {
+          continue; // ignore integer widen
+        }
+      }
+      if (n->is_Load()) {
+        // MemNode::can_see_stored_value looks up through many memory nodes,
+        // which means we would need to notify modifications from far up in
+        // the inputs all the way down to the LoadNode. We don't do that.
+        continue;
+      }
+      tty->cr();
+      tty->print_cr("Missed optimization (PhaseCCP):");
+      n->dump_bfs(1, 0, "");
+      tty->print_cr("Current type:");
+      told->dump_on(tty);
+      tty->cr();
+      tty->print_cr("Optimized type:");
+      tnew->dump_on(tty);
+      tty->cr();
+      failure = true;
+    }
+  }
+  // If we get this assert, check why the reported nodes were not processed again in CCP.
+  // We should either make sure that these nodes are properly added back to the CCP worklist
+  // in PhaseCCP::push_child_nodes_to_worklist() to update their type or add an exception
+  // in the verification code above if that is not possible for some reason (like Load nodes).
+  assert(!failure, "Missed optimization opportunity in PhaseCCP");
+}
+#endif
 
 // Fetch next node from worklist to be examined in this iteration.
 Node* PhaseCCP::fetch_next_node(Unique_Node_List& worklist) {
@@ -1847,6 +1907,8 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_counted_loop_phi(worklist, parent, use);
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
+  push_cast_ii(worklist, parent, use);
+  push_opaque_zero_trip_guard(worklist, use);
 }
 
 
@@ -1950,6 +2012,28 @@ void PhaseCCP::push_and(Unique_Node_List& worklist, const Node* parent, const No
   }
 }
 
+// CastII::Value() optimizes CmpI/If patterns if the right input of the CmpI has a constant type. If the CastII input is
+// the same node as the left input into the CmpI node, the type of the CastII node can be improved accordingly. Add the
+// CastII node back to the worklist to re-apply Value() to either not miss this optimization or to undo it because it
+// cannot be applied anymore. We could have optimized the type of the CastII before but now the type of the right input
+// of the CmpI (i.e. 'parent') is no longer constant. The type of the CastII must be widened in this case.
+void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const {
+  if (use->Opcode() == Op_CmpI && use->in(2) == parent) {
+    Node* other_cmp_input = use->in(1);
+    for (DUIterator_Fast imax, i = other_cmp_input->fast_outs(imax); i < imax; i++) {
+      Node* cast_ii = other_cmp_input->fast_out(i);
+      if (cast_ii->is_CastII()) {
+        push_if_not_bottom_type(worklist, cast_ii);
+      }
+    }
+  }
+}
+
+void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const {
+  if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+    push_if_not_bottom_type(worklist, use->unique_out());
+  }
+}
 
 //------------------------------do_transform-----------------------------------
 // Top level driver for the recursive transformer
@@ -2099,7 +2183,6 @@ Node *PhaseCCP::transform_once( Node *n ) {
   case Op_CountedLoop:
   case Op_Conv2B:
   case Op_Opaque1:
-  case Op_Opaque2:
     _worklist.push(n);
     break;
   default:

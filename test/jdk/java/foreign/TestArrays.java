@@ -28,11 +28,11 @@
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestArrays
  */
 
-import java.lang.foreign.MemoryAddress;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SequenceLayout;
 
 import java.lang.invoke.VarHandle;
@@ -108,7 +108,7 @@ public class TestArrays {
 
     @Test(dataProvider = "arrays")
     public void testArrays(Consumer<MemorySegment> init, Consumer<MemorySegment> checker, MemoryLayout layout) {
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openImplicit());
+        MemorySegment segment = MemorySegment.allocateNative(layout, SegmentScope.auto());
         init.accept(segment);
         assertFalse(segment.isReadOnly());
         checker.accept(segment);
@@ -119,7 +119,7 @@ public class TestArrays {
     public void testTooBigForArray(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         MemoryLayout seq = MemoryLayout.sequenceLayout((Integer.MAX_VALUE * layout.byteSize()) + 1, layout);
         //do not really allocate here, as it's way too much memory
-        MemorySegment segment = MemorySegment.ofAddress(MemoryAddress.NULL, seq.byteSize(), MemorySession.global());
+        MemorySegment segment = MemorySegment.ofAddress(0, seq.byteSize(), SegmentScope.global());
         arrayFactory.apply(segment);
     }
 
@@ -127,8 +127,8 @@ public class TestArrays {
             expectedExceptions = IllegalStateException.class)
     public void testBadSize(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
         if (layout.byteSize() == 1) throw new IllegalStateException(); //make it fail
-        try (MemorySession session = MemorySession.openConfined()) {
-            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), session);
+        try (Arena arena = Arena.openConfined()) {
+            MemorySegment segment = MemorySegment.allocateNative(layout.byteSize() + 1, layout.byteSize(), arena.scope());
             arrayFactory.apply(segment);
         }
     }
@@ -136,8 +136,9 @@ public class TestArrays {
     @Test(dataProvider = "elemLayouts",
             expectedExceptions = IllegalStateException.class)
     public void testArrayFromClosedSegment(MemoryLayout layout, Function<MemorySegment, Object> arrayFactory) {
-        MemorySegment segment = MemorySegment.allocateNative(layout, MemorySession.openConfined());
-        segment.session().close();
+        Arena arena = Arena.openConfined();
+        MemorySegment segment = MemorySegment.allocateNative(layout, arena.scope());
+        arena.close();
         arrayFactory.apply(segment);
     }
 

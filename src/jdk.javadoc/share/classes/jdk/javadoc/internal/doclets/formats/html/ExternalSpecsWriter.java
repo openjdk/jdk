@@ -35,8 +35,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.function.Predicate;
+
 import javax.lang.model.element.Element;
 import javax.tools.Diagnostic;
 
@@ -183,12 +185,43 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
     protected void addExternalSpecs(Content content) {
         final int USE_DETAILS_THRESHHOLD = 20;
         Map<String, List<IndexItem>> searchIndexMap = groupExternalSpecs();
-        Table table = new Table(HtmlStyle.summaryTable)
+
+        var hostNamesSet = new TreeSet<String>();
+        boolean noHost = false;
+        for (var searchIndexItems : searchIndexMap.values()) {
+            try {
+                URI uri = getSpecURI(searchIndexItems.get(0));
+                String host = uri.getHost();
+                if (host != null) {
+                    hostNamesSet.add(host);
+                } else {
+                    noHost = true;
+                }
+            } catch (URISyntaxException e) {
+                // ignore
+            }
+        }
+        var hostNamesList = new ArrayList<>(hostNamesSet);
+
+        var table = new Table<URI>(HtmlStyle.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setId(HtmlIds.EXTERNAL_SPECS);
+        if ((hostNamesList.size() + (noHost ? 1 : 0)) > 1) {
+            for (var host : hostNamesList) {
+                table.addTab(Text.of(host), u -> host.equals(u.getHost()));
+            }
+            if (noHost) {
+                table.addTab(Text.of(resources.getText("doclet.External_Specifications.no-host")),
+                        u -> u.getHost() == null);
+            }
+        }
+        table.setDefaultTab(Text.of(resources.getText("doclet.External_Specifications.All_Specifications")));
+
         for (List<IndexItem> searchIndexItems : searchIndexMap.values()) {
-            Content specName = createSpecLink(searchIndexItems.get(0));
+            IndexItem ii = searchIndexItems.get(0);
+            Content specName = createSpecLink(ii);
             Content referencesList = HtmlTree.UL(HtmlStyle.refList, searchIndexItems,
                     item -> HtmlTree.LI(createLink(item)));
             Content references = searchIndexItems.size() < USE_DETAILS_THRESHHOLD
@@ -197,7 +230,12 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                             .add(HtmlTree.SUMMARY(contents.getContent("doclet.references",
                                     String.valueOf(searchIndexItems.size()))))
                             .add(referencesList);
-            table.addRow(specName, references);
+            try {
+                URI uri = getSpecURI(ii);
+                table.addRow(uri, specName, references);
+            } catch (URISyntaxException e) {
+                table.addRow(specName, references);
+            }
         }
         content.add(table);
     }
@@ -278,20 +316,31 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         }
     }
 
-    private Content createSpecLink(IndexItem i) {
+    /**
+     * {@return the fully-resolved URI in index item for a {@code @spec} tag}
+     *
+     * While the signature declares that it may throw {@code URISynaxException},
+     * that should not occur: items with bad URIs should not make it into the index.
+     *
+     * @param i the index item
+     * @throws URISyntaxException if there is an issue creating the URI
+     */
+    private URI getSpecURI(IndexItem i) throws URISyntaxException {
         assert i.getDocTree().getKind() == DocTree.Kind.SPEC : i;
         SpecTree specTree = (SpecTree) i.getDocTree();
 
-        Content title = Text.of(i.getLabel());
+        URI specURI = new URI(specTree.getURL().getBody());
+        return resolveExternalSpecURI(specURI);
+    }
 
-        URI specURI;
+    private Content createSpecLink(IndexItem i) {
+        Content title = Text.of(i.getLabel());
         try {
-            specURI = new URI(specTree.getURL().getBody());
+            URI uri = getSpecURI(i);
+            return HtmlTree.A(uri, title);
         } catch (URISyntaxException e) {
             // should not happen: items with bad URIs should not make it into the index
             return title;
         }
-
-        return HtmlTree.A(resolveExternalSpecURI(specURI), title);
     }
 }

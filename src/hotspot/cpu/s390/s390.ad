@@ -810,6 +810,8 @@ void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
 
 //=============================================================================
 
+#include "gc/shared/barrierSetAssembler.hpp"
+
 #if !defined(PRODUCT)
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   Compile* C = ra_->C;
@@ -837,6 +839,10 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   }
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
+
+  if (C->stub_function() == NULL) {
+    st->print("nmethod entry barrier\n\t");
+  }
 }
 #endif
 
@@ -890,6 +896,13 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     ConstantTable& constant_table = C->output()->constant_table();
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
+
+  if (C->stub_function() == NULL) {
+    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs->nmethod_entry_barrier(&_masm);
+  }
+
+  C->output()->set_frame_complete(cbuf.insts_size());
 }
 
 uint MachPrologNode::size(PhaseRegAlloc *ra_) const {

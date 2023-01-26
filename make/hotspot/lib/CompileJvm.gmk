@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,26 +83,24 @@ CFLAGS_VM_VERSION := \
 ################################################################################
 # Disabled warnings
 
-DISABLED_WARNINGS_gcc := parentheses comment unknown-pragmas address \
-    delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
-    ignored-qualifiers  missing-field-initializers implicit-fallthrough \
-    empty-body strict-overflow sequence-point maybe-uninitialized \
-    misleading-indentation cast-function-type shift-negative-value
+DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
+    empty-body ignored-qualifiers implicit-fallthrough int-in-bool-context \
+    maybe-uninitialized missing-field-initializers parentheses \
+    shift-negative-value unknown-pragmas
 
-ifeq ($(call check-jvm-feature, zero), true)
-  DISABLED_WARNINGS_gcc += return-type switch clobbered
+DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
+    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
+
+ifneq ($(DEBUG_LEVEL), release)
+  # Assert macro gives warning
+  DISABLED_WARNINGS_clang += tautological-constant-out-of-range-compare
+  # Some reasonable asserts produce warnings on GCC <= 7
+  DISABLED_WARNINGS_gcc += strict-overflow
 endif
-
-DISABLED_WARNINGS_clang := tautological-compare \
-    undefined-var-template sometimes-uninitialized unknown-pragmas \
-    delete-non-virtual-dtor missing-braces char-subscripts \
-    ignored-qualifiers missing-field-initializers mismatched-tags \
-    shift-negative-value misleading-indentation
 
 DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
-DISABLED_WARNINGS_microsoft := 4100 4127 4146 4201 4244 4291 4351 \
-    4511 4512 4514 4624
+DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127
 
 ################################################################################
 # Platform specific setup
@@ -156,7 +154,24 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     abstract_vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
+    DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
+    DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
+    DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
+    DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
+    DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_codeBuffer.cpp := tautological-undefined-compare, \
+    DISABLED_WARNINGS_clang_directivesParser.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_g1ParScanThreadState.cpp := delete-abstract-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang_g1YoungGCPostEvacuateTasks.cpp := delete-abstract-non-virtual-dtor, \
+    DISABLED_WARNINGS_clang_management.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_notificationThread.cpp := bitwise-instead-of-logical, \
+    DISABLED_WARNINGS_clang_os_posix.cpp := mismatched-tags missing-field-initializers, \
+    DISABLED_WARNINGS_clang_postaloc.cpp := tautological-undefined-compare, \
+    DISABLED_WARNINGS_clang_serviceThread.cpp := bitwise-instead-of-logical, \
+    DISABLED_WARNINGS_clang_vm_version_x86.cpp := missing-field-initializers, \
+    DISABLED_WARNINGS_clang_zTracer.cpp := undefined-var-template, \
     DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \

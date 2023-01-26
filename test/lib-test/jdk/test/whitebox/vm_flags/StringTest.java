@@ -23,7 +23,7 @@
 
 /*
  * @test StringTest
- * @bug 8028756
+ * @bug 8038756
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management/sun.management

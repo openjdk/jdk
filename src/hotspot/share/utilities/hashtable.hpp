@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ private:
 
 public:
   // Accessing
-  void clear()                        { _entry = NULL; }
+  void clear()                        { _entry = nullptr; }
 
   // The following methods use order access methods to avoid race
   // conditions in multiprocessor systems.
@@ -154,7 +154,7 @@ protected:
   // Used when moving the entry to another table or deleting entry.
   // Clean up links.
   void unlink_entry(BasicHashtableEntry<F>* entry) {
-    entry->set_next(NULL);
+    entry->set_next(nullptr);
     --_number_of_entries;
   }
 
@@ -202,8 +202,8 @@ public:
     return this->hash_to_index(compute_hash(name));
   }
 
-  TableStatistics statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
-  void print_table_statistics(outputStream* st, const char *table_name, T (*literal_load_barrier)(HashtableEntry<T, F>*) = NULL);
+  TableStatistics statistics_calculate(T (*literal_load_barrier)(HashtableEntry<T, F>*) = nullptr);
+  void print_table_statistics(outputStream* st, const char *table_name, T (*literal_load_barrier)(HashtableEntry<T, F>*) = nullptr);
 
  protected:
 

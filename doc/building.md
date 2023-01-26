@@ -311,14 +311,17 @@ Build Wiki page for details about which versions of AIX are supported.
 Large portions of the JDK consists of native code, that needs to be compiled to
 be able to run on the target platform. In theory, toolchain and operating
 system should be independent factors, but in practice there's more or less a
-one-to-one correlation between target operating system and toolchain.
+one-to-one correlation between target operating system and toolchain. There are
+ongoing efforts to loosen this strict coupling between compiler and operating
+system (see [JDK-8288293](https://bugs.openjdk.org/browse/JDK-8288293)) but it
+will likely be a very long time before this goal can be realized.
 
- Operating system   Supported toolchain
- ------------------ -------------------------
- Linux              gcc, clang
- macOS              Apple Xcode (using clang)
- AIX                IBM XL C/C++
- Windows            Microsoft Visual Studio
+| Operating system   | Supported toolchain       |
+| ------------------ | ------------------------- |
+| Linux              | gcc, clang                |
+| macOS              | Apple Xcode (using clang) |
+| AIX                | IBM XL C/C++              |
+| Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
 recommendations. As a reference, these versions of the toolchains are used, at
@@ -327,11 +330,11 @@ possible to compile the JDK with both older and newer versions, but the closer
 you stay to this list, the more likely you are to compile successfully without
 issues.
 
- Operating system   Toolchain version
- ------------------ -------------------------------------------------------
- Linux              gcc 11.2.0
- macOS              Apple Xcode 10.1 (using clang 10.0.0)
- Windows            Microsoft Visual Studio 2022 update 17.1.0
+| Operating system   | Toolchain version                          |
+| ------------------ | ------------------------------------------ |
+| Linux              | gcc 11.2.0                                 |
+| macOS              | Apple Xcode 10.1 (using clang 10.0.0)      |
+| Windows            | Microsoft Visual Studio 2022 update 17.1.0 |
 
 All compilers are expected to be able to compile to the C99 language standard,
 as some C99 features are used in the source code. Microsoft Visual Studio
@@ -359,20 +362,20 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 The oldest supported version of Xcode is 8.
 
-You will need the Xcode command lines developers tools to be able to build
-the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
+You will need the Xcode command line developer tools to be able to build
+the JDK. (Actually, *only* the command line tools are needed, not the IDE.)
 The simplest way to install these is to run:
 ```
 xcode-select --install
 ```
 
-It is advisable to keep an older version of Xcode for building the JDK when
-updating Xcode. This [blog page](
-http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html) has
-good suggestions on managing multiple Xcode versions. To use a specific version
-of Xcode, use `xcode-select -s` before running `configure`, or use
-`--with-toolchain-path` to point to the version of Xcode to use, e.g.
-`configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin`
+When updating Xcode, it is advisable to keep an older version for building the JDK.
+To use a specific version of Xcode you have multiple options:
+
+  * Use `xcode-select -s` before running `configure`, e.g. `xcode-select -s /Applications/Xcode13.1.app`. The drawback is that the setting
+    is system wide and you may have to revert it after an OpenJDK build.
+  * Use configure option `--with-xcode-path`, e.g. `configure --with-xcode-path=/Applications/Xcode13.1.app`
+    This allows using a specific Xcode version for an OpenJDK build, independently of the active Xcode version by `xcode-select`.
 
 If you have recently (inadvertently) updated your OS and/or Xcode version, and
 the JDK can no longer be built, please see the section on [Problems with the
@@ -861,13 +864,14 @@ https://ci.adoptopenjdk.net/view/Dependencies/job/dependency_pipeline/lastSucces
 Download the latest `.tar.gz` file, unpack it, and point `--with-jtreg` to the
 `jtreg` directory that you just unpacked.
 
-Building of Hotspot Gtest suite requires the source code of Google Test framework.
-The top directory, which contains both `googletest` and `googlemock`
-directories, should be specified via `--with-gtest`.
-The supported version of Google Test is 1.8.1, whose source code can be obtained:
+Building of Hotspot Gtest suite requires the source code of Google
+Test framework.  The top directory, which contains both `googletest`
+and `googlemock` directories, should be specified via `--with-gtest`.
+The minimum supported version of Google Test is 1.13.0, whose source
+code can be obtained:
 
- * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/release-1.8.1)
- * or by checking out `release-1.8.1` tag of `googletest` project: `git clone -b release-1.8.1 https://github.com/google/googletest`
+ * by downloading and unpacking the source bundle from [here](https://github.com/google/googletest/releases/tag/v1.13.0)
+ * or by checking out `v1.13.0` tag of `googletest` project: `git clone -b v1.13.0 https://github.com/google/googletest`
 
 To execute the most basic tests (tier 1), use:
 ```
@@ -1330,12 +1334,12 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using sjavac
+### Using the javac server
 
-To speed up compilation of Java code, especially during incremental compilations,
-the sjavac server is automatically enabled in the configuration step by default.
-To explicitly enable or disable sjavac, use either `--enable-javac-server`
-or `--disable-javac-server`.
+To speed up compilation of Java code, especially during incremental
+compilations, the javac server is automatically enabled in the configuration
+step by default. To explicitly enable or disable the javac server, use either
+`--enable-javac-server` or `--disable-javac-server`.
 
 ### Building the Right Target
 

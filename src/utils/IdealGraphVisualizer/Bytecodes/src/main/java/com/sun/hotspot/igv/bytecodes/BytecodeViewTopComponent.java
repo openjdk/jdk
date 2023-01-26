@@ -29,12 +29,11 @@ import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import java.awt.BorderLayout;
-import java.io.Serializable;
 import org.openide.ErrorManager;
 import org.openide.explorer.ExplorerManager;
 import org.openide.explorer.ExplorerUtils;
 import org.openide.explorer.view.BeanTreeView;
-import org.openide.util.*;
+import org.openide.util.NbBundle;
 import org.openide.windows.TopComponent;
 import org.openide.windows.WindowManager;
 
@@ -62,7 +61,7 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
 
         treeView = new BeanTreeView();
         treeView.setRootVisible(false);
-        this.add(BorderLayout.CENTER, treeView);
+        add(BorderLayout.CENTER, treeView);
         associateLookup(ExplorerUtils.createLookup(manager, getActionMap()));
     }
 
@@ -110,11 +109,6 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
     }
 
     @Override
-    public Object writeReplace() {
-        return new ResolvableHelper();
-    }
-
-    @Override
     protected String preferredID() {
         return PREFERRED_ID;
     }
@@ -154,15 +148,6 @@ final class BytecodeViewTopComponent extends TopComponent implements ExplorerMan
         }
         rootNode = new MethodNode(null, null, "");
         manager.setRootContext(rootNode);
-    }
-
-    static final class ResolvableHelper implements Serializable {
-
-        private static final long serialVersionUID = 1L;
-
-        public Object readResolve() {
-            return BytecodeViewTopComponent.getDefault();
-        }
     }
 
     /** This method is called from within the constructor to

@@ -24,8 +24,8 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "classfile/vmSymbols.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -1006,7 +1006,7 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
   // check to see if the file is secure
   if (!is_file_secure(fd, filename)) {
     ::close(fd);
-    return -1;
+    return OS_ERR;
   }
 
   return fd;
@@ -1173,8 +1173,6 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   int mmap_prot = PROT_READ;
   int file_flags = O_RDONLY | O_NOFOLLOW;
 
-  ResourceMark rm;
-
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
   const char* luser = get_user_name(vmid, &nspid, CHECK);
@@ -1196,29 +1194,21 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
               "Process not found");
   }
 
+  // open the shared memory file for the give vmid
   char* filename = get_sharedmem_filename(dirname, vmid, nspid);
 
-  // copy heap memory to resource memory. the open_sharedmem_file
-  // method below need to use the filename, but could throw an
-  // exception. using a resource array prevents the leak that
-  // would otherwise occur.
-  char* rfilename = NEW_RESOURCE_ARRAY(char, strlen(filename) + 1);
-  strcpy(rfilename, filename);
+  // We don't use CHECK as we need to free the strings even if an exception occurred.
+  int fd = open_sharedmem_file(filename, file_flags, THREAD);
 
   // free the c heap resources that are no longer needed
   FREE_C_HEAP_ARRAY(char, luser);
   FREE_C_HEAP_ARRAY(char, dirname);
   FREE_C_HEAP_ARRAY(char, filename);
 
-  // open the shared memory file for the give vmid
-  int fd = open_sharedmem_file(rfilename, file_flags, THREAD);
-
-  if (fd == OS_ERR) {
-    return;
-  }
-
   if (HAS_PENDING_EXCEPTION) {
-    ::close(fd);
+    assert(fd == OS_ERR, "open_sharedmem_file always return OS_ERR on exceptions");
+  }
+  if (fd == OS_ERR) {
     return;
   }
 

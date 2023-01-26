@@ -123,6 +123,12 @@ public:
   virtual void do_nmethod(nmethod* nm) { ShouldNotReachHere(); }
 };
 
+// Interface for applying an OopClosure to a set of oops.
+class OopIterator {
+public:
+  virtual void oops_do(OopClosure* cl) = 0;
+};
+
 enum class derived_pointer : intptr_t;
 class DerivedOopClosure : public Closure {
  public:
@@ -232,13 +238,6 @@ class SpaceClosure : public StackObj {
   // Called for each space
   virtual void do_space(Space* s) = 0;
 };
-
-class CompactibleSpaceClosure : public StackObj {
- public:
-  // Called for each compactible space
-  virtual void do_space(CompactibleSpace* s) = 0;
-};
-
 
 // CodeBlobClosure is used for iterating through code blobs
 // in the code cache or on thread stacks

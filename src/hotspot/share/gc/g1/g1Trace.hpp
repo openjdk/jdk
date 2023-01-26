@@ -32,7 +32,7 @@ class G1EvacInfo;
 class G1HeapSummary;
 class G1EvacSummary;
 
-class G1NewTracer : public YoungGCTracer {
+class G1NewTracer : public YoungGCTracer, public CHeapObj<mtGC> {
   G1GCPauseType _pause;
 
 public:
@@ -86,7 +86,7 @@ private:
                                      bool prediction_active);
 };
 
-class G1OldTracer : public OldGCTracer {
+class G1OldTracer : public OldGCTracer, public CHeapObj<mtGC> {
  protected:
   void report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp);
  public:
