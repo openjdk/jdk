@@ -183,6 +183,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
+        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set", Level.TRACE),
@@ -192,8 +193,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
         new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
         new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Start New Collection Set", Level.DEBUG),
-        new LogMessageWithLevel("Resize TLABs", Level.DEBUG),
+        new LogMessageWithLevel("Prepare for Mutator", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
     };
 

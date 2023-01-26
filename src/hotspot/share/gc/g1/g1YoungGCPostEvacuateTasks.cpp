@@ -727,7 +727,7 @@ public:
   }
 
   double worker_cost() const override {
-    return (double)_list.length() / 10;
+    return (double)_list.length() / 20;
   }
 };
 

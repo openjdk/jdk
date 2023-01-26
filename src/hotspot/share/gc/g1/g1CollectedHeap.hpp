@@ -491,7 +491,7 @@ private:
   bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
-  void prepare_heap_for_mutators();
+  void prepare_for_mutator_after_full_collection();
   void abort_refinement();
   void verify_after_full_collection();
   void print_heap_after_full_collection();
@@ -771,7 +771,7 @@ public:
   // Start a concurrent cycle.
   void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
-  void prepare_for_mutator_after_young_gc();
+  void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
 

@@ -153,7 +153,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[RedirtyCards] = new WorkerDataArray<double>("RedirtyCards", "Redirty Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RedirtyCards]->create_thread_work_items("Redirtied Cards:");
 
-  _gc_par_phases[ResizeThreadLABs] = new WorkerDataArray<double>("ResizeTLAB", "Resize TLAB (ms):", max_gc_threads);
+  _gc_par_phases[ResizeThreadLABs] = new WorkerDataArray<double>("ResizeTLABs", "Resize TLABs (ms):", max_gc_threads);
 
   _gc_par_phases[FreeCollectionSet] = new WorkerDataArray<double>("FreeCSet", "Free Collection Set (ms):", max_gc_threads);
   _gc_par_phases[YoungFreeCSet] = new WorkerDataArray<double>("YoungFreeCSet", "Young Free Collection Set (ms):", max_gc_threads);

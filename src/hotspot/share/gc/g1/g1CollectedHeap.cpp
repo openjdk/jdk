@@ -1010,7 +1010,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
-void G1CollectedHeap::prepare_heap_for_mutators() {
+void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   DEBUG_ONLY(MetaspaceUtils::verify();)
@@ -1025,9 +1025,8 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   // Rebuild the code root lists for each region
   rebuild_code_roots();
 
-  // Start a new incremental collection set for the next pause
   start_new_collection_set();
-
+  allocate_dummy_regions();
   _allocator->init_mutator_alloc_regions();
 
   // Post collection state updates.
@@ -2761,16 +2760,17 @@ G1JFRTracerMark::~G1JFRTracerMark() {
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
 }
 
-void G1CollectedHeap::prepare_for_mutator_after_young_gc() {
+void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
   double start = os::elapsedTime();
 
   _survivor_evac_stats.adjust_desired_plab_size();
   _old_evac_stats.adjust_desired_plab_size();
 
+  // Start a new incremental collection set for the mutator phase.
   start_new_collection_set();
-
   allocate_dummy_regions();
   _allocator->init_mutator_alloc_regions();
+
   phase_times()->record_prepare_for_mutator_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
