@@ -25,6 +25,7 @@
 
 package java.util;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -4266,15 +4267,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(long[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
+        }
         int result = 1;
         for (long element : a) {
             int elementHash = (int)(element ^ (element >>> 32));
             result = 31 * result + elementHash;
         }
-
         return result;
     }
 
@@ -4295,14 +4295,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(int[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (int element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
+        };
     }
 
     /**
@@ -4322,14 +4322,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(short[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (short element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_SHORT);
+        };
     }
 
     /**
@@ -4349,14 +4349,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(char[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (char element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_CHAR);
+        };
     }
 
     /**
@@ -4376,14 +4376,14 @@ public class Arrays {
      * @since 1.5
      */
     public static int hashCode(byte[] a) {
-        if (a == null)
+        if (a == null) {
             return 0;
-
-        int result = 1;
-        for (byte element : a)
-            result = 31 * result + element;
-
-        return result;
+        }
+        return switch (a.length) {
+            case 0 -> 1;
+            case 1 -> 31 + (int)a[0];
+            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_BYTE);
+        };
     }
 
     /**

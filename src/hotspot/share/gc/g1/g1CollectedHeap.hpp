@@ -1272,8 +1272,6 @@ public:
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
   void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.
@@ -1312,6 +1310,9 @@ public:
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   // Printing
 private:
   void print_heap_regions() const;
@@ -1326,10 +1327,6 @@ public:
 
   // Override
   void print_tracing_info() const override;
-
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

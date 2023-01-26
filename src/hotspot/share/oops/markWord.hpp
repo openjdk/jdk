@@ -25,10 +25,11 @@
 #ifndef SHARE_OOPS_MARKWORD_HPP
 #define SHARE_OOPS_MARKWORD_HPP
 
-#include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
+
+#include <type_traits>
 
 // The markWord describes the header of an object.
 //
@@ -258,7 +259,7 @@ class markWord {
 
 // Support atomic operations.
 template<>
-struct PrimitiveConversions::Translate<markWord> : public TrueType {
+struct PrimitiveConversions::Translate<markWord> : public std::true_type {
   typedef markWord Value;
   typedef uintptr_t Decayed;
 

@@ -547,6 +547,7 @@ endef
 #   STRIPFLAGS Optionally change the flags given to the strip command
 #   PRECOMPILED_HEADER Header file to use as precompiled header
 #   PRECOMPILED_HEADER_EXCLUDE List of source files that should not use PCH
+#   BUILD_INFO_LOG_MACRO Overrides log level of the build info log message, default LogWarn
 #
 # After being called, some variables are exported from this macro, all prefixed
 # with parameter 1 followed by a '_':
@@ -931,12 +932,18 @@ define SetupNativeCompilationBody
 
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
-  $$($1_BUILD_INFO): $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
+  # TestFilesCompilation.gmk.
+  $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
+  $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
+  $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
-	  $$(call LogWarn, Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
+	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
+	      Creating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) from $$(words \
 	      $$(filter-out %.vardeps, $$?)) file(s))
         else
-	  $$(call LogWarn, $$(strip Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) \
+	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
+	      $$(strip Updating $$(subst $$(OUTPUTDIR)/,,$$($1_TARGET)) \
 	      $$(if $$(filter-out %.vardeps, $$?), \
 	        due to $$(words $$(filter-out %.vardeps, $$?)) file(s), \
 	      $$(if $$(filter %.vardeps, $$?), due to makefile changes))))

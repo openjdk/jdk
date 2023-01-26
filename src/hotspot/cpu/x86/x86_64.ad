@@ -305,10 +305,10 @@ reg_class int_rbx_reg(RBX);
 // Singleton class for RCX int register
 reg_class int_rcx_reg(RCX);
 
-// Singleton class for RCX int register
+// Singleton class for RDX int register
 reg_class int_rdx_reg(RDX);
 
-// Singleton class for RCX int register
+// Singleton class for RDI int register
 reg_class int_rdi_reg(RDI);
 
 // Singleton class for instruction pointer
@@ -12071,6 +12071,32 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
     __ arrays_equals(true, $ary1$$Register, $ary2$$Register,
                      $tmp3$$Register, $result$$Register, $tmp4$$Register,
                      $tmp1$$XMMRegister, $tmp2$$XMMRegister, true /* char */, $ktmp$$KRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct arrays_hashcode(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result, immU8 basic_type,
+                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1) (Binary result basic_type)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1,
+         USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary1,$cnt1,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                       $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                       $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                       $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                       $tmp_vec13$$XMMRegister, (BasicType)$basic_type$$constant);
   %}
   ins_pipe( pipe_slow );
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,7 +266,7 @@ public:
   static void reprofile(ScopeDesc* trap_scope, bool is_osr);
   static nmethod* event(const methodHandle& method, const methodHandle& inlinee,
                  int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, TRAPS);
-  // Select task is called by CompileBroker. We should return a task or NULL.
+  // Select task is called by CompileBroker. We should return a task or nullptr.
   static CompileTask* select_task(CompileQueue* compile_queue);
   // Tell the runtime if we think a given method is adequately profiled.
   static bool is_mature(Method* method);
