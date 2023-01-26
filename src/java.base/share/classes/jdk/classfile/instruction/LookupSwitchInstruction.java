@@ -37,7 +37,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  */
-sealed public interface LookupSwitchInstruction extends Instruction
+public sealed interface LookupSwitchInstruction extends Instruction
         permits AbstractInstruction.BoundLookupSwitchInstruction,
                 AbstractInstruction.UnboundLookupSwitchInstruction {
     /**

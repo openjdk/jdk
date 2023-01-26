@@ -31,7 +31,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_Float_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface FloatEntry
+public sealed interface FloatEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits ConcreteEntry.ConcreteFloatEntry {
 

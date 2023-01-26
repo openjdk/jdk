@@ -39,7 +39,7 @@ import jdk.classfile.impl.Util;
  * {@link Opcode.Kind#STORE}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
-sealed public interface StoreInstruction extends Instruction
+public sealed interface StoreInstruction extends Instruction
         permits AbstractInstruction.BoundStoreInstruction, AbstractInstruction.UnboundStoreInstruction {
     int slot();
     TypeKind typeKind();

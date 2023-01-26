@@ -39,7 +39,7 @@ import jdk.classfile.impl.Util;
  * {@link Opcode.Kind#LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
-sealed public interface LoadInstruction extends Instruction
+public sealed interface LoadInstruction extends Instruction
         permits AbstractInstruction.BoundLoadInstruction,
                 AbstractInstruction.UnboundLoadInstruction {
     int slot();

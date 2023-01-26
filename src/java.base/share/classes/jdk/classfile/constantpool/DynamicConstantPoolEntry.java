@@ -30,7 +30,7 @@ import jdk.classfile.BootstrapMethodEntry;
  * Models a dynamic constant pool entry, which is either {@link ConstantDynamicEntry}
  * or {@link InvokeDynamicEntry}.
  */
-sealed public interface DynamicConstantPoolEntry extends PoolEntry
+public sealed interface DynamicConstantPoolEntry extends PoolEntry
         permits ConstantDynamicEntry, InvokeDynamicEntry {
 
     /**

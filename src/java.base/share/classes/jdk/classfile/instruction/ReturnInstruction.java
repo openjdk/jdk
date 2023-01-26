@@ -39,7 +39,7 @@ import jdk.classfile.impl.Util;
  * {@link Opcode.Kind#RETURN}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
-sealed public interface ReturnInstruction extends Instruction
+public sealed interface ReturnInstruction extends Instruction
         permits AbstractInstruction.UnboundReturnInstruction {
     TypeKind typeKind();
 

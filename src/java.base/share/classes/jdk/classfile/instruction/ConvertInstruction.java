@@ -39,7 +39,7 @@ import jdk.classfile.impl.Util;
  * a {@code kind} of {@link Opcode.Kind#CONVERT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  */
-sealed public interface ConvertInstruction extends Instruction
+public sealed interface ConvertInstruction extends Instruction
         permits AbstractInstruction.UnboundConvertInstruction {
     /**
      * {@return the source type to convert from}

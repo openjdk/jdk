@@ -44,7 +44,7 @@ import jdk.classfile.impl.Util;
  * Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
-sealed public interface FieldInstruction extends Instruction
+public sealed interface FieldInstruction extends Instruction
         permits AbstractInstruction.BoundFieldInstruction, AbstractInstruction.UnboundFieldInstruction {
     /**
      * {@return the {@link FieldRefEntry} constant described by this instruction}

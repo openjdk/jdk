@@ -30,7 +30,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_NameAndType_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface NameAndTypeEntry extends PoolEntry
+public sealed interface NameAndTypeEntry extends PoolEntry
         permits ConcreteEntry.ConcreteNameAndTypeEntry {
 
     /**

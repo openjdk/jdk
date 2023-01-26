@@ -35,7 +35,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  */
-sealed public interface NewReferenceArrayInstruction extends Instruction
+public sealed interface NewReferenceArrayInstruction extends Instruction
         permits AbstractInstruction.BoundNewReferenceArrayInstruction, AbstractInstruction.UnboundNewReferenceArrayInstruction {
     /**
      * {@return the component type of the array}

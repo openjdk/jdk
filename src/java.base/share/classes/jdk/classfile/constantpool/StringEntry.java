@@ -30,7 +30,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_String_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface StringEntry
+public sealed interface StringEntry
         extends ConstantValueEntry
         permits ConcreteEntry.ConcreteStringEntry {
     /**

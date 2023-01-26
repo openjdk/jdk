@@ -40,7 +40,7 @@ import jdk.classfile.impl.LineNumberImpl;
  *
  * @see PseudoInstruction
  */
-sealed public interface LineNumber extends PseudoInstruction
+public sealed interface LineNumber extends PseudoInstruction
         permits LineNumberImpl {
     int line();
 }

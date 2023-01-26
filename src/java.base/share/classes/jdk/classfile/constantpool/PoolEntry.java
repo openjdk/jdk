@@ -29,7 +29,7 @@ import jdk.classfile.WritableElement;
 /**
  * Models an entry in the constant pool of a classfile.
  */
-sealed public interface PoolEntry extends WritableElement<PoolEntry>
+public sealed interface PoolEntry extends WritableElement<PoolEntry>
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,
                 PackageEntry {

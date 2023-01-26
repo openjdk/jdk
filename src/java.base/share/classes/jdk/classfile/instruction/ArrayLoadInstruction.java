@@ -38,7 +38,7 @@ import jdk.classfile.impl.Util;
  * Opcode.Kind#ARRAY_LOAD}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  */
-sealed public interface ArrayLoadInstruction extends Instruction
+public sealed interface ArrayLoadInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayLoadInstruction {
     /**
      * {@return the component type of the array}

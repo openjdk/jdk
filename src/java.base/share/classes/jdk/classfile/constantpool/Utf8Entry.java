@@ -30,7 +30,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_UTF8_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface Utf8Entry
+public sealed interface Utf8Entry
         extends CharSequence, AnnotationConstantValueEntry
         permits ConcreteEntry.ConcreteUtf8Entry {
 

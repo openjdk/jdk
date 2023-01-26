@@ -34,7 +34,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  */
-sealed public interface ThrowInstruction extends Instruction
+public sealed interface ThrowInstruction extends Instruction
         permits AbstractInstruction.UnboundThrowInstruction {
 
     /**

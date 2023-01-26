@@ -44,7 +44,7 @@ import jdk.classfile.impl.Util;
  * a {@code kind} of {@link Opcode.Kind#CONSTANT}.  Delivered as a {@link
  * CodeElement} when traversing the elements of a {@link CodeModel}.
  */
-sealed public interface ConstantInstruction extends Instruction {
+public sealed interface ConstantInstruction extends Instruction {
 
     /**
      * {@return the constant value}

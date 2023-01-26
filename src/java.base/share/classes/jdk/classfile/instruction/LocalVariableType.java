@@ -43,7 +43,7 @@ import jdk.classfile.impl.BoundLocalVariableType;
  * traversal of the elements of a {@link CodeModel}, according to the setting of
  * the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
  */
-sealed public interface LocalVariableType extends PseudoInstruction
+public sealed interface LocalVariableType extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariableType, BoundLocalVariableType {
     /**
      * {@return the local variable slot}

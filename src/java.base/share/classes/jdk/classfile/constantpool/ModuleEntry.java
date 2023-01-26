@@ -31,7 +31,7 @@ import jdk.classfile.jdktypes.ModuleDesc;
  * Models a {@code CONSTANT_Module_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface ModuleEntry extends PoolEntry
+public sealed interface ModuleEntry extends PoolEntry
         permits ConcreteEntry.ConcreteModuleEntry {
     /**
      * {@return the name of the module}

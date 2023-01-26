@@ -31,7 +31,7 @@ import jdk.classfile.TypeKind;
  * Marker interface for constant pool entries suitable for loading via the
  * {@code LDC} instructions.
  */
-sealed public interface LoadableConstantEntry extends PoolEntry
+public sealed interface LoadableConstantEntry extends PoolEntry
         permits ClassEntry, ConstantDynamicEntry, ConstantValueEntry, MethodHandleEntry, MethodTypeEntry {
 
     /**

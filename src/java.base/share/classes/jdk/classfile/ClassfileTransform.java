@@ -69,7 +69,7 @@ import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
  * Complex class instrumentation sample chaining multiple transformations:
  * {@snippet lang="java" class="PackageSnippets" region="classInstrumentation"}
  */
-sealed public interface ClassfileTransform<
+public sealed interface ClassfileTransform<
         C extends ClassfileTransform<C, E, B>,
         E extends ClassfileElement,
         B extends ClassfileBuilder<E, B>>

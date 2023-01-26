@@ -38,7 +38,7 @@ import jdk.classfile.impl.Util;
  * Models a {@code CONSTANT_Class_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface ClassEntry
+public sealed interface ClassEntry
         extends LoadableConstantEntry
         permits ConcreteEntry.ConcreteClassEntry {
 

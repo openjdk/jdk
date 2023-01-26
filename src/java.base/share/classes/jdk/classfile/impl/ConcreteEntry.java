@@ -653,7 +653,7 @@ public abstract sealed class ConcreteEntry {
         }
     }
 
-    public static sealed abstract class MemberRefEntry
+    public static abstract sealed class MemberRefEntry
             extends RefsEntry<ConcreteClassEntry, ConcreteNameAndTypeEntry>
             implements jdk.classfile.constantpool.MemberRefEntry {
 
@@ -759,7 +759,7 @@ public abstract sealed class ConcreteEntry {
         }
     }
 
-    public static sealed abstract class AbstractDynamicConstantPoolEntry extends ConcreteEntry {
+    public static abstract sealed class AbstractDynamicConstantPoolEntry extends ConcreteEntry {
 
         private final int bsmIndex;
         private ConcreteBootstrapMethodEntry bootstrapMethod;

@@ -35,7 +35,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_Dynamic_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface ConstantDynamicEntry
+public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
         permits ConcreteEntry.ConcreteConstantDynamicEntry {
 

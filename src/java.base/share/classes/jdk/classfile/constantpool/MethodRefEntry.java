@@ -30,7 +30,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_MethodRef_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface MethodRefEntry extends MemberRefEntry
+public sealed interface MethodRefEntry extends MemberRefEntry
         permits ConcreteEntry.ConcreteMethodRefEntry {
 
 }

@@ -40,7 +40,7 @@ import jdk.classfile.impl.Util;
  * code} array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  */
-sealed public interface TypeCheckInstruction extends Instruction
+public sealed interface TypeCheckInstruction extends Instruction
         permits AbstractInstruction.BoundTypeCheckInstruction,
                 AbstractInstruction.UnboundTypeCheckInstruction {
     ClassEntry type();

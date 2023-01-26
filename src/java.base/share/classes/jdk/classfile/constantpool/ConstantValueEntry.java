@@ -31,7 +31,7 @@ import java.lang.constant.ConstantDesc;
  * {@code ConstantValue} attribute; this includes the four primitive constant
  * types and {@linkplain String} constants.
  */
-sealed public interface ConstantValueEntry extends LoadableConstantEntry
+public sealed interface ConstantValueEntry extends LoadableConstantEntry
         permits DoubleEntry, FloatEntry, IntegerEntry, LongEntry, StringEntry {
 
     /**

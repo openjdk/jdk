@@ -39,7 +39,7 @@ import jdk.classfile.impl.BoundCharacterRange;
  * during traversal of the elements of a {@link CodeModel}, according to
  * the setting of the {@link Classfile.Option.Key#PROCESS_DEBUG} option.
  */
-sealed public interface CharacterRange extends PseudoInstruction
+public sealed interface CharacterRange extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundCharacterRange, BoundCharacterRange {
     /**
      * {@return the start of the instruction range}

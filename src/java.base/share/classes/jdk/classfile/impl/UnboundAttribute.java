@@ -901,7 +901,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
     }
 
-    public non-sealed static abstract class AdHocAttribute<T extends Attribute<T>>
+    public static abstract non-sealed class AdHocAttribute<T extends Attribute<T>>
             extends UnboundAttribute<T> {
 
         public AdHocAttribute(AttributeMapper<T> mapper) {
@@ -939,7 +939,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
     }
 
-    public static sealed abstract class CustomAttribute<T extends CustomAttribute<T>>
+    public static abstract sealed class CustomAttribute<T extends CustomAttribute<T>>
             extends UnboundAttribute<T>
             permits jdk.classfile.CustomAttribute {
 

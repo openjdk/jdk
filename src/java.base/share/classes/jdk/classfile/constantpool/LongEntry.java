@@ -31,7 +31,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_Long_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface LongEntry
+public sealed interface LongEntry
         extends AnnotationConstantValueEntry, ConstantValueEntry
         permits ConcreteEntry.ConcreteLongEntry {
 

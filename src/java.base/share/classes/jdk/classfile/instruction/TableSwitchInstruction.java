@@ -37,7 +37,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  */
-sealed public interface TableSwitchInstruction extends Instruction
+public sealed interface TableSwitchInstruction extends Instruction
         permits AbstractInstruction.BoundTableSwitchInstruction, AbstractInstruction.UnboundTableSwitchInstruction {
     /**
      * {@return the low value of the switch target range, inclusive}

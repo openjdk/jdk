@@ -964,7 +964,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         }
     }
 
-    public static sealed abstract class BoundCodeAttribute
+    public static abstract sealed class BoundCodeAttribute
             extends BoundAttribute<CodeAttribute>
             implements CodeAttribute
             permits CodeImpl {

@@ -35,7 +35,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * attribute.  Delivered as a {@link CodeElement} when traversing the elements
  * of a {@link CodeModel}.
  */
-sealed public interface NewObjectInstruction extends Instruction
+public sealed interface NewObjectInstruction extends Instruction
         permits AbstractInstruction.BoundNewObjectInstruction, AbstractInstruction.UnboundNewObjectInstruction {
 
     /**

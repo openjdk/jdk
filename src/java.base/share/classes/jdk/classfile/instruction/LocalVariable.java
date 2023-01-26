@@ -46,7 +46,7 @@ import jdk.classfile.impl.BoundLocalVariable;
  *
  * @see PseudoInstruction
  */
-sealed public interface LocalVariable extends PseudoInstruction
+public sealed interface LocalVariable extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundLocalVariable, BoundLocalVariable {
     /**
      * {@return the local variable slot}

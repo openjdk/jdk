@@ -34,7 +34,7 @@ import jdk.classfile.impl.AbstractInstruction;
  * array of a {@code Code} attribute.  Delivered as a {@link CodeElement}
  * when traversing the elements of a {@link CodeModel}.
  */
-sealed public interface NopInstruction extends Instruction
+public sealed interface NopInstruction extends Instruction
         permits AbstractInstruction.UnboundNopInstruction {
     /**
      * {@return a no-op instruction}

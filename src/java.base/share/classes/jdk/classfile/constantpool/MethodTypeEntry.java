@@ -32,7 +32,7 @@ import jdk.classfile.impl.ConcreteEntry;
  * Models a {@code CONSTANT_MethodType_info} constant in the constant pool of a
  * classfile.
  */
-sealed public interface MethodTypeEntry
+public sealed interface MethodTypeEntry
         extends LoadableConstantEntry
         permits ConcreteEntry.ConcreteMethodTypeEntry {
 

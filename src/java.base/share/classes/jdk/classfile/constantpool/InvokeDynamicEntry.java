@@ -33,7 +33,7 @@ import jdk.classfile.impl.ConcreteEntry;
 /**
  * Models a constant pool entry for a dynamic call site.
  */
-sealed public interface InvokeDynamicEntry
+public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
         permits ConcreteEntry.ConcreteInvokeDynamicEntry {
 

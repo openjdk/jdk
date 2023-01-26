@@ -39,7 +39,7 @@ import jdk.classfile.impl.LabelImpl;
  *
  * @see PseudoInstruction
  */
-sealed public interface LabelTarget extends PseudoInstruction
+public sealed interface LabelTarget extends PseudoInstruction
         permits LabelImpl {
     Label label();
 }

@@ -44,7 +44,7 @@ import jdk.classfile.impl.Util;
  * {@code Code} attribute.  Delivered as a {@link CodeElement} when traversing
  * the elements of a {@link CodeModel}.
  */
-sealed public interface InvokeDynamicInstruction extends Instruction
+public sealed interface InvokeDynamicInstruction extends Instruction
         permits AbstractInstruction.BoundInvokeDynamicInstruction, AbstractInstruction.UnboundInvokeDynamicInstruction {
     /**
      * {@return an {@link InvokeDynamicEntry} describing the call site}

@@ -29,7 +29,7 @@ import jdk.classfile.impl.UnboundAttribute;
 /**
  * Models a single line number in the {@link LineNumberTableAttribute}.
  */
-sealed public interface LineNumberInfo
+public sealed interface LineNumberInfo
         permits UnboundAttribute.UnboundLineNumberInfo {
 
     /**
