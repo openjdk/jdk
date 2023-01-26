@@ -1272,8 +1272,6 @@ public:
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
   void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.
