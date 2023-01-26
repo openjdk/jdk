@@ -174,7 +174,7 @@ class ImmutableCollections {
         if (coll.getClass().getModule() == Object.class.getModule()) {
             return listFromTrustedArray(array);
         } else {
-            return (List<E>) List.of(array); 
+            return (List<E>) List.of(array);
         }
     }
 
