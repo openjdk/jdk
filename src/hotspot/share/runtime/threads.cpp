@@ -254,6 +254,8 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
+  assert_at_safepoint();
+
   uintx claim_token = Threads::thread_claim_token();
   ALL_JAVA_THREADS(p) {
     if (p->claim_threads_do(is_par, claim_token)) {
