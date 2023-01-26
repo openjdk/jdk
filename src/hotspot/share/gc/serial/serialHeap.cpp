@@ -42,9 +42,9 @@ SerialHeap::SerialHeap() :
     GenCollectedHeap(Generation::DefNew,
                      Generation::MarkSweepCompact,
                      "Copy:MSC"),
-    _eden_pool(NULL),
-    _survivor_pool(NULL),
-    _old_pool(NULL) {
+    _eden_pool(nullptr),
+    _survivor_pool(nullptr),
+    _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy", "end of minor GC");
   _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
 }
