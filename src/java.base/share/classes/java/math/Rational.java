@@ -3,6 +3,8 @@ package java.math;
 
 import java.util.Arrays;
 import java.util.Objects;
+import jdk.internal.math.DoubleConsts;
+import jdk.internal.math.FloatConsts;
 
 /**
  * Immutable, infinite-precision signed rational numbers.
@@ -274,12 +276,12 @@ public class Rational extends Number implements Comparable<Rational> {
         if (Double.isInfinite(val) || Double.isNaN(val))
             throw new NumberFormatException("Infinite or NaN");
         // Translate the double into sign, exponent and significand, according
-        // to the formulae in JLS, Section 20.10.22.
+        // to the formulae in Double.longBitsToDouble(long).
         long valBits = Double.doubleToLongBits(val);
         int sign = ((valBits >> 63) == 0 ? 1 : -1);
-        int exponent = (int) ((valBits >> 52) & 0x7ffL);
-        long significand = (exponent == 0 ? (valBits & ((1L << 52) - 1)) << 1
-                : (valBits & ((1L << 52) - 1)) | (1L << 52));
+        int exponent = (int) ((valBits & DoubleConsts.EXP_BIT_MASK) >> 52);
+        long significand = (exponent == 0 ? (valBits & DoubleConsts.SIGNIF_BIT_MASK) << 1
+                : (valBits & DoubleConsts.SIGNIF_BIT_MASK) | (1L << 52));
         exponent -= 1075;
         // At this point, val == sign * significand * 2**exponent.
 
@@ -1859,7 +1861,112 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public double doubleValue() {
-        return toBigDecimal(MathContext.DECIMAL64).doubleValue();
+        final double fl = floor.doubleValue();
+        
+        // integer or non-representable value
+        if (numerator.signum == 0 || Double.isInfinite(fl))
+            return signum * fl;
+        // At this point, fractional part is non-zero
+        
+        final int flBits = floor.bitLength();
+        final int prec = Double.PRECISION;
+        if (flBits > prec) { // integer part does not fit into a double
+            // check if first discarded bit is set to round up, since fractional part is non-zero
+            return signum * (floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl);
+        }
+        
+        // unpack biased exponent and significand of integer part, according
+        // to the formulae in Double.longBitsToDouble(long).
+        final long twoTo52 = 1L << 52;
+        final long flPacked = Double.doubleToLongBits(fl);
+        final int biasedExp = (int) ((flPacked & DoubleConsts.EXP_BIT_MASK) >> 52);
+        final long significand = (biasedExp == 0 ? (flPacked & DoubleConsts.SIGNIF_BIT_MASK) << 1
+                : (flPacked & DoubleConsts.SIGNIF_BIT_MASK) | twoTo52);
+        // At this point, floor == significand * 2**(biasedExp - 1075).
+        
+        long resSig; // result significand
+        int resExp; // result biased exponent
+        int nBits; // computed bits of result significand
+        MutableBigInteger rem = new MutableBigInteger(numerator);
+        final MutableBigInteger den = new MutableBigInteger(denominator);
+        // compute initial result significand
+        if (floor.signum == 0) { // no integer part
+            // normalize
+            int scale = (int) Math.max(1, den.bitLength() - rem.bitLength());
+            rem.leftShift(scale);
+            // now 0.5 <= rem / den < 2
+            if (rem.compare(den) < 0) { // rem / den < 1
+                scale++;
+                rem.leftShift(1);
+            }
+            // now 1 <= rem / den < 2
+            rem.subtract(den); // subtract one to (rem / den)
+            // now rem / den < 1
+            
+            resSig = 1L; // set the most significant bit
+            // compute the correct biased exponent
+            if (scale < DoubleConsts.EXP_BIAS) { // normal number
+                nBits = 1; // count the implicit bit
+                resExp = -scale + DoubleConsts.EXP_BIAS; // resExp > 0
+            } else { // subnormal number
+                nBits = scale + Double.MIN_EXPONENT + 1; // scale - 1022 + 1, count the implicit bit
+                resExp = 0;
+                
+                if (nBits > prec) { // abs(this) < Double.MIN_VALUE
+                    // half even rounding
+                    return signum * (nBits > prec + 1 || rem.isZero() ? 0.0 : Double.MIN_VALUE);
+                }
+            }
+        } else { // non-zero integer part
+            resSig = floor.longValue();
+            nBits = flBits;
+            resExp = biasedExp;
+        }
+        // now rem / den < 1
+        
+        // compute remaining bits, stop if remainder is zero
+        int shift;
+        for (; !rem.isZero() && nBits < prec; nBits += shift) {
+            shift = (int) Math.max(1, den.bitLength() - rem.bitLength());
+            
+            if (nBits + shift <= prec) { // shifted significand fits in double precision
+                resSig <<= shift;
+                rem.leftShift(shift);
+                // now 0.5 <= rem / den < 2
+                final MutableBigInteger diff = new MutableBigInteger(rem);
+                
+                // subtract one to (rem / den)
+                if (diff.subtract(den) != -1) { // rem / den >= 1
+                    resSig |= 1L;
+                    rem = diff;
+                }
+                // now rem / den < 1
+            } else { // end of iterating
+                shift = prec - nBits;
+                resSig <<= shift; // add trailing zeros
+                rem.leftShift(shift);
+                // now rem / den < 1
+            }
+        }
+        
+        double res = makeDouble(resExp, resSig);
+        if (!rem.isZero()) { // inexact result
+            // compute one more bit to round
+            rem.leftShift(1);
+            final int rem_cmp_den = rem.compare(den);
+            
+            if (rem_cmp_den >= 0) // the bit is one
+                if (rem_cmp_den > 0 || (resSig & 1L) == 1) // half even rounding
+                    res = Math.nextUp(res);
+        }
+        
+        return signum * res;
+    }
+    
+    private static double makeDouble(long biasExp, long significand) {
+        // see Double.longBitsToDouble(long)
+        significand = biasExp == 0 ? (significand >> 1) : (significand & DoubleConsts.SIGNIF_BIT_MASK);
+        return Double.longBitsToDouble((biasExp << 52) | significand);
     }
 
     /**
@@ -1877,7 +1984,113 @@ public class Rational extends Number implements Comparable<Rational> {
      */
     @Override
     public float floatValue() {
-        return toBigDecimal(MathContext.DECIMAL32).floatValue();
+        final float fl = floor.floatValue();
+        
+        // integer or non-representable value
+        if (numerator.signum() == 0 || Float.isInfinite(fl))
+            return signum * fl;
+        // At this point, fractional part is non-zero
+        
+        final int flBits = floor.bitLength();
+        final int prec = Float.PRECISION;
+        if (flBits > prec) { // integer part does not fit into a float
+            // check if first discarded bit is set to round up, since fractional part is non-zero
+            return signum * (floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl);
+        }
+        
+        // unpack biased exponent and significand of integer part, according
+        // to the formulae in Float.intBitsToFloat(int).
+        final int twoTo23 = 1 << 23;
+        final int flPacked = Float.floatToIntBits(fl);
+        final int biasedExp = (flPacked & FloatConsts.EXP_BIT_MASK) >> 23;
+        final int significand = (biasedExp == 0 ? (flPacked & FloatConsts.SIGNIF_BIT_MASK) << 1
+                : (flPacked & FloatConsts.SIGNIF_BIT_MASK) | twoTo23);
+        // At this point, floor == significand * 2**(biasedExp - 150).
+        
+        int resSig; // result significand
+        int resExp; // result biased exponent
+        int nBits; // computed bits of result significand
+        MutableBigInteger rem = new MutableBigInteger(numerator);
+        final MutableBigInteger den = new MutableBigInteger(denominator);
+        // compute initial result significand
+        if (floor.signum == 0) { // no integer part
+            // normalize
+            int scale = (int) Math.max(1, den.bitLength() - rem.bitLength());
+            rem.leftShift(scale);
+            // now 0.5 <= rem / den < 2
+            if (rem.compare(den) < 0) { // rem / den < 1
+                scale++;
+                rem.leftShift(1);
+            }
+            // now 1 <= rem / den < 2
+            rem.subtract(den); // subtract one to (rem / den)
+            // now rem / den < 1
+            
+            resSig = 1; // set the most significant bit
+            // compute the correct biased exponent
+            if (scale < FloatConsts.EXP_BIAS) { // normal number
+                nBits = 1; // count the implicit bit
+                resExp = -scale + FloatConsts.EXP_BIAS; // resExp > 0
+            } else { // subnormal number
+                nBits = scale + Float.MIN_EXPONENT + 1; // scale - 126 + 1, count the implicit bit
+                resExp = 0;
+                
+                if (nBits > prec) { // abs(this) < Float.MIN_VALUE
+                    // half even rounding
+                    return signum * (nBits > prec + 1 || rem.isZero() ? 0f : Float.MIN_VALUE);
+                }
+            }
+        } else { // non-zero integer part
+            resSig = floor.intValue();
+            nBits = flBits;
+            resExp = biasedExp;
+        }
+        // now rem / den < 1
+        
+        // compute remaining bits, stop if remainder is zero
+        int shift;
+        for (; !rem.isZero() && nBits < prec; nBits += shift) {
+            shift = (int) Math.max(1, den.bitLength() - rem.bitLength());
+            
+            if (nBits + shift <= prec) { // shifted significand fits in float precision
+                resSig <<= shift;
+                rem.leftShift(shift);
+                // now 0.5 <= rem / den < 2
+                final MutableBigInteger diff = new MutableBigInteger(rem);
+                
+                // subtract one to (rem / den)
+                if (diff.subtract(den) != -1) { // rem / den >= 1
+                    resSig |= 1;
+                    rem = diff;
+                }
+                // now rem / den < 1
+            } else { // end of iterating
+                shift = prec - nBits;
+                resSig <<= shift; // add trailing zeros
+                rem.leftShift(shift);
+                // now rem / den < 1
+            }
+        }
+        
+        
+        float res = makeFloat(resExp, resSig);
+        if (!rem.isZero()) { // inexact result
+            // compute one more bit to round
+            rem.leftShift(1);
+            final int rem_cmp_den = rem.compare(den);
+            
+            if (rem_cmp_den >= 0) // the bit is one
+                if (rem_cmp_den > 0 || (resSig & 1) == 1) // half even rounding
+                    res = Math.nextUp(res);
+        }
+        
+        return signum * res;
+    }
+    
+    private static float makeFloat(int biasExp, int significand) {
+        // see Float.intBitsToFloat(int)
+        significand = biasExp == 0 ? (significand >> 1) : (significand & FloatConsts.SIGNIF_BIT_MASK);
+        return Float.intBitsToFloat((biasExp << 23) | significand);
     }
 
     /**
