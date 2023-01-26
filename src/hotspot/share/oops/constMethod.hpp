@@ -137,7 +137,7 @@ class MethodParametersElement {
 #define INLINE_TABLE_DECLARE(sym)    int _##sym;
 #define INLINE_TABLE_PARAM(sym)      int sym,
 #define INLINE_TABLE_INIT(sym)       _##sym(sym),
-#define INLINE_TABLE_nullptr(sym)       _##sym(0),
+#define INLINE_TABLE_NULL(sym)       _##sym(0),
 #define INLINE_TABLE_ACCESSOR(sym)   int sym() const { return _##sym; }
 
 class InlineTableSizes : StackObj {
@@ -153,14 +153,14 @@ class InlineTableSizes : StackObj {
 
   // Default constructor for no inlined tables
   InlineTableSizes() :
-      INLINE_TABLES_DO(INLINE_TABLE_nullptr)
+      INLINE_TABLES_DO(INLINE_TABLE_NULL)
       _end(0) {}
 
   // Accessors
   INLINE_TABLES_DO(INLINE_TABLE_ACCESSOR)
 };
 #undef INLINE_TABLE_ACCESSOR
-#undef INLINE_TABLE_nullptr
+#undef INLINE_TABLE_NULL
 #undef INLINE_TABLE_INIT
 #undef INLINE_TABLE_PARAM
 #undef INLINE_TABLE_DECLARE
