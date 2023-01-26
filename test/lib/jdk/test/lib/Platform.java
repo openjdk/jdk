@@ -50,8 +50,6 @@ public class Platform {
     private static final String compiler    = privilegedGetProperty("sun.management.compiler");
     private static final String testJdk     = privilegedGetProperty("test.jdk");
 
-    private static final boolean leakSanitizer = Boolean.parseBoolean(privilegedGetProperty("jdk.sanitizer.leak.enabled"));
-
     @SuppressWarnings("removal")
     private static String privilegedGetProperty(String key) {
         return AccessController.doPrivileged((
@@ -420,9 +418,5 @@ public class Platform {
      */
     public static boolean areCustomLoadersSupportedForCDS() {
         return (is64bit() && (isLinux() || isOSX() || isWindows()));
-    }
-
-    public static boolean hasLeakSanitizer() {
-      return leakSanitizer;
     }
 }

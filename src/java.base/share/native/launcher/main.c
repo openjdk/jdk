@@ -34,15 +34,6 @@
 #include "jli_util.h"
 #include "jni.h"
 
-#ifdef LEAK_SANITIZER
-// Override weak symbol exposed by LSan to override default options. This is called by LSan
-// extremely early during library loading, before main is called. We disable implicit leak checks
-// during exit and instead invoke leak checking early during JVM shutdown.
-JNIEXPORT const char* __lsan_default_options() {
-  return "leak_check_at_exit=0";
-}
-#endif
-
 /*
  * Entry point.
  */

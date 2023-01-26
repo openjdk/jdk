@@ -62,6 +62,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/vmThread.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/vmError.hpp"
@@ -75,7 +76,6 @@
 #include "opto/compile.hpp"
 #include "opto/node.hpp"
 #endif
-#include "lsan/lsan.hpp"
 
 // Helper class for printing in CodeCache
 class CodeBlob_sizes {
@@ -330,7 +330,8 @@ void CodeCache::initialize_heaps() {
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
   ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
 
-  Lsan::register_root_region(rs.base(), rs.size());
+  // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
+  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 
   // Non-nmethods (stubs, adapters, ...)
   add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
@@ -1194,6 +1195,8 @@ void CodeCache::initialize() {
     FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
     FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
+    // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
+    LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
     add_heap(rs, "CodeCache", CodeBlobType::All);
   }
 

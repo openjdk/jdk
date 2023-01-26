@@ -448,13 +448,13 @@ JCOV_FILTERS=@JCOV_FILTERS@
 # AddressSanitizer
 ASAN_ENABLED:=@ASAN_ENABLED@
 
+# LeakSanitizer
+LSAN_ENABLED:=@LSAN_ENABLED@
+
 # UndefinedBehaviorSanitizer
 UBSAN_ENABLED:=@UBSAN_ENABLED@
 UBSAN_CFLAGS:=@UBSAN_CFLAGS@
 UBSAN_LDFLAGS:=@UBSAN_LDFLAGS@
-
-# LeakSanitizer
-LSAN_ENABLED:=@LSAN_ENABLED@
 
 # Necessary additional compiler flags to compile X11
 X_CFLAGS:=@X_CFLAGS@

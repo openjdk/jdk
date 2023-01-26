@@ -29,7 +29,6 @@
 #include "compiler/compiler_globals.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
-#include "lsan/lsan.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/universe.hpp"
@@ -45,6 +44,7 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_JVMCI
@@ -128,7 +128,7 @@ jint init_globals() {
   {
     // Register the Java heap with LSan.
     VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
-    Lsan::register_root_region(summary.start(), summary.reserved_size());
+    LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
   }
 
   AsyncLogWriter::initialize();
@@ -194,7 +194,7 @@ void exit_globals() {
     {
       // Unregister the Java heap with LSan.
       VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
-      Lsan::unregister_root_region(summary.start(), summary.reserved_size());
+      LSAN_UNREGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
     }
   }
 }

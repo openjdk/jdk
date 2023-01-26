@@ -64,7 +64,6 @@
 #include "utilities/parseInteger.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stringUtils.hpp"
-#include "lsan/lsan.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -427,12 +426,6 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, _java_class_path);
   PropertyList_add(&_system_properties, _jdk_boot_class_path_append);
   PropertyList_add(&_system_properties, _vm_info);
-
-  // Add sanitizer properties.
-  if (Lsan::enabled()) {
-    PropertyList_add(&_system_properties,
-                     new SystemProperty("jdk.sanitizer.leak.enabled", "true", false));
-  }
 
   // Set OS specific system properties values
   os::init_system_properties_values();
@@ -3979,21 +3972,21 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-  LSAN_ONLY(
+#ifdef LEAK_SANITIZER
 #ifdef _LP64
-    // LSAN relies on pointers to be natively aligned. Using compressed class pointers breaks this
-    // expectation and results in nondeterministic leak reports.
-    if (FLAG_SET_CMDLINE(UseCompressedOops, false) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-    if (FLAG_SET_CMDLINE(UseCompressedClassPointers, false) != JVMFlag::SUCCESS) {
-      return JNI_EINVAL;
-    }
-#endif  // _LP64
-    // During testing CDS appeared to cause LSan to report many false positives, so disable it.
-    UseSharedSpaces = false;
-    RequireSharedSpaces = false;
-  );
+  // LSAN relies on pointers to be natively aligned. Using compressed class pointers breaks this
+  // expectation and results in nondeterministic leak reports.
+  if (FLAG_SET_CMDLINE(UseCompressedOops, false) != JVMFlag::SUCCESS) {
+    return JNI_EINVAL;
+  }
+  if (FLAG_SET_CMDLINE(UseCompressedClassPointers, false) != JVMFlag::SUCCESS) {
+    return JNI_EINVAL;
+  }
+#endif // _LP64
+  // During testing CDS appeared to cause LSan to report many false positives, so disable it.
+  UseSharedSpaces = false;
+  RequireSharedSpaces = false;
+#endif // LEAK_SANITIZER
 
   // Verify NMT arguments
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);

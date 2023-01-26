@@ -72,6 +72,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -93,7 +94,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-#include "lsan/lsan.hpp"
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -417,12 +417,17 @@ void before_exit(JavaThread* thread, bool halt) {
     }
   }
 
-  // If we are built with LSan, not halting, and there is no JVM error perform a full GC and then
-  // perform leak checking. We do this as early as possible during the shutdown sequence as we are
-  // not interested in leaks introduced during shutdown.
-  if (Lsan::enabled() && !halt && !VMError::is_error_reported()) {
-    Universe::heap()->collect(GCCause::_java_lang_system_gc);
-    Lsan::do_leak_check();
+  // If we are built with LSan, we need to perform leak checking. If we are
+  // terminating normally, not halting and no VM error, we perform a normal
+  // leak check which terminates if leaks are found. If we are not terminating
+  // normally, halting or VM error, we perform a recoverable leak check which
+  // prints leaks but will not terminate.
+  if (!halt && !VMError::is_error_reported()) {
+    LSAN_DO_LEAK_CHECK();
+  } else {
+    int result = LSAN_DO_RECOVERABLE_LEAK_CHECK();
+    // Ignore the return value.
+    static_cast<void>(result);
   }
 
 #if INCLUDE_JVMCI
