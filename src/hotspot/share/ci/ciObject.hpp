@@ -67,7 +67,7 @@ private:
 
     public:
       ConstantValue() : _value(ciConstant()), _off(0) { }
-      ConstantValue(int off, ciConstant value) : _off(off), _value(value) { }
+      ConstantValue(int off, ciConstant value) : _value(value), _off(off) { }
 
       int off() const { return _off; }
       ciConstant value() const { return _value; }
