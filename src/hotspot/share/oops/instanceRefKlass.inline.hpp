@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,9 @@ static inline oop load_referent(oop obj, ReferenceType type) {
 template <typename T, class OopClosureType>
 bool InstanceRefKlass::try_discover(oop obj, ReferenceType type, OopClosureType* closure) {
   ReferenceDiscoverer* rd = closure->ref_discoverer();
-  if (rd != NULL) {
+  if (rd != nullptr) {
     oop referent = load_referent(obj, type);
-    if (referent != NULL) {
+    if (referent != nullptr) {
       if (!referent->is_gc_marked()) {
         // Only try to discover if not yet marked.
         return rd->discover_reference(obj, type);
@@ -99,14 +99,14 @@ void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, Referen
 
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
-  assert(closure->ref_discoverer() == NULL, "ReferenceDiscoverer should not be set");
+  assert(closure->ref_discoverer() == nullptr, "ReferenceDiscoverer should not be set");
   do_referent<T>(obj, closure, contains);
   do_discovered<T>(obj, closure, contains);
 }
 
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains) {
-  assert(closure->ref_discoverer() == NULL, "ReferenceDiscoverer should not be set");
+  assert(closure->ref_discoverer() == nullptr, "ReferenceDiscoverer should not be set");
   do_discovered<T>(obj, closure, contains);
 }
 

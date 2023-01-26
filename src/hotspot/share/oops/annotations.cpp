@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ Annotations* Annotations::allocate(ClassLoaderData* loader_data, TRAPS) {
 
 // helper
 void Annotations::free_contents(ClassLoaderData* loader_data, Array<AnnotationArray*>* p) {
-  if (p != NULL) {
+  if (p != nullptr) {
     for (int i = 0; i < p->length(); i++) {
       MetadataFactory::free_array<u1>(loader_data, p->at(i));
     }
@@ -49,12 +49,12 @@ void Annotations::free_contents(ClassLoaderData* loader_data, Array<AnnotationAr
 }
 
 void Annotations::deallocate_contents(ClassLoaderData* loader_data) {
-  if (class_annotations() != NULL) {
+  if (class_annotations() != nullptr) {
     MetadataFactory::free_array<u1>(loader_data, class_annotations());
   }
   free_contents(loader_data, fields_annotations());
 
-  if (class_type_annotations() != NULL) {
+  if (class_type_annotations() != nullptr) {
     MetadataFactory::free_array<u1>(loader_data, class_type_annotations());
   }
   free_contents(loader_data, fields_type_annotations());
@@ -64,7 +64,7 @@ void Annotations::deallocate_contents(ClassLoaderData* loader_data) {
 // The alternative to creating this array and adding to Java heap pressure
 // is to have a hashtable of the already created typeArrayOops
 typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
-  if (annotations != NULL) {
+  if (annotations != nullptr) {
     int length = annotations->length();
     typeArrayOop copy = oopFactory::new_byteArray(length, CHECK_NULL);
     for (int i = 0; i< length; i++) {
@@ -72,7 +72,7 @@ typeArrayOop Annotations::make_java_array(AnnotationArray* annotations, TRAPS) {
     }
     return copy;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -81,7 +81,7 @@ void Annotations::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_class_annotations);
   it->push(&_fields_annotations);
   it->push(&_class_type_annotations);
-  it->push(&_fields_type_annotations); // FIXME: need a test case where _fields_type_annotations != NULL
+  it->push(&_fields_type_annotations); // FIXME: need a test case where _fields_type_annotations != null
 }
 
 void Annotations::print_value_on(outputStream* st) const {
