@@ -65,7 +65,7 @@ class JVMCIArray : public JVMCIObject {
 class JVMCIObjectArray : public JVMCIArray {
  public:
   JVMCIObjectArray() {}
-  JVMCIObjectArray(void* v): JVMCIArray() { assert(v == nullptr, "must be nullptr"); }
+  JVMCIObjectArray(void* v): JVMCIArray() { assert(v == nullptr, "must be null"); }
   JVMCIObjectArray(jobject o, bool is_hotspot): JVMCIArray(o, is_hotspot) {}
 
   jobjectArray as_jobject() { return (jobjectArray) JVMCIArray::as_jobject(); }
@@ -74,7 +74,7 @@ class JVMCIObjectArray : public JVMCIArray {
 class JVMCIPrimitiveArray : public JVMCIArray {
  public:
   JVMCIPrimitiveArray() {}
-  JVMCIPrimitiveArray(void* v): JVMCIArray() { assert(v == nullptr, "must be nullptr"); }
+  JVMCIPrimitiveArray(void* v): JVMCIArray() { assert(v == nullptr, "must be null"); }
   JVMCIPrimitiveArray(jobject o, bool is_hotspot): JVMCIArray(o, is_hotspot) {}
 
   jbooleanArray as_jbooleanArray() { return (jbooleanArray) as_jobject(); }

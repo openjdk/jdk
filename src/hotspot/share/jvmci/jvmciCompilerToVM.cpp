@@ -1241,7 +1241,7 @@ bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** reso
     resolved_methods = init_resolved_methods(methods, JVMCIENV);
     *resolved_methods_ref = resolved_methods;
   }
-  assert(method != nullptr, "method should not be nullptr");
+  assert(method != nullptr, "method should not be null");
   assert(resolved_methods->length() == ((objArrayOop) JNIHandles::resolve(methods))->length(), "arrays must have the same length");
   for (int i = 0; i < resolved_methods->length(); i++) {
     Method* m = resolved_methods->at(i);

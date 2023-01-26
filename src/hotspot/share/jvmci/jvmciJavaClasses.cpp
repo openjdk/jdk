@@ -199,7 +199,7 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
     return resolve(object)->is_a(className::klass());                                   \
   }                                                                                     \
   void HotSpotJVMCI::className::check(oop obj, const char* field_name, int offset) {    \
-    assert(obj != nullptr, "nullptr field access of %s.%s", #className, field_name); \
+    assert(obj != nullptr, "null field access of %s.%s", #className, field_name);       \
     assert(obj->is_a(className::klass()), "wrong class, " #className " expected, found %s", obj->klass()->external_name()); \
     assert(offset != 0, "must be valid offset");                                        \
   }                                                                                     \
@@ -225,28 +225,28 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 #define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, objArrayOop)
 #define STATIC_OOPISH_FIELD(className, name, type)                                                                        \
     type HotSpotJVMCI::className::name(JVMCIEnv* env) {                                                                   \
-      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       oop result = HeapAccess<>::oop_load_at(base, className::_##name##_offset);                                          \
       return type(result);                                                                                                \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, type x) {                                                     \
-      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);         \
-      assert(className::klass() != nullptr, "Class not yet loaded: " #className);                                            \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
+      assert(className::klass() != nullptr, "Class not yet loaded: " #className);                                         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       HeapAccess<>::oop_store_at(base, className::_##name##_offset, x);                                                   \
     }
 #define STATIC_PRIMITIVE_FIELD(className, name, jtypename)                                                                \
     jtypename HotSpotJVMCI::className::get_##name(JVMCIEnv* env) {                                                        \
-      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       return *base->field_addr<jtypename>(className::_##name##_offset);                                                   \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, jtypename x) {                                                \
-      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       *base->field_addr<jtypename>(className::_##name##_offset) = x;                                                      \
@@ -621,8 +621,8 @@ JVMCI_CLASSES_DO(EMPTY2, EMPTY0, FIELD2, FIELD2, FIELD2, FIELD2, FIELD2, FIELD3,
     return jni()->IsInstanceOf(object.as_jobject(), className::clazz()) != 0;                                                     \
   }                                                                                                                               \
   void JNIJVMCI::className::check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset) {                 \
-    assert(obj.is_non_null(), "nullptr field access of %s.%s", #className, field_name);                                     \
-    assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj)); \
+    assert(obj.is_non_null(), "null field access of %s.%s", #className, field_name);                                              \
+    assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj));          \
     assert(offset != 0, "must be valid offset");                                                                                  \
   }                                                                                                                               \
   jclass JNIJVMCI::className::_class = nullptr;

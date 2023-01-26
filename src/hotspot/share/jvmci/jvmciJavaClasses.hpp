@@ -384,13 +384,13 @@ class HotSpotJVMCI {
 
 #undef HS_START_CLASS
 
-#define JNI_START_CLASS(simpleClassName, fullClassName)                                             \
-  START_CLASS(simpleClassName, fullClassName)                                                       \
-  friend class JNIJVMCI;                                                                            \
-  private:                                                                                          \
-  static void check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset);  \
-  static jclass _class;                                                                             \
-public:                                                                                             \
+#define JNI_START_CLASS(simpleClassName, fullClassName)                                                \
+  START_CLASS(simpleClassName, fullClassName)                                                          \
+  friend class JNIJVMCI;                                                                               \
+  private:                                                                                             \
+  static void check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset);     \
+  static jclass _class;                                                                                \
+public:                                                                                                \
  static jclass clazz() { assert(_class != nullptr, #fullClassName " uninitialized"); return _class; }  \
  static jclass fullClassName ##_class()  { assert(_class != nullptr, "uninit"); return _class; }
 

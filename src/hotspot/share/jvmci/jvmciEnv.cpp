@@ -1459,7 +1459,7 @@ Handle JVMCIEnv::asConstant(JVMCIObject constant, JVMCI_TRAPS) {
     }
     oop result = resolve_oop_handle(object_handle);
     if (result == nullptr) {
-      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly nullptr", Handle());
+      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
     }
     return Handle(THREAD, result);
   } else {
@@ -1472,7 +1472,7 @@ JVMCIObject JVMCIEnv::wrap(jobject object) {
 }
 
 jlong JVMCIEnv::make_oop_handle(const Handle& obj) {
-  assert(!obj.is_null(), "should only create handle for non-nullptr oops");
+  assert(!obj.is_null(), "should only create handle for non-null oops");
   return _runtime->make_oop_handle(obj);
 }
 
