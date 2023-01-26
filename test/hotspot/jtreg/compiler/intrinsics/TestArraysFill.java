@@ -68,7 +68,7 @@ public class TestArraysFill {
     WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-        TestArraysFill t = new TestArraysFill();
+        var t = new TestArraysFill();
         t.testByteAll();
         t.testShortAll();
         t.testIntAll();
