@@ -342,10 +342,14 @@ void VM_Version::initialize() {
   }
 
   if (UseSHA && VM_Version::supports_sha3()) {
-    // Do not auto-enable UseSHA3Intrinsics until it has been fully tested on hardware
-    // if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
-      // FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
-    // }
+    // Auto-enable UseSHA3Intrinsics on hardware with performance benefit.
+    // Note that the evaluation of UseSHA3Intrinsics shows better performance
+    // on Apple silicon but worse performance on Neoverse V1 and N2.
+    if (_cpu == CPU_APPLE) {  // Apple silicon
+      if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
+      }
+    }
   } else if (UseSHA3Intrinsics) {
     warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);

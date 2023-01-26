@@ -701,6 +701,19 @@ define SetupNativeCompilationBody
     $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
   endif
 
+  ifeq ($$($1_TYPE), EXECUTABLE)
+    ifeq ($(UBSAN_ENABLED), true)
+      # We need to set the default options for UBSan. This needs to be included in every executable.
+      # Rather than copy and paste code to everything with a main function, we add an additional
+      # source file to every executable that exports __ubsan_default_options.
+      ifneq ($$(filter %.cpp %.cc, $$($1_SRCS)), )
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.cpp
+      else
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.c
+      endif
+    endif
+  endif
+
   # Calculate the expected output from compiling the sources
   $1_EXPECTED_OBJS_FILENAMES := $$(call replace_with_obj_extension, $$(notdir $$($1_SRCS)))
   $1_EXPECTED_OBJS := $$(addprefix $$($1_OBJECT_DIR)/, $$($1_EXPECTED_OBJS_FILENAMES))

@@ -278,7 +278,7 @@ protected:
 
   // Accessing marks
   void save_marks();
-  void reset_saved_marks();
+
   bool no_allocs_since_save_marks();
 
   // Need to declare the full complement of closures, whether we'll

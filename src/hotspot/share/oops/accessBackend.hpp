@@ -27,7 +27,6 @@
 
 #include "gc/shared/barrierSetConfig.hpp"
 #include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "metaprogramming/integralConstant.hpp"
 #include "metaprogramming/isPointer.hpp"
@@ -46,7 +45,7 @@ template <DecoratorSet decorators>
 struct HeapOopType: AllStatic {
   static const bool needs_oop_compress = HasDecorator<decorators, INTERNAL_CONVERT_COMPRESSED_OOP>::value &&
                                          HasDecorator<decorators, INTERNAL_RT_USE_COMPRESSED_OOPS>::value;
-  typedef typename Conditional<needs_oop_compress, narrowOop, oop>::type type;
+  using type = std::conditional_t<needs_oop_compress, narrowOop, oop>;
 };
 
 namespace AccessInternal {
@@ -73,9 +72,9 @@ namespace AccessInternal {
   // and otherwise returns the same type T.
   template <DecoratorSet decorators, typename T>
   struct EncodedType: AllStatic {
-    typedef typename Conditional<
-      HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-      typename HeapOopType<decorators>::type, T>::type type;
+    using type = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                    typename HeapOopType<decorators>::type,
+                                    T>;
   };
 
   template <DecoratorSet decorators>
@@ -1126,9 +1125,9 @@ namespace AccessInternal {
   inline T load(P* addr) {
     verify_types<decorators, T>();
     using DecayedP = std::decay_t<P>;
-    typedef typename Conditional<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-                                 typename OopOrNarrowOop<T>::type,
-                                 std::decay_t<T>>::type DecayedT;
+    using DecayedT = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                        typename OopOrNarrowOop<T>::type,
+                                        std::decay_t<T>>;
     // If a volatile address is passed in but no memory ordering decorator,
     // set the memory ordering to MO_RELAXED by default.
     const DecoratorSet expanded_decorators = DecoratorFixup<
@@ -1140,9 +1139,9 @@ namespace AccessInternal {
   template <DecoratorSet decorators, typename T>
   inline T load_at(oop base, ptrdiff_t offset) {
     verify_types<decorators, T>();
-    typedef typename Conditional<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
-                                 typename OopOrNarrowOop<T>::type,
-                                 std::decay_t<T>>::type DecayedT;
+    using DecayedT = std::conditional_t<HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value,
+                                        typename OopOrNarrowOop<T>::type,
+                                        std::decay_t<T>>;
     // Expand the decorators (figure out sensible defaults)
     // Potentially remember if we need compressed oop awareness
     const DecoratorSet expanded_decorators = DecoratorFixup<decorators |
@@ -1252,6 +1251,14 @@ namespace AccessInternal {
     template <typename T>
     inline bool operator !=(const T& other) const {
       return load<decorators | INTERNAL_VALUE_IS_OOP, P, T>(_addr) != other;
+    }
+
+    inline bool operator ==(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) == nullptr;
+    }
+
+    inline bool operator !=(std::nullptr_t) const {
+      return load<decorators | INTERNAL_VALUE_IS_OOP, P, oop>(_addr) != nullptr;
     }
   };
 

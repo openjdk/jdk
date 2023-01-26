@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -741,10 +741,6 @@ private:
   }
 
   // Misc. accessors/mutators
-  void set_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = true; }
-  void clr_do_not_unlock(void)                   { _do_not_unlock_if_synchronized = false; }
-  bool do_not_unlock(void)                       { return _do_not_unlock_if_synchronized; }
-
   static ByteSize scopedValueCache_offset()       { return byte_offset_of(JavaThread, _scopedValueCache); }
 
   // For assembly stub generation

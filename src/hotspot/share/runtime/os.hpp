@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -500,13 +500,13 @@ class os: AllStatic {
   static bool   numa_topology_changed();
   static int    numa_get_group_id();
   static int    numa_get_group_id_for_address(const void* address);
+  static bool   numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count);
 
   // Page manipulation
   struct page_info {
     size_t size;
     int lgrp_id;
   };
-  static bool   get_page_info(char *start, page_info* info);
   static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
 
   static char*  non_memory_address_word();

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,28 +21,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "metaprogramming/conditional.hpp"
-#include "metaprogramming/isSame.hpp"
-#include "utilities/debug.hpp"
+package sun.security.util;
 
-class ConditionalTest {
-  class A: AllStatic {};
-  class B: AllStatic {};
+import java.math.BigInteger;
+import javax.crypto.spec.DHParameterSpec;
 
-  typedef Conditional<true, A, B>::type A_B_if_true;
-  static const bool A_B_if_true_is_A = IsSame<A_B_if_true, A>::value;
-  static const bool A_B_if_true_is_B = IsSame<A_B_if_true, B>::value;
-  STATIC_ASSERT(A_B_if_true_is_A);
-  STATIC_ASSERT(!A_B_if_true_is_B);
+/**
+ * Internal marker class for well-known safe DH parameters. It should
+ * only be used with trusted callers since it does not have all the needed
+ * values for validation.
+ */
 
-  typedef Conditional<false, A, B>::type A_B_if_false;
-  static const bool A_B_if_false_is_A = IsSame<A_B_if_false, A>::value;
-  static const bool A_B_if_false_is_B = IsSame<A_B_if_false, B>::value;
-  STATIC_ASSERT(!A_B_if_false_is_A);
-  STATIC_ASSERT(A_B_if_false_is_B);
-};
+public final class SafeDHParameterSpec extends DHParameterSpec {
+    public SafeDHParameterSpec(BigInteger p, BigInteger g) {
+        super(p, g);
+    }
+
+    public SafeDHParameterSpec(BigInteger p, BigInteger g, int l) {
+        super(p, g, l);
+    }
+}

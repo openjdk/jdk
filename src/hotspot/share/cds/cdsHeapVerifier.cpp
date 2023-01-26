@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,11 +308,9 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
   return level;
 }
 
-#ifdef ASSERT
 void CDSHeapVerifier::verify() {
   CDSHeapVerifier verf;
   HeapShared::archived_object_cache()->iterate(&verf);
 }
-#endif
 
 #endif // INCLUDE_CDS_JAVA_HEAP
