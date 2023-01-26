@@ -28,6 +28,7 @@ package java.lang;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.util.function.IntPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -271,6 +272,72 @@ public class Runtime {
             sm.checkPermission(new RuntimePermission("shutdownHooks"));
         }
         return ApplicationShutdownHooks.remove(hook);
+    }
+
+
+    /**
+     * Registers a new virtual-machine shutdown predicate.
+     *
+     * @apiNote
+     * Shutdown predicates run at a delicate time in the life cycle of a virtual
+     * machine and should therefore be coded defensively. They should, in
+     * particular, be written to be thread-safe and to avoid deadlocks insofar
+     * as possible. They should also not rely blindly upon services that may
+     * have registered their own shutdown predicates and therefore may themselves be
+     * in the process of shutting down. Attempts to use other thread-based
+     * services such as the AWT event-dispatch thread, for example, may lead to
+     * deadlocks.
+     * <p>
+     * Shutdown predicates should also finish their work quickly.  When a
+     * program invokes {@link #exit exit}, the expectation is
+     * that the virtual machine will promptly shut down and exit.  When the
+     * virtual machine is terminated due to user logoff or system shutdown the
+     * underlying operating system may only allow a limited amount of time in
+     * which to shut down and exit. It is therefore inadvisable to attempt any
+     * user interaction or to perform a long-running computation in a shutdown
+     * predicate.
+     *
+     * @param   predicate
+     *          An initialized but unstarted {@link Thread} object
+     *
+     * @throws  IllegalArgumentException
+     *          If the same predicate (compared using {@code ==}) as the specified 
+     *          predicate has already been registered
+     *
+     * @throws  IllegalStateException
+     *          If the shutdown sequence has already begun
+     *
+     * @see #removeShutdownPredicate
+     * @see #halt(int)
+     * @see #exit(int)
+     * @since 22
+     */
+    public void addShutdownPredicate(IntPredicate predicate) {
+        // implementation to be done
+    }
+
+    /**
+     * De-registers a previously-registered virtual-machine shutdown predicate.
+     * Predicates are compared using {@code ==}.
+     * Registration and de-registration of shutdown predicates is disallowed
+     * once the shutdown sequence has begun.
+     *
+     * @param predicate the predicate to remove
+     * @return {@code true} if the specified predicate had previously been
+     * registered and was successfully de-registered, {@code false}
+     * otherwise.
+     *
+     * @throws  IllegalStateException
+     *          If the shutdown sequence has already begun
+     *
+     * @see #addShutdownPredicate
+     * @see #halt(int)
+     * @see #exit(int)
+     * @since 22
+     */
+    public boolean removeShutdownPredicate(IntPredicate predicate) {
+        // implementation to be done
+        return false;
     }
 
     /**
