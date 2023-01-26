@@ -628,8 +628,7 @@ public abstract class Charset
             });
     }
 
-    @Stable
-    private static Charset defaultCharset;
+    private @Stable static Charset defaultCharset;
 
     /**
      * Returns the default charset of this Java virtual machine.
