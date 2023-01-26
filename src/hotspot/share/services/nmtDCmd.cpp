@@ -50,8 +50,7 @@ NMTDCmd::NMTDCmd(outputStream* output,
             "comparison against previous baseline, which shows the memory " \
             "allocation activities at different callsites.",
             "BOOLEAN", false, "false"),
-  _shutdown("shutdown", "request runtime to shutdown itself and free the " \
-            "memory used by runtime.",
+  _shutdown("shutdown", "deprecated.",
             "BOOLEAN", false, "false"),
   _statistics("statistics", "print tracker statistics for tuning purpose.", \
             "BOOLEAN", false, "false"),
@@ -148,8 +147,7 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("No detail baseline for comparison");
     }
   } else if (_shutdown.value()) {
-    MemTracker::shutdown();
-    output()->print_cr("Native memory tracking has been turned off");
+    output()->print_cr("This option is deprecated and will be ignored.");
   } else if (_statistics.value()) {
     if (check_detail_tracking_level(output())) {
       MemTracker::tuning_statistics(output());
