@@ -2494,7 +2494,7 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Arguments for generated stub:
   //   t:                Array element type.
-  //   aligned:          True if data is aligned at 8 bytes.
+  //   aligned:          True if data is 8 bytes aligned.
   //   name:             Stub name.
   //   to:               Start address.
   //   value:            Value to fill array with.
@@ -2568,7 +2568,7 @@ class StubGenerator: public StubCodeGenerator {
     // if (smallThreshold != 0 && count <= smallThreshold) {
     //   goto implTable + count * implSize; // see generate_fixed_fill_tail_implementation(...)
     // }
-    // [align data at 16 bytes];
+    // [align data by 16 bytes];
     // count = count * ELEMENT_SIZE; // count in bytes
     // if (UseBlockZeroing && value == 0 && count >= BlockZeroingLowLimit) {
     //   goto specialZeroingImplementation;
@@ -2581,7 +2581,7 @@ class StubGenerator: public StubCodeGenerator {
     // return;
     //
     // specialZeroingImplementation:
-    // [align at zva_length];
+    // [align by zva_length];
     // while(count >= 2 * zva_length) {
     //   [clear cache line with zva_length bytes];
     //   [clear cache line with zva_length bytes];
@@ -2696,7 +2696,7 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(lr);
     }
 
-    // align data at 16 bytes
+    // align data by 16 bytes
     __ align(OptoLoopAlignment);
     __ bind(L_large);
     if (!UseSIMDForArrayFill) {
@@ -2783,7 +2783,7 @@ class StubGenerator: public StubCodeGenerator {
       __ align(OptoLoopAlignment);
       __ bind(L_zero);
 
-      // align at zva_length.
+      // align by zva_length
       if (ZVA_LENGTH == 64) {
         Label L_aligned32;
         __ tbz(to, exact_log2(16), L_aligned32);
