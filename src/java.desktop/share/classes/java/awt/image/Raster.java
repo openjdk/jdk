@@ -366,10 +366,10 @@ public class Raster {
                                                      " be greater than 0");
         }
         int[] bankIndices = new int[bands];
-        int[] bandOffsets = new int[bands];
         for (int i = 0; i < bands; i++) {
             bankIndices[i] = i;
         }
+        int[] bandOffsets = new int[bands]; // leave default 0 values
 
         return createBandedRaster(dataType, w, h, w,
                                   bankIndices, bandOffsets,
