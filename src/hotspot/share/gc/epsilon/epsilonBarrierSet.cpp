@@ -39,8 +39,8 @@ EpsilonBarrierSet::EpsilonBarrierSet() : BarrierSet(
           make_barrier_set_assembler<BarrierSetAssembler>(),
           make_barrier_set_c1<BarrierSetC1>(),
           make_barrier_set_c2<BarrierSetC2>(),
-          NULL /* barrier_set_nmethod */,
-          NULL /* barrier_set_stack_chunk */,
+          nullptr /* barrier_set_nmethod */,
+          nullptr /* barrier_set_stack_chunk */,
           BarrierSet::FakeRtti(BarrierSet::EpsilonBarrierSet)) {}
 
 void EpsilonBarrierSet::on_thread_create(Thread *thread) {
