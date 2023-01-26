@@ -1300,6 +1300,8 @@ void G1ConcurrentMark::remark() {
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
+
+    G1CollectedHeap::finish_codecache_marking_cycle();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
@@ -1315,8 +1317,6 @@ void G1ConcurrentMark::remark() {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
     report_object_count(mark_finished);
   }
-
-  G1CollectedHeap::finish_codecache_marking_cycle();
 
   // Statistics
   double now = os::elapsedTime();
