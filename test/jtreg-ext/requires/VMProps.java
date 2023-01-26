@@ -515,9 +515,17 @@ public class VMProps implements Callable<Map<String, String>> {
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
+
+        // TODO: use property for file path if defined, plus timestamp
+        File out = new File("./container-ps-stdout.log");
+        pb.redirectOutput(out);
+        File err = new File("./container-ps-stderr.log");
+        pb.redirectError(err);
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
+
+        // TODO: log stdout and stderr file names
         log("checkDockerSupport(): exitValue = " + exitValue);
 
         return (exitValue == 0);
@@ -673,6 +681,7 @@ public class VMProps implements Callable<Map<String, String>> {
                     + fileName + "'", e);
         }
     }
+
 
     /**
      * This method is for the testing purpose only.
