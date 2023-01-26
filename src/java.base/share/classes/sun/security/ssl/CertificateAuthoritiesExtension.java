@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ final class CertificateAuthoritiesExtension {
                     "insufficient data");
             }
 
-            this.authorities = new LinkedList<>();
+            this.authorities = new ArrayList<>();
             while (listLen > 0) {
                 // opaque DistinguishedName<1..2^16-1>;
                 byte[] encoded = Record.getBytes16(m);
