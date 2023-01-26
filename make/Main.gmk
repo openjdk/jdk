@@ -707,6 +707,22 @@ ifeq ($(BUILD_FAILURE_HANDLER), true)
   ))
 endif
 
+ifeq ($(BUILD_JTREG_MAIN_WRAPPER), true)
+  # Builds the main wrapper jtreg extension
+  $(eval $(call SetupTarget, build-test-main-wrapper, \
+      MAKEFILE := test/BuildJtregMainWrapper, \
+      TARGET := build, \
+      DEPS := interim-langtools, \
+  ))
+
+  # Copies the jtreg main wrapper into the test image
+  $(eval $(call SetupTarget, test-image-main-wrapper, \
+      MAKEFILE := test/BuildJtregMainWrapper, \
+      TARGET := images, \
+      DEPS := build-test-main-wrapper, \
+  ))
+endif
+
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
     DEPS := interim-langtools exploded-image, \
@@ -1185,6 +1201,10 @@ endif
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
   test-image: test-image-failure-handler
+endif
+
+ifeq ($(BUILD_JTREG_MAIN_WRAPPER), true)
+  test-image: test-image-main-wrapper
 endif
 
 ifneq ($(JMH_CORE_JAR), )

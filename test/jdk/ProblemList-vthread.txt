@@ -1,0 +1,375 @@
+# Filed bugs
+
+java/foreign/channels/TestSocketChannels.java                         8272749 windows-all
+java/lang/management/ThreadMXBean/Locks.java                          8278603 generic-all
+
+# JFR is not completely fixed to support vthreads
+jdk/jfr/event/gc/detailed/TestPromotionFailedEventWithDefNew.java            8279836 generic-all
+jdk/jfr/event/gc/detailed/TestPromotionFailedEventWithParallelScavenge.java  8279836 generic-all
+jdk/jfr/jcmd/TestJcmdDumpPathToGCRoots.java 0000000 generic-all
+jdk/jfr/tool/TestPrintXML.java 0000000 generic-all
+
+java/util/logging/Logger/logrb/TestLogrbResourceBundle.java                  8284779 generic-all
+
+com/sun/jdi/EATests.java#id0                                         8264699 generic-all
+
+jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8283508 generic-all
+
+
+##########
+## Tests failing when main() is executed in additional vthread or in vthread instead of thread
+#
+
+
+####
+# Incorrect stackwalking expectations for main thread stack trace
+java/lang/StackWalker/StackWalkTest.java 0000000 generic-all
+java/lang/StackWalker/VerifyStackTrace.java 0000000 generic-all
+java/lang/StackWalker/GetCallerClassTest.java 0000000 generic-all
+java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
+java/lang/StackWalker/ReflectionFrames.java 0000000 generic-all
+java/lang/StackWalker/NativeMethod.java 0000000 generic-all
+
+# Uses custom scheduler
+java/lang/Thread/virtual/HoldsLock.java 0000000 generic-all
+
+jdk/internal/vm/Continuation/HumongousStack.java 0000000 generic-all
+jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
+jdk/internal/vm/Continuation/Fuzz.java 0000000 generic-all
+
+# Doesn't work with --enable-preview
+java/lang/invoke/defineHiddenClass/PreviewHiddenClass.java 0000000 generic-all
+
+####
+# Thread-sensitive threads
+
+# Test assumes main thread is named "main"
+java/lang/Thread/UncaughtExceptionsTest.java 0000000 generic-all
+
+# Handler thread has daemon status set because it inherited from virtual thread
+com/sun/net/httpserver/bugs/B6431193.java 0000000 generic-all
+
+# Test limits default scheduler to 1 carrier thread, can't run with wrapper
+java/lang/Thread/virtual/GetStackTraceWhenRunnable.java 0000000 generic-all
+
+# Test requires the main thread to be in a thread group
+java/lang/Thread/MainThreadTest.java 0000000 generic-all
+
+# Test don't expect FJ pool creating thread on demand
+java/lang/management/ThreadMXBean/ThreadLists.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ResetPeakThreadCount.java 0000000 generic-all
+
+# Test assumes main thread is a platform thread
+java/lang/management/ThreadMXBean/VirtualThreads.java#default 0000000 generic-all
+java/lang/management/ThreadMXBean/VirtualThreads.java#no-vmcontinuations 0000000 generic-all
+
+####
+
+# JFR tests check events for test main thread only or expect to find MainThread
+jdk/jfr/event/io/TestFileStreamEvents.java 0000000 generic-all
+jdk/jfr/event/compiler/TestAllocInNewTLAB.java 0000000 generic-all
+jdk/jfr/event/runtime/TestThreadStartEvent.java 0000000 generic-all
+
+# test expects to find virtual thread frames in thread dump
+jdk/jfr/event/runtime/TestThreadDumpEvent.java 0000000 generic-all
+
+# the VirtualThreadStartEvent is loaded before main() in wrapper
+jdk/jfr/jvm/TestGetAllEventClasses.java 0000000 generic-all
+
+# Virtual threads don't generate jdk.ThreadPark event when they park
+jdk/jfr/event/runtime/TestThreadParkEvent.java 0000000 generic-all
+
+####
+# OOME in unexpected thread
+
+java/lang/ref/OOMEInReferenceHandler.java 0000000 generic-all
+
+####
+# incorrect using of 'test.jdk' by wrapper
+
+runtime/jni/checked/TestCheckedEnsureLocalCapacity.java 0000000 generic-all
+
+####
+# Makes use of methods that are not supported on virtual threads
+java/lang/management/ManagementFactory/ProxyTypeMapping.java 0000000 generic-all
+java/lang/management/ManagementFactory/ValidateOpenTypes.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ThreadUserTime.java 0000000 generic-all
+java/lang/management/ThreadMXBean/ThreadCpuTime.java 0000000 generic-all
+com/sun/management/ThreadMXBean/ThreadAllocatedMemory.java 0000000 generic-all
+
+
+####
+# Tests failing while setting custom Permissions
+
+java/util/Properties/LoadAndStoreXML.java 0000000 generic-all
+java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
+sun/reflect/ReflectionFactory/ReflectionFactoryTest.java 0000000 generic-all
+java/io/FilePermission/MergeName.java 0000000 generic-all
+java/lang/System/SecurityRace.java 0000000 generic-all
+java/lang/System/LoggerFinder/jdk/DefaultLoggerBridgeTest/DefaultLoggerBridgeTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/jdk/DefaultPlatformLoggerTest/DefaultPlatformLoggerTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/PlatformLoggerBridgeTest/PlatformLoggerBridgeTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/LoggerFinderLoaderTest/LoggerFinderLoaderTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/LoggerBridgeTest/LoggerBridgeTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/BootstrapLogger/BootstrapLoggerTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/BasePlatformLoggerTest/BasePlatformLoggerTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/BaseLoggerBridgeTest/BaseLoggerBridgeTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/internal/BaseDefaultLoggerFinderTest/BaseDefaultLoggerFinderTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/DefaultLoggerFinderTest/DefaultLoggerFinderTest.java 0000000 generic-all
+java/lang/System/LoggerFinder/BaseLoggerFinderTest/BaseLoggerFinderTest.java 0000000 generic-all
+java/lang/System/Logger/default/DefaultLoggerTest.java 0000000 generic-all
+java/lang/System/Logger/custom/CustomLoggerTest.java 0000000 generic-all
+java/lang/System/SecurityManagerWarnings.java 0000000 generic-all
+java/lang/StackWalker/SecurityExceptions.java 0000000 generic-all
+java/lang/StackWalker/CallerSensitiveMethod/Main.java 0000000 generic-all
+java/lang/SecurityManager/CheckSecurityProvider.java 0000000 generic-all
+java/lang/SecurityManager/PackageAccessTest.java 0000000 generic-all
+java/lang/SecurityManager/modules/CustomSecurityManagerTest.java 0000000 generic-all
+java/lang/reflect/Proxy/nonPublicProxy/NonPublicProxyClass.java 0000000 generic-all
+java/lang/reflect/records/IsRecordTest.java 0000000 generic-all
+java/lang/reflect/records/RecordPermissionsTest.java 0000000 generic-all
+java/lang/reflect/records/RecordReflectionTest.java 0000000 generic-all
+java/lang/ProcessHandle/PermissionTest.java 0000000 generic-all
+java/lang/ProcessBuilder/SecurityManagerClinit.java 0000000 generic-all
+java/lang/ProcessBuilder/Basic.java#id1 0000000 generic-all
+java/lang/ProcessBuilder/Basic.java#id0 0000000 generic-all
+java/lang/ModuleTests/WithSecurityManager.java 0000000 generic-all
+java/lang/module/ModuleFinderWithSecurityManager.java 0000000 generic-all
+java/lang/invoke/MethodTypeSecurityManager.java 0000000 generic-all
+java/lang/invoke/MethodHandleConstants.java 0000000 generic-all
+java/lang/invoke/InvokeDynamicPrintArgs.java 0000000 generic-all
+java/lang/reflect/callerCache/ReflectionCallerCacheTest.java 0000000 generic-all
+java/lang/runtime/ObjectMethodsTest.java 0000000 generic-all
+java/util/ServiceLoader/security/SecurityTest.java 0000000 generic-all
+java/util/PluggableLocale/PermissionTest.java 0000000 generic-all
+java/util/logging/TestLoggerBundleSync.java 0000000 generic-all
+java/util/logging/TestLogConfigurationDeadLockWithConf.java 0000000 generic-all
+java/util/logging/TestLogConfigurationDeadLock.java 0000000 generic-all
+java/util/logging/TestGetLoggerNPE.java 0000000 generic-all
+java/util/logging/TestConfigurationListeners.java 0000000 generic-all
+java/util/logging/TestAppletLoggerContext.java 0000000 generic-all
+java/util/logging/SystemLoggerConfigTest.java 0000000 generic-all
+java/util/logging/FileHandlerPatternExceptions.java 0000000 generic-all
+java/util/logging/FileHandlerPath.java 0000000 generic-all
+java/util/logging/FileHandlerLongLimit.java 0000000 generic-all
+java/util/logging/RootLogger/RootLevelInConfigFile.java 0000000 generic-all
+java/util/logging/LogManager/RootLogger/setLevel/TestRootLoggerLevel.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/TestConfigurationLock.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/ParentLoggerWithHandlerGC.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/updateConfiguration/UpdateConfigurationTest.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/updateConfiguration/SimpleUpdateConfigWithInputStreamTest.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/updateConfiguration/SimpleUpdateConfigurationTest.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexResetUpdate.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/updateConfiguration/HandlersOnComplexUpdate.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/rootLoggerHandlers/RootLoggerHandlers.java 0000000 generic-all
+java/lang/invoke/VarHandles/VarHandleTestByteArrayAsDouble.java 0000000 generic-all
+java/util/logging/Logger/setResourceBundle/TestSetResourceBundle.java 0000000 generic-all
+java/util/logging/LogManager/Configuration/rootLoggerHandlers/BadRootLoggerHandlers.java 0000000 generic-all
+java/util/logging/Logger/getGlobal/TestGetGlobalConcurrent.java 0000000 generic-all
+java/util/logging/Logger/getGlobal/TestGetGlobalByName.java 0000000 generic-all
+java/util/logging/Logger/getGlobal/TestGetGlobal.java 0000000 generic-all
+runtime/Dictionary/ProtectionDomainCacheTest.java 0000000 generic-all
+java/util/concurrent/Executors/PrivilegedCallables.java 0000000 generic-all
+java/lang/constant/methodTypeDesc/ResolveConstantDesc.java 0000000 generic-all
+java/lang/ClassLoader/forNameLeak/ClassForNameLeak.java 0000000 generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithRemoveAddProvider.java 0000000 generic-all
+com/sun/crypto/provider/Cipher/AES/TestAESCiphers/TestAESWithProviderChange.java 0000000 generic-all
+jdk/jfr/api/consumer/security/TestStreamingRemote.java 0000000 generic-all
+jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
+java/lang/Class/getDeclaredField/FieldSetAccessibleTest.java 0000000 generic-all
+java/lang/Class/getDeclaredField/ClassDeclaredFieldsTest.java 0000000 generic-all
+java/lang/annotation/ParameterAnnotations.java 0000000 generic-all
+sun/security/util/Resources/early/EarlyResources.java 0000000 generic-all
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 0000000 generic-all
+
+#####
+# Tests failing because of ProcessTools wrapper
+
+com/sun/jdi/ProcessAttachTest.java 0000000 generic-all
+java/util/ResourceBundle/modules/cache/CacheTest.java 0000000 generic-all
+java/util/logging/modules/GetResourceBundleTest.java 0000000 generic-all
+jdk/modules/etc/DefaultModules.java 0000000 generic-all
+jdk/modules/incubator/ServiceBinding.java 0000000 generic-all
+jdk/internal/misc/VM/RuntimeArguments.java 0000000 generic-all
+jdk/jfr/jvm/TestJfrJavaBase.java 0000000 generic-all
+java/lang/StackWalker/CallerFromMain.java 0000000 generic-all
+java/lang/Package/PackageFromManifest.java 0000000 generic-all
+java/lang/Package/IsCompatibleWithDriver.java 0000000 generic-all
+java/lang/RuntimeTests/shutdown/ShutdownHooks.java 0000000 generic-all
+java/lang/ClassLoader/EndorsedDirs.java 0000000 generic-all
+java/lang/ClassLoader/ExtDirs.java 0000000 generic-all
+java/lang/ClassLoader/GetSystemPackage.java 0000000 generic-all
+java/lang/ClassLoader/securityManager/ClassLoaderTest.java 0000000 generic-all
+java/lang/ClassLoader/getResource/modules/ResourcesTest.java 0000000 generic-all
+java/lang/ClassLoader/getResource/automaticmodules/Driver.java 0000000 generic-all
+java/lang/Class/getResource/ResourcesTest.java 0000000 generic-all
+java/lang/Class/forName/modules/TestDriver.java 0000000 generic-all
+java/lang/ClassLoader/getResource/modules/ResourcesTest.java 0000000 generic-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id0 0000000 generic-all
+java/lang/Thread/jni/AttachCurrentThread/AttachTest.java#id1 0000000 generic-all
+java/foreign/enablenativeaccess/TestEnableNativeAccess.java 0000000 generic-all
+java/foreign/enablenativeaccess/TestEnableNativeAccessDynamic.java 0000000 generic-all
+java/security/AccessController/DoPrivAccompliceTest.java 0000000 generic-all
+java/security/AccessController/LimitedDoPrivileged.java 0000000 generic-all
+java/security/Policy/SignedJar/SignedJarTest.java 0000000 generic-all
+java/security/Provider/SecurityProviderModularTest.java 0000000 generic-all
+java/security/Security/signedfirst/DynStatic.java 0000000 generic-all
+java/security/SignedJar/SignedJarWithCustomClassLoader.java 0000000 generic-all
+javax/security/auth/login/modules/JaasModularClientTest.java 0000000 generic-all
+javax/security/auth/login/modules/JaasModularDefaultHandlerTest.java 0000000 generic-all
+sun/security/ssl/CertPathRestrictions/TLSRestrictions.java 0000000 generic-all
+sun/security/tools/jarsigner/multiRelease/MVJarSigningTest.java 0000000 generic-all
+java/io/FilePermission/ReadFileOnPath.java 0000000 generic-all
+java/nio/file/spi/SetDefaultProvider.java 0000000 generic-all
+tools/launcher/modules/addexports/AddExportsTest.java 0000000 generic-all
+tools/launcher/modules/addexports/manifest/AddExportsAndOpensInManifest.java 0000000 generic-all
+tools/launcher/modules/addmods/AddModsTest.java 0000000 generic-all
+tools/launcher/modules/addreads/AddReadsTest.java 0000000 generic-all
+tools/launcher/modules/addreads/AddReadsTestWarningError.java 0000000 generic-all
+tools/launcher/modules/basic/BasicTest.java 0000000 generic-all
+tools/launcher/modules/basic/LauncherErrors.java 0000000 generic-all
+tools/launcher/modules/describe/DescribeModuleTest.java 0000000 generic-all
+tools/launcher/modules/dryrun/DryRunTest.java 0000000 generic-all
+tools/launcher/modules/illegalaccess/IllegalAccessTest.java 0000000 generic-all
+tools/launcher/modules/limitmods/LimitModsTest.java 0000000 generic-all
+tools/launcher/modules/listmods/ListModsTest.java 0000000 generic-all
+tools/launcher/modules/showmoduleresolution/ShowModuleResolutionTest.java 0000000 generic-all
+tools/launcher/modules/validate/ValidateModulesTest.java 0000000 generic-all
+java/rmi/module/ModuleTest.java 0000000 generic-all
+javax/crypto/SecretKeyFactory/TestFailOver.java 0000000 generic-all
+javax/xml/jaxp/module/ServiceProviderTest/BasicModularXMLParserTest.java 0000000 generic-all
+tools/jimage/JImageToolTest.java 0000000 generic-all
+tools/jpackage/junit/junit.java 0000000 generic-all
+jdk/security/JavaDotSecurity/MakeJavaSecurityTest.java 0000000 generic-all
+javax/xml/jaxp/module/ServiceProviderTest/BasicModularXMLParserTest.java 0000000 generic-all
+
+java/io/Serializable/class/NonSerializableTest.java 0000000 generic-all
+java/io/Serializable/evolution/RenamePackage/RenamePackageTest.java 0000000 generic-all
+java/io/Serializable/serialFilter/InvalidGlobalFilterTest.java 0000000 generic-all
+
+java/lang/instrument/PremainClass/PremainClassTest.java 0000000 generic-all
+java/lang/instrument/executableJAR/ExecJarWithAgent.java 0000000 generic-all
+
+sun/management/jmxremote/bootstrap/SSLConfigFilePermissionTest.java 0000000 generic-all
+sun/management/jmxremote/bootstrap/PasswordFilePermissionTest.java 0000000 generic-all
+sun/management/jmxremote/bootstrap/JMXInterfaceBindingTest.java 0000000 generic-all
+sun/management/jmxremote/startstop/JMXStartStopTest.java 0000000 generic-all
+sun/management/jmxremote/startstop/JMXStatusPerfCountersTest.java 0000000 generic-all
+sun/management/jmxremote/startstop/JMXStatusTest.java 0000000 generic-all
+
+jdk/internal/misc/CDS/ArchivedEnumTest.java 0000000 generic-all
+
+####
+# No expected StackOverflow
+
+java/lang/invoke/condy/CondyNestedResolutionTest.java 0000000 generic-all
+
+####
+# Other incorrect test expectations (test bugs)
+
+# Test memory consumption changed a little bit
+java/lang/RuntimeTests/exec/LotsOfOutput.java 0000000 generic-all
+
+###
+# transform invoked during parking, attempts recursive park that deadlocks
+java/lang/instrument/NativeMethodPrefixAgent.java 0000000 generic-all
+
+
+####
+# Legacy socket I/O is interruptible in the context of virtual threads
+java/net/DatagramSocket/InterruptibleDatagramSocket.java 0000000 generic-all
+java/nio/channels/DatagramChannel/InterruptibleOrNot.java 0000000 generic-all
+
+
+####
+# Tests behavior that differs when underlying socket is non-blocking
+java/nio/channels/SocketChannel/ShortWrite.java 0000000 generic-all
+
+
+####
+# JDI tests failing with wrapper
+# some failing to find main method
+# need to be re-reviewed later if want to support wrapper for jdi
+
+com/sun/jdi/DeferredStepTest.java 0000000 generic-all
+com/sun/jdi/EarlyReturnTest.java 0000000 generic-all
+com/sun/jdi/ExceptionEvents.java 0000000 generic-all
+com/sun/jdi/FetchLocals.java 0000000 generic-all
+com/sun/jdi/Frames2Test.java 0000000 generic-all
+com/sun/jdi/GetSetLocalTest.java 0000000 generic-all
+com/sun/jdi/JdbMethodExitTest.java 0000000 generic-all
+com/sun/jdi/JdbStepTest.java 0000000 generic-all
+com/sun/jdi/JdbStopThreadTest.java 0000000 generic-all
+com/sun/jdi/JdbStopThreadidTest.java 0000000 generic-all
+com/sun/jdi/LaunchCommandLine.java 0000000 generic-all
+com/sun/jdi/MethodEntryExitEvents.java 0000000 generic-all
+com/sun/jdi/MultiBreakpointsTest.java 0000000 generic-all
+com/sun/jdi/NativeInstanceFilter.java 0000000 generic-all
+com/sun/jdi/PopAndStepTest.java 0000000 generic-all
+com/sun/jdi/PopAsynchronousTest.java 0000000 generic-all
+com/sun/jdi/PopSynchronousTest.java 0000000 generic-all
+com/sun/jdi/RedefineCrossStart.java 0000000 generic-all
+com/sun/jdi/RedefineG.java 0000000 generic-all
+com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 0000000 generic-all
+com/sun/jdi/RedefineTTYLineNumber.java 0000000 generic-all
+com/sun/jdi/ReferrersTest.java 0000000 generic-all
+com/sun/jdi/ResumeAfterThreadResumeCallTest.java 0000000 generic-all
+com/sun/jdi/SetLocalWhileThreadInNative.java 0000000 generic-all
+com/sun/jdi/StepTest.java 0000000 generic-all
+com/sun/jdi/redefine/RedefineTest.java 0000000 generic-all
+com/sun/jdi/redefineMethod/RedefineTest.java 0000000 generic-all
+
+####
+# JDI SDE Tests
+# Use custom classpath
+
+com/sun/jdi/sde/FilterMangleTest.java 0000000 generic-all
+com/sun/jdi/sde/MangleTest.java 0000000 generic-all
+com/sun/jdi/sde/MangleStepTest.java 0000000 generic-all
+com/sun/jdi/sde/TemperatureTableTest.java 0000000 generic-all
+com/sun/jdi/sde/SourceDebugExtensionTest.java 0000000 generic-all
+
+# Tests using Thread.stop(), not supported on virtual threads
+jdk/jshell/PasteAndMeasurementsUITest.java                      0000000 generic-all
+
+
+# Junit test fail to check permissions
+java/util/concurrent/tck/JSR166TestCase.java
+
+####
+# The testng tests using custom permissions don't with with wrapper
+
+java/io/Serializable/records/AbsentStreamValuesTest.java
+java/io/Serializable/records/BasicRecordSer.java
+java/io/Serializable/records/ConstructorAccessTest.java
+java/io/Serializable/records/ConstructorPermissionTest.java
+java/io/Serializable/records/CycleTest.java
+java/io/Serializable/records/DifferentStreamFieldsTest.java
+java/io/Serializable/records/ReadResolveTest.java
+java/io/Serializable/records/RecordClassTest.java
+java/io/Serializable/records/SerialVersionUIDTest.java
+java/io/Serializable/records/ThrowingConstructorTest.java
+java/io/Serializable/records/WriteReplaceTest.java
+jdk/dynalink/BeanLinkerTest.java
+jdk/dynalink/TrustedDynamicLinkerFactoryTest.java
+jdk/dynalink/UntrustedDynamicLinkerFactoryTest.java
+jdk/nio/zipfs/DirectoryStreamTests.java
+jdk/nio/zipfs/InvalidZipHeaderTests.java
+jdk/nio/zipfs/NewFileSystemTests.java
+jdk/nio/zipfs/PropertyPermissionTests.java
+jdk/nio/zipfs/TestPosix.java
+jdk/nio/zipfs/ZipFSPermissionsTest.java
+java/net/httpclient/AsFileDownloadTest.java
+java/net/httpclient/ConnectExceptionTest.java
+java/net/httpclient/DependentActionsTest.java
+java/net/httpclient/DependentPromiseActionsTest.java
+java/net/httpclient/FilePublisher/FilePublisherPermsTest.java
+java/net/httpclient/FilePublisher/FilePublisherTest.java
+java/net/httpclient/HttpClientLocalAddrTest.java
+java/net/httpclient/PathSubscriber/BodyHandlerOfFileDownloadTest.java
+java/net/httpclient/PathSubscriber/BodyHandlerOfFileTest.java
+java/net/httpclient/PathSubscriber/BodySubscriberOfFileTest.java
+java/net/httpclient/RequestBodyTest.java
+java/net/httpclient/security/filePerms/FileProcessorPermissionTest.java
+java/net/httpclient/security/filePerms/SecurityBeforeFile.java
+java/net/httpclient/websocket/security/WSURLPermissionTest.java

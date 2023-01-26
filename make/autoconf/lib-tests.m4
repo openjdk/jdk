@@ -301,3 +301,22 @@ AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_FAILURE_HANDLER],
       ])
   AC_SUBST(BUILD_FAILURE_HANDLER)
 ])
+
+AC_DEFUN_ONCE([LIB_TESTS_ENABLE_DISABLE_JTREG_MAIN_WRAPPER],
+[
+  UTIL_ARG_ENABLE(NAME: jtreg-main-wrapper, DEFAULT: auto,
+      RESULT: BUILD_JTREG_MAIN_WRAPPER,
+      DESC: [enable building of the jtreg main wrapper],
+      DEFAULT_DESC: [enabled if jtreg is present],
+      CHECKING_MSG: [if the jtreg main wrapper should be built],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if the jtreg main wrapper is available])
+        if test "x$JT_HOME" != "x"; then
+          AC_MSG_RESULT([yes])
+        else
+          AVAILABLE=false
+          AC_MSG_RESULT([no (jtreg not present)])
+        fi
+      ])
+  AC_SUBST(BUILD_JTREG_MAIN_WRAPPER)
+])
