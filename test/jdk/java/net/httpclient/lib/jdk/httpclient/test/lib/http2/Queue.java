@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,14 @@
  * questions.
  */
 
+package jdk.httpclient.test.lib.http2;
+
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import jdk.httpclient.test.lib.common.ExceptionallyCloseable;
 
 // Each stream has one of these for input. Each Http2Connection has one
 // for output. Can be used blocking or asynchronously.

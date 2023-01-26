@@ -2755,29 +2755,6 @@ bool FileMapInfo::validate_header() {
   }
 }
 
-// Unmap mapped regions of shared space.
-void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
-  MetaspaceShared::set_shared_metaspace_range(nullptr, nullptr, nullptr);
-
-  FileMapInfo *map_info = FileMapInfo::current_info();
-  if (map_info) {
-    map_info->fail_continue("%s", msg);
-    for (int i = 0; i < MetaspaceShared::num_non_heap_regions; i++) {
-      if (!HeapShared::is_heap_region(i)) {
-        map_info->unmap_region(i);
-      }
-    }
-    // Dealloc the archive heap regions only without unmapping. The regions are part
-    // of the java heap. Unmapping of the heap regions are managed by GC.
-    map_info->dealloc_heap_regions(open_heap_regions,
-                                   num_open_heap_regions);
-    map_info->dealloc_heap_regions(closed_heap_regions,
-                                   num_closed_heap_regions);
-  } else if (DumpSharedSpaces) {
-    fail_stop("%s", msg);
-  }
-}
-
 #if INCLUDE_JVMTI
 ClassPathEntry** FileMapInfo::_classpath_entries_for_jvmti = nullptr;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,37 @@
  * questions.
  */
 
-
-import java.io.IOException;
-
 /**
- * A handler which is invoked to process HTTP exchanges. Each
- * HTTP exchange is handled by one of these handlers.
+ * @test
+ * @bug 8298118
+ * @summary Test that the JVM doesn't fail due to split-if causing empty loop to temporarily have more than one phi
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestEmptyLoopMultiplePhis::test
+ *      compiler.loopopts.TestEmptyLoopMultiplePhis
  */
-public interface Http2Handler {
-    /**
-     * Handles the given request and generate an appropriate response.
-     *
-     * @param exchange the exchange containing the request from the
-     *      client and used to send the response
-     * @throws NullPointerException if exchange is <code>null</code>
-     */
-    void handle (Http2TestExchange exchange) throws IOException;
-}
 
+package compiler.loopopts;
+
+public class TestEmptyLoopMultiplePhis {
+    static int[] iArrFld = new int[10];
+    static int x;
+
+    static void test(int a) {
+        int i;
+        for (int j = 6; j < 129; ++j) {
+            a >>= 37388;
+            a += 1001;
+        }
+        a >>>= -8;
+        for (i = 0; i < 8; ++i) {
+            iArrFld[i] = i;
+        }
+        for (int j = i; j < 7; ) {
+            x = a;
+        }
+    }
+
+    public static void main(String[] strArr) {
+        test(2);
+    }
+}

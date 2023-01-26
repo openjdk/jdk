@@ -290,13 +290,13 @@ class os: AllStatic {
 
   // Fill in buffer with an ISO-8601 string corresponding to the given javaTimeMillis value
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(jlong milliseconds_since_19700101, char* buffer,
                             size_t buffer_length, bool utc = false);
 
   // Fill in buffer with current local time as an ISO-8601 string.
   // E.g., YYYY-MM-DDThh:mm:ss.mmm+zzzz.
-  // Returns buffer, or NULL if it failed.
+  // Returns buffer, or null if it failed.
   static char* iso8601_time(char* buffer, size_t buffer_length, bool utc = false);
 
   // Interface for detecting multiprocessor system
@@ -675,7 +675,7 @@ class os: AllStatic {
   // dladdr() for all platforms. Name of the nearest function is copied
   // to buf. Distance from its base address is optionally returned as offset.
   // If function name is not found, buf[0] is set to '\0' and offset is
-  // set to -1 (if offset is non-NULL).
+  // set to -1 (if offset is non-null).
   static bool dll_address_to_function_name(address addr, char* buf,
                                            int buflen, int* offset,
                                            bool demangle = true);
@@ -683,7 +683,7 @@ class os: AllStatic {
   // Locate DLL/DSO. On success, full path of the library is copied to
   // buf, and offset is optionally set to be the distance between addr
   // and the library's base address. On failure, buf[0] is set to '\0'
-  // and offset is set to -1 (if offset is non-NULL).
+  // and offset is set to -1 (if offset is non-null).
   static bool dll_address_to_library_name(address addr, char* buf,
                                           int buflen, int* offset);
 
@@ -700,7 +700,7 @@ class os: AllStatic {
   // "<address> in <library>+<offset>"
   static bool print_function_and_library_name(outputStream* st,
                                               address addr,
-                                              char* buf = NULL, int buflen = 0,
+                                              char* buf = nullptr, int buflen = 0,
                                               bool shorten_paths = true,
                                               bool demangle = true,
                                               bool strip_arguments = false);
@@ -714,7 +714,7 @@ class os: AllStatic {
   // Loads .dll/.so and
   // in case of error it checks if .dll/.so was built for the
   // same architecture as HotSpot is running on
-  // in case of an error NULL is returned and an error message is stored in ebuf
+  // in case of an error null is returned and an error message is stored in ebuf
   static void* dll_load(const char *name, char *ebuf, int ebuflen);
 
   // lookup symbol in a shared library
@@ -819,7 +819,7 @@ class os: AllStatic {
   static bool is_first_C_frame(frame *fr);
   static frame get_sender_for_C_frame(frame *fr);
 
-  // return current frame. pc() and sp() are set to NULL on failure.
+  // return current frame. pc() and sp() are set to null on failure.
   static frame      current_frame();
 
   static void print_hex_dump(outputStream* st, address start, address end, int unitsize,
@@ -829,7 +829,7 @@ class os: AllStatic {
   }
 
   // returns a string to describe the exception/signal;
-  // returns NULL if exception_code is not an OS exception/signal.
+  // returns null if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
 
   // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
@@ -871,10 +871,10 @@ class os: AllStatic {
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
 
-  // handles NULL pointers
+  // handles null pointers
   static void  free    (void *memblock);
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
-  // Like strdup, but exit VM when strdup() returns NULL
+  // Like strdup, but exit VM when strdup() returns null
   static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
