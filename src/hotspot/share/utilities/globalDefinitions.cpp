@@ -228,6 +228,17 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "*narrowklass*",
   "*conflict*"
 };
+const char* type2name(BasicType t) {
+  if (t < ARRAY_SIZE(type2name_tab)) {
+    return type2name_tab[t];
+  } else if (t == T_ILLEGAL) {
+    return "*illegal*";
+  } else {
+    fatal("invalid type %d", t);
+    return "invalid type";
+  }
+}
+
 
 
 BasicType name2type(const char* name) {
