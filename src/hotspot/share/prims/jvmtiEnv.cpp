@@ -425,7 +425,7 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 
   jvmtiClassDefinition* class_definitions =
                             NEW_RESOURCE_ARRAY(jvmtiClassDefinition, class_count);
-  nullptr_CHECK(class_definitions, JVMTI_ERROR_OUT_OF_MEMORY);
+  NULL_CHECK(class_definitions, JVMTI_ERROR_OUT_OF_MEMORY);
 
   for (index = 0; index < class_count; index++) {
     HandleMark hm(current_thread);
@@ -510,7 +510,7 @@ JvmtiEnv::RedefineClasses(jint class_count, const jvmtiClassDefinition* class_de
 jvmtiError
 JvmtiEnv::GetObjectSize(jobject object, jlong* size_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
-  nullptr_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
+  NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
   *size_ptr = (jlong)mirror->size() * wordSize;
   return JVMTI_ERROR_NONE;
 } /* end GetObjectSize */
@@ -910,14 +910,14 @@ JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
   }
 
   thread_objs = NEW_RESOURCE_ARRAY(Handle, nthreads);
-  nullptr_CHECK(thread_objs, JVMTI_ERROR_OUT_OF_MEMORY);
+  NULL_CHECK(thread_objs, JVMTI_ERROR_OUT_OF_MEMORY);
 
   for (int i = 0; i < nthreads; i++) {
     thread_objs[i] = Handle(tle.get_threadObj(i));
   }
 
   jthread *jthreads  = new_jthreadArray(nthreads, thread_objs);
-  nullptr_CHECK(jthreads, JVMTI_ERROR_OUT_OF_MEMORY);
+  NULL_CHECK(jthreads, JVMTI_ERROR_OUT_OF_MEMORY);
 
   *threads_ptr = jthreads;
   return JVMTI_ERROR_NONE;
@@ -1186,7 +1186,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* java_thread = nullptr;
   oop thread_oop = nullptr;
 
-  nullptr_CHECK(thread, JVMTI_ERROR_INVALID_THREAD);
+  NULL_CHECK(thread, JVMTI_ERROR_INVALID_THREAD);
 
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
 
@@ -1198,7 +1198,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
     return err;
   }
   oop e = JNIHandles::resolve_external_guard(exception);
-  nullptr_CHECK(e, JVMTI_ERROR_NULL_POINTER);
+  NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
   JavaThread::send_async_exception(java_thread, e);
 
@@ -1608,7 +1608,7 @@ JvmtiEnv::GetTopThreadGroups(jint* group_count_ptr, jthreadGroup** groups_ptr) {
   // Assume this area is freed by caller.
   *groups_ptr = (jthreadGroup *) jvmtiMalloc((sizeof(jthreadGroup)) * (*group_count_ptr));
 
-  nullptr_CHECK(*groups_ptr, JVMTI_ERROR_OUT_OF_MEMORY);
+  NULL_CHECK(*groups_ptr, JVMTI_ERROR_OUT_OF_MEMORY);
 
   // Convert oop to Handle, then convert Handle to global-ref.
   {
@@ -1629,7 +1629,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
   HandleMark hm(current_thread);
 
   Handle group_obj (current_thread, JNIHandles::resolve_external_guard(group));
-  nullptr_CHECK(group_obj(), JVMTI_ERROR_INVALID_THREAD_GROUP);
+  NULL_CHECK(group_obj(), JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   const char* name;
   Handle parent_group;
@@ -1647,7 +1647,7 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
 
   if (name != nullptr) {
     info_ptr->name = (char*)jvmtiMalloc(strlen(name)+1);
-    nullptr_CHECK(info_ptr->name, JVMTI_ERROR_OUT_OF_MEMORY);
+    NULL_CHECK(info_ptr->name, JVMTI_ERROR_OUT_OF_MEMORY);
     strcpy(info_ptr->name, name);
   } else {
     info_ptr->name = nullptr;
@@ -1665,7 +1665,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   jvmtiError err;
   JavaThread* current_thread = JavaThread::current();
   oop group_obj = JNIHandles::resolve_external_guard(group);
-  nullptr_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
+  NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = nullptr;
   objArrayHandle group_objs;
@@ -2137,7 +2137,7 @@ JvmtiEnv::IterateThroughHeap(jint heap_filter, jclass klass, const jvmtiHeapCall
 jvmtiError
 JvmtiEnv::GetTag(jobject object, jlong* tag_ptr) {
   oop o = JNIHandles::resolve_external_guard(object);
-  nullptr_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
+  NULL_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
   *tag_ptr = JvmtiTagMap::tag_map_for(this)->get_tag(object);
   return JVMTI_ERROR_NONE;
 } /* end GetTag */
@@ -2146,7 +2146,7 @@ JvmtiEnv::GetTag(jobject object, jlong* tag_ptr) {
 jvmtiError
 JvmtiEnv::SetTag(jobject object, jlong tag) {
   oop o = JNIHandles::resolve_external_guard(object);
-  nullptr_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
+  NULL_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
   JvmtiTagMap::tag_map_for(this)->set_tag(object, tag);
   return JVMTI_ERROR_NONE;
 } /* end SetTag */
@@ -2180,7 +2180,7 @@ JvmtiEnv::ForceGarbageCollection() {
 jvmtiError
 JvmtiEnv::IterateOverObjectsReachableFromObject(jobject object, jvmtiObjectReferenceCallback object_reference_callback, const void* user_data) {
   oop o = JNIHandles::resolve_external_guard(object);
-  nullptr_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
+  NULL_CHECK(o, JVMTI_ERROR_INVALID_OBJECT);
   JvmtiTagMap::tag_map_for(this)->iterate_over_objects_reachable_from_object(object, object_reference_callback, user_data);
   return JVMTI_ERROR_NONE;
 } /* end IterateOverObjectsReachableFromObject */
@@ -2676,7 +2676,7 @@ JvmtiEnv::SetLocalDouble(jthread thread, jint depth, jint slot, jdouble value) {
 // method - pre-checked for validity, but may be null meaning obsolete method
 jvmtiError
 JvmtiEnv::SetBreakpoint(Method* method, jlocation location) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   if (location < 0) {   // simple invalid location check first
     return JVMTI_ERROR_INVALID_LOCATION;
   }
@@ -2702,7 +2702,7 @@ JvmtiEnv::SetBreakpoint(Method* method, jlocation location) {
 // method - pre-checked for validity, but may be null meaning obsolete method
 jvmtiError
 JvmtiEnv::ClearBreakpoint(Method* method, jlocation location) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
   if (location < 0) {   // simple invalid location check first
     return JVMTI_ERROR_INVALID_LOCATION;
@@ -2793,7 +2793,7 @@ JvmtiEnv::GetClassSignature(oop k_mirror, char** signature_ptr, char** generic_p
   Klass* k = nullptr;
   if (!isPrimitive) {
     k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
   }
   if (signature_ptr != nullptr) {
     char* result = nullptr;
@@ -2841,7 +2841,7 @@ JvmtiEnv::GetClassStatus(oop k_mirror, jint* status_ptr) {
     result |= JVMTI_CLASS_STATUS_PRIMITIVE;
   } else {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
     result = k->jvmti_class_status();
   }
   *status_ptr = result;
@@ -2858,14 +2858,14 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
      return JVMTI_ERROR_ABSENT_INFORMATION;
   }
   Klass* k_klass = java_lang_Class::as_Klass(k_mirror);
-  nullptr_CHECK(k_klass, JVMTI_ERROR_INVALID_CLASS);
+  NULL_CHECK(k_klass, JVMTI_ERROR_INVALID_CLASS);
 
   if (!k_klass->is_instance_klass()) {
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
   Symbol* sfnOop = InstanceKlass::cast(k_klass)->source_file_name();
-  nullptr_CHECK(sfnOop, JVMTI_ERROR_ABSENT_INFORMATION);
+  NULL_CHECK(sfnOop, JVMTI_ERROR_ABSENT_INFORMATION);
   {
     JavaThread* current_thread  = JavaThread::current();
     ResourceMark rm(current_thread);
@@ -2886,7 +2886,7 @@ JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   jint result = 0;
   if (!java_lang_Class::is_primitive(k_mirror)) {
     Klass* k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
     result = k->compute_modifier_flags();
 
     // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
@@ -2916,7 +2916,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
     return JVMTI_ERROR_NONE;
   }
   Klass* k = java_lang_Class::as_Klass(k_mirror);
-  nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+  NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
   // Return CLASS_NOT_PREPARED error as per JVMTI spec.
   if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
@@ -3000,7 +3000,7 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
   Klass* k = java_lang_Class::as_Klass(k_mirror);
-  nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+  NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
   // Return CLASS_NOT_PREPARED error as per JVMTI spec.
   if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) )) {
@@ -3055,7 +3055,7 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
     JavaThread* current_thread = JavaThread::current();
     HandleMark hm(current_thread);
     Klass* k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
     // Return CLASS_NOT_PREPARED error as per JVMTI spec.
     if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) ))
@@ -3213,7 +3213,7 @@ JvmtiEnv::GetClassLoader(oop k_mirror, jobject* classloader_ptr) {
     JavaThread* current_thread = JavaThread::current();
     HandleMark hm(current_thread);
     Klass* k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
 
     oop result_oop = k->class_loader();
     if (result_oop == nullptr) {
@@ -3237,12 +3237,12 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
     Klass* k = java_lang_Class::as_Klass(k_mirror);
-    nullptr_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
+    NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
     if (!k->is_instance_klass()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
     const char* sde = InstanceKlass::cast(k)->source_debug_extension();
-    nullptr_CHECK(sde, JVMTI_ERROR_ABSENT_INFORMATION);
+    NULL_CHECK(sde, JVMTI_ERROR_ABSENT_INFORMATION);
 
     {
       *source_debug_extension_ptr = (char *) jvmtiMalloc(strlen(sde)+1);
@@ -3261,8 +3261,8 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
 jvmtiError
 JvmtiEnv::GetObjectHashCode(jobject object, jint* hash_code_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
-  nullptr_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
-  nullptr_CHECK(hash_code_ptr, JVMTI_ERROR_NULL_POINTER);
+  NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
+  NULL_CHECK(hash_code_ptr, JVMTI_ERROR_NULL_POINTER);
 
   {
     jint result = (jint) mirror->identity_hash();
@@ -3369,7 +3369,7 @@ JvmtiEnv::IsFieldSynthetic(fieldDescriptor* fdesc_ptr, jboolean* is_synthetic_pt
 // generic_ptr - null is a valid value, must be checked
 jvmtiError
 JvmtiEnv::GetMethodName(Method* method, char** name_ptr, char** signature_ptr, char** generic_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   JavaThread* current_thread  = JavaThread::current();
 
   ResourceMark rm(current_thread); // get the utf8 name and signature
@@ -3410,7 +3410,7 @@ JvmtiEnv::GetMethodName(Method* method, char** name_ptr, char** signature_ptr, c
 // declaring_class_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   (*declaring_class_ptr) = get_jni_class_non_null(method->method_holder());
   return JVMTI_ERROR_NONE;
 } /* end GetMethodDeclaringClass */
@@ -3420,7 +3420,7 @@ JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
 // modifiers_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   (*modifiers_ptr) = method->access_flags().as_int() & JVM_RECOGNIZED_METHOD_MODIFIERS;
   return JVMTI_ERROR_NONE;
 } /* end GetMethodModifiers */
@@ -3430,7 +3430,7 @@ JvmtiEnv::GetMethodModifiers(Method* method, jint* modifiers_ptr) {
 // max_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetMaxLocals(Method* method, jint* max_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get max stack
   (*max_ptr) = method->max_locals();
   return JVMTI_ERROR_NONE;
@@ -3441,7 +3441,7 @@ JvmtiEnv::GetMaxLocals(Method* method, jint* max_ptr) {
 // size_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetArgumentsSize(Method* method, jint* size_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get size of arguments
 
   (*size_ptr) = method->size_of_parameters();
@@ -3454,7 +3454,7 @@ JvmtiEnv::GetArgumentsSize(Method* method, jint* size_ptr) {
 // table_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetLineNumberTable(Method* method, jint* entry_count_ptr, jvmtiLineNumberEntry** table_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   if (!method->has_linenumber_table()) {
     return (JVMTI_ERROR_ABSENT_INFORMATION);
   }
@@ -3497,7 +3497,7 @@ JvmtiEnv::GetLineNumberTable(Method* method, jint* entry_count_ptr, jvmtiLineNum
 jvmtiError
 JvmtiEnv::GetMethodLocation(Method* method, jlocation* start_location_ptr, jlocation* end_location_ptr) {
 
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   // get start and end location
   (*end_location_ptr) = (jlocation) (method->code_size() - 1);
   if (method->code_size() == 0) {
@@ -3517,7 +3517,7 @@ JvmtiEnv::GetMethodLocation(Method* method, jlocation* start_location_ptr, jloca
 jvmtiError
 JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLocalVariableEntry** table_ptr) {
 
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   JavaThread* current_thread  = JavaThread::current();
 
   // does the klass have any local variable information?
@@ -3527,7 +3527,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
   }
 
   ConstantPool* constants = method->constants();
-  nullptr_CHECK(constants, JVMTI_ERROR_ABSENT_INFORMATION);
+  NULL_CHECK(constants, JVMTI_ERROR_ABSENT_INFORMATION);
 
   // in the vm localvariable table representation, 6 consecutive elements in the table
   // represent a 6-tuple of shorts
@@ -3593,7 +3593,7 @@ JvmtiEnv::GetLocalVariableTable(Method* method, jint* entry_count_ptr, jvmtiLoca
 // bytecodes_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
   methodHandle mh(Thread::current(), method);
   jint size = (jint)mh->code_size();
@@ -3614,7 +3614,7 @@ JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char**
 // is_native_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::IsMethodNative(Method* method, jboolean* is_native_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   (*is_native_ptr) = method->is_native();
   return JVMTI_ERROR_NONE;
 } /* end IsMethodNative */
@@ -3624,7 +3624,7 @@ JvmtiEnv::IsMethodNative(Method* method, jboolean* is_native_ptr) {
 // is_synthetic_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::IsMethodSynthetic(Method* method, jboolean* is_synthetic_ptr) {
-  nullptr_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
+  NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   (*is_synthetic_ptr) = method->is_synthetic();
   return JVMTI_ERROR_NONE;
 } /* end IsMethodSynthetic */
@@ -3659,7 +3659,7 @@ JvmtiEnv::IsMethodObsolete(Method* method, jboolean* is_obsolete_ptr) {
 jvmtiError
 JvmtiEnv::CreateRawMonitor(const char* name, jrawMonitorID* monitor_ptr) {
   JvmtiRawMonitor* rmonitor = new JvmtiRawMonitor(name);
-  nullptr_CHECK(rmonitor, JVMTI_ERROR_OUT_OF_MEMORY);
+  NULL_CHECK(rmonitor, JVMTI_ERROR_OUT_OF_MEMORY);
 
   *monitor_ptr = (jrawMonitorID)rmonitor;
 
@@ -3930,7 +3930,7 @@ JvmtiEnv::GetThreadCpuTime(jthread thread, jlong* nanos_ptr) {
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
-  nullptr_CHECK(nanos_ptr, JVMTI_ERROR_NULL_POINTER);
+  NULL_CHECK(nanos_ptr, JVMTI_ERROR_NULL_POINTER);
 
   *nanos_ptr = os::thread_cpu_time(java_thread);
   return JVMTI_ERROR_NONE;

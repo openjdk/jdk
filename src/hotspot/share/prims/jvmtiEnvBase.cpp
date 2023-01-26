@@ -544,7 +544,7 @@ JvmtiEnvBase::new_jthreadArray(int length, Handle *handles) {
   }
 
   jthread* objArray = (jthread *) jvmtiMalloc(sizeof(jthread) * length);
-  nullptr_CHECK(objArray, nullptr);
+  NULL_CHECK(objArray, nullptr);
 
   for (int i = 0; i < length; i++) {
     objArray[i] = (jthread)jni_reference(handles[i]);
@@ -559,7 +559,7 @@ JvmtiEnvBase::new_jthreadGroupArray(int length, objArrayHandle groups) {
   }
 
   jthreadGroup* objArray = (jthreadGroup *) jvmtiMalloc(sizeof(jthreadGroup) * length);
-  nullptr_CHECK(objArray, nullptr);
+  NULL_CHECK(objArray, nullptr);
 
   for (int i = 0; i < length; i++) {
     objArray[i] = (jthreadGroup)JNIHandles::make_local(groups->obj_at(i));
@@ -792,7 +792,7 @@ JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jin
   int nthreads = tle.num_threads();
   if (nthreads > 0) {
     thread_objs = NEW_RESOURCE_ARRAY_RETURN_NULL(Handle, nthreads);
-    nullptr_CHECK(thread_objs, JVMTI_ERROR_OUT_OF_MEMORY);
+    NULL_CHECK(thread_objs, JVMTI_ERROR_OUT_OF_MEMORY);
     for (int i = 0; i < nthreads; i++) {
       Handle thread = tle.get_threadObj(i);
       if (thread()->is_a(vmClasses::Thread_klass()) && java_lang_Thread::threadGroup(thread()) == group_hdl()) {
@@ -1379,8 +1379,8 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   // Check arguments
   {
     oop mirror = JNIHandles::resolve_external_guard(object);
-    nullptr_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
-    nullptr_CHECK(info_ptr, JVMTI_ERROR_NULL_POINTER);
+    NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
+    NULL_CHECK(info_ptr, JVMTI_ERROR_NULL_POINTER);
 
     hobj = Handle(current_thread, mirror);
   }
@@ -1853,7 +1853,7 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
   ResourceMark rm(current_thread);
 
   javaVFrame* jvf = jvf_for_thread_and_depth(java_thread, 0);
-  nullptr_CHECK(jvf, JVMTI_ERROR_NO_MORE_FRAMES);
+  NULL_CHECK(jvf, JVMTI_ERROR_NO_MORE_FRAMES);
 
   if (jvf->method()->is_native()) {
     return JVMTI_ERROR_OPAQUE_FRAME;
@@ -1882,9 +1882,9 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
   jobject jobj = value.l;
   if (tos == atos && jobj != nullptr) { // null reference is allowed
     Handle ob_h(current_thread, JNIHandles::resolve_external_guard(jobj));
-    nullptr_CHECK(ob_h, JVMTI_ERROR_INVALID_OBJECT);
+    NULL_CHECK(ob_h, JVMTI_ERROR_INVALID_OBJECT);
     Klass* ob_k = ob_h()->klass();
-    nullptr_CHECK(ob_k, JVMTI_ERROR_INVALID_OBJECT);
+    NULL_CHECK(ob_k, JVMTI_ERROR_INVALID_OBJECT);
 
     // Method return type signature.
     char* ty_sign = 1 + strchr(signature->as_C_string(), JVM_SIGNATURE_ENDFUNC);

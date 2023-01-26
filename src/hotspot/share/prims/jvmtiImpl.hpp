@@ -550,6 +550,6 @@ class JvmtiDeferredEventQueue : public CHeapObj<mtInternal> {
 };
 
 // Utility macro that checks for null pointers:
-#define nullptr_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
+#NULL nullptr_CHECK(X, Y) if ((X) == nullptr) { return (Y); }
 
 #endif // SHARE_PRIMS_JVMTIIMPL_HPP

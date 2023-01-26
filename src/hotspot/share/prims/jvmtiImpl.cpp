@@ -548,9 +548,9 @@ bool VM_BaseGetOrSetLocal::check_slot_type_lvt(javaVFrame* jvf) {
   if (_set && slot_type == T_OBJECT && jobj != nullptr) { // null reference is allowed
     // Check that the jobject class matches the return type signature.
     oop obj = JNIHandles::resolve_external_guard(jobj);
-    nullptr_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
+    NULL_CHECK(obj, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
     Klass* ob_k = obj->klass();
-    nullptr_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
+    NULL_CHECK(ob_k, (_result = JVMTI_ERROR_INVALID_OBJECT, false));
 
     const char* signature = (const char *) sign_sym->as_utf8();
     if (!is_assignable(signature, ob_k, VMThread::vm_thread())) {
