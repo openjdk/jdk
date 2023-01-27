@@ -337,11 +337,11 @@ JVMFlag::Error MinTLABSizeConstraintFunc(size_t value, bool verbose) {
                         value, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-  if (value > ((int64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
+  if (value > ((uint64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
     JVMFlag::printError(verbose,
                         "MinTLABSize (" SIZE_FORMAT ") must be "
-                        "less than or equal to ergonomic TLAB maximum (" INT64_FORMAT ")\n",
-                        value, (int64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize);
+                        "less than or equal to ergonomic TLAB maximum (" UINT64_FORMAT ")\n",
+                        value, (uint64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -357,11 +357,11 @@ JVMFlag::Error TLABSizeConstraintFunc(size_t value, bool verbose) {
                           value, MinTLABSize);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
-    if (value > ((int64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
+    if (value > ((uint64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
       JVMFlag::printError(verbose,
                           "TLABSize (" SIZE_FORMAT ") must be "
-                          "less than or equal to ergonomic TLAB maximum size (" INT64_FORMAT ")\n",
-                          value, (int64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize);
+                          "less than or equal to ergonomic TLAB maximum size (" UINT64_FORMAT ")\n",
+                          value, (uint64_t)ThreadLocalAllocBuffer::max_size() * HeapWordSize);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
