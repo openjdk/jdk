@@ -67,7 +67,8 @@ public class StreamAvailableLocales {
         if (Locale.streamAvailableLocales().anyMatch(loc -> (loc.equals(requiredLocale)))) {
             System.out.printf("$$$ Passed: Stream has %s!%n", localeName);
         } else {
-            throw new RuntimeException("$$$ Error: Stream is missing Locale.US");
+            throw new RuntimeException(String.format("$$$ Error:" +
+                    " Stream is missing %s!", localeName));
         }
     }
 
