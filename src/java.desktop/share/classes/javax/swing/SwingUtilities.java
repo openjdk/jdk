@@ -1810,6 +1810,13 @@ public class SwingUtilities implements SwingConstants
         action.actionPerformed(new ActionEvent(sender,
                         ActionEvent.ACTION_PERFORMED, command, event.getWhen(),
                         modifiers));
+        if (event.getSource() instanceof JToggleButton) {
+            JToggleButton tb = (JToggleButton)event.getSource();
+            commandO = action.getValue(Action.SELECTED_KEY);
+            if (commandO != null) {
+                tb.setSelected(!tb.isSelected());
+            }
+        }
         return true;
     }
 
