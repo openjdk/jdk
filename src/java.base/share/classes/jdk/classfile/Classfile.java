@@ -654,8 +654,11 @@ public class Classfile {
     public static final int JAVA_16_VERSION = 60;
     public static final int JAVA_17_VERSION = 61;
     public static final int JAVA_18_VERSION = 62;
+    public static final int JAVA_19_VERSION = 63;
+    public static final int JAVA_20_VERSION = 64;
+    public static final int JAVA_21_VERSION = 65;
 
-    public static final int LATEST_MAJOR_VERSION = JAVA_17_VERSION;
+    public static final int LATEST_MAJOR_VERSION = JAVA_21_VERSION;
     public static final int LATEST_MINOR_VERSION = 0;
     public static final int PREVIEW_MINOR_VERSION = -1;
 
