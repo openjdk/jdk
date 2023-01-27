@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
-  if (top_obj != NULL) {
+  if (top_obj != nullptr) {
     if (_sp->block_is_obj(top_obj)) {
       if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
         // An arrayOop is starting on the dirty card - since we do exact
@@ -64,7 +64,7 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
       top = top_obj;
     }
   } else {
-    assert(top == _sp->end(), "only case where top_obj == NULL");
+    assert(top == _sp->end(), "only case where top_obj == null");
   }
   return top;
 }
@@ -109,7 +109,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   HeapWord* bottom_obj;
   HeapWord* top_obj;
 
-  assert(_last_bottom == NULL || top <= _last_bottom,
+  assert(_last_bottom == nullptr || top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
 
@@ -125,7 +125,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   top = get_actual_top(top, top_obj);
 
   // If the previous call did some part of this region, don't redo.
-  if (_min_done != NULL && _min_done < top) {
+  if (_min_done != nullptr && _min_done < top) {
     top = _min_done;
   }
 
@@ -135,7 +135,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   bottom = MIN2(bottom, top);
   MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
-         (_min_done == NULL || top <= _min_done),
+         (_min_done == nullptr || top <= _min_done),
          "overlap!");
 
   // Walk the region if it is not empty; otherwise there is nothing to do.
@@ -148,7 +148,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
 
 HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
                                                HeapWord* top_obj) {
-  if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
+  if (top_obj != nullptr && top_obj < (_sp->toContiguousSpace())->top()) {
     if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
       // An arrayOop is starting on the dirty card - since we do exact
       // store checks for objArrays we are done.
@@ -175,7 +175,7 @@ void ContiguousSpaceDCTOC::walk_mem_region(MemRegion mr,
   // examining cards here.
   assert(bottom < top, "ought to be at least one obj on a dirty card.");
 
-  if (_boundary != NULL) {
+  if (_boundary != nullptr) {
     // We have a boundary outside of which we don't want to look
     // at objects, so create a filtering closure around the
     // oop closure before walking the region.
@@ -240,7 +240,7 @@ void Space::clear(bool mangle_space) {
   }
 }
 
-ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL) {
+ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
 
@@ -316,7 +316,7 @@ void CompactibleSpace::initialize(MemRegion mr,
                                   bool mangle_space) {
   Space::initialize(mr, clear_space, mangle_space);
   set_compaction_top(bottom());
-  _next_compaction_space = NULL;
+  _next_compaction_space = nullptr;
 }
 
 void CompactibleSpace::clear(bool mangle_space) {
@@ -334,11 +334,11 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     // switch to next compaction space
     cp->space->set_compaction_top(compact_top);
     cp->space = cp->space->next_compaction_space();
-    if (cp->space == NULL) {
+    if (cp->space == nullptr) {
       cp->gen = GenCollectedHeap::heap()->young_gen();
-      assert(cp->gen != NULL, "compaction must succeed");
+      assert(cp->gen != nullptr, "compaction must succeed");
       cp->space = cp->gen->first_compaction_space();
-      assert(cp->space != NULL, "generation must have a first compaction space");
+      assert(cp->space != nullptr, "generation must have a first compaction space");
     }
     compact_top = cp->space->bottom();
     cp->space->set_compaction_top(compact_top);
@@ -376,8 +376,8 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   // space, so this is a good time to initialize this:
   set_compaction_top(bottom());
 
-  if (cp->space == NULL) {
-    assert(cp->gen != NULL, "need a generation");
+  if (cp->space == nullptr) {
+    assert(cp->gen != nullptr, "need a generation");
     assert(cp->gen->first_compaction_space() == this, "just checking");
     cp->space = cp->gen->first_compaction_space();
     cp->space->initialize_threshold();
@@ -389,7 +389,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   DeadSpacer dead_spacer(this);
 
   HeapWord*  end_of_live = bottom();  // One byte beyond the last byte of the last live object.
-  HeapWord*  first_dead = NULL; // The first dead object.
+  HeapWord*  first_dead = nullptr; // The first dead object.
 
   const intx interval = PrefetchScanIntervalInBytes;
 
@@ -426,7 +426,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
         *(HeapWord**)cur_obj = end;
 
         // see if this is the first dead region.
-        if (first_dead == NULL) {
+        if (first_dead == nullptr) {
           first_dead = cur_obj;
         }
       }
@@ -438,7 +438,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
 
   assert(cur_obj == scan_limit, "just checking");
   _end_of_live = end_of_live;
-  if (first_dead != NULL) {
+  if (first_dead != nullptr) {
     _first_dead = first_dead;
   } else {
     _first_dead = end_of_live;
@@ -465,7 +465,7 @@ void CompactibleSpace::adjust_pointers() {
 
   const intx interval = PrefetchScanIntervalInBytes;
 
-  debug_only(HeapWord* prev_obj = NULL);
+  debug_only(HeapWord* prev_obj = nullptr);
   while (cur_obj < end_of_live) {
     Prefetch::write(cur_obj, interval);
     if (cur_obj < first_dead || cast_to_oop(cur_obj)->is_gc_marked()) {
@@ -512,7 +512,7 @@ void CompactibleSpace::compact() {
     cur_obj = *(HeapWord**)(_first_dead);
   }
 
-  debug_only(HeapWord* prev_obj = NULL);
+  debug_only(HeapWord* prev_obj = nullptr);
   while (cur_obj < end_of_live) {
     if (!cast_to_oop(cur_obj)->is_forwarded()) {
       debug_only(prev_obj = cur_obj);
@@ -538,7 +538,7 @@ void CompactibleSpace::compact() {
       ContinuationGCSupport::transform_stack_chunk(new_obj);
 
       new_obj->init_mark();
-      assert(new_obj->klass() != NULL, "should have a class");
+      assert(new_obj->klass() != nullptr, "should have a class");
 
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
@@ -583,7 +583,7 @@ void TenuredSpace::print_on(outputStream* st) const {
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
     prev_p = p;
@@ -680,7 +680,7 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
     assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -699,7 +699,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
         return obj;
       }
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -737,7 +737,7 @@ TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
 
 void TenuredSpace::verify() const {
   HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   int objs = 0;
   int blocks = 0;
 

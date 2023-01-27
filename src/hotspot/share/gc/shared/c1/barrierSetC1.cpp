@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
   // We need to generate code similar to the following...
   //
   // if (offset == java_lang_ref_Reference::referent_offset()) {
-  //   if (src != NULL) {
+  //   if (src != null) {
   //     if (klass(src)->reference_type() != REF_NONE) {
   //       pre_barrier(..., value, ...);
   //     }
@@ -269,7 +269,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     // We still need to continue with the checks.
     if (base.is_constant()) {
       ciObject* src_con = base.get_jobject_constant();
-      guarantee(src_con != NULL, "no source constant");
+      guarantee(src_con != nullptr, "no source constant");
 
       if (src_con->is_null_object()) {
         // The constant src object is null - We can skip
@@ -287,7 +287,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     // Can the klass of object be statically determined to be
     // a sub-class of Reference?
     ciType* type = base.value()->declared_type();
-    if ((type != NULL) && type->is_loaded()) {
+    if ((type != nullptr) && type->is_loaded()) {
       if (type->is_subtype_of(gen->compilation()->env()->Reference_klass())) {
         gen_type_check = false;
       } else if (type->is_klass() &&
@@ -327,14 +327,14 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     if (gen_source_check) {
       // offset is a const and equals referent offset
       // if (source == null) -> continue
-      __ cmp(lir_cond_equal, base_reg, LIR_OprFact::oopConst(NULL));
+      __ cmp(lir_cond_equal, base_reg, LIR_OprFact::oopConst(nullptr));
       __ branch(lir_cond_equal, cont->label());
     }
     LIR_Opr src_klass = gen->new_register(T_METADATA);
     if (gen_type_check) {
       // We have determined that offset == referent_offset && src != null.
       // if (src->_klass->_reference_type == REF_NONE) -> continue
-      gen->load_klass(base_reg, src_klass, NULL);
+      gen->load_klass(base_reg, src_klass, nullptr);
       LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(InstanceKlass::reference_type_offset()), T_BYTE);
       LIR_Opr reference_type = gen->new_register(T_INT);
       __ move(reference_type_addr, reference_type);
