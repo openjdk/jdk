@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _task_queue(g1h->task_queue(worker_id)),
     _rdc_local_qset(rdcqs),
     _ct(g1h->card_table()),
-    _closures(NULL),
-    _plab_allocator(NULL),
+    _closures(nullptr),
+    _plab_allocator(nullptr),
     _age_table(false),
     _tenuring_threshold(g1h->policy()->tenuring_threshold()),
     _scanner(g1h, this),
@@ -76,8 +76,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _stack_trim_upper_threshold(GCDrainStackTargetSize * 2 + 1),
     _stack_trim_lower_threshold(GCDrainStackTargetSize),
     _trim_ticks(),
-    _surviving_young_words_base(NULL),
-    _surviving_young_words(NULL),
+    _surviving_young_words_base(nullptr),
+    _surviving_young_words(nullptr),
     _surviving_words_length(young_cset_length + 1),
     _old_gen_is_full(false),
     _partial_objarray_chunk_size(ParGCArrayScanChunk),
@@ -85,7 +85,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _string_dedup_requests(),
     _num_optional_regions(optional_cset_length),
     _numa(g1h->numa()),
-    _obj_alloc_stat(NULL),
+    _obj_alloc_stat(nullptr),
     EVAC_FAILURE_INJECTOR_ONLY(_evac_failure_inject_counter(0) COMMA)
     _preserved_marks(preserved_marks),
     _evacuation_failed_info(),
@@ -148,7 +148,7 @@ size_t G1ParScanThreadState::lab_undo_waste_words() const {
 
 #ifdef ASSERT
 void G1ParScanThreadState::verify_task(narrowOop* task) const {
-  assert(task != NULL, "invariant");
+  assert(task != nullptr, "invariant");
   assert(UseCompressedOops, "sanity");
   oop p = RawAccess<>::oop_load(task);
   assert(_g1h->is_in_reserved(p),
@@ -156,7 +156,7 @@ void G1ParScanThreadState::verify_task(narrowOop* task) const {
 }
 
 void G1ParScanThreadState::verify_task(oop* task) const {
-  assert(task != NULL, "invariant");
+  assert(task != nullptr, "invariant");
   oop p = RawAccess<>::oop_load(task);
   assert(_g1h->is_in_reserved(p),
          "task=" PTR_FORMAT " p=" PTR_FORMAT, p2i(task), p2i(p));
@@ -184,7 +184,7 @@ void G1ParScanThreadState::verify_task(ScannerTask task) const {
 template <class T>
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_oop_evac(T* p) {
-  // Reference should not be NULL here as such are never pushed to the task queue.
+  // Reference should not be null here as such are never pushed to the task queue.
   oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
 
   // Although we never intentionally push references outside of the collection
@@ -346,7 +346,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
       _tenuring_threshold = 0;
     }
 
-    if (obj_ptr != NULL) {
+    if (obj_ptr != nullptr) {
       dest->set_old();
     } else {
       // We just failed to allocate in old gen. The same idea as explained above
@@ -358,7 +358,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(G1HeapRegionAttr* dest,
     _old_gen_is_full = previous_plab_refill_failed;
     assert(dest->is_old(), "Unexpected dest region attr: %s", dest->get_type_str());
     // no other space to try.
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -396,7 +396,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                                    size_t word_sz,
                                                    uint age,
                                                    uint node_index) {
-  HeapWord* obj_ptr = NULL;
+  HeapWord* obj_ptr = nullptr;
   // Try slow-path allocation unless we're allocating old and old is already full.
   if (!(dest_attr->is_old() && _old_gen_is_full)) {
     bool plab_refill_failed = false;
@@ -404,14 +404,14 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                                            word_sz,
                                                            &plab_refill_failed,
                                                            node_index);
-    if (obj_ptr == NULL) {
+    if (obj_ptr == nullptr) {
       obj_ptr = allocate_in_next_plab(dest_attr,
                                       word_sz,
                                       plab_refill_failed,
                                       node_index);
     }
   }
-  if (obj_ptr != NULL) {
+  if (obj_ptr != nullptr) {
     update_numa_stats(node_index);
     if (_g1h->gc_tracer_stw()->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit
@@ -463,17 +463,17 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_attr, word_sz, node_index);
 
   // PLAB allocations should succeed most of the time, so we'll
-  // normally check against NULL once and that's it.
-  if (obj_ptr == NULL) {
+  // normally check against null once and that's it.
+  if (obj_ptr == nullptr) {
     obj_ptr = allocate_copy_slow(&dest_attr, old, word_sz, age, node_index);
-    if (obj_ptr == NULL) {
+    if (obj_ptr == nullptr) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
       return handle_evacuation_failure_par(old, old_mark, word_sz);
     }
   }
 
-  assert(obj_ptr != NULL, "when we get here, allocation should have succeeded");
+  assert(obj_ptr != nullptr, "when we get here, allocation should have succeeded");
   assert(_g1h->is_in_reserved(obj_ptr), "Allocated memory should be in the heap");
 
   // Should this evacuation fail?
@@ -494,7 +494,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // examine its contents without other synchronization, since the contents
   // may not be up to date for them.
   const oop forward_ptr = old->forward_to_atomic(obj, old_mark, memory_order_relaxed);
-  if (forward_ptr == NULL) {
+  if (forward_ptr == nullptr) {
 
     {
       const uint young_index = from_region->young_index_in_cset();
@@ -563,7 +563,7 @@ oop G1ParScanThreadState::copy_to_survivor_space(G1HeapRegionAttr region_attr,
 
 G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
   assert(worker_id < _n_workers, "out of bounds access");
-  if (_states[worker_id] == NULL) {
+  if (_states[worker_id] == nullptr) {
     _states[worker_id] =
       new G1ParScanThreadState(_g1h, rdcqs(),
                                _preserved_marks_set.get(worker_id),
@@ -599,7 +599,7 @@ void G1ParScanThreadStateSet::flush_stats() {
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, lab_undo_waste_bytes, G1GCPhaseTimes::MergePSSLABUndoWasteBytes);
 
     delete pss;
-    _states[worker_id] = NULL;
+    _states[worker_id] = nullptr;
   }
   _flushed = true;
 }
@@ -619,7 +619,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   assert(_g1h->is_in_cset(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
-  if (forward_ptr == NULL) {
+  if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
     HeapRegion* r = _g1h->heap_region_containing(old);
 
@@ -674,14 +674,14 @@ void G1ParScanThreadState::initialize_numa_stats() {
 }
 
 void G1ParScanThreadState::flush_numa_stats() {
-  if (_obj_alloc_stat != NULL) {
+  if (_obj_alloc_stat != nullptr) {
     uint node_index = _numa->index_of_current_thread();
     _numa->copy_statistics(G1NUMAStats::LocalObjProcessAtCopyToSurv, node_index, _obj_alloc_stat);
   }
 }
 
 void G1ParScanThreadState::update_numa_stats(uint node_index) {
-  if (_obj_alloc_stat != NULL) {
+  if (_obj_alloc_stat != nullptr) {
     _obj_alloc_stat[node_index]++;
   }
 }
@@ -703,7 +703,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _evac_failure_regions(evac_failure_regions) {
   _preserved_marks_set.init(n_workers);
   for (uint i = 0; i < n_workers; ++i) {
-    _states[i] = NULL;
+    _states[i] = nullptr;
   }
   memset(_surviving_young_words_total, 0, (young_cset_length + 1) * sizeof(size_t));
 }

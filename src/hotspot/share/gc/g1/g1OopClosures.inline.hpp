@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
   HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
 
-  assert(to_rem_set != NULL, "Need per-region 'into' remsets.");
+  assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
     to_rem_set->add_reference(p, _worker_id);
   }
@@ -230,7 +230,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
     } else {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
-    assert(forwardee != NULL, "forwardee should not be NULL");
+    assert(forwardee != nullptr, "forwardee should not be null");
     RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 
     if (barrier == G1BarrierCLD) {
@@ -255,7 +255,7 @@ void G1ParCopyClosure<barrier, should_mark>::do_oop_work(T* p) {
 
 template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   oop const obj = RawAccess<MO_RELAXED>::oop_load(p);
-  if (obj == NULL) {
+  if (obj == nullptr) {
     return;
   }
 

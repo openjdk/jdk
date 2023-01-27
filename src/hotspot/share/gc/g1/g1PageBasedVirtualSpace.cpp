@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "utilities/bitMap.inline.hpp"
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
-  _low_boundary(NULL), _high_boundary(NULL), _tail_size(0), _page_size(0),
+  _low_boundary(nullptr), _high_boundary(nullptr), _tail_size(0), _page_size(0),
   _committed(mtGC), _dirty(mtGC), _special(false), _executable(false) {
   initialize_with_page_size(rs, used_size, page_size);
 }
@@ -43,7 +43,7 @@ G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_s
 void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t used_size, size_t page_size) {
   guarantee(rs.is_reserved(), "Given reserved space must have been reserved already.");
 
-  vmassert(_low_boundary == NULL, "VirtualSpace already initialized");
+  vmassert(_low_boundary == nullptr, "VirtualSpace already initialized");
   vmassert(page_size > 0, "Page size must be non-zero.");
 
   guarantee(is_aligned(rs.base(), page_size),
@@ -76,8 +76,8 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
 G1PageBasedVirtualSpace::~G1PageBasedVirtualSpace() {
   // This does not release memory it never reserved.
   // Caller must release via rs.release();
-  _low_boundary           = NULL;
-  _high_boundary          = NULL;
+  _low_boundary           = nullptr;
+  _high_boundary          = nullptr;
   _special                = false;
   _executable             = false;
   _page_size              = 0;

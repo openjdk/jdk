@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   virtual ~G1RegionToSpaceMapper() {}
 
-  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL) = 0;
+  virtual void commit_regions(uint start_idx, size_t num_regions = 1, WorkerThreads* pretouch_workers = nullptr) = 0;
   virtual void uncommit_regions(uint start_idx, size_t num_regions = 1) = 0;
 
   // Creates an appropriate G1RegionToSpaceMapper for the given parameters.

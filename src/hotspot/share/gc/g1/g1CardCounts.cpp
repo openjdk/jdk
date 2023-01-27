@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ void G1CardCounts::clear_range(size_t from_card_num, size_t to_card_num) {
 }
 
 G1CardCounts::G1CardCounts(G1CollectedHeap *g1h):
-  _listener(), _g1h(g1h), _ct(NULL), _card_counts(NULL), _reserved_max_card_num(0), _ct_bot(NULL) {
+  _listener(), _g1h(g1h), _ct(nullptr), _card_counts(nullptr), _reserved_max_card_num(0), _ct_bot(nullptr) {
   _listener.set_cardcounts(this);
 }
 

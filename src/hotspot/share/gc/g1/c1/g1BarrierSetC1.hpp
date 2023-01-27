@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class G1PreBarrierStub: public CodeStub {
   // previous value is assumed to have already been loaded into pre_val.
   G1PreBarrierStub(LIR_Opr pre_val) :
     _do_load(false), _addr(LIR_OprFact::illegalOpr), _pre_val(pre_val),
-    _patch_code(lir_patch_none), _info(NULL)
+    _patch_code(lir_patch_none), _info(nullptr)
   {
     assert(_pre_val->is_register(), "should be a register");
   }
@@ -69,7 +69,7 @@ class G1PreBarrierStub: public CodeStub {
     if (_do_load) {
       // don't pass in the code emit info since it's processed in the fast
       // path
-      if (_info != NULL)
+      if (_info != nullptr)
         visitor->do_slow_case(_info);
       else
         visitor->do_slow_case();
@@ -126,8 +126,8 @@ class G1BarrierSetC1 : public ModRefBarrierSetC1 {
 
  public:
   G1BarrierSetC1()
-    : _pre_barrier_c1_runtime_code_blob(NULL),
-      _post_barrier_c1_runtime_code_blob(NULL) {}
+    : _pre_barrier_c1_runtime_code_blob(nullptr),
+      _post_barrier_c1_runtime_code_blob(nullptr) {}
 
   CodeBlob* pre_barrier_c1_runtime_code_blob() { return _pre_barrier_c1_runtime_code_blob; }
   CodeBlob* post_barrier_c1_runtime_code_blob() { return _post_barrier_c1_runtime_code_blob; }

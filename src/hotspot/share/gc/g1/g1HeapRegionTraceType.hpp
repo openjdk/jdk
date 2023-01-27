@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ class G1HeapRegionTraceType : AllStatic {
       case Old:                return "Old";
       case OpenArchive:        return "OpenArchive";
       case ClosedArchive:      return "ClosedArchive";
-      default: ShouldNotReachHere(); return NULL;
+      default: ShouldNotReachHere(); return nullptr;
     }
   }
 };

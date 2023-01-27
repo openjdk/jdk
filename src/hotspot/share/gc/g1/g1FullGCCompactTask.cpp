@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
 
     // There is no need to transform stack chunks - marking already did that.
     cast_to_oop(destination)->init_mark();
-    assert(cast_to_oop(destination)->klass() != NULL, "should have a class");
+    assert(cast_to_oop(destination)->klass() != nullptr, "should have a class");
   }
 
   // Clear the mark for the compacted object to allow reuse of the

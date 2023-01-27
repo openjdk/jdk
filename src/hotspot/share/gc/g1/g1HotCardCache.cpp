@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
   _g1h(g1h), _card_counts(g1h),
-  _hot_cache(NULL), _hot_cache_size(0), _hot_cache_par_chunk_size(0),
+  _hot_cache(nullptr), _hot_cache_size(0), _hot_cache_par_chunk_size(0),
   _hot_cache_idx(0), _hot_cache_par_claimed_idx(0), _cache_wrapped_around(false)
 {}
 
@@ -54,9 +54,9 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
 
 G1HotCardCache::~G1HotCardCache() {
   if (use_cache()) {
-    assert(_hot_cache != NULL, "Logic");
+    assert(_hot_cache != nullptr, "Logic");
     ArrayAllocator<CardValue*>::free(_hot_cache, _hot_cache_size);
-    _hot_cache = NULL;
+    _hot_cache = nullptr;
   }
 }
 
@@ -92,7 +92,7 @@ CardTable::CardValue* G1HotCardCache::insert(CardValue* card_ptr) {
 void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_id) {
   assert(use_cache(), "Drain only necessary if we use the hot card cache.");
 
-  assert(_hot_cache != NULL, "Logic");
+  assert(_hot_cache != nullptr, "Logic");
 
   while (_hot_cache_par_claimed_idx < _hot_cache_size) {
     size_t end_idx = Atomic::add(&_hot_cache_par_claimed_idx,
@@ -102,7 +102,7 @@ void G1HotCardCache::drain(G1CardTableEntryClosure* cl, uint worker_id) {
     end_idx = MIN2(end_idx, _hot_cache_size);
     for (size_t i = start_idx; i < end_idx; i++) {
       CardValue* card_ptr = _hot_cache[i];
-      if (card_ptr != NULL) {
+      if (card_ptr != nullptr) {
         cl->do_card_ptr(card_ptr, worker_id);
       } else {
         break;

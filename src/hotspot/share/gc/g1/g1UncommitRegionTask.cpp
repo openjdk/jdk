@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "runtime/globals.hpp"
 #include "utilities/ticks.hpp"
 
-G1UncommitRegionTask* G1UncommitRegionTask::_instance = NULL;
+G1UncommitRegionTask* G1UncommitRegionTask::_instance = nullptr;
 
 G1UncommitRegionTask::G1UncommitRegionTask() :
     G1ServiceTask("G1 Uncommit Region Task"),
@@ -38,7 +38,7 @@ G1UncommitRegionTask::G1UncommitRegionTask() :
     _summary_region_count(0) { }
 
 void G1UncommitRegionTask::initialize() {
-  assert(_instance == NULL, "Already initialized");
+  assert(_instance == nullptr, "Already initialized");
   _instance = new G1UncommitRegionTask();
 
   // Register the task with the service thread. This will automatically
@@ -48,7 +48,7 @@ void G1UncommitRegionTask::initialize() {
 }
 
 G1UncommitRegionTask* G1UncommitRegionTask::instance() {
-  if (_instance == NULL) {
+  if (_instance == nullptr) {
     initialize();
   }
   return _instance;

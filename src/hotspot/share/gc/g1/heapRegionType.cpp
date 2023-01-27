@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ const char* HeapRegionType::get_str() const {
     case ClosedArchiveTag:      return "CARC";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 
@@ -77,7 +77,7 @@ const char* HeapRegionType::get_short_str() const {
     case ClosedArchiveTag:      return "CA";
     default:
       ShouldNotReachHere();
-      return NULL; // keep some compilers happy
+      return nullptr; // keep some compilers happy
   }
 }
 

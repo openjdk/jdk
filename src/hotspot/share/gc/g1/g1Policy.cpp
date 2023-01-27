@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,10 +74,10 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _rs_length(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
-  _collection_set(NULL),
-  _g1h(NULL),
+  _collection_set(nullptr),
+  _g1h(nullptr),
   _phase_times_timer(gc_timer),
-  _phase_times(NULL),
+  _phase_times(nullptr),
   _mark_remark_start_sec(0),
   _mark_cleanup_start_sec(0),
   _tenuring_threshold(MaxTenuringThreshold),
@@ -518,7 +518,7 @@ double G1Policy::predict_survivor_regions_evac_time() const {
 G1GCPhaseTimes* G1Policy::phase_times() const {
   // Lazy allocation because it must follow initialization of all the
   // OopStorage objects by various other subsystems.
-  if (_phase_times == NULL) {
+  if (_phase_times == nullptr) {
     _phase_times = new G1GCPhaseTimes(_phase_times_timer, ParallelGCThreads);
   }
   return _phase_times;
@@ -1047,7 +1047,7 @@ double G1Policy::predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy) co
     return 0.0;
   }
   size_t const expected_bytes = _eden_surv_rate_group->accum_surv_rate_pred(count) * HeapRegion::GrainBytes;
-  if (bytes_to_copy != NULL) {
+  if (bytes_to_copy != nullptr) {
     *bytes_to_copy = expected_bytes;
   }
   return _analytics->predict_object_copy_time_ms(expected_bytes, collector_state()->in_young_only_phase());
@@ -1291,7 +1291,7 @@ class G1ClearCollectionSetCandidateRemSets : public HeapRegionClosure {
 };
 
 void G1Policy::clear_collection_set_candidates() {
-  if (_collection_set->candidates() == NULL) {
+  if (_collection_set->candidates() == nullptr) {
     return;
   }
   // Clear remembered sets of remaining candidate regions and the actual candidate
@@ -1383,7 +1383,7 @@ void G1Policy::abort_time_to_mixed_tracking() {
 bool G1Policy::next_gc_should_be_mixed(const char* no_candidates_str) const {
   G1CollectionSetCandidates* candidates = _collection_set->candidates();
 
-  if (candidates == NULL || candidates->is_empty()) {
+  if (candidates == nullptr || candidates->is_empty()) {
     if (no_candidates_str != nullptr) {
       log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
     }
@@ -1441,7 +1441,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
                                                     double time_remaining_ms,
                                                     uint& num_initial_regions,
                                                     uint& num_optional_regions) {
-  assert(candidates != NULL, "Must be");
+  assert(candidates != nullptr, "Must be");
 
   num_initial_regions = 0;
   num_optional_regions = 0;
@@ -1464,7 +1464,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
                             min_old_cset_length, max_old_cset_length, time_remaining_ms, optional_threshold_ms);
 
   HeapRegion* hr = candidates->at(candidate_idx);
-  while (hr != NULL) {
+  while (hr != nullptr) {
     if (num_initial_regions + num_optional_regions >= max_old_cset_length) {
       // Added maximum number of old regions to the CSet.
       log_debug(gc, ergo, cset)("Finish adding old regions to collection set (Maximum number of regions). "
@@ -1505,7 +1505,7 @@ void G1Policy::calculate_old_collection_set_regions(G1CollectionSetCandidates* c
     }
     hr = candidates->at(++candidate_idx);
   }
-  if (hr == NULL) {
+  if (hr == nullptr) {
     log_debug(gc, ergo, cset)("Old candidate collection set empty.");
   }
 
@@ -1532,7 +1532,7 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
   HeapRegion* r = candidates->at(candidate_idx);
   while (num_optional_regions < max_optional_regions) {
-    assert(r != NULL, "Region must exist");
+    assert(r != nullptr, "Region must exist");
     double prediction_ms = predict_region_total_time_ms(r, false);
 
     if (prediction_ms > time_remaining_ms) {

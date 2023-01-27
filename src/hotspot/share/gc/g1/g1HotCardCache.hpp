@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,13 +97,13 @@ private:
 
   void initialize(G1RegionToSpaceMapper* card_counts_storage);
 
-  // Returns the card to be refined or NULL.
+  // Returns the card to be refined or null.
   //
   // Increments the count for given the card. if the card is not 'hot',
   // it is returned for immediate refining. Otherwise the card is
   // added to the hot card cache.
   // If there is enough room in the hot card cache for the card we're
-  // adding, NULL is returned and no further action in needed.
+  // adding, null is returned and no further action in needed.
   // If we evict a card from the cache to make room for the new card,
   // the evicted card is then returned for refinement.
   CardValue* insert(CardValue* card_ptr);
@@ -134,10 +134,10 @@ private:
   }
  private:
   void reset_hot_cache_internal() {
-    assert(_hot_cache != NULL, "Logic");
+    assert(_hot_cache != nullptr, "Logic");
     _hot_cache_idx = 0;
     for (size_t i = 0; i < _hot_cache_size; i++) {
-      _hot_cache[i] = NULL;
+      _hot_cache[i] = nullptr;
     }
     _cache_wrapped_around = false;
   }

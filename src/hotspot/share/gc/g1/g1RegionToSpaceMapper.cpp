@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t region_granularity,
                                              size_t commit_factor,
                                              MEMFLAGS type) :
-  _listener(NULL),
+  _listener(nullptr),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
   _region_commit_map(rs.size() * commit_factor / region_granularity, mtGC),
@@ -254,7 +254,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 };
 
 void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  if (_listener != NULL) {
+  if (_listener != nullptr) {
     _listener->on_commit(start_idx, num_regions, zero_filled);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,18 +91,18 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _young_gc_memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
   _conc_gc_memory_manager("G1 Concurrent GC", "end of concurrent GC pause"),
-  _eden_space_pool(NULL),
-  _survivor_space_pool(NULL),
-  _old_gen_pool(NULL),
-  _young_collection_counters(NULL),
-  _full_collection_counters(NULL),
-  _conc_collection_counters(NULL),
-  _young_gen_counters(NULL),
-  _old_gen_counters(NULL),
-  _old_space_counters(NULL),
-  _eden_space_counters(NULL),
-  _from_space_counters(NULL),
-  _to_space_counters(NULL),
+  _eden_space_pool(nullptr),
+  _survivor_space_pool(nullptr),
+  _old_gen_pool(nullptr),
+  _young_collection_counters(nullptr),
+  _full_collection_counters(nullptr),
+  _conc_collection_counters(nullptr),
+  _young_gen_counters(nullptr),
+  _old_gen_counters(nullptr),
+  _old_space_counters(nullptr),
+  _eden_space_counters(nullptr),
+  _from_space_counters(nullptr),
+  _to_space_counters(nullptr),
 
   _overall_committed(0),
   _overall_used(0),

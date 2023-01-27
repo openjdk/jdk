@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,13 +111,13 @@ void HeapRegion::handle_evacuation_failure() {
 }
 
 void HeapRegion::unlink_from_list() {
-  set_next(NULL);
-  set_prev(NULL);
-  set_containing_set(NULL);
+  set_next(nullptr);
+  set_prev(nullptr);
+  set_containing_set(nullptr);
 }
 
 void HeapRegion::hr_clear(bool clear_space) {
-  assert(_humongous_start_region == NULL,
+  assert(_humongous_start_region == nullptr,
          "we should have already filtered out humongous regions");
 
   clear_young_index_in_cset();
@@ -217,7 +217,7 @@ void HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
-  _humongous_start_region = NULL;
+  _humongous_start_region = nullptr;
 }
 
 void HeapRegion::prepare_remset_for_scan() {
@@ -230,23 +230,23 @@ HeapRegion::HeapRegion(uint hrm_index,
                        G1CardSetConfiguration* config) :
   _bottom(mr.start()),
   _end(mr.end()),
-  _top(NULL),
+  _top(nullptr),
   _bot_part(bot, this),
-  _pre_dummy_top(NULL),
-  _rem_set(NULL),
+  _pre_dummy_top(nullptr),
+  _rem_set(nullptr),
   _hrm_index(hrm_index),
   _type(),
-  _humongous_start_region(NULL),
+  _humongous_start_region(nullptr),
   _index_in_opt_cset(InvalidCSetIndex),
-  _next(NULL), _prev(NULL),
+  _next(nullptr), _prev(nullptr),
 #ifdef ASSERT
-  _containing_set(NULL),
+  _containing_set(nullptr),
 #endif
-  _top_at_mark_start(NULL),
-  _parsable_bottom(NULL),
+  _top_at_mark_start(nullptr),
+  _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _young_index_in_cset(-1),
-  _surv_rate_group(NULL), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
+  _surv_rate_group(nullptr), _age_index(G1SurvRateGroup::InvalidAgeIndex), _gc_efficiency(-1.0),
   _node_index(G1NUMA::UnknownNodeIndex)
 {
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
@@ -367,8 +367,8 @@ public:
     _hr(hr), _failures(false) {}
 
   void do_code_blob(CodeBlob* cb) {
-    nmethod* nm = (cb == NULL) ? NULL : cb->as_compiled_method()->as_nmethod_or_null();
-    if (nm != NULL) {
+    nmethod* nm = (cb == nullptr) ? nullptr : cb->as_compiled_method()->as_nmethod_or_null();
+    if (nm != nullptr) {
       // Verify that the nemthod is live
       VerifyCodeRootOopClosure oop_cl(_hr);
       nm->oops_do(&oop_cl);
@@ -473,7 +473,7 @@ public:
 
   G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption vo) :
     _g1h(g1h), _ct(g1h->card_table()),
-    _containing_obj(NULL), _failures(false), _n_failures(0), _vo(vo) {
+    _containing_obj(nullptr), _failures(false), _n_failures(0), _vo(vo) {
   }
 
   void set_containing_obj(oop obj) {
@@ -502,7 +502,7 @@ public:
 
   template <class T>
   void do_oop_work(T* p) {
-    assert(_containing_obj != NULL, "Precondition");
+    assert(_containing_obj != nullptr, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
       "Precondition");
     verify_liveness(p);
@@ -560,7 +560,7 @@ public:
 
   template <class T>
   void do_oop_work(T* p) {
-    assert(_containing_obj != NULL, "Precondition");
+    assert(_containing_obj != nullptr, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
       "Precondition");
     verify_remembered_set(p);
@@ -574,7 +574,7 @@ public:
       oop obj = CompressedOops::decode_not_null(heap_oop);
       HeapRegion* from = _g1h->heap_region_containing(p);
       HeapRegion* to = _g1h->heap_region_containing(obj);
-      if (from != NULL && to != NULL &&
+      if (from != nullptr && to != nullptr &&
         from != to &&
         !to->is_pinned() &&
         to->rem_set()->is_complete()) {
@@ -634,7 +634,7 @@ void HeapRegion::verify(VerifyOption vo,
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   VerifyLiveClosure vl_cl(g1h, vo);
   VerifyRemSetClosure vr_cl(g1h, vo);
   bool is_region_humongous = is_humongous();
@@ -725,7 +725,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   *failures = false;
   HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   VerifyRemSetClosure vr_cl(g1h, vo);
   while (p < top()) {
     oop obj = cast_to_oop(p);

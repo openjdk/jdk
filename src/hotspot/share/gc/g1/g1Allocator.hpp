@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ public:
   size_t plab_size(G1HeapRegionAttr which) const;
 
   // Allocate word_sz words in dest, either directly into the regions or by
-  // allocating a new PLAB. Returns the address of the allocated memory, NULL if
+  // allocating a new PLAB. Returns the address of the allocated memory, null if
   // not successful. Plab_refill_failed indicates whether an attempt to refill the
   // PLAB failed or not.
   HeapWord* allocate_direct_or_new_plab(G1HeapRegionAttr dest,
@@ -212,7 +212,7 @@ public:
                                         uint node_index);
 
   // Allocate word_sz words in the PLAB of dest.  Returns the address of the
-  // allocated memory, NULL if not successful.
+  // allocated memory, null if not successful.
   inline HeapWord* plab_allocate(G1HeapRegionAttr dest,
                                  size_t word_sz,
                                  uint node_index);
@@ -260,14 +260,14 @@ public:
   G1ArchiveAllocator(G1CollectedHeap* g1h, bool open) :
     _open(open),
     _g1h(g1h),
-    _allocation_region(NULL),
+    _allocation_region(nullptr),
     _allocated_regions(2),
-    _bottom(NULL),
-    _top(NULL),
-    _max(NULL) { }
+    _bottom(nullptr),
+    _top(nullptr),
+    _max(nullptr) { }
 
   virtual ~G1ArchiveAllocator() {
-    assert(_allocation_region == NULL, "_allocation_region not NULL");
+    assert(_allocation_region == nullptr, "_allocation_region not null");
   }
 
   static G1ArchiveAllocator* create_allocator(G1CollectedHeap* g1h, bool open);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ private:
   const CardValue* _ct_bot;
 
   // Returns true if the card counts table has been reserved.
-  bool has_reserved_count_table() { return _card_counts != NULL; }
+  bool has_reserved_count_table() { return _card_counts != nullptr; }
 
   // Returns true if the card counts table has been reserved and committed.
   bool has_count_table() {
