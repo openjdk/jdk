@@ -61,7 +61,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
     const Type* t = val->bottom_type();
-    if (t == TypePtr::nullptr_PTR || t == Type::TOP) {
+    if (t == TypePtr::NULL_PTR || t == Type::TOP) {
       return;
     }
   }
