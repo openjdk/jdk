@@ -59,7 +59,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _index(index),
   _bottom(start),
   _end(start + RegionSizeWords),
-  _new_top(NULL),
+  _new_top(nullptr),
   _empty_time(os::elapsedTime()),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
@@ -454,7 +454,7 @@ HeapWord* ShenandoahHeapRegion::block_start(const void* p) const {
       last = cur;
       cur += cast_to_oop(cur)->size();
     }
-    shenandoah_assert_correct(NULL, cast_to_oop(last));
+    shenandoah_assert_correct(nullptr, cast_to_oop(last));
     return last;
   }
 }

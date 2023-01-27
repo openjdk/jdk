@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -93,7 +93,7 @@ public:
   // Reset iterator to default state
   void reset();
 
-  // Returns next region, or NULL if there are no more regions.
+  // Returns next region, or null if there are no more regions.
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
 
