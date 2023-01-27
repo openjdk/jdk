@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,8 +839,12 @@ public class SimpleTimeZone extends TimeZone {
 
     /**
      * Queries if the given date is in daylight saving time.
+     * @implSpec The default implementation throws a
+     * {@code NullPointerException} if {@code date} is {@code null}
      * @return true if daylight saving time is in effective at the
      * given date; false otherwise.
+     * @throws NullPointerException This method may throw a
+     * {@code NullPointerException} if {@code date} is {@code null}
      */
     public boolean inDaylightTime(Date date)
     {
