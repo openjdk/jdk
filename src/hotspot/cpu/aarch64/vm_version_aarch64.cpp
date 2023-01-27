@@ -246,10 +246,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  if (FLAG_IS_DEFAULT(UsePmull)) {
-    UsePmull = VM_Version::supports_sha3() && VM_Version::supports_pmull();
-  }
-
   if (UsePmull && (!VM_Version::supports_sha3() || !VM_Version::supports_pmull())) {
     warning("UsePmull specified, but not supported on this CPU");
     FLAG_SET_DEFAULT(UsePmull, false);
