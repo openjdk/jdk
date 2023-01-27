@@ -181,6 +181,7 @@ public class Basic {
     public Iterator<Object[]> unmodifiable() {
         return Arrays.asList(
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
+            new Object[] { "ListOf", ORIGINAL.subList(1, 3), ORIGINAL.subList(1, 3) },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
         ).iterator();
@@ -255,6 +256,29 @@ public class Basic {
 
         var rreq = rseq.reversed();
         checkOneWay(rreq, ref);
+    }
+
+    /**
+     * Check that modification operations will throw UnsupportedOperationException.
+     *
+     * @param seq the SequencedCollection under test
+     */
+    public void checkUnmodifiable(SequencedCollection<String> seq) {
+        final var UOE = UnsupportedOperationException.class;
+
+        assertThrows(UOE, () -> seq.addFirst("x"));
+        assertThrows(UOE, () -> seq.addLast("x"));
+        assertThrows(UOE, () -> seq.removeFirst());
+        assertThrows(UOE, () -> seq.removeLast());
+
+        assertThrows(UOE, () -> seq.add("x"));
+        assertThrows(UOE, () -> seq.addAll(List.of()));
+        assertThrows(UOE, () -> seq.clear());
+        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
+        assertThrows(UOE, () -> seq.remove("x"));
+        assertThrows(UOE, () -> seq.removeAll(List.of()));
+        assertThrows(UOE, () -> seq.removeIf(x -> false));
+        assertThrows(UOE, () -> seq.retainAll(seq));
     }
 
     // ========== Tests ==========
@@ -332,17 +356,8 @@ public class Basic {
 
     @Test(dataProvider="unmodifiable")
     public void testUnmodifiable(String label, SequencedCollection<String> seq, List<String> ref) {
-        assertThrows(UnsupportedOperationException.class, () -> seq.addFirst("x"));
-        assertThrows(UnsupportedOperationException.class, () -> seq.addLast("x"));
-        assertThrows(UnsupportedOperationException.class, () -> seq.removeFirst());
-        assertThrows(UnsupportedOperationException.class, () -> seq.removeLast());
-
-        var rseq = seq.reversed();
-        assertThrows(UnsupportedOperationException.class, () -> rseq.addFirst("x"));
-        assertThrows(UnsupportedOperationException.class, () -> rseq.addLast("x"));
-        assertThrows(UnsupportedOperationException.class, () -> rseq.removeFirst());
-        assertThrows(UnsupportedOperationException.class, () -> rseq.removeLast());
-
+        checkUnmodifiable(seq);
+        checkUnmodifiable(seq.reversed());
         checkContents(seq, ref);
     }
 }

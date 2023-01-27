@@ -845,7 +845,7 @@ public interface List<E> extends SequencedCollection<E> {
      * @since 21
      */
     default List<E> reversed() {
-        return ReverseOrderListView.of(this);
+        return ReverseOrderListView.of(this, true); // we must assume it's modifiable
     }
 
     // ========== static methods ==========

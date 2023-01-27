@@ -34,23 +34,45 @@ import java.util.stream.StreamSupport;
 
 /**
  * Provides a reverse-ordered view of a List. Not serializable.
- *
- * TODO: RandomAccess
  */
 class ReverseOrderListView<E> implements List<E> {
 
     final List<E> base;
+    final boolean modifiable;
 
-    public static <T> List<T> of(List<T> list) {
+    public static <T> List<T> of(List<T> list, boolean modifiable) {
         if (list instanceof ReverseOrderListView) {
             return ((ReverseOrderListView<T>)list).base;
+        } else if (list instanceof RandomAccess) {
+            return new ReverseOrderListView.Rand<>(list, modifiable);
         } else {
-            return new ReverseOrderListView<>(list);
+            return new ReverseOrderListView<>(list, modifiable);
         }
     }
 
-    ReverseOrderListView(List<E> list) {
+    static class Rand<E> extends ReverseOrderListView<E> implements RandomAccess {
+        Rand(List<E> list, boolean modifiable) {
+            super(list, modifiable);
+        }
+    }
+
+    ReverseOrderListView(List<E> list, boolean modifiable) {
         this.base = list;
+        this.modifiable = modifiable;
+    }
+
+    /**
+     * Throws if this list is unmodifiable. This should be called from every mutator
+     * method. For bulk ops (addAll, removeAll, etc.) this throws unconditionally.
+     * In contrast, if the base list inherits a bulk op implementation from AbstractList,
+     * it might not throw if no actual mutation would be attempted (e.g., addAll on an
+     * empty collection). Arguably calling this is unnecessary for individual ops,
+     * for which the base list should always throw, but it's easier to verify the right
+     * behavior if every mutator of this class always checks.
+     */
+    void checkModifiable() {
+        if (! modifiable)
+            throw new UnsupportedOperationException();
     }
 
     class DescendingIterator implements Iterator<E> {
@@ -58,6 +80,7 @@ class ReverseOrderListView<E> implements List<E> {
         public boolean hasNext() { return it.hasPrevious(); }
         public E next() { return it.previous(); }
         public void remove() {
+            checkModifiable();
             it.remove();
             // TODO - make sure ListIterator is positioned correctly afterward
         }
@@ -97,14 +120,17 @@ class ReverseOrderListView<E> implements List<E> {
         }
 
         public void remove() {
+            checkModifiable();
             it.remove();
         }
 
         public void set(E e) {
+            checkModifiable();
             it.set(e);
         }
 
         public void add(E e) {
+            checkModifiable();
             it.add(e);
             it.previous();
         }
@@ -129,11 +155,13 @@ class ReverseOrderListView<E> implements List<E> {
     // ========== Collection ==========
 
     public boolean add(E e) {
+        checkModifiable();
         base.add(0, e);
         return true;
     }
 
     public boolean addAll(Collection<? extends E> c) {
+        checkModifiable();
         boolean modified = false;
         for (E e : c) {
             base.add(0, e);
@@ -143,6 +171,7 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public void clear() {
+        checkModifiable();
         base.clear();
     }
 
@@ -190,6 +219,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     // copied from AbstractCollection
     public boolean remove(Object o) {
+        checkModifiable();
         Iterator<E> it = iterator();
         if (o==null) {
             while (it.hasNext()) {
@@ -211,6 +241,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     // copied from AbstractCollection
     public boolean removeAll(Collection<?> c) {
+        checkModifiable();
         Objects.requireNonNull(c);
         boolean modified = false;
         Iterator<?> it = iterator();
@@ -225,6 +256,7 @@ class ReverseOrderListView<E> implements List<E> {
 
     // copied from AbstractCollection
     public boolean retainAll(Collection<?> c) {
+        checkModifiable();
         Objects.requireNonNull(c);
         boolean modified = false;
         Iterator<E> it = iterator();
@@ -290,10 +322,12 @@ class ReverseOrderListView<E> implements List<E> {
     // ========== List ==========
 
     public void add(int index, E element) {
+        checkModifiable();
         base.add(base.size() - index, element);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
+        checkModifiable();
         boolean modified = false;
         int i = base.size() - index;
         for (E e : c) {
@@ -326,27 +360,32 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public E remove(int index) {
+        checkModifiable();
         return base.remove(base.size() - index - 1);
     }
 
     public boolean removeIf(Predicate<? super E> filter) {
+        checkModifiable();
         return base.removeIf(filter);
     }
 
     public void replaceAll(UnaryOperator<E> operator) {
+        checkModifiable();
         base.replaceAll(operator);
     }
 
     public void sort(Comparator<? super E> c) {
+        checkModifiable();
         base.sort(Collections.reverseOrder(c));
     }
 
     public E set(int index, E element) {
+        checkModifiable();
         return base.set(base.size() - index - 1, element);
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
         int size = base.size();
-        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex));
+        return new ReverseOrderListView<>(base.subList(size - toIndex, size - fromIndex), modifiable);
     }
 }
