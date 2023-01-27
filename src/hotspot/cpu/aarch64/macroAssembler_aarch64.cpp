@@ -3729,8 +3729,6 @@ void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
     Label CRC_by64_loop, CRC_by4_loop, CRC_by1_loop, CRC_less64, CRC_by64_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
 
-    prfm(Address(buf), PLDL1KEEP);
-
     mvnw(crc, crc);
 
     subs(len, len, 128);
@@ -3774,8 +3772,8 @@ void MacroAssembler::kernel_crc32_using_crc32(Register crc, Register buf,
     b(L_exit);
 
   BIND(CRC_by64_pre);
+    ldp(tmp0, tmp1, Address(buf));
     sub(buf, buf, 8);
-    ldp(tmp0, tmp1, Address(buf, 8));
     crc32x(crc, crc, tmp0);
     ldr(tmp2, Address(buf, 24));
     crc32x(crc, crc, tmp1);
