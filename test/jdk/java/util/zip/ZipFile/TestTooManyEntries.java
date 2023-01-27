@@ -154,7 +154,7 @@ public class TestTooManyEntries {
 
         try (FileOutputStream out  = new FileOutputStream(z.toFile())) {
 
-            if(zip64) {
+            if (zip64) {
                 // Write the Zip64 end of central directory record and locator
                 writeZip64End(out, cenSize, zip64);
             }
