@@ -208,15 +208,6 @@ public:
   // On success, true is returned, false otherwise.
   bool attempt_enlarge_chunk(Metachunk* c, FreeChunkListVector* freelists);
 
-  // Attempts to purge the node:
-  //
-  // If all chunks living in this node are free, they will all be removed from
-  //  the freelist they currently reside in. Then, the node will be deleted.
-  //
-  // Returns true if the node has been deleted, false if not.
-  // !! If this returns true, do not access the node from this point on. !!
-  bool attempt_purge(FreeChunkListVector* freelists);
-
   // Attempts to uncommit free areas according to the rules set in settings.
   // Returns number of words uncommitted.
   size_t uncommit_free_areas();
