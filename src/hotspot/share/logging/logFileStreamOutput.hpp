@@ -90,18 +90,4 @@ class LogStderrOutput : public LogFileStreamOutput {
 extern LogStderrOutput* StderrLog;
 extern LogStdoutOutput* StdoutLog;
 
-class FileLocker : public StackObj {
-private:
-    FILE *_file;
-
-public:
-    FileLocker(FILE *file) : _file(file) {
-      os::flockfile(_file);
-    }
-
-    ~FileLocker() {
-      os::funlockfile(_file);
-    }
-};
-
 #endif // SHARE_LOGGING_LOGFILESTREAMOUTPUT_HPP

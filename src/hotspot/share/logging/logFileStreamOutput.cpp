@@ -74,6 +74,20 @@ int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   return total_written;
 }
 
+class FileLocker : public StackObj {
+private:
+  FILE *_file;
+
+public:
+  FileLocker(FILE *file) : _file(file) {
+    os::flockfile(_file);
+  }
+
+  ~FileLocker() {
+    os::funlockfile(_file);
+  }
+};
+
 bool LogFileStreamOutput::flush() {
   bool result = true;
   if (fflush(_stream) != 0) {
