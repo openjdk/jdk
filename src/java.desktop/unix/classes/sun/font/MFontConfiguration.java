@@ -86,6 +86,7 @@ public class MFontConfiguration extends FontConfiguration {
      */
     protected void setOsNameAndVersion(){
         super.setOsNameAndVersion();
+
         if (osName.equals("Linux")) {
             try {
                 File f;
