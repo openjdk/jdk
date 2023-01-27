@@ -3367,26 +3367,18 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
 }
 
-void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool full_gc) {
-  // We can reach here with an active code cache marking cycle either because
-  // the previous G1 concurrent marking cycle
-  //
-  // (1) was aborted and a full gc is about to begin or
-  // (2) it was undone because the heap occupancy was below the threshold after
-  //     the initiating young gc (see G1ConcurrentMark::post_concurrent_undo_start())
-  //
-  // Especially in case (2) it is important that the active codecache cycle was not
-  // finished when executing the G1 undo operation. If it was (repeatedly) finished
-  // then nmethods with frames in continuation StackChunks could appear as not
-  // on stack because they were not marked as on stack in the undone concurrent marking.
-  //
-  // Also for (2) it is important to arm nmethod entry barriers even if no new
-  // code cache cycle is started. They are needed for a complete SATB. A full gc
-  // on the other hand doesn't need the barriers at all.
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_marking_start) {
+  // We can reach here with an active code cache marking cycle either because the
+  // previous G1 concurrent marking cycle was undone (if heap occupancy after the
+  // concurrent start young collection was below the threshold) or aborted. See
+  // CodeCache::on_gc_marking_cycle_finish() why this is.  We must not start a new code
+  // cache cycle then. If we are about to start a new g1 concurrent marking cycle we
+  // still have to arm all nmethod entry barriers. They are needed for adding oop
+  // constants to the SATB snapshot. Full GC does not need nmethods to be armed.
   if (!CodeCache::is_gc_marking_cycle_active()) {
     CodeCache::on_gc_marking_cycle_start();
   }
-  if (!full_gc) {
+  if (concurrent_marking_start) {
     CodeCache::arm_all_nmethods();
   }
 }
