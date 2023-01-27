@@ -28,7 +28,6 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -3468,18 +3467,13 @@ public class Lower extends TreeTranslator {
             Type elemtype = types.elemtype(tree.expr.type);
             JCExpression loopvarinit = make.Indexed(make.Ident(arraycache),
                                                     make.Ident(index)).setType(elemtype);
-
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-            JCVariableDecl jcVariableDecl = (JCVariableDecl) tree.varOrRecordPattern;
-
-            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(jcVariableDecl.mods,
-                    jcVariableDecl.name,
-                    jcVariableDecl.vartype,
-                    loopvarinit).setType(jcVariableDecl.type);
-            loopvardef.sym = jcVariableDecl.sym;
+            JCVariableDecl loopvardef = (JCVariableDecl)make.VarDef(tree.var.mods,
+                                                  tree.var.name,
+                                                  tree.var.vartype,
+                                                  loopvarinit).setType(tree.var.type);
+            loopvardef.sym = tree.var.sym;
             JCBlock body = make.
-                    Block(0, List.of(loopvardef, tree.body));
-
+                Block(0, List.of(loopvardef, tree.body));
 
             result = translate(make.
                                ForLoop(loopinit,
@@ -3558,26 +3552,22 @@ public class Lower extends TreeTranslator {
                                        itvar.type,
                                        List.nil());
             JCExpression vardefinit = make.App(make.Select(make.Ident(itvar), next));
-
-            Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.VARIABLE);
-
-            JCVariableDecl var = (JCVariableDecl) tree.varOrRecordPattern;
-            if (var.type.isPrimitive())
+            if (tree.var.type.isPrimitive())
                 vardefinit = make.TypeCast(types.cvarUpperBound(iteratorTarget), vardefinit);
             else
-                vardefinit = make.TypeCast(var.type, vardefinit);
-            JCVariableDecl indexDef = (JCVariableDecl) make.VarDef(var.mods,
-                    var.name,
-                    var.vartype,
-                    vardefinit).setType(var.type);
-            indexDef.sym = var.sym;
+                vardefinit = make.TypeCast(tree.var.type, vardefinit);
+            JCVariableDecl indexDef = (JCVariableDecl)make.VarDef(tree.var.mods,
+                                                  tree.var.name,
+                                                  tree.var.vartype,
+                                                  vardefinit).setType(tree.var.type);
+            indexDef.sym = tree.var.sym;
             JCBlock body = make.Block(0, List.of(indexDef, tree.body));
             body.endpos = TreeInfo.endPos(tree.body);
             result = translate(make.
-                    ForLoop(List.of(init),
-                            cond,
-                            List.nil(),
-                            body));
+                ForLoop(List.of(init),
+                        cond,
+                        List.nil(),
+                        body));
             patchTargets(body, tree, result);
         }
 

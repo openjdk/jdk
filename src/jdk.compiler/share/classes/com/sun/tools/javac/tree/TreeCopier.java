@@ -223,10 +223,10 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
         JCEnhancedForLoop t = (JCEnhancedForLoop) node;
-        JCTree varOrRecordPattern = copy(t.varOrRecordPattern, p);
+        JCVariableDecl var = copy(t.var, p);
         JCExpression expr = copy(t.expr, p);
         JCStatement body = copy(t.body, p);
-        return M.at(t.pos).ForeachLoop(varOrRecordPattern, expr, body);
+        return M.at(t.pos).ForeachLoop(var, expr, body);
     }
 
     @DefinedBy(Api.COMPILER_TREE)

@@ -388,7 +388,7 @@ public class TreeDiffer extends TreeScanner {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         JCEnhancedForLoop that = (JCEnhancedForLoop) parameter;
         result =
-                scan(tree.varOrRecordPattern, that.varOrRecordPattern)
+                scan(tree.var, that.var)
                         && scan(tree.expr, that.expr)
                         && scan(tree.body, that.body);
     }

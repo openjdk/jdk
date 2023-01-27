@@ -760,6 +760,7 @@ public class JavacParser implements Parser {
 
     /** parses patterns.
      */
+
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
@@ -2817,47 +2818,25 @@ public class JavacParser implements Parser {
         case FOR: {
             nextToken();
             accept(LPAREN);
-            JCTree pattern;
-
-            ForInitResult initResult = analyzeForInit();
-
-            if (initResult == ForInitResult.RecordPattern) {
-                int patternPos = token.pos;
-                JCModifiers mods = optFinal(0);
-                int typePos = token.pos;
-                JCExpression type = unannotatedType(false);
-
-                pattern = parsePattern(patternPos, mods, type, false, false);
-
-                if (pattern != null) {
-                    checkSourceLevel(token.pos, Feature.PATTERN_SWITCH);
-                }
+            List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
+            if (inits.length() == 1 &&
+                inits.head.hasTag(VARDEF) &&
+                ((JCVariableDecl) inits.head).init == null &&
+                token.kind == COLON) {
+                JCVariableDecl var = (JCVariableDecl)inits.head;
                 accept(COLON);
                 JCExpression expr = parseExpression();
                 accept(RPAREN);
                 JCStatement body = parseStatementAsBlock();
-                return F.at(pos).ForeachLoop(pattern, expr, body);
+                return F.at(pos).ForeachLoop(var, expr, body);
             } else {
-                List<JCStatement> inits = token.kind == SEMI ? List.nil() : forInit();
-                if (inits.length() == 1 &&
-                        inits.head.hasTag(VARDEF) &&
-                        ((JCVariableDecl) inits.head).init == null &&
-                        token.kind == COLON) {
-                    JCVariableDecl var = (JCVariableDecl) inits.head;
-                    accept(COLON);
-                    JCExpression expr = parseExpression();
-                    accept(RPAREN);
-                    JCStatement body = parseStatementAsBlock();
-                    return F.at(pos).ForeachLoop(var, expr, body);
-                } else {
-                    accept(SEMI);
-                    JCExpression cond = token.kind == SEMI ? null : parseExpression();
-                    accept(SEMI);
-                    List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
-                    accept(RPAREN);
-                    JCStatement body = parseStatementAsBlock();
-                    return F.at(pos).ForLoop(inits, cond, steps, body);
-                }
+                accept(SEMI);
+                JCExpression cond = token.kind == SEMI ? null : parseExpression();
+                accept(SEMI);
+                List<JCExpressionStatement> steps = token.kind == RPAREN ? List.nil() : forUpdate();
+                accept(RPAREN);
+                JCStatement body = parseStatementAsBlock();
+                return F.at(pos).ForLoop(inits, cond, steps, body);
             }
         }
         case WHILE: {
@@ -2971,91 +2950,6 @@ public class JavacParser implements Parser {
         default:
             Assert.error();
             return null;
-        }
-    }
-
-    private enum ForInitResult {
-        LocalVarDecl,
-        RecordPattern
-    }
-
-    @SuppressWarnings("fallthrough")
-    ForInitResult analyzeForInit() {
-        boolean inType = false;
-        boolean inSelectionAndParenthesis = false;
-        int typeParameterPossibleStart = -1;
-        outer: for (int lookahead = 0; ; lookahead++) {
-            TokenKind tk = S.token(lookahead).kind;
-            switch (tk) {
-                case DOT:
-                    if (inType) break; // in qualified type
-                case COMMA:
-                    typeParameterPossibleStart = lookahead;
-                    break;
-                case QUES:
-                    // "?" only allowed in a type parameter position - otherwise it's an expression
-                    if (typeParameterPossibleStart == lookahead - 1) break;
-                    else return ForInitResult.LocalVarDecl;
-                case EXTENDS: case SUPER: case AMP:
-                case GTGTGT: case GTGT: case GT:
-                case FINAL: case ELLIPSIS:
-                    break;
-                case BYTE: case SHORT: case INT: case LONG: case FLOAT:
-                case DOUBLE: case BOOLEAN: case CHAR: case VOID:
-                    if (peekToken(lookahead, IDENTIFIER)) {
-                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
-                                                         : ForInitResult.LocalVarDecl;
-                    }
-                    break;
-                case LPAREN:
-                    if (lookahead != 0 && inType) {
-                        inSelectionAndParenthesis = true;
-                        inType = false;
-                    }
-                    break;
-                case RPAREN:
-                    // a method call in the init part or a record pattern?
-                    if (inSelectionAndParenthesis) {
-                        if (peekToken(lookahead, DOT)  ||
-                                peekToken(lookahead, SEMI) ||
-                                peekToken(lookahead, ARROW)) {
-                            return ForInitResult.LocalVarDecl;
-                        }
-                        else if(peekToken(lookahead, COLON)) {
-                            return ForInitResult.RecordPattern;
-                        }
-                        break;
-                    }
-                case UNDERSCORE:
-                case ASSERT:
-                case ENUM:
-                case IDENTIFIER:
-                    if (lookahead == 0) {
-                        inType = true;
-                    }
-                    break;
-                case MONKEYS_AT: {
-                    int prevLookahead = lookahead;
-                    lookahead = skipAnnotation(lookahead);
-                    if (typeParameterPossibleStart == prevLookahead - 1) {
-                        // move possible start of type param after the anno
-                        typeParameterPossibleStart = lookahead;
-                    }
-                    break;
-                }
-                case LBRACKET:
-                    if (peekToken(lookahead, RBRACKET)) {
-                        return inSelectionAndParenthesis ? ForInitResult.RecordPattern
-                                                         : ForInitResult.LocalVarDecl;
-                    }
-                    return ForInitResult.LocalVarDecl;
-                case LT:
-                    typeParameterPossibleStart = lookahead;
-                    break;
-                default:
-                    //this includes EOF
-                    return ForInitResult.LocalVarDecl;
-            }
         }
     }
 

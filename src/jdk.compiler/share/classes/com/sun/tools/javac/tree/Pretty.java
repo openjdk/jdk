@@ -801,7 +801,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         try {
             print("for (");
-            printExpr(tree.varOrRecordPattern);
+            printExpr(tree.var);
             print(" : ");
             printExpr(tree.expr);
             print(") ");

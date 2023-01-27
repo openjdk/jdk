@@ -34,7 +34,6 @@ import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CaseTree;
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.MemberSelectTree;
@@ -1514,25 +1513,24 @@ public class Attr extends JCTree.Visitor {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
-
         try {
             //the Formal Parameter of a for-each loop is not in the scope when
             //attributing the for-each expression; we mimic this by attributing
             //the for-each expression first (against original scope).
             Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             chk.checkNonVoid(tree.pos(), exprType);
-            tree.elementType = types.elemtype(exprType); // perhaps expr is an array?
-            if (tree.elementType == null) {
+            Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
+            if (elemtype == null) {
                 // or perhaps expr implements Iterable<T>?
                 Type base = types.asSuper(exprType, syms.iterableType.tsym);
                 if (base == null) {
                     log.error(tree.expr.pos(),
                               Errors.ForeachNotApplicableToType(exprType,
                                                                 Fragments.TypeReqArrayOrIterable));
-                    tree.elementType = types.createErrorType(exprType);
+                    elemtype = types.createErrorType(exprType);
                 } else {
                     List<Type> iterableParams = base.allparams();
-                    tree.elementType = iterableParams.isEmpty()
+                    elemtype = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
 
@@ -1546,40 +1544,14 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if (tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
-                if (jcVariableDecl.isImplicitlyTyped()) {
-                    Type inferredType = chk.checkLocalVarType(jcVariableDecl, tree.elementType, jcVariableDecl.name);
-                    setSyntheticVariableType(jcVariableDecl, inferredType);
-                }
-                attribStat(jcVariableDecl, loopEnv);
-                chk.checkType(tree.expr.pos(), tree.elementType, jcVariableDecl.sym.type);
-
-                loopEnv.tree = tree; // before, we were not in loop!
-                attribStat(tree.body, loopEnv);
-            } else {
-                Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN);
-                JCRecordPattern jcRecordPattern = (JCRecordPattern) tree.varOrRecordPattern;
-
-                attribExpr(jcRecordPattern, loopEnv, tree.elementType);
-
-                // for(<pattern> x : xs) { y }
-                // we include x's bindings when true in y
-                // we don't do anything with x's bindings when false
-
-                MatchBindings forWithRecordPatternBindings = matchBindings;
-                Env<AttrContext> recordPatternEnv = bindingEnv(loopEnv, forWithRecordPatternBindings.bindingsWhenTrue);
-
-                Type clazztype = jcRecordPattern.type;
-
-                checkCastablePattern(tree.expr.pos(), tree.elementType, clazztype);
-
-                recordPatternEnv.tree = tree; // before, we were not in loop!
-                try {
-                    attribStat(tree.body, recordPatternEnv);
-                } finally {
-                    recordPatternEnv.info.scope.leave();
-                }
+            if (tree.var.isImplicitlyTyped()) {
+                Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
+                setSyntheticVariableType(tree.var, inferredType);
             }
+            attribStat(tree.var, loopEnv);
+            chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
+            loopEnv.tree = tree; // before, we were not in loop!
+            attribStat(tree.body, loopEnv);
             result = null;
         }
         finally {

@@ -189,7 +189,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.varOrRecordPattern = translate(tree.varOrRecordPattern);
+        tree.var = translate(tree.var);
         tree.expr = translate(tree.expr);
         tree.body = translate(tree.body);
         result = tree;
