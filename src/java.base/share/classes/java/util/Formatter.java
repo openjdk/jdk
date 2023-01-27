@@ -61,7 +61,7 @@ import java.time.temporal.TemporalQueries;
 import java.time.temporal.UnsupportedTemporalTypeException;
 
 import jdk.internal.math.DoubleConsts;
-import jdk.internal.math.FormattedFloatingDecimal;
+import jdk.internal.math.FormattedFPDecimal;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
@@ -3512,19 +3512,16 @@ public final class Formatter implements Closeable, Flushable {
             appendJustified(fmt.a, sb);
         }
 
-        // !Double.isInfinite(value) && !Double.isNaN(value)
+        // !Double.isInfinite(value) && !Double.isNaN(value) && value sign bit is 0
         private void print(Formatter fmt, StringBuilder sb, double value, Locale l,
-                           int flags, char c, int precision, boolean neg)
-            throws IOException
-        {
+                           int flags, char c, int precision, boolean neg) {
             if (c == Conversion.SCIENTIFIC) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.SCIENTIFIC);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.SCIENTIFIC);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3552,13 +3549,12 @@ public final class Formatter implements Closeable, Flushable {
 
                 localizedMagnitudeExp(fmt, sb, exp, 1, l);
             } else if (c == Conversion.DECIMAL_FLOAT) {
-                // Create a new FormattedFloatingDecimal with the desired
+                // Create a new FormattedFPDecimal with the desired
                 // precision.
                 int prec = (precision == -1 ? 6 : precision);
 
-                FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.DECIMAL_FLOAT);
+                FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                        value, prec, FormattedFPDecimal.PLAIN);
 
                 StringBuilder mant = new StringBuilder().append(fd.getMantissa());
                 addZeros(mant, prec);
@@ -3587,9 +3583,8 @@ public final class Formatter implements Closeable, Flushable {
                     mant.append('0');
                     expRounded = 0;
                 } else {
-                    FormattedFloatingDecimal fd
-                        = FormattedFloatingDecimal.valueOf(value, prec,
-                          FormattedFloatingDecimal.Form.GENERAL);
+                    FormattedFPDecimal fd = FormattedFPDecimal.valueOf(
+                            value, prec, FormattedFPDecimal.GENERAL);
                     exp = fd.getExponent();
                     mant.append(fd.getMantissa());
                     expRounded = fd.getExponentRounded();
