@@ -97,7 +97,7 @@ public class filter_s002 extends JDIBase {
         if (exitCode != PASSED) {
             System.out.println("TEST FAILED");
         }
-        return testExitCode;
+        return exitCode;
     }
 
     //  ************************************************    test parameters
