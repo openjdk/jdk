@@ -476,8 +476,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 #endif // PRODUCT
 
 bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
-  //DEBUG_ONLY( if (!VMError::is_error_reported()) { assert_locked_or_safepoint(ClassLoaderDataGraph_lock); } )
-  DEBUG_ONLY( if (!VMError::is_error_reported() && !Debugging) { assert_locked_or_safepoint(ClassLoaderDataGraph_lock); } )
+  DEBUG_ONLY( if (!VMError::is_error_reported()) { assert_locked_or_safepoint(ClassLoaderDataGraph_lock); } )
   if (loader_data != NULL) {
     if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
       return true;
