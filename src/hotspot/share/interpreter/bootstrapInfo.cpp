@@ -262,7 +262,6 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
 
   if (_indy_index != -1) {
     if (UseNewIndyCode) {
-      sprintf(what, "indy#%d", _indy_index);
       os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
     } else {
       os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
