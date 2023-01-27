@@ -388,6 +388,7 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
 
+  _completed_mark_cycles(0),
   _has_overflown(false),
   _concurrent(false),
   _has_aborted(false),
@@ -1010,10 +1011,18 @@ void G1ConcurrentMark::concurrent_cycle_start() {
   _g1h->trace_heap_before_gc(_gc_tracer_cm);
 }
 
-void G1ConcurrentMark::concurrent_cycle_end() {
+uint G1ConcurrentMark::completed_mark_cycles() const {
+  return Atomic::load(&_completed_mark_cycles);
+}
+
+void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
   _g1h->collector_state()->set_clearing_bitmap(false);
 
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
+
+  if (mark_cycle_completed) {
+    Atomic::inc(&_completed_mark_cycles, memory_order_relaxed);
+  }
 
   if (has_aborted()) {
     log_info(gc, marking)("Concurrent Mark Abort");
@@ -1772,28 +1781,24 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   G1SATBMarkQueueSet& _qset;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
-  uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
     _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
-    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */),
-    _claim_token(Threads::thread_claim_token()) {}
+    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_threads_do(true, _claim_token)) {
-      // Transfer any partial buffer to the qset for completed buffer processing.
-      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
-      if (thread->is_Java_thread()) {
-        // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
-        // however the liveness of oops reachable from nmethods have very complex lifecycles:
-        // * Alive if on the stack of an executing method
-        // * Weakly reachable otherwise
-        // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
-        // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        JavaThread::cast(thread)->nmethods_do(&_code_cl);
-      }
+    // Transfer any partial buffer to the qset for completed buffer processing.
+    _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
+    if (thread->is_Java_thread()) {
+      // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
+      // however the liveness of oops reachable from nmethods have very complex lifecycles:
+      // * Alive if on the stack of an executing method
+      // * Weakly reachable otherwise
+      // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
+      // live by the SATB invariant but other oops recorded in nmethods may behave differently.
+      JavaThread::cast(thread)->nmethods_do(&_code_cl);
     }
   }
 };
@@ -1808,7 +1813,7 @@ public:
       ResourceMark rm;
 
       G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
-      Threads::threads_do(&threads_f);
+      Threads::possibly_parallel_threads_do(true /* is_par */, &threads_f);
     }
 
     do {
