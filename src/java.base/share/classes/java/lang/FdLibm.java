@@ -817,7 +817,7 @@ class FdLibm {
             i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
             hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
             y  = (double)(k + i);
-            x = __HI(x, hx);
+            x = __HI(x, hx); // replace high word of x with hx
             z  = y * log10_2lo + ivln10 * StrictMath.log(x);
             return  z + y * log10_2hi;
         }
