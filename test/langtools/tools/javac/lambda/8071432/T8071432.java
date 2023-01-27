@@ -41,7 +41,7 @@ class T8071432 {
         }
     }
 
-    public static void main(String[] args) {
+    public static void meth() {
         Collection<Point> c = Arrays.asList(new Point(1.0, 0.1));
         System.out.println("------- 1 ---------------");
         System.out.println(c.stream().reduce(0.0,
