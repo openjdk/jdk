@@ -933,7 +933,7 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  static void start_codecache_marking_cycle_if_inactive(bool concurrent_marking_start);
+  static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
   static void finish_codecache_marking_cycle();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.

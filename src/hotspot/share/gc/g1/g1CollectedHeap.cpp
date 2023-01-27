@@ -3367,7 +3367,7 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
 }
 
-void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_marking_start) {
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start) {
   // We can reach here with an active code cache marking cycle either because the
   // previous G1 concurrent marking cycle was undone (if heap occupancy after the
   // concurrent start young collection was below the threshold) or aborted. See
@@ -3378,7 +3378,7 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
   if (!CodeCache::is_gc_marking_cycle_active()) {
     CodeCache::on_gc_marking_cycle_start();
   }
-  if (concurrent_marking_start) {
+  if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
 }
