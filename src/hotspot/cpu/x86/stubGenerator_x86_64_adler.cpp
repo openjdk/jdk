@@ -140,10 +140,8 @@ address StubGenerator::generate_updateBytesAdler32() {
 
   __ align32();
   if (VM_Version::supports_avx512vl()) {
-    __ cmpl(s, VM_Version::avx3_threshold());
-    __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
     // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
-    __ cmpl(s, 128);
+    __ cmpl(s, MAX(128, VM_Version::avx3_threshold()));
     __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
     __ vpxor(yb, yb, yb, Assembler::AVX_512bit);
 
