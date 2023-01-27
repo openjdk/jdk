@@ -785,36 +785,36 @@ class FdLibm {
         private static double log10_2hi  =  3.01029995663611771306e-01; /* 0x3FD34413, 0x509F6000 */
         private static double log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
 
-        private static double zero   =  0.0;
-
         private Log10() {
             throw new UnsupportedOperationException();
         }
 
         public static double compute(double x) {
-            double y,z;
-            int i,k,hx;
-            /*unsigned*/ int lx;
+            double y, z;
+            int i, k, hx, lx;
 
             hx = __HI(x);   /* high word of x */
             lx = __LO(x);   /* low word of x */
 
             k=0;
             if (hx < 0x00100000) {                  /* x < 2**-1022  */
-                if (((hx&0x7fffffff)|lx)==0)
-                    return -two54/zero;             /* log(+-0)=-inf */
-                if (hx<0) return (x-x)/zero;        /* log(-#) = NaN */
-                k -= 54; x *= two54; /* subnormal number, scale up x */
+                if (((hx & 0x7fff_ffff) | lx) == 0)
+                    return -two54/0.0;             /* log(+-0)=-inf */
+                if (hx < 0)
+                    return (x - x)/0.0;        /* log(-#) = NaN */
+                k -= 54;
+                x *= two54; /* subnormal number, scale up x */
                 hx = __HI(x);                /* high word of x */
             }
-            if (hx >= 0x7ff00000) return x+x;
-            k += (hx>>20)-1023;
-            i  = (k&0x80000000)>>>31; // unsigned shift
-            hx = (hx&0x000fffff)|((0x3ff-i)<<20);
-            y  = (double)(k+i);
+            if (hx >= 0x7ff00000)
+                return x+x;
+            k += (hx >> 20) - 1023;
+            i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
+            hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
+            y  = (double)(k + i);
             x = __HI(x, hx); //original: __HI(x) = hx;
-            z  = y*log10_2lo + ivln10*StrictMath.log(x);
-            return  z+y*log10_2hi;
+            z  = y * log10_2lo + ivln10 * StrictMath.log(x);
+            return  z + y * log10_2hi;
         }
     }
 }
