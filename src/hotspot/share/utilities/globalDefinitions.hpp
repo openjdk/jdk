@@ -190,6 +190,7 @@ FORBID_C_FUNCTION(void exit(int), "use os::exit");
 FORBID_C_FUNCTION(void _exit(int), "use os::exit");
 FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ AC_DEFUN([BPERF_CHECK_CORES],
 
   if test -f /proc/cpuinfo; then
     # Looks like a Linux (or cygwin) system
-    NUM_CORES=`cat /proc/cpuinfo  | grep -c processor`
+    NUM_CORES=`cat /proc/cpuinfo  | grep -cw processor`
     if test "$NUM_CORES" -eq "0"; then
       NUM_CORES=`cat /proc/cpuinfo  | grep -c ^CPU`
     fi
