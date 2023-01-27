@@ -36,11 +36,11 @@ class ResolvedIndyInfo {
     u2 _cpool_index;
     u2 _number_of_parameters;
     u1 _return_type;
-    bool _has_appendix;
-    bool _resolution_failed;
+    //bool _has_appendix;
+    //bool _resolution_failed;
     // make flag for has_appendix and resolution_failed
-    //u1 _flags;
-    // flags [000|local signature|final|vfinal|has appendix|resolution failed]
+    u1 _flags;
+    // flags [000|local_signature|final|vfinal|has_appendix|resolution_failed]
 
 
 public:
@@ -50,16 +50,25 @@ public:
         _cpool_index(0),
         _number_of_parameters(0),
         _return_type(0),
-        _has_appendix(false),
-        _resolution_failed(false) {}
+        //_has_appendix(false),
+        //_resolution_failed(false)
+        _flags(0) {}
     ResolvedIndyInfo(u2 resolved_references_index, u2 cpool_index) :
         _method(nullptr),
         _resolved_references_index(resolved_references_index),
         _cpool_index(cpool_index),
         _number_of_parameters(0),
         _return_type(0),
-        _has_appendix(false),
-        _resolution_failed(false) {}
+        //_has_appendix(false),
+        //_resolution_failed(false)
+        _flags(0) {}
+
+    enum {
+        has_appendix_shift        = 1,
+        is_vfinal_shift           = 2,
+        is_final_shift            = 3,
+        has_local_signature_shift = 4
+    };
 
     // Getters
     Method* method() const               { return _method;                    }
@@ -67,12 +76,19 @@ public:
     u2 cpool_index() const               { return _cpool_index;               }
     u2 num_parameters() const            { return _number_of_parameters;      }
     u1 return_type() const               { return _return_type;               }
-    bool has_appendix() const            { return _has_appendix;              }
+    bool is_resolved() const             { return _method != nullptr;         }
+
+    bool has_appendix() const            { return _flags & (1 << has_appendix_shift)        != 0; }
+    bool is_vfinal() const               { return _flags & (1 << is_vfinal_shift)           != 0; }
+    bool is_final() const                { return _flags & (1 << is_final_shift)            != 0; }
+    bool has_local_signature() const     { return _flags & (1 << has_local_signature_shift) != 0; }
+    bool resolution_failed()             { return _flags & 1                                != 0; }
+
+    /*bool has_appendix() const            { return _has_appendix;              }
     bool has_local_signature() const     { return true;                       } // might not be guaranteed to be true
     bool is_vfinal() const               { return true;                       } // ask Lois, what does this mean??
-    bool is_final() const                { return true;                       }
-    bool is_resolved() const             { return _method != nullptr;         }
-    bool resolution_failed()             { return _resolution_failed;         }
+    bool is_final() const                { return true;                       }*/
+    //bool resolution_failed()             { return _resolution_failed;         }
 
     // Printing
     void print_on(outputStream* st) const;
@@ -87,13 +103,24 @@ public:
     void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
         _number_of_parameters = num_params; // might be parameter size()
         _return_type = return_type;
-        _has_appendix = has_appendix;
+        //_has_appendix = has_appendix;
+        set_flags(has_appendix, false, false, false); // Not sure if the other flags have fixed values
         //_method = m;
         Atomic::release_store(&_method, m);
     }
 
+    void set_flags(bool has_appendix, bool is_vfinal, bool is_final, bool has_local_signature) {
+        u1 new_flags = (has_appendix << has_appendix_shift) | (is_vfinal << is_vfinal_shift) |
+                    (is_final << is_final_shift) | (has_local_signature << has_local_signature_shift);
+        tty->print_cr("flags = %d", new_flags);
+        assert((new_flags & 1) == 0, "New flags should not change resolution flag");
+        // Preserve the resolution_failed bit
+        _flags = (_flags & 1) | new_flags;
+    }
+
     void set_resolution_failed() {
-        _resolution_failed = true;
+        //_resolution_failed = true;
+        _flags = _flags | 1;
     }
 
     void adjust_method_entry(Method* new_method) { _method = new_method; }
@@ -107,8 +134,9 @@ public:
     static ByteSize method_offset()                    { return byte_offset_of(ResolvedIndyInfo, _method);                    }
     static ByteSize resolved_references_index_offset() { return byte_offset_of(ResolvedIndyInfo, _resolved_references_index); }
     static ByteSize result_type_offset()               { return byte_offset_of(ResolvedIndyInfo, _return_type);               }
-    static ByteSize has_appendix_offset()              { return byte_offset_of(ResolvedIndyInfo, _has_appendix);              }
+    //static ByteSize has_appendix_offset()              { return byte_offset_of(ResolvedIndyInfo, _has_appendix);              }
     static ByteSize num_parameters_offset()            { return byte_offset_of(ResolvedIndyInfo, _number_of_parameters);      }
+    static ByteSize flags_offset()                     { return byte_offset_of(ResolvedIndyInfo, _flags);                     }
 };
 
 #endif // SHARE_OOPS_RESOLVEDINVOKEDYNAMICINFO_HPP
