@@ -766,7 +766,8 @@ bool OopStorage::reduce_deferred_updates() {
 
 static inline void check_release_entry(const oop* entry) {
   assert(entry != NULL, "Releasing NULL");
-  assert(*entry == NULL, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
+  assert(!Universe::heap()->is_in(*reinterpret_cast<void* const*>(entry)),
+         "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
 }
 
 void OopStorage::release(const oop* ptr) {
