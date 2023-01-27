@@ -1062,9 +1062,12 @@ define SetupNativeCompilationBody
           $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
           # Setup the command line creating debuginfo files, to be run after linking.
           # It cannot be run separately since it updates the original target file
+          # Creating the debuglink is done in another command rather than all at once
+          # so we can run it after strip is called, since strip can sometimes mangle the
+          # embedded debuglink, which we want to avoid.
           $1_CREATE_DEBUGINFO_CMDS := \
               $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE)
-          $1_CREATE_DEBUGINFO_LINK_CMDS := $(CD) $$($1_SYMBOLS_DIR) && \
+          $1_CREATE_DEBUGLINK_CMDS := $(CD) $$($1_SYMBOLS_DIR) && \
               $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
         else ifeq ($(call isTargetOs, aix), true)
@@ -1194,7 +1197,7 @@ define SetupNativeCompilationBody
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
-        $$($1_STRIP_CMD) $$($1_CREATE_DEBUGINFO_LINK_CMDS)
+        $$($1_STRIP_CMD) $$($1_CREATE_DEBUGLINK_CMDS)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -1257,7 +1260,7 @@ define SetupNativeCompilationBody
 		          test "$$$$?" = "1" ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
-		  $$($1_CREATE_DEBUGINFO_LINK_CMDS)
+		  $$($1_CREATE_DEBUGLINK_CMDS)
                  ifeq ($(call isBuildOsEnv, windows.wsl2), true)
 		    $$(CHMOD) +x $$($1_TARGET)
                  endif
@@ -1269,7 +1272,7 @@ define SetupNativeCompilationBody
 		          $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		  $$($1_CREATE_DEBUGINFO_CMDS)
 		  $$($1_STRIP_CMD)
-		  $$($1_CREATE_DEBUGINFO_LINK_CMDS)
+		  $$($1_CREATE_DEBUGLINK_CMDS)
                 endif
                 ifeq ($(call isTargetOs, windows), true)
                   ifneq ($$($1_MANIFEST), )
