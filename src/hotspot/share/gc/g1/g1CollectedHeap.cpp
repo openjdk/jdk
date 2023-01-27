@@ -1025,9 +1025,6 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   // Rebuild the code root lists for each region
   rebuild_code_roots();
 
-  // Purge code root memory
-  purge_code_root_memory();
-
   // Start a new incremental collection set for the next pause
   start_new_collection_set();
 
@@ -3320,10 +3317,6 @@ void G1CollectedHeap::update_used_after_gc(bool evacuation_failed) {
 
 void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
-}
-
-void G1CollectedHeap::purge_code_root_memory() {
-  G1CodeRootSet::purge();
 }
 
 class RebuildCodeRootClosure: public CodeBlobClosure {
