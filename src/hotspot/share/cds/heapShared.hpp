@@ -76,16 +76,16 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   static void check_allowed_klass(InstanceKlass* ik);
  public:
   KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
-    _k(k),  _subgraph_object_klasses(NULL),
-    _subgraph_entry_fields(NULL),
+    _k(k),  _subgraph_object_klasses(nullptr),
+    _subgraph_entry_fields(nullptr),
     _is_full_module_graph(is_full_module_graph),
     _has_non_early_klasses(false) {}
 
   ~KlassSubGraphInfo() {
-    if (_subgraph_object_klasses != NULL) {
+    if (_subgraph_object_klasses != nullptr) {
       delete _subgraph_object_klasses;
     }
-    if (_subgraph_entry_fields != NULL) {
+    if (_subgraph_entry_fields != nullptr) {
       delete _subgraph_entry_fields;
     }
   };
@@ -101,7 +101,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
                                 bool is_closed_archive);
   void add_subgraph_object_klass(Klass *orig_k);
   int num_subgraph_object_klasses() {
-    return _subgraph_object_klasses == NULL ? 0 :
+    return _subgraph_object_klasses == nullptr ? 0 :
            _subgraph_object_klasses->length();
   }
   bool is_full_module_graph() const { return _is_full_module_graph; }
@@ -125,7 +125,7 @@ class ArchivedKlassSubGraphInfoRecord {
   Array<Klass*>* _subgraph_object_klasses;
  public:
   ArchivedKlassSubGraphInfoRecord() :
-    _k(NULL), _entry_field_records(NULL), _subgraph_object_klasses(NULL) {}
+    _k(nullptr), _entry_field_records(nullptr), _subgraph_object_klasses(nullptr) {}
   void init(KlassSubGraphInfo* info);
   Klass* klass() const { return _k; }
   Array<int>* entry_field_records() const { return _entry_field_records; }
@@ -159,8 +159,8 @@ public:
   static bool is_subgraph_root_class(InstanceKlass* ik);
 
   // Scratch objects for archiving Klass::java_mirror()
-  static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
@@ -289,13 +289,13 @@ private:
   static KlassToOopHandleTable* _scratch_java_mirror_table;
 
   static void init_seen_objects_table() {
-    assert(_seen_objects_table == NULL, "must be");
+    assert(_seen_objects_table == nullptr, "must be");
     _seen_objects_table = new (mtClass)SeenObjectsTable();
   }
   static void delete_seen_objects_table() {
-    assert(_seen_objects_table != NULL, "must be");
+    assert(_seen_objects_table != nullptr, "must be");
     delete _seen_objects_table;
-    _seen_objects_table = NULL;
+    _seen_objects_table = nullptr;
   }
 
   // Statistics (for one round of start_recording_subgraph ... done_recording_subgraph)
@@ -347,30 +347,31 @@ private:
       _original_object_table =
         new (mtClass)OriginalObjectTable();
     } else {
-      _original_object_table = NULL;
+      _original_object_table = nullptr;
     }
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
-    _archived_object_cache = NULL;
-    if (_original_object_table != NULL) {
+    _archived_object_cache = nullptr;
+    if (_original_object_table != nullptr) {
       delete _original_object_table;
-      _original_object_table = NULL;
+      _original_object_table = nullptr;
     }
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
   }
   static oop get_original_object(oop archived_object) {
-    assert(_original_object_table != NULL, "sanity");
+    assert(_original_object_table != nullptr, "sanity");
     oop* r = _original_object_table->get(archived_object);
-    if (r == NULL) {
-      return NULL;
+    if (r == nullptr) {
+      return nullptr;
     } else {
       return *r;
     }
   }
 
+  static bool is_too_large_to_archive(oop o);
   static oop find_archived_heap_object(oop obj);
   static oop archive_object(oop obj);
 
@@ -445,7 +446,7 @@ private:
 
   // Returns the address of a heap object when it's mapped at the
   // runtime requested address. See comments in archiveBuilder.hpp.
-  static address to_requested_address(address dumptime_addr) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static address to_requested_address(address dumptime_addr) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static oop to_requested_address(oop dumptime_oop) {
     return cast_to_oop(to_requested_address(cast_from_oop<address>(dumptime_oop)));
   }

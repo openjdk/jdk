@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,10 @@
 /*
  * @test
  * @bug 8156514
- * @library /test/lib server
- * @build jdk.test.lib.net.SimpleSSLContext
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2EchoHandler
+ *        jdk.httpclient.test.lib.http2.Http2RedirectHandler
  * @run testng/othervm
  *      -Djdk.httpclient.HttpClient.log=frames,ssl,requests,responses,errors
  *      -Djdk.internal.httpclient.debug=true
@@ -47,6 +45,11 @@ import java.util.concurrent.*;
 import java.util.function.*;
 import java.util.Arrays;
 import java.util.Iterator;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.Http2EchoHandler;
+import jdk.httpclient.test.lib.http2.Http2RedirectHandler;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
