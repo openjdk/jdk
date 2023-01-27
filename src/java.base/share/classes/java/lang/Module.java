@@ -597,12 +597,13 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
-     * <p> A package {@code p} opened to module {@code M} means that code in
-     * {@code M} can do deep reflection on all types in the package.
+     * @apiNote A package {@code p} opened to module {@code M} means that code in
+     * {@code M} can do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * deep reflection} on all types in the package.
      * Further, if {@code M} reads this module, it can obtain a
      * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
      * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
-     * in package {@code p}. </p>
+     * in package {@code p}.
      *
      * @param  pn
      *         The package name
@@ -657,6 +658,14 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
+     * @apiNote A package {@code p} opened to module {@code M} means that code in
+     * {@code M} can do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * deep reflection} on all types in the package.
+     * Further, if {@code M} reads this module, it can obtain a
+     * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
+     * {@link java.lang.invoke.MethodHandles.Lookup#defineClass(byte[]) define classes}
+     * in package {@code p}.
+     *
      * @param  pn
      *         The package name
      *
@@ -664,6 +673,8 @@ public final class Module implements AnnotatedElement {
      *         unconditionally
      *
      * @see ModuleDescriptor#opens()
+     * @see java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
     public boolean isOpen(String pn) {
         Objects.requireNonNull(pn);

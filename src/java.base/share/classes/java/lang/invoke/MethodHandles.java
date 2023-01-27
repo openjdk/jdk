@@ -232,12 +232,12 @@ public class MethodHandles {
      * {@code PRIVATE} access but no {@code MODULE} access.
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
-     * <p>
-     * The {@code Lookup} object returned by this method is allowed to
+     *
+     * @apiNote The {@code Lookup} object returned by this method is allowed to
      * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
      * of {@code targetClass}. Extreme caution should be taken when opening a package
      * to another module as such defined classes have the same full privilege
-     * access as other members in the target module.
+     * access as other members in {@code targetClass}'s module.
      *
      * @param targetClass the target class
      * @param caller the caller lookup object
