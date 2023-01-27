@@ -91,7 +91,7 @@ public class Fuzz implements Runnable {
             throw new SkippedException("Test is unstable with slowdebug bits "
                                        + "on macosx-aarch64");
         }
-        if (Platform.isLinux() && Platform.isPPC()) {
+        if (Platform.isPPC()) {
             COMPILATION_TIMEOUT = COMPILATION_TIMEOUT * 2;
         }
         warmup();
