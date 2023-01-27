@@ -55,10 +55,10 @@ ShenandoahPhaseTimings::ShenandoahPhaseTimings(uint max_workers) :
 
   // Initialize everything to sane defaults
   for (uint i = 0; i < _num_phases; i++) {
-#define SHENANDOAH_WORKER_DATA_nullptr(type, title) \
+#define SHENANDOAH_WORKER_DATA_NULL(type, title) \
     _worker_data[i] = nullptr;
-    SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_nullptr)
-#undef SHENANDOAH_WORKER_DATA_nullptr
+    SHENANDOAH_PAR_PHASE_DO(,, SHENANDOAH_WORKER_DATA_NULL)
+#undef SHENANDOAH_WORKER_DATA_NULL
     _cycle_data[i] = uninitialized();
   }
 

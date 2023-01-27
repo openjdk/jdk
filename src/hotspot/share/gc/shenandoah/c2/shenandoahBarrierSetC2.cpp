@@ -256,7 +256,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
       pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
     }
 
-    // if (pre_val != null)
+    // if (pre_val != nullptr)
     __ if_then(pre_val, BoolTest::ne, kit->null()); {
       Node* buffer  = __ load(__ ctrl(), buffer_adr, TypeRawPtr::NOTNULL, T_ADDRESS, Compile::AliasIdxRaw);
 
@@ -278,7 +278,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
         const TypeFunc *tf = ShenandoahBarrierSetC2::write_ref_field_pre_entry_Type();
         __ make_leaf_call(tf, CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), "shenandoah_wb_pre", pre_val, tls);
       } __ end_if();  // (!index)
-    } __ end_if();  // (pre_val != null)
+    } __ end_if();  // (pre_val != nullptr)
   } __ end_if();  // (!marking)
 
   // Final sync IdealKit and GraphKit.
@@ -425,7 +425,7 @@ void ShenandoahBarrierSetC2::insert_pre_barrier(GraphKit* kit, Node* base_oop, N
       __ sync_kit(kit);
 
       Node* one = __ ConI(1);
-      // is_instof == 0 if base_oop == null
+      // is_instof == 0 if base_oop == nullptr
       __ if_then(is_instof, BoolTest::eq, one, unlikely); {
 
         // Update graphKit from IdeakKit.
