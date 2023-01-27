@@ -166,7 +166,7 @@ class ImmutableCollections {
      */
     @SuppressWarnings("unchecked")
     static <E> List<E> listCopy(Collection<? extends E> coll) {
-        if (coll instanceof List12 || (coll instanceof ListN && ! ((ListN<?>)coll).allowNulls)) {
+        if (coll instanceof List12 || (coll instanceof ListN<?> c && !c.allowNulls)) {
             return (List<E>)coll;
         }
 
