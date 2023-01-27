@@ -112,20 +112,9 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-void release_thread_info(JNIEnv *jni, jvmtiThreadInfo *info) {
-  deallocate(jvmti_env, jni, (unsigned char *)info->name);
-  if (info->thread_group != NULL) {
-    jni->DeleteLocalRef(info->thread_group);
-  }
-  if (info->context_class_loader != NULL) {
-    jni->DeleteLocalRef(info->context_class_loader);
-  }
-}
-
 JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
   jint threads_count = -1;
   jthread *threads;
-  int expected = 0;
   jvmtiThreadInfo inf;
 
   LOG(" >>> Check point: %d\n", idx);
@@ -137,18 +126,17 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
   for (int i = 0; i < threads_count; i++) {
     err = jvmti_env->GetThreadInfo(threads[i], &inf);
     check_jvmti_status(jni, err, "Failed in GetThreadInfo");
-    LOG(" >>> %s", inf.name);
+    char *name = get_thread_name(jvmti_env, jni, threads[i]);
+    LOG(" >>> %s", name);
 
     bool found = false;
     for (int j = 0; j < thrInfo[idx].unexpected.cnt && !found; j++) {
-      found = (inf.name != NULL && strcmp(inf.name, thrInfo[idx].unexpected.thr_names[j]) == 0);
+      found = strcmp(name, thrInfo[idx].unexpected.thr_names[j]) == 0;
     }
     if (found) {
       LOG("Point %d: detected unexpected thread %s\n", idx, inf.name);
-      release_thread_info(jni, &inf);
       return JNI_FALSE;
     }
-    release_thread_info(jni, &inf);
   }
 
   LOG("\n");
@@ -157,10 +145,8 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
   for (int i = 0; i < thrInfo[idx].expected.cnt; i++) {
     bool found = false;
     for (int j = 0; j < threads_count && !found; j++) {
-      err = jvmti_env->GetThreadInfo(threads[j], &inf);
-      check_jvmti_status(jni, err, "Failed in GetThreadInfo");
-      found = (inf.name != NULL && strcmp(inf.name, thrInfo[idx].expected.thr_names[i]) == 0);
-      release_thread_info(jni, &inf);
+      char *name = get_thread_name(jvmti_env, jni, threads[j]);
+      found = strcmp(name, thrInfo[idx].expected.thr_names[i]) == 0;
     }
     if (!found) {
       LOG("Point %d: thread %s not detected\n", idx, thrInfo[idx].expected.thr_names[i]);
