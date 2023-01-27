@@ -37,6 +37,7 @@ import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.random.RandomGenerator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -416,8 +417,8 @@ public class Collections {
      * portion of the list that runs from the first element to the current
      * position, inclusive.
      *
-     * <p>This method runs in linear time.  If the specified list does not
-     * implement the {@link RandomAccess} interface and is large, this
+     * @implSpec This method runs in linear time.  If the specified list does
+     * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
      * quadratic behavior that would result from shuffling a "sequential
@@ -438,6 +439,24 @@ public class Collections {
 
     /**
      * Randomly permute the specified list using the specified source of
+     * randomness.<p>
+     *
+     * This method is equivalent to {@link #shuffle(List, RandomGenerator)}
+     * and exists for backward compatibility. The {@link #shuffle(List, RandomGenerator)}
+     * method is preferred, as it is not limited to random generators
+     * that extend the {@link Random} class.
+     *
+     * @param  list the list to be shuffled.
+     * @param  rnd the source of randomness to use to shuffle the list.
+     * @throws UnsupportedOperationException if the specified list or its
+     *         list-iterator does not support the {@code set} operation.
+     */
+    public static void shuffle(List<?> list, Random rnd) {
+        shuffle(list, (RandomGenerator) rnd);
+    }
+
+    /**
+     * Randomly permute the specified list using the specified source of
      * randomness.  All permutations occur with equal likelihood
      * assuming that the source of randomness is fair.<p>
      *
@@ -445,10 +464,10 @@ public class Collections {
      * up to the second, repeatedly swapping a randomly selected element into
      * the "current position".  Elements are randomly selected from the
      * portion of the list that runs from the first element to the current
-     * position, inclusive.<p>
+     * position, inclusive.
      *
-     * This method runs in linear time.  If the specified list does not
-     * implement the {@link RandomAccess} interface and is large, this
+     * @implSpec This method runs in linear time.  If the specified list does
+     * not implement the {@link RandomAccess} interface and is large, this
      * implementation dumps the specified list into an array before shuffling
      * it, and dumps the shuffled array back into the list.  This avoids the
      * quadratic behavior that would result from shuffling a "sequential
@@ -458,9 +477,10 @@ public class Collections {
      * @param  rnd the source of randomness to use to shuffle the list.
      * @throws UnsupportedOperationException if the specified list or its
      *         list-iterator does not support the {@code set} operation.
+     * @since 21
      */
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static void shuffle(List<?> list, Random rnd) {
+    public static void shuffle(List<?> list, RandomGenerator rnd) {
         int size = list.size();
         if (size < SHUFFLE_THRESHOLD || list instanceof RandomAccess) {
             for (int i=size; i>1; i--)

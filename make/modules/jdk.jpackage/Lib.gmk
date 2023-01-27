@@ -73,7 +73,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
-    LIBS_macosx := $(LIBCXX) -framework Cocoa, \
+    LIBS_macosx := $(LIBCXX) -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
     LIBS_windows := $(LIBCXX) user32.lib ole32.lib msi.lib shlwapi.lib \
         Shell32.lib, \
     LIBS_linux := -ldl, \
