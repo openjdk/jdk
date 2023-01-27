@@ -86,7 +86,6 @@ public class MFontConfiguration extends FontConfiguration {
      */
     protected void setOsNameAndVersion(){
         super.setOsNameAndVersion();
-
         if (osName.equals("Linux")) {
             try {
                 File f;
@@ -121,7 +120,9 @@ public class MFontConfiguration extends FontConfiguration {
                     osName = props.getProperty("NAME");
                     osVersion = props.getProperty("VERSION_ID");
                     osName = extractOsInfo(osName);
-                    if (osName.equals("SLES")) osName = "SuSE";
+                    if (osName.equals("SLES") || osName.contains("SUSE")) {
+                        osName = "SuSE";
+                    }
                     osVersion = extractOsInfo(osVersion);
                 }
             } catch (Exception e) {
