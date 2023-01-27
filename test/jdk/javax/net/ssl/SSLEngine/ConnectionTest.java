@@ -79,10 +79,10 @@ public class ConnectionTest {
         ssle2 = sslc.createSSLEngine();
 
         ssle1.setEnabledCipherSuites(new String [] {
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"});
+            "SSL_RSA_WITH_RC4_128_MD5"});
 
         ssle2.setEnabledCipherSuites(new String [] {
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384"});
+            "SSL_RSA_WITH_RC4_128_MD5"});
 
         createBuffers();
     }
