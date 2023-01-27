@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -919,7 +919,7 @@ public class DocCommentTester {
         String normalize(String s) {
             String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
             StringBuilder sb = new StringBuilder();
-            Pattern p = Pattern.compile("\\{@(code|literal)( )?");
+            Pattern p = Pattern.compile("(?i)\\{@([a-z][a-z0-9.:-]*)( )?");
             Matcher m = p.matcher(s2);
             int start = 0;
             while (m.find(start)) {
