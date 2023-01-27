@@ -3615,11 +3615,11 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
 
 #ifdef ASSERT
-  // Ensure only one phi which is the iv.
+  // Ensure at most one used phi exists, which is the iv.
   Node* iv = NULL;
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     Node* n = cl->fast_out(i);
-    if (n->Opcode() == Op_Phi) {
+    if ((n->Opcode() == Op_Phi) && (n->outcnt() > 0)) {
       assert(iv == NULL, "Too many phis");
       iv = n;
     }
