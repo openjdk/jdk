@@ -311,14 +311,14 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
     size_t hs_bytes = arrayOopDesc::base_offset_in_bytes(elem_type);
     assert(is_aligned(hs_bytes, BytesPerInt), "must be 4 byte aligned");
     HeapWord* obj = cast_from_oop<HeapWord*>(result);
-    if (!is_aligned(hs_bytes, HeapWordSize)) {
+    if (!is_aligned(hs_bytes, BytesPerLong)) {
       *reinterpret_cast<jint*>(reinterpret_cast<char*>(obj) + hs_bytes) = 0;
       hs_bytes += BytesPerInt;
     }
 
     // Optimized zeroing.
-    assert(is_aligned(hs_bytes, HeapWordSize), "must be word aligned");
-    const size_t aligned_hs = hs_bytes / HeapWordSize;
+    assert(is_aligned(hs_bytes, BytesPerLong), "must be 8-byte aligned");
+    const size_t aligned_hs = hs_bytes / BytesPerLong;
     Copy::fill_to_aligned_words(obj+aligned_hs, size-aligned_hs);
   }
 
