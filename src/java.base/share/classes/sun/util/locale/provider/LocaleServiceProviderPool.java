@@ -130,8 +130,8 @@ public final class LocaleServiceProviderPool {
          * Available locales for all locale sensitive services.
          * This also contains JRE's available locales
          */
-        static final Locale[] allAvailableLocales;
-        static final Set<Locale> setOfLocales;
+        static final Locale[] AvailableLocalesArray;
+        static final Set<Locale> AvailableLocalesSet;
 
         static {
             Set<Locale> all = new HashSet<>();
@@ -140,8 +140,8 @@ public final class LocaleServiceProviderPool {
                     LocaleServiceProviderPool.getPool(c);
                 all.addAll(pool.getAvailableLocaleSet());
             }
-            setOfLocales = all;
-            allAvailableLocales = all.toArray(new Locale[0]);
+            AvailableLocalesSet = all;
+            AvailableLocalesArray = all.toArray(new Locale[0]);
         }
 
         // No instantiation
@@ -157,7 +157,7 @@ public final class LocaleServiceProviderPool {
      * @return a stream of the available locales for all provider classes
      */
     public static Stream<Locale> streamAvailableLocales() {
-        return AllAvailableLocales.setOfLocales.stream();
+        return AllAvailableLocales.AvailableLocalesSet.stream();
     }
 
     /**
@@ -168,7 +168,7 @@ public final class LocaleServiceProviderPool {
      * @return an array of the available locales for all provider classes
      */
     public static Locale[] getAllAvailableLocales() {
-        return AllAvailableLocales.allAvailableLocales.clone();
+        return AllAvailableLocales.AvailableLocalesArray.clone();
     }
 
     /**
