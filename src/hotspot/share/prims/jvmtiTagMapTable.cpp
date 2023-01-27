@@ -72,18 +72,7 @@ oop JvmtiTagMapKey::object_no_keepalive() const {
 JvmtiTagMapTable::JvmtiTagMapTable() : _table(Constants::_table_size) {}
 
 void JvmtiTagMapTable::clear() {
-  struct RemoveAll {
-    bool do_entry(const JvmtiTagMapKey& entry, const jlong& tag) {
-      return true;
-    }
-  } remove_all;
-  // The unlink method of ResourceHashTable gets a pointer to a type whose 'do_entry(K,V)' method is callled
-  // while iterating over all the elements of the table. If the do_entry() method returns true the element
-  // will be removed.
-  // In this case, we always return true from do_entry to clear all the elements.
-  _table.unlink(&remove_all);
-
-  assert(_table.number_of_entries() == 0, "should have removed all entries");
+  _table.unlink_all();
 }
 
 JvmtiTagMapTable::~JvmtiTagMapTable() {

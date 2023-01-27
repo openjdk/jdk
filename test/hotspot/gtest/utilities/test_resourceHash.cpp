@@ -336,7 +336,7 @@ TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
 }
 
-TEST_VM_F(SimpleResourceHashtableDeleteTest, simle_unlink_all) {
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_unlink_all) {
   TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
   Symbol* s = t;
   int s_orig_count = s->refcount();
