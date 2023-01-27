@@ -30,23 +30,39 @@ import java.awt.Font;
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 import javax.swing.SwingUtilities;
+import javax.swing.UnsupportedLookAndFeelException;
 
 public class JFileChooserFontReset {
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported L&F: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void main(String args[]) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        JFileChooser fc = new JFileChooser();
-        Font origFont = fc.getFont();
-        System.out.println("orig font " + origFont);
-        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-        SwingUtilities.updateComponentTreeUI(fc);
-        System.out.println("Nimbus font " + fc.getFont());
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        SwingUtilities.updateComponentTreeUI(fc);
-        Font curFont = fc.getFont();
-        System.out.println("current font " + curFont);
-        if (curFont != null && !curFont.equals(origFont)) {
-            throw new RuntimeException(
-                 "JFileChooser font did not reset after Look & Feel change");
+        for (UIManager.LookAndFeelInfo laf :
+                 UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing L&F: " + laf.getClassName());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            JFileChooser fc = new JFileChooser();
+            Font origFont = fc.getFont();
+            System.out.println("orig font " + origFont);
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            SwingUtilities.updateComponentTreeUI(fc);
+            System.out.println("Nimbus font " + fc.getFont());
+            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
+            SwingUtilities.updateComponentTreeUI(fc);
+            Font curFont = fc.getFont();
+            System.out.println("current font " + curFont);
+            if (curFont != null && !curFont.equals(origFont)) {
+                throw new RuntimeException(
+                     "JFileChooser font did not reset after Look & Feel change");
+            }
         }
     }
 }
