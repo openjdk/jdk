@@ -82,7 +82,7 @@ public class Fuzz implements Runnable {
     static final boolean VERBOSE = false;
 
     static float timeoutFactor = Float.parseFloat(System.getProperty("test.timeout.factor", "1.0"));
-    static final int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
+    static int COMPILATION_TIMEOUT = (int)(5_000 * timeoutFactor); // ms
 
     static final Path TEST_DIR = Path.of(System.getProperty("test.src", "."));
 
