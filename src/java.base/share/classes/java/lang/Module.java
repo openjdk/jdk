@@ -597,8 +597,8 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
-     * @apiNote A package {@code p} opened to module {@code M} means that code in
-     * {@code M} can do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * @apiNote A package {@code p} opened to module {@code M} allows code in
+     * {@code M} do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
      * deep reflection} on all types in the package.
      * Further, if {@code M} reads this module, it can obtain a
      * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
@@ -658,8 +658,8 @@ public final class Module implements AnnotatedElement {
      *
      * <p> This method does not check if the given module reads this module. </p>
      *
-     * @apiNote A package {@code p} opened to module {@code M} means that code in
-     * {@code M} can do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
+     * @apiNote A package {@code p} opened to module {@code M} allows code in
+     * {@code M} do {@linkplain java.lang.reflect.AccessibleObject#setAccessible(boolean)
      * deep reflection} on all types in the package.
      * Further, if {@code M} reads this module, it can obtain a
      * {@link java.lang.invoke.MethodHandles.Lookup Lookup} object that is allowed to
