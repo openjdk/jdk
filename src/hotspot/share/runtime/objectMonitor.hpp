@@ -147,9 +147,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Used by async deflation as a marker in the _owner field.
   // Note that the choice of the two markers is peculiar:
   // - They need to represent values that cannot be pointers. In particular,
-  //   we achieve this by using the lowest two bits
+  //   we achieve this by using the lowest two bits.
   // - ANONYMOUS_OWNER should be a small value, it is used in generated code
-  //   and small values encode much better
+  //   and small values encode much better.
   // - We test for anonymous owner by testing for the lowest bit, therefore
   //   DEFLATER_MARKER must *not* have that bit set.
   #define DEFLATER_MARKER reinterpret_cast<void*>(2)
