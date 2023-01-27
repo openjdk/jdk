@@ -170,11 +170,6 @@ class ObjectSynchronizer : AllStatic {
   // NOTE: It may cause monitor inflation
   static intptr_t FastHashCode(Thread* current, oop obj);
 
-  // Read mark-word and spin-wait as long as INFLATING is observed.
-  static markWord read_stable_mark(oop obj);
-
-  static markWord stable_mark(oop obj);
-
   // java.lang.Thread support
   static bool current_thread_holds_lock(JavaThread* current, Handle h_obj);
 

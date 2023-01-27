@@ -3402,46 +3402,6 @@ void StubGenerator::generate_libm_stubs() {
 }
 
 
-  // Call stub to call runtime oopDesc::load_nklass_runtime().
-  // rax: call argument (object)
-  // rax: return object's narrowKlass
-  // Preserves all caller-saved registers, except rax
-#ifdef _LP64
-address StubGenerator::generate_load_nklass() {
-  __ align(CodeEntryAlignment);
-  StubCodeMark(this, "StubRoutines", "load_nklass");
-  address start = __ pc();
-  __ enter(); // save rbp
-
-  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
-  __ push_FPU_state();
-
-  __ push(rdi);
-  __ push(rsi);
-  __ push(rdx);
-  __ push(rcx);
-  __ push(r8);
-  __ push(r9);
-  __ push(r10);
-  __ push(r11);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, oopDesc::load_nklass_runtime), rax);
-  __ pop(r11);
-  __ pop(r10);
-  __ pop(r9);
-  __ pop(r8);
-  __ pop(rcx);
-  __ pop(rdx);
-  __ pop(rsi);
-  __ pop(rdi);
-
-  __ pop_FPU_state();
-
-  __ leave();
-  __ ret(0);
-  return start;
-}
-#endif // _LP64
-
 address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
   if (!Continuations::enabled()) return nullptr;
 
@@ -3817,10 +3777,6 @@ void StubGenerator::generate_initial() {
 }
 
 void StubGenerator::generate_phase1() {
-#ifdef _LP64
-  StubRoutines::_load_nklass = generate_load_nklass();
-#endif
-
   // Continuation stubs:
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();

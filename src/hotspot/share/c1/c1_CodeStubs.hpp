@@ -556,16 +556,15 @@ class ArrayCopyStub: public CodeStub {
 
 class LoadKlassStub: public CodeStub {
 private:
-  LIR_Opr          _obj;
   LIR_Opr          _result;
 
 public:
-  LoadKlassStub(LIR_Opr obj, LIR_Opr result) :
-    CodeStub(), _obj(obj), _result(result) {};
+  LoadKlassStub(LIR_Opr result) :
+    CodeStub(), _result(result) {};
 
   virtual void emit_code(LIR_Assembler* e);
   virtual void visit(LIR_OpVisitState* visitor) {
-    visitor->do_input(_obj);
+    visitor->do_temp(_result);
     visitor->do_output(_result);
   }
 #ifndef PRODUCT

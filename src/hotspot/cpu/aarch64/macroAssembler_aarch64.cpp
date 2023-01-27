@@ -4034,35 +4034,19 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
 void MacroAssembler::load_nklass(Register dst, Register src) {
   assert(UseCompressedClassPointers, "expects UseCompressedClassPointers");
 
-  assert_different_registers(src, dst);
-
-  Label slow, done;
+  Label fast;
 
   // Check if we can take the (common) fast path, if obj is unlocked.
   ldr(dst, Address(src, oopDesc::mark_offset_in_bytes()));
-  eor(dst, dst, markWord::unlocked_value);
-  tst(dst, markWord::lock_mask_in_place);
-  br(Assembler::NE, slow);
+  tst(dst, markWord::monitor_value);
+  br(Assembler::NE, fast);
+
+  // Fetch displaced header
+  ldr(dst, Address(dst, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
 
   // Fast-path: shift and decode Klass*.
+  bind(fast);
   lsr(dst, dst, markWord::klass_shift);
-  b(done);
-
-  bind(slow);
-  RegSet saved_regs = RegSet::of(lr);
-  // We need r0 as argument and return register for the call. Preserve it, if necessary.
-  if (dst != r0) {
-    saved_regs += RegSet::of(r0);
-  }
-  push(saved_regs, sp);
-  mov(r0, src);
-  assert(StubRoutines::load_nklass() != NULL, "Must have stub");
-  far_call(RuntimeAddress(StubRoutines::load_nklass()));
-  if (dst != r0) {
-    mov(dst, r0);
-  }
-  pop(saved_regs, sp);
-  bind(done);
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {

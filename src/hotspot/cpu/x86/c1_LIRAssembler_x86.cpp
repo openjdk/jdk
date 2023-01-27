@@ -3541,16 +3541,12 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   assert_different_registers(tmp, result);
 
   // Check if we can take the (common) fast path, if obj is unlocked.
-  __ movq(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
-  __ xorq(tmp, markWord::unlocked_value);
-  __ testb(tmp, markWord::lock_mask_in_place);
+  __ movq(result, Address(obj, oopDesc::mark_offset_in_bytes()));
+  __ testb(result, markWord::monitor_value);
   __ jcc(Assembler::notZero, *op->stub()->entry());
-
-  // Fast-path: shift and decode Klass*.
-  __ movq(result, tmp);
-  __ shrq(result, markWord::klass_shift);
-
   __ bind(*op->stub()->continuation());
+  // Fast-path: shift and decode Klass*.
+  __ shrq(result, markWord::klass_shift);
   __ decode_klass_not_null(result, tmp);
 #else
   __ movptr(result, Address(obj, oopDesc::klass_offset_in_bytes()));

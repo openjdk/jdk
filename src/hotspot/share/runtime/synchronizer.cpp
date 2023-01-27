@@ -795,7 +795,7 @@ struct SharedGlobals {
 
 static SharedGlobals GVars;
 
-markWord ObjectSynchronizer::read_stable_mark(oop obj) {
+static markWord read_stable_mark(oop obj) {
   markWord mark = obj->mark_acquire();
   if (!mark.is_being_inflated() || UseFastLocking) {
     return mark;       // normal fast-path return
@@ -852,73 +852,6 @@ markWord ObjectSynchronizer::read_stable_mark(oop obj) {
     } else {
       SpinPause();       // SMP-polite spinning
     }
-  }
-}
-
-// Safely load a mark word from an object, even with racing stack-locking or monitor inflation.
-// The protocol is a partial inflation-protocol: it installs INFLATING into the object's mark
-// word in order to prevent an stack-locks or inflations from interferring (or detect such
-// interference and retry), but then, instead of creating and installing a monitor, simply
-// read and return the real mark word.
-markWord ObjectSynchronizer::stable_mark(oop object) {
-  for (;;) {
-    const markWord mark = read_stable_mark(object);
-    assert(!mark.is_being_inflated(), "read_stable_mark must prevent inflating mark");
-
-    // The mark can be in one of the following states:
-    // *  Inflated     - just return mark from inflated monitor
-    // *  Stack-locked - coerce it to inflating, and then return displaced mark
-    // *  Neutral      - return mark
-    // *  Marked       - return mark
-
-    // CASE: inflated
-    if (mark.has_monitor()) {
-      ObjectMonitor* inf = mark.monitor();
-      markWord dmw = inf->header();
-      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-      return dmw;
-    }
-
-    // CASE: stack-locked
-    // Could be stack-locked either by this thread or by some other thread.
-    if (mark.has_locker()) {
-      BasicLock* lock = mark.locker();
-      if (Thread::current()->is_lock_owned((address)lock)) {
-        // If locked by this thread, it is safe to access the displaced header.
-        markWord dmw = lock->displaced_header();
-        assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-        return dmw;
-      }
-
-      // Otherwise, attempt to temporarily install INFLATING into the mark-word,
-      // to prevent inflation or unlocking by competing thread.
-      markWord cmp = object->cas_set_mark(markWord::INFLATING(), mark);
-      if (cmp != mark) {
-        continue;       // Interference -- just retry
-      }
-
-      // fetch the displaced mark from the owner's stack.
-      // The owner can't die or unwind past the lock while our INFLATING
-      // object is in the mark.  Furthermore the owner can't complete
-      // an unlock on the object, either.
-      markWord dmw = mark.displaced_mark_helper();
-      // Catch if the object's header is not neutral (not locked and
-      // not marked is what we care about here).
-      assert(dmw.is_neutral(), "invariant: header=" INTPTR_FORMAT, dmw.value());
-
-      // Must preserve store ordering. The monitor state must
-      // be stable at the time of publishing the monitor address.
-      assert(object->mark() == markWord::INFLATING(), "invariant");
-      // Release semantics so that above set_object() is seen first.
-      object->release_set_mark(mark);
-
-      return dmw;
-    }
-
-    // CASE: neutral or marked (for GC)
-    // Catch if the object's header is not neutral or marked (it must not be locked).
-    assert(mark.is_neutral() || mark.is_marked() || mark.is_fast_locked(), "invariant: header=" INTPTR_FORMAT, mark.value());
-    return mark;
   }
 }
 

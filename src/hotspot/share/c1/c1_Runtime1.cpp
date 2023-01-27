@@ -244,7 +244,6 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   // Make sure that stubs that need oopmaps have them
   switch (id) {
     // These stubs don't need to have an oopmap
-  case load_klass_id:
   case dtrace_object_alloc_id:
   case slow_subtype_check_id:
   case fpu2long_stub_id:

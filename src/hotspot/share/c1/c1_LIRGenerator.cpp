@@ -1241,7 +1241,7 @@ void LIRGenerator::do_isInstance(Intrinsic* x) {
 }
 
 void LIRGenerator::load_klass(LIR_Opr obj, LIR_Opr klass, CodeEmitInfo* null_check_info) {
-  CodeStub* slow_path = new LoadKlassStub(obj, klass);
+  CodeStub* slow_path = new LoadKlassStub(klass);
   __ load_klass(obj, klass, null_check_info, slow_path);
 }
 

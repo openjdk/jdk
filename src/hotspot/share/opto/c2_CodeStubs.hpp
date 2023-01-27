@@ -94,4 +94,16 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
+#ifdef _LP64
+class C2LoadNKlassStub : public C2CodeStub {
+private:
+  Register _dst;
+public:
+  C2LoadNKlassStub(Register dst) : C2CodeStub(), _dst(dst) {}
+  Register dst() { return _dst; }
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+};
+#endif
+
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP

@@ -7237,7 +7237,17 @@ instruct loadNKlass(iRegNNoSp dst, memory4 mem, rFlagsReg cr)
   ins_encode %{
     assert($mem$$disp == oopDesc::klass_offset_in_bytes(), "expect correct offset");
     assert($mem$$index$$Register == noreg, "expect no index");
-    __ load_nklass($dst$$Register, $mem$$base$$Register);
+    Register dst = $dst$$Register;
+    Register obj = $mem$$base$$Register;
+    C2LoadNKlassStub* stub = new (Compile::current()->comp_arena()) C2LoadNKlassStub(dst);
+    Compile::current()->output()->add_stub(stub);
+    __ ldr(dst, Address(obj, oopDesc::mark_offset_in_bytes()));
+    // NOTE: We can't use tbnz here, because the target is sometimes too far away
+    // and cannot be encoded.
+    __ tst(dst, markWord::monitor_value);
+    __ br(Assembler::NE, stub->entry());
+    __ bind(stub->continuation());
+    __ lsr(dst, dst, markWord::klass_shift);
   %}
   ins_pipe(pipe_slow);
 %}

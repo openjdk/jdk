@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -71,6 +72,17 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
   __ far_call(StubRoutines::aarch64::check_lock_stack());
+  __ b(continuation());
+}
+
+int C2LoadNKlassStub::max_size() const {
+  return 8;
+}
+
+void C2LoadNKlassStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  Register d = dst();
+  __ ldr(d, Address(d, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
   __ b(continuation());
 }
 

@@ -63,7 +63,6 @@ class StubAssembler;
   stub(monitorenter_nofpu)             /* optimized version that does not preserve fpu registers */ \
   stub(monitorexit)                  \
   stub(monitorexit_nofpu)              /* optimized version that does not preserve fpu registers */ \
-  stub(load_klass)                   \
   stub(deoptimize)                   \
   stub(access_field_patching)        \
   stub(load_klass_patching)          \

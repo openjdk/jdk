@@ -38,6 +38,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/synchronizer.hpp"
 #include "utilities/align.hpp"
@@ -84,9 +85,18 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
   return Atomic::cmpxchg(&_mark, old_mark, new_mark, order);
 }
 
+markWord oopDesc::resolve_mark() const {
+  markWord hdr = mark();
+  if (hdr.has_monitor()) {
+    ObjectMonitor* monitor = hdr.monitor();
+    return monitor->header();
+  }
+  return hdr;
+}
+
 void oopDesc::init_mark() {
 #ifdef _LP64
-  markWord header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
+  markWord header = resolve_mark();
   assert(UseCompressedClassPointers, "expect compressed klass pointers");
   header = markWord((header.value() & markWord::klass_mask_in_place) | markWord::prototype().value());
 #else
@@ -98,10 +108,7 @@ void oopDesc::init_mark() {
 Klass* oopDesc::klass() const {
 #ifdef _LP64
   assert(UseCompressedClassPointers, "only with compressed class pointers");
-  markWord header = mark();
-  if (!header.is_neutral()) {
-    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
-  }
+  markWord header = resolve_mark();
   return header.klass();
 #else
   return _klass;
@@ -111,10 +118,7 @@ Klass* oopDesc::klass() const {
 Klass* oopDesc::klass_or_null() const {
 #ifdef _LP64
   assert(UseCompressedClassPointers, "only with compressed class pointers");
-  markWord header = mark();
-  if (!header.is_neutral()) {
-    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
-  }
+  markWord header = resolve_mark();
   return header.klass_or_null();
 #else
   return _klass;
@@ -125,8 +129,8 @@ Klass* oopDesc::klass_or_null_acquire() const {
 #ifdef _LP64
   assert(UseCompressedClassPointers, "only with compressed class pointers");
   markWord header = mark_acquire();
-  if (!header.is_neutral()) {
-    header = ObjectSynchronizer::stable_mark(cast_to_oop(this));
+  if (header.has_monitor()) {
+    header = header.monitor()->header();
   }
   return header.klass_or_null();
 #else
