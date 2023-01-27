@@ -736,7 +736,6 @@ public class Log10Tests {
      * Test StrictMath.log10 against transliteration port of log10.
      */
     private static int testAgainstTranslit() {
-        // TOOD: Change regions that are probed
         int failures = 0;
         double x;
 
@@ -748,23 +747,21 @@ public class Log10Tests {
          x =  Math.nextDown(Double.MIN_NORMAL);
          failures += testRange(x, -Math.ulp(x), 1000);
 
-
         // ... and near 1.0 ...
          x = 1.0;
          failures += testRange(x, Math.ulp(x), 1000);
          x = Math.nextDown(1.0);
          failures += testRange(x, -Math.ulp(x), 1000);
 
-
          x = Tests.createRandomDouble(random);
 
-        // Make the increment twice the ulp value in case the random
-        // value is near an exponent threshold. Don't worry about test
-        // elements overflowing to infinity if the starting value is
-        // near Double.MAX_VALUE.
+         // Make the increment twice the ulp value in case the random
+         // value is near an exponent threshold. Don't worry about test
+         // elements overflowing to infinity if the starting value is
+         // near Double.MAX_VALUE.
          failures += testRange(x, 2.0 * Math.ulp(x), 1000);
-        
-        return failures;
+
+         return failures;
     }
 
     private static int testRange(double start, double increment, int count) {

@@ -779,11 +779,11 @@ class FdLibm {
      * shown.
      */
     static class Log10 {
-        private static double two54      =  1.80143985094819840000e+16; /* 0x43500000, 0x00000000 */
-        private static double ivln10     =  4.34294481903251816668e-01; /* 0x3FDBCB7B, 0x1526E50E */
+        private static double two54     = 0x1.0p54;              // 1.80143985094819840000e+16;
+        private static double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
 
-        private static double log10_2hi  =  3.01029995663611771306e-01; /* 0x3FD34413, 0x509F6000 */
-        private static double log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
+        private static double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
+        private static double log10_2lo = 0x1.9fef311f12b36p-42; // 3.69423907715893078616e-13;
 
         private Log10() {
             throw new UnsupportedOperationException();
@@ -797,7 +797,7 @@ class FdLibm {
             lx = __LO(x);   /* low word of x */
 
             k=0;
-            if (hx < 0x00100000) {                  /* x < 2**-1022  */
+            if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
                 if (((hx & 0x7fff_ffff) | lx) == 0)
                     return -two54/0.0;             /* log(+-0)=-inf */
                 if (hx < 0)
@@ -806,13 +806,13 @@ class FdLibm {
                 x *= two54; /* subnormal number, scale up x */
                 hx = __HI(x);                /* high word of x */
             }
-            if (hx >= 0x7ff00000)
-                return x+x;
+            if (hx >= 0x7ff0_0000)
+                return x + x;
             k += (hx >> 20) - 1023;
             i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
             hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
             y  = (double)(k + i);
-            x = __HI(x, hx); //original: __HI(x) = hx;
+            x = __HI(x, hx);
             z  = y * log10_2lo + ivln10 * StrictMath.log(x);
             return  z + y * log10_2hi;
         }
