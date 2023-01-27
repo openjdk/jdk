@@ -2390,8 +2390,7 @@ Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_of
     return Address(base, byte_offset);
   }
 
-  assert(Rd != noreg, "expecting a register");
-  assert_different_registers(Rd, base);
+  assert_different_registers(Rd, base, noreg);
 
   // Do it the hard way
   mv(Rd, byte_offset);
