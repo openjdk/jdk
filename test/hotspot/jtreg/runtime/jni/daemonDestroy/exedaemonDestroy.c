@@ -23,6 +23,9 @@
 
 #include <jni.h>
 #include <stdlib.h>
+#ifdef AIX
+#include <pthread.h>
+#endif //AIX
 
 static JavaVMOption options[] = {
   { "-Djava.class.path=.", NULL }, // gets overwritten with real value
@@ -35,7 +38,15 @@ static JavaVMInitArgs vm_args = {
   JNI_FALSE
 };
 
-int main(int argc, char *argv[]) {
+typedef struct {
+    int argc;
+    char **argv;
+} args_list;
+
+void* run(void* argp){
+  args_list *arg = (args_list*) argp;
+  int argc =  arg->argc;
+  char **argv = arg->argv;
   JavaVM *jvm;
   JNIEnv *env;
 
@@ -102,4 +113,24 @@ int main(int argc, char *argv[]) {
     exit(1);
   }
   puts("Test: DestroyJavaVM returned");
+  return 0;
+}
+
+int main(int argc, char *argv[]) {
+   args_list args;
+   args.argc = argc;
+   args.argv = argv;
+#ifdef AIX
+   size_t adjusted_stack_size = 1024*1024;
+   pthread_t id;
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+   pthread_attr_setguardsize(&attr, 0);
+   pthread_attr_setstacksize(&attr, adjusted_stack_size);
+   pthread_create (&id,&attr,run,(void *)&args);
+   pthread_join(id,NULL);
+#else
+   run(&args);
+#endif //AIX
 }
