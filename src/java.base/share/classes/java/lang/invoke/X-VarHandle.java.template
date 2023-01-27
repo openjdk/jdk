@@ -382,19 +382,21 @@ final class VarHandle$Type$s {
 
 
     static sealed class FieldStaticReadOnly extends VarHandle {
+        final Class<?> receiverType;
         final Object base;
         final long fieldOffset;
 #if[Object]
         final Class<?> fieldType;
 #end[Object]
 
-        FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM, false);
+        FieldStaticReadOnly(Class<?> receiverType, Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
+            this(receiverType, base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadOnly.FORM, false);
         }
 
-        protected FieldStaticReadOnly(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
+        protected FieldStaticReadOnly(Class<?> receiverType, Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
                                       VarForm form, boolean exact) {
             super(form, exact);
+            this.receiverType = receiverType;
             this.base = base;
             this.fieldOffset = fieldOffset;
 #if[Object]
@@ -406,14 +408,14 @@ final class VarHandle$Type$s {
         public FieldStaticReadOnly withInvokeExactBehavior() {
             return hasInvokeExactBehavior()
                 ? this
-                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, true);
+                : new FieldStaticReadOnly(receiverType, base, fieldOffset{#if[Object]?, fieldType}, vform, true);
         }
 
         @Override
         public FieldStaticReadOnly withInvokeBehavior() {
             return !hasInvokeExactBehavior()
                 ? this
-                : new FieldStaticReadOnly(base, fieldOffset{#if[Object]?, fieldType}, vform, false);
+                : new FieldStaticReadOnly(receiverType, base, fieldOffset{#if[Object]?, fieldType}, vform, false);
         }
 
         @Override
@@ -424,7 +426,7 @@ final class VarHandle$Type$s {
 
             // Reflect on this VarHandle to extract the field name
             var staticField = VarHandles.getStaticFieldFromBaseAndOffset(
-                base, fieldOffset, {#if[Object]?fieldType:$type$.class});
+                receiverType, fieldOffset, {#if[Object]?fieldType:$type$.class});
             var receiverTypeRef = staticField.getDeclaringClass().describeConstable();
             if (!receiverTypeRef.isPresent())
                 return Optional.empty();
@@ -469,27 +471,27 @@ final class VarHandle$Type$s {
 
     static final class FieldStaticReadWrite extends FieldStaticReadOnly {
 
-        FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
-            this(base, fieldOffset{#if[Object]?, fieldType}, false);
+        FieldStaticReadWrite(Class<?> receiverType, Object base, long fieldOffset{#if[Object]?, Class<?> fieldType}) {
+            this(receiverType, base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
-        private FieldStaticReadWrite(Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
+        private FieldStaticReadWrite(Class<?> receiverType, Object base, long fieldOffset{#if[Object]?, Class<?> fieldType},
                                      boolean exact) {
-            super(base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM, exact);
+            super(receiverType, base, fieldOffset{#if[Object]?, fieldType}, FieldStaticReadWrite.FORM, exact);
         }
 
         @Override
         public FieldStaticReadWrite withInvokeExactBehavior() {
             return hasInvokeExactBehavior()
                 ? this
-                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, true);
+                : new FieldStaticReadWrite(receiverType, base, fieldOffset{#if[Object]?, fieldType}, true);
         }
 
         @Override
         public FieldStaticReadWrite withInvokeBehavior() {
             return !hasInvokeExactBehavior()
                 ? this
-                : new FieldStaticReadWrite(base, fieldOffset{#if[Object]?, fieldType}, false);
+                : new FieldStaticReadWrite(receiverType, base, fieldOffset{#if[Object]?, fieldType}, false);
         }
 
         @ForceInline

@@ -25,10 +25,13 @@
 
 package sun.swing;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Point;
 import java.lang.invoke.MethodHandles;
-import javax.swing.*;
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
 
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 
 /**
@@ -45,6 +48,14 @@ public final class SwingAccessor {
      * and interfaces.
      */
     private SwingAccessor() {
+    }
+
+    /**
+     * This interface provides access to the renderer's accessibility component.
+     * For example, the renderer of a list element, a table cell, or a tree node
+     */
+    public interface AccessibleComponentAccessor {
+        Accessible getCurrentAccessible(AccessibleContext ac);
     }
 
     /**
@@ -288,6 +299,21 @@ public final class SwingAccessor {
      */
     public static void setKeyStrokeAccessor(KeyStrokeAccessor accessor) {
         SwingAccessor.keyStrokeAccessor = accessor;
+    }
+
+    private static AccessibleComponentAccessor accessibleComponentAccessor = null;
+
+    public static AccessibleComponentAccessor getAccessibleComponentAccessor() {
+        var access = accessibleComponentAccessor;
+        if (access == null) {
+            ensureClassInitialized(JTree.class);
+            access = accessibleComponentAccessor;
+        }
+        return access;
+    }
+
+    public static void setAccessibleComponentAccessor(final AccessibleComponentAccessor accessibleAccessor) {
+        accessibleComponentAccessor = accessibleAccessor;
     }
 
     private static void ensureClassInitialized(Class<?> c) {

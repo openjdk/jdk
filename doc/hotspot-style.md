@@ -573,7 +573,7 @@ There are a few exceptions to this rule.
 * `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
 * `#include <limits>` to use `std::numeric_limits`.
 * `#include <type_traits>`.
-* `#include <cstddef>` to use `std::nullptr_t`.
+* `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
 
 TODO: Rather than directly \#including (permitted) Standard Library
 headers, use a convention of \#including wrapper headers (in some
@@ -650,6 +650,51 @@ of enums and avoidance of in-class initialization of static integral
 constant members.  Compilers having such bugs are no longer supported.
 Except where an enum is semantically appropriate, new code should use
 integral constants.
+
+### alignas
+
+_Alignment-specifiers_ (`alignas`
+[n2341](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2341.pdf))
+are permitted, with restrictions.
+
+_Alignment-specifiers_ are permitted when the requested alignment is a
+_fundamental alignment_ (not greater than `alignof(std::max_align_t)`
+[C++14 3.11/2](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+
+_Alignment-specifiers_ with an _extended alignment_ (greater than
+`alignof(std::max_align_t)`
+[C++14 3.11/3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf))
+may only be used to align variables with static or automatic storage duration
+([C++14 3.7.1, 3.7.3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+As a consequence, _over-aligned types_ are forbidden; this may change if
+HotSpot updates to using C++17 or later
+([p0035r4](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html)).
+
+Large _extended alignments_ should be avoided, particularly for stack
+allocated objects. What is a large value may depend on the platform and
+configuration. There may also be hard limits for some platforms.
+
+An _alignment-specifier_ must always be applied to a definition
+([C++14 10.6.2/6](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
+(C++ allows an _alignment-specifier_ to optionally also be applied to a
+declaration, so long as the definition has equivalent alignment. There isn't
+any known benefit from duplicating the alignment in a non-definition
+declaration, so such duplication should be avoided in HotSpot code.)
+
+Enumerations are forbidden from having _alignment-specifiers_. Aligned
+enumerations were originally permitted but insufficiently specified, and were
+later (C++20) removed
+([CWG 2354](https://cplusplus.github.io/CWG/issues/2354.html)).
+Permitting such usage in HotSpot now would just cause problems in the future.
+
+_Alignment-specifiers_ are forbidden in `typedef` and _alias-declarations_.
+This may work or may have worked in some versions of some compilers, but was
+later (C++14) explicitly disallowed
+([CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html)).
+
+The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
+platforms that define it. This macro predates the use by HotSpot of C++
+versions providing `alignas`. New code should use `alignas`.
 
 ### thread_local
 

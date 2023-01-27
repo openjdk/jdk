@@ -2333,7 +2333,7 @@ VirtualThreadGetOwnedMonitorInfoClosure::do_thread(Thread *target) {
   javaVFrame *jvf = JvmtiEnvBase::get_vthread_jvf(_vthread_h());
 
   if (!java_thread->is_exiting() && java_thread->threadObj() != NULL) {
-    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors((JavaThread*)target,
+    _result = ((JvmtiEnvBase *)_env)->get_owned_monitors(java_thread,
                                                          java_thread,
                                                          jvf,
                                                          _owned_monitors_list);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,9 @@
 /*
  * @test
  * @bug 8238270
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters
- *       ReferenceTracker Response204V2Test
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext
+ *       ReferenceTracker jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
  *                     Response204V2Test
@@ -57,6 +53,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;

@@ -687,7 +687,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                     newList.add(sub);
                 }
                 MenuSelectionManager manager = e.getMenuSelectionManager();
-                MenuElement[] newPath = new MenuElement[0];;
+                MenuElement[] newPath = new MenuElement[0];
                 newPath = newList.toArray(newPath);
                 manager.setSelectedPath(newPath);
                 e.consume();

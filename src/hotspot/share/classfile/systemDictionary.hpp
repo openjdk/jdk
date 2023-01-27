@@ -201,10 +201,6 @@ public:
   // Returns java system loader
   static oop java_system_loader();
 
-  // Returns the class loader data to be used when looking up/updating the
-  // system dictionary.
-  static ClassLoaderData *class_loader_data(Handle class_loader);
-
   // Returns java platform loader
   static oop java_platform_loader();
 
@@ -381,9 +377,9 @@ protected:
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
   // Class loader constraints
-  static void check_constraints(InstanceKlass* k, Handle loader,
+  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(JavaThread* current, InstanceKlass* k, Handle loader);
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP
