@@ -38,11 +38,17 @@ bool ResolvedIndyInfo::check_no_old_or_obsolete_entry() {
 }
 
 void ResolvedIndyInfo::remove_unshareable_info() {
-        _number_of_parameters = 0;
+    //STATIC_ASSERT(sizeof(*this) % sizeof(this));
+    u2 saved_resolved_references_index = _resolved_references_index;
+    u2 saved_cpool_index = _cpool_index;
+    memset(this, 0, sizeof(*this));
+    _resolved_references_index = saved_resolved_references_index;
+    _cpool_index = saved_cpool_index;
+        /*_number_of_parameters = 0;
         _return_type = 0;
         _has_appendix = false;
-        _method = nullptr;
-    }
+        _method = nullptr;*/
+}
 
 // ResolvedInvokeDynamicInfo
 void ResolvedIndyInfo::print_on(outputStream* st) const {

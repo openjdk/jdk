@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classPrinter.hpp"
-#include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"

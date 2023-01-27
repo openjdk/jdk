@@ -45,6 +45,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/ResolvedIndyInfo.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -2249,15 +2250,16 @@ run:
       CASE(_invokedynamic): {
         if (UseNewIndyCode) {
           u4 index = Bytes::get_native_u4(pc+1);
-          if (! cache->is_resolved((Bytecodes::Code) opcode)) {
+          ResolvedIndyInfo indy_info = cp->resolved_indy_info(index);
+          if (!indy_info->is_resolved) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             //cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
           }
-          Method* method = cache->resolved_invokedynamic_info_element(index)->method();
+          Method* method = indy_info(index)->method();
           if (VerifyOops) method->verify();
 
-          if (cache->has_appendix()) {
+          if (indy_info->has_appendix()) {
             constantPoolHandle cp(THREAD, METHOD->constants());
             SET_STACK_OBJECT(cache->appendix_if_resolved(cp), 0);
             MORE_STACK(1);

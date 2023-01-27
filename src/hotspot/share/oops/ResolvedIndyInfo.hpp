@@ -31,13 +31,17 @@ class Method;
 class ResolvedIndyInfo {
     friend class VMStructs;
 
-     Method* _method;
-     u2 _resolved_references_index;
-     u2 _cpool_index;
-     u2 _number_of_parameters;
-     u1 _return_type;
-     bool _has_appendix;
-     bool _resolution_failed;
+    Method* _method;
+    u2 _resolved_references_index;
+    u2 _cpool_index;
+    u2 _number_of_parameters;
+    u1 _return_type;
+    bool _has_appendix;
+    bool _resolution_failed;
+    // make flag for has_appendix and resolution_failed
+    //u1 _flags;
+    // flags [000|local signature|final|vfinal|has appendix|resolution failed]
+
 
 public:
     ResolvedIndyInfo() :
@@ -64,7 +68,8 @@ public:
     u2 num_parameters() const            { return _number_of_parameters;      }
     u1 return_type() const               { return _return_type;               }
     bool has_appendix() const            { return _has_appendix;              }
-    bool has_local_signature() const     { return true;                       }
+    bool has_local_signature() const     { return true;                       } // might not be guaranteed to be true
+    bool is_vfinal() const               { return true;                       } // ask Lois, what does this mean??
     bool is_final() const                { return true;                       }
     bool is_resolved() const             { return _method != nullptr;         }
     bool resolution_failed()             { return _resolution_failed;         }
