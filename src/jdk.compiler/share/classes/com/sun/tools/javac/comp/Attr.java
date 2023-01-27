@@ -5659,7 +5659,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         public void visitAnnotation(JCAnnotation tree) {
-            chk.validateTypeAnnotation(tree, false);
+            chk.validateTypeAnnotation(tree, null, false);
             super.visitAnnotation(tree);
         }
         public void visitAnnotatedType(JCAnnotatedType tree) {
@@ -5668,7 +5668,7 @@ public class Attr extends JCTree.Visitor {
             }
         }
         public void visitTypeParameter(JCTypeParameter tree) {
-            chk.validateTypeAnnotations(tree.annotations, true);
+            chk.validateTypeAnnotations(tree.annotations, tree.type.tsym, true);
             scan(tree.bounds);
             // Don't call super.
             // This is needed because above we call validateTypeAnnotation with

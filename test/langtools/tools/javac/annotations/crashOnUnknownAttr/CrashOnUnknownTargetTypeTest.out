@@ -1,5 +1,13 @@
-- compiler.warn.unknown.enum.constant: A.class, java.lang.annotation.ElementType, NO_SUCH
-- compiler.warn.unknown.enum.constant: Annotation.class, java.lang.annotation.ElementType, NO_SUCH
-CrashOnUnknownTargetTypeTest.java:10:6: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
-1 error
+- compiler.warn.unknown.enum.constant: ElementType.class, java.lang.annotation.ElementType, NO_SUCH
+- compiler.warn.unknown.enum.constant: String.class, java.lang.annotation.ElementType, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:10:5: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:11:5: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:12:14: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:15:5: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:16:5: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:17:17: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:18:5: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:19:14: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:13:9: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+9 errors
 2 warnings
