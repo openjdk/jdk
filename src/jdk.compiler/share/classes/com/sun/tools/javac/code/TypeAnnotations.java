@@ -181,7 +181,7 @@ public class TypeAnnotations {
      * Determine whether an annotation is a declaration annotation,
      * a type annotation, or both (or none, i.e a non-annotation masquerading as one).
      */
-    public AnnotationType annotationTargetType(JCTree tree, Attribute.Compound a, Symbol s) {
+    public AnnotationType annotationTargetType(JCTree pos, Attribute.Compound a, Symbol s) {
         if (!a.type.tsym.isAnnotationType()) {
             return AnnotationType.NONE;
         }
@@ -189,7 +189,7 @@ public class TypeAnnotations {
         return (targets == null) ?
                 AnnotationType.DECLARATION :
                 targets.stream()
-                        .map(attr -> targetToAnnotationType(tree, a, attr, s))
+                        .map(attr -> targetToAnnotationType(pos, a, attr, s))
                         .reduce(AnnotationType.NONE, this::combineAnnotationType);
     }
 
@@ -205,7 +205,7 @@ public class TypeAnnotations {
         }
     }
 
-    private AnnotationType targetToAnnotationType(JCTree tree, Attribute.Compound anno, Attribute a, Symbol s) {
+    private AnnotationType targetToAnnotationType(JCTree pos, Attribute.Compound anno, Attribute a, Symbol s) {
         Attribute.Enum e = (Attribute.Enum)a;
         if (e.value.name == names.TYPE) {
             if (s.kind == TYP)
@@ -255,7 +255,7 @@ public class TypeAnnotations {
             if (s.kind == MDL)
                 return AnnotationType.DECLARATION;
         } else {
-            log.error(TreeInfo.diagnosticPositionFor(anno.type.tsym, tree), Errors.AnnotationUnrecognizedAttributeName(anno.type, e.value.name));
+            log.error(TreeInfo.diagnosticPositionFor(anno.type.tsym, pos), Errors.AnnotationUnrecognizedAttributeName(anno.type, e.value.name));
             return AnnotationType.DECLARATION;
         }
         return AnnotationType.NONE;
@@ -305,8 +305,8 @@ public class TypeAnnotations {
          * we never build an JCAnnotatedType. This step finds these
          * annotations and marks them as if they were part of the type.
          */
-        private void separateAnnotationsKinds(JCTree tree, JCTree typetree, Type type,
-                                              Symbol sym, TypeAnnotationPosition pos)
+        private void separateAnnotationsKinds(JCTree pos, JCTree typetree, Type type,
+                                              Symbol sym, TypeAnnotationPosition typeAnnotationPosition)
         {
             List<Attribute.Compound> allAnnotations = sym.getRawAttributes();
             ListBuffer<Attribute.Compound> declAnnos = new ListBuffer<>();
@@ -314,18 +314,18 @@ public class TypeAnnotations {
             ListBuffer<Attribute.TypeCompound> onlyTypeAnnos = new ListBuffer<>();
 
             for (Attribute.Compound a : allAnnotations) {
-                switch (annotationTargetType(tree, a, sym)) {
+                switch (annotationTargetType(pos, a, sym)) {
                     case DECLARATION:
                         declAnnos.append(a);
                         break;
                     case BOTH: {
                         declAnnos.append(a);
-                        Attribute.TypeCompound ta = toTypeCompound(a, pos);
+                        Attribute.TypeCompound ta = toTypeCompound(a, typeAnnotationPosition);
                         typeAnnos.append(ta);
                         break;
                     }
                     case TYPE: {
-                        Attribute.TypeCompound ta = toTypeCompound(a, pos);
+                        Attribute.TypeCompound ta = toTypeCompound(a, typeAnnotationPosition);
                         typeAnnos.append(ta);
                         // Also keep track which annotations are only type annotations
                         onlyTypeAnnos.append(ta);
@@ -355,7 +355,7 @@ public class TypeAnnotations {
 
                 // Declaration annotations are always allowed on constructor returns.
                 // Therefore, use typeAnnotations instead of onlyTypeAnnos.
-                typeWithAnnotations(typetree, type, typeAnnotations, typeAnnotations, pos);
+                typeWithAnnotations(typetree, type, typeAnnotations, typeAnnotations, typeAnnotationPosition);
                 // Note that we don't use the result, the call to
                 // typeWithAnnotations side-effects the type annotation positions.
                 // This is important for constructors of nested classes.
@@ -364,7 +364,7 @@ public class TypeAnnotations {
             }
 
             // type is non-null, add type annotations from declaration context to the type
-            type = typeWithAnnotations(typetree, type, typeAnnotations, onlyTypeAnnos.toList(), pos);
+            type = typeWithAnnotations(typetree, type, typeAnnotations, onlyTypeAnnos.toList(), typeAnnotationPosition);
 
             if (sym.getKind() == ElementKind.METHOD) {
                 sym.type.asMethodType().restype = type;
