@@ -37,7 +37,7 @@ typedef struct {
 typedef struct  {
   info expected;
   info unexpected;
-} threadInfo;
+} thread_info;
 
 static jvmtiEnv *jvmti_env;
 static jrawMonitorID starting_agent_thread_lock;
@@ -58,13 +58,13 @@ static const char *main_sys[] = { main_name, sys_thread_name };
 static const char *thr1_sys[] = { thread1_name, sys_thread_name };
 static const char *main_fj[] = { main_name, fj_thread_name };
 
-static threadInfo thrInfo[] = {
+static thread_info thr_info[] = {
   {{1, main_only},    {2, thr1_sys}},
   {{1, main_only},    {2, thr1_sys}},
   {{2, main_thr1},    {1, sys_only}},
   {{1, main_only},    {2, thr1_sys}},
   {{2, main_sys},     {1, thr1_only}},
-  {{2, main_fj},     {1, thr1_sys}}
+  {{2, main_fj},      {1, thr1_sys}}
 };
 
 jthread create_jthread(JNIEnv *jni) {
@@ -130,8 +130,8 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
     LOG(" >>> %s", name);
 
     bool found = false;
-    for (int j = 0; j < thrInfo[idx].unexpected.cnt && !found; j++) {
-      found = strcmp(name, thrInfo[idx].unexpected.thr_names[j]) == 0;
+    for (int j = 0; j < thr_info[idx].unexpected.cnt && !found; j++) {
+      found = strcmp(name, thr_info[idx].unexpected.thr_names[j]) == 0;
     }
     if (found) {
       LOG("Point %d: detected unexpected thread %s\n", idx, inf.name);
@@ -142,14 +142,14 @@ JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
   LOG("\n");
 
   // verify all expected threads are present
-  for (int i = 0; i < thrInfo[idx].expected.cnt; i++) {
+  for (int i = 0; i < thr_info[idx].expected.cnt; i++) {
     bool found = false;
     for (int j = 0; j < threads_count && !found; j++) {
       char *name = get_thread_name(jvmti_env, jni, threads[j]);
-      found = strcmp(name, thrInfo[idx].expected.thr_names[i]) == 0;
+      found = strcmp(name, thr_info[idx].expected.thr_names[i]) == 0;
     }
     if (!found) {
-      LOG("Point %d: thread %s not detected\n", idx, thrInfo[idx].expected.thr_names[i]);
+      LOG("Point %d: thread %s not detected\n", idx, thr_info[idx].expected.thr_names[i]);
       return JNI_FALSE;
     }
   }
