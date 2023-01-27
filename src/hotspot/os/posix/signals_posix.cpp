@@ -1381,7 +1381,6 @@ static void print_single_signal_handler(outputStream* st,
   st->print(", flags=");
   int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
-
 }
 
 // Print established signal handler for this signal.
@@ -1398,6 +1397,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   sigaction(sig, NULL, &current_act);
 
   print_single_signal_handler(st, &current_act, buf, buflen);
+
+  sigset_t thread_sig_mask;
+  if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
+  }
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
