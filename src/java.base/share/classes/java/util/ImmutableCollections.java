@@ -168,13 +168,12 @@ class ImmutableCollections {
     static <E> List<E> listCopy(Collection<? extends E> coll) {
         if (coll instanceof List12 || (coll instanceof ListN<?> c && !c.allowNulls)) {
             return (List<E>)coll;
-        }
-
-        Object[] array = coll.toArray(); // implicit nullcheck of coll
-        if (coll.getClass().getModule() == Object.class.getModule()) {
-            return listFromTrustedArray(array);
+        } else if (coll.isEmpty()) { // implicit nullcheck of coll
+            return List.of();
+        } else if (coll.getClass().getModule() == Object.class.getModule()) {      
+            return listFromTrustedArray(coll.toArray());
         } else {
-            return (List<E>) List.of(array);
+            return (List<E>)List.of(coll.toArray());
         }
     }
 
