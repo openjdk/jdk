@@ -45,7 +45,6 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/ResolvedIndyInfo.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -2251,7 +2250,7 @@ run:
         if (UseNewIndyCode) {
           u4 index = Bytes::get_native_u4(pc+1);
           ResolvedIndyInfo indy_info = cp->resolved_indy_info(index);
-          if (!indy_info->is_resolved) {
+          if (!indy_info->is_resolved()) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
             //cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);

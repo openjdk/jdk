@@ -78,11 +78,11 @@ public:
     u1 return_type() const               { return _return_type;               }
     bool is_resolved() const             { return _method != nullptr;         }
 
-    bool has_appendix() const            { return _flags & (1 << has_appendix_shift)        != 0; }
-    bool is_vfinal() const               { return _flags & (1 << is_vfinal_shift)           != 0; }
-    bool is_final() const                { return _flags & (1 << is_final_shift)            != 0; }
-    bool has_local_signature() const     { return _flags & (1 << has_local_signature_shift) != 0; }
-    bool resolution_failed()             { return _flags & 1                                != 0; }
+    bool has_appendix() const            { return (_flags & (1 << has_appendix_shift))        != 0; }
+    bool is_vfinal() const               { return (_flags & (1 << is_vfinal_shift))           != 0; }
+    bool is_final() const                { return (_flags & (1 << is_final_shift))            != 0; }
+    bool has_local_signature() const     { return (_flags & (1 << has_local_signature_shift)) != 0; }
+    bool resolution_failed()             { return (_flags & 1)                                != 0; }
 
     /*bool has_appendix() const            { return _has_appendix;              }
     bool has_local_signature() const     { return true;                       } // might not be guaranteed to be true
@@ -104,7 +104,7 @@ public:
         _number_of_parameters = num_params; // might be parameter size()
         _return_type = return_type;
         //_has_appendix = has_appendix;
-        set_flags(has_appendix, false, false, false); // Not sure if the other flags have fixed values
+        set_flags(has_appendix, false, false, true); // Not sure if the other flags have fixed values
         //_method = m;
         Atomic::release_store(&_method, m);
     }
@@ -112,7 +112,6 @@ public:
     void set_flags(bool has_appendix, bool is_vfinal, bool is_final, bool has_local_signature) {
         u1 new_flags = (has_appendix << has_appendix_shift) | (is_vfinal << is_vfinal_shift) |
                     (is_final << is_final_shift) | (has_local_signature << has_local_signature_shift);
-        tty->print_cr("flags = %d", new_flags);
         assert((new_flags & 1) == 0, "New flags should not change resolution flag");
         // Preserve the resolution_failed bit
         _flags = (_flags & 1) | new_flags;
