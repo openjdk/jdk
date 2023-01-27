@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
+import java.util.stream.Stream;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -1208,6 +1209,21 @@ public final class Locale implements Cloneable, Serializable {
      */
     public static Locale[] getAvailableLocales() {
         return LocaleServiceProviderPool.getAllAvailableLocales();
+    }
+
+    /**
+     * Returns a stream of all installed locales.
+     * The returned stream represents the union of locales supported
+     * by the Java runtime environment and by installed
+     * {@link java.util.spi.LocaleServiceProvider LocaleServiceProvider}
+     * implementations. At a minimum, the returned stream must contain a
+     * {@code Locale} instance equal to {@link Locale#ROOT Locale.ROOT} and
+     * a {@code Locale} instance equal to {@link Locale#US Locale.US}.
+     *
+     * @return A stream of installed locales.
+     */
+    public static Stream<Locale> streamAvailableLocales() {
+        return LocaleServiceProviderPool.streamAvailableLocales();
     }
 
     /**
