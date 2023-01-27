@@ -40,24 +40,15 @@ class GCTrimNative : public AllStatic {
 
 public:
 
-  static void initialize(bool async_mode);
+  static void initialize();
   static void cleanup();
-
-  // Returns true if:
-  // - trimming is enabled and possible
-  // - trimming may have an actual effect (guess)
-  // - delay timer has expired (unless ignore_delay is true)
-  static bool should_trim(bool ignore_delay);
-
-  // Execute trim-native in this thread
-  static void execute_trim();
 
   // Pause/unpause periodic trim
   static void pause_periodic_trim();
   static void unpause_periodic_trim();
 
-  // Schedule an explicit trim now; if periodic trims had been
-  // paused, they are unpaused.
+  // Schedule an explicit trim now. If periodic trims are enabled and have been paused,
+  // they are unpaused.
   static void schedule_trim();
 
 };

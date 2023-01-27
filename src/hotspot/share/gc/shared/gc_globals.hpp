@@ -693,15 +693,24 @@
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
                                                                             \
   product(bool, GCTrimNativeHeap, false, EXPERIMENTAL,                      \
-          "GC will attempt to trim the native heap periodically and at "    \
-          "full GCs.")                                                      \
+          "GC will attempt to trim the native heap periodically and "       \
+          "after full GCs.")                                                \
                                                                             \
-  product(uint, GCTrimNativeHeapInterval, 60, EXPERIMENTAL,                 \
-          "If GCTrimNativeHeap is enabled: interval time, in seconds, in "  \
-          "which the VM will attempt to trim the native heap. A value of "  \
-          "0 disables periodic trimming while leaving trimming at full gc " \
-          "enabled.")                                                       \
+  product(uint, GCTrimNativeHeapInterval, 30, EXPERIMENTAL,                 \
+          "If GCTrimNativeHeap is enabled: interval, in seconds, in which " \
+          "the VM will attempt to trim the native heap. This is a lower "   \
+          "bound; the JVM may increase the interval time up to "            \
+          "GCTrimNativeHeapIntervalMax."                                    \
+          "A value of 0 disables periodic trimming altogether while "       \
+          "leaving trimming after full gc enabled.")                        \
+          range(0, (24 * 60 * 60))                                          \
+                                                                            \
+  product(uint, GCTrimNativeHeapIntervalMax, 0, EXPERIMENTAL,               \
+          "If GCTrimNativeHeap is enabled and GCTrimNativeHeapInterval is " \
+          "not 0: upper bound for the interval time, in seconds, in which " \
+          "the VM will attempt to trim the native heap.")                   \
           range(0, max_juint)                                               \
+          constraint(GCTrimNativeHeapIntervalMaxFunc,AtParse)               \
                                                                             \
           // end of GC_FLAGS
 
