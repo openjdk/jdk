@@ -181,7 +181,7 @@ public class TypeAnnotations {
      * Determine whether an annotation is a declaration annotation,
      * a type annotation, or both (or none, i.e a non-annotation masquerading as one).
      */
-    public AnnotationType annotationTargetType(Attribute.Compound a, Symbol s) {
+    public AnnotationType annotationTargetType(JCTree tree, Attribute.Compound a, Symbol s) {
         if (!a.type.tsym.isAnnotationType()) {
             return AnnotationType.NONE;
         }
@@ -189,7 +189,7 @@ public class TypeAnnotations {
         return (targets == null) ?
                 AnnotationType.DECLARATION :
                 targets.stream()
-                        .map(attr -> targetToAnnotationType(attr, s))
+                        .map(attr -> targetToAnnotationType(tree, a, attr, s))
                         .reduce(AnnotationType.NONE, this::combineAnnotationType);
     }
 
@@ -205,7 +205,7 @@ public class TypeAnnotations {
         }
     }
 
-    private AnnotationType targetToAnnotationType(Attribute a, Symbol s) {
+    private AnnotationType targetToAnnotationType(JCTree tree, Attribute.Compound anno, Attribute a, Symbol s) {
         Attribute.Enum e = (Attribute.Enum)a;
         if (e.value.name == names.TYPE) {
             if (s.kind == TYP)
@@ -255,8 +255,7 @@ public class TypeAnnotations {
             if (s.kind == MDL)
                 return AnnotationType.DECLARATION;
         } else {
-            Assert.error("annotationTargetType(): unrecognized Attribute name " + e.value.name +
-                    " (" + e.value.name.getClass() + ")");
+            log.error(TreeInfo.diagnosticPositionFor(anno.type.tsym, tree), Errors.AnnotationUnrecognizedAttributeName(anno.type, e.value.name));
             return AnnotationType.DECLARATION;
         }
         return AnnotationType.NONE;
@@ -306,7 +305,7 @@ public class TypeAnnotations {
          * we never build an JCAnnotatedType. This step finds these
          * annotations and marks them as if they were part of the type.
          */
-        private void separateAnnotationsKinds(JCTree typetree, Type type,
+        private void separateAnnotationsKinds(JCTree tree, JCTree typetree, Type type,
                                               Symbol sym, TypeAnnotationPosition pos)
         {
             List<Attribute.Compound> allAnnotations = sym.getRawAttributes();
@@ -315,7 +314,7 @@ public class TypeAnnotations {
             ListBuffer<Attribute.TypeCompound> onlyTypeAnnos = new ListBuffer<>();
 
             for (Attribute.Compound a : allAnnotations) {
-                switch (annotationTargetType(a, sym)) {
+                switch (annotationTargetType(tree, a, sym)) {
                     case DECLARATION:
                         declAnnos.append(a);
                         break;
@@ -1167,11 +1166,11 @@ public class TypeAnnotations {
                             TypeAnnotationPosition.methodReturn(tree.pos);
                         // Use null to mark that the annotations go
                         // with the symbol.
-                        separateAnnotationsKinds(tree, null, tree.sym, pos);
+                        separateAnnotationsKinds(tree, tree, null, tree.sym, pos);
                     } else {
                         final TypeAnnotationPosition pos =
                             TypeAnnotationPosition.methodReturn(tree.restype.pos);
-                        separateAnnotationsKinds(tree.restype,
+                        separateAnnotationsKinds(tree, tree.restype,
                                                  tree.sym.type.getReturnType(),
                                                  tree.sym, pos);
                     }
@@ -1184,7 +1183,7 @@ public class TypeAnnotations {
                     final TypeAnnotationPosition pos = TypeAnnotationPosition.methodReceiver(tree.recvparam.vartype.pos);
                     push(tree.recvparam);
                     try {
-                        separateAnnotationsKinds(tree.recvparam.vartype, tree.recvparam.sym.type, tree.recvparam.sym, pos);
+                        separateAnnotationsKinds(tree, tree.recvparam.vartype, tree.recvparam.sym.type, tree.recvparam.sym, pos);
                     } finally {
                         pop();
                     }
@@ -1197,7 +1196,7 @@ public class TypeAnnotations {
                         final TypeAnnotationPosition pos = TypeAnnotationPosition.methodParameter(i, param.vartype.pos);
                         push(param);
                         try {
-                            separateAnnotationsKinds(param.vartype, param.sym.type, param.sym, pos);
+                            separateAnnotationsKinds(param, param.vartype, param.sym.type, param.sym, pos);
                         } finally {
                             pop();
                         }
@@ -1239,7 +1238,7 @@ public class TypeAnnotations {
                         push(param);
                         try {
                             if (!param.declaredUsingVar()) {
-                                separateAnnotationsKinds(param.vartype, param.sym.type, param.sym, pos);
+                                separateAnnotationsKinds(param, param.vartype, param.sym.type, param.sym, pos);
                             }
                         } finally {
                             pop();
@@ -1272,30 +1271,30 @@ public class TypeAnnotations {
                 if (sigOnly) {
                     TypeAnnotationPosition pos =
                         TypeAnnotationPosition.field(tree.pos);
-                    separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                    separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                 }
             } else if (tree.sym.getKind() == ElementKind.LOCAL_VARIABLE) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.localVariable(currentLambda,
                                                          tree.pos);
                 if (!tree.declaredUsingVar()) {
-                    separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                    separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
                 }
             } else if (tree.sym.getKind() == ElementKind.BINDING_VARIABLE) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.localVariable(currentLambda,
                                                          tree.pos);
-                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.exceptionParameter(currentLambda,
                                                               tree.pos);
-                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.RESOURCE_VARIABLE) {
                 final TypeAnnotationPosition pos =
                     TypeAnnotationPosition.resourceVariable(currentLambda,
                                                             tree.pos);
-                separateAnnotationsKinds(tree.vartype, tree.sym.type, tree.sym, pos);
+                separateAnnotationsKinds(tree, tree.vartype, tree.sym.type, tree.sym, pos);
             } else if (tree.sym.getKind() == ElementKind.ENUM_CONSTANT) {
                 // No type annotations can occur here.
             } else {

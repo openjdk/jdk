@@ -1,0 +1,5 @@
+- compiler.warn.unknown.enum.constant: A.class, java.lang.annotation.ElementType, NO_SUCH
+- compiler.warn.unknown.enum.constant: Annotation.class, java.lang.annotation.ElementType, NO_SUCH
+CrashOnUnknownTargetTypeTest.java:10:6: compiler.err.annotation.unrecognized.attribute.name: A, NO_SUCH
+1 error
+2 warnings
