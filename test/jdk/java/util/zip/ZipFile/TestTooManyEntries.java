@@ -54,32 +54,84 @@ public class TestTooManyEntries {
     private static final int ZIP64_MAGICVAL = 0xFFFFFFFF; // Magic vals for ZIP64 CEN length and offset
 
 
-    // ZIP64 file to be rejected
-    private Path hugeZipFile;
-
-    // ZIP64 file to be accepted
-    private Path bigZipFile;
+    private Path huge64; // ZIP64 file with CEN size exceeding limit
+    private Path big64;  // ZIP64 file with CEN size exactly on the limit
+    private Path huge;   // ZIP file with CEN size  exceeding limit
+    private Path big;    // ZIP file with CEN size exactly on the limit
 
     /**
-     * Create ZIP64 files with CEN sizes on and above the CEN size limit
+     * Create ZIP64 and regular ZIP files with CEN sizes exactly on and exceeding the CEN size limit
      */
     @BeforeTest
     public void setup() throws IOException {
         var limit = Integer.MAX_VALUE - ENDHDR - 1;
         var exceedingLimit = limit + 1;
 
-        bigZipFile = zipWithCenSize("bigZip.zip", limit);
-        hugeZipFile = zipWithCenSize("hugeZip.zip", exceedingLimit);
+        big64 = zipWithCenSize("big64Zip.zip", limit, true);
+        huge64 = zipWithCenSize("huge64Zip.zip", exceedingLimit, true);
+
+        big = zipWithCenSize("bigZip.zip", limit, false);
+        huge = zipWithCenSize("hugeZip.zip", exceedingLimit, false);
     }
 
     /**
-     * Validates that the ZipException is thrown when the ZipFile class
-     * is initialized with a zip file whose ZIP64 end of central directory
-     * record contains a CEN length which exceed the CEN limit.
+     * Validates that a ZIP64 end of central directory record with
+     * a CEN length exceeding the CEN limit is rejected
+     */
+    @Test
+    public void shouldRejectHuge64() throws IOException {
+        assertTooLarge(huge64);
+    }
+
+    /**
+     * Validates that a regular end of central directory record with
+     * a CEN length exceeding the CEN limit is rejected
      */
     @Test
     public void shouldRejectHuge() throws IOException {
-        try (ZipFile zf = new ZipFile(hugeZipFile.toFile())) {
+        assertTooLarge(huge);
+    }
+
+    /**
+     * Validate that a ZIP64 end of central directory record with a
+     * valid CEN size is not rejected
+     */
+    @Test
+    public void shouldAcceptBig64() throws IOException {
+        assertEmptyZip(big64);
+    }
+
+    /**
+     * Validate that a regular end of central directory record with a
+     * valid CEN size is not rejected
+     */
+    @Test
+    public void shouldAcceptBig() throws IOException {
+        assertEmptyZip(big);
+    }
+
+
+    /**
+     * Assert that ZipFile can open the file without exceptions
+     * and that the file has zero entries.
+     *
+     * Note: Even if files created by this test are technically invalid ZIPs,
+     * ZipFile will accept them as empty because the initCEN method short-circuit
+     * when it detects that the end of central directory record is at
+     * offset 0 (meaning it will treat the ZIP as having zero entries)
+     */
+    private void assertEmptyZip(Path zip) throws IOException {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+            assertEquals( zf.size(), 0);
+        }
+    }
+
+    /**
+     * Assert that opening a file with ZipFile throws with a ZipException
+     * with the message "invalid END header (central directory size too large)"
+     */
+    private void assertTooLarge(Path zip) throws IOException {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
             fail("Expected ZipFile to throw ZipException");
         } catch (ZipException e) {
             var expected = "invalid END header (central directory size too large)";
@@ -90,41 +142,35 @@ public class TestTooManyEntries {
     }
 
     /**
-     * Validate that ZIP with a ZIP64 End of central directory record with a
-     * valid CEN size is not rejected by ZipFile
-     * (In fact, ZipFile will short-circuit the initCEN method when it detects
-     * that the End of central directory record is at offset 0, meaning it
-     * will treat the ZIP as having zero entries)
+     * Create an "empty" ZIP, containing only the required end
+     * of central directory record(s) with the specified CEN size.
+     *
+     * If {@code zip64} is true, ZIP64 end of central directory record
+     * and locator are output first, followed by the regular end of
+     * central directory record with ZIP64 magic values
      */
-    @Test
-    public void shouldAcceptBig() throws IOException {
-        try (ZipFile zf = new ZipFile(bigZipFile.toFile())) {
-            assertEquals( Collections.list(zf.entries()).size(), 0);
-        }
-    }
-
-    /**
-     * Create a ZIP:
-     * - Starting with a ZIP64 "End of central directory record" with the given CEN size
-     * - Followed by a ZIP64 "End of central directory locator"
-     * - Ending with a regular "End of central directory record" with ZIP64 magic values for CEN size and offset
-     */
-    private Path zipWithCenSize(String name, int cenSize) throws IOException {
+    private Path zipWithCenSize(String name, int cenSize, boolean zip64) throws IOException {
         Path z = Path.of(name);
 
         try (FileOutputStream out  = new FileOutputStream(z.toFile())) {
 
-            // Write the Zip64 end of central directory record and locator
-            writeZip64End(out, cenSize);
+            if(zip64) {
+                // Write the Zip64 end of central directory record and locator
+                writeZip64End(out, cenSize, zip64);
+            }
 
             // Write a regular End of central directory with Zip64 magic values
-            writeEndOfCen(out);
+            writeEndOfCen(out, zip64, zip64 ? ZIP64_MAGICVAL : cenSize);
         }
 
         return z;
     }
 
-    private void writeZip64End(FileOutputStream out, int cenSize) throws IOException {
+    /**
+     * Writes the ZIP64 "end of central directory record" and
+     * "end of central directory locator" records.
+     */
+    private void writeZip64End(FileOutputStream out, int cenSize, boolean zip64) throws IOException {
 
         ByteBuffer e64 = ByteBuffer.allocate(ZIP64_ENDHDR + ZIP64_LOCHDR).order(ByteOrder.LITTLE_ENDIAN);
 
@@ -151,14 +197,19 @@ public class TestTooManyEntries {
 
     }
 
-    private void writeEndOfCen(FileOutputStream out) throws IOException {
+    /**
+     * Write a regular "end of central directory" record with a given CEN size.
+     *
+     * If {@code zip64} is true, write ZIP64 magic values instead
+     */
+    private void writeEndOfCen(FileOutputStream out, boolean zip64, int cenLen) throws IOException {
         ByteBuffer ecen = ByteBuffer.allocate(ENDHDR).order(ByteOrder.LITTLE_ENDIAN);
         ecen.putInt(ENDSIG);                  // END record signature
         ecen.putShort((short) 0);             // number of this disk
         ecen.putShort((short) 0);             // central directory start disk
         ecen.putShort((short) 1);             // number of directory entries on disk
         ecen.putShort((short) 1);             // total number of directory entries
-        ecen.putInt(ZIP64_MAGICVAL);          // length of central directory
+        ecen.putInt(cenLen);                  // length of central directory
         ecen.putInt(ZIP64_MAGICVAL);          // offset of central directory
         ecen.putShort((short) 0);             // zip file comment
 

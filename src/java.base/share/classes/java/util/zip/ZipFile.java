@@ -1482,10 +1482,6 @@ public class ZipFile implements ZipConstants, Closeable {
                             end.centot = (int)centot64; // assume total < 2g
                             end.endpos = end64pos;
                         } catch (IOException x) {}    // no zip64 loc/end
-                        // Fail early if the CEN size is larger than what we can parse
-                        if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
-                            zerror("invalid END header (central directory size too large)");
-                        }
                         return end;
                     }
                 }
@@ -1499,6 +1495,10 @@ public class ZipFile implements ZipConstants, Closeable {
             byte[] cen;
             if (knownTotal == -1) {
                 End end = findEND();
+                // Fail early if the CEN size is larger than what we can parse
+                if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
+                    zerror("invalid END header (central directory size too large)");
+                }
                 if (end.endpos == 0) {
                     locpos = 0;
                     total = 0;
