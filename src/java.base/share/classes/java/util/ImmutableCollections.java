@@ -170,7 +170,7 @@ class ImmutableCollections {
             return (List<E>)coll;
         } else if (coll.isEmpty()) { // implicit nullcheck of coll
             return List.of();
-        } else if (coll.getClass().getModule() == Object.class.getModule()) {      
+        } else if (coll.getClass().getModule() == Object.class.getModule()) {
             return listFromTrustedArray(coll.toArray());
         } else {
             return (List<E>)List.of(coll.toArray());
