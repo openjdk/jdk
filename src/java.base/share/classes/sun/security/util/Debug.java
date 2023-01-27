@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,12 @@ public class Debug {
         System.err.println("pkcs11keystore");
         System.err.println("              PKCS11 KeyStore debugging");
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
+        System.err.println("properties    Prints which java.security Security Properties file that the JDK uses");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
         System.err.println("ts            timestamping");
+        System.err.println("x509          X.509 certificate debugging");
         System.err.println();
         System.err.println("The following can be used with access:");
         System.err.println();
@@ -121,6 +123,10 @@ public class Debug {
         System.err.println();
         System.err.println("ocsp          dump the OCSP protocol exchanges");
         System.err.println("verbose       verbose debugging");
+        System.err.println();
+        System.err.println("The following can be used with x509:");
+        System.err.println();
+        System.err.println("ava           embed non-printable/non-escaped characters in AVA components as hex strings");
         System.err.println();
         System.err.println("Note: Separate multiple options with a comma");
         System.exit(0);
