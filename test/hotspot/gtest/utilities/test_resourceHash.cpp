@@ -260,6 +260,12 @@ class GenericResourceHashtableTest : public CommonResourceHashtableTest {
       rh.unlink(&dt);
       ASSERT_FALSE(rh.get(as_K(5)));
 
+      rh.unlink([&](K const& key, V const& val) {
+        return ((uintptr_t)key % 2) == 0; // delete all even keys
+      });
+      ASSERT_FALSE(rh.get(as_K(6)));
+      ASSERT_TRUE(rh.get(as_K(7)));
+
       rh.unlink_all();
       for (uintptr_t i = 10; i > 0; --i) {
         uintptr_t index = i - 1;
@@ -333,6 +339,17 @@ TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete) {
   // Use unlink to remove the matching (or all) values from the table.
   SimpleDeleter deleter;
   _simple_test_table.unlink(&deleter);
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
+}
+
+TEST_VM_F(SimpleResourceHashtableDeleteTest, simple_delete_lambda) {
+  TempNewSymbol t = SymbolTable::new_symbol("abcdefg_simple");
+  Symbol* s = t;
+  int s_orig_count = s->refcount();
+  _simple_test_table.put(s, 66);
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount should be incremented in table";
+
+  _simple_test_table.unlink([&](SymbolHandle& key, int value) { return true; });
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be same as start";
 }
 
@@ -461,6 +478,26 @@ TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr) {
   // do_entry function.
   PtrDeleter deleter;
   _ptr_test_table.unlink(&deleter);
+  // Removal should make the refcount be the original refcount.
+  ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
+}
+
+TEST_VM_F(ResourceHashtableDeleteTest, check_delete_ptr_lambda) {
+  TempNewSymbol s = SymbolTable::new_symbol("abcdefg_ptr");
+  int s_orig_count = s->refcount();
+  {
+    TestValue* tv = new TestValue(s);
+    // Again since TestValue contains the pointer to the key Symbol, it will
+    // handle the refcounting.
+    _ptr_test_table.put(s, tv);
+    ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented by allocation";
+  }
+  ASSERT_EQ(s->refcount(), s_orig_count + 1) << "refcount incremented in table";
+
+  _ptr_test_table.unlink([&](auto key, auto value) {
+    delete value;
+    return true;
+  });
   // Removal should make the refcount be the original refcount.
   ASSERT_EQ(s->refcount(), s_orig_count) << "refcount should be as we started";
 }

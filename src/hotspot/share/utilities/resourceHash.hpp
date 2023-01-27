@@ -90,8 +90,10 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  protected:
+  // internal template function(Node* node, Node**& ptr) -> bool
+  // If it returns true, node is deleted.
   template<typename Function>
-  void unlink_impl(Function function) { // lambda enabled API
+  void unlink_impl(Function function) {
     const unsigned sz = table_size();
     int cnt = _number_of_entries;
 
@@ -281,6 +283,22 @@ class ResourceHashtableBase : public STORAGE {
   void unlink(ITER* iter) {
     auto wrapper = [&](Node* const node, Node**& ptr) {
       bool clean = iter->do_entry(node->_key, node->_value);
+      if (clean) {
+        *ptr = node->_next;
+      } else {
+        ptr = &(node->_next);
+      }
+      return clean;
+    };
+
+    unlink_impl(wrapper);
+  }
+
+  // function is a callable(lambda or functor) with the same signature of ITER::do_entry() above.
+  template <class Function>
+  void unlink(Function function) { // lambda enabled API
+    auto wrapper = [&](Node* const node, Node**& ptr) {
+      bool clean = function(node->_key, node->_value);
       if (clean) {
         *ptr = node->_next;
       } else {
