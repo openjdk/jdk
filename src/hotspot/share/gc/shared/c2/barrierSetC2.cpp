@@ -363,7 +363,7 @@ void C2Access::fixup_decorators() {
     const TypePtr* adr_type = _addr.type();
     Node* adr = _addr.node();
     if (!needs_cpu_membar() && adr_type->isa_instptr()) {
-      assert(adr_type->meet(TypePtr::nullptr_PTR) != adr_type->remove_speculative(), "should be not null");
+      assert(adr_type->meet(TypePtr::NULL_PTR) != adr_type->remove_speculative(), "should be not null");
       intptr_t offset = Type::OffsetBot;
       AddPNode::Ideal_base_and_offset(adr, &gvn(), offset);
       if (offset >= 0) {
