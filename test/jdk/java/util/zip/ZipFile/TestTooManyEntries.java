@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8272746
- * @summary Verify that ZipFile rejects ZIP64 files with CEN sizes exceeding the CEN size limit
+ * @summary Verify that ZipFile rejects files with CEN sizes exceeding the limit
  * @run testng/othervm TestTooManyEntries
  */
 
