@@ -90,6 +90,35 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  protected:
+  template<typename Function>
+  void unlink_impl(Function function) { // lambda enabled API
+    const unsigned sz = table_size();
+    int cnt = _number_of_entries;
+
+    for (unsigned index = 0; cnt > 0 && index < sz; index++) {
+      Node** ptr = bucket_at(index);
+      Node* node = *ptr;
+
+      while (node != nullptr) {
+        bool clean = function(node, ptr);
+
+        if (clean) {
+          Node* prev = node;
+          node = node->_next;
+          if (ALLOC_TYPE == AnyObj::C_HEAP) {
+            delete prev;
+          }
+          _number_of_entries--;
+        } else {
+          node = node->_next;
+        }
+
+        --cnt;
+        assert(cnt > 0 || node == nullptr, "sanity check");
+      }
+    }
+  }
+
   Node** table() const { return STORAGE::table(); }
 
   ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
@@ -98,7 +127,10 @@ class ResourceHashtableBase : public STORAGE {
 
   ~ResourceHashtableBase() {
     if (ALLOC_TYPE == AnyObj::C_HEAP) {
-      unlink_all();
+      auto wrapper = [&](Node* const node, Node** ptr) {
+        return true;
+      };
+      unlink_impl(wrapper);
     }
   }
 
@@ -247,57 +279,31 @@ class ResourceHashtableBase : public STORAGE {
   // the entry is deleted.
   template<class ITER>
   void unlink(ITER* iter) {
-    const unsigned sz = table_size();
-    int cnt = _number_of_entries;
-
-    for (unsigned index = 0; cnt > 0 && index < sz; index++) {
-      Node** ptr = bucket_at(index);
-
-      while (*ptr != nullptr) {
-        Node* node = *ptr;
-        // do_entry must clean up the key and value in Node.
-        bool clean = iter->do_entry(node->_key, node->_value);
-
-        if (clean) {
-          *ptr = node->_next;
-          if (ALLOC_TYPE == AnyObj::C_HEAP) {
-            delete node;
-          }
-          _number_of_entries--;
-        } else {
-          ptr = &(node->_next);
-        }
-        if (--cnt <= 0) return;
+    auto wrapper = [&](Node* const node, Node**& ptr) {
+      bool clean = iter->do_entry(node->_key, node->_value);
+      if (clean) {
+        *ptr = node->_next;
+      } else {
+        ptr = &(node->_next);
       }
-    }
+      return clean;
+    };
+
+    unlink_impl(wrapper);
   }
 
   // unlink_all() is a specialized version of unlink() when we decide to remove all elements.
   // It can not replace unlink(ITER* iter) if user-provided iter releases key/value
   void unlink_all() {
-    Node** bucket = table();
-    const unsigned sz = table_size();
-
-    while (_number_of_entries > 0 && bucket < bucket_at(sz)) {
-      Node* node = *bucket;
-      int n = 0;
-
-      while (node != NULL) {
-        Node* cur = node;
-        node = node->_next;
-        if (ALLOC_TYPE == AnyObj::C_HEAP) {
-          delete cur;
-        }
-        n++;
+    auto wrapper = [&](Node* const node, Node** ptr) {
+      if (node->_next == nullptr) {
+        // nullify the bucket when reach the end of linked list.
+        *ptr = nullptr;
       }
 
-      if (n > 0) {
-        *bucket = nullptr;
-        _number_of_entries -= n;
-      }
-      bucket++;
-    }
-
+      return true;
+    };
+    unlink_impl(wrapper);
     assert(_number_of_entries == 0, "sanity check");
   }
 
