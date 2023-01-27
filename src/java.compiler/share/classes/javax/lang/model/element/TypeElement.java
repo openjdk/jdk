@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * Returns the fully qualified name of this class or interface
      * element.  More precisely, it returns the <i>canonical</i> name.
      * For local and anonymous classes, which do not have canonical
-     * names, an <a href=Name.html#empty_name>empty name</a> is
+     * names, an {@linkplain Name##empty_name empty name} is
      * returned.
      *
      * <p>The name of a generic class or interface does not include any reference
@@ -169,8 +169,8 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
     /**
      * Returns the simple name of this class or interface element.
      *
-     * For an anonymous class, an <a href=Name.html#empty_name> empty
-     * name</a> is returned.
+     * For an anonymous class, an {@linkplain Name##empty_name empty
+     * name} is returned.
      *
      * @return the simple name of this class or interface,
      * an empty name for an anonymous class

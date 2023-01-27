@@ -15,7 +15,7 @@ class BadTest {
         static <A> Cell<A> makeCell(A x) { return new Cell<A>(x); }
         static <A> A id(A x) { return x; }
 
-        public static void main(String[] args) {
+        public static void meth() {
             List<Cell<String>> as = nil().prepend(makeCell(null));
             List<Cell<String>> bs = cons(makeCell(null), nil());
             List<String> xs = id(nil());

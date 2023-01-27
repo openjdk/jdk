@@ -132,7 +132,7 @@ class TenuredGeneration: public Generation {
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
   void save_marks();
-  void reset_saved_marks();
+
   bool no_allocs_since_save_marks();
 
   inline size_t block_size(const HeapWord* addr) const;

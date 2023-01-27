@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class LogConfiguration : public AllStatic {
   static size_t                     _n_listener_callbacks;
   static bool                       _async_mode;
 
-  // Create a new output. Returns NULL if failed.
+  // Create a new output. Returns nullptr if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
 
   // Add an output to the list of configured outputs. Returns the assigned index.

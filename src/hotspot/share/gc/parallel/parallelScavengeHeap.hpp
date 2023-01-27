@@ -102,7 +102,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord* allocate_old_gen_and_record(size_t word_size);
 
  protected:
-  static inline size_t total_invocations();
   HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
 
   inline bool should_alloc_in_eden(size_t size) const;
@@ -273,6 +272,9 @@ class ParallelScavengeHeap : public CollectedHeap {
   bool can_load_archived_objects() const override { return UseCompressedOops; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 // Class that can be used to print information about the

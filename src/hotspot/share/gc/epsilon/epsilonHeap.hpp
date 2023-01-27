@@ -110,8 +110,7 @@ public:
   void object_iterate(ObjectClosure* cl) override;
 
   // Object pinning support: every object is implicitly pinned
-  bool supports_object_pinning() const           override { return true; }
-  oop pin_object(JavaThread* thread, oop obj)    override { return obj; }
+  void pin_object(JavaThread* thread, oop obj) override { }
   void unpin_object(JavaThread* thread, oop obj) override { }
 
   // No support for block parsing.

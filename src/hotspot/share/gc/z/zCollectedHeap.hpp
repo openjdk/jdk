@@ -113,6 +113,9 @@ public:
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   void print_on(outputStream* st) const override;
   void print_on_error(outputStream* st) const override;
   void print_extended_on(outputStream* st) const override;

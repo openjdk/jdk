@@ -108,6 +108,9 @@ public:
   bool can_load_archived_objects() const override { return UseCompressedOops; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
+
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 };
 
 #endif // SHARE_GC_SERIAL_SERIALHEAP_HPP

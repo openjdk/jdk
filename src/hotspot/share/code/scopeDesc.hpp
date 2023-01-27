@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ class SimpleScopeDesc : public StackObj {
  public:
   SimpleScopeDesc(CompiledMethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
-    assert(pc_desc != NULL, "Must be able to find matching PcDesc");
+    assert(pc_desc != nullptr, "Must be able to find matching PcDesc");
     // save this here so we only have to look up the PcDesc once
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
     int ignore_sender = buffer.read_int();
@@ -82,7 +82,7 @@ class ScopeDesc : public ResourceObj {
   GrowableArray<MonitorValue*>* monitors();
   GrowableArray<ScopeValue*>*   objects();
 
-  // Stack walking, returns NULL if this is the outer most scope.
+  // Stack walking, returns nullptr if this is the outer most scope.
   ScopeDesc* sender() const;
 
   // Returns where the scope was decoded
@@ -90,7 +90,7 @@ class ScopeDesc : public ResourceObj {
 
   int sender_decode_offset() const { return _sender_decode_offset; }
 
-  // Tells whether sender() returns NULL
+  // Tells whether sender() returns nullptr
   bool is_top() const;
 
  private:
