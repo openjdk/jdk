@@ -324,9 +324,9 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Mac-specific, required
         newFolderExistsErrorText = getString("FileChooser.newFolderExistsErrorText", "That name is already taken");
         chooseButtonText = getString("FileChooser.chooseButtonText", "Choose");
+        chooseButtonToolTipText = getString("FileChooser.chooseButtonToolTipText", "Choose selected file");
         newFolderButtonText = getString("FileChooser.newFolderButtonText", "New");
         newFolderTitleText = getString("FileChooser.newFolderTitleText", "New Folder");
-        chooseButtonToolTipText = getString("FileChooser.chooseButtonToolTipText", "Choose");
 
         if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             fileNameLabelText = getString("FileChooser.saveDialogFileNameLabelText", "Save As:");
@@ -2054,9 +2054,9 @@ public class AquaFileChooserUI extends FileChooserUI {
             return fc.getApproveButtonMnemonic();
         }
 
-        // No fallback
         String getApproveButtonToolTipText(final JFileChooser fc) {
-            return getApproveButtonToolTipText(fc,chooseButtonToolTipText);
+            // Fallback to "Choose selected file"
+            return getApproveButtonToolTipText(fc, chooseButtonToolTipText);
         }
 
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {
