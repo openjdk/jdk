@@ -2818,7 +2818,7 @@ ciKlass* TypePtr::speculative_type() const {
   if (_speculative != NULL && _speculative->isa_oopptr()) {
     const TypeOopPtr* speculative = _speculative->join(this)->is_oopptr();
     if (speculative->klass_is_exact()) {
-      return speculative->klass();
+      return speculative->exact_klass();
     }
   }
   return NULL;
