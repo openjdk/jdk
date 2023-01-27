@@ -181,7 +181,7 @@ public class Vector<E>
     public Vector(Collection<? extends E> c) {
         Object[] a = c.toArray();
         elementCount = a.length;
-        if (c.getClass().getModule() == Object.class.getModule()) {
+        if (Collections.isTrustedCollection(c)) {
             elementData = a;
         } else {
             elementData = Arrays.copyOf(a, elementCount, Object[].class);

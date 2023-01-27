@@ -180,7 +180,7 @@ public class ArrayList<E> extends AbstractList<E>
     public ArrayList(Collection<? extends E> c) {
         Object[] a = c.toArray();
         if ((size = a.length) != 0) {
-            if (c.getClass().getModule() == Object.class.getModule()) {
+            if (Collections.isTrustedCollection(c)) {
                 elementData = a;
             } else {
                 elementData = Arrays.copyOf(a, size, Object[].class);

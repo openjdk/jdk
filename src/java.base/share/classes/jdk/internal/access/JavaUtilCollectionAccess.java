@@ -25,9 +25,11 @@
 
 package jdk.internal.access;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface JavaUtilCollectionAccess {
+    boolean isTrustedCollection(Collection<?> coll);
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
 }

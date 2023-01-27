@@ -263,7 +263,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private void initElementsFromCollection(Collection<? extends E> c) {
         Object[] es = c.toArray();
         int len = es.length;
-        if (c.getClass().getModule() != Object.class.getModule())
+        if (!Collections.isTrustedCollection(c))
             es = Arrays.copyOf(es, len, Object[].class);
         if (len == 1 || this.comparator != null)
             for (Object e : es)

@@ -139,7 +139,7 @@ public class CopyOnWriteArrayList<E>
             es = ((CopyOnWriteArrayList<?>)c).getArray();
         else {
             es = c.toArray();
-            if (c.getClass().getModule() != Object.class.getModule())
+            if (!SharedSecrets.getJavaUtilCollectionAccess().isTrustedCollection(c))
                 es = Arrays.copyOf(es, es.length, Object[].class);
         }
         setArray(es);
@@ -688,11 +688,12 @@ public class CopyOnWriteArrayList<E>
      */
     public int addAllAbsent(Collection<? extends E> c) {
         Object[] cs = c.toArray();
-        if (c.getClass().getModule() != Object.class.getModule()) {
+        if (cs.length == 0) {
+            return 0;
+        }
+        if (!SharedSecrets.getJavaUtilCollectionAccess().isTrustedCollection(c)) {
             cs = cs.clone();
         }
-        if (cs.length == 0)
-            return 0;
         synchronized (lock) {
             Object[] es = getArray();
             int len = es.length;
@@ -742,7 +743,7 @@ public class CopyOnWriteArrayList<E>
             Object[] es = getArray();
             int len = es.length;
             Object[] newElements;
-            if (len == 0 && c.getClass().getModule() == Object.class.getModule()) {
+            if (len == 0 && SharedSecrets.getJavaUtilCollectionAccess().isTrustedCollection(c)) {
                 newElements = cs;
             } else {
                 newElements = Arrays.copyOf(es, len + cs.length);

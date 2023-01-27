@@ -120,6 +120,9 @@ class ImmutableCollections {
     static class Access {
         static {
             SharedSecrets.setJavaUtilCollectionAccess(new JavaUtilCollectionAccess() {
+                public boolean isTrustedCollection(Collection<?> coll) {
+                    return Collections.isTrustedCollection(coll);
+                }
                 public <E> List<E> listFromTrustedArray(Object[] array) {
                     return ImmutableCollections.listFromTrustedArray(array);
                 }
@@ -170,7 +173,7 @@ class ImmutableCollections {
             return (List<E>)coll;
         } else if (coll.isEmpty()) { // implicit nullcheck of coll
             return List.of();
-        } else if (coll.getClass().getModule() == Object.class.getModule()) {
+        } else if (Collections.isTrustedCollection(coll)) {
             return listFromTrustedArray(coll.toArray());
         } else {
             return (List<E>)List.of(coll.toArray());

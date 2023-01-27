@@ -1009,6 +1009,9 @@ public class Collections {
         return -1;  // No candidate matched the target
     }
 
+    interface CollectionWrapper {
+        Collection<?> getCollection();
+    }
 
     // Unmodifiable Wrappers
 
@@ -1045,7 +1048,7 @@ public class Collections {
     /**
      * @serial include
      */
-    static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
+    static class UnmodifiableCollection<E> implements Collection<E>, CollectionWrapper, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
@@ -1057,6 +1060,8 @@ public class Collections {
                 throw new NullPointerException();
             this.c = c;
         }
+
+        public Collection<?> getCollection()       {return c;}
 
         public int size()                          {return c.size();}
         public boolean isEmpty()                   {return c.isEmpty();}
@@ -2079,7 +2084,7 @@ public class Collections {
     /**
      * @serial include
      */
-    static class SynchronizedCollection<E> implements Collection<E>, Serializable {
+    static class SynchronizedCollection<E> implements Collection<E>, CollectionWrapper, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
@@ -2096,6 +2101,10 @@ public class Collections {
         SynchronizedCollection(Collection<E> c, Object mutex) {
             this.c = Objects.requireNonNull(c);
             this.mutex = Objects.requireNonNull(mutex);
+        }
+
+        public Collection<?> getCollection() {
+            return c;
         }
 
         public int size() {
@@ -3141,7 +3150,7 @@ public class Collections {
     /**
      * @serial include
      */
-    static class CheckedCollection<E> implements Collection<E>, Serializable {
+    static class CheckedCollection<E> implements Collection<E>, CollectionWrapper, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1578914078182001775L;
 
@@ -3166,6 +3175,8 @@ public class Collections {
             this.c = Objects.requireNonNull(c, "c");
             this.type = Objects.requireNonNull(type, "type");
         }
+
+        public Collection<?> getCollection()              { return c; }
 
         public int size()                          { return c.size(); }
         public boolean isEmpty()                   { return c.isEmpty(); }
@@ -5694,7 +5705,7 @@ public class Collections {
      * @serial include
      */
     private static class SetFromMap<E> extends AbstractSet<E>
-        implements Set<E>, Serializable
+        implements Set<E>, CollectionWrapper, Serializable
     {
         @SuppressWarnings("serial") // Conditionally serializable
         private final Map<E, Boolean> m;  // The backing map
@@ -5706,6 +5717,8 @@ public class Collections {
             m = map;
             s = map.keySet();
         }
+
+        public Collection<?> getCollection()     { return s; }
 
         public void clear()               {        m.clear(); }
         public int size()                 { return m.size(); }
@@ -5779,12 +5792,13 @@ public class Collections {
      * @serial include
      */
     static class AsLIFOQueue<E> extends AbstractQueue<E>
-        implements Queue<E>, Serializable {
+        implements Queue<E>, CollectionWrapper, Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1802017725587941708L;
         @SuppressWarnings("serial") // Conditionally serializable
         private final Deque<E> q;
         AsLIFOQueue(Deque<E> q)                     { this.q = q; }
+        public Collection<?> getCollection()               { return q; }
         public boolean add(E e)                     { q.addFirst(e); return true; }
         public boolean offer(E e)                   { return q.offerFirst(e); }
         public E poll()                             { return q.pollFirst(); }
@@ -5819,5 +5833,19 @@ public class Collections {
         public Stream<E> stream()           {return q.stream();}
         @Override
         public Stream<E> parallelStream()   {return q.parallelStream();}
+    }
+
+    /*
+     * Checks whether the collection is trusted.
+     * It is safe to assume that all methods of trusted collection are compliant
+     */
+    static boolean isTrustedCollection(Collection<?> coll) {
+        if (coll.getClass().getModule() == Object.class.getModule()) {
+            return coll instanceof CollectionWrapper wrapper
+                  ? isTrustedCollection(wrapper.getCollection())
+                  : true;
+        } else {
+            return false;
+        }
     }
 }
