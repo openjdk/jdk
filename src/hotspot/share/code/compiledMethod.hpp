@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -130,7 +130,7 @@ public:
   PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
     address base_address = search.code_begin();
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != NULL && desc->pc_offset() == pc - base_address) {
+    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
       return desc;
     }
     return find_pc_desc_internal(pc, approximate, search);
@@ -221,8 +221,8 @@ public:
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
   virtual void print_pcs() = 0;
-  bool is_native_method() const { return _method != NULL && _method->is_native(); }
-  bool is_java_method() const { return _method != NULL && !_method->is_native(); }
+  bool is_native_method() const { return _method != nullptr && _method->is_native(); }
+  bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }

@@ -829,7 +829,7 @@ public class IPAddressUtil {
     }
 
     // Parse ASCII digit in given radix
-    private static int parseAsciiDigit(char c, int radix) {
+    public static int parseAsciiDigit(char c, int radix) {
         assert radix == OCTAL || radix == DECIMAL || radix == HEXADECIMAL;
         if (radix == HEXADECIMAL) {
             return parseAsciiHexDigit(c);
