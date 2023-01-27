@@ -30,13 +30,6 @@
 #include "services/mallocTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmError.hpp"
-
-static inline bool suppress_limit_handling() {
-  // We suppress limit reporting once error handling started to not
-  // disturb error reporting.
-  return VMError::is_error_reported();
-}
 
 // Returns true if allocating s bytes on f would trigger either global or the category limit
 inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
@@ -53,10 +46,7 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
     if (l->sz > 0) {
       size_t so_far = as_snapshot()->total();
       if ((so_far + s) > l->sz) { // hit the limit
-        if (!suppress_limit_handling()) {
-          total_limit_reached(s, so_far, l);
-          return true;
-        }
+        return total_limit_reached(s, so_far, l);
       }
     } else {
       // Category Limit?
@@ -65,10 +55,7 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
         const MallocMemory* mm = as_snapshot()->by_type(f);
         size_t so_far = mm->malloc_size() + mm->arena_size();
         if ((so_far + s) > l->sz) {
-          if (!suppress_limit_handling()) {
-            category_limit_reached(f, s, so_far, l);
-            return true;
-          }
+          return category_limit_reached(f, s, so_far, l);
         }
       }
     }

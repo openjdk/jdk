@@ -39,6 +39,7 @@
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 size_t MallocMemorySummary::_snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
 
@@ -83,7 +84,12 @@ void MallocMemorySummary::initialize() {
   MallocLimitHandler::initialize(MallocLimit);
 }
 
-void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
+bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
+
+  // Ignore the limit break during error reporting to prevent secondary errors.
+  if (VMError::is_error_reported()) {
+    return false;
+  }
 
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
@@ -94,11 +100,17 @@ void MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   } else {
     log_warning(nmt)(FORMATTED);
   }
-
 #undef FORMATTED
+
+  return true;
 }
 
-void MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
+bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
+
+  // Ignore the limit break during error reporting to prevent secondary errors.
+  if (VMError::is_error_reported()) {
+    return false;
+  }
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
@@ -109,8 +121,9 @@ void MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so
   } else {
     log_warning(nmt)(FORMATTED);
   }
-
 #undef FORMATTED
+
+  return true;
 }
 
 bool MallocTracker::initialize(NMT_TrackingLevel level) {

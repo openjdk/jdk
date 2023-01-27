@@ -704,7 +704,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
     // Observe MallocLimit
-    if (size > old_size && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
       return NULL;
     }
 

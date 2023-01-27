@@ -211,8 +211,13 @@ class MallocMemorySummary : AllStatic {
   static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
   static bool _have_limits;
 
-  static void total_limit_reached(size_t s, size_t so_far, const malloclimit* limit);
-  static void category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit);
+  // Called when a total limit break was detected.
+  // Will return true if the limit was handled, false if it was ignored.
+  static bool total_limit_reached(size_t s, size_t so_far, const malloclimit* limit);
+
+  // Called when a total limit break was detected.
+  // Will return true if the limit was handled, false if it was ignored.
+  static bool category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit);
 
  public:
    static void initialize();

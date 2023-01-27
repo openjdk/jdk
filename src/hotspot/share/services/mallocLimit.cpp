@@ -37,6 +37,18 @@
 MallocLimitSet MallocLimitHandler::_limits;
 bool MallocLimitHandler::_have_limit = false;
 
+static const char* const MODE_OOM = "oom";
+static const char* const MODE_FATAL = "fatal";
+
+static const char* mode_to_name(MallocLimitMode m) {
+  switch (m) {
+  case MallocLimitMode::trigger_fatal: return MODE_FATAL;
+  case MallocLimitMode::trigger_oom: return MODE_OOM;
+  default: ShouldNotReachHere();
+  };
+  return nullptr;
+}
+
 class ParserHelper {
   // Start, end of parsed string.
   const char* const _s;
@@ -55,11 +67,11 @@ public:
     if (eof()) {
       return false;
     }
-    if (strncasecmp(_p, "oom", 3) == 0) {
+    if (strncasecmp(_p, MODE_OOM, strlen(MODE_OOM)) == 0) {
       *out = MallocLimitMode::trigger_oom;
       _p += 3;
       return true;
-    } else if (strncasecmp(_p, "fatal", 5) == 0) {
+    } else if (strncasecmp(_p, MODE_FATAL, strlen(MODE_FATAL)) == 0) {
       *out = MallocLimitMode::trigger_fatal;
       _p += 5;
       return true;
@@ -134,16 +146,16 @@ void MallocLimitSet::reset() {
 }
 
 void MallocLimitSet::print_on(outputStream* st) const {
-  static const char* flagnames[] = { "fatal", "oom" };
+  static const char* flagnames[] = { MODE_FATAL, MODE_OOM };
   if (_glob.sz > 0) {
     st->print_cr("MallocLimit: total limit: " PROPERFMT " (%s)", PROPERFMTARGS(_glob.sz),
-              flagnames[(int)_glob.mode]);
+                 mode_to_name(_glob.mode));
   } else {
     for (int i = 0; i < mt_number_of_types; i++) {
       if (_cat[i].sz > 0) {
         st->print_cr("MallocLimit: category \"%s\" limit: " PROPERFMT " (%s)",
-          NMTUtil::flag_to_enum_name(NMTUtil::index_to_flag(i)),
-          PROPERFMTARGS(_cat[i].sz), flagnames[(int)_cat[i].mode]);
+                     NMTUtil::flag_to_enum_name(NMTUtil::index_to_flag(i)),
+                     PROPERFMTARGS(_cat[i].sz), mode_to_name(_cat[i].mode));
       }
     }
   }
