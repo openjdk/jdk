@@ -2306,35 +2306,55 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         //
         BoolTest::mask bt = loop_end->test_trip();
         assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-        Node* adj_max = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-        set_ctrl(adj_max, C->root());
-        Node* old_limit = NULL;
-        Node* adj_limit = NULL;
+        Node* underflow_clamp = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
+        set_ctrl(underflow_clamp, C->root());
+        Node* limit_before_underflow = NULL;
+        Node* prev_limit = NULL;
         Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : NULL;
         if (loop_head->unrolled_count() > 1 &&
             limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-            limit->in(CMoveNode::IfTrue) == adj_max &&
+            limit->in(CMoveNode::IfTrue) == underflow_clamp &&
             bol->as_Bool()->_test._test == bt &&
             bol->in(1)->Opcode() == Op_CmpI &&
             bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-          // Loop was unrolled before.
-          // Optimize the limit to avoid nested CMove:
-          // use original limit as old limit.
-          old_limit = bol->in(1)->in(1);
-          // Adjust previous adjusted limit.
-          adj_limit = limit->in(CMoveNode::IfFalse);
-          adj_limit = new SubINode(adj_limit, stride);
+          // Loop was unrolled before, and had an unrolling protection CMoveI.
+          // Use inputs to previous CMoveI for the new one:
+          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
+          limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
         } else {
-          old_limit = limit;
-          adj_limit = new SubINode(limit, stride);
+          // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
+          prev_limit = limit;
+          limit_before_underflow = limit;
         }
-        assert(old_limit != NULL && adj_limit != NULL, "");
-        register_new_node(adj_limit, ctrl); // adjust amount
-        Node* adj_cmp = new CmpINode(old_limit, adj_limit);
-        register_new_node(adj_cmp, ctrl);
-        Node* adj_bool = new BoolNode(adj_cmp, bt);
-        register_new_node(adj_bool, ctrl);
-        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+        //                           prev_limit   stride
+        //                                |         |
+        // limit_before_underflow  new_limit_with_underflow (SubI)
+        //                   |        |           |
+        //                 underflow_cmp          |
+        //                   |                    |
+        //                 underflow_bool [lt/gt] |
+        //                   |                    |
+        //                   +----+  +------------+
+        //                        |  |
+        //                        |  | underflow_clamp (min_jint/max_jint)
+        //                        |  |  |
+        //                       CMoveINode ([min_jint..hi] / [lo..max_jing])
+        //
+        assert(limit_before_underflow != NULL && prev_limit != NULL, "must find them");
+        Node* new_limit_with_underflow = new SubINode(prev_limit, stride);
+        register_new_node(new_limit_with_underflow, ctrl);
+        // We must compare with limit_before_underflow, prev_limit may already have underflowed.
+        Node* underflow_cmp = new CmpINode(limit_before_underflow, new_limit_with_underflow);
+        register_new_node(underflow_cmp, ctrl);
+        Node* underflow_bool = new BoolNode(underflow_cmp, bt);
+        register_new_node(underflow_bool, ctrl);
+        // Prevent type from becoming too pessimistic due to type underflow. The new limit
+        // may be arbitrarily decreased by unrolling, but still in [min_jint..hi] / [lo..max_jint]
+        const TypeInt* limit_before_underflow_t = _igvn.type(limit_before_underflow)->is_int();
+        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : limit_before_underflow_t->_lo,
+                                                      stride_con > 0 ? limit_before_underflow_t->_hi : max_jint,
+                                                      Type::WidenMax);
+        new_limit = new CMoveINode(underflow_bool, new_limit_with_underflow, underflow_clamp, no_underflow_t);
       }
       register_new_node(new_limit, ctrl);
     }
@@ -3694,7 +3714,12 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // counted loop has limit check predicate.
   Node* phi = cl->phi();
   Node* exact_limit = phase->exact_limit(this);
-  Node* final_iv = new SubINode(exact_limit, cl->stride());
+
+  // We need to pin the exact limit to prevent it from floating above the zero trip guard.
+  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
+
+  Node* final_iv = new SubINode(cast_ii, cl->stride());
   phase->register_new_node(final_iv, cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi, final_iv);
 

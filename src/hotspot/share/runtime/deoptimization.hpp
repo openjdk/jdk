@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ class Deoptimization : AllStatic {
   // activations using those nmethods.  If an nmethod is passed as an argument then it is
   // marked_for_deoptimization and made not_entrant.  Otherwise a scan of the code cache is done to
   // find all marked nmethods and they are made not_entrant.
-  static void deoptimize_all_marked(nmethod* nmethod_only = NULL);
+  static void deoptimize_all_marked(nmethod* nmethod_only = nullptr);
 
  public:
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
