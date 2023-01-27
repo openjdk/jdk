@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @summary Verify the implementation
+ * @summary Test the implementation
  * of Locale.streamAvailableLocales()
  * @bug 8282319
  * @run junit StreamAvailableLocales
@@ -32,12 +32,15 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.stream.Stream;
 import org.junit.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 public class StreamAvailableLocales {
 
     /**
      * Test to validate that the methods: Locale.getAvailableLocales()
-     * and Locale.streamAvailableLocales() contain the same elements
+     * and Locale.streamAvailableLocales() contain the same underlying collections
      */
     @Test
     public void testStreamEqualsArray() {
@@ -55,26 +58,24 @@ public class StreamAvailableLocales {
     }
 
     /**
-     * Test to validate that the stream has the required Locale.ROOT.
+     * Test to validate that the stream has the required
+     * Locale.ROOT and Locale.US.
      */
-    @Test
-    public void testStreamHasUS() {
-        if (Locale.streamAvailableLocales().anyMatch(loc -> (loc.equals(Locale.US)))) {
-            System.out.println("$$$ Passed: Stream has Locale.US!");
+    @ParameterizedTest
+    @MethodSource("requiredLocaleProvider")
+    public void testStreamRequirements(Locale requiredLocale, String localeName) {
+        if (Locale.streamAvailableLocales().anyMatch(loc -> (loc.equals(requiredLocale)))) {
+            System.out.printf("$$$ Passed: Stream has %s!%n", localeName);
         } else {
             throw new RuntimeException("$$$ Error: Stream is missing Locale.US");
         }
     }
 
-    /**
-     * Test to validate that the stream has the required Locale.US.
-     */
-    @Test
-    public void testStreamHasROOT() {
-        if (Locale.streamAvailableLocales().anyMatch(loc -> (loc.equals(Locale.ROOT)))) {
-            System.out.println("$$$ Passed: Stream has Locale.ROOT!");
-        } else {
-            throw new RuntimeException("$$$ Error: Stream is missing Locale.ROOT");
-        }
+    // Data provider for testStreamRequirements
+    private static Stream<Arguments> requiredLocaleProvider() {
+        return Stream.of(
+                Arguments.of(Locale.ROOT, "Root locale"),
+                Arguments.of(Locale.US, "US locale")
+        );
     }
 }
