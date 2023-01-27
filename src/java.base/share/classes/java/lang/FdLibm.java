@@ -791,23 +791,28 @@ class FdLibm {
 
         public static double compute(double x) {
             double y, z;
-            int i, k, hx, lx;
+            int i, k;
 
-            hx = __HI(x);   /* high word of x */
-            lx = __LO(x);   /* low word of x */
+            int hx = __HI(x); // high word of x
+            int lx = __LO(x); // low word of x
 
             k=0;
             if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
-                if (((hx & 0x7fff_ffff) | lx) == 0)
-                    return -two54/0.0;             /* log(+-0)=-inf */
-                if (hx < 0)
-                    return (x - x)/0.0;        /* log(-#) = NaN */
+                if (((hx & 0x7fff_ffff) | lx) == 0) {
+                    return -two54/0.0;               /* log(+-0)=-inf */
+                }
+                if (hx < 0) {
+                    return (x - x)/0.0;              /* log(-#) = NaN */
+                }
                 k -= 54;
                 x *= two54; /* subnormal number, scale up x */
-                hx = __HI(x);                /* high word of x */
+                hx = __HI(x);
             }
-            if (hx >= 0x7ff0_0000)
+
+            if (hx >= 0x7ff0_0000) {
                 return x + x;
+            }
+
             k += (hx >> 20) - 1023;
             i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
             hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
