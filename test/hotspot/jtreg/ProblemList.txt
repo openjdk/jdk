@@ -123,40 +123,6 @@ serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
-# Missing Lilliput support to load Klass*
-serviceability/sa/CDSJMapClstats.java 1234567 generic-all
-serviceability/sa/ClhsdbCDSCore.java 1234567 generic-all
-serviceability/sa/ClhsdbCDSJstackPrintAll.java 1234567 generic-all
-serviceability/sa/ClhsdbDumpheap.java 1234567 generic-all
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-process
-serviceability/sa/ClhsdbFindPC.java#xcomp-core
-serviceability/sa/ClhsdbFindPC.java#xcomp-process
-serviceability/sa/ClhsdbInspect.java 1234567 generic-all
-serviceability/sa/ClhsdbJdis.java 1234567 generic-all
-serviceability/sa/ClhsdbJhisto.java 1234567 generic-all
-serviceability/sa/ClhsdbJstack.java#id0 1234567 generic-all
-serviceability/sa/ClhsdbJstack.java#id1 1234567 generic-all
-serviceability/sa/ClhsdbPrintAs.java 1234567 generic-all
-serviceability/sa/ClhsdbPstack.java#core 1234567 generic-all
-serviceability/sa/ClhsdbPstack.java#process 1234567 generic-all
-serviceability/sa/ClhsdbSource.java 1234567 generic-all
-serviceability/sa/ClhsdbThread.java 1234567 generic-all
-serviceability/sa/ClhsdbThreadContext.java 1234567 generic-all
-serviceability/sa/ClhsdbWhere.java 1234567 generic-all
-serviceability/sa/DeadlockDetectionTest.java 1234567 generic-all
-serviceability/sa/JhsdbThreadInfoTest.java 1234567 generic-all
-serviceability/sa/TestClhsdbJstackLock.java 1234567 generic-all
-serviceability/sa/TestHeapDumpForInvokeDynamic.java 1234567 generic-all
-serviceability/sa/TestJhsdbJstackLineNumbers.java 1234567 generic-all
-serviceability/sa/TestJhsdbJstackLock.java 1234567 generic-all
-serviceability/sa/TestJhsdbJstackMixed.java 1234567 generic-all
-serviceability/sa/TestObjectMonitorIterate.java 1234567 generic-all
-serviceability/sa/TestSysProps.java 1234567 generic-all
-serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java 1234567 generic-all
-serviceability/sa/sadebugd/DebugdConnectTest.java 1234567 generic-all
-serviceability/sa/sadebugd/DisableRegistryTest.java 1234567 generic-all
-
 #############################################################################
 
 # :hotspot_misc
