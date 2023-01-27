@@ -27,7 +27,7 @@
  * @summary javax.net.ssl.SSLEngine does not properly handle received
  *      SSL fatal alerts
  * @library /test/lib
- * @run main/othervm EngineCloseOnAlert
+ * @run main EngineCloseOnAlert
  */
 
 import java.io.FileInputStream;
@@ -64,7 +64,6 @@ public class EngineCloseOnAlert {
     }
 
     public static void main(String[] args) throws Exception {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1");
         int failed = 0;
         List<TestCase> testMatrix = new LinkedList<TestCase>() {{
             add(clientReceivesAlert);
