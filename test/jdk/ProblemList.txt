@@ -589,8 +589,6 @@ javax/net/ssl/SSLEngine/TestAllSuites.java                      8298874 generic-
 javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
 javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
 
-sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
