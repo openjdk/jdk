@@ -50,11 +50,12 @@
 //
 //  - the two lock bits are used to describe three states: locked/unlocked and monitor.
 //
-//    [ptr             | 00]  locked             ptr points to real header on stack
+//    [ptr             | 00]  locked             ptr points to real header on stack (stack-locking in use)
+//    [header          | 00]  locked             locked regular object header (fast-locking in use)
 //    [header          | 01]  unlocked           regular object header
-//    [ptr             | 10]  monitor            inflated lock (header is wapped out)
+//    [ptr             | 10]  monitor            inflated lock (header is swapped out)
 //    [ptr             | 11]  marked             used to mark an object
-//    [0 ............ 0| 00]  inflating          inflation in progress
+//    [0 ............ 0| 00]  inflating          inflation in progress (stack-locking in use)
 //
 //    We assume that stack/thread pointers have the lowest two bits cleared.
 //
@@ -156,6 +157,7 @@ class markWord {
   // check for and avoid overwriting a 0 value installed by some
   // other thread.  (They should spin or block instead.  The 0 value
   // is transient and *should* be short-lived).
+  // Fast-locking does not use INFLATING.
   static markWord INFLATING() { return zero(); }    // inflate-in-progress
 
   // Should this header be preserved during GC?
