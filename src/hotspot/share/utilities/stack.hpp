@@ -160,27 +160,6 @@ private:
   E* _cache;      // Segment cache to avoid ping-ponging.
 };
 
-template <class E, MEMFLAGS F> class ResourceStack:  public Stack<E, F>, public ResourceObj
-{
-public:
-  // If this class becomes widely used, it may make sense to save the Thread
-  // and use it when allocating segments.
-//  ResourceStack(size_t segment_size = Stack<E, F>::default_segment_size()):
-  ResourceStack(size_t segment_size): Stack<E, F>(segment_size, max_uintx)
-    { }
-
-  // Set the segment pointers to nullptr so the parent dtor does not free them;
-  // that must be done by the ResourceMark code.
-  ~ResourceStack() { Stack<E, F>::reset(true); }
-
-protected:
-  virtual E*   alloc(size_t bytes);
-  virtual void free(E* addr, size_t bytes);
-
-private:
-  void clear(bool clear_cache = false);
-};
-
 template <class E, MEMFLAGS F>
 class StackIterator: public StackObj
 {

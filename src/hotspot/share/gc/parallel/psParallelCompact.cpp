@@ -838,7 +838,6 @@ void ParallelCompactData::verify_clear()
 STWGCTimer          PSParallelCompact::_gc_timer;
 ParallelOldTracer   PSParallelCompact::_gc_tracer;
 elapsedTimer        PSParallelCompact::_accumulated_time;
-unsigned int        PSParallelCompact::_total_invocations = 0;
 unsigned int        PSParallelCompact::_maximum_compaction_gc_num = 0;
 CollectorCounters*  PSParallelCompact::_counters = NULL;
 ParMarkBitMap       PSParallelCompact::_mark_bitmap;
@@ -966,9 +965,6 @@ void PSParallelCompact::pre_compact()
   CodeCache::on_gc_marking_cycle_start();
   CodeCache::arm_all_nmethods();
 
-  // We need to track unique mark sweep invocations as well.
-  _total_invocations++;
-
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
@@ -1071,11 +1067,12 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
     ++full_count;
   }
 
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
   if (maximum_compaction || cp == end_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(cp);
   }
 
@@ -1370,12 +1367,13 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
   // The gc number is saved whenever a maximum compaction is done, and used to
   // determine when the maximum compaction interval has expired.  This avoids
   // successive max compactions for different reasons.
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval ||
-    total_invocations() == HeapFirstMaximumCompactionCount;
+    total_invocations == HeapFirstMaximumCompactionCount;
   if (maximum_compaction || full_cp == top_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(full_cp);
   }
 
@@ -1982,7 +1980,7 @@ public:
     }
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
     // Mark from OopStorages
     {
