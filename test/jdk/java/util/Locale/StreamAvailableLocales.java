@@ -45,11 +45,12 @@ public class StreamAvailableLocales {
         Stream<Locale> streamedLocales = Locale.streamAvailableLocales();
         Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
         if (Arrays.equals(arrayLocales, convertedLocales)) {
-            System.out.println("$$$ Passed: Stream is equal to array elements");
+            System.out.println("$$$ Passed: The underlying collections" +
+                    " of getAvailableLocales() and streamAvailableLocales() are the same!");
         } else {
             throw new RuntimeException("$$$ Error: The underlying collections" +
                     " of getAvailableLocales() and streamAvailableLocales()" +
-                    " are not the same");
+                    " are not the same.");
         }
     }
 
