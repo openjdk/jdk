@@ -186,7 +186,7 @@ class ConstantPool : public Metadata {
   // generics support
   Symbol* generic_signature() const {
     return (_generic_signature_index == 0) ?
-      (Symbol*)nullptr : symbol_at(_generic_signature_index);
+      nullptr : symbol_at(_generic_signature_index);
   }
   u2 generic_signature_index() const                   { return _generic_signature_index; }
   void set_generic_signature_index(u2 sig_index)       { _generic_signature_index = sig_index; }
@@ -194,7 +194,7 @@ class ConstantPool : public Metadata {
   // source file name
   Symbol* source_file_name() const {
     return (_source_file_name_index == 0) ?
-      (Symbol*)nullptr : symbol_at(_source_file_name_index);
+      nullptr : symbol_at(_source_file_name_index);
   }
   u2 source_file_name_index() const                    { return _source_file_name_index; }
   void set_source_file_name_index(u2 sourcefile_index) { _source_file_name_index = sourcefile_index; }

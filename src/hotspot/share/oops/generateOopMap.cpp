@@ -672,11 +672,11 @@ int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
 //
 
 // Allocate memory and throw LinkageError if failure.
-#define ALLOC_RESOURCE_ARRAY(var, type, count) \
-  var = NEW_RESOURCE_ARRAY_RETURN_NULL(type, count);              \
-  if (var == nullptr) {                                              \
+#define ALLOC_RESOURCE_ARRAY(var, type, count)                           \
+  var = NEW_RESOURCE_ARRAY_RETURN_NULL(type, count);                     \
+  if (var == nullptr) {                                                  \
     report_error("Cannot reserve enough memory to analyze this method"); \
-    return;                                                       \
+    return;                                                              \
   }
 
 

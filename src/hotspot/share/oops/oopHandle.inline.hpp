@@ -31,11 +31,11 @@
 #include "gc/shared/oopStorage.inline.hpp"
 
 inline oop OopHandle::resolve() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<>::oop_load(_obj);
+  return (_obj == nullptr) ? nullptr : NativeAccess<>::oop_load(_obj);
 }
 
 inline oop OopHandle::peek() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
+  return (_obj == nullptr) ? nullptr : NativeAccess<AS_NO_KEEPALIVE>::oop_load(_obj);
 }
 
 inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
@@ -50,7 +50,7 @@ inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
 inline void OopHandle::release(OopStorage* storage) {
   if (_obj != nullptr) {
     // Clear the OopHandle first
-    NativeAccess<>::oop_store(_obj, (oop)nullptr);
+    NativeAccess<>::oop_store(_obj, nullptr);
     storage->release(_obj);
   }
 }

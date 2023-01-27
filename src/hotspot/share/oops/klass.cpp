@@ -428,7 +428,7 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
   // add ourselves to superklass' subklass list
   InstanceKlass* super = superklass();
-  if (super == nullptr) return;        // special case: class Object
+  if (super == nullptr) return;     // special case: class Object
   assert((!super->is_interface()    // interfaces cannot be supers
           && (super->superklass() == nullptr || !is_interface())),
          "an interface can only be a subklass of Object");

@@ -60,7 +60,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode(narrowOop v) {
-  return is_null(v) ? (oop)nullptr : decode_not_null(v);
+  return is_null(v) ? nullptr : decode_not_null(v);
 }
 
 inline narrowOop CompressedOops::encode_not_null(oop v) {
@@ -137,7 +137,7 @@ inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address na
 }
 
 inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
-  return is_null(v) ? (Klass*)nullptr : decode_not_null(v);
+  return is_null(v) ? nullptr : decode_not_null(v);
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {

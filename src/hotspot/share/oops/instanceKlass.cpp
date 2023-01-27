@@ -2162,7 +2162,7 @@ jmethodID InstanceKlass::get_jmethod_id(const methodHandle& method_h) {
   // we need to allocate a cache so default length and id values are good
 
   if (jmeths == nullptr ||   // no cache yet
-      length <= idnum ||  // cache is too short
+      length <= idnum ||     // cache is too short
       id == nullptr) {       // cache doesn't contain entry
 
     // This function can be called by the VMThread or GC worker threads so we
@@ -2255,7 +2255,7 @@ jmethodID InstanceKlass::get_jmethod_id_fetch_or_update(
   jmethodID  id     = nullptr;
   size_t     length = 0;
 
-  if (jmeths == nullptr ||                         // no cache yet
+  if (jmeths == nullptr ||                      // no cache yet
       (length = (size_t)jmeths[0]) <= idnum) {  // cache is too short
     if (jmeths != nullptr) {
       // copy any existing entries from the old cache
@@ -2313,7 +2313,7 @@ jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
   jmethodID* jmeths = methods_jmethod_ids_acquire();
   size_t length;                                // length assigned as debugging crumb
   jmethodID id = nullptr;
-  if (jmeths != nullptr &&                         // If there is a cache
+  if (jmeths != nullptr &&                      // If there is a cache
       (length = (size_t)jmeths[0]) > idnum) {   // and if it is long enough,
     id = jmeths[idnum+1];                       // Look up the id (may be null)
   }
