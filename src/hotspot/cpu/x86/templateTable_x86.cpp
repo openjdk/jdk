@@ -2766,7 +2766,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   Label L_no_push;
   // Check if there is an appendix
   __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedIndyInfo::flags_offset())));
-  __ testl(flags, (1 << ResolvedIndyInfo::has_appendix_shift));
+  __ testl(index, (1 << ResolvedIndyInfo::has_appendix_shift));
   __ jcc(Assembler::zero, L_no_push);
 
   // Get appendix
