@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class ClassLoaderMetaspace : public CHeapObj<mtClass> {
   metaspace::MetaspaceArena* _non_class_space_arena;
 
   // Arena for allocations from class space
-  //  (NULL if -XX:-UseCompressedClassPointers).
+  //  (null if -XX:-UseCompressedClassPointers).
   metaspace::MetaspaceArena* _class_space_arena;
 
   Mutex* lock() const                             { return _lock; }
@@ -87,7 +87,7 @@ public:
   MetaWord* allocate(size_t word_size, Metaspace::MetadataType mdType);
 
   // Attempt to expand the GC threshold to be good for at least another word_size words
-  // and allocate. Returns NULL if failure. Used during Metaspace GC.
+  // and allocate. Returns null if failure. Used during Metaspace GC.
   MetaWord* expand_and_allocate(size_t word_size, Metaspace::MetadataType mdType);
 
   // Prematurely returns a metaspace allocation to the _block_freelists
