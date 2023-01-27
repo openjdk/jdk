@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -115,7 +115,7 @@ public:
 
   // On success, returns a chunk of level of <preferred_level>, but at most <max_level>.
   //  The first <min_committed_words> of the chunk are guaranteed to be committed.
-  // On error, will return NULL.
+  // On error, will return null.
   //
   // This function may fail for two reasons:
   // - Either we are unable to reserve space for a new chunk (if the underlying VirtualSpaceList

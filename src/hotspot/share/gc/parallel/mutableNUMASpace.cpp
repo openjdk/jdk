@@ -231,24 +231,6 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
 }
 
 
-size_t MutableNUMASpace::capacity_in_words(Thread* thr) const {
-  guarantee(thr != nullptr, "No thread");
-  int lgrp_id = thr->lgrp_id();
-  if (lgrp_id == -1) {
-    if (lgrp_spaces()->length() > 0) {
-      return capacity_in_words() / lgrp_spaces()->length();
-    } else {
-      assert(false, "There should be at least one locality group");
-      return 0;
-    }
-  }
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
-  if (i == -1) {
-    return 0;
-  }
-  return lgrp_spaces()->at(i)->space()->capacity_in_words();
-}
-
 // Check if the NUMA topology has changed. Add and remove spaces if needed.
 // The update can be forced by setting the force parameter equal to true.
 bool MutableNUMASpace::update_layout(bool force) {
