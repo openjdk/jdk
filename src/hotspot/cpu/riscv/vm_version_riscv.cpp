@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ void VM_Version::initialize() {
     }
     if (FLAG_IS_DEFAULT(UseZfhmin)) {
       FLAG_SET_DEFAULT(UseZfhmin, true);
+    }
+    if (FLAG_IS_DEFAULT(UseZihintpause)) {
+      FLAG_SET_DEFAULT(UseZihintpause, true);
     }
   }
 
