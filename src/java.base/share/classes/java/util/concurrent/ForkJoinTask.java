@@ -208,7 +208,36 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * See the internal documentation of class ForkJoinPool for a
      * general implementation overview.  ForkJoinTasks are mainly
      * responsible for maintaining their "status" field amidst relays
-     * to methods in ForkJoinWorkerThread and ForkJoinPool.
+     * to methods in ForkJoinWorkerThread and ForkJoinPool, along with
+     * recording and reporting exceptions.  The status field mainly
+     * holds bits recording completion status.  There is no bit
+     * representing "running", to recording whether incomplete tasks
+     * are queued vs executing (although these cases can be
+     * distinguished in InterruptibleForkJoinTasks).  Cancellation is
+     * recorded in status bits (ABNORMAL but not THROWN), but reported
+     * in joining methods by throwing an exception. Other exceptions
+     * of completed (THROWN) tasks are recorded in the "aux" field,
+     * but may be reconstructed (in getThrowableException) to produce
+     * more useful stack traces when reported. Sentinels for being
+     * interrupted or timing out while waiting for completion are not
+     * recorded as status bits but are included in return values of
+     * methods in which they occur.
+     *
+     * The rules for how these are managed and issued in public
+     * methods have evolved across versions of this class.  Those for
+     * tasks with results accessed via join() differ from those via
+     * Future.get(), which may also vary when invoked using pool
+     * submit methods by non-workers. In particular, internal usages
+     * of ForkJoinTasks ignore interrupt status when executing or
+     * awaiting completion. In all other cases, reporting task status
+     * (results or exceptions while executing) is always preferred to
+     * interrupts (also timeouts), restoring caller interrupt status
+     * in case of races. Similarly, completion status is preferred to
+     * reporting cancellation (ensured by atomically setting status),
+     * including cases where tasks are cancelled during termination.
+     * Cancellation is reported as an unchecked exception by join(),
+     * and by worker calls to get(), but is otherwise wrapped by a
+     * (checked) ExecutionException.
      *
      * The methods of this class are more-or-less layered into
      * (1) basic status maintenance
@@ -216,12 +245,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * (3) user-level methods that additionally report results.
      * This is sometimes hard to see because this file orders exported
      * methods in a way that flows well in javadocs.
-     *
-     * Revision notes: This class uses jdk-internal Unsafe for atomics
-     * and special memory modes, rather than VarHandles, to avoid
-     * initialization dependencies in other jdk components that
-     * require early parallelism. It also simplifies handling of
-     * pool-submitted tasks, among other minor improvements.
      */
 
     /**
@@ -498,10 +521,20 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * spec'ed not to throw any exceptions, but if it does anyway, we
      * have no recourse, so guard against this case.
      */
-    static final void cancelIgnoringExceptions(Future<?> t) {
+    static final void cancelIgnoringExceptions(ForkJoinTask<?> t) {
         if (t != null) {
             try {
                 t.cancel(true);
+            } catch (Throwable ignore) {
+            }
+        }
+    }
+
+    /* Similarly, for interrupts */
+    static final void interruptIgnoringExceptions(Thread t) {
+        if (t != null) {
+            try {
+                t.interrupt();
             } catch (Throwable ignore) {
             }
         }
@@ -1478,19 +1511,57 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Adapter for Callable-based tasks that are designed to be
-     * interruptible when cancelled, including cases of cancellation
-     * upon pool termination. In addition to recording the running
-     * thread to enable interrupt in cancel(true), the task checks for
-     * termination before executing the compute method, to cover
-     * shutdown races in which the task has not yet been cancelled on
-     * entry but might not otherwise be re-interrupted by others.
+     * Tasks that are designed to be interruptible when cancelled,
+     * including cases of cancellation upon pool termination. In
+     * addition to recording the running thread to enable interrupt in
+     * cancel(true), the task checks for termination before executing
+     * the compute method, to cover shutdown races in which the task
+     * has not yet been cancelled on entry but might not otherwise be
+     * re-interrupted by others.
      */
-    static final class AdaptedInterruptibleCallable<T> extends ForkJoinTask<T>
+    static abstract class InterruptibleForkJoinTask<T> extends ForkJoinTask<T> {
+        transient volatile Thread runner;
+        abstract T compute() throws Exception;
+        static boolean isTerminating(Thread t) {
+            ForkJoinPool p;
+            return ((t instanceof ForkJoinWorkerThread) &&
+                    (p = ((ForkJoinWorkerThread) t).pool) != null &&
+                    p.runState < 0);
+        }
+        public final boolean exec() {
+            Thread t = Thread.currentThread();
+            if (isTerminating(t))
+                cancel(false);
+            else {
+                Thread.interrupted();
+                runner = t;
+                try {
+                    if (!isDone())
+                        setRawResult(compute());
+                } catch (Exception ex) {
+                    trySetThrown(ex);
+                } finally {
+                    runner = null;
+                }
+            }
+            return true;
+        }
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            int s = trySetCancelled();
+            if (s >= 0 && mayInterruptIfRunning)
+                ForkJoinTask.interruptIgnoringExceptions(runner);
+            return (s >= 0 || (s & (ABNORMAL | THROWN)) == ABNORMAL);
+        }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Adapter for Callable-based interruptible tasks.
+     */
+    static class AdaptedInterruptibleCallable<T> extends InterruptibleForkJoinTask<T>
         implements RunnableFuture<T> {
         @SuppressWarnings("serial") // Conditionally serializable
         final Callable<? extends T> callable;
-        transient volatile Thread runner;
         @SuppressWarnings("serial") // Conditionally serializable
         T result;
         AdaptedInterruptibleCallable(Callable<? extends T> callable) {
@@ -1499,44 +1570,34 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         }
         public final T getRawResult() { return result; }
         public final void setRawResult(T v) { result = v; }
-        public final boolean exec() {
-            ForkJoinPool p;
-            Thread t = Thread.currentThread();
-            if ((t instanceof ForkJoinWorkerThread) &&
-                (p = ((ForkJoinWorkerThread) t).pool) != null &&
-                p.runState < 0)         // termination check
-                cancelIgnoringExceptions(this);
-            else {
-                Thread.interrupted();
-                runner = t;
-                try {
-                    if (!isDone())
-                        result = callable.call();
-                } catch (RuntimeException rex) {
-                    throw rex;
-                } catch (Exception ex) {
-                    throw new RuntimeException(ex);
-                } finally {
-                    runner = null;
-                    Thread.interrupted();
-                }
-            }
-            return true;
-        }
+        T compute() throws Exception { return callable.call(); }
         public final void run() { invoke(); }
-        public final boolean cancel(boolean mayInterruptIfRunning) {
-            Thread t;
-            boolean stat = super.cancel(false);
-            if (mayInterruptIfRunning && (t = runner) != null) {
-                try {
-                    t.interrupt();
-                } catch (Throwable ignore) {
-                }
-            }
-            return stat;
-        }
         public String toString() {
             return super.toString() + "[Wrapped task = " + callable + "]";
+        }
+        private static final long serialVersionUID = 2838392045355241008L;
+    }
+
+    /**
+     * Adapter for Runnable-based interruptible tasks.
+     */
+    static final class AdaptedInterruptibleRunnable<T> extends InterruptibleForkJoinTask<T>
+        implements RunnableFuture<T> {
+        @SuppressWarnings("serial") // Conditionally serializable
+        final Runnable runnable;
+        @SuppressWarnings("serial") // Conditionally serializable
+        final T result;
+        AdaptedInterruptibleRunnable(Runnable runnable, T result) {
+            if (runnable == null) throw new NullPointerException();
+            this.runnable = runnable;
+            this.result = result;
+        }
+        public final T getRawResult() { return result; }
+        public final void setRawResult(T v) { }
+        final T compute() { runnable.run(); return result; }
+        public final void run() { invoke(); }
+        public String toString() {
+            return super.toString() + "[Wrapped task = " + runnable + "]";
         }
         private static final long serialVersionUID = 2838392045355241008L;
     }
@@ -1596,7 +1657,6 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @since 19
      */
     public static <T> ForkJoinTask<T> adaptInterruptible(Callable<? extends T> callable) {
-        // https://bugs.openjdk.org/browse/JDK-8246587
         return new AdaptedInterruptibleCallable<T>(callable);
     }
 
