@@ -28,10 +28,6 @@
 // Use this to mark code that needs to be cleaned up (for development only)
 #define NEEDS_CLEANUP
 
-// For when Pragmas need to be reliably nested in macros. Also handles
-// quotation marks, so use sites are not required to pass string literals
-#define PRAGMA(str) _Pragma(#str)
-
 // Makes a string of the argument (which is not macro-expanded)
 #define STR(a)  #a
 
