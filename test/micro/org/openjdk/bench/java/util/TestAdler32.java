@@ -36,7 +36,7 @@ public class TestAdler32 {
     private Random random;
     private byte[] bytes;
 
-    @Param({"64", "128", "256", "512", "1024",  "2048", "5012", "8192", "16384", "32768", "65536"})
+    @Param({"64", "128", "256", "512", "1024", "2048", "5012", "8192", "16384", "32768", "65536"})
     private int count;
 
     public TestAdler32() {
