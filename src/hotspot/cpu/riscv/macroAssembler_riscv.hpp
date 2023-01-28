@@ -365,6 +365,10 @@ class MacroAssembler: public Assembler {
     return ((predecessor & 0x3) << 2) | (successor & 0x3);
   }
 
+  void pause() {
+    fence(w, 0);
+  }
+
   // prints msg, dumps registers and stops execution
   void stop(const char* msg);
 

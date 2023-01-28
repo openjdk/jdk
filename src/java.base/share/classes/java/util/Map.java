@@ -1738,6 +1738,8 @@ public interface Map<K, V> {
     static <K, V> Map<K, V> copyOf(Map<? extends K, ? extends V> map) {
         if (map instanceof ImmutableCollections.AbstractImmutableMap) {
             return (Map<K,V>)map;
+        } else if (map.isEmpty()) { // Implicit nullcheck of map
+            return Map.of();
         } else {
             return (Map<K,V>)Map.ofEntries(map.entrySet().toArray(new Entry[0]));
         }

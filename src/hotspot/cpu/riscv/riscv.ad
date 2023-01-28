@@ -1,7 +1,7 @@
 //
 // Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
-// Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+// Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -949,6 +949,7 @@ definitions %{
   int_def FDIV_COST            ( 2000, 20 * DEFAULT_COST);          // fdiv
   int_def FSQRT_COST           ( 2500, 25 * DEFAULT_COST);          // fsqrt
   int_def VOLATILE_REF_COST    ( 1000, 10 * DEFAULT_COST);
+  int_def CACHE_MISS_COST      ( 2000, 20 * DEFAULT_COST);          // typicall cache miss penalty
 %}
 
 
@@ -1815,6 +1816,8 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   switch (opcode) {
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
     case Op_CacheWB:           // fall through
     case Op_CacheWBPreSync:    // fall through
     case Op_CacheWBPostSync:
@@ -7867,6 +7870,20 @@ instruct membar_volatile() %{
   ins_encode %{
     __ block_comment("membar_volatile");
     __ membar(MacroAssembler::StoreLoad);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct spin_wait() %{
+  predicate(UseZihintpause);
+  match(OnSpinWait);
+  ins_cost(CACHE_MISS_COST);
+
+  format %{ "spin_wait" %}
+
+  ins_encode %{
+    __ pause();
   %}
 
   ins_pipe(pipe_serial);
