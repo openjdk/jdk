@@ -113,10 +113,14 @@ public class TestTooManyEntries {
         }
         byte[] zipBytes = bout.toByteArray();
 
-        ByteBuffer buffer = ByteBuffer.wrap(zipBytes).order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putInt(zipBytes.length - ENDHDR + CEN_SIZE_OFFSET, cenSize);
-        Files.write(z, zipBytes);
+        // Change the "Central directory size" field of the
+        // "End of central directory" record
+        int offset = zipBytes.length - ENDHDR + CEN_SIZE_OFFSET;
+        ByteBuffer.wrap(zipBytes)
+                .order(ByteOrder.LITTLE_ENDIAN)
+                .putInt(offset, cenSize);
 
+        Files.write(z, zipBytes);
         return z;
     }
 }
