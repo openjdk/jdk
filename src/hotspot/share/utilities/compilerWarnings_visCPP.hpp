@@ -25,10 +25,11 @@
 #ifndef SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
 #define SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
 
+#define PRAGMA(str) _Pragma(#str)
+#define PRAGMA_DISABLE_MSVC_WARNING(num) PRAGMA(warning(disable : num))
+
 #define PRAGMA_DIAG_PUSH PRAGMA(warning(push))
 #define PRAGMA_DIAG_POP  PRAGMA(warning(pop))
-
-#define PRAGMA_DISABLE_MSVC_WARNING(num) PRAGMA(warning(disable : num))
 
 // The Visual Studio implementation of FORBID_C_FUNCTION explicitly does
 // nothing, because there doesn't seem to be a way to implement it for Visual
@@ -64,5 +65,7 @@
   PRAGMA_DISABLE_MSVC_WARNING(4996)             \
   __VA_ARGS__                                   \
   PRAGMA_DIAG_POP
+
+#undef PRAGMA
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
