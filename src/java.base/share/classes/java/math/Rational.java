@@ -359,18 +359,46 @@ public class Rational extends Number implements Comparable<Rational> {
             numerator = BigInteger.ZERO;
             denominator = BigInteger.ONE;
         } else {
-            final int scale = val.scale();
-            final BigInteger intVal = val.unscaledValue().abs();
+            val = val.abs();
 
-            if (scale > 0) {
-                Rational res = valueOf(signum, intVal, BigDecimal.bigTenToThe(scale));
-                floor = res.floor;
-                numerator = res.numerator;
-                denominator = res.denominator;
-            } else { // scale <= 0
-                floor = BigDecimal.bigMultiplyPowerTen(intVal, -scale);
+            if (val.scale() <= 0) { // no fractional part
+                floor = BigDecimal.bigMultiplyPowerTen(val.unscaledValue(), -val.scale());
                 numerator = BigInteger.ZERO;
                 denominator = BigInteger.ONE;
+            } else { // val.scale() > 0
+                floor = val.toBigInteger();
+                
+                BigDecimal frac = val.subtract(new BigDecimal(floor));
+                if (frac.signum() == 0) { // no fractional part
+                    numerator = BigInteger.ZERO;
+                    denominator = BigInteger.ONE;
+                } else { // non-zero fractional part
+                    BigInteger num = frac.unscaledValue();
+                    // frac.scale() > 0
+                    int twoExp = frac.scale(), fiveExp = twoExp; // 10^n = 2^n * 5^n
+                    
+                    // simplify by two
+                    final int shift = Math.min(twoExp, num.getLowestSetBit());
+                    num = num.shiftRight(shift);
+                    twoExp -= shift;
+                    
+                    // simplify by five
+                    final BigInteger FIVE = BigInteger.valueOf(5);
+                    int remSign;
+                    // at this point, fiveExp > 0
+                    do {
+                        BigInteger[] divRem = num.divideAndRemainder(FIVE);
+                        remSign = divRem[1].signum;
+                        
+                        if (remSign == 0) {
+                            num = divRem[0];
+                            fiveExp--;
+                        }
+                    } while (remSign == 0 && fiveExp > 0);
+                    
+                    numerator = num;
+                    denominator = FIVE.pow(fiveExp).shiftLeft(twoExp);
+                }
             }
         }
     }
@@ -1866,26 +1894,27 @@ public class Rational extends Number implements Comparable<Rational> {
         
         // integer or non-representable value
         if (numerator.signum == 0 || Double.isInfinite(fl))
-            return signum * fl;
-        // At this point, fractional part is non-zero
+            return signum == -1 ? -fl : fl;
+        // At this point, this Rational is non-integer
         
         final int flBits = floor.bitLength();
         final int prec = Double.PRECISION;
         if (flBits > prec) { // integer part does not fit into a double
-            // check if first discarded bit is set to round up, since fractional part is non-zero
-            return signum * (floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl);
+            // check if the 0.5 bit is set to round up, since this Rational is non-integer
+            double res = floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl;
+            return signum == -1 ? -res : res;
         }
         
         long significand;
-        final int biasedExp;
+        final long biasedExp;
         int nBits; // computed bits of significand
         MutableBigInteger rem = new MutableBigInteger(numerator);
         final MutableBigInteger den = new MutableBigInteger(denominator);
         
-        // compute initial significand
+        // compute initial value of significand
         if (floor.signum == 1) {  // non-zero integer part
             // unpack biased exponent of integer part
-            biasedExp = (int) ((Double.doubleToLongBits(fl) & DoubleConsts.EXP_BIT_MASK) >> 52);
+            biasedExp = (Double.doubleToLongBits(fl) & DoubleConsts.EXP_BIT_MASK) >> 52;
             significand = floor.longValue();
             nBits = flBits;
         } else { // no integer part
@@ -1908,11 +1937,12 @@ public class Rational extends Number implements Comparable<Rational> {
                 biasedExp = -scale + DoubleConsts.EXP_BIAS; // biasedExp > 0
             } else { // subnormal number
                 nBits = scale + Double.MIN_EXPONENT + 1; // scale - 1022 + 1, count the implicit bit
-                biasedExp = 0;
+                biasedExp = 0L;
                 
                 if (nBits > prec) { // abs(this) < Double.MIN_VALUE
                     // half even rounding
-                    return signum * (nBits > prec + 1 || rem.isZero() ? 0.0 : Double.MIN_VALUE);
+                    double res = nBits > prec + 1 || rem.isZero() ? 0.0 : Double.MIN_VALUE;
+                    return signum == -1 ? -res : res;
                 }
             }
         }
@@ -1938,35 +1968,39 @@ public class Rational extends Number implements Comparable<Rational> {
             } else { // end of iterating
                 shift = prec - nBits;
                 significand <<= shift; // add trailing zeros
-                rem.leftShift(shift);
+                rem.leftShift(shift); // align remainder
                 // now rem / den < 1
             }
         }
         
-        double res = makeDouble(biasedExp, significand);
+        significand &= DoubleConsts.SIGNIF_BIT_MASK; // remove the implicit bit
+        
         if (!rem.isZero()) { // inexact result
-            // compute one more bit to round
+            // compute the 0.5 bit to round
             rem.leftShift(1);
             final int rem_cmp_den = rem.compare(den);
-            
-            if (rem_cmp_den >= 0) // the bit is one
+            /*
+             * We round up if either the fractional part of significand is strictly greater
+             * than 0.5 (which is true if the 0.5 bit is set and the remainder is greater
+             * than the denominator), or if the fractional part of significand is >= 0.5 and
+             * significand is odd (which is true if both the 0.5 bit and the 1 bit are set).
+             * This is equivalent to the desired HALF_EVEN rounding.
+             */
+            if (rem_cmp_den >= 0) // the 0.5 bit is set
                 if (rem_cmp_den > 0 || (significand & 1L) == 1) // half even rounding
-                    res = Math.nextUp(res);
+                    significand++;
         }
+        /*
+         * If significand == 2^53, we'd need to set all of the significand bits to zero
+         * and add 1 to the exponent. This is exactly the behavior we get from just
+         * adding significand to the shifted exponent directly. If the exponent is
+         * Double.MAX_EXPONENT, we round up (correctly) to Double.POSITIVE_INFINITY.
+         */
+        long bits = (biasedExp << 52) + significand;
+        if (signum == -1)
+            bits |= DoubleConsts.SIGN_BIT_MASK;
         
-        return signum * res;
-    }
-    
-    /**
-     * Returns {@code ((significand * 2^-52) * 2^(biasedExp - 1023))} if {@code (biasedExp != 0)},
-     * otherwise returns {@code ((significand * 2^-52) * 2^-1022)}.
-     */
-    private static double makeDouble(long biasedExp, long significand) {
-        // assume already shifted significand if the value is subnormal
-        if (biasedExp != 0)
-            significand &= DoubleConsts.SIGNIF_BIT_MASK;
-        
-        return Double.longBitsToDouble((biasedExp << 52) | significand);
+        return Double.longBitsToDouble(bits);
     }
 
     /**
@@ -1988,14 +2022,15 @@ public class Rational extends Number implements Comparable<Rational> {
         
         // integer or non-representable value
         if (numerator.signum() == 0 || Float.isInfinite(fl))
-            return signum * fl;
-        // At this point, fractional part is non-zero
+            return signum == -1 ? -fl : fl;
+        // At this point, this Rational is non-integer
         
         final int flBits = floor.bitLength();
         final int prec = Float.PRECISION;
         if (flBits > prec) { // integer part does not fit into a float
-            // check if first discarded bit is set to round up, since fractional part is non-zero
-            return signum * (floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl);
+            // check if the 0.5 bit is set to round up, since this Rational is non-integer
+            float res = floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl;
+            return signum == -1 ? -res : res;
         }
         
         int significand;
@@ -2004,7 +2039,7 @@ public class Rational extends Number implements Comparable<Rational> {
         MutableBigInteger rem = new MutableBigInteger(numerator);
         final MutableBigInteger den = new MutableBigInteger(denominator);
         
-        // compute initial significand
+        // compute initial value of significand
         if (floor.signum == 1) { // non-zero integer part
             // unpack biased exponent of integer part
             biasedExp = (Float.floatToIntBits(fl) & FloatConsts.EXP_BIT_MASK) >> 23;
@@ -2034,7 +2069,8 @@ public class Rational extends Number implements Comparable<Rational> {
                 
                 if (nBits > prec) { // abs(this) < Float.MIN_VALUE
                     // half even rounding
-                    return signum * (nBits > prec + 1 || rem.isZero() ? 0f : Float.MIN_VALUE);
+                    float res = nBits > prec + 1 || rem.isZero() ? 0f : Float.MIN_VALUE;
+                    return signum == -1 ? -res : res;
                 }
             }
         }
@@ -2060,36 +2096,39 @@ public class Rational extends Number implements Comparable<Rational> {
             } else { // end of iterating
                 shift = prec - nBits;
                 significand <<= shift; // add trailing zeros
-                rem.leftShift(shift);
+                rem.leftShift(shift); // align remainder
                 // now rem / den < 1
             }
         }
         
+        significand &= FloatConsts.SIGNIF_BIT_MASK; // remove the implicit bit
         
-        float res = makeFloat(biasedExp, significand);
         if (!rem.isZero()) { // inexact result
-            // compute one more bit to round
+            // compute the 0.5 bit to round
             rem.leftShift(1);
             final int rem_cmp_den = rem.compare(den);
-            
-            if (rem_cmp_den >= 0) // the bit is one
+            /*
+             * We round up if either the fractional part of significand is strictly greater
+             * than 0.5 (which is true if the 0.5 bit is set and the remainder is greater
+             * than the denominator), or if the fractional part of significand is >= 0.5 and
+             * significand is odd (which is true if both the 0.5 bit and the 1 bit are set).
+             * This is equivalent to the desired HALF_EVEN rounding.
+             */
+            if (rem_cmp_den >= 0) // the 0.5 bit is set
                 if (rem_cmp_den > 0 || (significand & 1) == 1) // half even rounding
-                    res = Math.nextUp(res);
+                    significand++;
         }
+        /*
+         * If significand == 2^24, we'd need to set all of the significand bits to zero
+         * and add 1 to the exponent. This is exactly the behavior we get from just
+         * adding significand to the shifted exponent directly. If the exponent is
+         * Float.MAX_EXPONENT, we round up (correctly) to Float.POSITIVE_INFINITY.
+         */
+        int bits = (biasedExp << 23) + significand;
+        if (signum == -1)
+            bits |= FloatConsts.SIGN_BIT_MASK;
         
-        return signum * res;
-    }
-    
-    /**
-     * Returns {@code ((significand * 2^-23) * 2^(biasedExp - 127))} if {@code (biasedExp != 0)},
-     * otherwise returns {@code ((significand * 2^-23) * 2^-126)}.
-     */
-    private static float makeFloat(int biasedExp, int significand) {
-        // assume already shifted significand if the value is subnormal
-        if (biasedExp != 0)
-            significand &= FloatConsts.SIGNIF_BIT_MASK;
-        
-        return Float.intBitsToFloat((biasedExp << 23) | significand);
+        return Float.intBitsToFloat(bits);
     }
 
     /**
