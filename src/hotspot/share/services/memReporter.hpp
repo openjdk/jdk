@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,39 @@ class MemReporterBase : public StackObj {
   }
 
   // Convert diff amount in bytes to current reporting scale
-  inline long diff_in_current_scale(size_t s1, size_t s2) const {
-    long amount = (long)(s1 - s2);
-    long scale = (long)_scale;
-    amount = (amount > 0) ? (amount + scale / 2) : (amount - scale / 2);
-    return amount / scale;
+  // We use int64_t instead of ssize_t because on 32-bit it allows us to express deltas larger than 2 gb.
+  // On 64-bit we never expect memory sizes larger than INT64_MAX.
+  int64_t diff_in_current_scale(size_t s1, size_t s2) const {
+    assert(_scale != 0, "wrong scale");
+
+#ifdef _LP64
+    assert(s1 < INT64_MAX, "exceeded possible memory limits");
+    assert(s2 < INT64_MAX, "exceeded possible memory limits");
+#endif
+
+    bool is_negative = false;
+    if (s1 < s2) {
+      is_negative = true;
+      swap(s1, s2);
+    }
+
+    size_t amount = s1 - s2;
+    // We can split amount into p + q, where
+    //     q = amount % _scale
+    // and p = amount - q   (which is also (amount / _scale) * _scale).
+    // Then use
+    //   size_t scaled = (p + q + _scale/2) / _scale;
+    // =>
+    //   size_t scaled = (p / _scale) + ((q + _scale/2) / _scale);
+    // The lefthand side of the addition is exact.
+    // The righthand side is 0 if q <= (_scale - 1)/2, else 1. (The -1 is to account for odd _scale values.)
+    size_t scaled = (amount / _scale);
+    if ((amount % _scale) > (_scale - 1)/2) {
+      scaled += 1;
+    }
+
+    int64_t result = static_cast<int64_t>(scaled);
+    return is_negative ? -result : result;
   }
 
   // Print summary total, malloc and virtual memory

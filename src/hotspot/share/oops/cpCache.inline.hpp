@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,10 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
   }
 }
 
-inline oop ConstantPoolCache::resolved_references() { return _resolved_references.resolve(); }
+inline objArrayOop ConstantPoolCache::resolved_references() {
+  oop obj = _resolved_references.resolve();
+  assert(obj == nullptr || obj->is_objArray(), "should be objArray");
+  return (objArrayOop)obj;
+}
 
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

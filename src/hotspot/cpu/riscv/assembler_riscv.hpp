@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -682,13 +682,13 @@ public:
     unsigned insn = 0;
     guarantee(predecessor < 16, "predecessor is invalid");
     guarantee(successor < 16, "successor is invalid");
-    patch((address)&insn, 6, 0, 0b001111);
-    patch((address)&insn, 11, 7, 0b00000);
+    patch((address)&insn, 6, 0, 0b001111);      // opcode
+    patch((address)&insn, 11, 7, 0b00000);      // rd
     patch((address)&insn, 14, 12, 0b000);
-    patch((address)&insn, 19, 15, 0b00000);
-    patch((address)&insn, 23, 20, successor);
-    patch((address)&insn, 27, 24, predecessor);
-    patch((address)&insn, 31, 28, 0b0000);
+    patch((address)&insn, 19, 15, 0b00000);     // rs1
+    patch((address)&insn, 23, 20, successor);   // succ
+    patch((address)&insn, 27, 24, predecessor); // pred
+    patch((address)&insn, 31, 28, 0b0000);      // fm
     emit(insn);
   }
 
@@ -798,6 +798,8 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   INSN(fsqrt_d,  0b1010011, 0b00000, 0b0101101);
   INSN(fcvt_s_d, 0b1010011, 0b00001, 0b0100000);
   INSN(fcvt_d_s, 0b1010011, 0b00000, 0b0100001);
+  INSN(fcvt_s_h, 0b1010011, 0b00010, 0b0100000);
+  INSN(fcvt_h_s, 0b1010011, 0b00000, 0b0100010);
 #undef INSN
 
 // Immediate Instruction
@@ -1054,6 +1056,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
 
   INSN(fmv_w_x,  0b1010011, 0b000, 0b00000, 0b1111000);
   INSN(fmv_d_x,  0b1010011, 0b000, 0b00000, 0b1111001);
+  INSN(fmv_h_x,  0b1010011, 0b000, 0b00000, 0b1111010);
 
 #undef INSN
 
@@ -1074,6 +1077,7 @@ enum operand_size { int8, int16, int32, uint32, int64 };
   INSN(fclass_d, 0b1010011, 0b001, 0b00000, 0b1110001);
   INSN(fmv_x_w,  0b1010011, 0b000, 0b00000, 0b1110000);
   INSN(fmv_x_d,  0b1010011, 0b000, 0b00000, 0b1110001);
+  INSN(fmv_x_h,  0b1010011, 0b000, 0b00000, 0b1110010);
 
 #undef INSN
 

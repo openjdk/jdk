@@ -1214,42 +1214,12 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  // Until we have harmony between classes and interfaces in the type
-  // lattice, we must tread carefully around phis which implicitly
-  // convert the one to the other.
-  const TypePtr* ttp = _type->make_ptr();
-  const TypeInstPtr* ttip = (ttp != NULL) ? ttp->isa_instptr() : NULL;
-  const TypeInstKlassPtr* ttkp = (ttp != NULL) ? ttp->isa_instklassptr() : NULL;
-  bool is_intf = false;
-  if (ttip != NULL) {
-    if (ttip->is_interface())
-      is_intf = true;
-  }
-  if (ttkp != NULL) {
-    if (ttkp->is_interface())
-      is_intf = true;
-  }
-
   // Default case: merge all inputs
   const Type *t = Type::TOP;        // Merged type starting value
   for (uint i = 1; i < req(); ++i) {// For all paths in
     // Reachable control path?
     if (r->in(i) && phase->type(r->in(i)) == Type::CONTROL) {
       const Type* ti = phase->type(in(i));
-      // We assume that each input of an interface-valued Phi is a true
-      // subtype of that interface.  This might not be true of the meet
-      // of all the input types.  The lattice is not distributive in
-      // such cases.  Ward off asserts in type.cpp by refusing to do
-      // meets between interfaces and proper classes.
-      const TypePtr* tip = ti->make_ptr();
-      const TypeInstPtr* tiip = (tip != NULL) ? tip->isa_instptr() : NULL;
-      if (tiip) {
-        bool ti_is_intf = false;
-        if (tiip->is_interface())
-          ti_is_intf = true;
-        if (is_intf != ti_is_intf)
-          { t = _type; break; }
-      }
       t = t->meet_speculative(ti);
     }
   }
@@ -1273,60 +1243,13 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
   // The following logic has been moved into TypeOopPtr::filter.
   const Type* jt = t->join_speculative(_type);
   if (jt->empty()) {           // Emptied out???
-
-    // Check for evil case of 't' being a class and '_type' expecting an
-    // interface.  This can happen because the bytecodes do not contain
-    // enough type info to distinguish a Java-level interface variable
-    // from a Java-level object variable.  If we meet 2 classes which
-    // both implement interface I, but their meet is at 'j/l/O' which
-    // doesn't implement I, we have no way to tell if the result should
-    // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
-    // into a Phi which "knows" it's an Interface type we'll have to
-    // uplift the type.
-    if (!t->empty() && ttip && ttip->is_interface()) {
-      assert(ft == _type, ""); // Uplift to interface
-    } else if (!t->empty() && ttkp && ttkp->is_interface()) {
-      assert(ft == _type, ""); // Uplift to interface
-    } else {
-      // We also have to handle 'evil cases' of interface- vs. class-arrays
-      Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
-      if (!t->empty() && ttip != NULL && ttip->is_interface()) {
-          assert(ft == _type, "");   // Uplift to array of interface
-      } else {
-        // Otherwise it's something stupid like non-overlapping int ranges
-        // found on dying counted loops.
-        assert(ft == Type::TOP, ""); // Canonical empty value
-      }
-    }
+    // Otherwise it's something stupid like non-overlapping int ranges
+    // found on dying counted loops.
+    assert(ft == Type::TOP, ""); // Canonical empty value
   }
 
   else {
 
-    // If we have an interface-typed Phi and we narrow to a class type, the join
-    // should report back the class.  However, if we have a J/L/Object
-    // class-typed Phi and an interface flows in, it's possible that the meet &
-    // join report an interface back out.  This isn't possible but happens
-    // because the type system doesn't interact well with interfaces.
-    const TypePtr *jtp = jt->make_ptr();
-    const TypeInstPtr *jtip = (jtp != NULL) ? jtp->isa_instptr() : NULL;
-    const TypeInstKlassPtr *jtkp = (jtp != NULL) ? jtp->isa_instklassptr() : NULL;
-    if (jtip && ttip) {
-      if (jtip->is_interface() &&
-          !ttip->is_interface()) {
-        assert(ft == ttip->cast_to_ptr_type(jtip->ptr()) ||
-               ft->isa_narrowoop() && ft->make_ptr() == ttip->cast_to_ptr_type(jtip->ptr()), "");
-        jt = ft;
-      }
-    }
-    if (jtkp && ttkp) {
-      if (jtkp->is_interface() &&
-          !jtkp->klass_is_exact() && // Keep exact interface klass (6894807)
-          ttkp->is_loaded() && !ttkp->is_interface()) {
-        assert(ft == ttkp->cast_to_ptr_type(jtkp->ptr()) ||
-               ft->isa_narrowklass() && ft->make_ptr() == ttkp->cast_to_ptr_type(jtkp->ptr()), "");
-        jt = ft;
-      }
-    }
     if (jt != ft && jt->base() == ft->base()) {
       if (jt->isa_int() &&
           jt->is_int()->_lo == ft->is_int()->_lo &&
@@ -2862,7 +2785,7 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
         st->print(", ");
       }
       char buf[128];
-      ra->dump_register(n, buf);
+      ra->dump_register(n, buf, sizeof(buf));
       st->print("%s", buf);
     }
   }

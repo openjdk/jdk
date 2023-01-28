@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public:
   inline bool is_stub() const;
   inline bool is_compiled() const;
   CodeBlob* cb() const { return _cb; }
-  const ImmutableOopMap* oopmap() const { if (_oopmap == NULL) get_oopmap(); return _oopmap; }
+  const ImmutableOopMap* oopmap() const { if (_oopmap == nullptr) get_oopmap(); return _oopmap; }
   inline int frame_size() const;
   inline int stack_argsize() const;
   inline int num_oops() const;

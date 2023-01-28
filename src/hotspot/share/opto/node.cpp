@@ -734,7 +734,6 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
 }
 
@@ -2277,11 +2276,11 @@ void PrintBFS::print_node_idx(const Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
-    sprintf(buf,"_");           // null
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
   } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
   } else {
-    sprintf(buf, "o%d", n->_idx); // old node
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
   tty->print("%6s", buf);
 }
@@ -2289,7 +2288,7 @@ void PrintBFS::print_node_idx(const Node* n) {
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
-  sprintf(buf, "B%d", b->_pre_order);
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
   tty->print("%7s", buf);
 }
 
@@ -2543,10 +2542,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
     const TypeInstPtr  *toop = t->isa_instptr();
     const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-    ciKlass*           klass = toop ? toop->instance_klass() : (tkls ? tkls->instance_klass() : NULL );
-    if (klass && klass->is_loaded() && ((toop && toop->is_interface()) || (tkls && tkls->is_interface()))) {
-      st->print("  Interface:");
-    } else if (toop) {
+    if (toop) {
       st->print("  Oop:");
     } else if (tkls) {
       st->print("  Klass:");

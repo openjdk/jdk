@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8064362
  * @summary WriteableScope.dupUnshared not working properly for shared Scopes.
  * @modules jdk.compiler/com.sun.tools.javac.code:+open
  *          jdk.compiler/com.sun.tools.javac.file

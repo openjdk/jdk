@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
@@ -62,6 +64,10 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   // if this method contains a methodHandle call site
   raw_push(FP, LR);
   sub_slow(SP, SP, frame_size_in_bytes);
+
+  // Insert nmethod entry barrier into frame.
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->nmethod_entry_barrier(this);
 }
 
 void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
