@@ -8776,7 +8776,7 @@ public class Arrays {
      * elements in the array are not null and throws a customized {@link NullPointerException} if it is.
      * <p>
      * The message generator {@code messageGenerator} accepts an {@code int} argument
-     * and returns a {@code String}.  The argument of the function is the index of the {@code null}
+     * and returns a {@code String}.  The argument of the function is the index of the first {@code null}
      * element or {@code -1} if the {@code array} itself is null.
      * <p>
      * Unlike the method {@link #requireNoNulls(Object[], String)},
@@ -8834,7 +8834,7 @@ public class Arrays {
      * {@link NullPointerException} if it is.
      * <p>
      * The message generator {@code messageGenerator} accepts an {@code int} argument
-     * and returns a {@code String}.  The argument of the function is the index of the {@code null}
+     * and returns a {@code String}.  The argument of the function is the index of the first {@code null}
      * element or {@code -1} if the {@code array} itself is null.
      * <p>
      * If the method returns without throwing an exception, it is guaranteed that
