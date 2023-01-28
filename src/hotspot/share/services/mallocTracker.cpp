@@ -142,7 +142,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
-  assert(malloc_base != NULL, "precondition");
+  assert(malloc_base != nullptr, "precondition");
 
   MallocMemorySummary::record_malloc(size, flags);
   uint32_t mst_marker = 0;
@@ -173,7 +173,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 
 void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
-  assert(memblock != NULL, "precondition");
+  assert(memblock != nullptr, "precondition");
 
   MallocHeader* const header = malloc_header(memblock);
   header->assert_block_integrity();

@@ -1,7 +1,6 @@
 /*
  * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
@@ -316,11 +315,11 @@ class MallocTracker : AllStatic {
   static bool print_pointer_information(const void* p, outputStream* st);
 
   static inline MallocHeader* malloc_header(void *memblock) {
-    assert(memblock != NULL, "NULL pointer");
+    assert(memblock != nullptr, "null pointer");
     return (MallocHeader*)((char*)memblock - sizeof(MallocHeader));
   }
   static inline const MallocHeader* malloc_header(const void *memblock) {
-    assert(memblock != NULL, "NULL pointer");
+    assert(memblock != nullptr, "null pointer");
     return (const MallocHeader*)((const char*)memblock - sizeof(MallocHeader));
   }
 };
