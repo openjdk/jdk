@@ -105,9 +105,9 @@ class StringTable : public CHeapObj<mtSymbol>{
 
   // Sharing
  private:
-  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop lookup_shared(const jchar* name, int len, unsigned int hash) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
  public:
-  static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void write_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
