@@ -25,7 +25,10 @@
 
 package java.util.zip;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.attribute.FileTime;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -41,6 +44,14 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 class ZipUtils {
+
+    private static final VarHandle createVH(Class<?> viewArrayClass) {
+        return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.LITTLE_ENDIAN);
+    }
+    // VarHandles for reading shorts, ints and longs from byte arrays
+    private static final VarHandle SHORT_VH = createVH(short[].class);
+    private static final VarHandle INT_VH = createVH(int[].class);
+    private static final VarHandle LONG_VH = createVH(long[].class);
 
     static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
@@ -177,7 +188,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final int get16(byte[] b, int off) {
-        return get8(b, off) | (get8(b, off + 1) << 8);
+        return (short) SHORT_VH.get(b, off) & 0xffff;
     }
 
     /**
@@ -193,7 +204,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get64(byte[] b, int off) {
-        return get32(b, off) | (get32(b, off+4) << 32);
+        return (long) LONG_VH.get(b, off);
     }
 
     /**
@@ -202,7 +213,7 @@ class ZipUtils {
      *
      */
     public static final int get32S(byte[] b, int off) {
-        return (get16(b, off) | (get16(b, off+2) << 16));
+        return (int) INT_VH.get(b, off);
     }
 
     // fields access methods
