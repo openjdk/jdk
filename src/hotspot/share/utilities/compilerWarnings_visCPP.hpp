@@ -66,6 +66,4 @@
   __VA_ARGS__                                   \
   PRAGMA_DIAG_POP
 
-#undef PRAGMA
-
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_VISCPP_HPP
