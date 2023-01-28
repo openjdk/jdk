@@ -1712,7 +1712,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   }
 
   // Pause native trimming for the duration of the GC
-  GCTrimNative::pause_periodic_trim();
+  GCTrimNative::PauseThenTrimMark trim_native_pause;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -1870,8 +1870,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     // Resize the metaspace capacity after a collection
     MetaspaceGC::compute_new_size();
-
-    GCTrimNative::schedule_trim();
 
     if (log_is_enabled(Debug, gc, heap, exit)) {
       accumulated_time()->stop();

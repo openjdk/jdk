@@ -314,14 +314,6 @@ void ShenandoahControlThread::run_service() {
       last_shrink_time = current;
     }
 
-    if (GCTrimNative::should_trim(explicit_gc_requested)) {
-      static const char *msg = "Concurrent trim-native";
-      ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_trim, false);
-      EventMark em("%s", msg);
-      GCTrimNative::execute_trim();
-      heap->phase_timings()->flush_cycle_to_global();
-    }
-
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
@@ -433,6 +425,7 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
+  GCTrimNative::PauseThenTrimMark trim_pause_mark;
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
@@ -447,6 +440,7 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
+  GCTrimNative::PauseMark trim_pause_mark;
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 

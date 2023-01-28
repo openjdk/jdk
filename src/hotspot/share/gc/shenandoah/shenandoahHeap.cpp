@@ -627,7 +627,7 @@ void ShenandoahHeap::post_initialize() {
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
 
-  GCTrimNative::initialize(false); // false since this is taken care of inside the service thread
+  GCTrimNative::initialize();
 }
 
 size_t ShenandoahHeap::used() const {

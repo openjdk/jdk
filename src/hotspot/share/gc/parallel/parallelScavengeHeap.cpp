@@ -192,7 +192,7 @@ void ParallelScavengeHeap::post_initialize() {
 
   ScavengableNMethods::initialize(&_is_scavengable);
 
-  GCTrimNative::initialize(true);
+  GCTrimNative::initialize();
 }
 
 void ParallelScavengeHeap::update_counters() {

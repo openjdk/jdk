@@ -28,16 +28,7 @@
 
 #include "memory/allStatic.hpp"
 
-class NativeTrimmer;
-
 class GCTrimNative : public AllStatic {
-  friend class NativeTrimmer;
-
-  static bool _async_mode;
-  static double _next_trim_not_before;
-
-  static void do_trim();
-
 public:
 
   static void initialize();
@@ -50,6 +41,16 @@ public:
   // Schedule an explicit trim now. If periodic trims are enabled and have been paused,
   // they are unpaused.
   static void schedule_trim();
+
+  struct PauseMark {
+    PauseMark()   { GCTrimNative::pause_periodic_trim(); }
+    ~PauseMark()  { GCTrimNative::unpause_periodic_trim(); }
+  };
+
+  struct PauseThenTrimMark {
+    PauseThenTrimMark()   { GCTrimNative::pause_periodic_trim(); }
+    ~PauseThenTrimMark()  { GCTrimNative::schedule_trim(); }
+  };
 
 };
 
