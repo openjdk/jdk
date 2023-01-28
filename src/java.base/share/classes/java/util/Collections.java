@@ -5815,4 +5815,211 @@ public class Collections {
         @Override
         public Stream<E> parallelStream()   {return q.parallelStream();}
     }
+    
+    /**
+     * Checks that the specified iterable reference itself and all
+     * elements in the iterable are not null.
+     * This method is designed primarily fo doing parameter
+     * validation in methods and constructors, as demonstrated below:
+     * {@snippet :
+     * public Foo(List<Bar> bar) {
+     *      this.bar = Collections.requireNoNulls(bar);
+     *  }
+     * }
+     *
+     * @param collection the iterable reference to check for nullity
+     * @return {@code collection} if the iterable itself and all elements in the iterable are not {@code null}.
+     * @throws NullPointerException if {@code collection == null} or any element in the {@code collection}
+     *      is null.
+     * @param <C> The type of the iterable.
+     * @since TBA
+     */
+    public static <C extends Iterable<?>> C requireNoNulls(C collection) {
+        if (collection == null) {
+            throw new NullPointerException();
+        }
+        for (Object o : collection) {
+            if (o == null) {
+                throw new NullPointerException();
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * Checks that the specified map reference itself and all
+     * keys and values in the map are not null.
+     * This method is designed primarily fo doing parameter
+     * validation in methods and constructors, as demonstrated below:
+     * {@snippet :
+     * public Foo(Map<Bar, Baz> bar) {
+     *      this.bar = Collections.requireNoNulls(bar);
+     *  }
+     * }
+     *
+     * @param map the map reference to check for nullity
+     * @return {@code map} if the map itself and all keys and values in the map are not {@code null}.
+     * @throws NullPointerException if {@code map == null} or any element in the {@code map}
+     *      is null.
+     * @param <M> The type of the map.
+     * @since TBA
+     */
+    public static <M extends Map<?, ?>> M requireNoNulls(M map) {
+        if (map == null) {
+            throw new NullPointerException();
+        }
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) {
+                throw new NullPointerException();
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Checks that the specified iterable reference itself and all
+     * elements in the iterable are not null and throws a customized {@link NullPointerException} if it is.
+     *
+     * @param collection the iterable reference to check for nullity
+     * @param message detail message to be used in the event that a {@code NullPointerException} is thrown
+     * @return {@code collection} if the iterable itself and all elements in the iterable are not {@code null}.
+     * @throws NullPointerException if {@code collection == null} or any element in the {@code collection}
+     *      is null.
+     * @param <C> The type of the iterable.
+     * @since TBA
+     */
+    public static <C extends Iterable<?>> C requireNoNulls(C collection, String message) {
+        if (collection == null) {
+            throw new NullPointerException(message);
+        }
+        for (Object o : collection) {
+            if (o == null) {
+                throw new NullPointerException(message);
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * Checks that the specified map reference itself and all
+     * keys and values in the map are not null and throws a customized {@link NullPointerException} if it is.
+     *
+     * @param map the map reference to check for nullity
+     * @param message detail message to be used in the event that a {@code NullPointerException} is thrown
+     * @return {@code map} if the map itself and all keys and values in the map are not {@code null}.
+     * @throws NullPointerException if {@code map == null} or any element in the {@code map}
+     *      is null.
+     * @param <M> The type of the map.
+     * @since TBA
+     */
+    public static <M extends Map<?, ?>> M requireNoNulls(M map, String message) {
+        if (map == null) {
+            throw new NullPointerException(message);
+        }
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) {
+                throw new NullPointerException(message);
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Checks that the specified iterable reference itself and all
+     * elements in the iterable are not null and throws a customized {@link NullPointerException} if it is.
+     * <p>
+     * Unlike the method {@link #requireNoNulls(Iterable, String)}, this method allows creation
+     * of the message to be deferred until after the null check is made. While this may confer
+     * a performance advantage in the non-null case, when deciding to call this method care
+     * should be taken that the costs of creating the message supplier are less than the cost
+     * of just creating the string message directly.
+     *
+     * @param collection the iterable reference to check for nullity
+     * @param messageSupplier supplier of the detail message to be used in the event that a
+     *                       NullPointerException is thrown
+     * @return {@code collection} if the iterable itself and all elements in the iterable are not {@code null}.
+     * @throws NullPointerException if {@code collection == null} or any element in the {@code collection}
+     *      is null.
+     * @param <C> The type of the iterable.
+     * @since TBA
+     */
+    public static <C extends Iterable<?>> C requireNoNulls(C collection, Supplier<String> messageSupplier) {
+        if (collection == null) {
+            throw new NullPointerException(messageSupplier.get());
+        }
+        for (Object o : collection) {
+            if (o == null) {
+                throw new NullPointerException(messageSupplier.get());
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * Checks that the specified map reference itself and all
+     * keys and values in the map are not null and throws a customized {@link NullPointerException} if it is.
+     * <p>
+     * Unlike the method {@link #requireNoNulls(Map, String)}, this method allows creation
+     * of the message to be deferred until after the null check is made. While this may confer
+     * a performance advantage in the non-null case, when deciding to call this method care
+     * should be taken that the costs of creating the message supplier are less than the cost
+     * of just creating the string message directly.
+     * @param map the map reference to check for nullity
+     * @param messageSupplier supplier of the detail message to be used in the event that a
+     *          NullPointerException is thrown
+     * @return {@code map} if the map itself and all keys and values in the map are not {@code null}.
+     * @throws NullPointerException if {@code map == null} or any element in the {@code map}
+     *      is null.
+     * @param <M> The type of the map.
+     * @since TBA
+     */
+    public static <M extends Map<?, ?>> M requireNoNulls(M map, Supplier<String> messageSupplier) {
+        if (map == null) {
+            throw new NullPointerException(messageSupplier.get());
+        }
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (e.getKey() == null || e.getValue() == null) {
+                throw new NullPointerException(messageSupplier.get());
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Checks that the specified list reference itself and all
+     * elements in the array are not null and throws a customized {@link NullPointerException} if it is.
+     * <p>
+     * The message generator {@code messageGenerator} accepts an {@code int} argument
+     * and returns a {@code String}.  The argument of the function is the index of the {@code null}
+     * element or {@code -1} if the {@code list} itself is null.
+     * <p>
+     * Unlike the method {@link #requireNoNulls(Iterable, String)},
+     * this method allows creation of the message to be deferred
+     * until after the null check is made. While this may confer
+     * a performance advantage in the non-null case, when deciding
+     * to call this method care should be taken that the costs of
+     * creating the message supplier are less than the cost of
+     * just creating the string message directly.
+     *
+     * @param list the list reference to check for nullity
+     * @param messageGenerator generator of the detail message to be used in the
+     *                         event that a NullPointerException is thrown
+     * @return {@code list} if the list itself and all elements in the list are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null
+     * @param <L> The type of the list.
+     * @since TBA
+     */
+    public static <L extends List<?>> L requireNoNulls(L list, IntFunction<String> messageGenerator) {
+        if (list == null) {
+            throw new NullPointerException(messageGenerator.apply(-1));
+        }
+        ListIterator<?> li = list.listIterator();
+        while (li.hasNext()) {
+            if (li.next() == null) {
+                throw new NullPointerException(messageGenerator.apply(li.nextIndex() - 1));
+            }
+        }
+        return list;
+    }
 }
