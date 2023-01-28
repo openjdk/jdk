@@ -714,9 +714,11 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                if (!noShare && offset == 0 && length == bytes.length)
+                if (noShare || length != bytes.length) {
+                    return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                } else {
                     return new String(bytes, LATIN1);
-                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
+                }
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
