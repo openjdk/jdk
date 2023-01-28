@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,11 @@ import java.util.Map;
  * The management interface for the thread system of the Java virtual machine.
  *
  * <p> {@code ThreadMXBean} supports monitoring and management of
- * <a href="{@docRoot}/java.base/java/lang/Thread.html#platform-threads">
- * platform threads</a> in the Java virtual machine. Platform threads are
- * typically mapped to kernel threads scheduled by the operating system.
- * {@code ThreadMXBean} does not support monitoring or management of
- * <a href="{@docRoot}/java.base/java/lang/Thread.html#virtual-threads">
- * virtual threads</a>.
+ * {@linkplain Thread##platform-threads platform threads} in the Java
+ * virtual machine. Platform threads are typically mapped to kernel
+ * threads scheduled by the operating system.  {@code ThreadMXBean}
+ * does not support monitoring or management of {@linkplain
+ * Thread##virtual-threads virtual threads}.
  *
  * <p> A Java virtual machine has a single instance of the implementation
  * class of this interface.  This instance implementing this interface is

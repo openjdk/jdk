@@ -8657,6 +8657,96 @@ instruct cmpLTMask_reg_zero(iRegINoSp dst, iRegIorL2I op, immI0 zero)
 // ============================================================================
 // Max and Min
 
+instruct minI_reg_reg(iRegINoSp dst, iRegI src)
+%{
+  match(Set dst (MinI dst src));
+
+  ins_cost(BRANCH_COST + ALU_COST);
+  format %{
+    "ble $dst, $src, skip\t#@minI_reg_reg\n\t"
+    "mv  $dst, $src\n\t"
+    "skip:"
+  %}
+
+  ins_encode %{
+    Label Lskip;
+    __ ble(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
+    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
+    __ bind(Lskip);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct maxI_reg_reg(iRegINoSp dst, iRegI src)
+%{
+  match(Set dst (MaxI dst src));
+
+  ins_cost(BRANCH_COST + ALU_COST);
+  format %{
+    "bge $dst, $src, skip\t#@maxI_reg_reg\n\t"
+    "mv  $dst, $src\n\t"
+    "skip:"
+  %}
+
+  ins_encode %{
+    Label Lskip;
+    __ bge(as_Register($dst$$reg), as_Register($src$$reg), Lskip);
+    __ mv(as_Register($dst$$reg), as_Register($src$$reg));
+    __ bind(Lskip);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// special case for comparing with zero
+// n.b. this is selected in preference to the rule above because it
+// avoids loading constant 0 into a source register
+
+instruct minI_reg_zero(iRegINoSp dst, immI0 zero)
+%{
+  match(Set dst (MinI dst zero));
+  match(Set dst (MinI zero dst));
+
+  ins_cost(BRANCH_COST + ALU_COST);
+  format %{
+    "blez $dst, skip\t#@minI_reg_zero\n\t"
+    "mv   $dst, zr\n\t"
+    "skip:"
+  %}
+
+  ins_encode %{
+    Label Lskip;
+    __ blez(as_Register($dst$$reg), Lskip);
+    __ mv(as_Register($dst$$reg), zr);
+    __ bind(Lskip);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct maxI_reg_zero(iRegINoSp dst, immI0 zero)
+%{
+  match(Set dst (MaxI dst zero));
+  match(Set dst (MaxI zero dst));
+
+  ins_cost(BRANCH_COST + ALU_COST);
+  format %{
+    "bgez $dst, skip\t#@maxI_reg_zero\n\t"
+    "mv   $dst, zr\n\t"
+    "skip:"
+  %}
+
+  ins_encode %{
+    Label Lskip;
+    __ bgez(as_Register($dst$$reg), Lskip);
+    __ mv(as_Register($dst$$reg), zr);
+    __ bind(Lskip);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
 instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 %{
   match(Set dst (MinI src1 src2));
@@ -8683,7 +8773,7 @@ instruct minI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
     __ bind(Ldone);
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(pipe_class_compare);
 %}
 
 instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
@@ -8713,7 +8803,7 @@ instruct maxI_rReg(iRegINoSp dst, iRegI src1, iRegI src2)
 
   %}
 
-  ins_pipe(ialu_reg_reg);
+  ins_pipe(pipe_class_compare);
 %}
 
 // ============================================================================

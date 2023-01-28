@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -449,7 +449,7 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
 
   virtual void do_oop(narrowOop* p) {
     // This should be called before the loaded regions are modified, so all the embedded pointers
-    // must be NULL, or must point to a valid object in the loaded regions.
+    // must be null, or must point to a valid object in the loaded regions.
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
       oop o = CompressedOops::decode_not_null(v);
@@ -540,7 +540,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
     FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
-    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+    if (r->mapped_base() != nullptr && r->has_ptrmap()) {
       log_info(cds, heap)("Patching native pointers in heap region %d", i);
       BitMapView bm = r->ptrmap_view();
       PatchNativePointers patcher((Metadata**)r->mapped_base());

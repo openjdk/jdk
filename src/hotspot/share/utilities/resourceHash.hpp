@@ -39,11 +39,11 @@ public:
   ResourceHashtableNode* _next;
 
   ResourceHashtableNode(unsigned hash, K const& key, V const& value) :
-    _hash(hash), _key(key), _value(value), _next(NULL) {}
+    _hash(hash), _key(key), _value(value), _next(nullptr) {}
 
   // Create a node with a default-constructed value.
   ResourceHashtableNode(unsigned hash, K const& key) :
-    _hash(hash), _key(key), _value(), _next(NULL) {}
+    _hash(hash), _key(key), _value(), _next(nullptr) {}
 };
 
 template<
@@ -74,7 +74,7 @@ class ResourceHashtableBase : public STORAGE {
   Node** lookup_node(unsigned hash, K const& key) {
     unsigned index = hash % table_size();
     Node** ptr = bucket_at(index);
-    while (*ptr != NULL) {
+    while (*ptr != nullptr) {
       Node* node = *ptr;
       if (node->_hash == hash && EQUALS(key, node->_key)) {
         break;
@@ -107,16 +107,16 @@ class ResourceHashtableBase : public STORAGE {
   int number_of_entries() const { return _number_of_entries; }
 
   bool contains(K const& key) const {
-    return get(key) != NULL;
+    return get(key) != nullptr;
   }
 
   V* get(K const& key) const {
     unsigned hv = HASH(key);
     Node const** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       return const_cast<V*>(&(*ptr)->_value);
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -128,7 +128,7 @@ class ResourceHashtableBase : public STORAGE {
   bool put(K const& key, V const& value) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       (*ptr)->_value = value;
       return false;
     } else {
@@ -150,7 +150,7 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
+    if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         *ptr = new (MEM_TYPE) Node(hv, key);
       } else {
@@ -172,7 +172,7 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, V const& value, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
+    if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         *ptr = new (MEM_TYPE) Node(hv, key, value);
       } else {
@@ -192,7 +192,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
 
     Node* node = *ptr;
-    if (node != NULL) {
+    if (node != nullptr) {
       *ptr = node->_next;
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
@@ -222,7 +222,7 @@ class ResourceHashtableBase : public STORAGE {
 
     while (cnt > 0 && bucket < bucket_at(sz)) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
@@ -309,7 +309,7 @@ class ResourceHashtableBase : public STORAGE {
     while (bucket < bucket_at(sz)) {
       Node* node = *bucket;
       int count = 0;
-      while (node != NULL) {
+      while (node != nullptr) {
         literal_bytes += size_function(node->_key, node->_value);
         count++;
         node = node->_next;

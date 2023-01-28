@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,10 +88,10 @@ public:
   time_t timestamp() const { return _timestamp; }
   const char* name() const;
   const char* manifest() const {
-    return (_manifest == NULL) ? NULL : (const char*)_manifest->data();
+    return (_manifest == nullptr) ? nullptr : (const char*)_manifest->data();
   }
   int manifest_size() const {
-    return (_manifest == NULL) ? 0 : _manifest->length();
+    return (_manifest == nullptr) ? 0 : _manifest->length();
   }
   void set_manifest(Array<u1>* manifest) {
     _manifest = manifest;
@@ -115,7 +115,7 @@ class SharedPathTable {
   Array<u8>* _table;
   int _size;
 public:
-  SharedPathTable() : _table(NULL), _size(0) {}
+  SharedPathTable() : _table(nullptr), _size(0) {}
   SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
 
   void dumptime_init(ClassLoaderData* loader_data, TRAPS);
@@ -126,7 +126,7 @@ public:
   }
   SharedClassPathEntry* path_at(int index) {
     if (index < 0) {
-      return NULL;
+      return nullptr;
     }
     assert(index < _size, "sanity");
     char* p = (char*)_table->data();
@@ -429,7 +429,7 @@ public:
 
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)
-    NOT_CDS(return NULL;)
+    NOT_CDS(return nullptr;)
   }
 
   static void set_current_info(FileMapInfo* info) {
@@ -438,7 +438,7 @@ public:
 
   static FileMapInfo* dynamic_info() {
     CDS_ONLY(return _dynamic_archive_info;)
-    NOT_CDS(return NULL;)
+    NOT_CDS(return nullptr;)
   }
 
   static void assert_mark(bool check);
@@ -491,9 +491,6 @@ public:
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
-
-  // Stop CDS sharing and unmap CDS regions.
-  static void stop_sharing_and_unmap(const char* msg);
 
   static void allocate_shared_path_table(TRAPS);
   static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
@@ -561,11 +558,11 @@ public:
 
  private:
   void  seek_to_position(size_t pos);
-  char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(NULL);
+  char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(nullptr);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
   bool  check_paths_existence(const char* paths) NOT_CDS_RETURN_(false);
-  GrowableArray<const char*>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(NULL);
-  GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(NULL);
+  GrowableArray<const char*>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(nullptr);
+  GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(nullptr);
   bool  classpath_failure(const char* msg, const char* name) NOT_CDS_RETURN_(false);
   unsigned int longest_common_app_classpath_prefix_len(int num_paths,
                                                        GrowableArray<const char*>* rp_array)
@@ -590,9 +587,9 @@ public:
   static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
 
 public:
-  address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   narrowOop encoded_heap_region_dumptime_address(FileMapRegion* r);
 
 private:
