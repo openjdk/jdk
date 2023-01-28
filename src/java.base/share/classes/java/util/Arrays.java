@@ -8716,4 +8716,173 @@ public class Arrays {
 
         return aLength != bLength ? length : -1;
     }
+    
+    /**
+     * Checks that the specified array reference itself and all
+     * elements in the array are not null.
+     * This method is designed primarily for doing parameter
+     * validation in methods and constructors, as demonstrated below:
+     * {@snippet :
+     * public Foo(Bar[] bar) {
+     *      this.bar = Arrays.requireNoNulls(bar);
+     *  }
+     * }
+     *
+     * @param array the array reference to check for nullity
+     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null.
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    // @ForceInline
+    public static <E> E[] requireNoNulls(E[] array) {
+        Objects.requireNonNull(array);
+        int len = array.length;
+        for (int i = 0; i < len; i++) {
+            if (array[i] == null) {
+                throw new NullPointerException();
+            }
+        }
+        return array;
+    }
+
+    /**
+     * Checks that the specified array reference itself and all
+     * elements in the array are not null and throws a customized {@link NullPointerException} if it is.
+     *
+     * @param array the array reference to check for nullity
+     * @param message detail message to be used in the event that a {@code NullPointerException} is thrown
+     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null.
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    // @ForceInline
+    public static <E> E[] requireNoNulls(E[] array, String message) {
+        Objects.requireNonNull(array, message);
+        int len = array.length;
+        for (int i = 0; i < len; i++) {
+            if (array[i] == null) {
+                throw new NullPointerException(message);
+            }
+        }
+        return array;
+    }
+
+    /**
+     * Checks that the specified array reference itself and all
+     * elements in the array are not null and throws a customized {@link NullPointerException} if it is.
+     * <p>
+     * The message generator {@code messageGenerator} accepts an {@code int} argument
+     * and returns a {@code String}.  The argument of the function is the index of the {@code null}
+     * element or {@code -1} if the {@code array} itself is null.
+     * <p>
+     * Unlike the method {@link #requireNoNulls(Object[], String)},
+     * this method allows creation of the message to be deferred
+     * until after the null check is made. While this may confer
+     * a performance advantage in the non-null case, when deciding
+     * to call this method care should be taken that the costs of
+     * creating the message supplier are less than the cost of
+     * just creating the string message directly.
+     *
+     * @param array the array reference to check for nullity
+     * @param messageGenerator generator of the detail message to be used in the
+     *                         event that a NullPointerException is thrown
+     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    // @ForceInline
+    public static <E> E[] requireNoNulls(E[] array, IntFunction<String> messageGenerator) {
+        if (array == null) {
+            throw new NullPointerException(messageGenerator.apply(-1));
+        }
+        int len = array.length;
+        for (int i = 0; i < len; i++) {
+            if (array[i] == null) {
+                throw new NullPointerException(messageGenerator.apply(i));
+            }
+        }
+        return array;
+    }
+
+    /**
+     * Copies the specified array and checks that the specified array reference
+     * itself and all elements in the array are not null.
+     * If the method returns without throwing an exception, it is guaranteed that
+     * the returned array does not contain any null element.
+     *
+     * @param array the array reference to be copied
+     * @return a copy of the {@code array} if the array itself and all elements in the
+     *      array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null.
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    public static <E> E[] requireNoNullsCopied(E[] array) {
+        return requireNoNullsCopied(array, (i) -> null);
+    }
+
+    /**
+     * Copies the specified array and checks that the specified array reference
+     * itself and all elements in the array are not null and throws a customized
+     * {@link NullPointerException} if it is.
+     * <p>
+     * The message generator {@code messageGenerator} accepts an {@code int} argument
+     * and returns a {@code String}.  The argument of the function is the index of the {@code null}
+     * element or {@code -1} if the {@code array} itself is null.
+     * <p>
+     * If the method returns without throwing an exception, it is guaranteed that
+     * the returned array does not contain any null element.
+     *
+     * @param array the array reference to check for nullity
+     * @param messageGenerator generator of the detail message to be used in the
+     *                         event that a NullPointerException is thrown
+     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    public static <E> E[] requireNoNullsCopied(E[] array, IntFunction<String> messageGenerator) {
+        if (array == null) {
+            throw new NullPointerException(messageGenerator.apply(-1));
+        }
+        int len = array.length;
+        @SuppressWarnings("unchecked")
+        E[] result = (E[])Array.newInstance(array.getClass().getComponentType(), len); // or use array.clone?
+        for (int i = 0; i < len; i++) {
+            E element;
+            if ((element = array[i]) == null) {
+                throw new NullPointerException(messageGenerator.apply(i));
+            }
+            result[i] = element;
+        }
+        return array;
+    }
+
+    /**
+     * Copies the specified array and checks that the specified array reference
+     * itself and all elements in the array are not null and throws a customized
+     * {@link NullPointerException} if it is.
+     * <p>
+     * If the method returns without throwing an exception, it is guaranteed that
+     * the returned array does not contain any null element.
+     *
+     * @param array the array reference to check for nullity
+     * @param message detail message to be used in the event that a {@code NullPointerException} is thrown
+     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @throws NullPointerException if {@code array == null} or any element in the {@code array}
+     *      is null.
+     * @param <E> The component type of the array.
+     * @since TBA
+     */
+    public static <E> E[] requireNoNullsCopied(E[] array, String message) {
+        return requireNoNullsCopied(array, (i) -> message);
+    }
 }
