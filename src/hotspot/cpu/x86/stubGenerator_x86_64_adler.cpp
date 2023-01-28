@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "macroAssembler_x86.hpp"
@@ -46,8 +47,8 @@ ATTRIBUTE_ALIGNED(32) juint ADLER32_SHUF0_TABLE[] = {
 };
 
 ATTRIBUTE_ALIGNED(32) juint ADLER32_SHUF1_TABLE[] = {
-    0xFFFFFF08UL, 0xFFFFFF09, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
-    0xFFFFFF0CUL, 0xFFFFFF0D, 0xFFFFFF0EUL, 0xFFFFFF0FUL
+    0xFFFFFF08UL, 0xFFFFFF09UL, 0xFFFFFF0AUL, 0xFFFFFF0BUL,
+    0xFFFFFF0CUL, 0xFFFFFF0DUL, 0xFFFFFF0EUL, 0xFFFFFF0FUL
 };
 
 
@@ -109,7 +110,8 @@ address StubGenerator::generate_updateBytesAdler32() {
   const XMMRegister xtmp4 = xmm9;
   const XMMRegister xtmp5 = xmm10;
 
-  Label SLOOP1, SPRELOOP1A_AVX2, SLOOP1A_AVX2, SLOOP1A_AVX3, SKIP_LOOP_1A, SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
+  Label SLOOP1, SPRELOOP1A_AVX2, SLOOP1A_AVX2, SLOOP1A_AVX3, AVX3_REDUCE, SKIP_LOOP_1A;
+  Label SKIP_LOOP_1A_AVX3, FINISH, LT64, DO_FINAL, FINAL_LOOP, ZERO_SIZE, END;
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -141,18 +143,51 @@ address StubGenerator::generate_updateBytesAdler32() {
   __ align32();
   if (VM_Version::supports_avx512vl()) {
     // AVX2 performs better for smaller inputs because of leaner post loop reduction sequence..
-    __ cmpl(s, MAX(128, VM_Version::avx3_threshold()));
+    __ cmpl(s, MAX2(128, VM_Version::avx3_threshold()));
     __ jcc(Assembler::belowEqual, SPRELOOP1A_AVX2);
+
+    __ lea(end, Address(s, data, Address::times_1, - (2*CHUNKSIZE -1)));
     __ vpxor(yb, yb, yb, Assembler::AVX_512bit);
 
+    // Some notes on vectorized main loop algorithm.
+    // Additions are performed in slices of 16 bytes in the main loop.
+    // input size : 64 bytes (a0 - a63).
+    // Iteration0 : ya =  [a0 - a15]
+    //              yb =  [a0 - a15]
+    // Iteration1 : ya =  [a0 - a15] + [a16 - a31]
+    //              yb =  2 x [a0 - a15] + [a16 - a31]
+    // Iteration2 : ya =  [a0 - a15] + [a16 - a31] + [a32 - a47]
+    //              yb =  3 x [a0 - a15] + 2 x [a16 - a31] + [a32 - a47]
+    // Iteration4 : ya =  [a0 - a15] + [a16 - a31] + [a32 - a47] + [a48 - a63]
+    //              yb =  4 x [a0 - a15] + 3 x [a16 - a31] + 2 x [a32 - a47] + [a48 - a63]
+    // Before performing reduction we must scale the intermediate result appropriately.
+    // Since addition was performed in chunks of 16 bytes, thus to match the scalar implementation
+    // Oth lane element must be repeatedly added 16 times, 1st element 15 times and so on so forth.
+    // Thus we first multiply yb by 16 followed by subtracting appropriately scaled ya value.
+    // yb = 16 x yb  - [0 - 15] x ya
+    //    = 64 x [0 - 15] + 48 x [16 - 31] + 32 x [32 - 47] + 16 x [48 - 63]  -  [0 - 15] x ya
+    //    = 64 x a0 + 63 x a1 + 62 x a2 ...... + a63
     __ bind(SLOOP1A_AVX3);
-      __ evpmovzxbd(ydata, Address(data, 0), Assembler::AVX_512bit);
-      __ vpaddd(ya, ya, ydata, Assembler::AVX_512bit);
+      __ evpmovzxbd(ydata0, Address(data, 0), Assembler::AVX_512bit);
+      __ evpmovzxbd(ydata1, Address(data, CHUNKSIZE), Assembler::AVX_512bit);
+      __ vpaddd(ya, ya, ydata0, Assembler::AVX_512bit);
       __ vpaddd(yb, yb, ya, Assembler::AVX_512bit);
-      __ addptr(data, CHUNKSIZE);
+      __ vpaddd(ya, ya, ydata1, Assembler::AVX_512bit);
+      __ vpaddd(yb, yb, ya, Assembler::AVX_512bit);
+      __ addptr(data, 2*CHUNKSIZE);
       __ cmpptr(data, end);
       __ jcc(Assembler::below, SLOOP1A_AVX3);
 
+    __ addptr(end, CHUNKSIZE);
+    __ cmpptr(data, end);
+    __ jcc(Assembler::aboveEqual, AVX3_REDUCE);
+
+    __ evpmovzxbd(ydata0, Address(data, 0), Assembler::AVX_512bit);
+    __ vpaddd(ya, ya, ydata0, Assembler::AVX_512bit);
+    __ vpaddd(yb, yb, ya, Assembler::AVX_512bit);
+    __ addptr(data, CHUNKSIZE);
+
+    __ bind(AVX3_REDUCE);
     __ vpslld(yb, yb, 4, Assembler::AVX_512bit); //b is scaled by 16(avx512))
     __ vpmulld(ysa, ya, ExternalAddress((address)ADLER32_ASCALE_TABLE), Assembler::AVX_512bit, r14 /*rscratch*/);
 
