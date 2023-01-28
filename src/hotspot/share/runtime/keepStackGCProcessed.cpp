@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ KeepStackGCProcessedMark::KeepStackGCProcessedMark(JavaThread* jt) :
     return;
   }
   StackWatermark* our_watermark = StackWatermarkSet::get(JavaThread::current(), StackWatermarkKind::gc);
-  if (our_watermark == NULL) {
+  if (our_watermark == nullptr) {
     _active = false;
     return;
   }
@@ -56,5 +56,5 @@ KeepStackGCProcessedMark::~KeepStackGCProcessedMark() {
 }
 
 void KeepStackGCProcessedMark::finish_processing() {
-  StackWatermarkSet::finish_processing(_jt, NULL /* context */, StackWatermarkKind::gc);
+  StackWatermarkSet::finish_processing(_jt, nullptr /* context */, StackWatermarkKind::gc);
 }
