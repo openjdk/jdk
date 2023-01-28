@@ -166,11 +166,18 @@ class ZipUtils {
     }
 
     /**
+     * Fetches unsigned 8-bit value from byte array at specified offset.
+     */
+    public static final int get8(byte[] b, int off) {
+        return b[off] & 0xff;
+    }
+
+    /**
      * Fetches unsigned 16-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final int get16(byte[] b, int off) {
-        return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
+        return get8(b, off) | (get8(b, off + 1) << 8);
     }
 
     /**
@@ -178,7 +185,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get32(byte[] b, int off) {
-        return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
+        return get32S(b, off) & 0xffffffffL;
     }
 
     /**
@@ -200,19 +207,19 @@ class ZipUtils {
 
     // fields access methods
     static final int CH(byte[] b, int n) {
-        return b[n] & 0xff ;
+        return get8(b, n) ;
     }
 
     static final int SH(byte[] b, int n) {
-        return (b[n] & 0xff) | ((b[n + 1] & 0xff) << 8);
+        return get16(b, n);
     }
 
     static final long LG(byte[] b, int n) {
-        return ((SH(b, n)) | (SH(b, n + 2) << 16)) & 0xffffffffL;
+        return get32(b, n);
     }
 
     static final long LL(byte[] b, int n) {
-        return (LG(b, n)) | (LG(b, n + 4) << 32);
+        return get64(b, n);
     }
 
     static final long GETSIG(byte[] b) {
