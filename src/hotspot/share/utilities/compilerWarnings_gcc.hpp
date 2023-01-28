@@ -96,6 +96,4 @@
 
 #endif // gcc10+
 
-#undef PRAGMA
-
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP
