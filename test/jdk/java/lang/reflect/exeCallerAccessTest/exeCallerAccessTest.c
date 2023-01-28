@@ -23,6 +23,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef AIX
+#include <pthread.h>
+#endif //AIX
 
 #include "jni.h"
 #include "assert.h"
@@ -42,7 +45,7 @@ int setAccessible(JNIEnv *env, char* declaringClass_name, char* field_name);
 int trySetAccessible(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
 int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
 
-int main(int argc, char** args) {
+void* run(void* argp){
     JavaVM *jvm;
     JNIEnv *env;
     JavaVMInitArgs vm_args;
@@ -235,4 +238,20 @@ int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboole
         return 4;
     }
     return 0;
+}
+
+int main(int argc, char *argv[]){
+#ifdef AIX
+   size_t adjusted_stack_size = 1024*1024;
+   pthread_t id;
+   pthread_attr_t attr;
+   pthread_attr_init(&attr);
+   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+   pthread_attr_setguardsize(&attr, 0);
+   pthread_attr_setstacksize(&attr, adjusted_stack_size);
+   pthread_create (&id,&attr,run,(void *)&argv);
+   pthread_join(id,NULL);
+#else
+   run(&argv);
+#endif //AIX
 }
