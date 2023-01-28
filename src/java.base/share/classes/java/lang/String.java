@@ -697,8 +697,8 @@ public final class String
 
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
-     * 
-     * @param  noShare 
+     *
+     * @param  noShare
      *         {@code true} if the resulting string MUST NOT share the byte array,
      *         {@code false} if the byte array can be exclusively used to construct
      *         the string and is not modified or used for any other purpose.
