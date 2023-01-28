@@ -223,6 +223,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseZfhmin, false);
   }
 
+  if (UseZihintpause && !_cpu_features.ext_zihintpause) {
+    warning("Zihintpause is not supported on this CPU");
+    FLAG_SET_DEFAULT(UseZihintpause, false);
+  }
+
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
   }
@@ -250,7 +255,6 @@ void VM_Version::initialize() {
   char buf[512];
   buf[0] = '\0';
   if (_uarch != NULL && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
-  strcat(buf, "rv64");
   strcat(buf, _isa);
   _features_string = os::strdup(buf);
 

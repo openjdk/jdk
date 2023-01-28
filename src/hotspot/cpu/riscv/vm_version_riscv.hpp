@@ -47,6 +47,7 @@ struct riscv_cpu_feature {
   bool ext_zicbom;
   bool ext_zicbop;
   bool ext_zicboz;
+  bool ext_zihintpause;
   bool ext_zfhmin;
 };
 

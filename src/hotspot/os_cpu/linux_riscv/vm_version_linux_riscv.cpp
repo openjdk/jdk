@@ -142,6 +142,8 @@ void VM_Version::get_isa() {
       _cpu_features.ext_zicboz = true;
     } else if (strncmp(isa_ext, "zfhmin", sizeof "zfhmin" - 1) == 0) {
       _cpu_features.ext_zfhmin = true;
+    } else if (strncmp(isa_ext, "zihintpause", sizeof "zhintpause" - 1) == 0) {
+      _cpu_features.ext_zihintpause = true;
     }
 
     // read next isa extension string, if any
