@@ -34,6 +34,7 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
+#define PRAGMA(str) _Pragma(#str)
 #define PRAGMA_DISABLE_GCC_WARNING(option) PRAGMA(GCC diagnostic ignored option)
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
@@ -94,5 +95,7 @@
   PRAGMA_DIAG_POP
 
 #endif // gcc10+
+
+#undef PRAGMA
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP
