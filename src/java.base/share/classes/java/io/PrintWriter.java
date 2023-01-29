@@ -61,7 +61,7 @@ import jdk.internal.misc.InternalLock;
  * @since       1.1
  */
 
-public class PrintWriter extends Writer {
+public class PrintWriter extends Writer implements PrintOutput {
 
     /**
      * The underlying character-output stream of this
