@@ -90,8 +90,6 @@ public interface PrintOutput extends Appendable {
      *         appended to this output stream.
      *
      * @return {@code this}
-     *
-     * @since  1.5
      */
     @Override
     default PrintOutput append(CharSequence csq) {
@@ -126,8 +124,6 @@ public interface PrintOutput extends Appendable {
      *          If {@code start} or {@code end} are negative, {@code start}
      *          is greater than {@code end}, or {@code end} is greater than
      *          {@code csq.length()}
-     *
-     * @since  1.5
      */
     @Override
     default PrintOutput append(CharSequence csq, int start, int end) {
