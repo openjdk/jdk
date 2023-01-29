@@ -8863,7 +8863,7 @@ public class Arrays {
             }
             result[i] = element;
         }
-        return array;
+        return result;
     }
 
     /**
