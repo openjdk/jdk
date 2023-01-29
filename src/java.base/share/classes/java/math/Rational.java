@@ -1318,6 +1318,10 @@ public class Rational extends Number implements Comparable<Rational> {
      *                             {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY})
      *                             and the exact result cannot fit in
      *                             {@code mc.getPrecision()} digits.
+     * @implNote For reasons of performance, the rounding logic of this algorithm
+     *           relies on "2p + 2" property, so if {@code mc} has a half-way
+     *           rounding mode, the result is just probably within one half an ulp
+     *           of the exact value.
      * @see BigDecimal#sqrt(MathContext)
      * @see BigInteger#sqrt()
      * @see BigInteger#root(int)
@@ -1365,7 +1369,7 @@ public class Rational extends Number implements Comparable<Rational> {
             if (rootDenRem[1].signum != 0)
                 throw new ArithmeticException("Computed " + n + "th root not exact.");
 
-            Rational result = valueOf(signum, rootNumRem[0], rootDenRem[0]);
+            Rational result;
 
             if (n > 0)
                 result = valueOf(signum, rootNumRem[0], rootDenRem[0]);
@@ -1423,10 +1427,10 @@ public class Rational extends Number implements Comparable<Rational> {
         // point.
 
         final int expAdjust;
-        Rational working = this;
+        Rational working = this.abs();
         if (floor.signum == 1) { // non-zero integer part
-            int exp = -floor.bitLength() + 1; // 1 <= this * 2^exp < 2
-            // adjust exp to the nearest multiple of deg, round down in case of draw
+            int exp = -floor.bitLength() + 1; // 1 <= abs(this) * 2^exp < 2
+            // adjust exp to the nearest multiple of deg, round down in case of a tie
             int mod = -(exp % deg); // mod is non-negative
             expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
 
@@ -1436,18 +1440,18 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         } else {
             BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
-            int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < this * 2^exp < 2
+            int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < abs(this) * 2^exp < 2
 
             int mod = exp % deg;
             if (mod == 0)
                 expAdjust = exp;
             else {
-                if (numerator.shiftLeft(exp).compareTo(denominator) < 0) { // this * 2^exp < 1
+                if (numerator.shiftLeft(exp).compareTo(denominator) < 0) { // abs(this) * 2^exp < 1
                     exp++;
                     mod = mod + 1 == deg ? 0 : mod + 1;
                 }
-                // now 1 < this * 2^exp < 2
-                // adjust exp to the nearest multiple of deg, round down in case of draw
+                // now 1 < abs(this) * 2^exp < 2
+                // adjust exp to the nearest multiple of deg, round down in case of a tie
                 expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
             }
 
@@ -1531,15 +1535,16 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (n < 0)
             result = result.invert();
+        
+        if (signum == -1)
+            result = result.negate();
 
         // round with mc
         BigDecimal decimalRes = result.toBigDecimal(mc);
         result = new Rational(decimalRes);
         BigDecimal ulp = decimalRes.ulp();
-
-        switch (targetRm) {
-        case DOWN:
-        case FLOOR:
+        
+        if (roundFloor(targetRm)) {
             // Check if too big
             if (result.pow(n).compareTo(this) > 0) {
                 // Adjust increment down in case of 1 = 10^0
@@ -1554,17 +1559,13 @@ public class Rational extends Number implements Comparable<Rational> {
                 result = result.subtract(new Rational(ulp));
                 decimalRes = decimalRes.subtract(ulp);
             }
-            break;
-
-        case UP:
-        case CEILING:
+        } else if (roundCeiling(targetRm)) {
             // Check if too small
             if (result.pow(n).compareTo(this) < 0) {
                 result = result.add(new Rational(ulp));
                 decimalRes = decimalRes.add(ulp);
             }
-
-            break;
+        }
         // No additional work, rely on "2p + 2" property
         // for correct rounding. Alternatively, could
         // instead run the Newton iteration to around p
@@ -1575,7 +1576,6 @@ public class Rational extends Number implements Comparable<Rational> {
         // for Rational given the more varied
         // combinations of input and output precisions
         // supported.
-        }
 
         // Test numerical properties
         assert rootResultAssertions(n, result, decimalRes, mc);
@@ -1860,6 +1860,16 @@ public class Rational extends Number implements Comparable<Rational> {
     private boolean roundUp(RoundingMode rm) {
         return rm == RoundingMode.UP || signum != -1 && rm == RoundingMode.CEILING
                 || signum == -1 && rm == RoundingMode.FLOOR;
+    }
+    
+    private boolean roundCeiling(RoundingMode rm) {
+        return rm == RoundingMode.CEILING || signum != -1 && rm == RoundingMode.UP
+                || signum == -1 && rm == RoundingMode.DOWN;
+    }
+    
+    private boolean roundFloor(RoundingMode rm) {
+        return rm == RoundingMode.FLOOR || signum != -1 && rm == RoundingMode.DOWN
+                || signum == -1 && rm == RoundingMode.UP;
     }
 
     /**
