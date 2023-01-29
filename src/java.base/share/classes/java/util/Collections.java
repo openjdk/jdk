@@ -6023,4 +6023,37 @@ public class Collections {
         }
         return list;
     }
+
+    /**
+     * Finds and replaces all null elements in a list with a non-null object.
+     * <p>
+     * The replace function accepts the index of the null element as the argument,
+     * and returns a non-null object used to replace the null element.  This method
+     * invokes the replace function for every null slot.
+     *
+     * @param list a non-null array reference
+     * @param replaceFunction a function to be used to replace {@code null} elements
+     * @return the reference to the {@code list}
+     * @throws NullPointerException if {@code list == null} or {@code replaceFunction == null}
+     *      or {@code replaceFunction.apply} returns {@code null}.
+     * @throws ClassCastException if the {@code list} prevents an element from being set into the
+     *      list because the element has a wrong type.
+     * @throws UnsupportedOperationException if the {@linkplain List#listIterator() list iterator} of
+     *      the {@code list} does not support the set operation.
+     * @param <E> the component type of the array
+     * @since TBA
+     */
+    public static <E, L extends List<? super E>>
+    L requireNoNullsElseReplace(L list, IntFunction<? extends E> replaceFunction) {
+        Objects.requireNonNull(list, "list == null");
+        Objects.requireNonNull(replaceFunction, "replaceFunction == null");
+        ListIterator<? super E> li = list.listIterator();
+        while (li.hasNext()) {
+            if (li.next() == null) {
+                li.set(Objects.requireNonNull(replaceFunction.apply(li.nextIndex() - 1),
+                        "replaceFunction returns null"));
+            }
+        }
+        return list;
+    }
 }
