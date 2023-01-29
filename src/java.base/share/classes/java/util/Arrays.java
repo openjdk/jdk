@@ -8716,7 +8716,7 @@ public class Arrays {
 
         return aLength != bLength ? length : -1;
     }
-    
+
     /**
      * Checks that the specified array reference itself and all
      * elements in the array are not null.
