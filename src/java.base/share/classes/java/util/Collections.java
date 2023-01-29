@@ -6040,7 +6040,8 @@ public class Collections {
      *      list because the element has a wrong type.
      * @throws UnsupportedOperationException if the {@linkplain List#listIterator() list iterator} of
      *      the {@code list} does not support the set operation.
-     * @param <E> the component type of the array
+     * @param <E> the element type of the list
+     * @param <L> the type of the list
      * @since TBA
      */
     public static <E, L extends List<? super E>>
