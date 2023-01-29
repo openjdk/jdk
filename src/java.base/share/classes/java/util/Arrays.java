@@ -8843,7 +8843,7 @@ public class Arrays {
      * @param array the array reference to check for nullity
      * @param messageGenerator generator of the detail message to be used in the
      *                         event that a NullPointerException is thrown
-     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @return a copy of the {@code array} if the array itself and all elements in the array are not {@code null}.
      * @throws NullPointerException if {@code array == null} or any element in the {@code array}
      *      is null
      * @param <E> The component type of the array.
@@ -8876,7 +8876,7 @@ public class Arrays {
      *
      * @param array the array reference to check for nullity
      * @param message detail message to be used in the event that a {@code NullPointerException} is thrown
-     * @return {@code array} if the array itself and all elements in the array are not {@code null}.
+     * @return a copy of the {@code array} if the array itself and all elements in the array are not {@code null}.
      * @throws NullPointerException if {@code array == null} or any element in the {@code array}
      *      is null.
      * @param <E> The component type of the array.
