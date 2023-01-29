@@ -65,7 +65,7 @@ import jdk.internal.misc.InternalLock;
  */
 
 public class PrintStream extends FilterOutputStream
-    implements Appendable, Closeable
+    implements PrintOutput, Appendable, Closeable
 {
     // initialized to null when PrintStream is sub-classed
     private final InternalLock lock;
