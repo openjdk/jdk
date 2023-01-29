@@ -653,7 +653,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 }
 
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
-  SourceObjInfo* p = _src_obj_table.get(src_addr);
+  const SourceObjInfo* p = _src_obj_table.get(src_addr);
   assert(p != nullptr, "must be");
 
   return p->buffered_addr();
@@ -661,7 +661,7 @@ address ArchiveBuilder::get_buffered_addr(address src_addr) const {
 
 address ArchiveBuilder::get_source_addr(address buffered_addr) const {
   assert(is_in_buffer_space(buffered_addr), "must be");
-  address* src_p = _buffered_to_src_table.get(buffered_addr);
+  const address* src_p = _buffered_to_src_table.get(buffered_addr);
   assert(src_p != nullptr && *src_p != nullptr, "must be");
   return *src_p;
 }

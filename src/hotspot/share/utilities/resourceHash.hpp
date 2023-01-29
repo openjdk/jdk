@@ -120,14 +120,28 @@ class ResourceHashtableBase : public STORAGE {
     return get(key) != nullptr;
   }
 
-  V* get(K const& key) const {
+ /*
+  * Note that there are const and non-const overloads of 'get'.
+  * A const ResourceHashTableBase means that the V's in it
+  * are also const. So, the const version of 'get' returns
+  * V const* (pointer to constant V). The non-const version
+  * of 'get' returns V* (pointer to mutable V). This prevents
+  * the elements of a const ResourceHashTableBase from being
+  * modified through the pointer returned by 'get'.
+  */
+  V* get(K const& key) {
     unsigned hv = HASH(key);
-    Node const** ptr = lookup_node(hv, key);
+    Node ** ptr = lookup_node(hv, key);
     if (*ptr != nullptr) {
-      return const_cast<V*>(&(*ptr)->_value);
+      return &(*ptr)->_value;
     } else {
       return nullptr;
     }
+  }
+
+  V const* get(K const& key) const {
+    return const_cast<V const*>(
+      const_cast<ResourceHashtableBase*>(this)->get(key));
   }
 
  /**
