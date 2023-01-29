@@ -8811,6 +8811,35 @@ public class Arrays {
     }
 
     /**
+     * Finds and replaces all null elements in an array with a non-null object.
+     * <p>
+     * The replace function accepts the index of the null element as the argument,
+     * and returns a non-null object used to replace the null element.  This method
+     * invokes the replace function for every null slot.
+     *
+     * @param array a non-null array reference
+     * @param replaceFunction a function to be used to replace {@code null} elements
+     * @return the reference to the {@code array}
+     * @throws NullPointerException if {@code array == null} or {@code replaceFunction == null}
+     *      or {@code replaceFunction.apply} returns {@code null}.
+     * @throws ArrayStoreException if {@code replaceFunction.apply} returns an object that cannot
+     *      be stored into the array
+     * @param <E> the component type of the array
+     * @since TBA
+     */
+    public static <E> E[] requireNoNullsElseReplace(E[] array, IntFunction<? extends E> replaceFunction) {
+        Objects.requireNonNull(array, "array == null");
+        Objects.requireNonNull(replaceFunction, "replaceFunction == null");
+        int len = array.length;
+        for (int i = 0; i < len; i++) {
+            if (array[i] == null) {
+                array[i] = Objects.requireNonNull(replaceFunction.apply(i), "replaceFunction returns null");
+            }
+        }
+        return array;
+    }
+
+    /**
      * Copies the specified array and checks that the specified array reference
      * itself and all elements in the array are not null.
      * If the method returns without throwing an exception, it is guaranteed that
@@ -8884,5 +8913,43 @@ public class Arrays {
      */
     public static <E> E[] requireNoNullsCopied(E[] array, String message) {
         return requireNoNullsCopied(array, (i) -> message);
+    }
+
+    /**
+     * Returns a copy of an array replaced all null elements in the array with a non-null object.
+     * The original array is not modified.
+     * <p>
+     * The replace function accepts the index of the null element as the argument,
+     * and returns a non-null object used to replace the null element in the result array.
+     * This method invokes the replace function for every null slot.
+     * <p>
+     * If the method returns without throwing an exception, it is guaranteed that
+     * the returned array does not contain any null element.
+     *
+     * @param array a non-null array reference
+     * @param replaceFunction a function to be used to replace {@code null} elements
+     * @return a modified copy of the {@code array}
+     * @throws NullPointerException if {@code array == null} or {@code replaceFunction == null}
+     *      or {@code replaceFunction.apply} returns {@code null}.
+     * @throws ArrayStoreException if {@code replaceFunction.apply} returns an object that cannot
+     *      be stored into the array
+     * @param <E> the component type of the array
+     * @since TBA
+     */
+    public static <E> E[] requireNoNullsCopiedElseReplace(E[] array, IntFunction<? extends E> replaceFunction) {
+        Objects.requireNonNull(array, "array == null");
+        Objects.requireNonNull(replaceFunction, "replaceFunction == null");
+        int len = array.length;
+        @SuppressWarnings("unchecked")
+        E[] result = (E[])Array.newInstance(array.getClass().getComponentType(), len); // or use array.clone?
+        for (int i = 0; i < len; i++) {
+            E element;
+            if ((element = array[i]) == null) {
+                array[i] = Objects.requireNonNull(replaceFunction.apply(i), "replaceFunction returns null");
+            } else {
+                array[i] = element;
+            }
+        }
+        return array;
     }
 }
