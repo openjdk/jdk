@@ -40,9 +40,9 @@ import java.util.Locale;
  * control over the encoding process is required.
  *
  * @implSpec
- * All implementations of the default {@code print} methods relies on the only abstract
+ * All implementations of the default {@code print} methods rely on the only abstract
  * method {@link #print(String)}.
- * All implementations of the default {@code println} methods relies on the corresponding
+ * All implementations of the default {@code println} methods rely on the corresponding
  * {@code print} method and the no-arg {@link #println()} method.
  *
  * @see PrintStream
