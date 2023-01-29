@@ -5815,7 +5815,7 @@ public class Collections {
         @Override
         public Stream<E> parallelStream()   {return q.parallelStream();}
     }
-    
+
     /**
      * Checks that the specified iterable reference itself and all
      * elements in the iterable are not null.
