@@ -8945,11 +8945,11 @@ public class Arrays {
         for (int i = 0; i < len; i++) {
             E element;
             if ((element = array[i]) == null) {
-                array[i] = Objects.requireNonNull(replaceFunction.apply(i), "replaceFunction returns null");
+                result[i] = Objects.requireNonNull(replaceFunction.apply(i), "replaceFunction returns null");
             } else {
-                array[i] = element;
+                result[i] = element;
             }
         }
-        return array;
+        return result;
     }
 }
