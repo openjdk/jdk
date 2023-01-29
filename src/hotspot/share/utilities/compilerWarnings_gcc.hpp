@@ -34,8 +34,7 @@
 #define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
 #endif
 
-#define PRAGMA(str) _Pragma(#str)
-#define PRAGMA_DISABLE_GCC_WARNING(option) PRAGMA(GCC diagnostic ignored option)
+#define PRAGMA_DISABLE_GCC_WARNING(option) _Pragma("GCC diagnostic ignored" #option)
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
