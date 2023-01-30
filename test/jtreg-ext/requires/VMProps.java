@@ -513,26 +513,22 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + isSupported;
     }
 
-    private void redirectOutputToLogFile(ProcessBuilder pb, String fileNameBase) {
-        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
-            return;
-        }
-
+    private void redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
         String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
 
         String stdoutFileName = String.format("./%s-stdout--%s.log", fileNameBase, timeStamp);
         pb.redirectOutput(new File(stdoutFileName));
-        log("checkDockerSupport(): child process stdout redirected to" + stdoutFileName);
+        log(msg + ": child process stdout redirected to " + stdoutFileName);
 
         String stderrFileName = String.format("./%s-stderr--%s.log", fileNameBase, timeStamp);
         pb.redirectError(new File(stderrFileName));
-        log("checkDockerSupport(): child process stderr redirected to" + stderrFileName);
+        log(msg + ": child process stderr redirected to " + stderrFileName);
    }
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-        redirectOutputToLogFile(pb, "container-ps-stdout");
+        redirectOutputToLogFile("checkDockerSupport(): <container> ps", pb, "container-ps");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
@@ -659,33 +655,10 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param msg
      */
     protected static void log(String msg) {
+        // By jtreg design stderr produced here will be visible
+        // in the output of a parent process.
         System.err.println("VMProps: " + msg);
-        logToFile(msg);
     }
-
-
-    /**
-     * Logs diagnostic message into a file.
-     * Use a property -Djtreg.log.vmprops to turn on vmprops logging.
-     * E.g.: jtreg -Djtreg.log.vmprops=true
-     * If a property is not specified method returns w/o any action.
-     * Log will be writtent into current jtreg's workdir.
-     *
-     * @param msg
-     */
-    protected static void logToFile(String msg) {
-        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
-            return;
-        }
-        String fileName = "./jtreg-vm-props.log";
-        try {
-            Files.writeString(Paths.get(fileName), msg + "\n", Charset.forName("ISO-8859-1"),
-                    StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to log into '" + fileName + "'", e);
-        }
-    }
-
 
     /**
      * This method is for the testing purpose only.
