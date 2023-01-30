@@ -90,7 +90,8 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  protected:
-  Node** table() const { return STORAGE::table(); }
+  Node** table() { return STORAGE::table(); }
+  const Node* const* table() const { return STORAGE::table(); }
 
   ResourceHashtableBase() : STORAGE(), _number_of_entries(0) {}
   ResourceHashtableBase(unsigned size) : STORAGE(size), _number_of_entries(0) {}
@@ -332,8 +333,12 @@ protected:
     return TABLE_SIZE;
   }
 
-  Node** table() const {
-    return const_cast<Node**>(_table);
+  Node** table() {
+    return _table;
+  }
+
+  const Node* const* table() const {
+    return _table;
   }
 };
 
