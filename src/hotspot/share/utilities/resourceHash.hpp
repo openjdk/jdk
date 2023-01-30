@@ -90,14 +90,14 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   // impl that works for both const and non-const tables
-  template<typename Table_t, typename Bucket_t, typename Node_t, typename Function>
-  static void iterate_impl(Table_t& rht, Function function) {
-    Bucket_t* bucket = rht.table();
+  template<typename Table, typename Function>
+  static void iterate_impl(Table& rht, Function function) {
+    auto* bucket = rht.table();
     const unsigned sz = rht.table_size();
     int cnt = rht._number_of_entries;
 
     while (cnt > 0 && bucket < rht.bucket_at(sz)) {
-      Node_t* node = *bucket;
+      auto* node = *bucket;
       while (node != nullptr) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
@@ -268,12 +268,12 @@ class ResourceHashtableBase : public STORAGE {
 
   template<typename Function>
   void iterate(Function function) const { // lambda enabled API
-    iterate_impl<const ResourceHashtableBase, const Node* const, const Node>(*this, function);
+    iterate_impl(*this, function);
   }
 
   template<typename Function>
   void iterate(Function function) { // lambda enabled API
-    iterate_impl<ResourceHashtableBase, Node*, Node>(*this, function);
+    iterate_impl(*this, function);
   }
 
   // same as above, but unconditionally iterate all entries
