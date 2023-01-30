@@ -33,7 +33,15 @@
 
 #if defined(TARGET_COMPILER_gcc)
 
+#ifdef __has_builtin
+#if __has_builtin(__builtin_debugtrap)
 #define BREAKPOINT __builtin_debugtrap()
+#endif
+#endif
+
+#ifndef BREAKPOINT
+#define BREAKPOINT __builtin_trap()
+#endif
 
 #elif defined(TARGET_COMPILER_visCPP)
 
