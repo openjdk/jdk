@@ -5835,17 +5835,73 @@ public class Collections {
         public Stream<E> parallelStream()   {return q.parallelStream();}
     }
 
+    private static final Set<String> trustedCollections = Set.of(
+        // Lists
+        "java.util.Collections$EmptyList",
+        "java.util.Collections$SingletonList",
+        "java.util.Arrays$ArrayList",
+        "java.util.ArrayList",
+        "java.util.LinkedList",
+        "java.util.Vector",
+        "java.util.Stack",
+        "java.util.concurrent.CopyOnWriteArrayList",
+
+        // Sets
+        "java.util.HashSet",
+        "java.util.LinkedHashSet",
+        "java.util.TreeSet",
+        "java.util.JumboEnumSet",
+        "java.util.RegularEnumSet",
+        "java.util.Collections$EmptySet",
+        "java.util.Collections$SingletonSet",
+        "java.util.concurrent.CopyOnWriteArraySet",
+        "java.util.concurrent.ConcurrentSkipListSet",
+
+        // Queue
+        "java.util.ArrayDeque",
+        "java.util.PriorityQueue",
+        "java.util.concurrent.ArrayBlockingQueue",
+        "java.util.concurrent.ConcurrentLinkedQueue",
+        "java.util.concurrent.ConcurrentLinkedDeque",
+        "java.util.concurrent.DelayQueue",
+        "java.util.concurrent.LinkedBlockingQueue",
+        "java.util.concurrent.LinkedBlockingDeque",
+        "java.util.concurrent.LinkedTransferQueue",
+        "java.util.concurrent.PriorityBlockingQueue",
+        "java.util.concurrent.SynchronousQueue"
+    );
+
+    private static final Set<String> trustedMaps = Set.of(
+        "java.util.Properties",
+        "java.util.HashMap",
+        "java.util.LinkedHashMap",
+        "java.util.IdentityHashMap",
+        "java.util.WeakHashMap",
+        "java.util.Hashtable",
+        "java.util.TreeMap",
+        "java.util.EnumMap",
+        "java.util.concurrent.ConcurrentHashMap",
+        "java.util.concurrent.ConcurrentSkipListMap"
+    );
+
     /*
      * Checks whether the collection is trusted.
      * It is safe to assume that all methods of trusted collection are compliant
      */
     static boolean isTrustedCollection(Collection<?> coll) {
         if (coll.getClass().getModule() == Object.class.getModule()) {
-            return coll instanceof CollectionWrapper wrapper
-                  ? isTrustedCollection(wrapper.getCollection())
-                  : true;
-        } else {
-            return false;
+            if (coll instanceof CollectionWrapper wrapper) {
+                return isTrustedCollection(wrapper.getCollection());
+            } else if (trustedCollections.contains(coll.getClass().getName())) {
+                return true;
+            } else if (coll instanceof ImmutableCollections.AbstractImmutableCollection<?>) {
+                return true;
+            } else if (coll instanceof Set<?> && coll.getClass().isMemberClass()) { // Map keys set or entries set
+                return trustedMaps.contains(coll.getClass().getNestHost().getName());
+            } else {
+                return false;
+            }
         }
+        return false;
     }
 }
