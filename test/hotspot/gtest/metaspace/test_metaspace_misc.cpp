@@ -47,7 +47,7 @@ TEST_VM(metaspace, misc_sizes)   {
   ASSERT_TRUE(is_aligned(Settings::virtual_space_node_default_word_size(),
               metaspace::chunklevel::MAX_CHUNK_WORD_SIZE));
   ASSERT_EQ(Settings::virtual_space_node_default_word_size(),
-            metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 2);
+            metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * NOT_LP64(2) LP64_ONLY(16));
   ASSERT_EQ(Settings::virtual_space_node_reserve_alignment_words(),
             Metaspace::reserve_alignment_words());
 
