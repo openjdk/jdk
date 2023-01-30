@@ -3594,11 +3594,10 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp,
   eor(crc, crc, tmp);
 }
 
-void MacroAssembler::kernel_crc32_using_pmull(Register crc, Register buf,
-        Register len, Register tmp0, Register tmp1, Register tmp2,
-        Register tmp3) {
+void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2) {
     Label CRC_by128_loop, L_exit;
-    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2, tmp3);
+    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
 
     subs(tmp0, len, 256);
     br(Assembler::LT, L_exit);
@@ -3834,11 +3833,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register tmp, Register tmp2, Register tmp3) {
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
-  if (UseCRC32 && UsePmull) {
-      kernel_crc32_using_pmull(crc, buf, len, table0, table1, table2, table3);
-  }
-
   if (UseCRC32) {
+      if (UseCryptoPmull) {
+        kernel_crc32_using_crypto_pmull(crc, buf, len, table0, table1, table2);
+      }
+
       kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);
       return;
   }

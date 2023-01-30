@@ -246,9 +246,17 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32, false);
   }
 
-  if (UsePmull && (!VM_Version::supports_sha3() || !VM_Version::supports_pmull())) {
-    warning("UsePmull specified, but not supported on this CPU");
-    FLAG_SET_DEFAULT(UsePmull, false);
+
+  // Neoverse V1
+  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+    if (FLAG_IS_DEFAULT(UseCryptoPmull)) {
+      FLAG_SET_DEFAULT(UseCryptoPmull, true);
+    }
+  }
+
+  if (UseCryptoPmull && (!VM_Version::supports_sha3() || !VM_Version::supports_pmull())) {
+    warning("UseCryptoPmull specified, but not supported on this CPU");
+    FLAG_SET_DEFAULT(UseCryptoPmull, false);
   }
 
   if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {

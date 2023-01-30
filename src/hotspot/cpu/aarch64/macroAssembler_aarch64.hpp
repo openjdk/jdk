@@ -1412,9 +1412,8 @@ public:
                                Register yz_idx1, Register yz_idx2,
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp7, Register product_hi);
-  void kernel_crc32_using_pmull(Register crc, Register buf,
-        Register len, Register tmp0, Register tmp1, Register tmp2,
-        Register tmp3);
+  void kernel_crc32_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2);
   void kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
