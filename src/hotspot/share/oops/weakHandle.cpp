@@ -51,7 +51,7 @@ void WeakHandle::release(OopStorage* storage) const {
   if (_obj != nullptr) {
     // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
     // WeakHandle before it is cleared by GC.
-    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, nullptr);
+    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, static_cast<oop>(nullptr));
     storage->release(_obj);
   }
 }
