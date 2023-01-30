@@ -637,7 +637,7 @@ static void check_crash_protection() {
 static void break_if_ptr_caught(void* ptr) {
   if (p2i(ptr) == (intptr_t)MallocCatchPtr) {
     log_warning(malloc, free)("ptr caught: " PTR_FORMAT, p2i(ptr));
-    breakpoint();
+    BREAKPOINT;
   }
 }
 #endif // ASSERT
