@@ -126,6 +126,7 @@ private:
 public:
   ZPageAllocator(size_t min_capacity,
                  size_t initial_capacity,
+                 size_t soft_max_capacity,
                  size_t max_capacity);
 
   bool is_initialized() const;

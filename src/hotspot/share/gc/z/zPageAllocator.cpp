@@ -179,6 +179,7 @@ public:
 
 ZPageAllocator::ZPageAllocator(size_t min_capacity,
                                size_t initial_capacity,
+                               size_t soft_max_capacity,
                                size_t max_capacity) :
     _lock(),
     _cache(),
@@ -207,6 +208,7 @@ ZPageAllocator::ZPageAllocator(size_t min_capacity,
   log_info_p(gc, init)("Min Capacity: " SIZE_FORMAT "M", min_capacity / M);
   log_info_p(gc, init)("Initial Capacity: " SIZE_FORMAT "M", initial_capacity / M);
   log_info_p(gc, init)("Max Capacity: " SIZE_FORMAT "M", max_capacity / M);
+  log_info_p(gc, init)("Soft Max Capacity: " SIZE_FORMAT "M", soft_max_capacity / M);
   if (ZPageSizeMedium > 0) {
     log_info_p(gc, init)("Medium Page Size: " SIZE_FORMAT "M", ZPageSizeMedium / M);
   } else {

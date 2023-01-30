@@ -150,7 +150,11 @@ static double select_young_gc_workers(ZDirectorStats& stats, double serial_gc_ti
   return gc_workers;
 }
 
-ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats, double serial_gc_time_passed, double parallel_gc_time_passed) {
+ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats,
+                                                  double serial_gc_time_passed,
+                                                  double parallel_gc_time_passed,
+                                                  double allocation_spike_tolerance,
+                                                  size_t capacity) {
   if (!stats._old_stats._cycle._is_time_trustable) {
     // Rule disabled
     return ZDriverRequest(GCCause::_no_gc, ConcGCThreads, 0);
@@ -158,9 +162,8 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats, double 
 
   // Calculate amount of free memory available. Note that we take the
   // relocation headroom into account to avoid in-place relocation.
-  const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
   const size_t used = stats._heap._used;
-  const size_t free_including_headroom = soft_max_capacity - MIN2(soft_max_capacity, used);
+  const size_t free_including_headroom = capacity - MIN2(capacity, used);
   const size_t free = free_including_headroom - MIN2(free_including_headroom, ZHeuristics::relocation_headroom());
 
   // Calculate time until OOM given the max allocation rate and the amount
@@ -174,7 +177,7 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats, double 
   const double alloc_rate_avg = alloc_rate_stats._avg;
   const double alloc_rate_sd = alloc_rate_stats._sd;
   const double alloc_rate_sd_percent = alloc_rate_sd / (alloc_rate_avg + 1.0);
-  const double alloc_rate = (MAX2(alloc_rate_predict, alloc_rate_avg) * ZAllocationSpikeTolerance) + (alloc_rate_sd * one_in_1000) + 1.0;
+  const double alloc_rate = (MAX2(alloc_rate_predict, alloc_rate_avg) * allocation_spike_tolerance) + (alloc_rate_sd * one_in_1000) + 1.0;
   const double time_until_oom = (free / alloc_rate) / (1.0 + alloc_rate_sd_percent);
 
   // Calculate max serial/parallel times of a GC cycle. The times are
@@ -215,6 +218,26 @@ ZDriverRequest rule_minor_allocation_rate_dynamic(ZDirectorStats& stats, double 
   }
 
   return ZDriverRequest(GCCause::_z_allocation_rate, actual_gc_workers, 0);
+}
+
+ZDriverRequest rule_soft_minor_allocation_rate_dynamic(ZDirectorStats& stats,
+                                                       double serial_gc_time_passed,
+                                                       double parallel_gc_time_passed) {
+    return rule_minor_allocation_rate_dynamic(stats,
+                                              0.0 /* serial_gc_time_passed */,
+                                              0.0 /* parallel_gc_time_passed */,
+                                              1.0 /* allocation spike tolerance */,
+                                              stats._heap._soft_max_heap_size /* capacity */);
+}
+
+ZDriverRequest rule_hard_minor_allocation_rate_dynamic(ZDirectorStats& stats,
+                                                       double serial_gc_time_passed,
+                                                       double parallel_gc_time_passed) {
+  return rule_minor_allocation_rate_dynamic(stats,
+                                            0.0 /* serial_gc_time_passed */,
+                                            0.0 /* parallel_gc_time_passed */,
+                                            ZAllocationSpikeTolerance /* allocation spike tolerance */,
+                                            ZHeap::heap()->max_capacity() /* capacity */);
 }
 
 static bool rule_minor_allocation_rate_static(ZDirectorStats& stats) {
@@ -316,8 +339,17 @@ static bool rule_minor_allocation_rate(ZDirectorStats& stats) {
   }
 
   if (UseDynamicNumberOfGCThreads) {
-    const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
-    return request.cause() != GCCause::_no_gc;
+    if (rule_soft_minor_allocation_rate_dynamic(stats,
+                                                0.0 /* serial_gc_time_passed */,
+                                                0.0 /* parallel_gc_time_passed */).cause() != GCCause::_no_gc) {
+      return true;
+    }
+    if (rule_hard_minor_allocation_rate_dynamic(stats,
+                                                0.0 /* serial_gc_time_passed */,
+                                                0.0 /* parallel_gc_time_passed */).cause() != GCCause::_no_gc) {
+      return true;
+    }
+    return false;
   } else {
     return rule_minor_allocation_rate_static(stats);
   }
@@ -663,7 +695,7 @@ static ZWorkerResizeInfo wanted_young_nworkers(ZDirectorStats& stats) {
     };
   }
 
-  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, resize_stats._serial_gc_time_passed, resize_stats._parallel_gc_time_passed);
+  const ZDriverRequest request = rule_hard_minor_allocation_rate_dynamic(stats, resize_stats._serial_gc_time_passed, resize_stats._parallel_gc_time_passed);
   if (request.cause() == GCCause::_no_gc) {
     // No urgency
     return {
@@ -758,21 +790,27 @@ static uint initial_young_workers(ZDirectorStats& stats) {
     return MAX2(ConcGCThreads - initial_old_workers(stats), 1u);
   }
 
-  const ZDriverRequest request = rule_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
+  uint nworkers = 1u;
+  const ZDriverRequest soft_request = rule_soft_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
+  const ZDriverRequest hard_request = rule_hard_minor_allocation_rate_dynamic(stats, 0.0 /* serial_gc_time_passed */, 0.0 /* parallel_gc_time_passed */);
+  nworkers = MAX2(nworkers, soft_request.young_nworkers());
+  nworkers = MAX2(nworkers, hard_request.young_nworkers());
+  return nworkers;
+
   if (!ZDriver::major()->is_busy()) {
-    return request.young_nworkers();
+    return nworkers;
   }
 
   // Force old generation to yield threads if it has too many
   const ZWorkerResizeInfo young_info = {
     true,                     // _is_active
-    request.young_nworkers(), // _current_nworkers
-    request.young_nworkers()  // _desired_nworkers
+    nworkers, // _current_nworkers
+    nworkers  // _desired_nworkers
   };
 
   adjust_gc(stats, young_info, wanted_old_nworkers(stats));
 
-  return request.young_nworkers();
+  return nworkers;
 }
 
 static bool start_gc(ZDirectorStats& stats) {
