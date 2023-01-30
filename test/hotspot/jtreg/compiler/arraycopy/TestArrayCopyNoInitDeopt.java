@@ -124,7 +124,7 @@ public class TestArrayCopyNoInitDeopt {
                 throw new RuntimeException("m1 deoptimized again");
             }
 
-            if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 20) {
+            if (WHITE_BOX.getUintVMFlag("TypeProfileLevel") == 20) {
                 // Same test as above but with speculative types
 
                 // Warm up & make sure we collect type profiling
