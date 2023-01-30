@@ -25,7 +25,6 @@
 
 package java.util;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -2507,7 +2506,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return {@code true} if the two arrays are equal
      */
-    public static boolean equals(short[] a, short a2[]) {
+    public static boolean equals(short[] a, short[] a2) {
         if (a==a2)
             return true;
         if (a==null || a2==null)
