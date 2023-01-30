@@ -58,7 +58,7 @@ ciObject::ciObject(oop o) {
     Handle obj(Thread::current(), o);
     _handle = JNIHandles::make_global(obj);
   }
-  _klass = NULL;
+  _klass = nullptr;
   assert(oopDesc::is_oop_or_null(o), "Checking");
 }
 
@@ -72,7 +72,7 @@ ciObject::ciObject(Handle h) {
   } else {
     _handle = JNIHandles::make_global(h);
   }
-  _klass = NULL;
+  _klass = nullptr;
   assert(oopDesc::is_oop_or_null(h()), "Checking");
 }
 
@@ -83,19 +83,19 @@ ciObject::ciObject(Handle h) {
 // klass/method, if that makes sense.
 ciObject::ciObject(ciKlass* klass) {
   ASSERT_IN_VM;
-  assert(klass != NULL, "must supply klass");
-  _handle = NULL;
+  assert(klass != nullptr, "must supply klass");
+  _handle = nullptr;
   _klass = klass;
 }
 
 // ------------------------------------------------------------------
 // ciObject::ciObject
 //
-// NULL variant.  Used only by ciNullObject.
+// null variant.  Used only by ciNullObject.
 ciObject::ciObject() {
   ASSERT_IN_VM;
-  _handle = NULL;
-  _klass = NULL;
+  _handle = nullptr;
+  _klass = nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -111,14 +111,14 @@ oop ciObject::get_oop() const {
 //
 // Get the ciKlass of this ciObject.
 ciKlass* ciObject::klass() {
-  if (_klass == NULL) {
-    if (_handle == NULL) {
-      // When both _klass and _handle are NULL, we are dealing
+  if (_klass == nullptr) {
+    if (_handle == nullptr) {
+      // When both _klass and _handle are null, we are dealing
       // with the distinguished instance of ciNullObject.
       // No one should ask it for its klass.
       assert(is_null_object(), "must be null object");
       ShouldNotReachHere();
-      return NULL;
+      return nullptr;
     }
 
     GUARDED_VM_ENTRY(
@@ -164,7 +164,7 @@ int ciObject::hash() {
 // This method should be changed to return an generified address
 // to discourage use of the JNI handle.
 jobject ciObject::constant_encoding() {
-  assert(is_null_object() || handle() != NULL, "cannot embed null pointer");
+  assert(is_null_object() || handle() != nullptr, "cannot embed null pointer");
   return handle();
 }
 
@@ -221,7 +221,7 @@ bool ciObject::should_be_constant() {
     return true;
   }
 
-  return handle() == NULL;
+  return handle() == nullptr;
 }
 
 // ------------------------------------------------------------------
@@ -243,7 +243,7 @@ void ciObject::print(outputStream* st) {
 // Print debugging output about the oop this ciObject represents.
 void ciObject::print_oop(outputStream* st) {
   if (is_null_object()) {
-    st->print_cr("NULL");
+    st->print_cr("nullptr");
   } else if (!is_loaded()) {
     st->print_cr("UNLOADED");
   } else {

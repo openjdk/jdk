@@ -55,7 +55,7 @@ class ciObject : public ciBaseObject {
 
 private:
   // A JNI handle referring to an oop in the VM.  This
-  // handle may, in a small set of cases, correctly be NULL.
+  // handle may, in a small set of cases, correctly be null.
   jobject  _handle;
   ciKlass* _klass;
 
@@ -142,7 +142,7 @@ public:
   // By convention the ciNullObject is considered loaded, and
   // primitive types are considered loaded.
   bool is_loaded() const {
-    return handle() != NULL || is_classless();
+    return handle() != nullptr || is_classless();
   }
 
   // Subclass casting with assertions.
