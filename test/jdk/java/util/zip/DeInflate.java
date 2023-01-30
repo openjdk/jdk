@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 7110149 8184306 6341887
  * @summary Test basic deflater & inflater functionality
+ * @library /test/lib
  * @key randomness
  */
 
@@ -32,6 +33,7 @@ import java.io.*;
 import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
+import jdk.test.lib.Platform;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -268,7 +270,7 @@ public class DeInflate {
 
         byte[] dataIn = new byte[1024 * 512];
         rnd.nextBytes(dataIn);
-        byte[] dataOut1 = new byte[dataIn.length + 1024];
+        byte[] dataOut1 = new byte[dataIn.length + 1024 * (Platform.isS390x() ? 64 : 1)];
         byte[] dataOut2 = new byte[dataIn.length];
 
         Deflater defNotWrap = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
