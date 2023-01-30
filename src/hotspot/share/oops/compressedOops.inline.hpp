@@ -60,7 +60,7 @@ inline oop CompressedOops::decode_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode(narrowOop v) {
-  return is_null(v) ? nullptr : decode_not_null(v);
+  return is_null(v) ? (oop)nullptr : decode_not_null(v);
 }
 
 inline narrowOop CompressedOops::encode_not_null(oop v) {
