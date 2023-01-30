@@ -52,6 +52,10 @@ public class GraphRemoveCookie implements RemoveCookie {
                     int firstPosition = model.getFirstPosition();
                     int secondPosition = model.getSecondPosition();
                     int targetPosition = list.indexOf(graph);
+                    if (targetPosition == firstPosition || targetPosition == secondPosition) {
+                        t.close();
+                        continue;
+                    }
                     if (targetPosition < firstPosition) {
                         firstPosition--;
                     }
