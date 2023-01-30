@@ -59,6 +59,7 @@ static void z_keep_alive_load_barrier(MacroAssembler& _masm, const MachNode* nod
 }
 
 static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register ref) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
   const bool on_non_strong =
       ((node->barrier_data() & ZBarrierWeak) != 0) ||
       ((node->barrier_data() & ZBarrierPhantom) != 0);
@@ -79,6 +80,7 @@ static void z_load_barrier(MacroAssembler& _masm, const MachNode* node, Address 
 }
 
 static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address ref_addr, Register rnew_zaddress, Register rnew_zpointer, bool is_atomic) {
+  Assembler::InlineSkippedInstructionsCounter skipped_counter(&_masm);
   if (node->barrier_data() == ZBarrierElided) {
     if (rnew_zaddress != noreg) {
       // noreg means null; no need to color
