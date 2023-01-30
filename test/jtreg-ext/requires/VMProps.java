@@ -513,33 +513,31 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + isSupported;
     }
 
-    private String redirectOutputToLogFile(ProcessBuilder pb, String fileNameBase) {
+    private void redirectOutputToLogFile(ProcessBuilder pb, String fileNameBase) {
         if (!Boolean.getBoolean("jtreg.log.vmprops")) {
-            return "";
+            return;
         }
 
-        String fileName = "./" + fileNameBase + Instant.now().toString() + ".log";
-        pb.redirectOutput(new File(fileName));
-        return fileName;
+        String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
+
+        String stdoutFileName = String.format("./%s-stdout--%s.log", fileNameBase, timeStamp);
+        pb.redirectOutput(new File(stdoutFileName));
+        log("checkDockerSupport(): child process stdout redirected to" + stdoutFileName);
+
+        String stderrFileName = String.format("./%s-stderr--%s.log", fileNameBase, timeStamp);
+        pb.redirectError(new File(stderrFileName));
+        log("checkDockerSupport(): child process stderr redirected to" + stderrFileName);
    }
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-
-        // TODO: use property for file path if defined, plus timestamp
-        String stdoutFn = redirectOutputToLogFile(pb, "container-ps-stdout");
-        String stderrFn = redirectOutputToLogFile(pb, "container-ps-stderr");
+        redirectOutputToLogFile(pb, "container-ps-stdout");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 
-        log("checkDockerSupport(): exitValue = " + exitValue);
-        log(String.format("checkDockerSupport(): child process stdout for pid %s was logged into %s",
-                          p.pid(), stdoutFn));
-        log(String.format("checkDockerSupport(): child process stderr for pid %s was logged into %s",
-                          p.pid(), stderrFn));
-
+        log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
         return (exitValue == 0);
     }
 
