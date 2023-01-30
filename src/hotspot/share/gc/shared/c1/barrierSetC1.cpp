@@ -224,7 +224,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
   // We need to generate code similar to the following...
   //
   // if (offset == java_lang_ref_Reference::referent_offset()) {
-  //   if (src != null) {
+  //   if (src != nullptr) {
   //     if (klass(src)->reference_type() != REF_NONE) {
   //       pre_barrier(..., value, ...);
   //     }

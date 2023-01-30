@@ -99,12 +99,12 @@ public:
   };
 
   // Locks _allocation_mutex.
-  // precondition: ptr != null.
+  // precondition: ptr != nullptr.
   EntryStatus allocation_status(const oop* ptr) const;
 
   // Allocates and returns a new entry.  Returns null if memory allocation
   // failed.  Locks _allocation_mutex.
-  // postcondition: result == null or *result == null.
+  // postcondition: result == null or *result == nullptr.
   oop* allocate();
 
   // Maximum number of entries that can be obtained by one call to
@@ -120,18 +120,18 @@ public:
   // precondition: size > 0.
   // postcondition: result <= min(size, bulk_allocate_limit).
   // postcondition: ptrs[i] is an allocated entry for i in [0, result).
-  // postcondition: *ptrs[i] == null for i in [0, result).
+  // postcondition: *ptrs[i] == nullptr for i in [0, result).
   size_t allocate(oop** ptrs, size_t size);
 
   // Deallocates ptr.  No locking.
   // precondition: ptr is a valid allocated entry.
-  // precondition: *ptr == null.
+  // precondition: *ptr == nullptr.
   void release(const oop* ptr);
 
   // Releases all the ptrs.  Possibly faster than individual calls to
   // release(oop*).  Best if ptrs is sorted by address.  No locking.
   // precondition: All elements of ptrs are valid allocated entries.
-  // precondition: *ptrs[i] == null, for i in [0,size).
+  // precondition: *ptrs[i] == nullptr, for i in [0,size).
   void release(const oop* const* ptrs, size_t size);
 
   // Applies f to each allocated entry's location.  f must be a function or
@@ -155,7 +155,7 @@ public:
   // - is_alive->do_object_b(*p) must be a valid expression whose value is
   // convertible to bool.
   //
-  // For weak_oops_do, if *p == null then neither is_alive nor closure will be
+  // For weak_oops_do, if *p == nullptr then neither is_alive nor closure will be
   // invoked for p.  If is_alive->do_object_b(*p) is false, then closure will
   // not be invoked on p, and *p will be set to null.
 

@@ -124,7 +124,7 @@
 //   - is_alive->do_object_b(*p) must be a valid expression whose value
 //   is convertible to bool.
 //
-//   If *p == null then neither is_alive nor cl will be invoked for p.
+//   If *p == nullptr then neither is_alive nor cl will be invoked for p.
 //   If is_alive->do_object_b(*p) is false, then cl will not be
 //   invoked on p.
 
