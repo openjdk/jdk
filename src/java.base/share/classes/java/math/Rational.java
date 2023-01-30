@@ -16,7 +16,7 @@ import jdk.internal.math.FloatConsts;
  *
  * <p>
  * All the calculations performed have an exact result, except for the square
- * root, in which the user can specify the rounding behavior.
+ * and nth roots, in which the user can specify the rounding behavior.
  *
  * <p>
  * When a {@code MathContext} object is supplied with a precision setting of 0
@@ -24,9 +24,9 @@ import jdk.internal.math.FloatConsts;
  * exact, as are the arithmetic methods which take no {@code MathContext}
  * object. As a corollary of computing the exact result, the rounding mode
  * setting of a {@code MathContext} object with a precision setting of 0 is not
- * used and thus irrelevant. In the case of square root, the exact result could
- * not be represented as a fraction; for example, sqrt(2). If the square root
- * has a nonterminating decimal expansion and the operation is specified to
+ * used and thus irrelevant. In the case of square and nth root, the exact
+ * result could not be represented as a fraction; for example, sqrt(2). If the
+ * root has a nonterminating decimal expansion and the operation is specified to
  * return an exact result, an {@code ArithmeticException} is thrown. Otherwise,
  * the exact result is returned, as done for other operations.
  *
@@ -345,6 +345,13 @@ public class Rational extends Number implements Comparable<Rational> {
         numerator = BigInteger.ZERO;
         denominator = BigInteger.ONE;
     }
+    
+    /**
+     * Accept no subclasses.
+     */
+    private static BigDecimal toStrictBigDecimal(BigDecimal val) {
+        return (val.getClass() == BigDecimal.class) ? val : new BigDecimal(val.toString());
+    }
 
     /**
      * Translates a {@code BigDecimal} into a {@code Rational}.
@@ -352,6 +359,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @param val {@code BigDecimal} value to be converted to {@code Rational}.
      */
     public Rational(BigDecimal val) {
+        val = toStrictBigDecimal(val);
         signum = val.signum();
 
         if (signum == 0) {
@@ -367,7 +375,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 denominator = BigInteger.ONE;
             } else { // val.scale() > 0
                 floor = val.toBigInteger();
-                
+
                 BigDecimal frac = val.subtract(new BigDecimal(floor));
                 if (frac.signum() == 0) { // no fractional part
                     numerator = BigInteger.ZERO;
@@ -376,12 +384,12 @@ public class Rational extends Number implements Comparable<Rational> {
                     BigInteger num = frac.unscaledValue();
                     // frac.scale() > 0
                     int twoExp = frac.scale(), fiveExp = twoExp; // 10^n = 2^n * 5^n
-                    
+
                     // simplify by two
                     final int shift = Math.min(twoExp, num.getLowestSetBit());
                     num = num.shiftRight(shift);
                     twoExp -= shift;
-                    
+
                     // simplify by five
                     final BigInteger FIVE = BigInteger.valueOf(5);
                     int remSign;
@@ -389,13 +397,13 @@ public class Rational extends Number implements Comparable<Rational> {
                     do {
                         BigInteger[] divRem = num.divideAndRemainder(FIVE);
                         remSign = divRem[1].signum;
-                        
+
                         if (remSign == 0) {
                             num = divRem[0];
                             fiveExp--;
                         }
                     } while (remSign == 0 && fiveExp > 0);
-                    
+
                     numerator = num;
                     denominator = FIVE.pow(fiveExp).shiftLeft(twoExp);
                 }
@@ -1020,7 +1028,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns a {@code Rational} whose value is {@code (this<sup>n</sup>)}.
+     * Returns a {@code Rational} whose value is <code>this<sup>n</sup></code>.
      *
      * {@code ZERO.pow(0)} returns {@link #ONE}.
      *
@@ -1035,19 +1043,22 @@ public class Rational extends Number implements Comparable<Rational> {
         // ready to carry out power calculation...
         Rational acc = ONE; // accumulator
         boolean seenbit = false; // set once we've seen a 1-bit
-        final int nBits = Integer.SIZE - 1; // 31
 
-        for (int i = 1; i <= nBits; i++) { // for each bit [top bit ignored]
-            mag <<= 1; // shift left 1 bit
+        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [least bit ignored]
             if (mag < 0) { // top bit is set
                 seenbit = true; // OK, we're off
                 acc = acc.multiply(this); // acc=acc*x
             }
 
-            if (seenbit && i < nBits) // don't square at the last bit
+            if (seenbit) // if (!seenbit) no point in squaring ONE
                 acc = acc.square(); // acc=acc*acc [square]
-            // if (!seenbit) no point in squaring ONE
+            
+            mag <<= 1; // shift left 1 bit
         }
+        
+        if (mag < 0) // check the least bit
+            acc = acc.multiply(this); // acc=acc*x
+        
         // if negative n, calculate the reciprocal
         return n >= 0 ? acc : acc.invert();
     }
@@ -1535,7 +1546,7 @@ public class Rational extends Number implements Comparable<Rational> {
 
         if (n < 0)
             result = result.invert();
-        
+
         if (signum == -1)
             result = result.negate();
 
@@ -1543,7 +1554,7 @@ public class Rational extends Number implements Comparable<Rational> {
         BigDecimal decimalRes = result.toBigDecimal(mc);
         result = new Rational(decimalRes);
         BigDecimal ulp = decimalRes.ulp();
-        
+
         if (roundFloor(targetRm)) {
             // Check if too big
             if (result.pow(n).compareTo(this) > 0) {
@@ -1620,46 +1631,26 @@ public class Rational extends Number implements Comparable<Rational> {
             ulp = ulp.divide(BigDecimal.TEN);
 
         Rational neighborFloor = new Rational(decimalRes.subtract(ulp));
+        
+        // If the input is negative, the degree should be odd
+        assert !(this.signum == -1 && (n & 1) == 0) : "Bad signum of this for " + n + "th root.";
 
         // The starting value and result should be concordant.
-        assert (result.signum() == this.signum) : "Bad signum of this and/or its " + n + "th-root.";
+        assert (result.signum == this.signum) : "Bad signum of this and/or its " + n + "th root.";
 
-        if (this.signum != -1) { // the input is non-negative
-            switch (rm) {
-            case DOWN:
-            case FLOOR:
-                assert result.pow(n).compareTo(this) <= 0 && neighborCeil.pow(n).compareTo(this) > 0
-                        : "Power of result out for bounds rounding " + rm;
-                return true;
-
-            case UP:
-            case CEILING:
-                assert result.pow(n).compareTo(this) >= 0 && neighborFloor.pow(n).compareTo(this) < 0
-                        : "Power of result out for bounds rounding " + rm;
-                return true;
-            }
-        } else { // the input is negative
-            // the degree should be odd
-            assert (n & 1) == 1 : "Bad signum of this for " + n + "th-root.";
-
-            switch (rm) {
-            case DOWN:
-            case CEILING:
-                assert result.pow(n).compareTo(this) <= 0 && neighborCeil.pow(n).compareTo(this) > 0
-                        : "Power of result out for bounds rounding " + rm;
-                return true;
-
-            case UP:
-            case FLOOR:
-                assert result.pow(n).compareTo(this) >= 0 && neighborFloor.pow(n).compareTo(this) < 0
-                        : "Power of result out for bounds rounding " + rm;
-                return true;
-            }
+        if (roundFloor(rm)) {
+            assert result.pow(n).compareTo(this) <= 0 && neighborCeil.pow(n).compareTo(this) > 0
+                    : "Power of result out for bounds rounding " + rm;
+            return true;
+        }
+        
+        if (roundCeiling(rm)) {
+            assert result.pow(n).compareTo(this) >= 0 && neighborFloor.pow(n).compareTo(this) < 0
+                    : "Power of result out for bounds rounding " + rm;
+            return true;
         }
 
-        // case HALF_DOWN:
-        // case HALF_EVEN:
-        // case HALF_UP:
+        // half-way rounding mode
         Rational err = result.pow(n).subtract(this).abs();
         Rational errCeil = neighborCeil.pow(n).subtract(this);
         Rational errFloor = this.subtract(neighborFloor.pow(n));
@@ -1669,7 +1660,7 @@ public class Rational extends Number implements Comparable<Rational> {
         int err_comp_errCeil = err.compareTo(errCeil);
         int err_comp_errFloor = err.compareTo(errFloor);
 
-        assert errCeil.signum() == 1 && errFloor.signum() == 1 : "Errors of neighbors raised don't have correct signs";
+        assert errCeil.signum == 1 && errFloor.signum == 1 : "Errors of neighbors raised don't have correct signs";
 
         // For breaking a half-way tie, the return value may
         // have a larger error than one of the neighbors. For
@@ -1680,10 +1671,11 @@ public class Rational extends Number implements Comparable<Rational> {
         assert err_comp_errCeil <= 0 || err_comp_errFloor <= 0
                 : "Computed " + n + "th root has larger error than neighbors for " + rm;
 
-        assert (err_comp_errCeil != 0 || err_comp_errFloor < 0) && (err_comp_errFloor != 0 || err_comp_errCeil < 0)
+        assert !(err_comp_errCeil == 0 && err_comp_errFloor >= 0) && !(err_comp_errFloor == 0 && err_comp_errCeil >= 0)
                 : "Incorrect error relationships";
         // && could check for digit conditions for ties too
-        return true; // Definition of UNNECESSARY already verified.
+        // Definition of UNNECESSARY already verified.
+        return true;
     }
 
     // Scaling/Rounding Operations
@@ -1703,6 +1695,8 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational round(MathContext mc) {
         return new Rational(toBigDecimal(mc));
     }
+    
+    // Format Converters
 
     /**
      * Converts this {@code Rational} to a {@code BigInteger}. This conversion is
@@ -1723,8 +1717,6 @@ public class Rational extends Number implements Comparable<Rational> {
         // force to an integer, quietly
         return signum == -1 ? floor.negate() : floor;
     }
-
-    // Format Converters
 
     /**
      * Converts this {@code Rational} to a {@code BigInteger}, checking for lost
@@ -1861,12 +1853,12 @@ public class Rational extends Number implements Comparable<Rational> {
         return rm == RoundingMode.UP || signum != -1 && rm == RoundingMode.CEILING
                 || signum == -1 && rm == RoundingMode.FLOOR;
     }
-    
+
     private boolean roundCeiling(RoundingMode rm) {
         return rm == RoundingMode.CEILING || signum != -1 && rm == RoundingMode.UP
                 || signum == -1 && rm == RoundingMode.DOWN;
     }
-    
+
     private boolean roundFloor(RoundingMode rm) {
         return rm == RoundingMode.FLOOR || signum != -1 && rm == RoundingMode.DOWN
                 || signum == -1 && rm == RoundingMode.UP;
@@ -1901,12 +1893,12 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public double doubleValue() {
         final double fl = floor.doubleValue();
-        
+
         // integer or non-representable value
         if (numerator.signum == 0 || Double.isInfinite(fl))
             return signum == -1 ? -fl : fl;
         // At this point, this Rational is non-integer
-        
+
         final int flBits = floor.bitLength();
         final int prec = Double.PRECISION;
         if (flBits > prec) { // integer part does not fit into a double
@@ -1914,15 +1906,15 @@ public class Rational extends Number implements Comparable<Rational> {
             double res = floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl;
             return signum == -1 ? -res : res;
         }
-        
+
         long significand;
         final long biasedExp;
         int nBits; // computed bits of significand
         MutableBigInteger rem = new MutableBigInteger(numerator);
         final MutableBigInteger den = new MutableBigInteger(denominator);
-        
+
         // compute initial value of significand
-        if (floor.signum == 1) {  // non-zero integer part
+        if (floor.signum == 1) { // non-zero integer part
             // unpack biased exponent of integer part
             biasedExp = (Double.doubleToLongBits(fl) & DoubleConsts.EXP_BIT_MASK) >> 52;
             significand = floor.longValue();
@@ -1939,7 +1931,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // now 1 <= rem / den < 2
             rem.subtract(den); // subtract one to (rem / den)
             // now rem / den < 1
-            
+
             significand = 1L; // set the most significant bit
             // compute the correct biased exponent
             if (scale < DoubleConsts.EXP_BIAS) { // normal number
@@ -1948,7 +1940,7 @@ public class Rational extends Number implements Comparable<Rational> {
             } else { // subnormal number
                 nBits = scale + Double.MIN_EXPONENT + 1; // scale - 1022 + 1, count the implicit bit
                 biasedExp = 0L;
-                
+
                 if (nBits > prec) { // abs(this) < Double.MIN_VALUE
                     // half even rounding
                     double res = nBits > prec + 1 || rem.isZero() ? 0.0 : Double.MIN_VALUE;
@@ -1957,18 +1949,18 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         }
         // now rem / den < 1
-        
+
         // compute remaining bits, stop if remainder is zero
         int shift;
         for (; !rem.isZero() && nBits < prec; nBits += shift) {
             shift = (int) Math.max(1, den.bitLength() - rem.bitLength());
-            
+
             if (nBits + shift <= prec) { // shifted significand fits in double precision
                 significand <<= shift;
                 rem.leftShift(shift);
                 // now 0.5 <= rem / den < 2
                 final MutableBigInteger diff = new MutableBigInteger(rem);
-                
+
                 // subtract one to (rem / den)
                 if (diff.subtract(den) != -1) { // rem / den >= 1
                     significand |= 1L;
@@ -1982,9 +1974,9 @@ public class Rational extends Number implements Comparable<Rational> {
                 // now rem / den < 1
             }
         }
-        
+
         significand &= DoubleConsts.SIGNIF_BIT_MASK; // remove the implicit bit
-        
+
         if (!rem.isZero()) { // inexact result
             // compute the 0.5 bit to round
             rem.leftShift(1);
@@ -2009,7 +2001,7 @@ public class Rational extends Number implements Comparable<Rational> {
         long bits = (biasedExp << 52) + significand;
         if (signum == -1)
             bits |= DoubleConsts.SIGN_BIT_MASK;
-        
+
         return Double.longBitsToDouble(bits);
     }
 
@@ -2029,12 +2021,12 @@ public class Rational extends Number implements Comparable<Rational> {
     @Override
     public float floatValue() {
         final float fl = floor.floatValue();
-        
+
         // integer or non-representable value
         if (numerator.signum() == 0 || Float.isInfinite(fl))
             return signum == -1 ? -fl : fl;
         // At this point, this Rational is non-integer
-        
+
         final int flBits = floor.bitLength();
         final int prec = Float.PRECISION;
         if (flBits > prec) { // integer part does not fit into a float
@@ -2042,13 +2034,13 @@ public class Rational extends Number implements Comparable<Rational> {
             float res = floor.testBit(flBits - prec - 1) ? Math.nextUp(fl) : fl;
             return signum == -1 ? -res : res;
         }
-        
+
         int significand;
         final int biasedExp;
         int nBits; // computed bits of significand
         MutableBigInteger rem = new MutableBigInteger(numerator);
         final MutableBigInteger den = new MutableBigInteger(denominator);
-        
+
         // compute initial value of significand
         if (floor.signum == 1) { // non-zero integer part
             // unpack biased exponent of integer part
@@ -2067,7 +2059,7 @@ public class Rational extends Number implements Comparable<Rational> {
             // now 1 <= rem / den < 2
             rem.subtract(den); // subtract one to (rem / den)
             // now rem / den < 1
-            
+
             significand = 1; // set the most significant bit
             // compute the correct biased exponent
             if (scale < FloatConsts.EXP_BIAS) { // normal number
@@ -2076,7 +2068,7 @@ public class Rational extends Number implements Comparable<Rational> {
             } else { // subnormal number
                 nBits = scale + Float.MIN_EXPONENT + 1; // scale - 126 + 1, count the implicit bit
                 biasedExp = 0;
-                
+
                 if (nBits > prec) { // abs(this) < Float.MIN_VALUE
                     // half even rounding
                     float res = nBits > prec + 1 || rem.isZero() ? 0f : Float.MIN_VALUE;
@@ -2085,18 +2077,18 @@ public class Rational extends Number implements Comparable<Rational> {
             }
         }
         // now rem / den < 1
-        
+
         // compute remaining bits, stop if remainder is zero
         int shift;
         for (; !rem.isZero() && nBits < prec; nBits += shift) {
             shift = (int) Math.max(1, den.bitLength() - rem.bitLength());
-            
+
             if (nBits + shift <= prec) { // shifted significand fits in float precision
                 significand <<= shift;
                 rem.leftShift(shift);
                 // now 0.5 <= rem / den < 2
                 final MutableBigInteger diff = new MutableBigInteger(rem);
-                
+
                 // subtract one to (rem / den)
                 if (diff.subtract(den) != -1) { // rem / den >= 1
                     significand |= 1;
@@ -2110,9 +2102,9 @@ public class Rational extends Number implements Comparable<Rational> {
                 // now rem / den < 1
             }
         }
-        
+
         significand &= FloatConsts.SIGNIF_BIT_MASK; // remove the implicit bit
-        
+
         if (!rem.isZero()) { // inexact result
             // compute the 0.5 bit to round
             rem.leftShift(1);
@@ -2137,7 +2129,7 @@ public class Rational extends Number implements Comparable<Rational> {
         int bits = (biasedExp << 23) + significand;
         if (signum == -1)
             bits |= FloatConsts.SIGN_BIT_MASK;
-        
+
         return Float.intBitsToFloat(bits);
     }
 
