@@ -899,74 +899,83 @@ class FdLibm {
         private static double Lp5 = 1.818357216161805012e-01;  /* 3FC74664 96CB03DE */
         private static double Lp6 = 1.531383769920937332e-01;  /* 3FC39A09 D078C69F */
         private static double Lp7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
-        private static double zero = 0.0;
 
         public static double compute(double x) {
-            double hfsq,f=0,c=0,s,z,R,u;
-            int k,hx,hu=0,ax;
+            double hfsq, f=0, c=0, s, z, R, u;
+            int k, hx, hu=0, ax;
 
             hx = __HI(x);           /* high word of x */
-            ax = hx&0x7fffffff;
+            ax = hx & 0x7fffffff;
 
             k = 1;
             if (hx < 0x3FDA827A) {                  /* x < 0.41422  */
-                if(ax>=0x3ff00000) {                /* x <= -1.0 */
-                    /*
-                     * Added redundant test against hx to work around VC++
-                     * code generation problem.
-                     */
-                    if(x==-1.0 && (hx==0xbff00000)) /* log1p(-1)=-inf */
-                        return -two54/zero;
+                if(ax >= 0x3ff00000) {                /* x <= -1.0 */
+                    if (x == -1.0) /* log1p(-1)=-inf */
+                        return -two54 / 0.0;
                     else
                         return (x-x)/(x-x);           /* log1p(x<-1)=NaN */
                 }
-                if(ax<0x3e200000) {                 /* |x| < 2**-29 */
-                    if(two54+x>zero                 /* raise inexact */
-                       &&ax<0x3c900000)            /* |x| < 2**-54 */
+                if (ax < 0x3e200000) {                 /* |x| < 2**-29 */
+                    if (two54 + x>0.0                 /* raise inexact */
+                       && ax < 0x3c900000)            /* |x| < 2**-54 */
                         return x;
                     else
                         return x - x*x*0.5;
                 }
-                if(hx>0||hx<=(0xbfd2bec3)) {
-                    k=0;f=x;hu=1;}  /* -0.2929<x<0.41422 */
+                if (hx > 0 || hx <= (0xbfd2bec3)) {
+                    k=0;
+                    f=x;
+                    hu=1;}  /* -0.2929<x<0.41422 */
             }
             if (hx >= 0x7ff00000) return x+x;
-            if(k!=0) {
-                if(hx<0x43400000) {
-                    u  = 1.0+x;
+            if (k != 0) {
+                if (hx < 0x43400000) {
+                    u  = 1.0 + x;
                     hu = __HI(u);           /* high word of u */
-                    k  = (hu>>20)-1023;
-                    c  = (k>0)? 1.0-(u-x):x-(u-1.0);/* correction term */
+                    k  = (hu >> 20) - 1023;
+                    c  = (k > 0)? 1.0 - (u-x) : x-(u-1.0); /* correction term */
                     c /= u;
                 } else {
                     u  = x;
                     hu = __HI(u);           /* high word of u */
-                    k  = (hu>>20)-1023;
+                    k  = (hu >> 20) - 1023;
                     c  = 0;
                 }
                 hu &= 0x000fffff;
-                if(hu<0x6a09e) {
-                    u = __HI(u, hu|0x3ff00000);        /* normalize u */
+                if (hu < 0x6a09e) {
+                    u = __HI(u, hu | 0x3ff00000);        /* normalize u */
                 } else {
                     k += 1;
-                    u = __HI(u, hu|0x3fe00000);        /* normalize u/2 */
-                    hu = (0x00100000-hu)>>2;
+                    u = __HI(u, hu | 0x3fe00000);        /* normalize u/2 */
+                    hu = (0x00100000 - hu) >> 2;
                 }
-                f = u-1.0;
+                f = u - 1.0;
             }
             hfsq=0.5*f*f;
-            if(hu==0) {     /* |f| < 2**-20 */
-                if(f==zero) { if(k==0) return zero;
-                    else {c += k*ln2_lo; return k*ln2_hi+c;}}
-                R = hfsq*(1.0-0.66666666666666666*f);
-                if(k==0) return f-R; else
-                    return k*ln2_hi-((R-(k*ln2_lo+c))-f);
+            if (hu == 0) {     /* |f| < 2**-20 */
+                if (f == 0.0) {
+                    if(k==0) {
+                        return 0.0;
+                    } else {
+                        c += k * ln2_lo;
+                        return k * ln2_hi + c;
+                    }
+                }
+                R = hfsq * (1.0 - 0.66666666666666666*f);
+                if (k == 0) {
+                    return f-R;
+                } else {
+                    return k * ln2_hi - ((R-(k * ln2_lo+c)) - f);
+                }
             }
-            s = f/(2.0+f);
-            z = s*s;
-            R = z*(Lp1+z*(Lp2+z*(Lp3+z*(Lp4+z*(Lp5+z*(Lp6+z*Lp7))))));
-            if(k==0) return f-(hfsq-s*(hfsq+R)); else
-                return k*ln2_hi-((hfsq-(s*(hfsq+R)+(k*ln2_lo+c)))-f);
+            s = f/(2.0 + f);
+            z = s * s;
+            R = z * (Lp1 + z * (Lp2 + z * (Lp3 + z * (Lp4 + z * (Lp5 + z * (Lp6 + z*Lp7))))));
+            if(k==0) {
+                return f-(hfsq-s*(hfsq+R));
+            } else {
+                return k * ln2_hi - ((hfsq - (s*(hfsq + R) + (k * ln2_lo+c))) - f);
+            }
         }
     }
 }
