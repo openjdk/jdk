@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
  * @bug 4495742
  * @library /test/lib
  *
- * @run main/othervm/timeout=180 TestAllSuites
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.1
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.2
+ * @run main/othervm/timeout=180 TestAllSuites TLSv1.3
  *
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
  *
- * Iterate through all the suites using both TLS and SSLv3, and turn
- * SSLv2Hello off and on.  Exchange some bytes and shutdown.
+ * Iterate through all the suites, exchange some bytes and shutdown.
  *
  * @author Brad Wetmore
  */
@@ -52,6 +53,7 @@ public class TestAllSuites {
     private static final boolean DEBUG = Boolean.getBoolean("test.debug");
 
     private final SSLContext SSL_CONTEXT;
+    private final String PROTOCOL;
     private SSLEngine clientEngine;
     private SSLEngine serverEngine;
 
@@ -75,95 +77,91 @@ public class TestAllSuites {
     private ByteBuffer serverToClient;
 
 
-    private void createSSLEngines() throws Exception {
+    private void createSSLEngines() {
         clientEngine = SSL_CONTEXT.createSSLEngine("client", 1);
         clientEngine.setUseClientMode(true);
 
         serverEngine = SSL_CONTEXT.createSSLEngine("server", 2);
         serverEngine.setUseClientMode(false);
+        
+        clientEngine.setEnabledProtocols(new String[]{PROTOCOL});
+        serverEngine.setEnabledProtocols(new String[]{PROTOCOL});
     }
 
     private void test() throws Exception {
-
-        createSSLEngines();
-        List<String> supportedSuites = List.of(clientEngine.getSupportedCipherSuites());
-
-        for (SupportedCipherSuites tls : SupportedCipherSuites.values()) {
-            for (String cipherSuite : tls.cipherSuites) {
-                if (supportedSuites.contains(cipherSuite)) {
-                    createSSLEngines();
-                    runTest(cipherSuite, tls.protocol);
-                } else {
-                    System.out.printf("Skipping unsupported cipher suite %s with %s%n",
-                            tls.protocol,
-                            cipherSuite);
-                }
-            }
+        String [] suites = clientEngine.getEnabledCipherSuites();
+        System.out.println("Enabled cipher suites for protocol " + PROTOCOL +
+                ": " + Arrays.toString(suites));
+        for (String suite: suites){
+            // Need to recreate engines to override enabled ciphers
+            createSSLEngines();
+            runTest(suite);
         }
     }
 
-    private void runTest(String suite, String protocol) throws Exception {
+    private void runTest(String suite) throws Exception {
 
         boolean dataDone = false;
 
         System.out.println("======================================");
-        System.out.printf("Testing: %s with %s%n", protocol, suite);
+        System.out.printf("Testing: %s with %s%n", PROTOCOL, suite);
 
         String [] suites = new String [] { suite };
 
+        if(suite.equals("TLS_EMPTY_RENEGOTIATION_INFO_SCSV")) {
+            System.out.println("Ignoring SCSV suite");
+            return;
+        }
+
         clientEngine.setEnabledCipherSuites(suites);
         serverEngine.setEnabledCipherSuites(suites);
-
-        clientEngine.setEnabledProtocols(new String[]{protocol});
-        serverEngine.setEnabledProtocols(new String[]{protocol});
-
+        
         createBuffers();
 
-        SSLEngineResult result1;        // ssle1's results from last operation
-        SSLEngineResult result2;        // ssle2's results from last operation
+        SSLEngineResult clientResult;        // clientEngine's results from last operation
+        SSLEngineResult serverResult;        // serverEngine's results from last operation
 
         Date start = new Date();
-        int counter = 0;
         while (!isEngineClosed(clientEngine) || !isEngineClosed(serverEngine)) {
 
             log("----------------");
 
-            result1 = clientEngine.wrap(clientOut, clientToServer);
-            result2 = serverEngine.wrap(serverOut, serverToClient);
+            clientResult = clientEngine.wrap(clientOut, clientToServer);
+            serverResult = serverEngine.wrap(serverOut, serverToClient);
 
-            log("wrap1:  " + result1);
+            log("Client engine wrap result:  " + clientResult);
             log("clientToServer  = " + clientToServer);
             log("");
 
-            log("wrap2:  " + result2);
+            log("Server engine wrap result:  " + serverResult);
             log("serverToClient  = " + serverToClient);
 
-            runDelegatedTasks(result1, clientEngine);
-            runDelegatedTasks(result2, serverEngine);
+            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(serverResult, serverEngine);
 
             clientToServer.flip();
             serverToClient.flip();
 
             log("----");
 
-            result1 = clientEngine.unwrap(serverToClient, clientIn);
-            result2 = serverEngine.unwrap(clientToServer, serverIn);
+            clientResult = clientEngine.unwrap(serverToClient, clientIn);
+            serverResult = serverEngine.unwrap(clientToServer, serverIn);
 
-            log("unwrap1: " + result1);
+            log("Client engine unrap result: " + clientResult);
             log("serverToClient  = " + serverToClient);
             log("");
 
-            log("unwrap2: " + result2);
+            log("Server engine unwrap result: " + serverResult);
             log("clientToServer  = " + clientToServer);
 
-            runDelegatedTasks(result1, clientEngine);
-            runDelegatedTasks(result2, serverEngine);
+            runDelegatedTasks(clientResult, clientEngine);
+            runDelegatedTasks(serverResult, serverEngine);
 
             clientToServer.compact();
             serverToClient.compact();
 
             /*
-             * If we've transfered all the data between app1 and app2,
+             * If we've transferred all the data between client and server
              * we try to close and see what that gets us.
              */
             if (!dataDone && (clientOut.limit() == serverIn.position()) &&
@@ -177,6 +175,9 @@ public class TestAllSuites {
                 dataDone = true;
             }
         }
+
+        System.out.println("Negotiated protocol: " + clientEngine.getSession().getProtocol());
+        System.out.println("Negotiated cipher: " + clientEngine.getSession().getCipherSuite());
 
         /*
          * Just for grins, try closing again, make sure nothing
@@ -192,11 +193,11 @@ public class TestAllSuites {
         clientIn.clear();
         clientToServer.clear();
 
-        result1 = clientEngine.wrap(clientOut, clientToServer);
-        checkResult(result1);
+        clientResult = clientEngine.wrap(clientOut, clientToServer);
+        checkResult(clientResult);
 
-        result1 = clientEngine.unwrap(clientToServer, clientIn);
-        checkResult(result1);
+        clientResult = clientEngine.unwrap(clientToServer, clientIn);
+        checkResult(clientResult);
 
         System.out.println("Test Passed.");
         System.out.println("\n======================================");
@@ -219,15 +220,20 @@ public class TestAllSuites {
     }
 
     public static void main(String args[]) throws Exception {
-        SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
-        TestAllSuites tas;
 
-        tas = new TestAllSuites();
-
-        tas.createSSLEngines();
-
-        tas.test();
-
+        if (args.length < 1) {
+            throw new RuntimeException("Missing TLS protocol parameter.");
+        }
+        
+        switch(args[0]) {
+            case "TLSv1.1" -> SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
+            case "TLSv1.3" -> SecurityUtils.addToDisabledTlsAlgs("TLSv1.2");
+        }
+        
+        TestAllSuites testAllSuites = new TestAllSuites(args[0]);
+        testAllSuites.createSSLEngines();
+        testAllSuites.test();
+        
         System.out.println("All Tests Passed.");
         System.out.println("Elapsed time: " + elapsed / 1000.0);
     }
@@ -238,7 +244,8 @@ public class TestAllSuites {
      * **********************************************************
      */
 
-    public TestAllSuites() throws Exception {
+    public TestAllSuites(String protocol) throws Exception {
+        PROTOCOL = protocol;
         SSL_CONTEXT = getSSLContext(KEYSTORE_PATH, TRUSTSTORE_PATH);
     }
 
@@ -262,7 +269,7 @@ public class TestAllSuites {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
+        SSLContext sslCtx = SSLContext.getInstance(PROTOCOL);
 
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -282,8 +289,8 @@ public class TestAllSuites {
         clientToServer = ByteBuffer.allocateDirect(netBufferMax);
         serverToClient = ByteBuffer.allocateDirect(netBufferMax);
 
-        clientOut = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
+        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
 
         log("ClientOut = " + clientOut);
         log("ServerOut = " + serverOut);
@@ -326,59 +333,6 @@ public class TestAllSuites {
     private static void log(String str) {
         if (DEBUG) {
             System.out.println(str);
-        }
-    }
-
-    enum SupportedCipherSuites {
-        TLSv11("TLSv1.1", new String []{
-                "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-                "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
-                "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_RSA_WITH_AES_128_CBC_SHA",
-        }),
-
-        TLSv12("TLSv1.2", new String []{
-                "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-                "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-                "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
-                "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-                "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-                "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-                "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-                "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-                "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-                "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-                "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-                "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-                "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-                "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-                "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
-                "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
-        }),
-
-        TLSv13("TLSv1.3", new String[] {
-                "TLS_AES_128_GCM_SHA256",
-                "TLS_AES_256_GCM_SHA384",
-                "TLS_CHACHA20_POLY1305_SHA256"
-        });
-
-        final String protocol;
-        final String[] cipherSuites;
-
-        SupportedCipherSuites(String protocol, String [] supportedCipherSuites) {
-            this.protocol = protocol;
-            this.cipherSuites = Arrays.copyOf(supportedCipherSuites,
-                    supportedCipherSuites.length);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Common library for various security test helper functions.
@@ -59,6 +60,19 @@ public final class SecurityUtils {
     public static void removeFromDisabledTlsAlgs(String... protocols) {
         removeFromDisabledAlgs("jdk.tls.disabledAlgorithms",
                                List.<String>of(protocols));
+    }
+    
+    public static void addToDisabledTlsAlgs(String... protocols) {
+        addToDisabledArgs("jdk.tls.disabledAlgorithms", List.of(protocols));
+    }
+    
+    public static void addToDisabledArgs(String prop, List<String> constraints) {
+        String value = Security.getProperty(prop);
+        value = Stream.concat(Arrays.stream(value.split(",")), 
+                        constraints.stream())
+                .map(String::trim)
+                .collect(Collectors.joining(","));
+        Security.setProperty(prop, value);
     }
 
     /**
