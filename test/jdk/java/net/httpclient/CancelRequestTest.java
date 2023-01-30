@@ -366,7 +366,7 @@ public class CancelRequestTest implements HttpServerAdapters {
                         throw new RuntimeException("Unexpected timeout exception", cause);
                     }
                 }
-                if (!IOException.class.isAssignableFrom(cause.getClass())) {
+                if (!IOException.class.isInstance(cause)) {
                     out.println("Unexpected cause: " + cause.getClass());
                     cause.printStackTrace(out);
                 }
