@@ -659,6 +659,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param msg
      */
     protected static void log(String msg) {
+        System.err.println("VMProps: " + msg);
         logToFile(msg);
     }
 
@@ -676,7 +677,6 @@ public class VMProps implements Callable<Map<String, String>> {
         if (!Boolean.getBoolean("jtreg.log.vmprops")) {
             return;
         }
-
         String fileName = "./jtreg-vm-props.log";
         try {
             Files.writeString(Paths.get(fileName), msg + "\n", Charset.forName("ISO-8859-1"),
