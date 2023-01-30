@@ -554,7 +554,7 @@ static void copy_load_barrier(MacroAssembler* masm,
 
   // Test reference against bad mask. If mask bad, then we need to fix it up.
   __ andr(vec_tmp, Assembler::T16B, ref, z_copy_load_bad_vreg);
-  __ umaxp(vec_tmp, Assembler::T16B, vec_tmp, vec_tmp);
+  __ umaxv(vec_tmp, Assembler::T16B, vec_tmp);
   __ fcmpd(vec_tmp, 0.0);
   __ br(Assembler::EQ, done);
 
@@ -617,7 +617,7 @@ static void copy_store_barrier(MacroAssembler* masm,
 
   // Test reference against bad mask. If mask bad, then we need to fix it up.
   __ andr(vec_tmp, Assembler::T16B, pre_ref, z_copy_store_bad_vreg);
-  __ umaxp(vec_tmp, Assembler::T16B, vec_tmp, vec_tmp);
+  __ umaxv(vec_tmp, Assembler::T16B, vec_tmp);
   __ fcmpd(vec_tmp, 0.0);
   __ br(Assembler::EQ, done);
 
