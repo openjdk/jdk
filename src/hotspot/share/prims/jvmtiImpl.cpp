@@ -121,8 +121,8 @@ void GrowableCache::recache() {
 
 bool GrowableCache::equals(void* v, GrowableElement *e2) {
   GrowableElement *e1 = (GrowableElement *) v;
-  assert(e1 != nullptr, "e1 != null");
-  assert(e2 != nullptr, "e2 != null");
+  assert(e1 != nullptr, "e1 != nullptr");
+  assert(e2 != nullptr, "e2 != nullptr");
 
   return e1->equals(e2);
 }
@@ -159,7 +159,7 @@ int GrowableCache::length() {
 // get the value of the index element in the collection
 GrowableElement* GrowableCache::at(int index) {
   GrowableElement *e = (GrowableElement *) _elements->at(index);
-  assert(e != nullptr, "e != null");
+  assert(e != nullptr, "e != nullptr");
   return e;
 }
 
@@ -177,7 +177,7 @@ void GrowableCache::append(GrowableElement* e) {
 // remove the element at index
 void GrowableCache::remove (int index) {
   GrowableElement *e = _elements->at(index);
-  assert(e != nullptr, "e != null");
+  assert(e != nullptr, "e != nullptr");
   _elements->remove(e);
   delete e;
   recache();
@@ -409,13 +409,13 @@ address *         JvmtiCurrentBreakpoints::_breakpoint_list    = nullptr;
 JvmtiBreakpoints& JvmtiCurrentBreakpoints::get_jvmti_breakpoints() {
   if (_jvmti_breakpoints != nullptr) return (*_jvmti_breakpoints);
   _jvmti_breakpoints = new JvmtiBreakpoints(listener_fun);
-  assert(_jvmti_breakpoints != nullptr, "_jvmti_breakpoints != null");
+  assert(_jvmti_breakpoints != nullptr, "_jvmti_breakpoints != nullptr");
   return (*_jvmti_breakpoints);
 }
 
 void  JvmtiCurrentBreakpoints::listener_fun(void *this_obj, address *cache) {
   JvmtiBreakpoints *this_jvmti = (JvmtiBreakpoints *) this_obj;
-  assert(this_jvmti != nullptr, "this_jvmti != null");
+  assert(this_jvmti != nullptr, "this_jvmti != nullptr");
 
   debug_only(int n = this_jvmti->length(););
   assert(cache[n] == nullptr, "cache must be null terminated");

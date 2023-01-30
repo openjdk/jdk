@@ -148,7 +148,7 @@ bool JvmtiEnvThreadState::is_virtual() {
   return _state->is_virtual();
 }
 
-// Use _thread_saved if cthread is detached from JavaThread (_thread == null).
+// Use _thread_saved if cthread is detached from JavaThread (_thread == nullptr).
 JavaThread* JvmtiEnvThreadState::get_thread_or_saved() {
   return _state->get_thread_or_saved();
 }

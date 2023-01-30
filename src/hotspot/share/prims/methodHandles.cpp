@@ -1021,8 +1021,8 @@ void MethodHandles::trace_method_handle_interpreter_entry(MacroAssembler* _masm,
 static const int con_value_count = EACH_NAMED_CON(ONE_PLUS, IGNORE_REQ) 0;
 #define VALUE_COMMA(scope,value) scope::value,
 static const int con_values[con_value_count+1] = { EACH_NAMED_CON(VALUE_COMMA, IGNORE_REQ) 0 };
-#define STRING_nullptr(scope,value) #value "\0"
-static const char con_names[] = { EACH_NAMED_CON(STRING_nullptr, IGNORE_REQ) };
+#define STRING_NULL(scope,value) #value "\0"
+static const char con_names[] = { EACH_NAMED_CON(STRING_NULL, IGNORE_REQ) };
 
 static bool advertise_con_value(int which) {
   if (which < 0)  return false;
@@ -1043,7 +1043,7 @@ static bool advertise_con_value(int which) {
 
 #undef ONE_PLUS
 #undef VALUE_COMMA
-#undef STRING_nullptr
+#undef STRING_NULL
 #undef EACH_NAMED_CON
 #endif // PRODUCT
 

@@ -97,7 +97,7 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context) {
   context->old_handles = thread->active_handles();
 
   // For the profiler, the last_Java_frame information in thread must always be in
-  // legal state. We have no last Java frame if last_Java_sp == null so
+  // legal state. We have no last Java frame if last_Java_sp == nullptr so
   // the valid transition is to clear _last_Java_sp and then reset the rest of
   // the (platform specific) state.
 
