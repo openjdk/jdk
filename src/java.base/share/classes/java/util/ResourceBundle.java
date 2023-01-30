@@ -721,26 +721,24 @@ public abstract class ResourceBundle {
             if (this == other) {
                 return true;
             }
-            try {
-                final CacheKey otherEntry = (CacheKey)other;
+            if (other instanceof CacheKey otherEntry) {
                 //quick check to see if they are not equal
                 if (modulesHash != otherEntry.modulesHash) {
                     return false;
                 }
                 //are the names the same?
-                if (!name.equals(otherEntry.name)) {
+                if (!Objects.equals(name, otherEntry.name)) {
                     return false;
                 }
                 // are the locales the same?
-                if (!locale.equals(otherEntry.locale)) {
+                if (!Objects.equals(locale, otherEntry.locale)) {
                     return false;
                 }
                 // are modules and callerModules the same and non-null?
                 Module module = getModule();
                 Module caller = getCallerModule();
-                return ((module != null) && (module.equals(otherEntry.getModule())) &&
-                        (caller != null) && (caller.equals(otherEntry.getCallerModule())));
-            } catch (NullPointerException | ClassCastException e) {
+                return Objects.equals(module, otherEntry.getModule()) &&
+                       Objects.equals(caller, otherEntry.getCallerModule());
             }
             return false;
         }

@@ -502,15 +502,13 @@ public abstract class Bundles {
             if (this == other) {
                 return true;
             }
-            try {
-                final CacheKey otherEntry = (CacheKey)other;
+            if (other instanceof CacheKey otherEntry) {
                 //quick check to see if they are not equal
                 if (hashCodeCache != otherEntry.hashCodeCache) {
                     return false;
                 }
-                return locale.equals(otherEntry.locale)
-                        && name.equals(otherEntry.name);
-            } catch (NullPointerException | ClassCastException e) {
+                return Objects.equals(locale, otherEntry.locale)
+                        && Objects.equals(name, otherEntry.name);
             }
             return false;
         }
