@@ -232,14 +232,20 @@ public class Log1pTests {
         failures += testRange(x, Math.ulp(x), 1000);
 
         // ... and just below subnormal threshold ...
-         x =  Math.nextDown(Double.MIN_NORMAL);
-         failures += testRange(x, -Math.ulp(x), 1000);
+        x =  Math.nextDown(Double.MIN_NORMAL);
+        failures += testRange(x, -Math.ulp(x), 1000);
 
         // ... and near 1.0 ...
-         x = 1.0;
-         failures += testRange(x, Math.ulp(x), 1000);
-         x = Math.nextDown(1.0);
-         failures += testRange(x, -Math.ulp(x), 1000);
+        x = 1.0;
+        failures += testRange(x, Math.ulp(x), 1000);
+        x = Math.nextDown(1.0);
+        failures += testRange(x, -Math.ulp(x), 1000);
+
+        // ... and near 2^-29 ...
+        x = 0x1.0p-29;
+        failures += testRange(x, Math.ulp(x), 1000);
+        x = Math.nextDown(1.0);
+        failures += testRange(x, -Math.ulp(x), 1000);
 
          x = Tests.createRandomDouble(random);
 

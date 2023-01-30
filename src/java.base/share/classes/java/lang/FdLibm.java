@@ -915,19 +915,25 @@ class FdLibm {
                     else
                         return (x-x)/(x-x);           /* log1p(x<-1)=NaN */
                 }
+
                 if (ax < 0x3e200000) {                 /* |x| < 2**-29 */
-                    if (two54 + x>0.0                 /* raise inexact */
+                    if (two54 + x > 0.0                 /* raise inexact */
                        && ax < 0x3c900000)            /* |x| < 2**-54 */
                         return x;
                     else
                         return x - x*x*0.5;
                 }
-                if (hx > 0 || hx <= (0xbfd2bec3)) {
+
+                if (hx > 0 || hx <= 0xbfd2bec3) {
                     k=0;
                     f=x;
-                    hu=1;}  /* -0.2929<x<0.41422 */
+                    hu=1;}  /* -0.2929 < x < 0.41422 */
             }
-            if (hx >= 0x7ff00000) return x+x;
+
+            if (hx >= 0x7ff00000) {
+                return x+x;
+            }
+
             if (k != 0) {
                 if (hx < 0x43400000) {
                     u  = 1.0 + x;
@@ -951,10 +957,11 @@ class FdLibm {
                 }
                 f = u - 1.0;
             }
-            hfsq=0.5*f*f;
+
+            hfsq = 0.5*f*f;
             if (hu == 0) {     /* |f| < 2**-20 */
                 if (f == 0.0) {
-                    if(k==0) {
+                    if (k == 0) {
                         return 0.0;
                     } else {
                         c += k * ln2_lo;
@@ -963,7 +970,7 @@ class FdLibm {
                 }
                 R = hfsq * (1.0 - 0.66666666666666666*f);
                 if (k == 0) {
-                    return f-R;
+                    return f - R;
                 } else {
                     return k * ln2_hi - ((R-(k * ln2_lo+c)) - f);
                 }
@@ -971,7 +978,7 @@ class FdLibm {
             s = f/(2.0 + f);
             z = s * s;
             R = z * (Lp1 + z * (Lp2 + z * (Lp3 + z * (Lp4 + z * (Lp5 + z * (Lp6 + z*Lp7))))));
-            if(k==0) {
+            if (k == 0) {
                 return f-(hfsq-s*(hfsq+R));
             } else {
                 return k * ln2_hi - ((hfsq - (s*(hfsq + R) + (k * ln2_lo+c))) - f);
