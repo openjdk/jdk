@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
-  if (_virtual_space != NULL && _virtual_space->expand_by(_reserved_byte_size)) {
+  if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
     BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
@@ -68,9 +68,9 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   _region_start = 0;
   _region_size = 0;
-  if (_virtual_space != NULL) {
+  if (_virtual_space != nullptr) {
     delete _virtual_space;
-    _virtual_space = NULL;
+    _virtual_space = nullptr;
     // Release memory reserved in the space.
     rs.release();
   }

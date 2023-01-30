@@ -226,22 +226,23 @@ class Space: public CHeapObj<mtGC> {
   virtual void verify() const = 0;
 };
 
-// A MemRegionClosure (ResourceObj) whose "do_MemRegion" function applies an
-// OopClosure to (the addresses of) all the ref-containing fields that could
-// be modified by virtue of the given MemRegion being dirty. (Note that
-// because of the imprecise nature of the write barrier, this may iterate
-// over oops beyond the region.)
-// This base type for dirty card to oop closures handles memory regions
-// in non-contiguous spaces with no boundaries, and should be sub-classed
-// to support other space types. See ContiguousDCTOC for a sub-class
-// that works with ContiguousSpaces.
+// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
+// sub-classes). It knows how to filter out objects that are outside of the
+// _boundary.
+// (Note that because of the imprecise nature of the write barrier, this may
+// iterate over oops beyond the region.)
+//
+// Assumptions:
+// 1. That the actual top of any area in a memory region
+//    contained by the space is bounded by the end of the contiguous
+//    region of the space.
+// 2. That the space is really made up of objects and not just
+//    blocks.
 
 class DirtyCardToOopClosure: public MemRegionClosureRO {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
-  HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
-                                // pointing below boundary.
   HeapWord* _min_done;          // Need a downwards traversal to compensate
                                 // imprecise write barrier; this is the
                                 // lowest location already done (or,
@@ -255,7 +256,7 @@ protected:
   // at the top is assumed to start. For example, an object may
   // start at the top but actually extend past the assumed top,
   // in which case the top becomes the end of the object.
-  virtual HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
+  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj);
 
   // Walk the given memory region from bottom to (actual) top
   // looking for objects and applying the oop closure (_cl) to
@@ -263,13 +264,21 @@ protected:
   // blocks, where a block may or may not be an object. Sub-
   // classes should override this to provide more accurate
   // or possibly more efficient walking.
-  virtual void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
+  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
 
+  // Walk the given memory region, from bottom to top, applying
+  // the given oop closure to (possibly) all objects found. The
+  // given oop closure may or may not be the same as the oop
+  // closure with which this closure was created, as it may
+  // be a filtering closure which makes use of the _boundary.
+  // We offer two signatures, so the FilteringClosure static type is
+  // apparent.
+  void walk_mem_region_with_cl(MemRegion mr,
+                               HeapWord* bottom, HeapWord* top,
+                               OopIterateClosure* cl);
 public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
-                        HeapWord* boundary) :
-    _cl(cl), _sp(sp), _boundary(boundary),
-    _min_done(NULL) {
+  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
+    _cl(cl), _sp(sp), _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
   }
 
@@ -464,8 +473,7 @@ class ContiguousSpace: public CompactibleSpace {
     set_top(compaction_top());
   }
 
-  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                     HeapWord* boundary);
+  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's
@@ -507,45 +515,6 @@ class ContiguousSpace: public CompactibleSpace {
   // Debugging
   void verify() const override;
 };
-
-// A dirty card to oop closure for contiguous spaces (ContiguousSpace and
-// sub-classes). It knows how to filter out objects that are outside of the
-// _boundary.
-//
-// Assumptions:
-// 1. That the actual top of any area in a memory region
-//    contained by the space is bounded by the end of the contiguous
-//    region of the space.
-// 2. That the space is really made up of objects and not just
-//    blocks.
-class ContiguousSpaceDCTOC : public DirtyCardToOopClosure {
-  // Overrides.
-  void walk_mem_region(MemRegion mr,
-                       HeapWord* bottom, HeapWord* top) override;
-
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj) override;
-
-  // Walk the given memory region, from bottom to top, applying
-  // the given oop closure to (possibly) all objects found. The
-  // given oop closure may or may not be the same as the oop
-  // closure with which this closure was created, as it may
-  // be a filtering closure which makes use of the _boundary.
-  // We offer two signatures, so the FilteringClosure static type is
-  // apparent.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               OopIterateClosure* cl);
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               FilteringClosure* cl);
-
-public:
-  ContiguousSpaceDCTOC(ContiguousSpace* sp, OopIterateClosure* cl,
-                       HeapWord* boundary) :
-    DirtyCardToOopClosure(sp, cl, boundary)
-  {}
-};
-
 
 #if INCLUDE_SERIALGC
 
