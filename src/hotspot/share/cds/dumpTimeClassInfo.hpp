@@ -259,8 +259,8 @@ public:
     }
   }
 
-  template<class ITER> void iterate_all_live_classes(ITER* iter) const;
-  template<typename Function> void iterate_all_live_classes(Function function) const;
+  template<class ITER> void iterate_all_live_classes(ITER* iter);
+  template<typename Function> void iterate_all_live_classes(Function function);
 
 private:
   // It's unsafe to iterate on classes whose loader is dead.

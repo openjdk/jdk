@@ -89,6 +89,25 @@ class ResourceHashtableBase : public STORAGE {
         const_cast<ResourceHashtableBase*>(this)->lookup_node(hash, key));
   }
 
+  // impl that works for both const and non-const tables
+  template<typename Table_t, typename Bucket_t, typename Node_t, typename Function>
+  static void iterate_impl(Table_t& rht, Function function) {
+    Bucket_t* bucket = rht.table();
+    const unsigned sz = rht.table_size();
+    int cnt = rht._number_of_entries;
+
+    while (cnt > 0 && bucket < rht.bucket_at(sz)) {
+      Node_t* node = *bucket;
+      while (node != nullptr) {
+        bool cont = function(node->_key, node->_value);
+        if (!cont) { return; }
+        node = node->_next;
+        --cnt;
+      }
+      ++bucket;
+    }
+  }
+
  protected:
   Node** table() { return STORAGE::table(); }
   const Node* const* table() const { return STORAGE::table(); }
@@ -233,6 +252,14 @@ class ResourceHashtableBase : public STORAGE {
   // the iteration is cancelled.
   template<class ITER>
   void iterate(ITER* iter) const {
+    auto function = [&] (const K& k, const V& v) {
+      return iter->do_entry(k, v);
+    };
+    iterate(function);
+  }
+
+  template<class ITER>
+  void iterate(ITER* iter) {
     auto function = [&] (K& k, V& v) {
       return iter->do_entry(k, v);
     };
@@ -241,25 +268,26 @@ class ResourceHashtableBase : public STORAGE {
 
   template<typename Function>
   void iterate(Function function) const { // lambda enabled API
-    Node* const* bucket = const_cast<Node* const*>(table()); // FIXME
-    const unsigned sz = table_size();
-    int cnt = _number_of_entries;
+    iterate_impl<const ResourceHashtableBase, const Node* const, const Node>(*this, function);
+  }
 
-    while (cnt > 0 && bucket < bucket_at(sz)) {
-      Node* node = *bucket;
-      while (node != nullptr) {
-        bool cont = function(node->_key, node->_value);
-        if (!cont) { return; }
-        node = node->_next;
-        --cnt;
-      }
-      ++bucket;
-    }
+  template<typename Function>
+  void iterate(Function function) { // lambda enabled API
+    iterate_impl<ResourceHashtableBase, Node*, Node>(*this, function);
   }
 
   // same as above, but unconditionally iterate all entries
   template<typename Function>
   void iterate_all(Function function) const { // lambda enabled API
+    auto wrapper = [&] (const K& k, const V& v) {
+      function(k, v);
+      return true;
+    };
+    iterate(wrapper);
+  }
+
+  template<typename Function>
+  void iterate_all(Function function) { // lambda enabled API
     auto wrapper = [&] (K& k, V& v) {
       function(k, v);
       return true;

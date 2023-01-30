@@ -40,7 +40,7 @@
 // This function must be called only inside a safepoint, where the value of
 // k->is_loader_alive() will not change.
 template<typename Function>
-void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const {
+void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) {
   auto wrapper = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
@@ -59,7 +59,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
 
 
 template<class ITER>
-void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) const {
+void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) {
   auto function = [&] (InstanceKlass* k, DumpTimeClassInfo& v) {
     iter->do_entry(k, v);
   };
