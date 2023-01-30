@@ -104,7 +104,7 @@ class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
 // A supporting class for iterating over all entries in Hashmap
 class JvmtiTagMapKeyClosure {
  public:
-  virtual bool do_entry(JvmtiTagMapKey& key, jlong& value) = 0;
+  virtual bool do_entry(const JvmtiTagMapKey& key, jlong value) = 0;
 };
 
 #endif // SHARE_VM_PRIMS_TAGMAPTABLE_HPP

@@ -863,7 +863,7 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
 }
 
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
-void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
+void ArchivedKlassSubGraphInfoRecord::init(const KlassSubGraphInfo* info) {
   _k = info->klass();
   _entry_field_records = nullptr;
   _subgraph_object_klasses = nullptr;
@@ -925,7 +925,7 @@ struct CopyKlassSubGraphInfoToArchive : StackObj {
   CompactHashtableWriter* _writer;
   CopyKlassSubGraphInfoToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
 
-  bool do_entry(Klass* klass, KlassSubGraphInfo& info) {
+  bool do_entry(Klass* klass, const KlassSubGraphInfo& info) {
     if (info.subgraph_object_klasses() != nullptr || info.subgraph_entry_fields() != nullptr) {
       ArchivedKlassSubGraphInfoRecord* record =
         (ArchivedKlassSubGraphInfoRecord*)ArchiveBuilder::ro_region_alloc(sizeof(ArchivedKlassSubGraphInfoRecord));

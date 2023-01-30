@@ -357,7 +357,7 @@ ModuleEntryTable::ModuleEntryTable() { }
 ModuleEntryTable::~ModuleEntryTable() {
   class ModuleEntryTableDeleter : public StackObj {
    public:
-    bool do_entry(const SymbolHandle& name, ModuleEntry*& entry) {
+    bool do_entry(const SymbolHandle& name, ModuleEntry* entry) {
       if (log_is_enabled(Info, module, unload) || log_is_enabled(Debug, module)) {
         ResourceMark rm;
         const char* str = name->as_C_string();
@@ -550,7 +550,7 @@ static int compare_module_by_name(ModuleEntry* a, ModuleEntry* b) {
 }
 
 void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
-  auto syms = [&] (const SymbolHandle& key, ModuleEntry*& m) {
+  auto syms = [&] (const SymbolHandle& key, ModuleEntry* m) {
       m->iterate_symbols(closure);
   };
   _table.iterate_all(syms);
@@ -559,7 +559,7 @@ void ModuleEntryTable::iterate_symbols(MetaspaceClosure* closure) {
 Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
   Array<ModuleEntry*>* archived_modules = ArchiveBuilder::new_rw_array<ModuleEntry*>(_table.number_of_entries());
   int n = 0;
-  auto grab = [&] (const SymbolHandle& key, ModuleEntry*& m) {
+  auto grab = [&] (const SymbolHandle& key, ModuleEntry* m) {
     archived_modules->at_put(n++, m);
   };
   _table.iterate_all(grab);

@@ -224,7 +224,7 @@ void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol*
   _table.put(field, info);
 }
 
-inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value) {
+inline bool CDSHeapVerifier::do_entry(const oop& orig_obj, const HeapShared::CachedOopInfo& value) {
   _archived_objs++;
 
   StaticFieldInfo* info = _table.get(orig_obj);
@@ -274,7 +274,7 @@ void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
   }
 }
 
-int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
+int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, const HeapShared::CachedOopInfo* info) {
   int level = 0;
   if (info->_referrer != nullptr) {
     HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(info->_referrer);

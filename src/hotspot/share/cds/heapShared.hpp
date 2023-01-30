@@ -90,11 +90,11 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
     }
   };
 
-  Klass* klass()            { return _k; }
-  GrowableArray<Klass*>* subgraph_object_klasses() {
+  Klass* klass() const { return _k; }
+  GrowableArray<Klass*>* subgraph_object_klasses() const {
     return _subgraph_object_klasses;
   }
-  GrowableArray<int>* subgraph_entry_fields() {
+  GrowableArray<int>* subgraph_entry_fields() const {
     return _subgraph_entry_fields;
   }
   void add_subgraph_entry_field(int static_field_offset, oop v,
@@ -126,7 +126,7 @@ class ArchivedKlassSubGraphInfoRecord {
  public:
   ArchivedKlassSubGraphInfoRecord() :
     _k(nullptr), _entry_field_records(nullptr), _subgraph_object_klasses(nullptr) {}
-  void init(KlassSubGraphInfo* info);
+  void init(const KlassSubGraphInfo* info);
   Klass* klass() const { return _k; }
   Array<int>* entry_field_records() const { return _entry_field_records; }
   Array<Klass*>* subgraph_object_klasses() const { return _subgraph_object_klasses; }

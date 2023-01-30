@@ -69,7 +69,7 @@ class CDSHeapVerifier : public KlassClosure {
     }
     return nullptr;
   }
-  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p);
+  static int trace_to_root(outputStream* st, oop orig_obj, oop orig_field, const HeapShared::CachedOopInfo* p);
 
   CDSHeapVerifier();
   ~CDSHeapVerifier();
@@ -80,7 +80,7 @@ public:
   virtual void do_klass(Klass* k);
 
   // For ResourceHashtable::iterate()
-  inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
+  inline bool do_entry(const oop& orig_obj, const HeapShared::CachedOopInfo& value);
 
   static void verify();
 
