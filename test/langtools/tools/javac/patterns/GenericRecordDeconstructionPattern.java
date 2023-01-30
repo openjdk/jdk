@@ -24,7 +24,6 @@
 /**
  * @test
  * @bug 8298184
- * @enablePreview
  * @compile GenericRecordDeconstructionPattern.java
  * @run main GenericRecordDeconstructionPattern
  */

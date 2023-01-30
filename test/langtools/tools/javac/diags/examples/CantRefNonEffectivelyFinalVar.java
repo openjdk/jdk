@@ -25,9 +25,6 @@
 // key: compiler.misc.inner.cls
 // key: compiler.misc.lambda
 // key: compiler.misc.guard
-// key: compiler.misc.feature.pattern.switch
-// key: compiler.warn.preview.feature.use.plural
-// options: --enable-preview -source ${jdk.version} -Xlint:preview
 
 class CantRefNonEffectivelyFinalVar {
     void test() {

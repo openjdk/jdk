@@ -25,7 +25,6 @@
  * @test
  * @bug 8262891
  * @summary Check errors reported for guarded patterns.
- * @enablePreview
  * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics GuardsErrors.java
  */
 

@@ -33,8 +33,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
-
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -43,9 +41,8 @@ import static java.util.Objects.requireNonNull;
  * take additional static arguments corresponding to the {@code case} labels
  * of the {@code switch}, implicitly numbered sequentially from {@code [0..N)}.
  *
- * @since 17
+ * @since 21
  */
-@PreviewFeature(feature=PreviewFeature.Feature.SWITCH_PATTERN_MATCHING)
 public class SwitchBootstraps {
 
     private SwitchBootstraps() {}

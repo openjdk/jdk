@@ -2,9 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8262891 8269146 8269113
  * @summary Verify errors related to pattern switches.
- * @enablePreview
  * @compile/fail/ref=SwitchErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW SwitchErrors.java
  */
+
 public class SwitchErrors {
     void incompatibleSelectorObjectString(Object o) {
         switch (o) {

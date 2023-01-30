@@ -2238,10 +2238,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         @DefinedBy(Api.COMPILER_TREE)
         public JCExpression getExpression() { return expr; }
-        @DefinedBy(Api.COMPILER_TREE)
-        public TestKind getTestKind() {
-            return pattern instanceof JCPatternCaseLabel ? TestKind.PATTERN : TestKind.TYPE;
-        }
         @Override @DefinedBy(Api.COMPILER_TREE)
         public <R,D> R accept(TreeVisitor<R,D> v, D d) {
             return v.visitInstanceOf(this, d);

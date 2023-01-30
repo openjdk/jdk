@@ -387,8 +387,6 @@ public class TransPatterns extends TreeTranslator {
             Type seltype = selector.type.hasTag(BOT)
                     ? syms.objectType
                     : selector.type;
-            Assert.check(preview.isEnabled());
-            Assert.check(preview.usesPreview(env.toplevel.sourcefile));
 
             //rewrite pattern matching switches, performed in several steps:
             //1. record patterns are unrolled into a binding pattern and guards using unrollRecordPattern

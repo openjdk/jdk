@@ -28,7 +28,6 @@
  *          jdk.compiler/com.sun.tools.javac.parser
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- * @enablePreview
  */
 
 import com.sun.source.tree.CaseLabelTree;

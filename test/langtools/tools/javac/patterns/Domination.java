@@ -25,9 +25,9 @@
  * @test
  * @bug 8262891 8290709
  * @summary Check the pattern domination error are reported correctly.
- * @enablePreview
  * @compile/fail/ref=Domination.out -XDrawDiagnostics Domination.java
  */
+
 public class Domination {
     int testDominatesError1(Object o) {
         switch (o) {

@@ -27,6 +27,4 @@ DeconstructionPatternErrors.java:32:29: compiler.err.prob.found.req: (compiler.m
 DeconstructionPatternErrors.java:34:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, byte)
 DeconstructionPatternErrors.java:35:21: compiler.err.prob.found.req: (compiler.misc.not.applicable.types: int, long)
 DeconstructionPatternErrors.java:44:9: compiler.err.not.exhaustive.statement
-- compiler.note.preview.filename: DeconstructionPatternErrors.java, DEFAULT
-- compiler.note.preview.recompile
 29 errors

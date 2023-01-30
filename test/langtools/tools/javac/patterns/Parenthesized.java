@@ -25,7 +25,6 @@
  * @test
  * @bug 8262891 8269354
  * @summary Test parenthesized pattern
- * @enablePreview
  */
 public class Parenthesized {
     public static void main(String... args) {

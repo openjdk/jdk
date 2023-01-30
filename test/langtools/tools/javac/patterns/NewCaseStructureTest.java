@@ -431,9 +431,7 @@ public class NewCaseStructureTest extends TestRunner {
         Files.createDirectories(classes);
 
         List<String> actual = new JavacTask(tb)
-            .options("--enable-preview",
-                     "-source", JAVA_VERSION,
-                     "-XDrawDiagnostics",
+            .options("-XDrawDiagnostics",
                      "-Xlint:-preview",
                      "-XDshould-stop.at=FLOW")
             .outdir(classes)

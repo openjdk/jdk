@@ -25,8 +25,7 @@
  * @test
  * @bug 8297602
  * @summary Compiler crash with type annotation and generic record during pattern matching
- * @enablePreview
- * @compile --enable-preview -source ${jdk.version} -XDrawDiagnostics T8297602.java
+ * @compile -XDrawDiagnostics T8297602.java
  */
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;

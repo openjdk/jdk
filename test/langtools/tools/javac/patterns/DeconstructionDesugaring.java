@@ -25,8 +25,8 @@
  * @test
  * @bug 8291769
  * @summary Verify more complex switches work properly
- * @compile --enable-preview -source ${jdk.version} DeconstructionDesugaring.java
- * @run main/othervm --enable-preview DeconstructionDesugaring
+ * @compile DeconstructionDesugaring.java
+ * @run main DeconstructionDesugaring
  */
 
 import java.util.function.ToIntFunction;

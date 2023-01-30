@@ -88,9 +88,7 @@ public class CaseStructureTest extends ComboInstance<CaseStructureTest> {
         boolean hasDefault = Arrays.stream(caseLabels).anyMatch(l -> l == CaseLabel.DEFAULT || l == CaseLabel.TYPE_PATTERN || l == CaseLabel.PARENTHESIZED_PATTERN);
 
         ComboTask task = newCompilationTask()
-                .withSourceFromTemplate(MAIN_TEMPLATE.replace("#{CASES}", labels).replace("#{DEFAULT}", hasDefault ? "" : "default: break;"))
-                .withOption("--enable-preview")
-                .withOption("-source").withOption(JAVA_VERSION);
+                .withSourceFromTemplate(MAIN_TEMPLATE.replace("#{CASES}", labels).replace("#{DEFAULT}", hasDefault ? "" : "default: break;"));
 
         task.generate(result -> {
             boolean shouldPass = true;

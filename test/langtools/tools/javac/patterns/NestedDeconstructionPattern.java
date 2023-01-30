@@ -23,7 +23,6 @@
 
 /**
  * @test
- * @enablePreview
  */
 
 import java.util.Objects;

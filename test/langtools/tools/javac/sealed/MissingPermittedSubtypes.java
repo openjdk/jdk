@@ -93,8 +93,6 @@ public class MissingPermittedSubtypes extends TestRunner {
         Files.createDirectories(libClasses);
 
         new JavacTask(tb)
-                .options("--enable-preview",
-                         "-source", JAVA_VERSION)
                 .outdir(libClasses)
                 .files(tb.findJavaFiles(libSrc))
                 .run();
@@ -129,10 +127,7 @@ public class MissingPermittedSubtypes extends TestRunner {
 
             var log =
                     new JavacTask(tb)
-                        .options("--enable-preview",
-                                 "-source", JAVA_VERSION,
-                                 "-XDrawDiagnostics",
-                                 "-Xlint:-preview",
+                        .options("-XDrawDiagnostics",
                                  "--class-path", libClasses.toString())
                         .outdir(classes1)
                         .files(tb.findJavaFiles(src1))
@@ -173,10 +168,7 @@ public class MissingPermittedSubtypes extends TestRunner {
 
             var log =
                     new JavacTask(tb)
-                        .options("--enable-preview",
-                                 "-source", JAVA_VERSION,
-                                 "-XDrawDiagnostics",
-                                 "-Xlint:-preview",
+                        .options("-XDrawDiagnostics",
                                  "--class-path", libClasses.toString())
                         .outdir(classes2)
                         .files(tb.findJavaFiles(src2))

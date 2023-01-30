@@ -80,10 +80,7 @@ public class ParenthesizedCombo extends ComboInstance<ParenthesizedCombo> {
                     case "CASE_LABEL" -> caseLabel;
                     case "TYPE_PATTERN" -> typePattern;
                     default -> throw new UnsupportedOperationException(pname);
-                })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                });
         task.generate(result -> {
             if (result.hasErrors()) {
                 throw new AssertionError("Unexpected result: " + result.compilationInfo());

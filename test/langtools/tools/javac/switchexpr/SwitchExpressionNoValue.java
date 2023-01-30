@@ -96,10 +96,7 @@ public class SwitchExpressionNoValue extends ComboInstance<SwitchExpressionNoVal
                         case "EXPRESSION" -> expression;
                         case "CONTEXT" -> context;
                         default -> throw new UnsupportedOperationException(pname);
-                    })
-                .withOption("--enable-preview")
-                .withOption("-source")
-                .withOption(String.valueOf(Runtime.version().feature()));
+                    });
 
         task.generate(result -> {
             try {

@@ -46,8 +46,6 @@ import toolbox.ToolBox;
 
 public class Exhaustiveness extends TestRunner {
 
-    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
-
     ToolBox tb;
 
     public static void main(String... args) throws Exception {
@@ -119,8 +117,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -181,8 +177,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -214,8 +208,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -278,8 +270,6 @@ public class Exhaustiveness extends TestRunner {
                """,
                "Test.java:6:27: compiler.err.guard.has.constant.expression.false",
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "2 errors");
     }
 
@@ -407,8 +397,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:4:9: compiler.err.not.exhaustive.statement",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -468,8 +456,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -578,8 +564,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -675,8 +659,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -745,8 +727,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:5:16: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
         doTest(base,
                new String[]{"""
@@ -817,24 +797,18 @@ public class Exhaustiveness extends TestRunner {
                                      case C6<?, Integer> c -> {}
                          """,
                          "Test.java:11:9: compiler.err.not.exhaustive.statement",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
             new TestCase("""
                                      case C3<Integer> c -> {}
                                      case C6<?, Integer> c -> {}
                          """,
                          "Test.java:11:9: compiler.err.not.exhaustive.statement",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
             new TestCase("""
                                      case C3<Integer> c -> {}
                                      case C5<Integer, ?> c -> {}
                          """,
                          "Test.java:11:9: compiler.err.not.exhaustive.statement",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
             new TestCase("""
                                      case C1 c -> {}
@@ -843,8 +817,6 @@ public class Exhaustiveness extends TestRunner {
                                      case C6<?, Integer> c -> {}
                          """,
                          "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C1)",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
             new TestCase("""
                                      case C2<?> c -> {}
@@ -853,8 +825,6 @@ public class Exhaustiveness extends TestRunner {
                                      case C6<?, Integer> c -> {}
                          """,
                          "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C2<?>)",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
             new TestCase("""
                                      case C4<?, ?> c -> {}
@@ -863,8 +833,6 @@ public class Exhaustiveness extends TestRunner {
                                      case C6<?, Integer> c -> {}
                          """,
                          "Test.java:12:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: test.Test.I<java.lang.Integer>, test.Test.C4<?,?>)",
-                         "- compiler.note.preview.filename: Test.java, DEFAULT",
-                         "- compiler.note.preview.recompile",
                          "1 error"),
         };
         for (TestCase tc : subCases) {
@@ -962,8 +930,6 @@ public class Exhaustiveness extends TestRunner {
                "Test.java:42:42: compiler.err.cant.resolve.location: kindname.class, E, , , (compiler.misc.location: kindname.class, test.Test, null)",
                "Test.java:22:9: compiler.err.not.exhaustive.statement",
                "Test.java:29:17: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "4 errors");
     }
 
@@ -1030,8 +996,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:8:17: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
         doTest(base,
                new String[0],
@@ -1052,8 +1016,6 @@ public class Exhaustiveness extends TestRunner {
                """,
                "Test.java:9:29: compiler.err.cant.resolve.location.args: kindname.method, undefined, , , (compiler.misc.location: kindname.class, test.Test, null)",
                "Test.java:8:17: compiler.err.not.exhaustive",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "2 errors");
     }
 
@@ -1106,8 +1068,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:10:5: compiler.err.missing.ret.stmt",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
         doTest(base,
                new String[0],
@@ -1126,8 +1086,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:11:5: compiler.err.missing.ret.stmt",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
         doTest(base,
                new String[0],
@@ -1145,8 +1103,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:10:5: compiler.err.missing.ret.stmt",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
         doTest(base,
                new String[0],
@@ -1165,8 +1121,6 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:11:5: compiler.err.missing.ret.stmt",
-               "- compiler.note.preview.filename: Test.java, DEFAULT",
-               "- compiler.note.preview.recompile",
                "1 error");
     }
 
@@ -1207,8 +1161,6 @@ public class Exhaustiveness extends TestRunner {
             }
 
             new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION)
                     .outdir(libClasses)
                     .files(tb.findJavaFiles(libSrc))
                     .run();
@@ -1223,9 +1175,7 @@ public class Exhaustiveness extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
+                    .options("-XDrawDiagnostics",
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW")

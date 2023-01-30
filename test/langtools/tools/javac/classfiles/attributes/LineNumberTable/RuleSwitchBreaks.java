@@ -81,7 +81,7 @@ public class RuleSwitchBreaks extends LineNumberTestBase {
                      """,
                      List.of(1, 3, 4, 5, 6, 7, 9, 11),
                      true,
-                     List.of("--enable-preview", "-source", System.getProperty("java.specification.version")),
+                     List.of(),
                      "TestGuards")
     };
 
