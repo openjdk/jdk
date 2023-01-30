@@ -134,10 +134,21 @@ class ZipCoder {
         return hsh;
     }
 
-    boolean hasTrailingSlash(byte[] a, int end) {
+    /**
+     * Returns true if a byte array range ends with '/' in this encoding
+     */
+    boolean hasTrailingSlash(byte[] a, int off, int len) {
         byte[] slashBytes = slashBytes();
+        int end = off + len;
         return end >= slashBytes.length &&
             Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
+    }
+
+    /**
+     * Returns the number of bytes '/' encodes to in this encoding
+     */
+    int slashLength() {
+        return slashBytes().length;
     }
 
     private byte[] slashBytes;
@@ -184,6 +195,24 @@ class ZipCoder {
         return slashBytes;
     }
 
+    /**
+     * Returns the length of the longest common prefix of a byte
+     * array range and a byte array produced when encoding a String
+     *
+     * If the encoded string matches the range exactly, the length
+     * of the range is returned. Otherwise, a number in the
+     * range [0 - len) is returned.
+     *
+     * While a general implementation will need to encode the String,
+     * this can be avoided if the String coder is known and
+     * matches the charset of this ZipCoder
+     */
+    int commonPrefixLength(String str, byte[] cen, int off, int len) {
+        byte[] encoded = getBytes(str);
+        len = Math.min(encoded.length, len);
+        int mismatch = ArraysSupport.mismatch(encoded, 0, cen, off, len);
+        return mismatch == -1 ? len : mismatch;
+    }
     static final class UTF8ZipCoder extends ZipCoder {
 
         private UTF8ZipCoder(Charset utf8) {
@@ -229,8 +258,19 @@ class ZipCoder {
         }
 
         @Override
-        boolean hasTrailingSlash(byte[] a, int end) {
+        boolean hasTrailingSlash(byte[] a, int off, int len) {
+            int end = off + len;
             return end > 0 && a[end - 1] == '/';
+        }
+
+        @Override
+        int slashLength() {
+            return 1;
+        }
+
+        @Override
+        int commonPrefixLength(String str, byte[] cen, int off, int len) {
+            return JLA.commonUTF8PrefixLength(str, cen, off, len);
         }
     }
 }

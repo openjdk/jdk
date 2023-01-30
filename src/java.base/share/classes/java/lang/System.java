@@ -70,6 +70,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
@@ -2659,6 +2660,14 @@ public final class System {
                                                       ContinuationScope contScope,
                                                       Continuation continuation) {
                 return StackWalker.newInstance(options, null, contScope, continuation);
+            }
+
+            @Override
+            public int commonUTF8PrefixLength(String str, byte[] buf, int off, int len) {
+                byte[] value = str.isLatin1() ? str.value() : str.getBytes(UTF_8.INSTANCE);
+                len = Math.min(value.length, len);
+                int mismatch = ArraysSupport.mismatch(value, 0, buf, off, len);
+                return mismatch == -1 ? len : mismatch;
             }
         });
     }

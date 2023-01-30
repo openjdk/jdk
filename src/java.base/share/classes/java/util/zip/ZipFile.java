@@ -646,7 +646,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // only need to check for mismatch of trailing slash
             if (nlen > 0 &&
                 !name.isEmpty() &&
-                zc.hasTrailingSlash(cen, pos + CENHDR + nlen) &&
+                zc.hasTrailingSlash(cen, pos + CENHDR, nlen) &&
                 !name.endsWith("/"))
             {
                 name += '/';
@@ -1642,24 +1642,24 @@ public class ZipFile implements ZipConstants, Closeable {
 
                     try {
                         ZipCoder zc = zipCoderForPos(pos);
-                        String entry = zc.toString(cen, pos + CENHDR, CENNAM(cen, pos));
 
-                        // If addSlash is true we'll test for name+/ in addition to
-                        // name, unless name is the empty string or already ends with a
-                        // slash
-                        int entryLen = entry.length();
-                        int nameLen = name.length();
-                        if (entryLen == nameLen && entry.equals(name)) {
-                            // Found our match
+                        int noff = pos + CENHDR;
+                        int nlen = CENNAM(cen, pos);
+
+                        int prefix = zc.commonPrefixLength(name, cen, noff, nlen);
+
+                        // Exact match for "name"
+                        if (prefix == nlen) {
                             return pos;
                         }
-                        // If addSlash is true we'll now test for name+/ providing
-                        if (addSlash && nameLen + 1 == entryLen
-                                && entry.startsWith(name) &&
-                                entry.charAt(entryLen - 1) == '/') {
-                            // Found the entry "name+/", now find the CEN entry pos
+
+                        // If addSlash is true, we'll also test for "name/"
+                        if (addSlash && nlen == prefix + zc.slashLength() &&
+                                zc.hasTrailingSlash(cen, noff, nlen)) {
+                            // Entries could exist for both "name/" and "name"
+                            // Prefer an exact match
                             int exactPos = getEntryPos(name, false);
-                            return exactPos == -1 ? pos : exactPos;
+                            return exactPos != -1 ? exactPos : pos;
                         }
                     } catch (IllegalArgumentException iae) {
                         // Ignore

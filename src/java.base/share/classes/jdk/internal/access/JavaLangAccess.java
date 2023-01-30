@@ -564,4 +564,19 @@ public interface JavaLangAccess {
     StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                        ContinuationScope contScope,
                                        Continuation continuation);
+
+    /**
+     * Returns the length of the longest common prefix of a byte
+     * array range and the byte array produced when encoding a
+     * String in UTF-8.
+     *
+     * If the encoded string matches the range exactly, the length
+     * of the range is returned. Otherwise, a number in the
+     * range [0 - len) is returned.
+     *
+     * While a general implementation will need to encode the String,
+     * this can be avoided if the String coder is known to be UTF-8
+     * compatible.
+     */
+    int commonUTF8PrefixLength(String str, byte[] array, int off, int len);
 }
