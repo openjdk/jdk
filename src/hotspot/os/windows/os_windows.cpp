@@ -400,15 +400,6 @@ void os::init_system_properties_values() {
   return;
 }
 
-void os::breakpoint() {
-  DebugBreak();
-}
-
-// Invoked from the BREAKPOINT Macro
-extern "C" void breakpoint() {
-  os::breakpoint();
-}
-
 // RtlCaptureStackBackTrace Windows API may not exist prior to Windows XP.
 // So far, this method is only used by Native Memory Tracking, which is
 // only supported on Windows XP or later.
@@ -5579,7 +5570,7 @@ bool os::start_debugging(char *buf, int buflen) {
   bool yes = os::message_box("Unexpected Error", buf);
 
   if (yes) {
-    // os::breakpoint() calls DebugBreak(), which causes a breakpoint
+    // os::breakpoint() calls __debugbreak(), which causes a breakpoint
     // exception. If VM is running inside a debugger, the debugger will
     // catch the exception. Otherwise, the breakpoint exception will reach
     // the default windows exception handler, which can spawn a debugger and

@@ -68,6 +68,7 @@
 #include "services/nmtCommon.hpp"
 #include "services/threadService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/breakpoint.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -346,6 +347,10 @@ bool os::dll_locate_lib(char *buffer, size_t buflen,
 
   FREE_C_HEAP_ARRAY(char*, fullfname);
   return retval;
+}
+
+void os::breakpoint() {
+  BREAKPOINT;
 }
 
 // --------------------- sun.misc.Signal (optional) ---------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,44 @@
 #ifndef SHARE_UTILITIES_BREAKPOINT_HPP
 #define SHARE_UTILITIES_BREAKPOINT_HPP
 
-// If no more specific definition provided, default to calling a
-// function that is defined per-platform.  See also os::breakpoint().
-#ifndef BREAKPOINT
-extern "C" void breakpoint();
-#define BREAKPOINT ::breakpoint()
+#include <csignal>
+
+// BREAKPOINT
+//
+// Programatically triggers a breakpoint for debuggers.
+
+#if defined(TARGET_COMPILER_gcc)
+
+#define BREAKPOINT __builtin_debugtrap()
+
+#elif defined(TARGET_COMPILER_visCPP)
+
+#include <intrin.h>
+
+#pragma intrinsic(__debugbreak)
+
+#define BREAKPOINT __debugbreak()
+
+#elif defined(TARGET_COMPILER_xlc)
+
+#if defined(SIGTRAP)
+
+#define BREAKPOINT ::raise(SIGTRAP)
+
+#elif defined(SIGINT)
+
+#define BREAKPOINT ::raise(SIGINT)
+
+#else
+
+#error Neither SIGTRAP or SIGINT is defined.
+
+#endif
+
+#else
+
+#error Unknown toolchain.
+
 #endif
 
 #endif // SHARE_UTILITIES_BREAKPOINT_HPP
