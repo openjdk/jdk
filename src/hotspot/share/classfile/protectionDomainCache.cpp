@@ -211,7 +211,7 @@ WeakHandle ProtectionDomainCacheTable::add_if_absent(Handle protection_domain) {
 }
 
 void ProtectionDomainCacheTable::print_table_statistics(outputStream* st) {
-  auto size = [&] (WeakHandle& key, WeakHandle& value) {
+  auto size = [&] (const WeakHandle& key, const WeakHandle& value) {
     // The only storage is in OopStorage for an oop
     return sizeof(oop);
   };

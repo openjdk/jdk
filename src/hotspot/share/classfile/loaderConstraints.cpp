@@ -481,7 +481,7 @@ void LoaderConstraintTable::verify() {
 }
 
 void LoaderConstraintTable::print_table_statistics(outputStream* st) {
-  auto size = [&] (SymbolHandle& key, ConstraintSet& set) {
+  auto size = [&] (const SymbolHandle& key, const ConstraintSet& set) {
     // sizeof set is included in the size of the hashtable node
     int sum = 0;
     int len = set.num_constraints();

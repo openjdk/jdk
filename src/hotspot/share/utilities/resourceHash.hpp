@@ -65,7 +65,7 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   const Node* const* bucket_at(unsigned index) const {
-    Node** t = table();
+    const Node* const* t = table();
     return &t[index];
   }
 
@@ -241,7 +241,7 @@ class ResourceHashtableBase : public STORAGE {
 
   template<typename Function>
   void iterate(Function function) const { // lambda enabled API
-    Node* const* bucket = table();
+    Node* const* bucket = const_cast<Node* const*>(table()); // FIXME
     const unsigned sz = table_size();
     int cnt = _number_of_entries;
 
@@ -296,10 +296,10 @@ class ResourceHashtableBase : public STORAGE {
   TableStatistics statistics_calculate(Function size_function) const {
     NumberSeq summary;
     size_t literal_bytes = 0;
-    Node* const* bucket = table();
+    const Node* const* bucket = table();
     const unsigned sz = table_size();
     while (bucket < bucket_at(sz)) {
-      Node* node = *bucket;
+      const Node* node = *bucket;
       int count = 0;
       while (node != nullptr) {
         literal_bytes += size_function(node->_key, node->_value);

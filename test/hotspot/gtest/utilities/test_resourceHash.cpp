@@ -457,7 +457,7 @@ TEST_VM_F(ResourceHashtablePrintTest, print_test) {
     TestValue* tv = new TestValue(i);
     _test_table.put(i, tv);  // all the entries can be the same.
   }
-  auto printer = [&] (int& key, TestValue*& val) {
+  auto printer = [&] (int key, TestValue* val) {
     return sizeof(*val);
   };
   TableStatistics ts = _test_table.statistics_calculate(printer);
