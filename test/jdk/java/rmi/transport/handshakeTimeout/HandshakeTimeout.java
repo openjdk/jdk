@@ -56,8 +56,7 @@ public class HandshakeTimeout {
 
     public static void main(String[] args) throws Exception {
 
-        System.setProperty("sun.rmi.transport.tcp.handshakeTimeout",
-                           String.valueOf(TIMEOUT / 2));
+        System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "1");
 
         /*
          * Listen on port, but never process connections made to it.
