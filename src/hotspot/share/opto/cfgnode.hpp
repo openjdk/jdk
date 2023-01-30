@@ -79,12 +79,10 @@ public:
 
 private:
   bool _is_unreachable_region;
+  LoopStatus _loop_status;
 
   bool is_possible_unsafe_loop(const PhaseGVN* phase) const;
   bool is_unreachable_from_root(const PhaseGVN* phase) const;
-
-  LoopStatus _loop_status;
-
 public:
   // Node layout (parallels PhiNode):
   enum { Region,                // Generally points to self.

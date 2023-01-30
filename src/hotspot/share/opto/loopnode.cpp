@@ -5055,9 +5055,7 @@ void PhaseIdealLoop::build_loop_tree() {
       (void)bltstack.pop(); // Remove post-visited node from stack
     }
   }
-  //if (_verify_only && _verify_me == nullptr) {
   DEBUG_ONLY(verify_regions_in_irreducible_loops();)
-  //}
 }
 
 //------------------------------build_loop_tree_impl---------------------------
@@ -5253,7 +5251,6 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
 // if it is in an irreducible loop it must be marked as such
 void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
   ResourceMark rm;
-  //assert(_verify_only, "this verification is expensive");
   if (!_has_irreducible_loops) {
     // last build_loop_tree has not found any irreducible loops
     // hence no region has to be marked is_in_irreduible_loop
