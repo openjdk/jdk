@@ -36,55 +36,111 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
+// A list of n subsequent trim results
+class TrimData {
+
+  const size_t _max = 5;
+  os::size_change_t _results[_max];
+  int _num;
+
+public:
+
+  TrimData() : _num(0) {}
+
+  bool is_full() const { _num == _max; }
+
+  void reset() { _num = 0; }
+
+  bool add(const os::size_change_t* sc) {
+    assert(!is_full(), "full");
+    _results[_num] = *sc;
+    _num++;
+    return is_full();
+  }
+
+  // Small heuristic to evaluate the pointlessness of trimming:
+  // If we have enough historical data, would it make sense to slow down
+  // periodic trimming?
+  // If we keep reclaiming a lot of memory on each trim, but RSS bounces back
+  // each time, the answer is yes.
+  bool recommend_pause() {
+    if (_num < _max) {
+      return false; // not enough data
+    }
+    int num_significant_trims = 0;
+    int num_significant_trims_bouncebacks = 0;
+    for (int i = 0; i < _max; i++) {
+      const ssize_t gain_size = (ssize_t)_results[i].before - (ssize_t)_results[i].after;
+      if (gain_size > MIN2(32 * M, _results[i].after / 10)) {
+        // This trim showed a significant gain. But did we bounce back?
+        num_significant_trims++;
+        if (i < _max - 1) {
+          const ssize_t bounce_back_size = (ssize_t)_results[i].after - _results[i].before;
+          if (bounce_back_size >= gain_size) {
+            num_significant_trims_bouncebacks++;
+          }
+        }
+      }
+    }
+    // We recommend slowing down trimming if each trim showed significant gains but
+    // RSS bounced back right afterwards. Note that since we compare RSS, all of this is
+    // fuzzy and can yield false positives and negatives.
+    return (num_significant_trims == _max &&
+            num_significant_trims_bouncebacks == (num_significant_trims - 1));
+  }
+};
+
 class NativeTrimmer : public ConcurrentGCThread {
 
   Monitor* _lock;
 
-  // Time of next trim; INT64_MAX: periodic trim disabled
+  // Periodic trimming state
+  const int64_t _interval_ms;
+  const int64_t _max_interval_ms;
+  const bool _do_periodic_trim;
+
   int64_t _next_trim_time;
-  int64_t _next_trim_time_saved;
+  bool _paused;
+
+  // Auto-step-down
+  int64_t _last_long_pause;
+  TrimData _trim_history;
+
   static const int64_t never = INT64_MAX;
-
-  int64_t _interval_ms;
-
-  // Intervals in milliseconds;
-  bool periodic_trim_enabled() const { return GCTrimNativeHeapInterval != 0; }
-  int64_t trim_interval_min() const  { return GCTrimNativeHeapInterval * 1000; }
-  int64_t trim_interval_max() const  { return GCTrimNativeHeapIntervalMax * 1000; }
-
-  int64_t trim_interval() const      { return _interval_ms; }
-  int64_t next_trim_time() const     { return _next_trim_time; }
 
   static int64_t now() { return os::javaTimeMillis(); }
 
   void run_service() override {
+
     assert(GCTrimNativeHeap, "Sanity");
     assert(os::can_trim_native_heap(), "Sanity");
 
     log_info(gc, trim)("NativeTrimmer started.");
 
+    int64_t ntt = 0;
+
     for (;;) {
-
-      int64_t ntt = 0;
-      int64_t tnow = 0;
-
       {
         MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
         do {
-          ntt = next_trim_time();
-          tnow = now();
-          if (ntt > tnow) {
-            const int64_t sleep_ms = (ntt == never) ? 0 : ntt - tnow;
+          int64_t tnow = now();
+          ntt = _next_trim_time;
+          wait_some = ntt > tnow || _paused;
+          if (wait_some) {
+            const int64_t sleep_ms = (_paused || ntt == never) ?
+                                     0 /* infinite */ :
+                                     ntt - tnow;
             ml.wait(sleep_ms);
-            ntt = next_trim_time();
-            tnow = now();
           }
           if (should_terminate()) {
             log_info(gc, trim)("NativeTrimmer stopped.");
             return;
           }
-        } while (ntt > tnow);
-      }
+          ntt = _next_trim_time;
+          tnow = now();
+          wait_some = ntt > tnow || _paused;
+        } while (wait_some);
+      } // end mutex scope
 
       do_trim(); // may take some time...
 
