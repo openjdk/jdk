@@ -1035,7 +1035,7 @@ OGLTR_DrawGlyphList(JNIEnv *env, OGLContext *oglc, OGLSDOps *dstOps,
 
     // We have to obtain an information about destination content
     // in order to render lcd glyphs. It could be done by copying
-    // a part of desitination buffer into an intermediate texture
+    // a part of destination buffer into an intermediate texture
     // using glCopyTexSubImage2D(). However, on macosx this path is
     // slow, and it dramatically reduces the overall speed of lcd
     // text rendering.

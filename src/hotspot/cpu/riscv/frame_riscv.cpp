@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,12 @@ bool frame::safe_for_sender(JavaThread *thread) {
       saved_fp = (intptr_t*) *(sender_sp - 2);
     }
 
+    if (Continuation::is_return_barrier_entry(sender_pc)) {
+      // If our sender_pc is the return barrier, then our "real" sender is the continuation entry
+      frame s = Continuation::continuation_bottom_sender(thread, *this, sender_sp);
+      sender_sp = s.sp();
+      sender_pc = s.pc();
+    }
 
     // If the potential sender is the interpreter then we can do some more checking
     if (Interpreter::contains(sender_pc)) {
@@ -202,9 +208,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Validate the JavaCallWrapper an entry frame must have
       address jcw = (address)sender.entry_frame_call_wrapper();
 
-      bool jcw_safe = (jcw < thread->stack_base()) && (jcw > (address)sender.fp());
-
-      return jcw_safe;
+      return thread->is_in_stack_range_excl(jcw, (address)sender.fp());
     }
 
     CompiledMethod* nm = sender_blob->as_compiled_method_or_null();
@@ -254,15 +258,18 @@ bool frame::safe_for_sender(JavaThread *thread) {
 void frame::patch_pc(Thread* thread, address pc) {
   assert(_cb == CodeCache::find_blob(pc), "unexpected pc");
   address* pc_addr = &(((address*) sp())[-1]);
+  address pc_old = *pc_addr;
 
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
-                  p2i(pc_addr), p2i(*pc_addr), p2i(pc));
+                  p2i(pc_addr), p2i(pc_old), p2i(pc));
   }
+
+  assert(!Continuation::is_return_barrier_entry(pc_old), "return barrier");
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == *pc_addr || pc == *pc_addr || *pc_addr == 0, "must be");
+  assert(_pc == pc_old || pc == pc_old || pc_old == 0, "must be");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
@@ -276,10 +283,6 @@ void frame::patch_pc(Thread* thread, address pc) {
   }
 }
 
-bool frame::is_interpreted_frame() const  {
-  return Interpreter::contains(pc());
-}
-
 intptr_t* frame::entry_frame_argument_at(int offset) const {
   // convert offset to index to deal with tsi
   int index = (Interpreter::expr_offset_in_bytes(offset)/wordSize);
@@ -287,7 +290,16 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   return &unextended_sp()[index];
 }
 
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
+}
+
 // sender_sp
+
 intptr_t* frame::interpreter_frame_sender_sp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
   return (intptr_t*) at(interpreter_frame_sender_sp_offset);
@@ -306,7 +318,7 @@ BasicObjectLock* frame::interpreter_frame_monitor_begin() const {
 }
 
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
-  BasicObjectLock* result = (BasicObjectLock*) *addr_at(interpreter_frame_monitor_block_top_offset);
+  BasicObjectLock* result = (BasicObjectLock*) at(interpreter_frame_monitor_block_top_offset);
   // make sure the pointer points inside the frame
   assert(sp() <= (intptr_t*) result, "monitor end should be above the stack pointer");
   assert((intptr_t*) result < fp(),  "monitor end should be strictly below the frame pointer");
@@ -343,18 +355,35 @@ frame frame::sender_for_entry_frame(RegisterMap* map) const {
 }
 
 UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) const {
-  ShouldNotCallThis();
-  return nullptr;
+  assert(frame.is_upcall_stub_frame(), "wrong frame");
+  // need unextended_sp here, since normal sp is wrong for interpreter callees
+  return reinterpret_cast<UpcallStub::FrameData*>(
+          reinterpret_cast<address>(frame.unextended_sp()) + in_bytes(_frame_data_offset));
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  ShouldNotCallThis();
-  return false;
+  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  return jfa->last_Java_sp() == NULL;
 }
 
 frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
-  ShouldNotCallThis();
-  return {};
+  assert(map != NULL, "map must be set");
+  UpcallStub* blob = _cb->as_upcall_stub();
+  // Java frame called from C; skip all C frames and return top C
+  // frame of that chunk as the sender
+  JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
+  assert(!upcall_stub_frame_is_first(), "must have a frame anchor to go back to");
+  assert(jfa->last_Java_sp() > sp(), "must be above this frame on stack");
+  // Since we are walking the stack now this nested anchor is obviously walkable
+  // even if it wasn't when it was stacked.
+  jfa->make_walkable();
+  map->clear();
+  assert(map->include_argument_oops(), "should be set by clear");
+  frame fr(jfa->last_Java_sp(), jfa->last_Java_fp(), jfa->last_Java_pc());
+
+  return fr;
 }
 
 //------------------------------------------------------------------------------
@@ -417,6 +446,14 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   }
 #endif // COMPILER2
 
+  if (Continuation::is_return_barrier_entry(sender_pc())) {
+    if (map->walk_cont()) { // about to walk into an h-stack
+      return Continuation::top_frame(*this, map);
+    } else {
+      return Continuation::continuation_bottom_sender(map->thread(), *this, sender_sp);
+    }
+  }
+
   return frame(sender_sp, unextended_sp, link(), sender_pc());
 }
 
@@ -469,9 +506,11 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   }
 
   // validate locals
-  address locals = (address) *interpreter_frame_locals_addr();
-  if (locals > thread->stack_base() || locals < (address) fp()) {
-    return false;
+  if (m->max_locals() > 0) {
+    address locals = (address)interpreter_frame_locals();
+    if (!thread->is_in_stack_range_incl(locals, (address)fp())) {
+      return false;
+    }
   }
 
   // We'd have to be pretty unlucky to be mislead at this point
@@ -549,6 +588,22 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
     DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
+  }
+
+  if (is_java_frame() || Continuation::is_continuation_enterSpecial(*this)) {
+    intptr_t* ret_pc_loc;
+    intptr_t* fp_loc;
+    if (is_interpreted_frame()) {
+      ret_pc_loc = fp() + return_addr_offset;
+      fp_loc = fp();
+    } else {
+      ret_pc_loc = real_fp() - 1;
+      fp_loc = real_fp() - 2;
+    }
+    address ret_pc = *(address*)ret_pc_loc;
+    values.describe(frame_no, ret_pc_loc,
+      Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
+    values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
   }
 }
 #endif

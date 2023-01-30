@@ -23,12 +23,13 @@
  */
 package org.openjdk.bench.jdk.incubator.vector;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.SegmentScope;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import jdk.incubator.vector.ShortVector;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
@@ -71,17 +72,9 @@ public class TestLoadStoreShorts {
 
   private MemorySegment dstSegmentHeap;
 
-
-  private MemorySession implicitScope;
-
   private MemorySegment srcSegment;
 
   private MemorySegment dstSegment;
-
-
-  private MemoryAddress srcAddress;
-
-  private MemoryAddress dstAddress;
 
   private short[] a, b, c;
 
@@ -97,12 +90,8 @@ public class TestLoadStoreShorts {
     srcSegmentHeap = MemorySegment.ofArray(new byte[size]);
     dstSegmentHeap = MemorySegment.ofArray(new byte[size]);
 
-    implicitScope = MemorySession.openImplicit();
-    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
-    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), implicitScope);
-
-    srcAddress = srcSegment.address();
-    dstAddress = dstSegment.address();
+    srcSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), SegmentScope.auto());
+    dstSegment = MemorySegment.allocateNative(size, SPECIES.vectorByteSize(), SegmentScope.auto());
 
     this.longSize = longSize;
 
@@ -172,9 +161,9 @@ public class TestLoadStoreShorts {
 
   @Benchmark
   public void segmentNativeConfined() {
-    try (final var session = MemorySession.openConfined()) {
-      final var srcSegmentConfined = MemorySegment.ofAddress(srcAddress, size, session);
-      final var dstSegmentConfined = MemorySegment.ofAddress(dstAddress, size, session);
+    try (final var arena = Arena.openConfined()) {
+      final var srcSegmentConfined = MemorySegment.ofAddress(srcSegment.address(), size, arena.scope());
+      final var dstSegmentConfined = MemorySegment.ofAddress(dstSegment.address(), size, arena.scope());
 
       for (long i = 0; i < SPECIES.loopBound(srcArray.length); i += SPECIES.length()) {
         var v = ShortVector.fromMemorySegment(SPECIES, srcSegmentConfined, i, ByteOrder.nativeOrder());

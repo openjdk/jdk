@@ -71,8 +71,7 @@ import javax.tools.ToolProvider;
 
 /**
  * Utility methods and classes for writing jtreg tests for
- * javac, javah, javap, and sjavac. (For javadoc support,
- * see JavadocTester.)
+ * javac, javah, and javap. (For javadoc support, see JavadocTester.)
  *
  * <p>There is support for common file operations similar to
  * shell commands like cat, cp, diff, mv, rm, grep.
@@ -245,7 +244,7 @@ public class ToolBox {
     public void copyFile(Path from, Path to) throws IOException {
         if (Files.isDirectory(to)) {
             to = to.resolve(from.getFileName());
-        } else {
+        } else if (to.getParent() != null) {
             Files.createDirectories(to.getParent());
         }
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
@@ -990,4 +989,3 @@ public class ToolBox {
         }
     }
 }
-

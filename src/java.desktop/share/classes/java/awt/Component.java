@@ -6225,7 +6225,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     /**
      * Weak map of known coalesceEvent overriders.
-     * Value indicates whether overriden.
+     * Value indicates whether overridden.
      * Bootstrap classes are not included.
      */
     private static final Map<Class<?>, Boolean> coalesceMap =
@@ -6301,7 +6301,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
 
         try {
-            // Throws if not overriden.
+            // Throws if not overridden.
             clazz.getDeclaredMethod(
                 "coalesceEvents", coalesceEventsParams
                 );
@@ -8086,7 +8086,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         {
             return true;
         }
-    };
+    }
 
     static synchronized void setRequestFocusController(RequestFocusController requestController)
     {
@@ -10156,7 +10156,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * needs to be cut off of the heavyweight components in order to mix this
      * lightweight component correctly with them.
      *
-     * The method is overriden in the java.awt.Container to handle non-opaque
+     * The method is overridden in the java.awt.Container to handle non-opaque
      * containers containing opaque children.
      *
      * See 6637655 for details.
@@ -10425,7 +10425,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     void mixOnValidating() {
-        // This method gets overriden in the Container. Obviously, a plain
+        // This method gets overridden in the Container. Obviously, a plain
         // non-container components don't need to handle validation.
     }
 
@@ -10528,7 +10528,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
     // ****************** END OF MIXING CODE ********************************
 
-    // Note that the method is overriden in the Window class,
+    // Note that the method is overridden in the Window class,
     // a window doesn't need to be updated in the Z-order.
     void updateZOrder() {
         peer.setZOrder(getHWPeerAboveMe());

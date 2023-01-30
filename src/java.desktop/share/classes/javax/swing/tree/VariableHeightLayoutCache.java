@@ -417,7 +417,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                 Object            changedValue = changedNode.getValue();
 
                 /* Update the size of the changed node, as well as all the
-                   child indexs that are passed in. */
+                   child indices that are passed in. */
                 changedNode.updatePreferredSize();
                 if(changedNode.hasBeenExpanded() && changedIndexs != null) {
                     for(int index : changedIndexs) {
@@ -430,7 +430,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
                     }
                 }
                 else if (changedNode == root) {
-                    // Null indicies for root indicates it changed.
+                    // Null indices for root indicates it changed.
                     changedNode.updatePreferredSize();
                 }
                 if(!isFixedRowHeight()) {
@@ -694,7 +694,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
     }
 
     /**
-     * Retursn the bounds for row, <code>row</code> by reference in
+     * Returns the bounds for row, <code>row</code> by reference in
      * <code>placeIn</code>. If <code>placeIn</code> is null a new
      * Rectangle will be created and returned.
      */
@@ -751,7 +751,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
       * already exist and <I>parent</I> has been expanded at least once.
       * The newly created node will be made visible if <I>parent</I> is
       * currently expanded.  This does not update the position of any
-      * cells, nor update the selection if it needs to be.  If succesful
+      * cells, nor update the selection if it needs to be.  If successful
       * in creating the new TreeStateNode, it is returned, otherwise
       * null is returned.
       */
@@ -886,7 +886,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
       * Resets the y origin of all the visible nodes as well as messaging
       * all the visible nodes to updatePreferredSize().  You should not
       * normally have to call this.  Expanding and contracting the nodes
-      * automaticly adjusts the locations.
+      * automatically adjusts the locations.
       * updateAll determines if updatePreferredSize() is call on all nodes
       * or just those that don't have a valid size.
       */
@@ -948,7 +948,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      * Ensures that all the path components in path are expanded, accept
      * for the last component which will only be expanded if expandLast
      * is true.
-     * Returns true if succesful in finding the path.
+     * Returns true if successful in finding the path.
      */
     private void ensurePathIsExpanded(TreePath aPath, boolean expandLast) {
         if(aPath != null) {
@@ -1035,7 +1035,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
         }
 
         //
-        // Overriden DefaultMutableTreeNode methods
+        // Overridden DefaultMutableTreeNode methods
         //
 
         /**
@@ -1615,7 +1615,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     private class VisibleTreeStateNodeEnumeration implements
                      Enumeration<TreePath> {
-        /** Parent thats children are being enumerated. */
+        /** Parent whose children are being enumerated. */
         protected TreeStateNode       parent;
         /** Index of next child. An index of -1 signifies parent should be
          * visibled next. */
@@ -1665,7 +1665,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
 
         /**
          * Determines the next object by invoking <code>updateNextIndex</code>
-         * and if not succesful <code>findNextValidParent</code>.
+         * and if not successful <code>findNextValidParent</code>.
          */
         protected void updateNextObject() {
             if(!updateNextIndex()) {

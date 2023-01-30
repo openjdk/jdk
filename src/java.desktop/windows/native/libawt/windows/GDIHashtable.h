@@ -127,7 +127,7 @@ class GDIHashtable : public Hashtable {
 
         /**
          * @return <code>TRUE</code> if unreferenced AwtGDIObjects shouldn't
-         *         be destroyed immediatelly. They will be deleted in
+         *         be destroyed immediately. They will be deleted in
          *         a batch when needed.
          *         <code>FALSE</code> if unreferenced AwtGDIObjects should
          *         be destroyed as soon as freed.

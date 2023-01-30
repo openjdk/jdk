@@ -72,7 +72,7 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
      * or right).</p>
 
      * <p>A positive overlap indicates that tabs should overlap right/down,
-     * while a negative overlap indicates tha tabs should overlap left/up.</p>
+     * while a negative overlap indicates that tabs should overlap left/up.</p>
      *
      * <p>When tabOverlap is specified, it both changes the x position and width
      * of the tab if in TOP or BOTTOM placement, and changes the y position and

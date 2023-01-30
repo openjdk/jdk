@@ -21,23 +21,23 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @bug 8284161 8286788
  * @summary Test Thread API with virtual threads
  * @enablePreview
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run testng/othervm/timeout=300 ThreadAPI
+ * @run testng ThreadAPI
  */
 
-/**
- * @test
+/*
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @run testng/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
+ * @run testng/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations ThreadAPI
  */
 
 import java.time.Duration;
@@ -52,6 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,11 +64,40 @@ import java.nio.channels.Selector;
 
 import jdk.test.lib.thread.VThreadRunner;
 import org.testng.SkipException;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class ThreadAPI {
     private static final Object lock = new Object();
+
+    // used for scheduling thread interrupt
+    private ScheduledExecutorService scheduler;
+
+    @BeforeClass
+    public void setUp() throws Exception {
+        ThreadFactory factory = (task) -> {
+            Thread thread = new Thread(task);
+            thread.setDaemon(true);
+            return thread;
+        };
+        scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+    }
+
+    @AfterClass
+    public void tearDown() {
+        scheduler.shutdown();
+    }
+
+    /**
+     * An operation that does not return a result but may throw an exception.
+     */
+    @FunctionalInterface
+    interface ThrowingRunnable {
+        void run() throws Exception;
+    }
 
     /**
      * Test Thread.currentThread before/after park.
@@ -81,7 +111,7 @@ public class ThreadAPI {
             LockSupport.park();
             after.set(Thread.currentThread());
         });
-        Thread.sleep(100); // give time for virtual thread to park
+        awaitParked(thread);
         LockSupport.unpark(thread);
         thread.join();
         assertTrue(before.get() == thread);
@@ -105,7 +135,7 @@ public class ThreadAPI {
         });
         synchronized (lock) {
             thread.start();
-            Thread.sleep(100); // give time for virtual thread to block
+            awaitBlocked(thread);
         }
         thread.join();
         assertTrue(ref1.get() == thread);
@@ -135,7 +165,7 @@ public class ThreadAPI {
         lock.lock();
         try {
             thread.start();
-            Thread.sleep(100); // give time for virtual thread to block
+            awaitParked(thread);
         } finally {
             lock.unlock();
         }
@@ -206,7 +236,7 @@ public class ThreadAPI {
         try {
             assertTrue(vthread.isVirtual());
 
-            // Thread.currentThread() returned the virtual thread
+            // Thread.currentThread() returned by the virtual thread
             Thread current;
             while ((current = ref.get()) == null) {
                 Thread.sleep(10);
@@ -341,13 +371,13 @@ public class ThreadAPI {
     public void testJoin3() throws Exception {
         var thread = Thread.ofVirtual().start(LockSupport::park);
         try {
-            thread.join(100);
-            thread.join(100, 0);
-            thread.join(100, 100);
-            thread.join(0, 100);
-            assertFalse(thread.join(Duration.ofMillis(-100)));
+            thread.join(20);
+            thread.join(20, 0);
+            thread.join(20, 20);
+            thread.join(0, 20);
+            assertFalse(thread.join(Duration.ofMillis(-20)));
             assertFalse(thread.join(Duration.ofMillis(0)));
-            assertFalse(thread.join(Duration.ofMillis(100)));
+            assertFalse(thread.join(Duration.ofMillis(20)));
             assertTrue(thread.isAlive());
         } finally {
             LockSupport.unpark(thread);
@@ -414,7 +444,7 @@ public class ThreadAPI {
     public void testJoin11() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             try {
-                Thread.sleep(100);
+                Thread.sleep(50);
             } catch (InterruptedException e) { }
         });
         assertTrue(thread.join(Duration.ofSeconds(10)));
@@ -632,7 +662,7 @@ public class ThreadAPI {
      */
     @Test
     public void testJoin28() throws Exception {
-        long nanos = TimeUnit.NANOSECONDS.convert(2, TimeUnit.SECONDS);
+        long nanos = TimeUnit.NANOSECONDS.convert(100, TimeUnit.MILLISECONDS);
         VThreadRunner.run(() -> {
             var thread = new Thread(() -> LockSupport.parkNanos(nanos));
             thread.start();
@@ -658,7 +688,7 @@ public class ThreadAPI {
             Thread.currentThread().interrupt();
             try {
                 thread.join(Duration.ofSeconds(Integer.MAX_VALUE));
-                fail();
+                fail("join not interrupted");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());
             } finally {
@@ -685,7 +715,7 @@ public class ThreadAPI {
             scheduleInterrupt(Thread.currentThread(), 100);
             try {
                 thread.join(Duration.ofSeconds(Integer.MAX_VALUE));
-                fail();
+                fail("join not interrupted");
             } catch (InterruptedException expected) {
                 assertFalse(Thread.interrupted());
             } finally {
@@ -704,8 +734,8 @@ public class ThreadAPI {
     public void testJoin31() throws Exception {
         Thread thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                for (int i=0; i<10; i++) {
-                    LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+                for (int i = 0; i < 10; i++) {
+                    LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
             }
         });
@@ -724,7 +754,7 @@ public class ThreadAPI {
 
     /**
      * Test platform thread invoking timed-Thread.join on a thread that is parking
-     * and unparking.
+     * and unparking while pinned.
      */
     @Test
     public void testJoin33() throws Exception {
@@ -732,12 +762,12 @@ public class ThreadAPI {
         Thread thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 while (!done.get()) {
-                    LockSupport.parkNanos(Duration.ofMillis(100).toNanos());
+                    LockSupport.parkNanos(Duration.ofMillis(20).toNanos());
                 }
             }
         });
         try {
-            assertFalse(thread.join(Duration.ofSeconds(1)));
+            assertFalse(thread.join(Duration.ofMillis(100)));
         } finally {
             done.set(true);
         }
@@ -745,11 +775,18 @@ public class ThreadAPI {
 
     /**
      * Test virtual thread invoking timed-Thread.join on a thread that is parking
-     * and unparking.
+     * and unparking while pinned.
      */
     @Test
     public void testJoin34() throws Exception {
-        VThreadRunner.run(this::testJoin33);
+        // need at least two carrier threads due to pinning
+        int previousParallelism = VThreadRunner.ensureParallelism(2);
+        try {
+            VThreadRunner.run(this::testJoin33);
+        } finally {
+            // restore
+            VThreadRunner.setParallelism(previousParallelism);
+        }
     }
 
     /**
@@ -856,7 +893,7 @@ public class ThreadAPI {
             try {
                 try {
                     Thread.sleep(60*1000);
-                    fail();
+                    fail("sleep not interrupted");
                 } catch (InterruptedException e) {
                     // interrupt status should be reset
                     assertFalse(Thread.interrupted());
@@ -865,7 +902,7 @@ public class ThreadAPI {
                 exception.set(e);
             }
         });
-        Thread.sleep(100);  // give time for thread to block
+        awaitParked(thread);
         thread.interrupt();
         thread.join();
         assertTrue(exception.get() == null);
@@ -885,14 +922,14 @@ public class ThreadAPI {
                 exception.set(e);
             }
         });
-        Thread.sleep(100);  // give time for thread to block
+        awaitParked(thread);
         thread.interrupt();
         thread.join();
         assertTrue(exception.get() == null);
     }
 
     /**
-     * Test trying to park, wait or block with interrupt status set.
+     * Test trying to park with interrupt status set.
      */
     @Test
     public void testInterrupt8() throws Exception {
@@ -902,20 +939,32 @@ public class ThreadAPI {
             LockSupport.park();
             assertTrue(Thread.interrupted());
         });
+    }
 
+    /**
+     * Test trying to wait with interrupt status set.
+     */
+    @Test
+    public void testInterrupt9() throws Exception {
         VThreadRunner.run(() -> {
             Thread me = Thread.currentThread();
             me.interrupt();
             synchronized (lock) {
                 try {
                     lock.wait();
-                    fail();
+                    fail("wait not interrupted");
                 } catch (InterruptedException expected) {
                     assertFalse(Thread.interrupted());
                 }
             }
         });
+    }
 
+    /**
+     * Test trying to block with interrupt status set.
+     */
+    @Test
+    public void testInterrupt10() throws Exception {
         VThreadRunner.run(() -> {
             Thread me = Thread.currentThread();
             me.interrupt();
@@ -1185,147 +1234,106 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep(2000), thread should sleep.
+     * Tasks that sleep for 1 second.
      */
-    @Test
-    public void testSleep3() throws Exception {
+    @DataProvider(name = "oneSecondSleepers")
+    public Object[][] oneSecondSleepers() {
+        ThrowingRunnable[] sleepers = {
+                () -> Thread.sleep(1000),
+                () -> Thread.sleep(Duration.ofSeconds(1))
+        };
+        return Arrays.stream(sleepers)
+                .map(s -> new Object[] { s })
+                .toArray(Object[][]::new);
+    }
+
+    /**
+     * Test Thread.sleep duration.
+     */
+    @Test(dataProvider = "oneSecondSleepers")
+    public void testSleep3(ThrowingRunnable sleeper) throws Exception {
         VThreadRunner.run(() -> {
             long start = millisTime();
-            Thread.sleep(2000);
-            expectDuration(start, /*min*/1900, /*max*/4000);
-        });
-        VThreadRunner.run(() -> {
-            long start = millisTime();
-            Thread.sleep(2000, 0);
-            expectDuration(start, /*min*/1900, /*max*/4000);
-        });
-        VThreadRunner.run(() -> {
-            long start = millisTime();
-            Thread.sleep(Duration.ofMillis(2000));
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            sleeper.run();
+            expectDuration(start, /*min*/900, /*max*/4000);
         });
     }
 
     /**
+     * Tasks that sleep for zero or longer duration.
+     */
+    @DataProvider(name = "sleepers")
+    public Object[][] sleepers() {
+        ThrowingRunnable[] sleepers = {
+                () -> Thread.sleep(0),
+                () -> Thread.sleep(0, 0),
+                () -> Thread.sleep(1000),
+                () -> Thread.sleep(1000, 0),
+                () -> Thread.sleep(Duration.ofMillis(0)),
+                () -> Thread.sleep(Duration.ofMillis(1000)),
+        };
+        return Arrays.stream(sleepers)
+                .map(s -> new Object[] { s })
+                .toArray(Object[][]::new);
+    }
+
+    /**
      * Test Thread.sleep with interrupt status set.
+     */
+    @Test(dataProvider = "sleepers")
+    public void testSleep4(ThrowingRunnable sleeper) throws Exception {
+        VThreadRunner.run(() -> {
+            Thread me = Thread.currentThread();
+            me.interrupt();
+            try {
+                sleeper.run();
+                fail("sleep was not interrupted");
+            } catch (InterruptedException e) {
+                // expected
+                assertFalse(me.isInterrupted());
+            }
+        });
+    }
+
+    /**
+     * Test Thread.sleep with interrupt status set and a negative duration.
      */
     @Test
     public void testSleep4() throws Exception {
         VThreadRunner.run(() -> {
             Thread me = Thread.currentThread();
             me.interrupt();
-            try {
-                Thread.sleep(0);
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
-            try {
-                Thread.sleep(0, 0);
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
-            try {
-                Thread.sleep(1000);
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
-            try {
-                Thread.sleep(1000, 0);
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
             Thread.sleep(Duration.ofMillis(-1000));  // does nothing
             assertTrue(me.isInterrupted());
         });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
-            try {
-                Thread.sleep(Duration.ofMillis(0));
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread me = Thread.currentThread();
-            me.interrupt();
-            try {
-                Thread.sleep(Duration.ofMillis(1000));
-                fail();
-            } catch (InterruptedException e) {
-                // expected
-                assertFalse(me.isInterrupted());
-            }
-        });
     }
 
     /**
-     * Test interrupting Thread.sleep
+     * Tasks that sleep for a long time.
      */
-    @Test
-    public void testSleep5() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            scheduleInterrupt(t, 2000);
-            try {
-                Thread.sleep(20*1000);
-                fail();
-            } catch (InterruptedException e) {
-                // interrupt status should be cleared
-                assertFalse(t.isInterrupted());
-            }
-        });
+    @DataProvider(name = "longSleepers")
+    public Object[][] longSleepers() {
+        ThrowingRunnable[] sleepers = {
+                () -> Thread.sleep(20_000),
+                () -> Thread.sleep(20_000, 0),
+                () -> Thread.sleep(Duration.ofSeconds(20)),
+        };
+        return Arrays.stream(sleepers)
+                .map(s -> new Object[] { s })
+                .toArray(Object[][]::new);
+    }
 
+    /**
+     * Test interrupting Thread.sleep.
+     */
+    @Test(dataProvider = "longSleepers")
+    public void testSleep5(ThrowingRunnable sleeper) throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            scheduleInterrupt(t, 2000);
+            scheduleInterrupt(t, 100);
             try {
-                Thread.sleep(20*1000, 0);
-                fail();
-            } catch (InterruptedException e) {
-                // interrupt status should be cleared
-                assertFalse(t.isInterrupted());
-            }
-        });
-
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            scheduleInterrupt(t, 2000);
-            try {
-                Thread.sleep(Duration.ofSeconds(20));
-                fail();
+                sleeper.run();
+                fail("sleep was not interrupted");
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());
@@ -1334,7 +1342,7 @@ public class ThreadAPI {
     }
 
     /**
-     * Test that Thread.sleep should not disrupt parking permit.
+     * Test that Thread.sleep does not disrupt parking permit.
      */
     @Test
     public void testSleep6() throws Exception {
@@ -1342,8 +1350,8 @@ public class ThreadAPI {
             LockSupport.unpark(Thread.currentThread());
 
             long start = millisTime();
-            Thread.sleep(2000);
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            Thread.sleep(1000);
+            expectDuration(start, /*min*/900, /*max*/4000);
 
             // check that parking permit was not consumed
             LockSupport.park();
@@ -1357,20 +1365,17 @@ public class ThreadAPI {
     public void testSleep7() throws Exception {
         AtomicReference<Exception> exc = new AtomicReference<>();
         var thread = Thread.ofVirtual().start(() -> {
-            long start = millisTime();
             try {
-                Thread.sleep(2000);
-                long elapsed = millisTime() - start;
-                if (elapsed < 1900) {
-                    exc.set(new RuntimeException("sleep too short"));
-                }
-            } catch (InterruptedException e) {
+                long start = millisTime();
+                Thread.sleep(1000);
+                expectDuration(start, /*min*/900, /*max*/4000);
+            } catch (Exception e) {
                 exc.set(e);
             }
 
         });
         // attempt to disrupt sleep
-        for (int i=0; i<5; i++) {
+        for (int i = 0; i < 5; i++) {
             Thread.sleep(20);
             LockSupport.unpark(thread);
         }
@@ -1382,21 +1387,21 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread.sleep when pinned
+     * Test Thread.sleep when pinned.
      */
     @Test
     public void testSleep8() throws Exception {
         VThreadRunner.run(() -> {
             long start = millisTime();
             synchronized (lock) {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             }
-            expectDuration(start, /*min*/1900, /*max*/4000);
+            expectDuration(start, /*min*/900, /*max*/4000);
         });
     }
 
     /**
-     * Test Thread.sleep when pinned and with interrupt status set
+     * Test Thread.sleep when pinned and with interrupt status set.
      */
     @Test
     public void testSleep9() throws Exception {
@@ -1407,7 +1412,7 @@ public class ThreadAPI {
                 synchronized (lock) {
                     Thread.sleep(2000);
                 }
-                fail();
+                fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // expected
                 assertFalse(me.isInterrupted());
@@ -1416,18 +1421,18 @@ public class ThreadAPI {
     }
 
     /**
-     * Test interrupting Thread.sleep when pinned
+     * Test interrupting Thread.sleep when pinned.
      */
     @Test
     public void testSleep10() throws Exception {
         VThreadRunner.run(() -> {
             Thread t = Thread.currentThread();
-            scheduleInterrupt(t, 2000);
+            scheduleInterrupt(t, 100);
             try {
                 synchronized (lock) {
                     Thread.sleep(20 * 1000);
                 }
-                fail();
+                fail("sleep not interrupted");
             } catch (InterruptedException e) {
                 // interrupt status should be cleared
                 assertFalse(t.isInterrupted());
@@ -1864,47 +1869,17 @@ public class ThreadAPI {
     }
 
     /**
-     * Test Thread::getStackTrace on thread that has been started but
-     * has not run.
+     * Test Thread::getStackTrace on thread that has been started but has not run.
      */
     @Test
     public void testGetStackTrace2() throws Exception {
         if (!ThreadBuilders.supportsCustomScheduler())
             throw new SkipException("Requires continuations support");
-        List<Thread> threads = new ArrayList<>();
-        AtomicBoolean done = new AtomicBoolean();
-        try {
-            Thread target = null;
-
-            // start virtual threads that are CPU bound until we find a thread
-            // that does not run. This is done while holding a monitor to
-            // allow this test run in the context of a virtual thread.
-            synchronized (this) {
-                while (target == null) {
-                    CountDownLatch latch = new CountDownLatch(1);
-                    Thread vthread = Thread.ofVirtual().start(() -> {
-                        latch.countDown();
-                        while (!done.get()) { }
-                    });
-                    threads.add(vthread);
-                    if (!latch.await(3, TimeUnit.SECONDS)) {
-                        // thread did not run
-                        target = vthread;
-                    }
-                }
-            }
-
-            // stack trace should be empty
-            StackTraceElement[] stack = target.getStackTrace();
-            assertTrue(stack.length == 0);
-        } finally {
-            done.set(true);
-
-            // wait for threads to terminate
-            for (Thread thread : threads) {
-                thread.join();
-            }
-        }
+        Executor scheduler = task -> { };
+        Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
+        Thread thread = builder.start(() -> { });
+        StackTraceElement[] stack = thread.getStackTrace();
+        assertTrue(stack.length == 0);
     }
 
     /**
@@ -2294,17 +2269,33 @@ public class ThreadAPI {
     }
 
     /**
+     * Waits for the given thread to park.
+     */
+    static void awaitParked(Thread thread) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
+        }
+    }
+
+    /**
+     * Waits for the given thread to block waiting on a monitor.
+     */
+    static void awaitBlocked(Thread thread) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != Thread.State.BLOCKED) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
+        }
+    }
+
+    /**
      * Schedule a thread to be interrupted after a delay.
      */
-    private static void scheduleInterrupt(Thread thread, long delay) {
-        Runnable interruptTask = () -> {
-            try {
-                Thread.sleep(delay);
-                thread.interrupt();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        };
-        new Thread(interruptTask).start();
+    private void scheduleInterrupt(Thread thread, long delayInMillis) {
+        scheduler.schedule(thread::interrupt, delayInMillis, TimeUnit.MILLISECONDS);
     }
 }

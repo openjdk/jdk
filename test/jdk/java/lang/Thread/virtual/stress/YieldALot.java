@@ -21,19 +21,19 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress test Thread.yield
  * @requires vm.debug != true
- * @compile --enable-preview -source ${jdk.version} YieldALot.java
- * @run main/othervm --enable-preview YieldALot
+ * @enablePreview
+ * @run main YieldALot 350000
  */
 
-/**
+/*
  * @test
  * @requires vm.debug == true
- * @compile --enable-preview -source ${jdk.version} YieldALot.java
- * @run main/othervm/timeout=360 --enable-preview YieldALot 200000
+ * @enablePreview
+ * @run main YieldALot 200000
  */
 
 import java.time.Duration;

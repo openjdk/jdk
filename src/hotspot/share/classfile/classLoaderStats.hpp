@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public:
 
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
+                        "monitor", nullptr};
     return p;
   }
 };
@@ -112,7 +112,7 @@ protected:
   }
 
   typedef ResourceHashtable<oop, ClassLoaderStats,
-                            256, ResourceObj::RESOURCE_AREA, mtInternal,
+                            256, AnyObj::RESOURCE_AREA, mtInternal,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 
   outputStream* _out;

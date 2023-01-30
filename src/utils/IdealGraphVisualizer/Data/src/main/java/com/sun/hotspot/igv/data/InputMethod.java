@@ -35,13 +35,13 @@ import java.util.regex.Pattern;
  */
 public class InputMethod extends Properties.Entity {
 
-    private String name;
-    private int bci;
-    private String shortName;
-    private List<InputMethod> inlined;
+    private final String name;
+    private final int bci;
+    private final String shortName;
+    private final List<InputMethod> inlined;
     private InputMethod parentMethod;
-    private Group group;
-    private List<InputBytecode> bytecodes;
+    private final Group group;
+    private final List<InputBytecode> bytecodes;
 
     @Override
     public int hashCode() {
@@ -55,11 +55,10 @@ public class InputMethod extends Properties.Entity {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || (!(o instanceof InputMethod))) {
+        if ((!(o instanceof InputMethod))) {
             return false;
         }
-
-        final InputMethod im = (InputMethod)o;
+        final InputMethod im = (InputMethod) o;
         return name.equals(im.name) && bci == im.bci && shortName.equals(im.shortName) &&
                inlined.equals(im.inlined) && bytecodes.equals(im.bytecodes);
     }

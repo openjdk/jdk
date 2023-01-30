@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1OOPCLOSURES_HPP
 #define SHARE_GC_G1_G1OOPCLOSURES_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
@@ -179,7 +180,7 @@ public:
 };
 
 // Closure for iterating over object fields during concurrent marking
-class G1CMOopClosure : public MetadataVisitingOopIterateClosure {
+class G1CMOopClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1CollectedHeap*   _g1h;
   G1CMTask*          _task;
 public:
@@ -190,13 +191,13 @@ public:
 };
 
 // Closure to scan the root regions during concurrent marking
-class G1RootRegionScanClosure : public MetadataVisitingOopIterateClosure {
-private:
+class G1RootRegionScanClosure : public ClaimMetadataVisitingOopIterateClosure {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
   uint _worker_id;
 public:
   G1RootRegionScanClosure(G1CollectedHeap* g1h, G1ConcurrentMark* cm, uint worker_id) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, nullptr),
     _g1h(g1h), _cm(cm), _worker_id(worker_id) { }
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(      oop* p) { do_oop_work(p); }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // NULL if it's native thread
+  static Thread*     _thread;           // nullptr if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
@@ -103,12 +103,6 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  // public for use by the internal non-product debugger.
-  NOT_PRODUCT(public:)
-  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
-                                 char* buf, int buf_size);
-  NOT_PRODUCT(private:)
-
   static const char* get_filename_only() {
     char separator = os::file_separator()[0];
     const char* p = strrchr(_filename, separator);
@@ -143,6 +137,12 @@ class VMError : public AllStatic {
   static void clear_step_start_time();
 
 public:
+
+  // print_source_info: if true, we try to resolve the source information on platforms that support it
+  //  (useful but may slow down, timeout or misfunction in error situations)
+  // max_frames: if not -1, overrides StackPrintLimit
+  static void print_native_stack(outputStream* st, frame fr, Thread* t, bool print_source_info,
+                                 int max_frames, char* buf, int buf_size);
 
   // return a string to describe the error
   static char* error_string(char* buf, int buflen);
@@ -187,9 +187,8 @@ public:
 
   DEBUG_ONLY(static void controlled_crash(int how);)
 
-  // Address which is guaranteed to generate a fault on read, for test purposes,
-  // which is not NULL and contains bits in every word.
-  static const intptr_t segfault_address = LP64_ONLY(0xABC0000000000ABCULL) NOT_LP64(0x00000ABC);
+  // Non-null address guaranteed to generate a SEGV mapping error on read, for test purposes.
+  static constexpr intptr_t segfault_address = (1 * K) AIX_ONLY(+ (4 * K));
 
   // Max value for the ErrorLogPrintCodeLimit flag.
   static const int max_error_log_print_code = 10;

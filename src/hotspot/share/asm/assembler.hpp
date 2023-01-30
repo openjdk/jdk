@@ -241,6 +241,19 @@ class AbstractAssembler : public ResourceObj  {
     }
   };
   friend class InstructionMark;
+
+  // count size of instructions which are skipped from inline heuristics
+  class InlineSkippedInstructionsCounter: public StackObj {
+   private:
+    AbstractAssembler* _assm;
+    address _start;
+   public:
+    InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
+    }
+    ~InlineSkippedInstructionsCounter() {
+      _assm->register_skipped(_assm->pc() - _start);
+    }
+  };
 #ifdef ASSERT
   // Make it return true on platforms which need to verify
   // instruction boundaries for some operations.
@@ -282,21 +295,21 @@ class AbstractAssembler : public ResourceObj  {
   // ensure buf contains all code (call this before using/copying the code)
   void flush();
 
-  void emit_int8(   int8_t x1)                                  { code_section()->emit_int8(x1); }
+  void emit_int8(   uint8_t x1)                                     { code_section()->emit_int8(x1); }
 
-  void emit_int16(  int16_t x)                                  { code_section()->emit_int16(x); }
-  void emit_int16(  int8_t x1, int8_t x2)                       { code_section()->emit_int16(x1, x2); }
+  void emit_int16(  uint16_t x)                                     { code_section()->emit_int16(x); }
+  void emit_int16(  uint8_t x1, uint8_t x2)                         { code_section()->emit_int16(x1, x2); }
 
-  void emit_int24(  int8_t x1, int8_t x2, int8_t x3)            { code_section()->emit_int24(x1, x2, x3); }
+  void emit_int24(  uint8_t x1, uint8_t x2, uint8_t x3)             { code_section()->emit_int24(x1, x2, x3); }
 
-  void emit_int32(  int32_t x)                                  { code_section()->emit_int32(x); }
-  void emit_int32(  int8_t x1, int8_t x2, int8_t x3, int8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
+  void emit_int32(  uint32_t x)                                     { code_section()->emit_int32(x); }
+  void emit_int32(  uint8_t x1, uint8_t x2, uint8_t x3, uint8_t x4) { code_section()->emit_int32(x1, x2, x3, x4); }
 
-  void emit_int64(  int64_t x)                                  { code_section()->emit_int64(x); }
+  void emit_int64(  uint64_t x)                                     { code_section()->emit_int64(x); }
 
-  void emit_float(  jfloat  x)                                  { code_section()->emit_float(x); }
-  void emit_double( jdouble x)                                  { code_section()->emit_double(x); }
-  void emit_address(address x)                                  { code_section()->emit_address(x); }
+  void emit_float(  jfloat  x)                                      { code_section()->emit_float(x); }
+  void emit_double( jdouble x)                                      { code_section()->emit_double(x); }
+  void emit_address(address x)                                      { code_section()->emit_address(x); }
 
   enum { min_simm10 = -512 };
 
@@ -333,9 +346,12 @@ class AbstractAssembler : public ResourceObj  {
   OopRecorder*  oop_recorder() const   { return _oop_recorder; }
   void      set_oop_recorder(OopRecorder* r) { _oop_recorder = r; }
 
+  void   register_skipped(int size) { code_section()->register_skipped(size); }
+
   address       inst_mark() const { return code_section()->mark();       }
   void      set_inst_mark()       {        code_section()->set_mark();   }
   void    clear_inst_mark()       {        code_section()->clear_mark(); }
+
 
   // Constants in code
   void relocate(RelocationHolder const& rspec, int format = 0) {

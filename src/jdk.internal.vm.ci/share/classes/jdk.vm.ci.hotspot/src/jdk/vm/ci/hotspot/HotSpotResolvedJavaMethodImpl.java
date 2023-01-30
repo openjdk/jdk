@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,11 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public int getCodeSize() {
-        return UNSAFE.getChar(getConstMethod() + config().constMethodCodeSizeOffset);
+        int codeSize = UNSAFE.getChar(getConstMethod() + config().constMethodCodeSizeOffset);
+        if (codeSize > 0 && !getDeclaringClass().isLinked()) {
+            return -1;
+        }
+        return codeSize;
     }
 
     @Override

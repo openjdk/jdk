@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.management.jmxremote;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -924,9 +923,6 @@ public final class ConnectorBootstrap {
     private static class HostAwareSslSocketFactory extends SslRMIServerSocketFactory {
 
         private final String bindAddress;
-        private final String[] enabledCipherSuites;
-        private final String[] enabledProtocols;
-        private final boolean needClientAuth;
         private final SSLContext context;
 
         private HostAwareSslSocketFactory(String[] enabledCipherSuites,
@@ -941,11 +937,9 @@ public final class ConnectorBootstrap {
                                           String[] enabledProtocols,
                                           boolean sslNeedClientAuth,
                                           String bindAddress) throws IllegalArgumentException {
-            this.context = ctx;
+            super(ctx, enabledCipherSuites, enabledProtocols, sslNeedClientAuth);
             this.bindAddress = bindAddress;
-            this.enabledProtocols = enabledProtocols;
-            this.enabledCipherSuites = enabledCipherSuites;
-            this.needClientAuth = sslNeedClientAuth;
+            this.context = ctx;
             checkValues(ctx, enabledCipherSuites, enabledProtocols);
         }
 
@@ -955,14 +949,15 @@ public final class ConnectorBootstrap {
                 try {
                     InetAddress addr = InetAddress.getByName(bindAddress);
                     return new SslServerSocket(port, 0, addr, context,
-                                               enabledCipherSuites, enabledProtocols, needClientAuth);
+                            this.getEnabledCipherSuites(), this.getEnabledProtocols(),
+                            this.getNeedClientAuth());
                 } catch (UnknownHostException e) {
                     return new SslServerSocket(port, context,
-                                               enabledCipherSuites, enabledProtocols, needClientAuth);
+                            this.getEnabledCipherSuites(), this.getEnabledProtocols(), this.getNeedClientAuth());
                 }
             } else {
                 return new SslServerSocket(port, context,
-                                           enabledCipherSuites, enabledProtocols, needClientAuth);
+                        this.getEnabledCipherSuites(), this.getEnabledProtocols(), this.getNeedClientAuth());
             }
         }
 

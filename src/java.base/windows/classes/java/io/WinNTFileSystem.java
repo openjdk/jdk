@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -745,7 +745,7 @@ class WinNTFileSystem extends FileSystem {
             .valueOf(new long[] {listRoots0()})
             .stream()
             .mapToObj(i -> new File((char)('A' + i) + ":" + slash))
-            .filter(f -> access(f.getPath()) && f.exists())
+            .filter(f -> access(f.getPath()))
             .toArray(File[]::new);
     }
     private static native int listRoots0();

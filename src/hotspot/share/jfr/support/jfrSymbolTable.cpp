@@ -259,7 +259,7 @@ static const char* create_hidden_klass_symbol(const InstanceKlass* ik, uintptr_t
   const oop mirror = ik->java_mirror_no_keepalive();
   assert(mirror != NULL, "invariant");
   char hash_buf[40];
-  sprintf(hash_buf, "/" UINTX_FORMAT, hash);
+  os::snprintf_checked(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, hash);
   const size_t hash_len = strlen(hash_buf);
   const size_t result_len = ik->name()->utf8_length();
   hidden_symbol = NEW_RESOURCE_ARRAY(char, result_len + hash_len + 1);

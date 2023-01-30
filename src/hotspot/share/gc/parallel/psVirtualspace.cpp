@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,10 @@ PSVirtualSpace::PSVirtualSpace(ReservedSpace rs, size_t alignment) :
 // Deprecated.
 PSVirtualSpace::PSVirtualSpace():
   _alignment(os::vm_page_size()),
-  _reserved_low_addr(NULL),
-  _reserved_high_addr(NULL),
-  _committed_low_addr(NULL),
-  _committed_high_addr(NULL),
+  _reserved_low_addr(nullptr),
+  _reserved_high_addr(nullptr),
+  _committed_low_addr(nullptr),
+  _committed_high_addr(nullptr),
   _special(false) {
 }
 
@@ -62,8 +62,8 @@ void PSVirtualSpace::release() {
   DEBUG_ONLY(PSVirtualSpaceVerifier this_verifier(this));
   // This may not release memory it didn't reserve.
   // Use rs.release() to release the underlying memory instead.
-  _reserved_low_addr = _reserved_high_addr = NULL;
-  _committed_low_addr = _committed_high_addr = NULL;
+  _reserved_low_addr = _reserved_high_addr = nullptr;
+  _committed_low_addr = _committed_high_addr = nullptr;
   _special = false;
 }
 
@@ -126,7 +126,7 @@ void PSVirtualSpace::verify() const {
 
   // Reserved region must be non-empty or both addrs must be 0.
   assert(reserved_low_addr() < reserved_high_addr() ||
-         reserved_low_addr() == NULL && reserved_high_addr() == NULL,
+         reserved_low_addr() == nullptr && reserved_high_addr() == nullptr,
          "bad reserved addrs");
   assert(committed_low_addr() <= committed_high_addr(), "bad committed addrs");
 

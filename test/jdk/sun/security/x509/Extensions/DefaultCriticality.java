@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,28 @@
             certificate extensions
  * @bug 8059916
  * @modules java.base/sun.security.x509
+ *          java.base/sun.security.util
  */
 
+import sun.security.util.ObjectIdentifier;
+import sun.security.x509.CertificatePolicyId;
+import sun.security.x509.CertificatePolicyMap;
 import sun.security.x509.PolicyConstraintsExtension;
 import sun.security.x509.PolicyMappingsExtension;
 
+import java.util.List;
+
 public class DefaultCriticality {
     public static void main(String [] args) throws Exception {
-        PolicyConstraintsExtension pce = new PolicyConstraintsExtension(-1,-1);
+        PolicyConstraintsExtension pce = new PolicyConstraintsExtension(1, 1);
         if (!pce.isCritical()) {
             throw new Exception("PolicyConstraintsExtension should be " +
                                 "critical by default");
         }
 
-        PolicyMappingsExtension pme = new PolicyMappingsExtension();
+        CertificatePolicyId id = new CertificatePolicyId(ObjectIdentifier.of("1.2.3.4"));
+        PolicyMappingsExtension pme = new PolicyMappingsExtension(List.of(
+                new CertificatePolicyMap(id, id)));
         if (!pme.isCritical()) {
             throw new Exception("PolicyMappingsExtension should be " +
                                 "critical by default");

@@ -466,7 +466,7 @@ static char *base_plus_suffix(const char* base, const char *suffix)
   int len = (int)strlen(base) + (int)strlen(suffix) + 1;
 
   char* fname = new char[len];
-  sprintf(fname,"%s%s",base,suffix);
+  snprintf_checked(fname,len,"%s%s",base,suffix);
   return fname;
 }
 

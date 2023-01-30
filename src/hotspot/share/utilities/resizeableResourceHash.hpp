@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 
 template<
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE,
+    AnyObj::allocation_type ALLOC_TYPE,
     MEMFLAGS MEM_TYPE>
-class ResizeableResourceHashtableStorage : public ResourceObj {
+class ResizeableResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
 protected:
@@ -71,7 +71,7 @@ protected:
 
 template<
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
@@ -112,7 +112,7 @@ public:
     Node* const* bucket = old_table;
     while (bucket < &old_table[old_size]) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         Node* next = node->_next;
         unsigned hash = HASH(node->_key);
         unsigned index = hash % new_size;
@@ -125,7 +125,7 @@ public:
       ++bucket;
     }
 
-    if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
       FREE_C_HEAP_ARRAY(Node*, old_table);
     }
     BASE::_table = new_table;

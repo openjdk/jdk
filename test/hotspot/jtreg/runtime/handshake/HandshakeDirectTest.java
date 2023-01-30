@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:GuaranteedSafepointInterval=10 -XX:+HandshakeALot -XX:+SafepointALot HandshakeDirectTest
  */
 
+import jvmti.JVMTIUtils;
+
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.Semaphore;
@@ -45,6 +47,28 @@ public class HandshakeDirectTest  implements Runnable {
     static Thread[] workingThreads = new Thread[WORKING_THREADS];
     static Object[] locks = new Object[WORKING_THREADS];
     static AtomicInteger handshakeCount = new AtomicInteger(0);
+
+    static void suspendThread(Thread t) {
+        try {
+            JVMTIUtils.suspendThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
+                throw e;
+            }
+        }
+    }
+
+    static void resumeThread(Thread t) {
+        try {
+            JVMTIUtils.resumeThread(t);
+        } catch (JVMTIUtils.JvmtiException e) {
+            if (e.getCode() != JVMTIUtils.JVMTI_ERROR_THREAD_NOT_ALIVE
+                && e.getCode() != JVMTIUtils.JVMTI_ERROR_WRONG_PHASE) {
+                throw e;
+            }
+        }
+    }
 
     @Override
     public void run() {
@@ -91,12 +115,12 @@ public class HandshakeDirectTest  implements Runnable {
             public void run() {
                 while (true) {
                     int i = ThreadLocalRandom.current().nextInt(0, WORKING_THREADS - 1);
-                    workingThreads[i].suspend();
+                    suspendThread(workingThreads[i]);
                     try {
                         Thread.sleep(1); // sleep for 1 ms
                     } catch(InterruptedException ie) {
                     }
-                    workingThreads[i].resume();
+                    resumeThread(workingThreads[i]);
                 }
             }
         };

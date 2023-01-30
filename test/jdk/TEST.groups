@@ -41,6 +41,7 @@ tier1_part3 = \
     :jdk_math \
     :jdk_svc_sanity \
     :jdk_foreign \
+    :jdk_vector_sanity \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
     sun/nio/cs/ISO8859x.java
@@ -76,6 +77,7 @@ tier3 = \
     :jdk_rmi \
     :jdk_svc \
    -:jdk_svc_sanity \
+   -:jdk_vector_sanity \
    -:svc_tools
 
 # Everything not in other tiers
@@ -124,6 +126,7 @@ jdk_util = \
 jdk_util_other = \
     java/util \
     sun/util \
+    jdk/internal/util \
     -:jdk_collections \
     -:jdk_concurrent \
     -:jdk_stream
@@ -361,6 +364,31 @@ jdk_foreign = \
 jdk_vector = \
     jdk/incubator/vector
 
+jdk_vector_sanity = \
+    jdk/incubator/vector/AddTest.java \
+    jdk/incubator/vector/ByteMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/ByteMaxVectorTests.java \
+    jdk/incubator/vector/CovarOverrideTest.java \
+    jdk/incubator/vector/DoubleMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/DoubleMaxVectorTests.java \
+    jdk/incubator/vector/FloatMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/FloatMaxVectorTests.java \
+    jdk/incubator/vector/ImageTest.java \
+    jdk/incubator/vector/IntMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/IntMaxVectorTests.java \
+    jdk/incubator/vector/LoadJsvmlTest.java \
+    jdk/incubator/vector/LongMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/LongMaxVectorTests.java \
+    jdk/incubator/vector/MethodOverideTest.java \
+    jdk/incubator/vector/MismatchTest.java \
+    jdk/incubator/vector/PreferredSpeciesTest.java \
+    jdk/incubator/vector/ShortMaxVectorLoadStoreTests.java \
+    jdk/incubator/vector/ShortMaxVectorTests.java \
+    jdk/incubator/vector/VectorHash.java \
+    jdk/incubator/vector/VectorMaxConversionTests.java \
+    jdk/incubator/vector/VectorReshapeTests.java \
+    jdk/incubator/vector/VectorRuns.java
+
 #############################
 
 #
@@ -596,9 +624,6 @@ jdk_core_manual_no_input_security = \
     com/sun/security/sasl/gsskerb/ConfSecurityLayer.java \
     com/sun/security/sasl/gsskerb/NoSecurityLayer.java \
     sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java \
-    sun/security/provider/PolicyParser/ExtDirs.java \
-    sun/security/provider/PolicyParser/ExtDirsChange.java \
-    sun/security/provider/PolicyParser/ExtDirsDefaultPolicy.java \
     sun/security/provider/PolicyParser/PrincipalExpansionError.java \
     sun/security/smartcardio/TestChannel.java \
     sun/security/smartcardio/TestConnect.java \
@@ -610,12 +635,12 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
-    sun/security/tools/jarsigner/compatibility/Compatibility.java \
-    sun/security/tools/keytool/i18n.java
+    sun/security/tools/jarsigner/compatibility/Compatibility.java
 
 jdk_core_manual_requires_human_input = \
     com/sun/jndi/dns/Test6991580.java \
-    java/util/TimeZone/DefaultTimeZoneTest.java
+    java/util/TimeZone/DefaultTimeZoneTest.java \
+    sun/security/tools/keytool/i18n.java
 
 
 # Test sets for running inside container environment

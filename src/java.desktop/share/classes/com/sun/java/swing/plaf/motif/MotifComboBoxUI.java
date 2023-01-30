@@ -94,7 +94,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     }
 
     /**
-     * Overriden to empty the MouseMotionListener.
+     * Overridden to empty the MouseMotionListener.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifComboPopup extends BasicComboPopup {

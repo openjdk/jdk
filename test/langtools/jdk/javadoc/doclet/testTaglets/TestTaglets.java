@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8202947
+ * @bug      8202947 8294471
  * @summary  Test TagletManager initialization
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -50,7 +50,7 @@ import toolbox.ToolBox;
 public class TestTaglets extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestTaglets tester = new TestTaglets();
+        var tester = new TestTaglets();
         tester.runTests();
     }
 

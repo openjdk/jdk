@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -196,11 +196,12 @@ $(eval $(call SetTestOpt,JAVA_OPTIONS,JTREG))
 $(eval $(call SetTestOpt,JOBS,JTREG))
 $(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
 $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
+$(eval $(call SetTestOpt,REPORT,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -352,7 +353,7 @@ ExpandJtregPath = \
 # with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
 #      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
 TestID = \
-    $(subst .java,,$(suffix $(notdir $1)))
+    $(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1)))))
 
 # The test id starting with a hash (#testid) will be stripped by all
 # evals in ParseJtregTestSelectionInner and will be reinserted by calling
@@ -745,6 +746,7 @@ define SetupRunJtregTestBody
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
+  JTREG_REPORT ?= files
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -770,10 +772,13 @@ define SetupRunJtregTestBody
   # Make sure the tmp dir is normalized as some tests will react badly otherwise
   $1_TEST_TMP_DIR := $$(abspath $$($1_TEST_SUPPORT_DIR)/tmp)
 
+  # test.boot.jdk is used by some test cases that want to execute a previous
+  # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
       -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
+      -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
 
   $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet
@@ -854,7 +859,8 @@ define SetupRunJtregTestBody
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
           -workDir:$$($1_TEST_SUPPORT_DIR) \
-          -status:$$$${JTREG_STATUS} \
+          -report:$${JTREG_REPORT} \
+          $$$${JTREG_STATUS} \
           $$(JTREG_OPTIONS) \
           $$(JTREG_FAILURE_HANDLER_OPTIONS) \
           $$(JTREG_COV_OPTIONS) \
@@ -1185,13 +1191,11 @@ ifeq ($(TEST_OPTS_JCOV), true)
     JCOV_SOURCE_DIFF := $(JCOV_OUTPUT_DIR)/source_diff
     JCOV_DIFF_COVERAGE_REPORT := $(JCOV_OUTPUT_DIR)/diff_coverage_report
 
-    ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
-      DIFF_COMMAND := $(HG) -R $(TOPDIR) diff -r $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
-    else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+    ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
       DIFF_COMMAND := $(GIT) -C $(TOPDIR) diff $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
     else
-      $(info Error: Must be either hg or git source tree for diff coverage.)
-      $(error Neither hg nor git source tree.)
+      $(info Error: Must be a git source tree for diff coverage.)
+      $(error No git source tree.)
     endif
 
     jcov-gen-diffcoverage: jcov-stop-grabber

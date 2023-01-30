@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,7 +35,7 @@
 #include "utilities/nativeCallStack.hpp"
 
 inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker)
-  : _size(size), _mst_marker(mst_marker), _flags(NMTUtil::flag_to_index(flags)),
+  : _size(size), _mst_marker(mst_marker), _flags(flags),
     _unused(0), _canary(_header_canary_life_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
@@ -45,6 +45,16 @@ inline MallocHeader::MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_mark
   set_footer(_footer_canary_life_mark); // set after initializing _size
 }
 
+inline void MallocHeader::revive() {
+  assert(_canary == _header_canary_dead_mark, "must be dead");
+  assert(get_footer() == _footer_canary_dead_mark, "must be dead");
+  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
+  _canary = _header_canary_life_mark;
+  NOT_LP64(_alt_canary = _header_alt_canary_life_mark);
+  set_footer(_footer_canary_life_mark);
+}
+
+// The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
   _canary = _header_canary_dead_mark;
   NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
@@ -53,11 +63,9 @@ inline void MallocHeader::mark_block_as_dead() {
 
 inline void MallocHeader::assert_block_integrity() const {
   char msg[256];
-  address corruption = NULL;
+  address corruption = nullptr;
   if (!check_block_integrity(msg, sizeof(msg), &corruption)) {
-    if (corruption != NULL) {
-      print_block_on_error(tty, (address)this);
-    }
+    print_block_on_error(tty, corruption != nullptr ? corruption : (address)this);
     fatal("NMT corruption: Block at " PTR_FORMAT ": %s", p2i(this), msg);
   }
 }
@@ -66,8 +74,8 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   // Note: if you modify the error messages here, make sure you
   // adapt the associated gtests too.
 
-  // Weed out obviously wrong block addresses of NULL or very low
-  // values. Note that we should not call this for ::free(NULL),
+  // Weed out obviously wrong block addresses of null or very low
+  // values. Note that we should not call this for ::free(null),
   // which should be handled by os::free() above us.
   if (((size_t)p2i(this)) < K) {
     jio_snprintf(msg, msglen, "invalid block address");

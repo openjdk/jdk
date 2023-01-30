@@ -330,7 +330,7 @@ public abstract class View implements SwingConstants {
      *          being removed from a parent
      */
     public void setParent(View parent) {
-        // if the parent is null then propogate down the view tree
+        // if the parent is null then propagate down the view tree
         if (parent == null) {
             for (int i = 0; i < getViewCount(); i++) {
                 if (getView(i).getParent() == this) {
@@ -1383,4 +1383,4 @@ public abstract class View implements SwingConstants {
      */
     int lastUpdateIndex;
 
-};
+}

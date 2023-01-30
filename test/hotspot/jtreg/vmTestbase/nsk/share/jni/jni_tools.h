@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 
 /*************************************************************/
 
+#include "jvmti_common.h"
+
 /* printf format specifier for jlong */
 #ifdef _WIN32
 
@@ -51,16 +53,6 @@
 #endif
 
 #endif // !_WIN32
-
-/**
- * Additional Java basic types
- */
-
-#ifdef _WIN32
-    typedef unsigned __int64 julong;
-#else
-    typedef unsigned long long julong;
-#endif
 
 /*************************************************************/
 
@@ -94,10 +86,6 @@
 
 /*************************************************************/
 
-extern "C" {
-
-/*************************************************************/
-
 /**
  * If positive, assert status is true; or
  * if !positive, assert status is not true.
@@ -128,22 +116,6 @@ int nsk_jni_lverify_void(JNIEnv* jni, const char file[], int line,
 int nsk_jni_check_exception(JNIEnv* jni, const char file[], int line);
 
 /**
- * Convert the digits of the given value argument to a null-terminated
- * character string and store the result (up to 32 bytes) in string.
- * If value is negative, the first character of the stored string is
- * the minus sign (-). The function returns a pointer to the begining
- * of the result string.
- */
-char *jlong_to_string(jlong value, char *string);
-
-/**
- * Convert the digits of the given value argument to a null-terminated
- * character string and store the result (up to 32 bytes) in string.
- * The function returns a pointer to the begining of the result string.
- */
-char *julong_to_string(julong value, char *string);
-
-/**
  * Sleep for given number of milliseconds.
  */
 void mssleep(long millis);
@@ -160,10 +132,6 @@ JavaVMOption* jni_create_vmoptions(int size, char *args[], int argsCnt);
  * Print JavaVMInitArgs values to stdout.
  */
 void jni_print_vmargs(JavaVMInitArgs vmargs);
-
-/*************************************************************/
-
-}
 
 /*************************************************************/
 

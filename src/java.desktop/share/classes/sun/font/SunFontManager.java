@@ -1325,7 +1325,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          */
         HashMap<String,String> fontToFileMap2 = null;
         HashMap<String,String> fontToFamilyNameMap2 = null;
-        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;;
+        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;
 
         for (String pathFile : getFontFilesFromPath(false)) {
             if (!registryFiles.contains(pathFile)) {
@@ -1686,7 +1686,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
 
     /* Used to register any font files that are found by platform APIs
      * that weren't previously found in the standard font locations.
-     * the isAbsolute() check is needed since that's whats stored in the
+     * the isAbsolute() check is needed since that's what's stored in the
      * set, and on windows, the fonts in the system font directory that
      * are in the fontToFileMap are just basenames. We don't want to try
      * to register those again, but we do want to register other registry

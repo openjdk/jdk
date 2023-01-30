@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 
 AC_PREREQ([2.69])
-AC_INIT(OpenJDK, openjdk, build-dev@openjdk.java.net,,http://openjdk.java.net)
+AC_INIT(OpenJDK, openjdk, build-dev@openjdk.org,,https://openjdk.org)
 
 AC_CONFIG_AUX_DIR([$TOPDIR/make/autoconf/build-aux])
 m4_include([build-aux/pkg.m4])
@@ -86,6 +86,7 @@ PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET
 
 # Continue setting up basic stuff. Most remaining code require fundamental tools.
 BASIC_SETUP_PATHS
+BASIC_SETUP_BUILD_ENV
 
 # Check if it's a pure open build or if custom sources are to be used.
 JDKOPT_SETUP_OPEN_OR_CUSTOM
@@ -133,6 +134,7 @@ BASIC_SETUP_DEFAULT_LOG
 ###############################################################################
 
 # We need build & target for this.
+JDKOPT_SETUP_JMOD_OPTIONS
 JDKOPT_SETUP_JLINK_OPTIONS
 JDKVER_SETUP_JDK_VERSION_NUMBERS
 
@@ -213,6 +215,9 @@ JDKOPT_SETUP_CODE_COVERAGE
 
 # AddressSanitizer
 JDKOPT_SETUP_ADDRESS_SANITIZER
+
+# UndefinedBehaviorSanitizer
+JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER
 
 ###############################################################################
 #

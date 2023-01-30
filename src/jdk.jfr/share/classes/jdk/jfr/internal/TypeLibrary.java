@@ -63,7 +63,7 @@ public final class TypeLibrary {
 
     private static TypeLibrary instance;
     private static boolean implicitFieldTypes;
-    private static final Map<Long, Type> types = new LinkedHashMap<>(100);
+    private static final Map<Long, Type> types = LinkedHashMap.newLinkedHashMap(350);
     static final ValueDescriptor DURATION_FIELD = createDurationField();
     static final ValueDescriptor THREAD_FIELD = createThreadField();
     static final ValueDescriptor STACK_TRACE_FIELD = createStackTraceField();
@@ -301,7 +301,7 @@ public final class TypeLibrary {
     }
 
     private static void addUserFields(Class<?> clazz, Type type, List<ValueDescriptor> dynamicFields) {
-        Map<String, ValueDescriptor> dynamicFieldSet = new HashMap<>();
+        Map<String, ValueDescriptor> dynamicFieldSet = HashMap.newHashMap(dynamicFields.size());
         for (ValueDescriptor dynamicField : dynamicFields) {
             dynamicFieldSet.put(dynamicField.getName(), dynamicField);
         }

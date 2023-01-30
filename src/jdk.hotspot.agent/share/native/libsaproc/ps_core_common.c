@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ void core_release(struct ps_prochandle* ph) {
 static map_info* allocate_init_map(int fd, off_t offset, uintptr_t vaddr, size_t memsz, uint32_t flags) {
   map_info* map;
   if ( (map = (map_info*) calloc(1, sizeof(map_info))) == NULL) {
-    print_debug("can't allocate memory for map_info\n");
+    print_error("can't allocate memory for map_info\n");
     return NULL;
   }
 
@@ -300,7 +300,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       jvm_name = lib->name;
       useSharedSpacesAddr = lookup_symbol(ph, jvm_name, USE_SHARED_SPACES_SYM);
       if (useSharedSpacesAddr == 0) {
-        print_debug("can't lookup 'UseSharedSpaces' symbol\n");
+        print_error("can't lookup 'UseSharedSpaces' symbol\n");
         return false;
       }
 
@@ -308,7 +308,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       // using equivalent type jboolean to read the value of
       // UseSharedSpaces which is same as hotspot type "bool".
       if (read_jboolean(ph, useSharedSpacesAddr, &useSharedSpaces) != true) {
-        print_debug("can't read the value of 'UseSharedSpaces' symbol\n");
+        print_error("can't read the value of 'UseSharedSpaces' symbol\n");
         return false;
       }
 
@@ -319,28 +319,30 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
 
       sharedBaseAddressAddr = lookup_symbol(ph, jvm_name, SHARED_BASE_ADDRESS_SYM);
       if (sharedBaseAddressAddr == 0) {
-        print_debug("can't lookup 'SharedBaseAddress' flag\n");
+        print_error("can't lookup 'SharedBaseAddress' flag\n");
         return false;
       }
 
       if (read_pointer(ph, sharedBaseAddressAddr, &sharedBaseAddress) != true) {
-        print_debug("can't read the value of 'SharedBaseAddress' flag\n");
+        print_error("can't read the value of 'SharedBaseAddress' flag\n");
         return false;
       }
 
       sharedArchivePathAddrAddr = lookup_symbol(ph, jvm_name, SHARED_ARCHIVE_PATH_SYM);
       if (sharedArchivePathAddrAddr == 0) {
-        print_debug("can't lookup shared archive path symbol\n");
+        print_error("can't lookup shared archive path symbol\n");
         return false;
       }
 
       if (read_pointer(ph, sharedArchivePathAddrAddr, &sharedArchivePathAddr) != true) {
-        print_debug("can't read shared archive path pointer\n");
+        print_error("can't read shared archive path pointer (%p)\n", sharedArchivePathAddrAddr);
         return false;
       }
 
+      classes_jsa[0] = 0;
       if (read_string(ph, sharedArchivePathAddr, classes_jsa, sizeof(classes_jsa)) != true) {
-        print_debug("can't read shared archive path value\n");
+        print_error("can't read shared archive path value (%p) (%p)\n",
+                    (void*)sharedArchivePathAddrAddr, (void*)sharedArchivePathAddr);
         return false;
       }
 
@@ -348,7 +350,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       // open the class sharing archive file
       fd = pathmap_open(classes_jsa);
       if (fd < 0) {
-        print_debug("can't open %s!\n", classes_jsa);
+        print_error("can't open %s!\n", classes_jsa);
         ph->core->classes_jsa_fd = -1;
         return false;
       } else {
@@ -360,14 +362,14 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       memset(&header, 0, header_size);
       if ((n = read(fd, &header, header_size))
            != header_size) {
-        print_debug("can't read shared archive file map header from %s\n", classes_jsa);
+        print_error("can't read shared archive file map header from %s\n", classes_jsa);
         close(fd);
         return false;
       }
 
       // check file magic
       if (header._generic_header._magic != CDS_ARCHIVE_MAGIC) {
-        print_debug("%s has bad shared archive file magic number 0x%x, expecting 0x%x\n",
+        print_error("%s has bad shared archive file magic number 0x%x, expecting 0x%x\n",
                     classes_jsa, header._generic_header._magic, CDS_ARCHIVE_MAGIC);
         close(fd);
         return false;
@@ -375,7 +377,7 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
 
       // check version
       if (header._generic_header._version != CURRENT_CDS_ARCHIVE_VERSION) {
-        print_debug("%s has wrong shared archive file version %d, expecting %d\n",
+        print_error("%s has wrong shared archive file version %d, expecting %d\n",
                      classes_jsa, header._generic_header._version, CURRENT_CDS_ARCHIVE_VERSION);
         close(fd);
         return false;
@@ -384,17 +386,17 @@ bool init_classsharing_workaround(struct ps_prochandle* ph) {
       ph->core->classes_jsa_fd = fd;
       // add read-only maps from classes.jsa to the list of maps
       for (m = 0; m < NUM_CDS_REGIONS; m++) {
-        if (header._space[m]._read_only &&
-            !header._space[m]._is_heap_region &&
-            !header._space[m]._is_bitmap_region) {
+        if (header._regions[m]._read_only &&
+            !header._regions[m]._is_heap_region &&
+            !header._regions[m]._is_bitmap_region) {
           // With *some* linux versions, the core file doesn't include read-only mmap'ed
           // files regions, so let's add them here. This is harmless if the core file also
           // include these regions.
-          uintptr_t base = sharedBaseAddress + (uintptr_t) header._space[m]._mapping_offset;
-          size_t size = header._space[m]._used;
+          uintptr_t base = sharedBaseAddress + (uintptr_t) header._regions[m]._mapping_offset;
+          size_t size = header._regions[m]._used;
           // no need to worry about the fractional pages at-the-end.
           // possible fractional pages are handled by core_read_data.
-          add_class_share_map_info(ph, (off_t) header._space[m]._file_offset,
+          add_class_share_map_info(ph, (off_t) header._regions[m]._file_offset,
                                    base, size);
           print_debug("added a share archive map [%d] at 0x%lx (size 0x%lx bytes)\n", m, base, size);
         }

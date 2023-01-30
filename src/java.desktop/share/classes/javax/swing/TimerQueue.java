@@ -198,13 +198,6 @@ class TimerQueue implements Runnable
                     }
                 }
             }
-        }
-        catch (ThreadDeath td) {
-            // Mark all the timers we contain as not being queued.
-            for (DelayedTimer delayedTimer : queue) {
-                delayedTimer.getTimer().cancelEvent();
-            }
-            throw td;
         } finally {
             running = false;
             runningLock.unlock();

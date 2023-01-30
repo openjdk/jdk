@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244
+ * @bug 7021614 8273244 8200337
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -188,6 +188,26 @@ DocComment[DOC_COMMENT, pos:1
         Text[TEXT, pos:35, desc]
     ]
     Text[TEXT, pos:40, _def]
+  body: empty
+  block tags: empty
+]
+*/
+
+    /**
+     * abc {@linkplain java.lang.String##fragment desc} def
+     */
+    void fragment_desc() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 3
+    Text[TEXT, pos:1, abc_]
+    Link[LINK_PLAIN, pos:5
+      reference:
+        Reference[REFERENCE, pos:17, java.lang.String##fragment]
+      body: 1
+        Text[TEXT, pos:44, desc]
+    ]
+    Text[TEXT, pos:49, _def]
   body: empty
   block tags: empty
 ]

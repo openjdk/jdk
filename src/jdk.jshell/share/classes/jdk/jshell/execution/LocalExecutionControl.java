@@ -114,6 +114,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     @Override
+    @SuppressWarnings("removal")
     protected String invoke(Method doitMethod) throws Exception {
         if (allStop == null) {
             super.load(new ClassBytecodes[]{ genCancelClass() });

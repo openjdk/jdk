@@ -90,7 +90,7 @@ static oop reference_referent(oop reference) {
 }
 
 static void reference_clear_referent(oop reference) {
-  java_lang_ref_Reference::clear_referent(reference);
+  java_lang_ref_Reference::clear_referent_raw(reference);
 }
 
 template <typename T>

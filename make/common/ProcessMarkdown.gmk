@@ -57,7 +57,7 @@ define ProcessMarkdown
   endif
 
   ifneq ($$($1_CSS), )
-    ifneq ($$(findstring http:/, $$($1_CSS)), )
+    ifneq ($$(findstring https:/, $$($1_CSS)), )
       $1_$2_CSS_OPTION := --css '$$($1_CSS)'
     else
       $1_$2_CSS := $$(strip $$(call RelativePath, $$($1_CSS), $$($1_$2_TARGET_DIR)))

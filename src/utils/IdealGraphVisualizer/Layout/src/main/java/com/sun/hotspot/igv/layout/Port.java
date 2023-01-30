@@ -31,7 +31,7 @@ import java.awt.Point;
  */
 public interface Port {
 
-    public Vertex getVertex();
+    Vertex getVertex();
 
-    public Point getRelativePosition();
+    Point getRelativePosition();
 }

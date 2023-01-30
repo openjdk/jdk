@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
     final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
-    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags", Integer.class, "u2");
+    final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_flags._flags", Integer.class, "u2");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
     final int klassVtableLengthOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_length_offset", Integer.class, "int");
 
@@ -119,6 +119,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int fieldInfoAccessFlagsOffset = getConstant("FieldInfo::access_flags_offset", Integer.class);
     final int fieldInfoNameIndexOffset = getConstant("FieldInfo::name_index_offset", Integer.class);
     final int fieldInfoSignatureIndexOffset = getConstant("FieldInfo::signature_index_offset", Integer.class);
+    final int fieldInfoConstantValueIndexOffset = getConstant("FieldInfo::initval_index_offset", Integer.class);
     final int fieldInfoLowPackedOffset = getConstant("FieldInfo::low_packed_offset", Integer.class);
     final int fieldInfoHighPackedOffset = getConstant("FieldInfo::high_packed_offset", Integer.class);
     final int fieldInfoFieldSlots = getConstant("FieldInfo::field_slots", Integer.class);
@@ -139,8 +140,8 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmAccEnum = getConstant("JVM_ACC_ENUM", Integer.class);
     final int jvmAccInterface = getConstant("JVM_ACC_INTERFACE", Integer.class);
 
-    final int jvmMiscFlagsHasDefaultMethods = getConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods", Integer.class);
-    final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods", Integer.class);
+    final int jvmMiscFlagsHasDefaultMethods = getConstant("InstanceKlassFlags::_misc_has_nonstatic_concrete_methods", Integer.class);
+    final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods", Integer.class);
 
     // This is only valid on AMD64.
     final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, osArch.equals("amd64") ? null : 0);

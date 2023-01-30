@@ -55,6 +55,7 @@ public final class StaticProperty {
     private static final String JAVA_PROPERTIES_DATE;
     private static final String SUN_JNU_ENCODING;
     private static final Charset jnuCharset;
+    private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
 
     private StaticProperty() {}
 
@@ -74,6 +75,7 @@ public final class StaticProperty {
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
         jnuCharset = Charset.forName(SUN_JNU_ENCODING, Charset.defaultCharset());
+        JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
     }
 
     private static String getProperty(Properties props, String key) {
@@ -242,5 +244,16 @@ public final class StaticProperty {
      */
     public static Charset jnuCharset() {
         return jnuCharset;
+    }
+
+    /**
+     * {@return the {@code java.locale.useOldISOCodes} system property}
+     *
+     * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+     * in this method. The caller of this method should take care to ensure
+     * that the returned property is not made accessible to untrusted code.</strong>
+     */
+    public static String javaLocaleUseOldISOCodes() {
+        return JAVA_LOCALE_USE_OLD_ISO_CODES;
     }
 }

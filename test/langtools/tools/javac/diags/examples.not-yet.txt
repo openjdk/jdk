@@ -66,6 +66,7 @@ compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close                      # JavaCompiler
 compiler.misc.feature.not.supported.in.source.plural    # cannot happen (for now)
 compiler.misc.file.does.not.contain.package
+compiler.misc.illegal.flag.combo                        # ClassReader
 compiler.misc.illegal.start.of.class.file
 compiler.misc.inferred.do.not.conform.to.lower.bounds   # cannot happen?
 compiler.misc.kindname.annotation

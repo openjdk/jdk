@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,12 @@ on:
         type: string
       msvc-toolset-architecture:
         required: true
+        type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
         type: string
 
 env:
@@ -108,9 +114,9 @@ jobs:
           --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
           --with-jtreg=${{ steps.jtreg.outputs.path }}
           --with-gtest=${{ steps.gtest.outputs.path }}
-          --enable-jtreg-failure-handler
           --with-msvc-toolset-version=${{ inputs.msvc-toolset-version }}
-          ${{ inputs.extra-conf-options }} || (
+          --with-jmod-compress=zip-1
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
           echo "Dumping config.log:" &&
           cat config.log &&
           exit 1)
@@ -118,12 +124,13 @@ jobs:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
           PATH: ''
+        shell: env /usr/bin/bash --login -eo pipefail {0}
 
       - name: 'Build'
         id: build
         uses: ./.github/actions/do-build
         with:
-          make-target: '${{ inputs.make-target }}'
+          make-target: '${{ inputs.make-target }} ${{ inputs.make-arguments }}'
           platform: ${{ inputs.platform }}
           debug-suffix: '${{ matrix.suffix }}'
 

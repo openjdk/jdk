@@ -26,6 +26,7 @@
  * @bug 4035266 4052418 4068133 4068137 4068139 4086052 4095322 4097779
  *      4097920 4098467 4111338 4113835 4117554 4143071 4146175 4152117
  *      4152416 4153072 4158381 4214367 4217703 4638433 8264765 8291660
+ *      8294008
  * @library /java/text/testlib
  * @run main/timeout=2000 BreakIteratorTest
  * @summary test BreakIterator
@@ -1467,5 +1468,9 @@ public class BreakIteratorTest extends IntlTest
                             .toList());
                     generalIteratorTest(characterBreak, expected);
                 });
+    }
+
+    public void TestSetTextIOOBException() {
+        BreakIterator.getCharacterInstance().setText(new StringCharacterIterator("abcfefg", 1, 5, 3));
     }
 }

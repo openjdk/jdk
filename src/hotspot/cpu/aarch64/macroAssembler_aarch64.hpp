@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -110,17 +110,9 @@ class MacroAssembler: public Assembler {
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
-  // Helper functions for statistics gathering.
-  // Unconditional atomic increment.
-  void atomic_incw(Register counter_addr, Register tmp, Register tmp2);
-  void atomic_incw(Address counter_addr, Register tmp1, Register tmp2, Register tmp3) {
-    lea(tmp1, counter_addr);
-    atomic_incw(tmp1, tmp2, tmp3);
-  }
   // Load Effective Address
   void lea(Register r, const Address &a) {
     InstructionMark im(this);
-    code_section()->relocate(inst_mark(), a.rspec());
     a.lea(this, r);
   }
 
@@ -589,6 +581,14 @@ public:
     mrs(0b011, 0b0000, 0b0000, 0b001, reg);
   }
 
+  inline void get_nzcv(Register reg) {
+    mrs(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
+  inline void set_nzcv(Register reg) {
+    msr(0b011, 0b0100, 0b0010, 0b000, reg);
+  }
+
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register ra, Register rb,
                       bool want_remainder, Register tmp = rscratch1);
@@ -657,8 +657,8 @@ public:
   void extend_sign(Register hi, Register lo);
 
   // Load and store values by size and signed-ness
-  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed, Register dst2 = noreg);
-  void store_sized_value(Address dst, Register src, size_t size_in_bytes, Register src2 = noreg);
+  void load_sized_value(Register dst, Address src, size_t size_in_bytes, bool is_signed);
+  void store_sized_value(Address dst, Register src, size_t size_in_bytes);
 
   // Support for inc/dec with optimal instruction selection depending on value
 
@@ -831,6 +831,7 @@ public:
   void store_check(Register obj, Address dst);   // same as above, dst is exact store location (reg. is destroyed)
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -850,16 +851,16 @@ public:
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
                       Register tmp1, Register tmp2);
 
-  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
+  void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
-                     Register tmp2 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop(Register dst, Address src, Register tmp1,
+                     Register tmp2, DecoratorSet decorators = 0);
 
-  void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg,
-                              Register tmp2 = noreg, DecoratorSet decorators = 0);
-  void store_heap_oop(Address dst, Register src, Register tmp1 = noreg,
-                      Register tmp2 = noreg, Register tmp3 = noreg, DecoratorSet decorators = 0);
+  void load_heap_oop_not_null(Register dst, Address src, Register tmp1,
+                              Register tmp2, DecoratorSet decorators = 0);
+  void store_heap_oop(Address dst, Register val, Register tmp1,
+                      Register tmp2, Register tmp3, DecoratorSet decorators = 0);
 
   // currently unimplemented
   // Used for storing NULL. All other oop constants should be
@@ -1092,9 +1093,6 @@ public:
                bool acquire, bool release, bool weak,
                Register result);
 
-private:
-  void compare_eq(Register rn, Register rm, enum operand_size size);
-
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
   // call generation (see trampoline_call() below),  when a set of Labels must
@@ -1108,6 +1106,9 @@ private:
     lbl.reset();
   }
 #endif
+
+private:
+  void compare_eq(Register rn, Register rm, enum operand_size size);
 
 public:
   // AArch64 OpenJDK uses four different types of calls:
@@ -1185,7 +1186,7 @@ public:
     return ReservedCodeCacheSize > branch_range;
   }
 
-  // Check if branches to the the non nmethod section require a far jump
+  // Check if branches to the non nmethod section require a far jump
   static bool codestub_branch_needs_far_jump() {
     return CodeCache::max_distance_to_non_nmethod() > branch_range;
   }
@@ -1456,6 +1457,13 @@ public:
                       FloatRegister data = v0, int unrolls = 1);
   void aesecb_decrypt(Register from, Register to, Register key, Register keylen);
   void aes_round(FloatRegister input, FloatRegister subkey);
+
+  // ChaCha20 functions support block
+  void cc20_quarter_round(FloatRegister aVec, FloatRegister bVec,
+          FloatRegister cVec, FloatRegister dVec, FloatRegister scratch,
+          FloatRegister tbl);
+  void cc20_shift_lane_org(FloatRegister bVec, FloatRegister cVec,
+          FloatRegister dVec, bool colToDiag);
 
   // Place an ISB after code may have been modified due to a safepoint.
   void safepoint_isb();

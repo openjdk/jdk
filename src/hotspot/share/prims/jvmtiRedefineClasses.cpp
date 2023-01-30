@@ -104,7 +104,7 @@ void VM_RedefineClasses::lock_classes() {
   MonitorLocker ml(RedefineClasses_lock);
 
   if (redef_classes == NULL) {
-    redef_classes = new(ResourceObj::C_HEAP, mtClass) GrowableArray<Klass*>(1, mtClass);
+    redef_classes = new (mtClass) GrowableArray<Klass*>(1, mtClass);
     state->set_classes_being_redefined(redef_classes);
   }
 
@@ -1324,7 +1324,7 @@ class RedefineVerifyMark : public StackObj {
  private:
   JvmtiThreadState* _state;
   Klass*            _scratch_class;
-  Handle            _scratch_mirror;
+  OopHandle         _scratch_mirror;
 
  public:
 
@@ -1332,14 +1332,14 @@ class RedefineVerifyMark : public StackObj {
                      JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
-    _scratch_mirror = Handle(_state->get_thread(), _scratch_class->java_mirror());
-    _scratch_class->replace_java_mirror(the_class->java_mirror());
+    _scratch_mirror = the_class->java_mirror_handle();  // this is a copy that is swapped
+    _scratch_class->swap_java_mirror_handle(_scratch_mirror);
   }
 
   ~RedefineVerifyMark() {
     // Restore the scratch class's mirror, so when scratch_class is removed
     // the correct mirror pointing to it can be cleared.
-    _scratch_class->replace_java_mirror(_scratch_mirror());
+    _scratch_class->swap_java_mirror_handle(_scratch_mirror);
     _state->clear_class_versions_map();
   }
 };
@@ -4329,20 +4329,18 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   int emcp_method_count = check_methods_and_mark_as_obsolete();
   transfer_old_native_function_registrations(the_class);
 
-  // The class file bytes from before any retransformable agents mucked
-  // with them was cached on the scratch class, move to the_class.
-  // Note: we still want to do this if nothing needed caching since it
-  // should get cleared in the_class too.
-  if (the_class->get_cached_class_file() == 0) {
-    // the_class doesn't have a cache yet so copy it
-    the_class->set_cached_class_file(scratch_class->get_cached_class_file());
-  }
-  else if (scratch_class->get_cached_class_file() !=
-           the_class->get_cached_class_file()) {
-    // The same class can be present twice in the scratch classes list or there
+  if (scratch_class->get_cached_class_file() != the_class->get_cached_class_file()) {
+    // 1. the_class doesn't have a cache yet, scratch_class does have a cache.
+    // 2. The same class can be present twice in the scratch classes list or there
     // are multiple concurrent RetransformClasses calls on different threads.
-    // In such cases we have to deallocate scratch_class cached_class_file.
-    os::free(scratch_class->get_cached_class_file());
+    // the_class and scratch_class have the same cached bytes, but different buffers.
+    // In such cases we need to deallocate one of the buffers.
+    // 3. RedefineClasses and the_class has cached bytes from a previous transformation.
+    // In the case we need to use class bytes from scratch_class.
+    if (the_class->get_cached_class_file() != nullptr) {
+      os::free(the_class->get_cached_class_file());
+    }
+    the_class->set_cached_class_file(scratch_class->get_cached_class_file());
   }
 
   // NULL out in scratch class to not delete twice.  The class to be redefined
@@ -4373,16 +4371,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     (int)strlen(scratch_class->source_debug_extension()));
 
   // Use of javac -g could be different in the old and the new
-  if (scratch_class->access_flags().has_localvariable_table() !=
-      the_class->access_flags().has_localvariable_table()) {
-
-    AccessFlags flags = the_class->access_flags();
-    if (scratch_class->access_flags().has_localvariable_table()) {
-      flags.set_has_localvariable_table();
-    } else {
-      flags.clear_has_localvariable_table();
-    }
-    the_class->set_access_flags(flags);
+  if (scratch_class->has_localvariable_table() !=
+      the_class->has_localvariable_table()) {
+    the_class->set_has_localvariable_table(scratch_class->has_localvariable_table());
   }
 
   swap_annotations(the_class, scratch_class);
@@ -4405,7 +4396,9 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
-  the_class->set_has_been_redefined();
+  if (!the_class->has_been_redefined()) {
+    the_class->set_has_been_redefined();
+  }
 
   // Scratch class is unloaded but still needs cleaning, and skipping for CDS.
   scratch_class->set_is_scratch_class();

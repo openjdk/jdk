@@ -159,8 +159,8 @@ public class TestDateTimeFormatterBuilderWithLocale {
     Object[][] localizedDateTimePatterns() {
         return new Object[][] {
             // French Locale and ISO Chronology
-            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.FRENCH, "EEEE d MMMM y '\u00e0' HH:mm:ss zzzz"},
-            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.FRENCH, "d MMMM y '\u00e0' HH:mm:ss z"},
+            {FormatStyle.FULL, FormatStyle.FULL, IsoChronology.INSTANCE, Locale.FRENCH, "EEEE d MMMM y, HH:mm:ss zzzz"},
+            {FormatStyle.LONG, FormatStyle.LONG, IsoChronology.INSTANCE, Locale.FRENCH, "d MMMM y, HH:mm:ss z"},
             {FormatStyle.MEDIUM, FormatStyle.MEDIUM, IsoChronology.INSTANCE, Locale.FRENCH, "d MMM y, HH:mm:ss"},
             {FormatStyle.SHORT, FormatStyle.SHORT, IsoChronology.INSTANCE, Locale.FRENCH, "dd/MM/y HH:mm"},
             {FormatStyle.FULL, null, IsoChronology.INSTANCE, Locale.FRENCH, "EEEE d MMMM y"},

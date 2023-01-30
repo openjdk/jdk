@@ -40,9 +40,9 @@
 
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
-    st->print("BAD WORD");
+    st->print_cr("BAD WORD");
   } else if (*((juint*)this) == badMetaWordVal) {
-    st->print("BAD META WORD");
+    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
@@ -99,10 +99,7 @@ void oopDesc::verify(oopDesc* oop_desc) {
 intptr_t oopDesc::slow_identity_hash() {
   // slow case; we have to acquire the micro lock in order to locate the header
   Thread* current = Thread::current();
-  ResetNoHandleMark rnm; // Might be called from LEAF/QUICK ENTRY
-  HandleMark hm(current);
-  Handle object(current, this);
-  return ObjectSynchronizer::identity_hash_value_for(object);
+  return ObjectSynchronizer::FastHashCode(current, this);
 }
 
 // used only for asserts and guarantees

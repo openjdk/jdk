@@ -32,7 +32,7 @@ import java.io.PrintStream;
  * Extracted from GIFEncoder by Adam Doppelt
  * Comments added by Robin Luiten
  * {@code expandCode} added by Robin Luiten
- * The strLen table to give quick access to the lenght of an expanded
+ * The strLen table to give quick access to the length of an expanded
  * code for use by the {@code expandCode} method added by Robin.
  **/
 public class LZWStringTable {
@@ -73,7 +73,7 @@ public class LZWStringTable {
      * @param index value of -1 indicates no predecessor [used in initialisation]
      * @param b the byte [character] to add to the string store which follows
      * the predecessor string specified the index.
-     * @return 0xFFFF if no space in table left for addition of predecesor
+     * @return 0xFFFF if no space in table left for addition of predecessor
      * index and byte b. Else return the code allocated for combination index + b.
      */
     public int addCharString(short index, byte b) {
@@ -103,7 +103,7 @@ public class LZWStringTable {
 
     /*
      * @param index index to prefix string
-     * @param b the character that follws the index prefix
+     * @param b the character that follows the index prefix
      * @return b if param index is HASH_FREE. Else return the code
      * for this prefix and byte successor
      */
@@ -151,7 +151,7 @@ public class LZWStringTable {
      * to buf and the return value indicates how much of the expanded code has
      * been written to the buf. The next call to expandCode() should be with
      * the same code and have the skip parameter set the negated value of the
-     * previous return. Succesive negative return values should be negated and
+     * previous return. Successive negative return values should be negated and
      * added together for next skip parameter value with same code.
      *
      * @param buf buffer to place expanded data into

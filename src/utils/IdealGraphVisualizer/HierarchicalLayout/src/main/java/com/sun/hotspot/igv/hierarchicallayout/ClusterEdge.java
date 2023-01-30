@@ -23,9 +23,9 @@
  */
 package com.sun.hotspot.igv.hierarchicallayout;
 
+import com.sun.hotspot.igv.layout.Cluster;
 import com.sun.hotspot.igv.layout.Link;
 import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Cluster;
 import java.awt.Point;
 import java.util.List;
 
@@ -35,8 +35,8 @@ import java.util.List;
  */
 public class ClusterEdge implements Link {
 
-    private ClusterNode from;
-    private ClusterNode to;
+    private final ClusterNode from;
+    private final ClusterNode to;
     private List<Point> points;
 
     public ClusterEdge(ClusterNode from, ClusterNode to) {

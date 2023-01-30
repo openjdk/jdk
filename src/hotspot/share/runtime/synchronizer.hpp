@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class ObjectMonitorsHashtable {
  private:
   // ResourceHashtable SIZE is specified at compile time so we
   // use 1031 which is the first prime after 1024.
-  typedef ResourceHashtable<void*, PtrList*, 1031, ResourceObj::C_HEAP, mtThread,
+  typedef ResourceHashtable<void*, PtrList*, 1031, AnyObj::C_HEAP, mtThread,
                             &ObjectMonitorsHashtable::ptr_hash> PtrTable;
   PtrTable* _ptrs;
   size_t _key_count;
@@ -63,7 +63,7 @@ class ObjectMonitorsHashtable {
   // ResourceHashtable is passed to various functions and populated in
   // different places so we allocate it using C_HEAP to make it immune
   // from any ResourceMarks that happen to be in the code paths.
-  ObjectMonitorsHashtable() : _ptrs(new (ResourceObj::C_HEAP, mtThread) PtrTable), _key_count(0), _om_count(0) {}
+  ObjectMonitorsHashtable() : _ptrs(new (mtThread) PtrTable), _key_count(0), _om_count(0) {}
 
   ~ObjectMonitorsHashtable();
 
@@ -77,11 +77,6 @@ class ObjectMonitorsHashtable {
   PtrList* get_entry(void* key) {
     PtrList** listpp = _ptrs->get(key);
     return (listpp == nullptr) ? nullptr : *listpp;
-  }
-
-  bool has_entry(void* key) {
-    PtrList** listpp = _ptrs->get(key);
-    return listpp != nullptr && *listpp != nullptr;
   }
 
   bool has_entry(void* key, ObjectMonitor* om);
@@ -114,7 +109,7 @@ class MonitorList::Iterator {
 
 public:
   Iterator(ObjectMonitor* head) : _current(head) {}
-  bool has_next() const { return _current != NULL; }
+  bool has_next() const { return _current != nullptr; }
   ObjectMonitor* next();
 };
 
@@ -159,11 +154,6 @@ class ObjectSynchronizer : AllStatic {
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
   static bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
 
-  // Special internal-use-only method for use by JVM infrastructure
-  // that needs to wait() on a java-level object but must not respond
-  // to interrupt requests and doesn't timeout.
-  static void wait_uninterruptibly(Handle obj, JavaThread* current);
-
   // used by classloading to free classloader object lock,
   // wait on an internal lock, and reclaim original lock
   // with original recursion count
@@ -178,7 +168,6 @@ class ObjectSynchronizer : AllStatic {
 
   // Returns the identity hash value for an oop
   // NOTE: It may cause monitor inflation
-  static intptr_t identity_hash_value_for(Handle obj);
   static intptr_t FastHashCode(Thread* current, oop obj);
 
   // java.lang.Thread support
@@ -267,7 +256,6 @@ class ObjectLocker : public StackObj {
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
-  void wait_uninterruptibly(JavaThread* current) { ObjectSynchronizer::wait_uninterruptibly(_obj, current); }
 };
 
 #endif // SHARE_RUNTIME_SYNCHRONIZER_HPP

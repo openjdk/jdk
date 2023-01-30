@@ -62,7 +62,7 @@ public class HelloExtTest {
 
     TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
             "-cp", appJar, bootClassPath, "-Xlog:class+load",
-            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary",
+            "-XX:+PrintSharedArchiveAndExit",
             "HelloExt")
         .assertNormalExit(output ->  output.shouldNotMatch(class_pattern));
   }

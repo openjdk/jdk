@@ -101,7 +101,6 @@ jfieldID ni_bindsID;
 jfieldID ni_virutalID;
 jfieldID ni_childsID;
 jfieldID ni_parentID;
-jfieldID ni_defaultIndexID;
 jmethodID ni_ctrID;
 
 static jclass ni_ibcls;
@@ -187,9 +186,7 @@ JNIEXPORT void JNICALL Java_java_net_NetworkInterface_init
     CHECK_NULL(ni_ib4broadcastID);
     ni_ib4maskID = (*env)->GetFieldID(env, ni_ibcls, "maskLength", "S");
     CHECK_NULL(ni_ib4maskID);
-    ni_defaultIndexID = (*env)->GetStaticFieldID(env, ni_class, "defaultIndex",
-                                                 "I");
-    CHECK_NULL(ni_defaultIndexID);
+
     initInetAddressIDs(env);
 }
 

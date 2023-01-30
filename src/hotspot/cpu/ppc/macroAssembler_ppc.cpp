@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1179,6 +1179,15 @@ address MacroAssembler::call_c_using_toc(const FunctionDescriptor* fd,
   return _last_calls_return_pc;
 }
 #endif // ABI_ELFv2
+
+void MacroAssembler::post_call_nop() {
+  // Make inline again when loom is always enabled.
+  if (!Continuations::enabled()) {
+    return;
+  }
+  InlineSkippedInstructionsCounter skipCounter(this);
+  nop();
+}
 
 void MacroAssembler::call_VM_base(Register oop_result,
                                   Register last_java_sp,
@@ -2624,6 +2633,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   Label cont;
   Label object_has_monitor;
   Label cas_failed;
+  Label success, failure;
 
   // Load markWord from object into displaced_header.
   ld(displaced_header, oopDesc::mark_offset_in_bytes(), oop);
@@ -2632,7 +2642,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     load_klass(temp, oop);
     lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
     testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    bne(flag, cont);
+    bne(flag, failure);
   }
 
 #if INCLUDE_RTM_OPT
@@ -2670,14 +2680,14 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
              &cas_failed,
              /*check without membar and ldarx first*/true);
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+    // If the compare-and-exchange succeeded, then we found an unlocked
+    // object and we have now locked it.
+    b(success);
   } else {
     // Set NE to indicate 'failure' -> take slow-path.
     crandc(flag, Assembler::equal, flag, Assembler::equal);
+    b(failure);
   }
-
-  // If the compare-and-exchange succeeded, then we found an unlocked
-  // object and we have now locked it.
-  b(cont);
 
   bind(cas_failed);
   // We did not see an unlocked object so try the fast recursive case.
@@ -2693,9 +2703,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   mcrf(flag,CCR0);
   std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Handle existing monitor.
   b(cont);
 
+  // Handle existing monitor.
   bind(object_has_monitor);
   // The object's monitor m is unlocked iff m->owner == NULL,
   // otherwise m->owner may contain a thread or a stack address.
@@ -2720,11 +2730,11 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   // Store a non-null value into the box.
   std(box, BasicLock::displaced_header_offset_in_bytes(), box);
-  beq(flag, cont);
+  beq(flag, success);
 
   // Check for recursive locking.
   cmpd(flag, current_header, R16_thread);
-  bne(flag, cont);
+  bne(flag, failure);
 
   // Current thread already owns the lock. Just increment recursions.
   Register recursions = displaced_header;
@@ -2737,8 +2747,12 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 #endif
 
   bind(cont);
-  // flag == EQ indicates success
+  // flag == EQ indicates success, increment held monitor count
   // flag == NE indicates failure
+  bne(flag, failure);
+  bind(success);
+  inc_held_monitor_count(temp);
+  bind(failure);
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
@@ -2746,7 +2760,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  bool use_rtm) {
   assert_different_registers(oop, box, temp, displaced_header, current_header);
   assert(flag != CCR0, "bad condition register");
-  Label cont, object_has_monitor, notRecursive;
+  Label object_has_monitor, notRecursive;
+  Label success, failure;
 
 #if INCLUDE_RTM_OPT
   if (UseRTMForStackLocks && use_rtm) {
@@ -2756,7 +2771,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     cmpwi(flag, R0, markWord::unlocked_value);                  // bits = 01 unlocked
     bne(flag, L_regular_unlock);                                // else RegularLock
     tend_();                                                    // otherwise end...
-    b(cont);                                                    // ... and we're done
+    b(success);                                                 // ... and we're done
     bind(L_regular_unlock);
   }
 #endif
@@ -2767,7 +2782,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 
     // If the displaced header is 0, we have a recursive unlock.
     cmpdi(flag, displaced_header, 0);
-    beq(flag, cont);
+    beq(flag, success);
   }
 
   // Handle existing monitor.
@@ -2789,16 +2804,16 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
              MacroAssembler::MemBarRel,
              MacroAssembler::cmpxchgx_hint_release_lock(),
              noreg,
-             &cont);
+             &failure);
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
+    b(success);
   } else {
     // Set NE to indicate 'failure' -> take slow-path.
     crandc(flag, Assembler::equal, flag, Assembler::equal);
+    b(failure);
   }
 
   // Handle existing monitor.
-  b(cont);
-
   bind(object_has_monitor);
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
@@ -2812,7 +2827,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     cmpdi(flag, temp, 0);
     bne(flag, L_regular_inflated_unlock);
     tend_();
-    b(cont);
+    b(success);
     bind(L_regular_inflated_unlock);
   }
 #endif
@@ -2820,25 +2835,27 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   ld(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
 
   cmpd(flag, temp, R16_thread);
-  bne(flag, cont);
+  bne(flag, failure);
 
   addic_(displaced_header, displaced_header, -1);
   blt(CCR0, notRecursive); // Not recursive if negative after decrement.
   std(displaced_header, ObjectMonitor::recursions_offset_in_bytes(), current_header);
-  b(cont); // flag is already EQ here.
+  b(success); // flag is already EQ here.
 
   bind(notRecursive);
   ld(temp,             ObjectMonitor::EntryList_offset_in_bytes(), current_header);
   ld(displaced_header, ObjectMonitor::cxq_offset_in_bytes(), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
   cmpdi(flag, temp, 0);
-  bne(flag, cont);
+  bne(flag, failure);
   release();
   std(temp, ObjectMonitor::owner_offset_in_bytes(), current_header);
 
-  bind(cont);
-  // flag == EQ indicates success
+  // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
+  bind(success);
+  dec_held_monitor_count(temp);
+  bind(failure);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod) {
@@ -2873,6 +2890,12 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
                                      MacroAssembler::PreservationLevel preservation_level) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->resolve_jobject(this, value, tmp1, tmp2, preservation_level);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Register tmp2,
+                                     MacroAssembler::PreservationLevel preservation_level) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->resolve_global_jobject(this, value, tmp1, tmp2, preservation_level);
 }
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
@@ -4369,4 +4392,49 @@ void MacroAssembler::cache_wbsync(bool is_presync) {
   if (!is_presync) {
     fence();
   }
+}
+
+void MacroAssembler::push_cont_fastpath() {
+  Label done;
+  ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
+  cmpld(CCR0, R1_SP, R0);
+  ble(CCR0, done);
+  st_ptr(R1_SP, JavaThread::cont_fastpath_offset(), R16_thread);
+  bind(done);
+}
+
+void MacroAssembler::pop_cont_fastpath() {
+  Label done;
+  ld_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
+  cmpld(CCR0, R1_SP, R0);
+  ble(CCR0, done);
+  li(R0, 0);
+  st_ptr(R0, JavaThread::cont_fastpath_offset(), R16_thread);
+  bind(done);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
+  ld(tmp, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+#ifdef ASSERT
+  Label ok;
+  cmpdi(CCR0, tmp, 0);
+  bge_predict_taken(CCR0, ok);
+  stop("held monitor count is negativ at increment");
+  bind(ok);
+#endif
+  addi(tmp, tmp, 1);
+  std(tmp, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+}
+
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
+  ld(tmp, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+#ifdef ASSERT
+  Label ok;
+  cmpdi(CCR0, tmp, 0);
+  bgt_predict_taken(CCR0, ok);
+  stop("held monitor count is <= 0 at decrement");
+  bind(ok);
+#endif
+  addi(tmp, tmp, -1);
+  std(tmp, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
 }

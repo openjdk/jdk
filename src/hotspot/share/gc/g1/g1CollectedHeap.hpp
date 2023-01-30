@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -145,7 +146,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1SegmentedArrayFreeMemoryTask* _free_segmented_array_memory_task;
+  G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;
@@ -162,9 +163,9 @@ private:
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
-  G1SegmentedArrayMemoryStats _young_gen_card_set_stats;
+  G1MonotonicArenaMemoryStats _young_gen_card_set_stats;
   // Collection set candidates memory statistics after GC.
-  G1SegmentedArrayMemoryStats _collection_set_candidates_card_set_stats;
+  G1MonotonicArenaMemoryStats _collection_set_candidates_card_set_stats;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
@@ -239,8 +240,8 @@ public:
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
   bool should_sample_collection_set_candidates() const;
-  void set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats);
-  void set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats);
+  void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
+  void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
 private:
 
@@ -251,7 +252,7 @@ private:
   // (a) cause == _g1_humongous_allocation,
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
   // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
-  // (d) cause == _wb_conc_mark or _wb_breakpoint,
+  // (d) cause == _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
@@ -756,11 +757,11 @@ private:
   // active, true otherwise.
   // precondition: at safepoint on VM thread
   // precondition: !is_gc_active()
-  bool do_collection_pause_at_safepoint(double target_pause_time_ms);
+  bool do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
+  void do_collection_pause_at_safepoint_helper();
 
   G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -786,6 +787,8 @@ private:
   G1RemSet* _rem_set;
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
+
+  G1MonotonicArenaFreePool _card_set_freelist_pool;
 
 public:
   // After a collection pause, reset eden and the collection set.
@@ -912,6 +915,9 @@ public:
   G1Policy* policy() const { return _policy; }
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
+
+  const G1MonotonicArenaFreePool* card_set_freelist_pool() const { return &_card_set_freelist_pool; }
+  G1MonotonicArenaFreePool* card_set_freelist_pool() { return &_card_set_freelist_pool; }
 
   inline G1GCPhaseTimes* phase_times() const;
 
@@ -1266,8 +1272,6 @@ public:
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
   void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.
@@ -1306,6 +1310,9 @@ public:
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   // Printing
 private:
   void print_heap_regions() const;
@@ -1320,10 +1327,6 @@ public:
 
   // Override
   void print_tracing_info() const override;
-
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

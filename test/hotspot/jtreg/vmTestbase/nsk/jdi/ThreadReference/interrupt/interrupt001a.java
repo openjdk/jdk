@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package nsk.jdi.ThreadReference.interrupt;
 
 import nsk.share.jpda.*;
 import nsk.share.jdi.*;
+
 
 /**
  * This class is used as debuggee application for the interrupt001 JDI test.
@@ -101,80 +102,35 @@ public class interrupt001a {
 
             } else if (instruction.equals("newcheck")) {
 
-                switch (i) {
-                case 0:
-                    synchronized (interrupt001aThread.lockingObject) {
-                        thread2 = threadStart("Thread02");
-                        thread3 = threadStart("Thread03");
+                synchronized (interrupt001aThread.lockingObject) {
+                    thread2 = threadStart("Thread02");
+                    thread3 = threadStart("Thread03");
 
-                        pipe.println("checkready");
-                        if (checkInterruptStatus() == FAILED) {
-                            exitCode = FAILED;
-                            break label0;
-                        }
-                    }
-                    log1("mainThread is out of: synchronized (lockingObject)");
-
-                    if (waitThreadJoin(thread2) == FAILED) {
-                        exitCode = FAILED;
-                    }
-                    if (waitThreadJoin(thread3) == FAILED) {
-                        exitCode = FAILED;
-                    }
-
-                    instruction = pipe.readln();
-                    if (!instruction.equals("continue")) {
-                        logErr("Unexpected instruction #1: " + instruction);
+                    pipe.println("checkready");
+                    if (checkInterruptStatus() == FAILED) {
                         exitCode = FAILED;
                         break label0;
                     }
-                    pipe.println("docontinue");
-                    break;
+                }
+                log1("mainThread is out of: synchronized (lockingObject)");
 
-                case 1:
-                    synchronized (interrupt001aThread.lockingObject) {
-                        thread2 = threadStart("Thread12");
-                        thread3 = threadStart("Thread13");
+                if (waitThreadJoin(thread2) == FAILED) {
+                    exitCode = FAILED;
+                }
+                if (waitThreadJoin(thread3) == FAILED) {
+                    exitCode = FAILED;
+                }
 
-                        log1("suspending Thread2");
-                        thread2.suspend();
-
-                        log1("suspending Thread3");
-                        thread3.suspend();
-
-                        log1("interrupting the Thread3");
-                        thread3.interrupt();
-
-                        pipe.println("checkready");
-                        if (checkInterruptStatus() == FAILED) {
-                            exitCode = FAILED;
-                            break label0;
-                        }
-                    }
-                    log1("mainThread is out of: synchronized (lockingObject)");
-
-                    log1("resuming Thread2");
-                    thread2.resume();
-                    if (waitThreadJoin(thread2) == FAILED) {
-                        exitCode = FAILED;
-                    }
-                    log1("resuming Thread3");
-                    thread3.resume();
-                    if (waitThreadJoin(thread3) == FAILED) {
-                        exitCode = FAILED;
-                    }
-
-                    instruction = pipe.readln();
-                    if (!instruction.equals("continue")) {
-                        logErr("Unexpected instruction #2: " + instruction);
-                        exitCode = FAILED;
-                        break label0;
-                    }
-                    pipe.println("docontinue");
-                    break;
+                instruction = pipe.readln();
+                if (!instruction.equals("continue")) {
+                    logErr("Unexpected instruction #1: " + instruction);
+                    exitCode = FAILED;
+                    break label0;
+                }
+                pipe.println("docontinue");
+                break;
 
                 //-------------------------------------------------    standard end section
-                }
 
             } else {
                 logErr("Unexpected instruction #0: " + instruction);

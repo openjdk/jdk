@@ -116,10 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
 
 void AsyncLogWriter::write() {
   ResourceMark rm;
-  // Similar to AsyncLogMap but on resource_area
-  ResourceHashtable<LogFileStreamOutput*, uint32_t,
-                          17/*table_size*/, ResourceObj::RESOURCE_AREA,
-                          mtLogging> snapshot;
+  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
 
   // lock protection. This guarantees I/O jobs don't block logsites.
   {
@@ -195,10 +192,10 @@ void AsyncLogWriter::initialize() {
   AsyncLogWriter* self = new AsyncLogWriter();
   if (self->_initialized) {
     Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
-    // All readers of _instance after the fence see non-NULL.
+    // All readers of _instance after the fence see non-nullptr.
     // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
     // After that, we start AsyncLog Thread and it exclusively takes over all logging I/O.
-    for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {
       ts->wait_until_no_readers();
     }
     os::start_thread(self);
@@ -241,11 +238,15 @@ AsyncLogWriter::BufferUpdater::BufferUpdater(size_t newsize) {
 }
 
 AsyncLogWriter::BufferUpdater::~BufferUpdater() {
-  AsyncLogLocker locker;
+  AsyncLogWriter::flush();
   auto p = AsyncLogWriter::_instance;
 
-  delete p->_buffer;
-  delete p->_buffer_staging;
-  p->_buffer = _buf1;
-  p->_buffer_staging = _buf2;
+  {
+    AsyncLogLocker locker;
+
+    delete p->_buffer;
+    delete p->_buffer_staging;
+    p->_buffer = _buf1;
+    p->_buffer_staging = _buf2;
+  }
 }

@@ -35,6 +35,8 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 class oopDesc;
 
@@ -110,14 +112,17 @@ class oopDesc;
 
 // Format 32-bit quantities.
 #define INT32_FORMAT             "%"          PRId32
+#define INT32_FORMAT_X           "0x%"        PRIx32
 #define INT32_FORMAT_X_0         "0x%08"      PRIx32
 #define INT32_FORMAT_W(width)    "%"   #width PRId32
 #define UINT32_FORMAT            "%"          PRIu32
+#define UINT32_FORMAT_X          "0x%"        PRIx32
 #define UINT32_FORMAT_X_0        "0x%08"      PRIx32
 #define UINT32_FORMAT_W(width)   "%"   #width PRIu32
 
 // Format 64-bit quantities.
 #define INT64_FORMAT             "%"          PRId64
+#define INT64_PLUS_FORMAT        "%+"         PRId64
 #define INT64_FORMAT_X           "0x%"        PRIx64
 #define INT64_FORMAT_X_0         "0x%016"     PRIx64
 #define INT64_FORMAT_W(width)    "%"   #width PRId64
@@ -128,6 +133,7 @@ class oopDesc;
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
+#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
@@ -184,6 +190,7 @@ FORBID_C_FUNCTION(void exit(int), "use os::exit");
 FORBID_C_FUNCTION(void _exit(int), "use os::exit");
 FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
 
@@ -370,6 +377,9 @@ inline T byte_size_in_proper_unit(T s) {
   }
 }
 
+#define PROPERFMT             SIZE_FORMAT "%s"
+#define PROPERFMTARGS(s)      byte_size_in_proper_unit(s), proper_unit_for_byte_size(s)
+
 inline const char* exact_unit_for_byte_size(size_t s) {
 #ifdef _LP64
   if (s >= G && (s % G) == 0) {
@@ -516,6 +526,13 @@ T2 checked_cast(T1 thing) {
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
+
+// Additional Java basic types
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
 
 // Unsigned byte types for os and stream.hpp
 
@@ -786,10 +803,7 @@ extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack ele
 extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
 extern BasicType name2type(const char* name);
 
-inline const char* type2name(BasicType t) {
-  assert((uint)t < T_CONFLICT + 1, "invalid type");
-  return type2name_tab[t];
-}
+const char* type2name(BasicType t);
 
 inline jlong max_signed_integer(BasicType bt) {
   if (bt == T_INT) {
@@ -1284,5 +1298,9 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 
 // Allow use of C++ thread_local when approved - see JDK-8282469.
 #define APPROVED_CPP_THREAD_LOCAL thread_local
+
+// Converts any type T to a reference type.
+template<typename T>
+std::add_rvalue_reference_t<T> declval() noexcept;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP

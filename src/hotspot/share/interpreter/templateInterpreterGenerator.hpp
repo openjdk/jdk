@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,14 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
     return generate_exception_handler_common(name, message, false);
   }
   address generate_klass_exception_handler(const char* name) {
-    return generate_exception_handler_common(name, NULL, true);
+    return generate_exception_handler_common(name, nullptr, true);
   }
   address generate_exception_handler_common(const char* name, const char* message, bool pass_oop);
   address generate_ClassCastException_handler();
   address generate_ArrayIndexOutOfBounds_handler();
   address generate_return_entry_for(TosState state, int step, size_t index_size);
   address generate_earlyret_entry_for(TosState state);
-  address generate_deopt_entry_for(TosState state, int step, address continuation = NULL);
+  address generate_deopt_entry_for(TosState state, int step, address continuation = nullptr);
   address generate_safept_entry_for(TosState state, address runtime_entry);
   void    generate_throw_exception();
 
@@ -94,7 +94,7 @@ class TemplateInterpreterGenerator: public AbstractInterpreterGenerator {
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
   address generate_currentThread();
 #endif
 #ifdef IA32

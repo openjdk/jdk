@@ -27,7 +27,7 @@ import jdk.internal.util.random.RandomSupport;
 /**
  * @test
  * @summary RandomSupport.convertSeedBytesToLongs sign extension overwrites previous bytes.
- * @bug 8282144
+ * @bug 8282144 8294509
  * @modules java.base/jdk.internal.util.random
  * @run main T8282144
  * @key randomness
@@ -36,6 +36,11 @@ import jdk.internal.util.random.RandomSupport;
 
 public class T8282144 {
     public static void main(String[] args) {
+        testLongs();
+        testInts();
+    }
+
+    private static void testLongs() {
         RandomGenerator rng = RandomGeneratorFactory.of("L64X128MixRandom").create(42);
 
         for (int i = 1; i < 8; i++) {
@@ -56,6 +61,27 @@ public class T8282144 {
         }
     }
 
+    private static void testInts() {
+        RandomGenerator rng = RandomGeneratorFactory.of("L64X128MixRandom").create(42);
+
+        for (int i = 1; i < 8; i++) {
+            byte[] seed = new byte[i];
+
+            for (int j = 0; j < 10; j++) {
+                rng.nextBytes(seed);
+
+                int[] existing = RandomSupport.convertSeedBytesToInts(seed, 1, 1);
+                int[] testing = convertSeedBytesToIntsFixed(seed, 1, 1);
+
+                for (int k = 0; k < existing.length; k++) {
+                    if (existing[k] != testing[k]) {
+                        throw new RuntimeException("convertSeedBytesToInts incorrect");
+                    }
+                }
+            }
+        }
+    }
+
 
     public static long[] convertSeedBytesToLongsFixed(byte[] seed, int n, int z) {
         final long[] result = new long[n];
@@ -68,4 +94,17 @@ public class T8282144 {
 
         return result;
     }
+
+    public static int[] convertSeedBytesToIntsFixed(byte[] seed, int n, int z) {
+        final int[] result = new int[n];
+        final int m = Math.min(seed.length, n << 2);
+
+        // Distribute seed bytes into the words to be formed.
+        for (int j = 0; j < m; j++) {
+            result[j >> 2] = (result[j >> 2] << 8) | (seed[j] & 0xff);
+        }
+
+        return result;
+    }
+
 }

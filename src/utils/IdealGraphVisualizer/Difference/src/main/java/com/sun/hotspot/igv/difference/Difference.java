@@ -105,7 +105,7 @@ public class Difference {
             }
         }
         g.getProperties().setProperty("name", "Difference");
-        InputGraph graph = new InputGraph(a.getName() + ", " + b.getName(), true);
+        InputGraph graph = new InputGraph(a, b);
         g.addElement(graph);
 
         Map<InputBlock, InputBlock> blocksMap = new HashMap<>();
@@ -287,9 +287,6 @@ public class Difference {
     }
 
     private static InputGraph createDiff(InputGraph a, InputGraph b) {
-
-        Set<InputNode> matched = new HashSet<>();
-
         Set<NodePair> pairs = new HashSet<>();
         for (InputNode n : a.getNodes()) {
             String s = n.getProperties().get(MAIN_PROPERTY);

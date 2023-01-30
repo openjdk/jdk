@@ -237,7 +237,11 @@ public final class PlatformEventType extends Type {
         }
     }
 
-    public boolean isEveryChunk() {
+    /**
+     * Returns true if "beginChunk", "endChunk" or "everyChunk" have
+     * been set.
+     */
+    public boolean isChunkTime() {
         return period == 0;
     }
 

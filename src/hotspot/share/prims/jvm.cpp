@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/classListParser.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/dynamicArchive.hpp"
@@ -48,6 +47,7 @@
 #include "interpreter/bytecode.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
@@ -1363,6 +1363,54 @@ JVM_ENTRY(jobject, JVM_GetStackAccessControlContext(JNIEnv *env, jclass cls))
   return JNIHandles::make_local(THREAD, result);
 JVM_END
 
+class ScopedValueBindingsResolver {
+public:
+  InstanceKlass* Carrier_klass;
+  ScopedValueBindingsResolver(JavaThread* THREAD) {
+    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_incubator_concurrent_ScopedValue_Carrier(), true, THREAD);
+    Carrier_klass = InstanceKlass::cast(k);
+  }
+};
+
+JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
+  ResourceMark rm(THREAD);
+  GrowableArray<Handle>* local_array = new GrowableArray<Handle>(12);
+  JvmtiVMObjectAllocEventCollector oam;
+
+  static ScopedValueBindingsResolver resolver(THREAD);
+
+  // Iterate through Java frames
+  vframeStream vfst(thread);
+  for(; !vfst.at_end(); vfst.next()) {
+    int loc = -1;
+    // get method of frame
+    Method* method = vfst.method();
+
+    Symbol *name = method->name();
+
+    InstanceKlass* holder = method->method_holder();
+    if (name == vmSymbols::runWith_method_name()) {
+      if ((holder == resolver.Carrier_klass
+           || holder == vmClasses::VirtualThread_klass()
+           || holder == vmClasses::Thread_klass())) {
+        loc = 1;
+      }
+    }
+
+    if (loc != -1) {
+      javaVFrame *frame = vfst.asJavaVFrame();
+      StackValueCollection* locals = frame->locals();
+      StackValue* head_sv = locals->at(loc); // jdk/incubator/concurrent/ScopedValue$Snapshot
+      Handle result = head_sv->get_obj();
+      assert(!head_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
+      if (result() != NULL) {
+        return JNIHandles::make_local(THREAD, result());
+      }
+    }
+  }
+
+  return NULL;
+JVM_END
 
 JVM_ENTRY(jboolean, JVM_IsArrayClass(JNIEnv *env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
@@ -2926,9 +2974,6 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     if (java_lang_Thread::thread(JNIHandles::resolve_non_null(jthread)) != NULL) {
       throw_illegal_thread_state = true;
     } else {
-      // We could also check the stillborn flag to see if this thread was already stopped, but
-      // for historical reasons we let the thread detect that itself when it starts running
-
       jlong size =
              java_lang_Thread::stackSize(JNIHandles::resolve_non_null(jthread));
       // Allocate the C++ Thread structure and create the native thread.  The
@@ -2981,71 +3026,9 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
 JVM_END
 
 
-// JVM_Stop is implemented using a VM_Operation, so threads are forced to safepoints
-// before the quasi-asynchronous exception is delivered.  This is a little obtrusive,
-// but is thought to be reliable and simple. In the case, where the receiver is the
-// same thread as the sender, no VM_Operation is needed.
-JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
-  ThreadsListHandle tlh(thread);
-  oop java_throwable = JNIHandles::resolve(throwable);
-  if (java_throwable == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  oop java_thread = NULL;
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, &java_thread);
-  Events::log_exception(thread,
-                        "JVM_StopThread thread JavaThread " INTPTR_FORMAT " as oop " INTPTR_FORMAT " [exception " INTPTR_FORMAT "]",
-                        p2i(receiver), p2i(java_thread), p2i(throwable));
-
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    if (thread == receiver) {
-      // Exception is getting thrown at self so no VM_Operation needed.
-      THROW_OOP(java_throwable);
-    } else {
-      // Use a VM_Operation to throw the exception.
-      JavaThread::send_async_exception(receiver, java_throwable);
-    }
-  } else {
-    // Either:
-    // - target thread has not been started before being stopped, or
-    // - target thread already terminated
-    // We could read the threadStatus to determine which case it is
-    // but that is overkill as it doesn't matter. We must set the
-    // stillborn flag for the first case, and if the thread has already
-    // exited setting this flag has no effect.
-    java_lang_Thread::set_stillborn(java_thread);
-  }
-JVM_END
-
-
 JVM_ENTRY(jboolean, JVM_IsThreadAlive(JNIEnv* env, jobject jthread))
   oop thread_oop = JNIHandles::resolve_non_null(jthread);
   return java_lang_Thread::is_alive(thread_oop);
-JVM_END
-
-
-JVM_ENTRY(void, JVM_SuspendThread(JNIEnv* env, jobject jthread))
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread, but java_suspend() will
-    // detect a thread that has started to exit and will ignore it.
-    receiver->java_suspend();
-  }
-JVM_END
-
-
-JVM_ENTRY(void, JVM_ResumeThread(JNIEnv* env, jobject jthread))
-  ThreadsListHandle tlh(thread);
-  JavaThread* receiver = NULL;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(jthread, &receiver, NULL);
-  if (is_alive) {
-    // jthread refers to a live JavaThread.
-    receiver->java_resume();
-  }
 JVM_END
 
 
@@ -3093,7 +3076,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     ThreadState old_state = thread->osthread()->get_state();
     thread->osthread()->set_state(SLEEPING);
     if (!thread->sleep(millis)) { // interrupted
-      // An asynchronous exception (e.g., ThreadDeathException) could have been thrown on
+      // An asynchronous exception could have been thrown on
       // us while we were sleeping. We do not overwrite those.
       if (!HAS_PENDING_EXCEPTION) {
         HOTSPOT_THREAD_SLEEP_END(1);
@@ -3179,22 +3162,15 @@ JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring na
   }
 JVM_END
 
-JVM_ENTRY(jobject, JVM_ExtentLocalCache(JNIEnv* env, jclass threadClass))
-  oop theCache = thread->extentLocalCache();
-  if (theCache) {
-    arrayOop objs = arrayOop(theCache);
-    assert(objs->length() == ExtentLocalCacheSize * 2, "wrong length");
-  }
+JVM_ENTRY(jobject, JVM_ScopedValueCache(JNIEnv* env, jclass threadClass))
+  oop theCache = thread->scopedValueCache();
   return JNIHandles::make_local(THREAD, theCache);
 JVM_END
 
-JVM_ENTRY(void, JVM_SetExtentLocalCache(JNIEnv* env, jclass threadClass,
+JVM_ENTRY(void, JVM_SetScopedValueCache(JNIEnv* env, jclass threadClass,
                                        jobject theCache))
   arrayOop objs = arrayOop(JNIHandles::resolve(theCache));
-  if (objs != NULL) {
-    assert(objs->length() == ExtentLocalCacheSize * 2, "wrong length");
-  }
-  thread->set_extentLocalCache(objs);
+  thread->set_scopedValueCache(objs);
 JVM_END
 
 // java.lang.SecurityManager ///////////////////////////////////////////////////////////////////////
@@ -3610,7 +3586,7 @@ JVM_END
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");
-  HeapShared::initialize_from_archived_subgraph(k, THREAD);
+  HeapShared::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
 JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
@@ -3947,6 +3923,8 @@ JVM_ENTRY(void, JVM_VirtualThreadMountBegin(JNIEnv* env, jobject vthread, jboole
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
     return;
   }
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ true);
 #else
   fatal("Should only be called with JVMTI enabled");
@@ -3971,6 +3949,7 @@ JVM_ENTRY(void, JVM_VirtualThreadMountEnd(JNIEnv* env, jobject vthread, jboolean
     }
   }
   assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ true);
   if (first_mount) {
     // thread start
@@ -4019,7 +3998,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountBegin(JNIEnv* env, jobject vthread, jboo
       }
     }
   }
-
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::start_VTMS_transition(vthread, /* is_mount */ false);
 
@@ -4042,7 +4021,22 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmountEnd(JNIEnv* env, jobject vthread, jboole
     return;
   }
   assert(thread->is_in_VTMS_transition(), "sanity check");
+  assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
   JvmtiVTMSTransitionDisabler::finish_VTMS_transition(vthread, /* is_mount */ false);
+#else
+  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  assert(!thread->is_in_VTMS_transition(), "sanity check");
+  assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
+  thread->toggle_is_in_tmp_VTMS_transition();
 #else
   fatal("Should only be called with JVMTI enabled");
 #endif
@@ -4065,4 +4059,13 @@ JVM_ENTRY(jint, JVM_GetClassFileVersion(JNIEnv* env, jclass current))
   assert(c->is_instance_klass(), "must be");
   InstanceKlass* ik = InstanceKlass::cast(c);
   return (ik->minor_version() << 16) | ik->major_version();
+JVM_END
+
+/*
+ * Ensure that code doing a stackwalk and using javaVFrame::locals() to
+ * get the value will see a materialized value and not a scalar-replaced
+ * null value.
+ */
+JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
+  JVM_EnsureMaterializedForStackWalk(env, value);
 JVM_END
