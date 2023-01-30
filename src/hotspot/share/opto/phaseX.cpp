@@ -1241,8 +1241,11 @@ void PhaseIterGVN::verify_optimize() {
   }
 }
 
-// Check that if type(n) == n->Value(), return true if we have a failure
-// We have a list of exceptions, see comments in code.
+// Check that if type(n) == n->Value(), return true if we have a failure.
+// We have a list of exceptions, see detailed comments in code.
+// (1) Integer "widen" changes, but the range is the same.
+// (2) LoadNode performs deep traversals. Load is not notified for changes far away.
+// (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
 bool PhaseIterGVN::verify_node_value(Node* n) {
   // If we assert inside type(n), because the type is still a nullptr, then maybe
   // the node never went through gvn.transform,  which would be a bug.
@@ -1251,7 +1254,8 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   if (told == tnew) {
     return false;
   }
-  // Check special cases that are ok
+  // Exception (1)
+  // Integer "widen" changes, but range is the same.
   if (told->isa_integer(tnew->basic_type()) != nullptr) { // both either int or long
     const TypeInteger* t0 = told->is_integer(tnew->basic_type());
     const TypeInteger* t1 = tnew->is_integer(tnew->basic_type());
@@ -1260,12 +1264,16 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
       return false; // ignore integer widen
     }
   }
+  // Exception (2)
+  // LoadNode performs deep traversals. Load is not notified for changes far away.
   if (n->is_Load()) {
     // MemNode::can_see_stored_value looks up through many memory nodes,
     // which means we would need to notify modifications from far up in
     // the inputs all the way down to the LoadNode. We don't do that.
     return false;
   }
+  // Exception (3)
+  // CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
   if (n->Opcode() == Op_CmpP && type(n->in(1))->isa_oopptr() && type(n->in(2))->isa_oopptr()) {
     // SubNode::Value
     // CmpPNode::sub

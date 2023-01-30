@@ -54,9 +54,11 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   const Type* in_type = phase->type(in(1));
   const Type* ft = in_type->filter_speculative(_type);
 
-  if (ft->speculative() == nullptr && // speculative was dropped
-      _type->speculative() != nullptr &&   // but was present
-      in_type->speculative() != nullptr) { // for cast and input
+  // Check if both _type and in_type had a speculative type, but for the just
+  // computed ft the speculative type was dropped.
+  if (ft->speculative() == nullptr &&
+      _type->speculative() != nullptr &&
+      in_type->speculative() != nullptr) {
     // Speculative type may have disagreed between cast and input, and was
     // dropped in filtering. Recompute so that ft can take speculative type
     // of in_type. If we did not do it now, a subsequent ::Value call would

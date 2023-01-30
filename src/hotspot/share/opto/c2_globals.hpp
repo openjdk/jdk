@@ -618,7 +618,7 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(uintx, VerifyIterativeGVN, 0,                                     \
+  develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering"                         \
           "=XY, with Y: verify Def-Use modifications during sparse IGVN"    \
           "          X: verify that type(n) == n->Value() after IGVN"       \

@@ -291,31 +291,43 @@ JVMFlag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verb
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error TypeProfileLevelConstraintFunc(uint value, bool verbose) {
+  uint original_value = value;
   for (int i = 0; i < 3; i++) {
     if (value % 10 > 2) {
       JVMFlag::printError(verbose,
-                          "Invalid value (" UINTX_FORMAT ") "
+                          "Invalid value (" UINT32_FORMAT ") "
                           "in TypeProfileLevel at position %d\n", value, i);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
     value = value / 10;
   }
-
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for TypeProfileLevel: maximal 3 digits\n", original_value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }
 
-JVMFlag::Error VerifyIterativeGVNConstraintFunc(uintx value, bool verbose) {
+JVMFlag::Error VerifyIterativeGVNConstraintFunc(uint value, bool verbose) {
+  uint original_value = value;
   for (int i = 0; i < 2; i++) {
     if (value % 10 > 1) {
       JVMFlag::printError(verbose,
-                          "Invalid value (" UINTX_FORMAT ") "
+                          "Invalid value (" UINT32_FORMAT ") "
                           "in VerifyIterativeGVN at position %d\n", value, i);
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
     value = value / 10;
   }
-
+  if (value != 0) {
+    JVMFlag::printError(verbose,
+                        "Invalid value (" UINT32_FORMAT ") "
+                        "for VerifyIterativeGVN: maximal 2 digits\n", original_value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
   return JVMFlag::SUCCESS;
 }
 
