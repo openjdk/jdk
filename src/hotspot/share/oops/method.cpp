@@ -2278,6 +2278,8 @@ bool Method::is_valid_method(const Method* m) {
   } else if ((intptr_t(m) & (wordSize-1)) != 0) {
     // Quick sanity check on pointer.
     return false;
+  } else if (!os::is_readable_range(m, m + 1)) {
+    return false;
   } else if (m->is_shared()) {
     return CppVtables::is_valid_shared_method(m);
   } else if (Metaspace::contains_non_shared(m)) {
