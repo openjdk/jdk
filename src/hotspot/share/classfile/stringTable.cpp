@@ -754,32 +754,7 @@ oop StringTable::lookup_shared(const jchar* name, int len) {
   return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
 }
 
-oop StringTable::create_archived_string(oop s) {
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
-  assert(java_lang_String::is_instance(s), "sanity");
-  assert(!HeapShared::is_archived_object_during_dumptime(s), "sanity");
-
-  oop new_s = nullptr;
-  typeArrayOop v = java_lang_String::value_no_keepalive(s);
-  typeArrayOop new_v = (typeArrayOop)HeapShared::archive_object(v);
-  if (new_v == nullptr) {
-    return nullptr;
-  }
-  new_s = HeapShared::archive_object(s);
-  if (new_s == nullptr) {
-    return nullptr;
-  }
-
-  // adjust the pointer to the 'value' field in the new String oop
-  java_lang_String::set_value_raw(new_s, new_v);
-  // Prevent string deduplication from changing the 'value' field to
-  // something not in the archive before building the archive.  Also marks
-  // the shared string when loaded.
-  java_lang_String::set_deduplication_forbidden(new_s);
-  return new_s;
-}
-
-class CopyToArchive : StackObj {
+class EncodeSharedStringsAsOffsets : StackObj {
   CompactHashtableWriter* _writer;
 private:
   u4 compute_delta(oop s) {
@@ -792,34 +767,35 @@ private:
     return (u4)offset;
   }
 public:
-  CopyToArchive(CompactHashtableWriter* writer) : _writer(writer) {}
+  EncodeSharedStringsAsOffsets(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    unsigned int hash = java_lang_String::hash_code(s);
-    oop new_s = StringTable::create_archived_string(s);
-    if (new_s == nullptr) {
-      return true;
+    oop new_s = HeapShared::find_archived_heap_object(s);
+    if (new_s != nullptr) { // could be null if the string is too big
+      unsigned int hash = java_lang_String::hash_code(s);
+      if (UseCompressedOops) {
+        _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
+      } else {
+        _writer->add(hash, compute_delta(new_s));
+      }
     }
-
-    // add to the compact table
-    if (UseCompressedOops) {
-      _writer->add(hash, CompressedOops::narrow_oop_value(new_s));
-    } else {
-      _writer->add(hash, compute_delta(new_s));
-    }
-    return true;
+    return true; // keep iterating
   }
 };
 
-void StringTable::write_to_archive(const DumpedInternedStrings* dumped_interned_strings) {
+// Write the _shared_table (a CompactHashtable) into the CDS archive file.
+void StringTable::write_shared_table(const DumpedInternedStrings* dumped_interned_strings) {
   assert(HeapShared::can_write(), "must be");
 
   _shared_table.reset();
   CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
 
-  // Copy the interned strings into the "string space" within the java heap
-  CopyToArchive copier(&writer);
-  dumped_interned_strings->iterate(&copier);
+  // Encode the strings in the CompactHashtable using offsets -- we know that the
+  // strings will not move during runtime because they are inside the G1 closed
+  // archive region.
+  EncodeSharedStringsAsOffsets offset_finder(&writer);
+  dumped_interned_strings->iterate(&offset_finder);
+
   writer.dump(&_shared_table, "string");
 }
 

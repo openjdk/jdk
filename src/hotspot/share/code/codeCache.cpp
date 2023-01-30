@@ -867,6 +867,9 @@ void CodeCache::on_gc_marking_cycle_start() {
   ++_gc_epoch;
 }
 
+// Once started the code cache marking cycle must only be finished after marking of
+// the java heap is complete. Otherwise nmethods could appear to be not on stack even
+// if they have frames in continuation StackChunks that were not yet visited.
 void CodeCache::on_gc_marking_cycle_finish() {
   assert(is_gc_marking_cycle_active(), "Marking cycle started before last one finished");
   ++_gc_epoch;

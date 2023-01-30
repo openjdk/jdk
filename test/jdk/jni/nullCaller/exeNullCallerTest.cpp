@@ -52,9 +52,11 @@ void getBundle(JNIEnv* env) {
     // msg = b.getString("message");
     jstring msg = (jstring) m_ResourceBundle_getString.callReturnNotNull(b, env->NewStringUTF("message"));
 
-    if (std::string("Hello!") != env->GetStringUTFChars(msg, NULL)) {
+    const char* chars = env->GetStringUTFChars(msg, NULL);
+    if (std::string("Hello!") != chars) {
         emitErrorMessageAndExit("Bundle didn't contain expected content");
     }
+    env->ReleaseStringUTFChars(msg, chars);
 
     // ResourceBundle.clearCache()
     m_ResourceBundle_clearCache.callVoidMethod();

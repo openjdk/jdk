@@ -62,5 +62,6 @@ ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_options()
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_suppressions() {
   return
     // Remove after JDK-8297688 is resolved.
-    "leak:^JLI_MemAlloc$\n";
+    "leak:^JLI_MemAlloc$\n"
+    "leak:^JLI_StringDup$\n";
 }
