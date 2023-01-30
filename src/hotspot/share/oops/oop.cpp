@@ -40,9 +40,9 @@
 
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
-    st->print("BAD WORD");
+    st->print_cr("BAD WORD");
   } else if (*((juint*)this) == badMetaWordVal) {
-    st->print("BAD META WORD");
+    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
