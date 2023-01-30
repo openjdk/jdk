@@ -2397,7 +2397,7 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ z_ldr(Z_F8, Z_ftos);        // Save ftos.
   // Use -XX:StopInterpreterAt=<num> to set the limit
   // and break at breakpoint().
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, breakpoint), false);
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, os::breakpoint), false);
   __ z_lgr(Z_tos, Z_tmp_1);      // Restore tos.
   __ z_lgr(Z_bytecode, Z_tmp_2); // Save Z_bytecode.
   __ z_ldr(Z_ftos, Z_F8);        // Restore ftos.
