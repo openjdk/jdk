@@ -791,7 +791,7 @@ public:
   }
 
   // Use checked_resolve_jmethod_id() in situations where the caller
-  // should provide a valid jmethodID, but might not. null is returned
+  // should provide a valid jmethodID, but might not. Null is returned
   // when the jmethodID does not refer to a valid method.
   static Method* checked_resolve_jmethod_id(jmethodID mid);
 
