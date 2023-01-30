@@ -311,7 +311,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
   if (MemTracker::check_exceeds_limit(x, _flags)) {
-    return NULL;
+    return nullptr;
   }
 
   Chunk *k = _chunk;            // Get filled-up chunk address

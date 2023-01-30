@@ -705,7 +705,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     // Observe MallocLimit
     if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
-      return NULL;
+      return nullptr;
     }
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
