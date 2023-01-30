@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -199,9 +199,12 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   mov(rscratch1, len_in_bytes);
   lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
-  zero_words(t1, t2);
+  address tpc = zero_words(t1, t2);
 
   bind(done);
+  if (tpc == nullptr) {
+    Compilation::current()->bailout("no space for trampoline stub");
+  }
 }
 
 
@@ -228,10 +231,17 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
      if (var_size_in_bytes != noreg) {
        mov(index, var_size_in_bytes);
        initialize_body(obj, index, hdr_size_in_bytes, t1, t2);
+       if (Compilation::current()->bailed_out()) {
+         return;
+       }
      } else if (con_size_in_bytes > hdr_size_in_bytes) {
        con_size_in_bytes -= hdr_size_in_bytes;
        lea(t1, Address(obj, hdr_size_in_bytes));
-       zero_words(t1, con_size_in_bytes / BytesPerWord);
+       address tpc = zero_words(t1, con_size_in_bytes / BytesPerWord);
+       if (tpc == nullptr) {
+         Compilation::current()->bailout("no space for trampoline stub");
+         return;
+       }
      }
   }
 
@@ -267,6 +277,9 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   // clear rest of allocated space
   initialize_body(obj, arr_size, header_size * BytesPerWord, t1, t2);
+  if (Compilation::current()->bailed_out()) {
+    return;
+  }
 
   membar(StoreStore);
 

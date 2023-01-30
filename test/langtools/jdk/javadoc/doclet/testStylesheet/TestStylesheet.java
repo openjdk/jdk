@@ -49,8 +49,8 @@ import toolbox.ToolBox;
 public class TestStylesheet extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestStylesheet tester = new TestStylesheet();
-        tester.runTests(m -> new Object[] { Path.of(m.getName())});
+        var tester = new TestStylesheet();
+        tester.runTests();
     }
 
     @Test

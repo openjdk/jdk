@@ -91,16 +91,6 @@
   #endif
 #endif
 
-// Compiler-specific primitive types
-// All defs of int (uint16_6 etc) are defined in AIX' /usr/include/stdint.h
-
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // checking for nanness
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }

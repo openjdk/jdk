@@ -245,7 +245,7 @@ public class TextComponentPrintable implements CountingPrintable {
                     //the values do not matter
                     //we only need to get frames created
                     rendererPane.setSize(WIDTH, HEIGHT);
-                };
+                }
             };
         if (SwingUtilities.isEventDispatchThread()) {
             doCreateFrames.run();
