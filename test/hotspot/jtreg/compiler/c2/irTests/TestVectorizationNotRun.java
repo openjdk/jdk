@@ -32,6 +32,7 @@ import java.util.Random;
 /*
  * @test
  * @bug 8300256
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizationNotRun
