@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public:
       switch (t->basic_type()) {
       case T_LONG:    return long2_type();
       case T_DOUBLE:  return double2_type();
-      default:        ShouldNotReachHere(); return NULL;
+      default:        ShouldNotReachHere(); return nullptr;
       }
     }
 
@@ -333,16 +333,16 @@ public:
     }
     // pop_objArray and pop_typeArray narrow the tos to ciObjArrayKlass
     // or ciTypeArrayKlass (resp.).  In the rare case that an explicit
-    // null is popped from the stack, we return NULL.  Caller beware.
+    // null is popped from the stack, we return null.  Caller beware.
     ciObjArrayKlass* pop_objArray() {
       ciType* array = pop_value();
-      if (array == null_type())  return NULL;
+      if (array == null_type())  return nullptr;
       assert(array->is_obj_array_klass(), "must be object array type");
       return array->as_obj_array_klass();
     }
     ciTypeArrayKlass* pop_typeArray() {
       ciType* array = pop_value();
-      if (array == null_type())  return NULL;
+      if (array == null_type())  return nullptr;
       assert(array->is_type_array_klass(), "must be prim array type");
       return array->as_type_array_klass();
     }
@@ -501,8 +501,8 @@ public:
     int    _index;
     Block* _succ;
   public:
-    SuccIter()                        : _pred(NULL), _index(-1), _succ(NULL) {}
-    SuccIter(Block* pred)             : _pred(pred), _index(-1), _succ(NULL) { next(); }
+    SuccIter()                        : _pred(nullptr), _index(-1), _succ(nullptr) {}
+    SuccIter(Block* pred)             : _pred(pred), _index(-1), _succ(nullptr) { next(); }
     int    index()     { return _index; }
     Block* pred()      { return _pred; }           // Return predecessor
     bool   done()      { return _index < 0; }      // Finished?
@@ -593,7 +593,7 @@ public:
       assert(is_loop_head(), "only loop heads");
       // Find outermost loop with same loop head
       Loop* lp = loop();
-      while (lp->parent() != NULL) {
+      while (lp->parent() != nullptr) {
         if (lp->parent()->head() != lp->head()) break;
         lp = lp->parent();
       }
@@ -607,7 +607,7 @@ public:
                                       StateVector* state,
                                       JsrSet* jsrs);
     GrowableArray<Block*>* successors() {
-      assert(_successors != NULL, "must be filled in");
+      assert(_successors != nullptr, "must be filled in");
       return _successors;
     }
 
@@ -618,7 +618,7 @@ public:
 
     // Get the exceptional successors for this Block.
     GrowableArray<Block*>* exceptions() {
-      if (_exceptions == NULL) {
+      if (_exceptions == nullptr) {
         compute_exceptions();
       }
       return _exceptions;
@@ -627,7 +627,7 @@ public:
     // Get the exception klasses corresponding to the
     // exceptional successors for this Block.
     GrowableArray<ciInstanceKlass*>* exc_klasses() {
-      if (_exc_klasses == NULL) {
+      if (_exc_klasses == nullptr) {
         compute_exceptions();
       }
       return _exc_klasses;
@@ -703,7 +703,7 @@ public:
     Block* looping_succ(Loop* lp);       // Successor inside of loop
     bool   is_single_entry_loop_head() const {
       if (!is_loop_head()) return false;
-      for (Loop* lp = loop(); lp != NULL && lp->head() == this; lp = lp->parent())
+      for (Loop* lp = loop(); lp != nullptr && lp->head() == this; lp = lp->parent())
         if (lp->is_irreducible()) return false;
       return true;
     }
@@ -729,7 +729,7 @@ public:
 
   public:
     Loop(Block* head, Block* tail) :
-      _parent(NULL), _sibling(NULL), _child(NULL),
+      _parent(nullptr), _sibling(nullptr), _child(nullptr),
       _head(head),   _tail(tail),
       _irreducible(false), _def_locals(), _profiled_count(-1) {}
 
@@ -780,7 +780,7 @@ public:
     Loop* _current;
   public:
     PreorderLoops(Loop* root) : _root(root), _current(root) {}
-    bool done() { return _current == NULL; }  // Finished iterating?
+    bool done() { return _current == nullptr; }  // Finished iterating?
     void next();                            // Advance to next loop
     Loop* current() { return _current; }      // Return current loop.
   };
@@ -825,11 +825,11 @@ public:
   int backedge_copy_count(int ciBlockIndex, JsrSet* jsrs) const;
 
   // Return an existing block containing bci which has a JsrSet compatible
-  // with jsrs, or NULL if there is none.
+  // with jsrs, or null if there is none.
   Block* existing_block_at(int bci, JsrSet* set) { return block_at(bci, set, no_create); }
 
   // Tell whether the flow analysis has encountered an error of some sort.
-  bool failing() { return env()->failing() || _failure_reason != NULL; }
+  bool failing() { return env()->failing() || _failure_reason != nullptr; }
 
   // Reason this compilation is failing, such as "too many basic blocks".
   const char* failure_reason() { return _failure_reason; }
@@ -838,7 +838,7 @@ public:
   void record_failure(const char* reason);
 
   // Return the block of a given pre-order number.
-  int have_block_count() const      { return _block_map != NULL; }
+  int have_block_count() const      { return _block_map != nullptr; }
   int block_count() const           { assert(have_block_count(), "");
                                       return _next_pre_order; }
   Block* pre_order_at(int po) const { assert(0 <= po && po < block_count(), "out of bounds");
@@ -860,7 +860,7 @@ private:
   int _next_pre_order;
 
   // Are there more blocks on the work list?
-  bool work_list_empty() { return _work_list == NULL; }
+  bool work_list_empty() { return _work_list == nullptr; }
 
   // Get the next basic block from our work list.
   Block* work_list_next();

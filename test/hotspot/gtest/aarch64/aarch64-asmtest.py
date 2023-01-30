@@ -350,6 +350,67 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class SystemRegOp(Instruction):
+    def __init__(self, args):
+        name, self.system_reg = args
+        Instruction.__init__(self, name)
+        if self.system_reg == 'fpsr':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0100
+            self.op2 = 0b001
+        elif self.system_reg == 'dczid_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b111
+        elif self.system_reg == 'ctr_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b001
+        elif self.system_reg == 'nzcv':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0010
+            self.op2 = 0b000
+
+    def generate(self):
+        self.reg = [GeneralRegister().generate()]
+        return self
+
+class SystemOneRegOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(SystemOneRegOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(SystemOneRegOp, self).astr()
+                + '%s' % self.system_reg
+                + ', %s' % self.reg[0].astr(prefix))
+
+class OneRegSystemOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(OneRegSystemOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(OneRegSystemOp, self).astr()
+                + '%s' % self.reg[0].astr(prefix)
+                + ', %s' % self.system_reg)
+
 class PostfixExceptionOneRegOp(OneRegOp):
 
     def __init__(self, op):
@@ -1395,6 +1456,12 @@ generate (OneRegOp, ["br", "blr",
                      "paciza", "pacizb", "pacdza", "pacdzb",
                      "autiza", "autizb", "autdza", "autdzb", "xpacd",
                      "braaz", "brabz", "blraaz", "blrabz"])
+
+for system_reg in ["fpsr", "nzcv"]:
+    generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+    generate (OneRegSystemOp, [ ["mrs", system_reg] ])
 
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])

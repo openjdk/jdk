@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ public:
 
 // Second set of post evacuate collection set tasks containing (s means serial):
 // - Eagerly Reclaim Humongous Objects (s)
-// - Purge Code Roots (s)
 // - Reset Hot Card Cache (s)
 // - Update Derived Pointers (s)
 // - Clear Retained Region Bitmaps (on evacuation failure)
@@ -63,7 +62,6 @@ public:
 // - Free Collection Set
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
-  class PurgeCodeRootsTask;
   class ResetHotCardCacheTask;
 #if COMPILER2_OR_JVMCI
   class UpdateDerivedPointersTask;
@@ -81,4 +79,3 @@ public:
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
-

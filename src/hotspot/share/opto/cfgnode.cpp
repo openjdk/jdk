@@ -2895,7 +2895,7 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
         st->print(", ");
       }
       char buf[128];
-      ra->dump_register(n, buf);
+      ra->dump_register(n, buf, sizeof(buf));
       st->print("%s", buf);
     }
   }
