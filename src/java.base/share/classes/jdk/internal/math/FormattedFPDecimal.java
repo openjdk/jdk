@@ -73,6 +73,11 @@ public final class FormattedFPDecimal {
     }
 
     private FormattedFPDecimal plain(int prec) {
+        /*
+         * Rounding d = f 10^e to prec digits in plain mode means the same
+         * as rounding it to the p = n + e + prec most significand digits of d,
+         * with the understanding that p < 0 cuts off all its digits.
+         */
         round(n + e + (long) prec);  // n + e is well inside the int range
         return plainChars();
     }
@@ -110,6 +115,10 @@ public final class FormattedFPDecimal {
     }
 
     private FormattedFPDecimal scientific(int prec) {
+        /*
+         * Rounding d = f 10^e to prec digits in scientific mode means the same
+         * as rounding it to the p = prec + 1 most significand digits of d.
+         */
         round(prec + 1L);
         return scientificChars(prec);
     }
@@ -137,6 +146,12 @@ public final class FormattedFPDecimal {
     }
 
     private FormattedFPDecimal general(int prec) {
+        /*
+         * Rounding d = f 10^e to prec digits in general mode means the same
+         * as rounding it to the p = prec most significand digits of d, and then
+         * deciding whether to format it in plain or scientific mode, depending
+         * on the rounded value.
+         */
         round(prec);
         int er = getExponentRounded();
         if (-4 <= er && er < prec) {
