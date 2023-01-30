@@ -183,6 +183,7 @@ class markWord {
     return UseFastLocking && ((value() & lock_mask_in_place) == locked_value);
   }
   markWord set_fast_locked() const {
+    // Clear the lock_mask_in_place bits to set locked_value:
     return markWord(value() & ~lock_mask_in_place);
   }
 

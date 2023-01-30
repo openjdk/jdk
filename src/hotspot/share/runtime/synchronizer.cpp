@@ -560,8 +560,8 @@ void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* current) 
         markWord unlocked_header = mark.set_unlocked();
         markWord witness = object->cas_set_mark(unlocked_header, mark);
         if (witness != mark) {
-          // Another thread beat us and inflated the monitor, it can only
-          // have installed an anonymously locked monitor at this point.
+          // Another thread won the CAS, it must have inflated the monitor.
+          // It can only have installed an anonymously locked monitor at this point.
           // Fetch that monitor, set owner correctly to this thread, and
           // exit it (allowing waiting threads to enter).
           assert(witness.has_monitor(), "must have monitor");

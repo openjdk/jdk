@@ -75,6 +75,7 @@ inline bool LockStack::contains(oop o) const {
   size_t found_i = 0;
   for (oop* loc = _current - 1; loc >= _base; loc--) {
     if (*loc == o) {
+      validate("post-contains");
       return true;
     }
   }
