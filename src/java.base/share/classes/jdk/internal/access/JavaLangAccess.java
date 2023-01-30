@@ -566,17 +566,15 @@ public interface JavaLangAccess {
                                        Continuation continuation);
 
     /**
-     * Returns the length of the longest common prefix of a byte
-     * array range and the byte array produced when encoding a
-     * String in UTF-8.
+     * Returns the mismatch of a string and a given byte array range,
+     * as if the string was first encoded in UTF-8
      *
-     * If the encoded string matches the range exactly, the length
-     * of the range is returned. Otherwise, a number in the
-     * range [0 - len) is returned.
+     * See {@link Arrays#mismatch(byte[], int, int, byte[], int, int)} for the
+     * semantics of the parameters and return value of this method.
      *
      * While a general implementation will need to encode the String,
      * this can be avoided if the String coder is known to be UTF-8
      * compatible.
      */
-    int commonUTF8PrefixLength(String str, byte[] array, int off, int len);
+    int mismatchUTF8(String str, byte[] array, int fromIndex, int toIndex);
 }

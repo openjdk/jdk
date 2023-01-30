@@ -196,22 +196,19 @@ class ZipCoder {
     }
 
     /**
-     * Returns the length of the longest common prefix of a byte
-     * array range and a byte array produced when encoding a String
+     * Returns the mismatch of a string and a given byte array range,
+     * as if the string was first encoded in this ZipCoder's charset
      *
-     * If the encoded string matches the range exactly, the length
-     * of the range is returned. Otherwise, a number in the
-     * range [0 - len) is returned.
+     * See {@link Arrays#mismatch(byte[], int, int, byte[], int, int)} for the
+     * semantics of the parameters and return value of this method.
      *
      * While a general implementation will need to encode the String,
      * this can be avoided if the String coder is known and
      * matches the charset of this ZipCoder
      */
-    int commonPrefixLength(String str, byte[] cen, int off, int len) {
+    int mismatch(String str, byte[] b, int fromIndex, int toIndex) {
         byte[] encoded = getBytes(str);
-        len = Math.min(encoded.length, len);
-        int mismatch = ArraysSupport.mismatch(encoded, 0, cen, off, len);
-        return mismatch == -1 ? len : mismatch;
+        return Arrays.mismatch(encoded, 0, encoded.length, b, fromIndex, toIndex);
     }
     static final class UTF8ZipCoder extends ZipCoder {
 
@@ -269,8 +266,8 @@ class ZipCoder {
         }
 
         @Override
-        int commonPrefixLength(String str, byte[] cen, int off, int len) {
-            return JLA.commonUTF8PrefixLength(str, cen, off, len);
+        int mismatch(String str, byte[] b, int fromIndex, int toIndex) {
+            return JLA.mismatchUTF8(str, b, fromIndex, toIndex);
         }
     }
 }

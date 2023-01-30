@@ -1646,15 +1646,15 @@ public class ZipFile implements ZipConstants, Closeable {
                         int noff = pos + CENHDR;
                         int nlen = CENNAM(cen, pos);
 
-                        int prefix = zc.commonPrefixLength(name, cen, noff, nlen);
+                        int mismatch = zc.mismatch(name, cen, noff, noff + nlen);
 
                         // Exact match for "name"
-                        if (prefix == nlen) {
+                        if (mismatch == -1) {
                             return pos;
                         }
 
                         // If addSlash is true, we'll also test for "name/"
-                        if (addSlash && nlen == prefix + zc.slashLength() &&
+                        if (addSlash && nlen == mismatch + zc.slashLength() &&
                                 zc.hasTrailingSlash(cen, noff, nlen)) {
                             // Entries could exist for both "name/" and "name"
                             // Prefer an exact match

@@ -54,6 +54,7 @@ import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -2663,11 +2664,17 @@ public final class System {
             }
 
             @Override
-            public int commonUTF8PrefixLength(String str, byte[] buf, int off, int len) {
-                byte[] value = str.isLatin1() ? str.value() : str.getBytes(UTF_8.INSTANCE);
-                len = Math.min(value.length, len);
-                int mismatch = ArraysSupport.mismatch(value, 0, buf, off, len);
-                return mismatch == -1 ? len : mismatch;
+            public int mismatchUTF8(String str, byte[] b, int fromIndex, int toIndex) {
+                byte[] encoded = str.isLatin1() ? str.value() : str.getBytes(UTF_8.INSTANCE);
+                if (false) {
+                    // Arrays.mismatch without the range checks (~3% faster micro getEntryHit)
+                    int aLength = encoded.length;
+                    int bLength = toIndex - fromIndex;
+                    int length = Math.min(aLength, bLength);
+                    int i = ArraysSupport.mismatch(encoded, 0, b, fromIndex, length);
+                    return (i < 0 && aLength != bLength) ? length : i;
+                }
+                return Arrays.mismatch(encoded, 0, encoded.length, b, fromIndex, toIndex);
             }
         });
     }
