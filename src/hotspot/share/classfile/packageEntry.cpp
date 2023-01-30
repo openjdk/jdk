@@ -374,7 +374,7 @@ PackageEntry* PackageEntryTable::locked_lookup_only(Symbol* name) {
 // Verify the packages loaded thus far are in java.base's package list.
 void PackageEntryTable::verify_javabase_packages(GrowableArray<Symbol*> *pkg_list) {
   assert_lock_strong(Module_lock);
-  auto verifier = [&] (const SymbolHandle& name, PackageEntry*& entry) {
+  auto verifier = [&] (const SymbolHandle& name, PackageEntry* entry) {
     ModuleEntry* m = entry->module();
     Symbol* module_name = (m == nullptr ? nullptr : m->name());
     if (module_name != nullptr &&
@@ -410,7 +410,7 @@ bool PackageEntry::exported_pending_delete() const {
 // Remove dead entries from all packages' exported list
 void PackageEntryTable::purge_all_package_exports() {
   assert_locked_or_safepoint(Module_lock);
-  auto purge = [&] (const SymbolHandle& name, PackageEntry*& entry) {
+  auto purge = [&] (const SymbolHandle& name, PackageEntry* entry) {
     if (entry->exported_pending_delete()) {
       // exported list is pending deletion due to a transition
       // from qualified to unqualified
@@ -423,7 +423,7 @@ void PackageEntryTable::purge_all_package_exports() {
 }
 
 void PackageEntryTable::packages_do(void f(PackageEntry*)) {
-  auto doit = [&] (const SymbolHandle&name, PackageEntry*& entry) {
+  auto doit = [&] (const SymbolHandle&name, PackageEntry* entry) {
     f(entry);
   };
   assert_locked_or_safepoint(Module_lock);
@@ -433,7 +433,7 @@ void PackageEntryTable::packages_do(void f(PackageEntry*)) {
 
 GrowableArray<PackageEntry*>*  PackageEntryTable::get_system_packages() {
   GrowableArray<PackageEntry*>* loaded_class_pkgs = new GrowableArray<PackageEntry*>(50);
-  auto grab = [&] (const SymbolHandle& name, PackageEntry*& entry) {
+  auto grab = [&] (const SymbolHandle& name, PackageEntry* entry) {
     if (entry->has_loaded_class()) {
       loaded_class_pkgs->append(entry);
     }
@@ -446,7 +446,7 @@ GrowableArray<PackageEntry*>*  PackageEntryTable::get_system_packages() {
 }
 
 void PackageEntryTable::print(outputStream* st) {
-  auto printer = [&] (const SymbolHandle& name, PackageEntry*& entry) {
+  auto printer = [&] (const SymbolHandle& name, PackageEntry* entry) {
     entry->print(st);
   };
   st->print_cr("Package Entry Table (table_size=%d, entries=%d)",

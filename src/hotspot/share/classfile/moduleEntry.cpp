@@ -634,7 +634,7 @@ ModuleEntry* ModuleEntryTable::lookup_only(Symbol* name) {
 // This should only occur at class unloading.
 void ModuleEntryTable::purge_all_module_reads() {
   assert_locked_or_safepoint(Module_lock);
-  auto purge = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
+  auto purge = [&] (const SymbolHandle& key, ModuleEntry* entry) {
     entry->purge_reads();
   };
   _table.iterate_all(purge);
@@ -712,7 +712,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
 
 void ModuleEntryTable::print(outputStream* st) {
   ResourceMark rm;
-  auto printer = [&] (const SymbolHandle& name, ModuleEntry*& entry) {
+  auto printer = [&] (const SymbolHandle& name, ModuleEntry* entry) {
     entry->print(st);
   };
   st->print_cr("Module Entry Table (table_size=%d, entries=%d)",
@@ -722,7 +722,7 @@ void ModuleEntryTable::print(outputStream* st) {
 }
 
 void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
-  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry* entry) {
     f(entry);
   };
   assert_lock_strong(Module_lock);
@@ -730,7 +730,7 @@ void ModuleEntryTable::modules_do(void f(ModuleEntry*)) {
 }
 
 void ModuleEntryTable::modules_do(ModuleClosure* closure) {
-  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry* entry) {
     closure->do_module(entry);
   };
   assert_lock_strong(Module_lock);
@@ -749,7 +749,7 @@ void ModuleEntry::print(outputStream* st) {
 }
 
 void ModuleEntryTable::verify() {
-  auto do_f = [&] (const SymbolHandle& key, ModuleEntry*& entry) {
+  auto do_f = [&] (const SymbolHandle& key, ModuleEntry* entry) {
     entry->verify();
   };
   assert_locked_or_safepoint(Module_lock);

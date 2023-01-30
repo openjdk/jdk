@@ -259,11 +259,11 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   template<class ITER>
-  void iterate(ITER* iter) {
+  void mutable_iterate(ITER* iter) {
     auto function = [&] (K& k, V& v) {
       return iter->do_entry(k, v);
     };
-    iterate(function);
+    mutable_iterate(function);
   }
 
   template<typename Function>
@@ -272,7 +272,7 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   template<typename Function>
-  void iterate(Function function) { // lambda enabled API
+  void mutable_iterate(Function function) { // lambda enabled API
     iterate_impl(*this, function);
   }
 
@@ -287,12 +287,12 @@ class ResourceHashtableBase : public STORAGE {
   }
 
   template<typename Function>
-  void iterate_all(Function function) { // lambda enabled API
+  void mutable_iterate_all(Function function) { // lambda enabled API
     auto wrapper = [&] (K& k, V& v) {
       function(k, v);
       return true;
     };
-    iterate(wrapper);
+    mutable_iterate(wrapper);
   }
 
   // ITER contains bool do_entry(K const&, V const&), which will be

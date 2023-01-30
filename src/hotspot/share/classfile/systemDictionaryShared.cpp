@@ -690,7 +690,7 @@ void SystemDictionaryShared::dumptime_classes_do(class MetaspaceClosure* it) {
       key.metaspace_pointers_do(it);
     }
   };
-  _dumptime_lambda_proxy_class_dictionary->iterate_all(do_lambda);
+  _dumptime_lambda_proxy_class_dictionary->mutable_iterate_all(do_lambda);
 }
 
 bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
@@ -1226,7 +1226,7 @@ void SystemDictionaryShared::write_lambda_proxy_class_dictionary(LambdaProxyClas
   dictionary->reset();
   CompactHashtableWriter writer(_dumptime_lambda_proxy_class_dictionary->_count, &stats);
   CopyLambdaProxyClassInfoToArchive copy(&writer);
-  _dumptime_lambda_proxy_class_dictionary->iterate(&copy);
+  _dumptime_lambda_proxy_class_dictionary->mutable_iterate(&copy);
   writer.dump(dictionary, "lambda proxy class dictionary");
 }
 
@@ -1252,7 +1252,7 @@ void SystemDictionaryShared::write_to_archive(bool is_static_archive) {
 
 void SystemDictionaryShared::adjust_lambda_proxy_class_dictionary() {
   AdjustLambdaProxyClassInfo adjuster;
-  _dumptime_lambda_proxy_class_dictionary->iterate(&adjuster);
+  _dumptime_lambda_proxy_class_dictionary->mutable_iterate(&adjuster);
 }
 
 void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
@@ -1468,7 +1468,7 @@ class CloneDumpTimeLambdaProxyClassTable: StackObj {
     assert(_cloned_table != nullptr, "_cloned_table is nullptr");
   }
 
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
+  bool do_entry(const LambdaProxyClassKey& key, const DumpTimeLambdaProxyClassInfo& info) {
     assert_lock_strong(DumpTimeTable_lock);
     bool created;
     // make copies then store in _clone_table

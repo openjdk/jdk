@@ -126,7 +126,7 @@ void AsyncLogWriter::write() {
     swap(_buffer, _buffer_staging);
 
     // move counters to snapshot and reset them.
-    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+    _stats.mutable_iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
       if (counter > 0) {
         bool created = snapshot.put(output, counter);
         assert(created == true, "sanity check");
@@ -153,7 +153,7 @@ void AsyncLogWriter::write() {
 
   LogDecorations decorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
                              LogDecorators::All);
-  snapshot.iterate([&](LogFileStreamOutput* output, uint32_t& counter) {
+  snapshot.iterate([&](LogFileStreamOutput* output, uint32_t counter) {
     if (counter > 0) {
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);

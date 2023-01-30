@@ -167,7 +167,7 @@ void ProtectionDomainCacheTable::unlink() {
 
 void ProtectionDomainCacheTable::print_on(outputStream* st) {
   assert_locked_or_safepoint(SystemDictionary_lock);
-  auto printer = [&] (WeakHandle& key, WeakHandle& value) {
+  auto printer = [&] (const WeakHandle& key, const WeakHandle& value) {
       st->print_cr("  protection_domain: " PTR_FORMAT, p2i(value.peek()));
   };
   st->print_cr("Protection domain cache table (table_size=%d, protection domains=%d)",
@@ -176,7 +176,7 @@ void ProtectionDomainCacheTable::print_on(outputStream* st) {
 }
 
 void ProtectionDomainCacheTable::verify() {
-  auto verifier = [&] (WeakHandle& key, WeakHandle& value) {
+  auto verifier = [&] (const WeakHandle& key, const WeakHandle& value) {
     guarantee(value.peek() == nullptr || oopDesc::is_oop(value.peek()), "must be an oop");
   };
   _pd_cache_table.iterate_all(verifier);

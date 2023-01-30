@@ -54,7 +54,10 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) {
       }
     }
   };
-  DumpTimeSharedClassTableBaseType::iterate_all(wrapper);
+  // Some callers want to mutate 'info', so we do a mutable iterate.
+  // It seems like we never want to iterate over a `const DumpTimeSharedClassTable`,
+  // so for now we don't need a const overload of this function.
+  DumpTimeSharedClassTableBaseType::mutable_iterate_all(wrapper);
 }
 
 

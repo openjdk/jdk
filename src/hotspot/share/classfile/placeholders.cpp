@@ -333,7 +333,7 @@ void PlaceholderEntry::print_on(outputStream* st) const {
 }
 
 void PlaceholderTable::print_on(outputStream* st) {
-  auto printer = [&] (PlaceholderKey& key, PlaceholderEntry& entry) {
+  auto printer = [&] (const PlaceholderKey& key, const PlaceholderEntry& entry) {
       st->print("placeholder ");
       key.print_on(st);
       entry.print_on(st);

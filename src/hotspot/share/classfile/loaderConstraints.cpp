@@ -444,7 +444,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 
 void LoaderConstraintTable::verify() {
   Thread* thread = Thread::current();
-  auto check = [&] (SymbolHandle& key, ConstraintSet& set) {
+  auto check = [&] (const SymbolHandle& key, const ConstraintSet& set) {
     // foreach constraint in the set, check the klass is in the dictionary or placeholder table.
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
@@ -497,7 +497,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
 
 // Called with the system dictionary lock held
 void LoaderConstraintTable::print_on(outputStream* st) {
-  auto printer = [&] (SymbolHandle& key, ConstraintSet& set) {
+  auto printer = [&] (const SymbolHandle& key, const ConstraintSet& set) {
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);

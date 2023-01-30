@@ -1258,7 +1258,7 @@ class TagObjectCollector : public JvmtiTagMapKeyClosure {
   // - if it matches then we create a JNI local reference to the object
   // and record the reference and tag value.
   // Always return true so the iteration continues.
-  bool do_entry(JvmtiTagMapKey& key, jlong& value) {
+  bool do_entry(const JvmtiTagMapKey& key, jlong value) {
     for (int i = 0; i < _tag_count; i++) {
       if (_tags[i] == value) {
         // The reference in this tag map could be the only (implicitly weak)
