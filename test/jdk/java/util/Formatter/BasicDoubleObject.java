@@ -329,7 +329,7 @@ public class BasicDoubleObject extends Basic {
         test("%3.0e", "1e+08", 100000000.00);
 
         //---------------------------------------------------------------------
-        // %e - adoption of Double.toString(double) algorithm (8300869)
+        // %e - adoption of Double.toString(double) algorithm
         //---------------------------------------------------------------------
         test("%.1e", "9.9e-324", 1e-323);
         test("%.1e", "9.9e-323", 1e-322);
@@ -400,7 +400,7 @@ public class BasicDoubleObject extends Basic {
         test("%,3.0f", "100,000,000", 100000000.00);
 
         //---------------------------------------------------------------------
-        // %f - adoption of Double.toString(double) algorithm (8300869)
+        // %f - adoption of Double.toString(double) algorithm
         //---------------------------------------------------------------------
         test("%.0f", "738790000000000000000", 7.3879e20);
         test("%.0f", "100000000000000000000000", 1e23);
@@ -505,7 +505,7 @@ public class BasicDoubleObject extends Basic {
         tryCatch("%#3.0g", FormatFlagsConversionMismatchException.class, 1000.00);
 
         //---------------------------------------------------------------------
-        // %g - adoption of Double.toString(double) algorithm (8300869)
+        // %g - adoption of Double.toString(double) algorithm
         //---------------------------------------------------------------------
         test("%.2g", "9.9e-324", 1e-323);
         test("%.2g", "9.9e-323", 1e-322);
