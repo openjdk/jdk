@@ -622,10 +622,13 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * remote resources, particularly any which may have a lower level of
      * trust, is strongly discouraged.
      * The alternative mechanisms to load styles from an {@code InputStream}
-     * {@link load(InputStream, Class)}
-     * using a resource co-located with the application or by providing a
-     * {@code SynthStyleFactory} to {@link setStyleFactory} are preferred.
-     * Consequently this method is deprecated and will be removed in a future release.
+     * {@linkplain #load(InputStream, Class)}
+     * using resources co-located with the application or by providing a
+     * {@code SynthStyleFactory} to
+     * {@linkplain #setStyleFactory setStyleFactory(SynthStyleFactory)}
+     * are preferred.
+     * Consequently this method is deprecated and will be removed in a future
+     * release.
      *
      * @param url the <code>URL</code> to load the set of
      *     <code>SynthStyle</code> from
@@ -633,8 +636,8 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * @throws IllegalArgumentException if synthSet is <code>null</code>
      * @throws IOException if synthSet cannot be opened as an <code>InputStream</code>
      * @since 1.6
-     * @deprecated Use {@link load(InputStream, Class)} or
-     * {@link setStyleFactory} instead
+     * @deprecated Use {@link #load(InputStream, Class)} or
+     * {@link #setStyleFactory setStyleFactory(SynthStyleFactory)} instead
      */
     @Deprecated(since = "21", forRemoval = true)
     public void load(URL url) throws ParseException, IOException {
