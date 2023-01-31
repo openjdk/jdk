@@ -25,10 +25,10 @@
  * @test
  * @bug 8295019
  * @summary Cannot call a method with a parameter of a local class declared in a lambda
- * @compile LocalClassDeclaredInsideLambdaTest.java
+ * @compile TypeDeclarationInsideLambdaTest.java
  */
 
-class LocalClassDeclaredInsideLambdaTest {
+class TypeDeclarationInsideLambdaTest {
     void run(Runnable r) {}
 
     void m() {
