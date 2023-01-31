@@ -87,7 +87,7 @@ public class Debug {
         System.err.println("pkcs11keystore");
         System.err.println("              PKCS11 KeyStore debugging");
         System.err.println("pkcs12        PKCS12 KeyStore debugging");
-        System.err.println("properties    Prints which java.security Security Properties file that the JDK uses");
+        System.err.println("properties    Security property and configuration file debugging");
         System.err.println("sunpkcs11     SunPKCS11 provider debugging");
         System.err.println("scl           permissions SecureClassLoader assigns");
         System.err.println("securerandom  SecureRandom");
