@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@
  * @summary Testing NVRAM mapped byte buffer support
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
- * @requires ((os.arch == "x86_64")|(os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le"))
+ * @requires (os.arch == "x86_64")
  */
 
 import java.io.File;
