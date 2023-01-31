@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ private:
   virtual bool reserve(uintptr_t addr, size_t size) {
     const uintptr_t res = ZMapper::reserve(addr, size);
 
-    assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+    assert(res == addr || res == nullptr, "Should not reserve other memory than requested");
     return res == addr;
   }
 
@@ -162,7 +162,7 @@ private:
   virtual bool reserve(uintptr_t addr, size_t size) {
     const uintptr_t res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
 
-    assert(res == addr || res == NULL, "Should not reserve other memory than requested");
+    assert(res == addr || res == nullptr, "Should not reserve other memory than requested");
     return res == addr;
   }
 
@@ -171,7 +171,7 @@ private:
   }
 };
 
-static ZVirtualMemoryManagerImpl* _impl = NULL;
+static ZVirtualMemoryManagerImpl* _impl = nullptr;
 
 void ZVirtualMemoryManager::pd_initialize_before_reserve() {
   if (ZLargePages::is_enabled()) {
