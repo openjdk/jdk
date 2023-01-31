@@ -112,12 +112,11 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
 }
 
 void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
-                                                HeapWord* gen_boundary,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate(sp, gen_boundary, urasm, cl, this);
+  non_clean_card_iterate(sp, urasm, cl, this);
 }
 
 #ifdef ASSERT
@@ -441,7 +440,6 @@ void CardTableRS::initialize() {
 }
 
 void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
-                                         HeapWord* gen_boundary,
                                          MemRegion mr,
                                          OopIterateClosure* cl,
                                          CardTableRS* ct)
@@ -451,7 +449,7 @@ void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
   }
   // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, gen_boundary);
+  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl);
   ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
 
   clear_cl.do_MemRegion(mr);
