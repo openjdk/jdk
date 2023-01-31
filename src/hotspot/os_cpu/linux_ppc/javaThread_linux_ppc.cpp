@@ -70,7 +70,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.
       // Bail out because this will create big trouble later on, either
-      //  - when using istate, calculated as (null - ijava_state_size) or
+      //  - when using istate, calculated as (nullptr - ijava_state_size) or
       //  - when using fp() directly in safe_for_sender()
       //
       // There is no conclusive description (yet) how this could happen, but it does.
