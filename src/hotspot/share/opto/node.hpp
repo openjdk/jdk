@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -712,8 +712,8 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
-      DEFINE_CLASS_ID(Con,      Type, 19)
-          DEFINE_CLASS_ID(ConI,     Con, 0)
+      DEFINE_CLASS_ID(Con, Type, 8)
+          DEFINE_CLASS_ID(ConI, Con, 0)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)

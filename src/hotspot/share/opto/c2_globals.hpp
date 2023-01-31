@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -620,7 +620,7 @@
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering"                         \
-          "=XY, with Y: verify Def-Use modifications during sparse IGVN"    \
+          "=XY, with Y: verify Def-Use modifications during IGVN"           \
           "          X: verify that type(n) == n->Value() after IGVN"       \
           "X and Y in 0=off; 1=on")                                         \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
