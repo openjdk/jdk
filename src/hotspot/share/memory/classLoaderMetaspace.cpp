@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,8 +50,8 @@ using metaspace::InternalStats;
 ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType space_type) :
   _lock(lock),
   _space_type(space_type),
-  _non_class_space_arena(NULL),
-  _class_space_arena(NULL)
+  _non_class_space_arena(nullptr),
+  _class_space_arena(nullptr)
 {
   ChunkManager* const non_class_cm =
           ChunkManager::chunkmanager_nonclass();
@@ -98,7 +98,7 @@ MetaWord* ClassLoaderMetaspace::allocate(size_t word_size, Metaspace::MetadataTy
 }
 
 // Attempt to expand the GC threshold to be good for at least another word_size words
-// and allocate. Returns NULL if failure. Used during Metaspace GC.
+// and allocate. Returns null if failure. Used during Metaspace GC.
 MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace::MetadataType mdType) {
   size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size * BytesPerWord);
   assert(delta_bytes > 0, "Must be");
@@ -115,7 +115,7 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
   do {
     incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before, &can_retry);
     res = allocate(word_size, mdType);
-  } while (!incremented && res == NULL && can_retry);
+  } while (!incremented && res == nullptr && can_retry);
 
   if (incremented) {
     Metaspace::tracer()->report_gc_threshold(before, after,
@@ -141,20 +141,20 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_c
 
 // Update statistics. This walks all in-use chunks.
 void ClassLoaderMetaspace::add_to_statistics(metaspace::ClmsStats* out) const {
-  if (non_class_space_arena() != NULL) {
+  if (non_class_space_arena() != nullptr) {
     non_class_space_arena()->add_to_statistics(&out->_arena_stats_nonclass);
   }
-  if (class_space_arena() != NULL) {
+  if (class_space_arena() != nullptr) {
     class_space_arena()->add_to_statistics(&out->_arena_stats_class);
   }
 }
 
 #ifdef ASSERT
 void ClassLoaderMetaspace::verify() const {
-  if (non_class_space_arena() != NULL) {
+  if (non_class_space_arena() != nullptr) {
     non_class_space_arena()->verify();
   }
-  if (class_space_arena() != NULL) {
+  if (class_space_arena() != nullptr) {
     class_space_arena()->verify();
   }
 }
@@ -167,16 +167,16 @@ void ClassLoaderMetaspace::verify() const {
 void ClassLoaderMetaspace::calculate_jfr_stats(size_t* p_used_bytes, size_t* p_capacity_bytes) const {
   // Implement this using the standard statistics objects.
   size_t used_c = 0, cap_c = 0, used_nc = 0, cap_nc = 0;
-  if (non_class_space_arena() != NULL) {
-    non_class_space_arena()->usage_numbers(&used_nc, NULL, &cap_nc);
+  if (non_class_space_arena() != nullptr) {
+    non_class_space_arena()->usage_numbers(&used_nc, nullptr, &cap_nc);
   }
-  if (class_space_arena() != NULL) {
-    class_space_arena()->usage_numbers(&used_c, NULL, &cap_c);
+  if (class_space_arena() != nullptr) {
+    class_space_arena()->usage_numbers(&used_c, nullptr, &cap_c);
   }
-  if (p_used_bytes != NULL) {
+  if (p_used_bytes != nullptr) {
     *p_used_bytes = used_c + used_nc;
   }
-  if (p_capacity_bytes != NULL) {
+  if (p_capacity_bytes != nullptr) {
     *p_capacity_bytes = cap_c + cap_nc;
   }
 }

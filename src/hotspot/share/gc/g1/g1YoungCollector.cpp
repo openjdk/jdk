@@ -1020,7 +1020,6 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->record_obj_copy_mem_stats();
 
-  evacuation_info->set_collection_set_used_before(collection_set()->bytes_used_before());
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
 
   _g1h->start_new_collection_set();

@@ -35,6 +35,7 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 class oopDesc;
@@ -189,6 +190,7 @@ FORBID_C_FUNCTION(void exit(int), "use os::exit");
 FORBID_C_FUNCTION(void _exit(int), "use os::exit");
 FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
 
@@ -524,6 +526,13 @@ T2 checked_cast(T1 thing) {
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
+
+// Additional Java basic types
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
 
 // Unsigned byte types for os and stream.hpp
 

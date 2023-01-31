@@ -168,7 +168,7 @@ size_t MutableNUMASpace::free_in_words() const {
 
 
 size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     // This case can occur after the topology of the system has
@@ -193,7 +193,7 @@ size_t MutableNUMASpace::tlab_capacity(Thread *thr) const {
 
 size_t MutableNUMASpace::tlab_used(Thread *thr) const {
   // Please see the comments for tlab_capacity().
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     if (lgrp_spaces()->length() > 0) {
@@ -213,7 +213,7 @@ size_t MutableNUMASpace::tlab_used(Thread *thr) const {
 
 size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   // Please see the comments for tlab_capacity().
-  guarantee(thr != NULL, "No thread");
+  guarantee(thr != nullptr, "No thread");
   int lgrp_id = thr->lgrp_id();
   if (lgrp_id == -1) {
     if (lgrp_spaces()->length() > 0) {
@@ -230,24 +230,6 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *thr) const {
   return lgrp_spaces()->at(i)->space()->free_in_bytes();
 }
 
-
-size_t MutableNUMASpace::capacity_in_words(Thread* thr) const {
-  guarantee(thr != NULL, "No thread");
-  int lgrp_id = thr->lgrp_id();
-  if (lgrp_id == -1) {
-    if (lgrp_spaces()->length() > 0) {
-      return capacity_in_words() / lgrp_spaces()->length();
-    } else {
-      assert(false, "There should be at least one locality group");
-      return 0;
-    }
-  }
-  int i = lgrp_spaces()->find(&lgrp_id, LGRPSpace::equals);
-  if (i == -1) {
-    return 0;
-  }
-  return lgrp_spaces()->at(i)->space()->capacity_in_words();
-}
 
 // Check if the NUMA topology has changed. Add and remove spaces if needed.
 // The update can be forced by setting the force parameter equal to true.
@@ -605,8 +587,8 @@ void MutableNUMASpace::initialize(MemRegion mr,
   if (!old_region.equals(region())) {
     new_region = MemRegion(rounded_bottom, rounded_end);
     MemRegion intersection = new_region.intersection(old_region);
-    if (intersection.start() == NULL ||
-        intersection.end() == NULL   ||
+    if (intersection.start() == nullptr ||
+        intersection.end() == nullptr   ||
         prev_page_size > page_size()) { // If the page size got smaller we have to change
                                         // the page size preference for the whole space.
       intersection = MemRegion(new_region.start(), new_region.start());
@@ -681,7 +663,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
     MemRegion intersection = old_region.intersection(new_region);
 
-    if (intersection.start() == NULL || intersection.end() == NULL) {
+    if (intersection.start() == nullptr || intersection.end() == nullptr) {
       intersection = MemRegion(new_region.start(), new_region.start());
     }
 
@@ -801,19 +783,19 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   LGRPSpace *ls = lgrp_spaces()->at(i);
   MutableSpace *s = ls->space();
   HeapWord *p = s->cas_allocate(size);
-  if (p != NULL) {
+  if (p != nullptr) {
     size_t remainder = pointer_delta(s->end(), p + size);
     if (remainder < CollectedHeap::min_fill_size() && remainder > 0) {
       if (s->cas_deallocate(p, size)) {
         // We were the last to allocate and created a fragment less than
         // a minimal object.
-        p = NULL;
+        p = nullptr;
       } else {
         guarantee(false, "Deallocation should always succeed");
       }
     }
   }
-  if (p != NULL) {
+  if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
       if (Atomic::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
@@ -823,12 +805,12 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   }
 
   // Make the page allocation happen here if there is no static binding.
-  if (p != NULL && !os::numa_has_static_binding() ) {
+  if (p != nullptr && !os::numa_has_static_binding() ) {
     for (HeapWord *i = p; i < p + size; i += os::vm_page_size() >> LogHeapWordSize) {
       *(int*)i = 0;
     }
   }
-  if (p == NULL) {
+  if (p == nullptr) {
     ls->set_allocation_failed();
   }
   return p;
@@ -929,7 +911,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
   char *s = scan_start;
   while (s < scan_end) {
     char *e = os::scan_pages(s, (char*)scan_end, &page_expected, &page_found);
-    if (e == NULL) {
+    if (e == nullptr) {
       break;
     }
     if (e != scan_end) {
