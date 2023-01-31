@@ -309,6 +309,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                         }
                     }
                 };
+
        future = new FutureTask<T>(callable);
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);
@@ -549,6 +550,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * {@inheritDoc}
      */
     public final boolean cancel(boolean mayInterruptIfRunning) {
+        setState(StateValue.DONE);
         return future.cancel(mayInterruptIfRunning);
     }
 
@@ -563,7 +565,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
      * {@inheritDoc}
      */
     public final boolean isDone() {
-        return future.isDone();
+        return future.isDone() && state == StateValue.DONE;
     }
 
     /**
