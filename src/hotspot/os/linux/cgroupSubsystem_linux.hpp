@@ -166,7 +166,7 @@ PRAGMA_DIAG_POP
   int err;                                                                \
   err = subsystem_file_line_contents(subsystem,                           \
                                      filename,                            \
-                                     nullptr,                                \
+                                     nullptr,                             \
                                      scan_fmt,                            \
                                      &variable);                          \
   if (err != 0) {                                                         \
@@ -184,11 +184,11 @@ PRAGMA_DIAG_POP
   int err;                                                                \
   err = subsystem_file_line_contents(subsystem,                           \
                                      filename,                            \
-                                     nullptr,                                \
+                                     nullptr,                             \
                                      scan_fmt,                            \
                                      variable);                           \
   if (err != 0)                                                           \
-    return (return_type) nullptr;                                            \
+    return (return_type) nullptr;                                         \
                                                                           \
   log_trace(os, container)(logstring, variable);                          \
 }

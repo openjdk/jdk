@@ -2167,14 +2167,14 @@ bool os::Linux::print_container_info(outputStream* st) {
   st->print_cr("container (cgroup) information:");
 
   const char *p_ct = OSContainer::container_type();
-  st->print_cr("container_type: %s", p_ct != null ? p_ct : "not supported");
+  st->print_cr("container_type: %s", p_ct != nullptr ? p_ct : "not supported");
 
   char *p = OSContainer::cpu_cpuset_cpus();
-  st->print_cr("cpu_cpuset_cpus: %s", p != null ? p : "not supported");
+  st->print_cr("cpu_cpuset_cpus: %s", p != nullptr ? p : "not supported");
   free(p);
 
   p = OSContainer::cpu_cpuset_memory_nodes();
-  st->print_cr("cpu_memory_nodes: %s", p != null ? p : "not supported");
+  st->print_cr("cpu_memory_nodes: %s", p != nullptr ? p : "not supported");
   free(p);
 
   int i = OSContainer::active_processor_count();
@@ -3309,7 +3309,7 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
 }
 
 // Allocate (using mmap, NO_RESERVE, with small pages) at either a given request address
-//   (req_addr != null) or with a given alignment.
+//   (req_addr != nullptr) or with a given alignment.
 //  - bytes shall be a multiple of alignment.
 //  - req_addr can be null. If not null, it must be a multiple of alignment.
 //  - alignment sets the alignment at which memory shall be allocated.
@@ -3837,7 +3837,7 @@ static char* shmat_large_pages(int shmid, size_t bytes, size_t alignment, char* 
   }
 
   // Since shmid has been setup with SHM_HUGETLB, shmat will automatically
-  // return large page size aligned memory addresses when req_addr == null.
+  // return large page size aligned memory addresses when req_addr == nullptr.
   // However, if the alignment is larger than the large page size, we have
   // to manually ensure that the memory returned is 'alignment' aligned.
   if (alignment > os::large_page_size()) {
