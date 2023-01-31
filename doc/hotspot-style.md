@@ -668,11 +668,11 @@ may only be used to align variables with static or automatic storage duration
 ([C++14 3.7.1, 3.7.3](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
 As a consequence, _over-aligned types_ are forbidden; this may change if
 HotSpot updates to using C++17 or later
-[p0035r4](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html).
+([p0035r4](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0035r4.html)).
 
 Large _extended alignments_ should be avoided, particularly for stack
-allocated objects.  What is a large value may depend on the platform and
-configuration.  There may also be hard limits for some platforms.
+allocated objects. What is a large value may depend on the platform and
+configuration. There may also be hard limits for some platforms.
 
 An _alignment-specifier_ must always be applied to a definition
 ([C++14 10.6.2/6](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2014/n4296.pdf)).
@@ -684,13 +684,13 @@ declaration, so such duplication should be avoided in HotSpot code.)
 Enumerations are forbidden from having _alignment-specifiers_. Aligned
 enumerations were originally permitted but insufficiently specified, and were
 later (C++20) removed
-[CWG 2354](https://cplusplus.github.io/CWG/issues/2354.html).
+([CWG 2354](https://cplusplus.github.io/CWG/issues/2354.html)).
 Permitting such usage in HotSpot now would just cause problems in the future.
 
 _Alignment-specifiers_ are forbidden in `typedef` and _alias-declarations_.
 This may work or may have worked in some versions of some compilers, but was
 later (C++14) explicitly disallowed
-[CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html).
+([CWG 1437](https://cplusplus.github.io/CWG/issues/1437.html)).
 
 The HotSpot macro `ATTRIBUTE_ALIGNED` provides similar capabilities for
 platforms that define it. This macro predates the use by HotSpot of C++

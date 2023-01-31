@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,11 @@ public class SimpleOCSPServer {
     private boolean logEnabled = false;
     private ExecutorService threadPool;
     private volatile boolean started = false;
-    private volatile boolean serverReady = false;
+    private CountDownLatch serverReady = new CountDownLatch(1);
     private volatile boolean receivedShutdown = false;
     private volatile boolean acceptConnections = true;
     private volatile long delayMsec = 0;
+    private boolean omitContentLength = false;
 
     // Fields used in the generation of responses
     private long nextUpdateInterval = -1;
@@ -216,13 +217,14 @@ public class SimpleOCSPServer {
                             listenPort), 128);
                     log("Listening on " + servSocket.getLocalSocketAddress());
 
-                    // Singal ready
-                    serverReady = true;
-
                     // Update the listenPort with the new port number.  If
                     // the server is restarted, it will bind to the same
                     // port rather than picking a new one.
                     listenPort = servSocket.getLocalPort();
+
+                    // Decrement the latch, allowing any waiting entities
+                    // to proceed with their requests.
+                    serverReady.countDown();
 
                     // Main dispatch loop
                     while (!receivedShutdown) {
@@ -257,7 +259,7 @@ public class SimpleOCSPServer {
                     // Reset state variables so the server can be restarted
                     receivedShutdown = false;
                     started = false;
-                    serverReady = false;
+                    serverReady = new CountDownLatch(1);
                 }
             }
         });
@@ -497,7 +499,7 @@ public class SimpleOCSPServer {
      * server has not yet been bound to a port.
      */
     public int getPort() {
-        if (serverReady) {
+        if (serverReady.getCount() == 0) {
             InetSocketAddress inetSock =
                     (InetSocketAddress)servSocket.getLocalSocketAddress();
             return inetSock.getPort();
@@ -507,12 +509,21 @@ public class SimpleOCSPServer {
     }
 
     /**
-     * Use to check if OCSP server is ready to accept connection.
+     * Allow SimpleOCSPServer consumers to wait for the server to be in
+     * the ready state before sending requests.
      *
-     * @return true if server ready, false otherwise
+     * @param timeout the length of time to wait for the server to be ready
+     * @param unit the unit of time applied to the timeout parameter
+     *
+     * @return true if the server enters the ready state, false if the
+     *      timeout period elapses while the caller is waiting for the server
+     *      to become ready.
+     *
+     * @throws InterruptedException if the current thread is interrupted.
      */
-    public boolean isServerReady() {
-        return serverReady;
+    public boolean awaitServerReady(long timeout, TimeUnit unit)
+            throws InterruptedException {
+        return serverReady.await(timeout, unit);
     }
 
     /**
@@ -528,6 +539,19 @@ public class SimpleOCSPServer {
             log("OCSP latency set to " + delayMsec + " milliseconds.");
         } else {
             log("OCSP latency disabled");
+        }
+    }
+
+    /**
+     * Setting to control whether HTTP responses have the Content-Length
+     * field asserted or not.
+     *
+     * @param isDisabled true if the Content-Length field should not be
+     *        asserted, false otherwise.
+     */
+    public void setDisableContentLength(boolean isDisabled) {
+        if (!started) {
+            omitContentLength = isDisabled;
         }
     }
 
@@ -776,8 +800,11 @@ public class SimpleOCSPServer {
 
             sb.append("HTTP/1.0 200 OK\r\n");
             sb.append("Content-Type: application/ocsp-response\r\n");
-            sb.append("Content-Length: ").append(respBytes.length);
-            sb.append("\r\n\r\n");
+            if (!omitContentLength) {
+                sb.append("Content-Length: ").append(respBytes.length).
+                        append("\r\n");
+            }
+            sb.append("\r\n");
 
             out.write(sb.toString().getBytes("UTF-8"));
             out.write(respBytes);

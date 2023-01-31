@@ -44,10 +44,9 @@ void G1MonotonicArenaMemoryStats::clear() {
 }
 
 void G1MonotonicArenaFreePool::update_unlink_processors(G1ReturnMemoryProcessorSet* unlink_processor) {
-  uint num_free_lists = _freelist_pool.num_free_lists();
 
-  for (uint i = 0; i < num_free_lists; i++) {
-    unlink_processor->at(i)->visit_free_list(_freelist_pool.free_list(i));
+  for (uint i = 0; i < num_free_lists(); i++) {
+    unlink_processor->at(i)->visit_free_list(free_list(i));
   }
 }
 
@@ -148,8 +147,6 @@ bool G1MonotonicArenaFreePool::G1ReturnMemoryProcessor::return_to_os(jlong deadl
   return _first != nullptr;
 }
 
-G1MonotonicArenaFreePool G1MonotonicArenaFreePool::_freelist_pool(G1CardSetConfiguration::num_mem_object_types());
-
 G1MonotonicArenaFreePool::G1MonotonicArenaFreePool(uint num_free_lists) :
   _num_free_lists(num_free_lists) {
 
@@ -184,8 +181,8 @@ size_t G1MonotonicArenaFreePool::mem_size() const {
   return result;
 }
 
-void G1MonotonicArenaFreePool::print_on(outputStream* out) {
-  out->print_cr("  Free Pool: size %zu", free_list_pool()->mem_size());
+void G1MonotonicArenaFreePool::print_on(outputStream* out) const {
+  out->print_cr("  Free Pool: size %zu", mem_size());
   for (uint i = 0; i < _num_free_lists; i++) {
     FormatBuffer<> fmt("    %s", G1CardSetConfiguration::mem_object_type_name_str(i));
     _free_lists[i].print_on(out, fmt);

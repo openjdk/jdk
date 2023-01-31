@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -555,10 +555,10 @@ Java_sun_font_FreetypeFontScaler_createScalerContextNative(
         ptsz = 1.0;
     }
     context->ptsz = (int)(ptsz * 64);
-    context->transform.xx =  FloatToFTFixed((float)dmat[0]/ptsz);
-    context->transform.yx = -FloatToFTFixed((float)dmat[1]/ptsz);
-    context->transform.xy = -FloatToFTFixed((float)dmat[2]/ptsz);
-    context->transform.yy =  FloatToFTFixed((float)dmat[3]/ptsz);
+    context->transform.xx =  FloatToFTFixed((float)(dmat[0]/ptsz));
+    context->transform.yx = -FloatToFTFixed((float)(dmat[1]/ptsz));
+    context->transform.xy = -FloatToFTFixed((float)(dmat[2]/ptsz));
+    context->transform.yy =  FloatToFTFixed((float)(dmat[3]/ptsz));
     context->aaType = aa;
     context->fmType = fm;
 

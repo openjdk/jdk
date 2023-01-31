@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,9 +105,11 @@ class PlaceholderEntry {
 
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername) {
-    Symbol::maybe_decrement_refcount(_supername);
-    _supername = supername;
-    Symbol::maybe_increment_refcount(_supername);
+    if (supername != _supername) {
+      Symbol::maybe_decrement_refcount(_supername);
+      _supername = supername;
+      Symbol::maybe_increment_refcount(_supername);
+    }
   }
   void               clear_supername() {
     Symbol::maybe_decrement_refcount(_supername);
@@ -130,15 +132,15 @@ class PlaceholderEntry {
   void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
 
   bool super_load_in_progress() {
-     return (_superThreadQ != NULL);
+     return (_superThreadQ != nullptr);
   }
 
   bool instance_load_in_progress() {
-    return (_loadInstanceThreadQ != NULL);
+    return (_loadInstanceThreadQ != nullptr);
   }
 
   bool define_class_in_progress() {
-    return (_defineThreadQ != NULL);
+    return (_defineThreadQ != nullptr);
   }
 
   // Used for ClassCircularityError checking

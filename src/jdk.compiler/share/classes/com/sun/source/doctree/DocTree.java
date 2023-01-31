@@ -227,7 +227,7 @@ public interface DocTree {
         SPEC("spec"),
 
         /**
-         * Used for instances of {@link EndElementTree}
+         * Used for instances of {@link StartElementTree}
          * representing the start of an HTML element.
          */
         START_ELEMENT,

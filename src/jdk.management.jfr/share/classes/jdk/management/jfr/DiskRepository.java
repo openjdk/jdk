@@ -49,6 +49,7 @@ import java.util.Queue;
 
 import jdk.jfr.internal.management.ChunkFilename;
 import jdk.jfr.internal.management.ManagementSupport;
+import jdk.jfr.internal.management.StreamBarrier;
 
 final class DiskRepository implements Closeable {
 
@@ -126,6 +127,7 @@ final class DiskRepository implements Closeable {
     private final ByteBuffer buffer = ByteBuffer.allocate(256);
     private final Path directory;
     private final ChunkFilename chunkFilename;
+    private final StreamBarrier barrier = new StreamBarrier();
 
     private RandomAccessFile raf;
     private RandomAccessFile previousRAF;
@@ -137,7 +139,7 @@ final class DiskRepository implements Closeable {
     private long typeId;
     private int typeIdshift;
     private int sizeShift;
-    private int payLoadSize;
+    private long payLoadSize;
     private int longValueshift;
     private int eventFieldSize;
     private int lastFlush;
@@ -153,6 +155,7 @@ final class DiskRepository implements Closeable {
     }
 
     public synchronized void write(byte[] bytes) throws IOException {
+        barrier.check();
         index = 0;
         lastFlush = 0;
         currentByteArray = bytes;
@@ -222,7 +225,7 @@ final class DiskRepository implements Closeable {
     private void processEvent() {
         int left = currentByteArray.length - index;
         if (left >= payLoadSize) {
-            index += payLoadSize;
+            index = index + (int)payLoadSize;
             payLoadSize = 0;
             state = State.EVENT_SIZE;
         } else {
@@ -258,7 +261,7 @@ final class DiskRepository implements Closeable {
 
         eventFieldSize++;
         byte b = nextByte(false);
-        int v = (b & 0x7F);
+        long v = (b & 0x7F);
         payLoadSize += (v << sizeShift);
         if (b >= 0) {
             if (payLoadSize == 0) {
@@ -345,6 +348,10 @@ final class DiskRepository implements Closeable {
             long endTimeNanos = currentChunk.startTimeNanos + durationNanos;
             currentChunk.endTimeNanos = endTimeNanos;
             currentChunk.endTime = ManagementSupport.epochNanosToInstant(endTimeNanos);
+            if (currentChunk.endTime.toEpochMilli() == barrier.getStreamEnd()) {
+                // Recording has been stopped, need to complete last chunk
+                completePrevious(currentChunk);
+            }
         }
         raf.seek(position);
     }
@@ -511,5 +518,10 @@ final class DiskRepository implements Closeable {
             fileDumps.add(fd);
         }
         return fd;
+    }
+
+    public StreamBarrier activateStreamBarrier() {
+        barrier.activate();
+        return barrier;
     }
 }

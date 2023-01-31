@@ -88,7 +88,7 @@ final class Config {
     private static final boolean DEBUG = false;
 
     // file name containing this configuration
-    private String filename;
+    private final String filename;
 
     // Reader and StringTokenizer used during parsing
     private Reader reader;
@@ -479,15 +479,12 @@ final class Config {
             }
             case "nssDbMode"-> {
                 String mode = parseStringEntry(st.sval);
-                if (mode.equals("readWrite")) {
-                    nssDbMode = Secmod.DbMode.READ_WRITE;
-                } else if (mode.equals("readOnly")) {
-                    nssDbMode = Secmod.DbMode.READ_ONLY;
-                } else if (mode.equals("noDb")) {
-                    nssDbMode = Secmod.DbMode.NO_DB;
-                } else {
-                    throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
-                }
+                nssDbMode = switch (mode) {
+                    case "readWrite" -> Secmod.DbMode.READ_WRITE;
+                    case "readOnly" -> Secmod.DbMode.READ_ONLY;
+                    case "noDb" -> Secmod.DbMode.NO_DB;
+                    default -> throw excToken("nssDbMode must be one of readWrite, readOnly, and noDb:");
+                };
                 nssUseSecmod = true;
             }
             case "nssNetscapeDbWorkaround"-> {
@@ -516,7 +513,7 @@ final class Config {
         if (name == null) {
             throw new ConfigurationException("name must be specified");
         }
-        if (nssUseSecmod == false) {
+        if (!nssUseSecmod) {
             if (library == null) {
                 throw new ConfigurationException("library must be specified");
             }
@@ -533,7 +530,7 @@ final class Config {
                 throw new ConfigurationException
                     ("nssArgs must not be specified in NSS mode");
             }
-            if (nssUseSecmodTrust != false) {
+            if (nssUseSecmodTrust) {
                 throw new ConfigurationException("nssUseSecmodTrust is an "
                     + "internal option and must not be specified in NSS mode");
             }
@@ -623,14 +620,11 @@ final class Config {
 
     private boolean parseBoolean() throws IOException {
         String val = parseWord();
-        switch (val) {
-            case "true":
-                return true;
-            case "false":
-                return false;
-            default:
-                throw excToken("Expected boolean value, read:");
-        }
+        return switch (val) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> throw excToken("Expected boolean value, read:");
+        };
     }
 
     private String parseLine() throws IOException {
@@ -688,7 +682,7 @@ final class Config {
     }
 
     private byte[] decodeByteArray(String str) throws IOException {
-        if (str.startsWith("0h") == false) {
+        if (!str.startsWith("0h")) {
             throw excToken("Expected byte array value, read");
         }
         str = str.substring(2);
@@ -833,7 +827,7 @@ final class Config {
         int token = nextToken();
         if (token == '=') {
             String s = parseWord();
-            if (s.equals("compatibility") == false) {
+            if (!s.equals("compatibility")) {
                 throw excLine("Expected 'compatibility', read " + s);
             }
             setCompatibilityAttributes();
@@ -964,16 +958,12 @@ final class Config {
 
     private String parseOperation() throws IOException {
         String op = parseWord();
-        switch (op) {
-            case "*":
-                return TemplateManager.O_ANY;
-            case "generate":
-                return TemplateManager.O_GENERATE;
-            case "import":
-                return TemplateManager.O_IMPORT;
-            default:
-                throw excLine("Unknown operation " + op);
-        }
+        return switch (op) {
+            case "*" -> TemplateManager.O_ANY;
+            case "generate" -> TemplateManager.O_GENERATE;
+            case "import" -> TemplateManager.O_IMPORT;
+            default -> throw excLine("Unknown operation " + op);
+        };
     }
 
     private long parseObjectClass() throws IOException {
@@ -1044,15 +1034,12 @@ final class Config {
         checkDup(keyword);
         parseEquals();
         String val = parseWord();
-        if (val.equals("ignoreAll")) {
-            handleStartupErrors = ERR_IGNORE_ALL;
-        } else if (val.equals("ignoreMissingLibrary")) {
-            handleStartupErrors = ERR_IGNORE_LIB;
-        } else if (val.equals("halt")) {
-            handleStartupErrors = ERR_HALT;
-        } else {
-            throw excToken("Invalid value for handleStartupErrors:");
-        }
+        handleStartupErrors = switch (val) {
+            case "ignoreAll" -> ERR_IGNORE_ALL;
+            case "ignoreMissingLibrary" -> ERR_IGNORE_LIB;
+            case "halt" -> ERR_HALT;
+            default -> throw excToken("Invalid value for handleStartupErrors:");
+        };
         if (DEBUG) {
             System.out.println("handleStartupErrors: " + handleStartupErrors);
         }

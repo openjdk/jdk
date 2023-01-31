@@ -701,23 +701,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Does nothing.
-     *
-     * @return false
-     *
-     * @param b ignored
-     *
-     * @deprecated This method was originally intended for controlling suspension
-     *             in low memory conditions. It was never specified.
-     *
-     * @since   1.1
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public boolean allowThreadSuspension(boolean b) {
-        return false;
-    }
-
-    /**
      * Returns a string representation of this Thread group.
      *
      * @return  a string representation of this thread group.

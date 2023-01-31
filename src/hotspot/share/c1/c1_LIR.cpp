@@ -194,7 +194,7 @@ void LIR_Op2::verify() const {
              "can't produce oops from arith");
   }
 
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
 
 #ifdef ASSERT
     bool threeOperandForm = false;

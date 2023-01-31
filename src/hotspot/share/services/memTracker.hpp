@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class MemTracker : AllStatic {
 
   static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
     const NativeCallStack& stack) {
-    assert(mem_base != NULL, "caller should handle NULL");
+    assert(mem_base != nullptr, "caller should handle null");
     if (enabled()) {
       return MallocTracker::record_malloc(mem_base, size, flag, stack);
     }
@@ -105,11 +105,15 @@ class MemTracker : AllStatic {
   // Record malloc free and return malloc base address
   static inline void* record_free(void* memblock) {
     // Never turned on
-    assert(memblock != NULL, "caller should handle NULL");
+    assert(memblock != nullptr, "caller should handle null");
     if (!enabled()) {
       return memblock;
     }
-    return MallocTracker::record_free(memblock);
+    return MallocTracker::record_free_block(memblock);
+  }
+  static inline void deaccount(MallocHeader::FreeInfo free_info) {
+    assert(enabled(), "NMT must be enabled");
+    MallocTracker::deaccount(free_info);
   }
 
   // Record creation of an arena
@@ -138,7 +142,7 @@ class MemTracker : AllStatic {
     MEMFLAGS flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
     }
@@ -148,7 +152,7 @@ class MemTracker : AllStatic {
     const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
@@ -159,7 +163,7 @@ class MemTracker : AllStatic {
     const NativeCallStack& stack) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -174,7 +178,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
     }
@@ -183,7 +187,7 @@ class MemTracker : AllStatic {
   static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
     }
@@ -192,7 +196,7 @@ class MemTracker : AllStatic {
   static void record_thread_stack(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadStackTracker::new_thread_stack((address)addr, size, CALLER_PC);
     }
   }
@@ -200,7 +204,7 @@ class MemTracker : AllStatic {
   static inline void release_thread_stack(void* addr, size_t size) {
     assert_post_init();
     if (!enabled()) return;
-    if (addr != NULL) {
+    if (addr != nullptr) {
       ThreadStackTracker::delete_thread_stack((address)addr, size);
     }
   }
@@ -209,7 +213,7 @@ class MemTracker : AllStatic {
   // So far, it is only used by JCmd query, but it may be used by
   // other tools.
   static inline Mutex* query_lock() {
-    assert(NMTQuery_lock != NULL, "not initialized!");
+    assert(NMTQuery_lock != nullptr, "not initialized!");
     return NMTQuery_lock;
   }
 

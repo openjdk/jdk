@@ -237,11 +237,6 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop
 }
 
 template <ChunkFrames frame_kind>
-inline intptr_t* StackChunkFrameStream<frame_kind>::next_sp() const {
-  return is_interpreted() ? next_sp_for_interpreter_frame() : unextended_sp() + cb()->frame_size();
-}
-
-template <ChunkFrames frame_kind>
 inline void StackChunkFrameStream<frame_kind>::get_cb() {
   _oopmap = nullptr;
   if (is_done() || is_interpreted()) {
@@ -333,20 +328,6 @@ inline address StackChunkFrameStream<frame_kind>::orig_pc() const {
 
   return pc1;
 }
-
-template <ChunkFrames frame_kind>
-inline int StackChunkFrameStream<frame_kind>::to_offset(stackChunkOop chunk) const {
-  assert(!is_done(), "");
-  return _sp - chunk->start_address();
-}
-
-#ifdef ASSERT
-template <ChunkFrames frame_kind>
-bool StackChunkFrameStream<frame_kind>::is_deoptimized() const {
-  address pc1 = pc();
-  return is_compiled() && CodeCache::find_oopmap_slot_fast(pc1) < 0 && cb()->as_compiled_method()->is_deopt_pc(pc1);
-}
-#endif
 
 template<ChunkFrames frame_kind>
 void StackChunkFrameStream<frame_kind>::handle_deopted() const {

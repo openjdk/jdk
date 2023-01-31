@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ void HotSpotJVMCI::compute_offset(int &dest_offset, Klass* klass, const char* na
   InstanceKlass* ik = InstanceKlass::cast(klass);
   Symbol* name_symbol = SymbolTable::probe(name, (int)strlen(name));
   Symbol* signature_symbol = SymbolTable::probe(signature, (int)strlen(signature));
-  if (name_symbol == NULL || signature_symbol == NULL) {
+  if (name_symbol == nullptr || signature_symbol == nullptr) {
 #ifndef PRODUCT
     ik->print_on(tty);
 #endif
@@ -97,8 +97,8 @@ void HotSpotJVMCI::compute_offset(int &dest_offset, Klass* klass, const char* na
 
 #ifndef PRODUCT
 static void check_resolve_method(const char* call_type, Klass* resolved_klass, Symbol* method_name, Symbol* method_signature, TRAPS) {
-  Method* method = NULL;
-  LinkInfo link_info(resolved_klass, method_name, method_signature, NULL, LinkInfo::AccessCheck::skip, LinkInfo::LoaderConstraintCheck::skip);
+  Method* method = nullptr;
+  LinkInfo link_info(resolved_klass, method_name, method_signature, nullptr, LinkInfo::AccessCheck::skip, LinkInfo::LoaderConstraintCheck::skip);
   if (strcmp(call_type, "call_static") == 0) {
     method = LinkResolver::resolve_static_call_or_null(link_info);
   } else if (strcmp(call_type, "call_virtual") == 0) {
@@ -108,7 +108,7 @@ static void check_resolve_method(const char* call_type, Klass* resolved_klass, S
   } else {
     fatal("Unknown or unsupported call type: %s", call_type);
   }
-  if (method == NULL) {
+  if (method == nullptr) {
     fatal("Could not resolve %s.%s%s", resolved_klass->external_name(), method_name->as_C_string(), method_signature->as_C_string());
   }
 }
@@ -199,11 +199,11 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
     return resolve(object)->is_a(className::klass());                                   \
   }                                                                                     \
   void HotSpotJVMCI::className::check(oop obj, const char* field_name, int offset) {    \
-    assert(obj != NULL, "NULL field access of %s.%s", #className, field_name); \
+    assert(obj != nullptr, "null field access of %s.%s", #className, field_name);       \
     assert(obj->is_a(className::klass()), "wrong class, " #className " expected, found %s", obj->klass()->external_name()); \
     assert(offset != 0, "must be valid offset");                                        \
   }                                                                                     \
-  InstanceKlass* HotSpotJVMCI::className::_klass = NULL;
+  InstanceKlass* HotSpotJVMCI::className::_klass = nullptr;
 
 #define END_CLASS
 
@@ -225,28 +225,28 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
 #define STATIC_OBJECTARRAY_FIELD(className, name, signature) STATIC_OOPISH_FIELD(className, name, objArrayOop)
 #define STATIC_OOPISH_FIELD(className, name, type)                                                                        \
     type HotSpotJVMCI::className::name(JVMCIEnv* env) {                                                                   \
-      assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       oop result = HeapAccess<>::oop_load_at(base, className::_##name##_offset);                                          \
       return type(result);                                                                                                \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, type x) {                                                     \
-      assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
-      assert(className::klass() != NULL, "Class not yet loaded: " #className);                                            \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
+      assert(className::klass() != nullptr, "Class not yet loaded: " #className);                                         \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       HeapAccess<>::oop_store_at(base, className::_##name##_offset, x);                                                   \
     }
 #define STATIC_PRIMITIVE_FIELD(className, name, jtypename)                                                                \
     jtypename HotSpotJVMCI::className::get_##name(JVMCIEnv* env) {                                                        \
-      assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       return *base->field_addr<jtypename>(className::_##name##_offset);                                                   \
     }                                                                                                                     \
     void HotSpotJVMCI::className::set_##name(JVMCIEnv* env, jtypename x) {                                                \
-      assert(className::klass() != NULL && className::klass()->is_linked(), "Class not yet linked: " #className);         \
+      assert(className::klass() != nullptr && className::klass()->is_linked(), "Class not yet linked: " #className);      \
       InstanceKlass* ik = className::klass();                                                                             \
       oop base = ik->static_field_base_raw();                                                                             \
       *base->field_addr<jtypename>(className::_##name##_offset) = x;                                                      \
@@ -266,7 +266,7 @@ void HotSpotJVMCI::compute_offsets(TRAPS) {
  *  oop HotSpotJVMCI::Architecture::wordKind(JVMCIEnv* env, oop obj) { ... }
  * void HotSpotJVMCI::Architecture::set_wordKind(JVMCIEnv* env, oop obj, oop x) { ... }
  *
- * InstanceKlass *HotSpotJVMCI::Architecture::_klass = NULL;
+ * InstanceKlass *HotSpotJVMCI::Architecture::_klass = nullptr;
  */
 JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, PRIMARRAY_FIELD, OBJECTARRAY_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECTARRAY_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)
 
@@ -296,7 +296,7 @@ JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, L
  * this ensures the declaring class is initialized.
  */
 void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz, const char* class_name, const char* name, const char* signature, bool static_field) {
-  if (JVMCILibDumpJNIConfig != NULL) {
+  if (JVMCILibDumpJNIConfig != nullptr) {
     fileStream* st = JVMCIGlobals::get_jni_config_file();
     st->print_cr("field %s %s %s", class_name, name, signature);
     return;
@@ -346,7 +346,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
       JVMCI_event_2(" jclass for %s = " PTR_FORMAT, current_class_name, p2i(k));            \
       /* SVM guarantees that jclass handles to classes in a native image are also */        \
       /* in the image. Further calling NewGlobalRef on such a handle returns a stable */    \
-      /* values across all JavaVMs executing on the same native image. */                   \
+      /* value across all JavaVMs executing on the same native image. */                    \
       if (current != nullptr) {                                                             \
            fatal("jclass for %s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,             \
            current_class_name, p2i(current), p2i(k));                                       \
@@ -355,7 +355,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
     }                                                                                       \
   }
 
-#define END_CLASS current_class_name = NULL; }
+#define END_CLASS current_class_name = nullptr; }
 
 #define FIELD(className, name, signature, static_field) initialize_field_id(env, className::_##name##_field_id, className::_class, current_class_name, #name, signature, static_field);
 #define CHAR_FIELD(className, name) FIELD(className, name, "C", false)
@@ -419,21 +419,21 @@ class ThrowableInitDumper : public SymbolClosure {
   void do_symbol(Symbol** p) {
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
     Symbol* name = *p;
-    if (name == NULL) {
+    if (name == nullptr) {
       return;
     }
     Klass* k = SystemDictionary::resolve_or_null(name, CHECK_EXIT);
-    if (k != NULL && k->is_instance_klass()) {
+    if (k != nullptr && k->is_instance_klass()) {
       InstanceKlass* iklass = InstanceKlass::cast(k);
       if (iklass->is_subclass_of(vmClasses::Throwable_klass()) && iklass->is_public() && !iklass->is_abstract()) {
-        const char* class_name = NULL;
+        const char* class_name = nullptr;
         Array<Method*>* methods = iklass->methods();
         for (int i = 0; i < methods->length(); i++) {
           Method* m = methods->at(i);
           if (m->name() == vmSymbols::object_initializer_name() &&
               m->is_public() &&
               (m->signature() == vmSymbols::void_method_signature() || m->signature() == vmSymbols::string_void_signature())) {
-            if (class_name == NULL) {
+            if (class_name == nullptr) {
               class_name = name->as_C_string();
               _st->print_cr("class %s", class_name);
             }
@@ -451,7 +451,7 @@ class ThrowableInitDumper : public SymbolClosure {
  */
 void JNIJVMCI::initialize_ids(JNIEnv* env) {
   ResourceMark rm;
-  const char* current_class_name = NULL;
+  const char* current_class_name = nullptr;
   JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, OBJECT_FIELD, OBJECT_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECT_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)
 
   IN_CLASS(java_lang_Class);
@@ -486,11 +486,11 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 
 #define DO_BOX_CLASS(klass, basicType, type) \
   current_class_name = "java/lang/" #klass;                                                                       \
-  if (JVMCILibDumpJNIConfig == NULL) {                                                                            \
+  if (JVMCILibDumpJNIConfig == nullptr) {                                                                         \
     _box_classes[basicType] = env->FindClass("java/lang/" #klass);                                                \
     JVMCI_EXCEPTION_CHECK(env, "FindClass(%s)", #klass);                                                          \
     _box_classes[basicType] = (jclass) env->NewGlobalRef(_box_classes[basicType]);                                \
-    assert(_box_classes[basicType] != NULL, "uninitialized");                                                     \
+    assert(_box_classes[basicType] != nullptr, "uninitialized");                                                  \
     _box_fields[basicType] = env->GetFieldID(_box_classes[basicType], "value", #type);                            \
     JVMCI_EXCEPTION_CHECK(env, "GetFieldID(%s, value, %s)", #klass, #type);                                       \
     GET_JNI_METHOD(GetMethodID, _box_constructors[basicType], _box_classes[basicType], "<init>", "(" #type ")V"); \
@@ -502,11 +502,11 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 
   BOX_CLASSES(DO_BOX_CLASS);
 
-  if (JVMCILibDumpJNIConfig == NULL) {
+  if (JVMCILibDumpJNIConfig == nullptr) {
     _byte_array = env->FindClass("[B");
     JVMCI_EXCEPTION_CHECK(env, "FindClass([B)");
     _byte_array = (jclass) env->NewGlobalRef(_byte_array);
-    assert(_byte_array != NULL, "uninitialized");
+    assert(_byte_array != nullptr, "uninitialized");
   } else {
     fileStream* st = JVMCIGlobals::get_jni_config_file();
     st->print_cr("class [B");
@@ -525,7 +525,7 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
   }                                                                                                                 \
 } while(0)
 
-  if (JVMCILibDumpJNIConfig != NULL) {
+  if (JVMCILibDumpJNIConfig != nullptr) {
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
     fileStream* st = JVMCIGlobals::get_jni_config_file();
 
@@ -548,7 +548,7 @@ void JNIJVMCI::initialize_ids(JNIEnv* env) {
 }
 
 static void register_natives_for_class(JNIEnv* env, jclass clazz, const char* name, const JNINativeMethod *methods, jint nMethods) {
-  if (clazz == NULL) {
+  if (clazz == nullptr) {
     clazz = env->FindClass(name);
     if (env->ExceptionCheck()) {
       env->ExceptionDescribe();
@@ -567,7 +567,7 @@ void JNIJVMCI::register_natives(JNIEnv* env) {
     JNINativeMethod CompilerToVM_nmethods[] = {{ CC"registerNatives", CC"()V", FN_PTR(JVM_RegisterJVMCINatives) }};
     JNINativeMethod JVMCI_nmethods[] = {{ CC"initializeRuntime",   CC"()Ljdk/vm/ci/runtime/JVMCIRuntime;", FN_PTR(JVM_GetJVMCIRuntime) }};
 
-    register_natives_for_class(env, NULL, "jdk/vm/ci/hotspot/CompilerToVM", CompilerToVM_nmethods, 1);
+    register_natives_for_class(env, nullptr, "jdk/vm/ci/hotspot/CompilerToVM", CompilerToVM_nmethods, 1);
     register_natives_for_class(env, JVMCI::clazz(), "jdk/vm/ci/runtime/JVMCI", JVMCI_nmethods, 1);
   }
 }
@@ -621,11 +621,11 @@ JVMCI_CLASSES_DO(EMPTY2, EMPTY0, FIELD2, FIELD2, FIELD2, FIELD2, FIELD2, FIELD3,
     return jni()->IsInstanceOf(object.as_jobject(), className::clazz()) != 0;                                                     \
   }                                                                                                                               \
   void JNIJVMCI::className::check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset) {                 \
-    assert(obj.is_non_null(), "NULL field access of %s.%s", #className, field_name);                                     \
-    assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj)); \
+    assert(obj.is_non_null(), "null field access of %s.%s", #className, field_name);                                              \
+    assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj));          \
     assert(offset != 0, "must be valid offset");                                                                                  \
   }                                                                                                                               \
-  jclass JNIJVMCI::className::_class = NULL;
+  jclass JNIJVMCI::className::_class = nullptr;
 
 #define END_CLASS
 
