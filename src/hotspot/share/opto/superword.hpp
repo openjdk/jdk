@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -536,12 +536,17 @@ class SuperWord : public ResourceObj {
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
+  // Given p1.last == p2.first, check if we have a reduction,
+  // or all new nodes in p2 are independent with all from p1.
+  bool can_combine_packs(Node_List* p1, Node_List* p2);
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
   // Merge CMove into new vector-nodes
   void merge_packs_to_cmove();
+  // Verify the consistency between dependence_graph and the PackSet (no cycle in PackSet)
+  DEBUG_ONLY(void verify_packs();)
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

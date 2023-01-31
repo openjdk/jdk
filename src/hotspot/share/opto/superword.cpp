@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -539,6 +539,8 @@ bool SuperWord::SLP_extract() {
     }
 
     filter_packs();
+
+    DEBUG_ONLY(verify_packs();)
 
     schedule();
 
@@ -1715,11 +1717,15 @@ void SuperWord::combine_packs() {
       for (int j = i + 1; j < _packset.length(); j++) {
         Node_List* p2 = _packset.at(j);
         if (p2 == NULL) continue;
-        if (i == j) continue;
+        assert(i != j, "sanity"); // TODO remove
+        if (i == j) continue; // TODO remove
         if (p1->at(p1->size()-1) == p2->at(0)) {
-          for (uint k = 1; k < p2->size(); k++) {
-            p1->push(p2->at(k));
+          if (can_combine_packs(p1, p2)) {
+            for (uint k = 1; k < p2->size(); k++) {
+              p1->push(p2->at(k));
+            }
           }
+          // remove p2, if it was combined or rejected
           _packset.at_put(j, NULL);
           changed = true;
         }
@@ -1770,11 +1776,30 @@ void SuperWord::combine_packs() {
   }
 }
 
+//----------------------------can_combine_packs---------------------------
+// Given p1.last == p2.first, check if we have a reduction,
+// or all new nodes in p2 are independent with all from p1.
+bool SuperWord::can_combine_packs(Node_List* p1, Node_List* p2) {
+  assert(p1 != nullptr && p2 != nullptr && p1 != p2, "must be two different packs");
+  assert(p1->at(p1->size()-1) == p2->at(0), "must link: p1.last == p2.first");
+  if (p1->at(0)->is_reduction()) {
+    return true; // reduction
+  }
+  // Check that all new nodes in p2 are independent to all nodes in p1
+  for (uint k1 = 0; k1 < p1->size(); k1++) {
+    for (uint k2 = 1; k2 < p2->size(); k2++) {
+      if (!independent(p1->at(k1), p2->at(k2))) {
+        return false; // dependence found
+      }
+    }
+  }
+  return true; // no dependence found
+}
+
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_packs).
 void SuperWord::construct_my_pack_map() {
-  Node_List* rslt = NULL;
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     for (uint j = 0; j < p->size(); j++) {
@@ -2203,6 +2228,113 @@ bool SuperWord::profitable(Node_List* p) {
   }
   return true;
 }
+
+#ifdef ASSERT
+void SuperWord::verify_packs() {
+  if (TraceSuperWord) {
+    tty->print_cr("\nVerify packset with the dependence_graph.");
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* p = _packset.at(i);
+      tty->print_cr("Pack: %d", i);
+      print_pack(p); // print all nodes in pack
+      for (uint j = 0; j < p->size(); j++) {
+        Node* n = p->at(j);
+        DepMem* d = _dg.dep(n);
+        if (d != nullptr) {
+          d->print(); // and the dependence_graph
+        }
+      }
+    }
+  }
+
+  // Build a packset graph.
+  // Have edge (p, p') if any "def" \in p, "use" \in p': "def" \in use->DepPreds
+  // If these edges for a directed cycle, we have a failure and cannot schedule.
+  ResourceMark rm;
+  int m = _packset.length();
+  GrowableArray<GrowableArray<int>> packset_in(m);  // pack id -> input pack ids
+  GrowableArray<GrowableArray<int>> packset_out(m); // pack id -> output pack ids
+  for (int i_use = 0; i_use < _packset.length(); i_use++) {
+    packset_in.push(GrowableArray<int>());
+    packset_out.push(GrowableArray<int>());
+  }
+
+  for (int i_use = 0; i_use < _packset.length(); i_use++) {
+    Node_List* p_use = _packset.at(i_use);
+    for (int i_def = 0; i_def < _packset.length(); i_def++) {
+      Node_List* p_def = _packset.at(i_def);
+      bool need_edge = false;
+      for (uint j_use = 0; j_use < p_use->size(); j_use++) {
+        Node* use = p_use->at(j_use);
+        for (DepPreds preds(use, _dg); !preds.done(); preds.next()) {
+          Node* pred = preds.current();
+          if (!in_bb(pred)) {
+            continue; // outside block -> ignore
+          }
+          if (my_pack(pred) != p_def) {
+            continue; // not in a pack, or wrong pack -> ignorue
+          }
+          if (use->is_reduction() && pred->is_reduction() && i_use == i_def) {
+            if (TraceSuperWord) {
+              tty->print_cr("verify: reduction pack[%d], N%d -> N%d",
+                            i_use, pred->_idx, use->_idx);
+            }
+            continue; // nodes in same pack, reduction -> self cycle allowed -> ignore
+          }
+          need_edge = true;
+          if (TraceSuperWord) {
+            tty->print_cr("verify: edge pack[%d] -> pack[%d], N%d -> N%d",
+                          i_def, i_use, pred->_idx, use->_idx);
+          }
+        }
+      }
+      if (need_edge) {
+        packset_in.at(i_use).push(i_def);
+        packset_out.at(i_def).push(i_use);
+      }
+    }
+  }
+
+  if (TraceSuperWord) {
+    tty->print_cr("Resulting packset graph:");
+    for (int i_use = 0; i_use < packset_in.length(); i_use++) {
+      tty->print("  %d (", i_use);
+      for (int j = 0; j < packset_in.at(i_use).length(); j++) {
+        tty->print("%d ", packset_in.at(i_use).at(j));
+      }
+      tty->print(") [");
+      for (int j = 0; j < packset_out.at(i_use).length(); j++) {
+        tty->print("%d ", packset_out.at(i_use).at(j));
+      }
+      tty->print_cr("]");
+    }
+  }
+
+  // Try to schedule the packs with topological sort, let's hope we find no cycles.
+  GrowableArray<int> worklist;
+  // Directly schedule all packs that have no precedence.
+  for (int i = 0; i < packset_in.length(); i++) {
+    if (packset_in.at(i).is_empty()) { // no precedence
+      worklist.push(i); // schedule i
+    }
+  }
+  // Continue scheduling by removing the already scheduled nodes from the remaining graph.
+  for (int i = 0; i < worklist.length(); i++) {
+    int p = worklist.at(i);
+    if (TraceSuperWord) {
+      tty->print_cr("verify: schedule pack[%d]", p);
+    }
+    for (int j = 0; j < packset_out.at(p).length(); j++){
+      int p_use = packset_out.at(p).at(j);
+      packset_in.at(p_use).remove(p); // p_use loses p as precedence
+      if (packset_in.at(p_use).is_empty()) {
+        worklist.push(p_use); // p_use just lost the last precedence (it was p)
+      }
+    }
+  }
+  assert(worklist.length() ==  _packset.length(), "no cycle in pack dependencies");
+}
+#endif
 
 //------------------------------schedule---------------------------
 // Adjust the memory graph for the packed operations
@@ -4022,7 +4154,11 @@ void SuperWord::print_packset() {
   for (int i = 0; i < _packset.length(); i++) {
     tty->print_cr("Pack: %d", i);
     Node_List* p = _packset.at(i);
-    print_pack(p);
+    if (p == nullptr) {
+      tty->print_cr("  nullptr");
+    } else {
+      print_pack(p);
+    }
   }
 #endif
 }
