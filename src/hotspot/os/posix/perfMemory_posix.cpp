@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -55,7 +55,7 @@
 # include <sys/file.h>
 #endif
 
-static char* backing_store_file_name = NULL;  // name of the backing store
+static char* backing_store_file_name = nullptr;  // name of the backing store
                                               // file, if successfully created.
 
 // Standard Memory Implementation Details
@@ -67,8 +67,8 @@ static char* create_standard_memory(size_t size) {
   // allocate an aligned chuck of memory
   char* mapAddress = os::reserve_memory(size);
 
-  if (mapAddress == NULL) {
-    return NULL;
+  if (mapAddress == nullptr) {
+    return nullptr;
   }
 
   // commit memory
@@ -77,7 +77,7 @@ static char* create_standard_memory(size_t size) {
       warning("Could not commit PerfData memory\n");
     }
     os::release_memory(mapAddress, size);
-    return NULL;
+    return nullptr;
   }
 
   return mapAddress;
@@ -183,7 +183,7 @@ static pid_t filename_to_pid(const char* filename) {
   // check if file name can be converted to an integer without
   // any leftover characters.
   //
-  char* remainder = NULL;
+  char* remainder = nullptr;
   errno = 0;
   pid_t pid = (pid_t)strtol(filename, &remainder, 10);
 
@@ -194,7 +194,7 @@ static pid_t filename_to_pid(const char* filename) {
   // check for left over characters. If any, then the filename is
   // not a candidate for conversion.
   //
-  if (remainder != NULL && *remainder != '\0') {
+  if (remainder != nullptr && *remainder != '\0') {
     return 0;
   }
 
@@ -307,7 +307,7 @@ static DIR *open_directory_secure(const char* dirname) {
   // introduce a window of opportunity for the directory to be attacked that
   // calling opendir() and is_directory_secure() does.
   int result;
-  DIR *dirp = NULL;
+  DIR *dirp = nullptr;
   RESTARTABLE(::open(dirname, O_RDONLY|O_NOFOLLOW), result);
   if (result == OS_ERR) {
     // Directory doesn't exist or is a symlink, so there is nothing to cleanup.
@@ -331,7 +331,7 @@ static DIR *open_directory_secure(const char* dirname) {
 
   // Open the directory.
   dirp = ::opendir(dirname);
-  if (dirp == NULL) {
+  if (dirp == nullptr) {
     // The directory doesn't exist, close fd and return.
     ::close(fd);
     return dirp;
@@ -342,7 +342,7 @@ static DIR *open_directory_secure(const char* dirname) {
     // The directory is not secure.
     ::close(fd);
     os::closedir(dirp);
-    dirp = NULL;
+    dirp = nullptr;
     return dirp;
   }
 
@@ -366,7 +366,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
 
   // Open the directory.
   DIR* dirp = open_directory_secure(dirname);
-  if (dirp == NULL) {
+  if (dirp == nullptr) {
     // Directory doesn't exist or is insecure, so there is nothing to cleanup.
     return dirp;
   }
@@ -394,7 +394,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
     }
     // Close the directory.
     os::closedir(dirp);
-    return NULL;
+    return nullptr;
   } else {
     return dirp;
   }
@@ -457,19 +457,19 @@ static char* get_user_name(uid_t uid) {
 
   char* pwbuf = NEW_C_HEAP_ARRAY(char, bufsize, mtInternal);
 
-  struct passwd* p = NULL;
+  struct passwd* p = nullptr;
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
-  if (result != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
+  if (result != 0 || p == nullptr || p->pw_name == nullptr || *(p->pw_name) == '\0') {
     if (PrintMiscellaneous && Verbose) {
       if (result != 0) {
         warning("Could not retrieve passwd entry: %s\n",
                 os::strerror(result));
       }
-      else if (p == NULL) {
+      else if (p == nullptr) {
         // this check is added to protect against an observed problem
         // with getpwuid_r() on RedHat 9 where getpwuid_r returns 0,
-        // indicating success, but has p == NULL. This was observed when
+        // indicating success, but has p == null. This was observed when
         // inserting a file descriptor exhaustion fault prior to the call
         // getpwuid_r() call. In this case, error is set to the appropriate
         // error condition, but this is undocumented behavior. This check
@@ -482,12 +482,12 @@ static char* get_user_name(uid_t uid) {
       }
       else {
         warning("Could not determine user name: %s\n",
-                p->pw_name == NULL ? "pw_name = NULL" :
+                p->pw_name == nullptr ? "pw_name = null" :
                                      "pw_name zero length");
       }
     }
     FREE_C_HEAP_ARRAY(char, pwbuf);
-    return NULL;
+    return nullptr;
   }
 
   char* user_name = NEW_C_HEAP_ARRAY(char, strlen(p->pw_name) + 1, mtInternal);
@@ -520,7 +520,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   }
 
   // directory search
-  char* oldest_user = NULL;
+  char* oldest_user = nullptr;
   time_t oldest_ctime = 0;
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
@@ -544,9 +544,9 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // open the temp directory
   DIR* tmpdirp = os::opendir(tmpdirname);
 
-  if (tmpdirp == NULL) {
+  if (tmpdirp == nullptr) {
     // Cannot open the directory to get the user name, return.
-    return NULL;
+    return nullptr;
   }
 
   // for each entry in the directory that matches the pattern hsperfdata_*,
@@ -556,7 +556,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   //
   struct dirent* dentry;
   errno = 0;
-  while ((dentry = os::readdir(tmpdirp)) != NULL) {
+  while ((dentry = os::readdir(tmpdirp)) != nullptr) {
 
     // check if the directory entry is a hsperfdata file
     if (strncmp(dentry->d_name, PERFDATA_NAME, strlen(PERFDATA_NAME)) != 0) {
@@ -573,7 +573,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
     // open the user directory
     DIR* subdirp = open_directory_secure(usrdir_name);
 
-    if (subdirp == NULL) {
+    if (subdirp == nullptr) {
       FREE_C_HEAP_ARRAY(char, usrdir_name);
       continue;
     }
@@ -592,7 +592,7 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
 
     struct dirent* udentry;
     errno = 0;
-    while ((udentry = os::readdir(subdirp)) != NULL) {
+    while ((udentry = os::readdir(subdirp)) != nullptr) {
 
       if (filename_to_pid(udentry->d_name) == searchpid) {
         struct stat statbuf;
@@ -652,10 +652,10 @@ static char* get_user_name(int vmid, int *nspid, TRAPS) {
 #if defined(LINUX)
   // If we are examining a container process without PID namespaces enabled
   // we need to use /proc/{pid}/root/tmp to find hsperfdata files.
-  if (result == NULL) {
+  if (result == nullptr) {
     result = get_user_name_slow(vmid, vmid, CHECK_NULL);
     // Enable nspid logic going forward
-    if (result != NULL) *nspid = vmid;
+    if (result != nullptr) *nspid = vmid;
   }
 #endif
   return result;
@@ -717,7 +717,7 @@ static void cleanup_sharedmem_files(const char* dirname) {
   int saved_cwd_fd;
   // open the directory and set the current working directory to it
   DIR* dirp = open_directory_secure_cwd(dirname, &saved_cwd_fd);
-  if (dirp == NULL) {
+  if (dirp == nullptr) {
     // directory doesn't exist or is insecure, so there is nothing to cleanup
     return;
   }
@@ -731,7 +731,7 @@ static void cleanup_sharedmem_files(const char* dirname) {
   //
   struct dirent* entry;
   errno = 0;
-  while ((entry = os::readdir(dirp)) != NULL) {
+  while ((entry = os::readdir(dirp)) != nullptr) {
     const char* filename = entry->d_name;
     pid_t pid = filename_to_pid(filename);
 
@@ -874,7 +874,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   int saved_cwd_fd;
   // open the directory and set the current working directory to it
   DIR* dirp = open_directory_secure_cwd(dirname, &saved_cwd_fd);
-  if (dirp == NULL) {
+  if (dirp == nullptr) {
     // Directory doesn't exist or is insecure, so cannot create shared
     // memory file.
     return -1;
@@ -1013,8 +1013,8 @@ static int open_sharedmem_file(const char* filename, int oflags, TRAPS) {
 }
 
 // create a named shared memory region. returns the address of the
-// memory region on success or NULL on failure. A return value of
-// NULL will ultimately disable the shared memory feature.
+// memory region on success or null on failure. A return value of
+// null will ultimately disable the shared memory feature.
 //
 // The name space for shared memory objects is the file system name space.
 //
@@ -1034,15 +1034,15 @@ static char* mmap_create_shared(size_t size) {
 
   char* user_name = get_user_name(geteuid());
 
-  if (user_name == NULL)
-    return NULL;
+  if (user_name == nullptr)
+    return nullptr;
 
   char* dirname = get_user_tmp_dir(user_name, vmid, -1);
   char* filename = get_sharedmem_filename(dirname, vmid, -1);
 
   // get the short filename
   char* short_filename = strrchr(filename, '/');
-  if (short_filename == NULL) {
+  if (short_filename == nullptr) {
     short_filename = filename;
   } else {
     short_filename++;
@@ -1062,7 +1062,7 @@ static char* mmap_create_shared(size_t size) {
 
   if (fd == -1) {
     FREE_C_HEAP_ARRAY(char, filename);
-    return NULL;
+    return nullptr;
   }
 
   mapAddress = (char*)::mmap((char*)0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
@@ -1076,7 +1076,7 @@ static char* mmap_create_shared(size_t size) {
     }
     remove_file(filename);
     FREE_C_HEAP_ARRAY(char, filename);
-    return NULL;
+    return nullptr;
   }
 
   // save the file name for use in delete_shared_memory()
@@ -1131,12 +1131,12 @@ static void delete_shared_memory(char* addr, size_t size) {
 
   assert(!PerfDisableSharedMem, "shouldn't be here");
 
-  if (backing_store_file_name != NULL) {
+  if (backing_store_file_name != nullptr) {
     remove_file(backing_store_file_name);
     // Don't.. Free heap memory could deadlock os::abort() if it is called
     // from signal handler. OS will reclaim the heap memory.
     // FREE_C_HEAP_ARRAY(char, backing_store_file_name);
-    backing_store_file_name = NULL;
+    backing_store_file_name = nullptr;
   }
 }
 
@@ -1177,7 +1177,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
   const char* luser = get_user_name(vmid, &nspid, CHECK);
 
-  if (luser == NULL) {
+  if (luser == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Could not map vmid to user Name");
   }
@@ -1258,7 +1258,7 @@ void PerfMemory::create_memory_region(size_t size) {
   }
   else {
     _start = create_shared_memory(size);
-    if (_start == NULL) {
+    if (_start == nullptr) {
 
       // creation of the shared memory region failed, attempt
       // to create a contiguous, non-shared memory region instead.
@@ -1271,7 +1271,7 @@ void PerfMemory::create_memory_region(size_t size) {
     }
   }
 
-  if (_start != NULL) _capacity = size;
+  if (_start != nullptr) _capacity = size;
 
 }
 
@@ -1283,13 +1283,13 @@ void PerfMemory::create_memory_region(size_t size) {
 //
 void PerfMemory::delete_memory_region() {
 
-  assert((start() != NULL && capacity() > 0), "verify proper state");
+  assert((start() != nullptr && capacity() > 0), "verify proper state");
 
   // If user specifies PerfDataSaveFile, it will save the performance data
   // to the specified file name no matter whether PerfDataSaveToFile is specified
   // or not. In other word, -XX:PerfDataSaveFile=.. overrides flag
   // -XX:+PerfDataSaveToFile.
-  if (PerfDataSaveToFile || PerfDataSaveFile != NULL) {
+  if (PerfDataSaveToFile || PerfDataSaveFile != nullptr) {
     save_memory_to_file(start(), capacity());
   }
 
