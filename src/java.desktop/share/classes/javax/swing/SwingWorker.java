@@ -301,18 +301,15 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 new Callable<T>() {
                     public T call() throws Exception {
                         setState(StateValue.STARTED);
-                        T ret = doInBackground();
-                        setState(StateValue.DONE);
-                        return ret;
+                        try {
+                            return doInBackground();
+                        } finally {
+                            setState(StateValue.DONE);
+                            doneEDT();
+                        }
                     }
                 };
-
-        future = new FutureTask<T>(callable) {
-                       @Override
-                       protected void done() {
-                           doneEDT();
-                       }
-                   };
+       future = new FutureTask<T>(callable);
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);
        doProcess = null;
@@ -753,13 +750,6 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
         if (SwingUtilities.isEventDispatchThread()) {
             doDone.run();
         } else {
-            if (state != StateValue.DONE) {
-                do {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {}
-                } while (state != StateValue.DONE);
-            }
             doSubmit.add(doDone);
         }
     }

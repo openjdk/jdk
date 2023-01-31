@@ -25,11 +25,11 @@
  * @bug 8081474
  * @summary  Verifies if SwingWorker calls 'done'
  *           before the 'doInBackground' is finished
- * @run main TestSwingWorker
+ * @run main TestDoneBeforeDoInBackground
  */
 import javax.swing.SwingWorker;
 
-public class TestSwingWorker {
+public class TestDoneBeforeDoInBackground {
 
     static boolean doInBackground =  false;
 
@@ -43,8 +43,7 @@ public class TestSwingWorker {
                         System.out.println("Working...");
                         Thread.sleep(1000);
                     }
-                }
-                catch (InterruptedException ex) {
+                } catch (InterruptedException ex) {
                     System.out.println("Got interrupted!");
                 }
                 try {
@@ -52,8 +51,7 @@ public class TestSwingWorker {
                     Thread.sleep(5000);
                     System.out.println("Done cleaning");
                     doInBackground = true;
-                }
-                catch (InterruptedException ex) {
+                } catch (InterruptedException ex) {
                     System.out.println("Got interrupted second time!");
                 }
                 return null;
