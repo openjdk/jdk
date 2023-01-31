@@ -26,13 +26,14 @@ package java.util.stream;
 
 import java.util.Objects;
 import java.util.Spliterator;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountedCompleter;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntFunction;
 import java.util.function.LongConsumer;
+import java.lang.invoke.VarHandle;
+import java.lang.invoke.MethodHandles;
 
 /**
  * Factory for creating instances of {@code TerminalOp} that perform an
@@ -364,10 +365,21 @@ final class ForEachOps {
         private final PipelineHelper<T> helper;
         private Spliterator<S> spliterator;
         private final long targetSize;
-        private final ConcurrentHashMap<ForEachOrderedTask<S, T>, ForEachOrderedTask<S, T>> completionMap;
         private final Sink<T> action;
         private final ForEachOrderedTask<S, T> leftPredecessor;
         private Node<T> node;
+
+        @SuppressWarnings("unused") private volatile ForEachOrderedTask<S, T> next; // Only accessed through the NEXT VarHandle
+        private static final VarHandle NEXT;
+        static {
+            try {
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                NEXT = l.findVarHandle(ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
+            } catch (Exception e) {
+                throw new InternalError(e);
+            }
+        }
+
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,
@@ -376,8 +388,6 @@ final class ForEachOps {
             this.helper = helper;
             this.spliterator = spliterator;
             this.targetSize = AbstractTask.suggestTargetSize(spliterator.estimateSize());
-            // Size map to avoid concurrent re-sizes
-            this.completionMap = new ConcurrentHashMap<>(Math.max(16, AbstractTask.getLeafTarget() << 1));
             this.action = action;
             this.leftPredecessor = null;
         }
@@ -389,7 +399,6 @@ final class ForEachOps {
             this.helper = parent.helper;
             this.spliterator = spliterator;
             this.targetSize = parent.targetSize;
-            this.completionMap = parent.completionMap;
             this.action = parent.action;
             this.leftPredecessor = leftPredecessor;
         }
@@ -417,7 +426,9 @@ final class ForEachOps {
                 // Completion of the left child "happens-before" completion of
                 // the right child
                 rightChild.addToPendingCount(1);
-                task.completionMap.put(leftChild, rightChild);
+                // leftChild and rightChild were just created and not fork():ed
+                // yet so no need for a volatile write
+                NEXT.set(leftChild, rightChild);
 
                 // If task is not on the left spine
                 if (task.leftPredecessor != null) {
@@ -433,7 +444,7 @@ final class ForEachOps {
                     leftChild.addToPendingCount(1);
                     // Update association of left-predecessor to left-most
                     // leaf node of right subtree
-                    if (task.completionMap.replace(task.leftPredecessor, task, leftChild)) {
+                    if (NEXT.compareAndSet(task.leftPredecessor, task, leftChild)) {
                         // If replaced, adjust the pending count of the parent
                         // to complete when its children complete
                         task.addToPendingCount(-1);
@@ -499,7 +510,8 @@ final class ForEachOps {
             // "happens-before" completion of the associated left-most leaf task
             // of right subtree (if any, which can be this task's right sibling)
             //
-            ForEachOrderedTask<S, T> leftDescendant = completionMap.remove(this);
+            @SuppressWarnings("unchecked")
+            var leftDescendant = (ForEachOrderedTask<S, T>)NEXT.getAndSet(this, null);
             if (leftDescendant != null)
                 leftDescendant.tryComplete();
         }
