@@ -52,6 +52,7 @@ public class Root {
     private static final Path SOURCE = Paths.get(SRC, "Root.policy");
     private static final Path TARGET = Paths.get(ROOT, ".java.policy");
     private static final Path BACKUP = Paths.get(ROOT, ".backup.policy");
+    private static final String USER = System.getProperty("user.name");
 
     @BeforeTest
     public void setup() throws IOException {
@@ -74,6 +75,12 @@ public class Root {
 
     @Test
     private void test() {
+        System.out.println("Run test as root user.");
+
+        if (!"root".equalsIgnoreCase(USER)) {
+            throw new RuntimeException("This test needs to be run with root privilege.");
+        }
+
         Policy p = Policy.getPolicy();
         Assert.assertTrue(p.implies(Root.class.getProtectionDomain(),
                 new AllPermission()));
