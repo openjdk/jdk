@@ -122,9 +122,9 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
-  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
+  if (!InlineIntrinsics) return nullptr; // Generate a vanilla entry
 
-  address entry_point = NULL;
+  address entry_point = nullptr;
   Register continuation = LR;
   bool use_runtime_call = false;
   switch (kind) {
@@ -181,7 +181,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     ShouldNotReachHere();
   }
 
-  if (entry_point != NULL) {
+  if (entry_point != nullptr) {
     __ mov(SP, Rsender_sp);
     if (use_runtime_call) {
       __ mov(Rtmp_save0, LR);
@@ -227,7 +227,7 @@ void TemplateInterpreterGenerator::generate_math_runtime_call(AbstractInterprete
     break;
   default:
     ShouldNotReachHere();
-    fn = NULL; // silence "maybe uninitialized" compiler warnings
+    fn = nullptr; // silence "maybe uninitialized" compiler warnings
   }
   __ call_VM_leaf(fn);
 }
@@ -307,7 +307,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 }
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
-  assert(!pass_oop || message == NULL, "either oop or message but not both");
+  assert(!pass_oop || message == nullptr, "either oop or message but not both");
   address entry = __ pc();
 
   InlinedString Lname(name);
@@ -327,7 +327,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   if (pass_oop) {
     __ call_VM(Rexception_obj, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception), R1, R2);
   } else {
-    if (message != NULL) {
+    if (message != nullptr) {
       __ ldr_literal(R2, Lmessage);
     } else {
       __ mov(R2, 0);
@@ -341,7 +341,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   __ nop(); // to avoid filling CPU pipeline with invalid instructions
   __ nop();
   __ bind_literal(Lname);
-  if (!pass_oop && (message != NULL)) {
+  if (!pass_oop && (message != nullptr)) {
     __ bind_literal(Lmessage);
   }
 
@@ -355,7 +355,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Restore stack bottom in case i2c adjusted stack
   __ ldr(SP, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
-  // and NULL it as marker that SP is now tos until next java call
+  // and null it as marker that SP is now tos until next java call
   __ mov(Rtemp, (int)NULL_WORD);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -389,7 +389,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
 
   __ interp_verify_oop(R0_tos, state, __FILE__, __LINE__);
 
-  // The stack is not extended by deopt but we must NULL last_sp as this
+  // The stack is not extended by deopt but we must null last_sp as this
   // entry is like a "return".
   __ mov(Rtemp, 0);
   __ str(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
@@ -408,7 +408,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     __ bind(L);
   }
 
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation);
@@ -497,8 +497,8 @@ void TemplateInterpreterGenerator::generate_counter_incr(Label* overflow) {
 
 void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue) {
   // InterpreterRuntime::frequency_counter_overflow takes one argument
-  // indicating if the counter overflow occurs at a backwards branch (non-NULL bcp).
-  // The call returns the address of the verified entry point for the method or NULL
+  // indicating if the counter overflow occurs at a backwards branch (non-null bcp).
+  // The call returns the address of the verified entry point for the method or null
   // if the compilation did not complete (either went background or bailed out).
   __ mov(R1, (int)false);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R1);
@@ -757,7 +757,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
-  // Check if local 0 != NULL
+  // Check if local 0 != null
   // If the receiver is null then it is OK to jump to the slow path.
   __ ldr(Rthis, Address(Rparams));
   __ cbz(Rthis, slow_path);
@@ -780,9 +780,9 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 // Not supported
-address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return NULL; }
-address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
-address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+address TemplateInterpreterGenerator::generate_CRC32_update_entry() { return nullptr; }
+address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
+address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return nullptr; }
 
 //
 // Interpreter stub for calling a native method. (asm interpreter)
@@ -1430,7 +1430,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ b(L_done, ne);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
-    // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
+    // Detect such a case in the InterpreterRuntime function and return the member name argument, or null.
 
     // get local0
     __ ldr(R1, Address(Rlocals, 0));
@@ -1621,7 +1621,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
-  assert(Interpreter::trace_code(t->tos_in()) != NULL,
+  assert(Interpreter::trace_code(t->tos_in()) != nullptr,
          "entry must have been generated");
   address trace_entry = Interpreter::trace_code(t->tos_in());
   __ call(trace_entry, relocInfo::none);

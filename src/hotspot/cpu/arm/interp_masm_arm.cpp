@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void InterpreterMacroAssembler::call_VM_helper(Register oop_result, address entr
   { Label L;
     ldr(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(Rtemp, L);
-    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != NULL");
+    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != null");
     bind(L);
   }
 #endif // ASSERT
@@ -160,7 +160,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret() {
     const Register thread_state = R2_tmp;
 
     ldr(thread_state, Address(Rthread, JavaThread::jvmti_thread_state_offset()));
-    cbz(thread_state, L); // if (thread->jvmti_thread_state() == NULL) exit;
+    cbz(thread_state, L); // if (thread->jvmti_thread_state() == null) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -1028,7 +1028,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   assert(ProfileInterpreter, "must be profiling interpreter");
   Label set_mdp;
 
-  // Test MDO to avoid the call if it is NULL.
+  // Test MDO to avoid the call if it is null.
   ldr(Rtemp, Address(Rmethod, Method::method_data_offset()));
   cbz(Rtemp, set_mdp);
 
@@ -1360,7 +1360,7 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
   }
 
   // In the fall-through case, we found no matching receiver, but we
-  // observed the receiver[start_row] is NULL.
+  // observed the receiver[start_row] is null.
 
   // Fill in the receiver field and increment the count.
   int recvr_offset = in_bytes(VirtualCallData::receiver_offset(start_row));

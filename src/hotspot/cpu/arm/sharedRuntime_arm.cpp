@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,7 +256,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
                                         VMRegPair *regs2,
                                         int total_args_passed) {
-  assert(regs2 == NULL, "not needed on arm");
+  assert(regs2 == nullptr, "not needed on arm");
 
   int slot = 0;
   int ireg = 0;
@@ -367,7 +367,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            int total_args_passed) {
 #ifdef __SOFTFP__
   // soft float is the same as the C calling convention.
-  return c_calling_convention(sig_bt, regs, NULL, total_args_passed);
+  return c_calling_convention(sig_bt, regs, nullptr, total_args_passed);
 #endif // __SOFTFP__
   int slot = 0;
   int ireg = 0;
@@ -771,7 +771,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
-                                       (OopMapSet*)NULL);
+                                       (OopMapSet*)nullptr);
   }
   // Arguments for JNI method include JNIEnv and Class if static
 
@@ -796,7 +796,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     out_sig_bt[argc++] = in_sig_bt[i];
   }
 
-  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
+  int out_arg_slots = c_calling_convention(out_sig_bt, out_regs, nullptr, total_c_args);
   int stack_slots = SharedRuntime::out_preserve_stack_slots() + out_arg_slots;
   // Since object arguments need to be wrapped, we must preserve space
   // for those object arguments which come in registers (GPR_PARAMS maximum)
@@ -875,7 +875,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ sub_slow(SP, SP, stack_size - 2*wordSize);
 
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  assert(bs != NULL, "Sanity");
+  assert(bs != nullptr, "Sanity");
   bs->nmethod_entry_barrier(masm);
 
   int frame_complete = __ pc() - start;
@@ -1397,7 +1397,7 @@ void SharedRuntime::generate_deopt_blob() {
   // exception_in_tls_offset entry point.
   __ str(Rexception_obj, Address(Rthread, JavaThread::exception_oop_offset()));
   __ str(Rexception_pc, Address(Rthread, JavaThread::exception_pc_offset()));
-  // Force return value to NULL to avoid confusing the escape analysis
+  // Force return value to null to avoid confusing the escape analysis
   // logic. Everything is dead here anyway.
   __ mov(R0, 0);
 
@@ -1734,7 +1734,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
   masm->flush();
-  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, NULL, 2 /* LR+FP */);
+  _uncommon_trap_blob = UncommonTrapBlob::create(&buffer, nullptr, 2 /* LR+FP */);
 }
 
 #endif // COMPILER2
@@ -1746,7 +1746,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 // a safepoint.
 //
 SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
-  assert(StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
 
   ResourceMark rm;
   CodeBuffer buffer("handler_blob", 256, 256);
@@ -1816,7 +1816,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 }
 
 RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
-  assert(StubRoutines::forward_exception_entry() != NULL, "must be generated before");
+  assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
 
   ResourceMark rm;
   CodeBuffer buffer(name, 1000, 512);
