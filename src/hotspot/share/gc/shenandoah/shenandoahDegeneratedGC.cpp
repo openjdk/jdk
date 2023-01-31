@@ -74,11 +74,6 @@ void ShenandoahDegenGC::entry_degenerated() {
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::degen_gc, true /* log_heap_usage */);
   EventMark em("%s", msg);
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-
-  // In case degenerated GC preempted evacuation or update-refs, clear the aging cycle now.  No harm in clearing it
-  // redundantly if it is already clear.  We don't age during degenerated cycles.
-  heap->set_aging_cycle(false);
-
   ShenandoahWorkerScope scope(heap->workers(),
                               ShenandoahWorkerPolicy::calc_workers_for_stw_degenerated(),
                               "stw degenerated gc");

@@ -267,7 +267,8 @@ void ShenandoahControlThread::run_service() {
         ShenandoahHeapLocker locker(heap->lock());
         heap->free_set()->log_status();
       }
-
+      // In case this is a degenerated cycle, remember whether original cycle was aging.
+      bool was_aging_cycle = heap->is_aging_cycle();
       heap->set_aging_cycle(false);
       {
         switch (_mode) {
@@ -280,6 +281,7 @@ void ShenandoahControlThread::run_service() {
             break;
           }
           case stw_degenerated: {
+            heap->set_aging_cycle(was_aging_cycle);
             if (!service_stw_degenerated_cycle(cause, degen_point)) {
               // The degenerated GC was upgraded to a Full GC
               generation = GLOBAL;
