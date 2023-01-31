@@ -360,4 +360,10 @@ inline void WriterHost<BE, IE, WriterPolicyImpl>::write_be_at_offset(T value, in
   }
 }
 
+template <typename BE, typename IE, typename WriterPolicyImpl>
+template <typename T>
+inline size_t WriterHost<BE, IE, WriterPolicyImpl>::size_in_bytes(T value) {
+  return IE::size_in_bytes(value);
+}
+
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_INLINE_HPP

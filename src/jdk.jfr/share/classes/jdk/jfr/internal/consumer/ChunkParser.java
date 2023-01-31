@@ -237,7 +237,7 @@ public final class ChunkParser {
         long absoluteChunkEnd = chunkHeader.getEnd();
         while (input.position() < absoluteChunkEnd) {
             long pos = input.position();
-            int size = input.readInt();
+            long size = input.readLong();
             if (size == 0) {
                 throw new IOException("Event can't have zero size");
             }
@@ -305,7 +305,7 @@ public final class ChunkParser {
         while (thisCP != abortCP && delta != 0) {
             input.position(thisCP);
             lastCP = thisCP;
-            int size = input.readInt(); // size
+            long size = input.readLong(); // size
             long typeId = input.readLong();
             if (typeId != CONSTANT_POOL_TYPE_ID) {
                 throw new IOException("Expected check point event (id = 1) at position " + lastCP + ", but found type id = " + typeId);

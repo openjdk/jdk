@@ -97,6 +97,8 @@ class WriterHost : public WriterPolicyImpl {
   template <typename T>
   void write_be_at_offset(T value, int64_t offset);
   int64_t reserve(size_t size);
+  template <typename T>
+  size_t size_in_bytes(T value);
 };
 
 #endif // SHARE_JFR_WRITERS_JFRWRITERHOST_HPP
