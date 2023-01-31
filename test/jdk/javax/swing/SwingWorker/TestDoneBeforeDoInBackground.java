@@ -31,7 +31,8 @@ import javax.swing.SwingWorker;
 
 public class TestDoneBeforeDoInBackground {
 
-    static boolean doInBackground =  false;
+    static boolean doInBackground = false;
+    static final int WAIT_TIME = 2000;
 
     public static void main(String[] args) throws InterruptedException {
         SwingWorker<String, String> worker =
@@ -41,14 +42,14 @@ public class TestDoneBeforeDoInBackground {
                 try {
                     while (!Thread.currentThread().isInterrupted()) {
                         System.out.println("Working...");
-                        Thread.sleep(1000);
+                        Thread.sleep(WAIT_TIME);
                     }
                 } catch (InterruptedException ex) {
                     System.out.println("Got interrupted!");
                 }
                 try {
                     System.out.println("Cleaning up");
-                    Thread.sleep(5000);
+                    Thread.sleep(WAIT_TIME);
                     System.out.println("Done cleaning");
                     doInBackground = true;
                 } catch (InterruptedException ex) {
@@ -67,9 +68,10 @@ public class TestDoneBeforeDoInBackground {
         };
 
         worker.execute();
-        Thread.sleep(5000);
+        Thread.sleep(WAIT_TIME);
 
         worker.cancel(true);
-        Thread.sleep(2000);
+        Thread.sleep(WAIT_TIME);
     }
 }
+
