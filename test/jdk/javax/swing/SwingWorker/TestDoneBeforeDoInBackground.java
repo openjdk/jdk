@@ -28,11 +28,14 @@
  * @run main TestDoneBeforeDoInBackground
  */
 import javax.swing.SwingWorker;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TestDoneBeforeDoInBackground {
 
     static boolean doInBackground = false;
-    static final int WAIT_TIME = 2000;
+    static final int WAIT_TIME = 200;
+    private static final long CLEANUP_TIME = 3000;
 
     public static void main(String[] args) throws InterruptedException {
         SwingWorker<String, String> worker =
@@ -49,7 +52,7 @@ public class TestDoneBeforeDoInBackground {
                 }
                 try {
                     System.out.println("Cleaning up");
-                    Thread.sleep(WAIT_TIME);
+                    Thread.sleep(CLEANUP_TIME);
                     System.out.println("Done cleaning");
                     doInBackground = true;
                 } catch (InterruptedException ex) {
@@ -68,10 +71,20 @@ public class TestDoneBeforeDoInBackground {
         };
 
         worker.execute();
-        Thread.sleep(WAIT_TIME);
+        Thread.sleep(WAIT_TIME * 3);
 
+        final long start = System.currentTimeMillis();
         worker.cancel(true);
-        Thread.sleep(WAIT_TIME);
+        final long end = System.currentTimeMillis();
+
+        if ((end - start) > 100) {
+            throw new RuntimeException("Cancel took too long: "
+                                       + ((end - start) / 1000.0d) + " s");
+        }
+        if (doInBackground && worker.getState() != SwingWorker.StateValue.DONE) {
+            throw new RuntimeException("doInBackground is finished " +
+                                       " but State is not DONE");
+        }
     }
 }
 
