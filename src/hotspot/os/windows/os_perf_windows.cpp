@@ -671,7 +671,7 @@ static const char* copy_string_to_c_heap(const char* string) {
 * Caller will need a ResourceMark.
 *
 * @param pdh_artifact_idx   the counter index as specified in the registry
-* @return                   localized pdh artifact string if successful, nullptr on failure.
+* @return                   localized pdh artifact string if successful, null on failure.
 */
 static const char* pdh_localized_artifact(DWORD pdh_artifact_idx) {
   char* pdh_localized_artifact_string = nullptr;
@@ -691,7 +691,7 @@ static const char* pdh_localized_artifact(DWORD pdh_artifact_idx) {
  *
  * Caller needs ResourceMark.
  *
- * @return the process image string description, nullptr if the call failed.
+ * @return the process image string description, null if the call failed.
 */
 static const char* pdh_process_image_name() {
   char* module_name = NEW_RESOURCE_ARRAY(char, MAX_PATH);
@@ -784,7 +784,7 @@ static OSReturn allocate_pdh_constants() {
  * Enuerate the Processor PDH object and returns a buffer containing the enumerated instances.
  * Caller needs ResourceMark;
  *
- * @return  buffer if successful, nullptr on failure.
+ * @return  buffer if successful, null on failure.
 */
 static const char* enumerate_cpu_instances() {
   char* processor; //'Processor' == PDH_PROCESSOR_IDX

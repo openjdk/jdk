@@ -287,13 +287,13 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
     int num_missing = 0;
     st->print(" - missing functions: ");
 
-    #define CHECK_AND_PRINT_IF_nullptr(functionname) \
+    #define CHECK_AND_PRINT_IF_NULL(functionname) \
     if (g_pfn_##functionname == nullptr) { \
       st->print("%s" #functionname, ((num_missing > 0) ? ", " : "")); \
       num_missing ++; \
     }
 
-    FOR_ALL_FUNCTIONS(CHECK_AND_PRINT_IF_nullptr)
+    FOR_ALL_FUNCTIONS(CHECK_AND_PRINT_IF_NULL)
 
     if (num_missing == 0) {
       st->print("none");
