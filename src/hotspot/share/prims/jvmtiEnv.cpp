@@ -578,7 +578,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
   JvmtiVTMSTransitionDisabler disabler;
 
   if (event_thread == nullptr) {
-    // Can be called at Agent_OnLoad() time with event_thread == null
+    // Can be called at Agent_OnLoad() time with event_thread == nullptr
     // when Thread::current() does not work yet so we cannot create a
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.

@@ -210,8 +210,8 @@ public:
         && ((int)event_type <= TOTAL_MAX_EVENT_TYPE_VAL);
   }
 
-  // Use (thread == null) to enable/disable an event globally.
-  // Use (thread != null) to enable/disable an event for a particular thread.
+  // Use (thread == nullptr) to enable/disable an event globally.
+  // Use (thread != nullptr) to enable/disable an event for a particular thread.
   // thread is ignored for events that can only be specified globally
   static void set_user_enabled(JvmtiEnvBase *env, JavaThread *thread, oop thread_oop,
                                jvmtiEvent event_type, bool enabled);

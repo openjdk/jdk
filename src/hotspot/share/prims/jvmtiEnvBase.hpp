@@ -167,7 +167,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
   };
 
-  // If (thread == null) then return current thread object.
+  // If (thread == nullptr) then return current thread object.
   // Otherwise return JNIHandles::resolve_external_guard(thread).
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
@@ -181,7 +181,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
     }
     oop cur_obj = current->jvmti_vthread();
 
-    // cur_obj == null is true for normal platform threads only
+    // cur_obj == nullptr is true for normal platform threads only
     // otherwise it can be virtual or carrier thread.
     return cur_obj == nullptr || cur_obj == thr_obj;
   }

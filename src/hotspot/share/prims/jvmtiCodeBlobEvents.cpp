@@ -53,7 +53,7 @@
 //
 // collector.collect();
 // JvmtiCodeBlobDesc* blob = collector.first();
-// while (blob != null) {
+// while (blob != nullptr) {
 //   :
 //   blob = collector.next();
 // }

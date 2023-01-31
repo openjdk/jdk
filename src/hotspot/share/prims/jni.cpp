@@ -2163,7 +2163,7 @@ JNI_ENTRY_NO_PRESERVE(const jchar*, jni_GetStringChars(
     int s_len = java_lang_String::length(s, s_value);
     bool is_latin1 = java_lang_String::is_latin1(s);
     buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
-    /* JNI Specification states return nullptr on OOM */
+    /* JNI Specification states return null on OOM */
     if (buf != nullptr) {
       if (s_len > 0) {
         if (!is_latin1) {
