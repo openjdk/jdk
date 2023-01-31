@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,11 +90,11 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *scan_fmt,
                                               T returnval) {
   if (c == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is nullptr");
+    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is null");
     return OSCONTAINER_ERROR;
   }
   if (c->subsystem_path() == nullptr) {
-    log_debug(os, container)("subsystem_file_line_contents: subsystem path is nullptr");
+    log_debug(os, container)("subsystem_file_line_contents: subsystem path is null");
     return OSCONTAINER_ERROR;
   }
 
@@ -166,7 +166,7 @@ PRAGMA_DIAG_POP
   int err;                                                                \
   err = subsystem_file_line_contents(subsystem,                           \
                                      filename,                            \
-                                     NULL,                                \
+                                     nullptr,                                \
                                      scan_fmt,                            \
                                      &variable);                          \
   if (err != 0) {                                                         \
@@ -184,11 +184,11 @@ PRAGMA_DIAG_POP
   int err;                                                                \
   err = subsystem_file_line_contents(subsystem,                           \
                                      filename,                            \
-                                     NULL,                                \
+                                     nullptr,                                \
                                      scan_fmt,                            \
                                      variable);                           \
   if (err != 0)                                                           \
-    return (return_type) NULL;                                            \
+    return (return_type) nullptr;                                            \
                                                                           \
   log_trace(os, container)(logstring, variable);                          \
 }
@@ -293,13 +293,13 @@ class CgroupInfo : public StackObj {
 
   public:
     CgroupInfo() {
-      _name = NULL;
+      _name = nullptr;
       _hierarchy_id = -1;
       _enabled = false;
       _data_complete = false;
-      _cgroup_path = NULL;
-      _root_mount_path = NULL;
-      _mount_path = NULL;
+      _cgroup_path = nullptr;
+      _root_mount_path = nullptr;
+      _mount_path = nullptr;
     }
 
 };
