@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -743,6 +743,83 @@ class FdLibm {
                 y = __HI(y, __HI(y) + ((k + 1000) << 20)); /* add k to y's exponent */
                 return y * twom1000;
             }
+        }
+    }
+
+    /**
+     * Return the base 10 logarithm of x
+     *
+     * Method :
+     *      Let log10_2hi = leading 40 bits of log10(2) and
+     *          log10_2lo = log10(2) - log10_2hi,
+     *          ivln10   = 1/log(10) rounded.
+     *      Then
+     *              n = ilogb(x),
+     *              if(n<0)  n = n+1;
+     *              x = scalbn(x,-n);
+     *              log10(x) := n*log10_2hi + (n*log10_2lo + ivln10*log(x))
+     *
+     * Note 1:
+     *      To guarantee log10(10**n)=n, where 10**n is normal, the rounding
+     *      mode must set to Round-to-Nearest.
+     * Note 2:
+     *      [1/log(10)] rounded to 53 bits has error  .198   ulps;
+     *      log10 is monotonic at all binary break points.
+     *
+     * Special cases:
+     *      log10(x) is NaN with signal if x < 0;
+     *      log10(+INF) is +INF with no signal; log10(0) is -INF with signal;
+     *      log10(NaN) is that NaN with no signal;
+     *      log10(10**N) = N  for N=0,1,...,22.
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following constants.
+     * The decimal values may be used, provided that the compiler will convert
+     * from decimal to binary accurately enough to produce the hexadecimal values
+     * shown.
+     */
+    static class Log10 {
+        private static double two54     = 0x1.0p54;              // 1.80143985094819840000e+16;
+        private static double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
+
+        private static double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
+        private static double log10_2lo = 0x1.9fef311f12b36p-42; // 3.69423907715893078616e-13;
+
+        private Log10() {
+            throw new UnsupportedOperationException();
+        }
+
+        public static double compute(double x) {
+            double y, z;
+            int i, k;
+
+            int hx = __HI(x); // high word of x
+            int lx = __LO(x); // low word of x
+
+            k=0;
+            if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
+                if (((hx & 0x7fff_ffff) | lx) == 0) {
+                    return -two54/0.0;               /* log(+-0)=-inf */
+                }
+                if (hx < 0) {
+                    return (x - x)/0.0;              /* log(-#) = NaN */
+                }
+                k -= 54;
+                x *= two54; /* subnormal number, scale up x */
+                hx = __HI(x);
+            }
+
+            if (hx >= 0x7ff0_0000) {
+                return x + x;
+            }
+
+            k += (hx >> 20) - 1023;
+            i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
+            hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
+            y  = (double)(k + i);
+            x = __HI(x, hx); // replace high word of x with hx
+            z  = y * log10_2lo + ivln10 * StrictMath.log(x);
+            return  z + y * log10_2hi;
         }
     }
 }
