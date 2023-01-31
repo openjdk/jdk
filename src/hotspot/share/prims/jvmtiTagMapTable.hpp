@@ -28,7 +28,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "oops/weakHandle.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/resizeableResourceHash.hpp"
 
 class JvmtiEnv;

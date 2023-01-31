@@ -81,7 +81,6 @@
 # include <errno.h>
 
 OSThread*         os::_starting_thread    = nullptr;
-address           os::_polling_page       = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;

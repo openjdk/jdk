@@ -100,29 +100,6 @@ class CLDScanClosure: public CLDClosure {
   void do_cld(ClassLoaderData* cld);
 };
 
-#endif // INCLUDE_SERIALGC
-
-class FilteringClosure: public OopIterateClosure {
- private:
-  HeapWord*   _boundary;
-  OopIterateClosure* _cl;
- protected:
-  template <class T> inline void do_oop_work(T* p);
- public:
-  FilteringClosure(HeapWord* boundary, OopIterateClosure* cl) :
-    OopIterateClosure(cl->ref_discoverer()), _boundary(boundary),
-    _cl(cl) {}
-  virtual void do_oop(oop* p);
-  virtual void do_oop(narrowOop* p);
-  virtual bool do_metadata()            { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
-  virtual void do_klass(Klass*)         { ShouldNotReachHere(); }
-  virtual void do_cld(ClassLoaderData*) { ShouldNotReachHere(); }
-  virtual void do_method(Method*)       { ShouldNotReachHere(); }
-  virtual void do_nmethod(nmethod*)     { ShouldNotReachHere(); }
-};
-
-#if INCLUDE_SERIALGC
-
 // Closure for scanning DefNewGeneration's weak references.
 //  -- weak references are processed all at once,
 //  with no notion of which generation they were in.

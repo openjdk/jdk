@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,16 @@ protected:
 
   Klass* get_Klass() const {
     Klass* k = (Klass*)_metadata;
-    assert(k != NULL, "illegal use of unloaded klass");
+    assert(k != nullptr, "illegal use of unloaded klass");
     return k;
   }
 
   // Certain subklasses have an associated class loader.
-  virtual oop loader()             { return NULL; }
-  virtual jobject loader_handle()  { return NULL; }
+  virtual oop loader()             { return nullptr; }
+  virtual jobject loader_handle()  { return nullptr; }
 
-  virtual oop protection_domain()             { return NULL; }
-  virtual jobject protection_domain_handle()  { return NULL; }
+  virtual oop protection_domain()             { return nullptr; }
+  virtual jobject protection_domain_handle()  { return nullptr; }
 
   const char* type_string() { return "ciKlass"; }
 
