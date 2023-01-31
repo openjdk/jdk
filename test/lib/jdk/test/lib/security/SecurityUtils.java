@@ -55,7 +55,7 @@ public final class SecurityUtils {
 
     /**
      * Adds the specified protocols to the jdk.tls.disabledAlgorithms
-     * security property 
+     * security property
      */
     public static void addToDisabledTlsAlgs(String... protocols) {
         addToDisabledArgs("jdk.tls.disabledAlgorithms", List.of(protocols));
