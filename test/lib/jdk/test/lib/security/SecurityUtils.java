@@ -54,25 +54,32 @@ public final class SecurityUtils {
     }
 
     /**
+     * Adds the specified protocols to the jdk.tls.disabledAlgorithms
+     * security property 
+     */
+    public static void addToDisabledTlsAlgs(String... protocols) {
+        addToDisabledArgs("jdk.tls.disabledAlgorithms", List.of(protocols));
+    }
+
+    /**
+     * Adds constraints to the specified security property.
+     */
+    public static void addToDisabledArgs(String prop, List<String> constraints) {
+        String value = Security.getProperty(prop);
+        value = Stream.concat(Arrays.stream(value.split(",")),
+                        constraints.stream())
+                .map(String::trim)
+                .collect(Collectors.joining(","));
+        Security.setProperty(prop, value);
+    }
+
+    /**
      * Removes the specified protocols from the jdk.tls.disabledAlgorithms
      * security property.
      */
     public static void removeFromDisabledTlsAlgs(String... protocols) {
         removeFromDisabledAlgs("jdk.tls.disabledAlgorithms",
                                List.<String>of(protocols));
-    }
-    
-    public static void addToDisabledTlsAlgs(String... protocols) {
-        addToDisabledArgs("jdk.tls.disabledAlgorithms", List.of(protocols));
-    }
-    
-    public static void addToDisabledArgs(String prop, List<String> constraints) {
-        String value = Security.getProperty(prop);
-        value = Stream.concat(Arrays.stream(value.split(",")), 
-                        constraints.stream())
-                .map(String::trim)
-                .collect(Collectors.joining(","));
-        Security.setProperty(prop, value);
     }
 
     /**

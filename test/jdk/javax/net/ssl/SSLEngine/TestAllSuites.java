@@ -83,7 +83,7 @@ public class TestAllSuites {
 
         serverEngine = SSL_CONTEXT.createSSLEngine("server", 2);
         serverEngine.setUseClientMode(false);
-        
+
         clientEngine.setEnabledProtocols(new String[]{PROTOCOL});
         serverEngine.setEnabledProtocols(new String[]{PROTOCOL});
     }
@@ -115,7 +115,7 @@ public class TestAllSuites {
 
         clientEngine.setEnabledCipherSuites(suites);
         serverEngine.setEnabledCipherSuites(suites);
-        
+
         createBuffers();
 
         SSLEngineResult clientResult;        // clientEngine's results from last operation
@@ -224,16 +224,16 @@ public class TestAllSuites {
         if (args.length < 1) {
             throw new RuntimeException("Missing TLS protocol parameter.");
         }
-        
+
         switch(args[0]) {
             case "TLSv1.1" -> SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1");
             case "TLSv1.3" -> SecurityUtils.addToDisabledTlsAlgs("TLSv1.2");
         }
-        
+
         TestAllSuites testAllSuites = new TestAllSuites(args[0]);
         testAllSuites.createSSLEngines();
         testAllSuites.test();
-        
+
         System.out.println("All Tests Passed.");
         System.out.println("Elapsed time: " + elapsed / 1000.0);
     }
