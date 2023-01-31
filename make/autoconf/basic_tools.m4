@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
+  UTIL_LOOKUP_PROGS(WHOAMI, whoami)
 
   # These are only needed on some platforms
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
@@ -285,7 +286,7 @@ AC_DEFUN([BASIC_CHECK_TAR],
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
-  elif test "x$TAR_TYPE" = "aix"; then
+  elif test "x$TAR_TYPE" = "xaix"; then
     # -L InputList of aix tar: name of file listing the files and directories
     # that need to be archived or extracted
     TAR_INCLUDE_PARAM="L"

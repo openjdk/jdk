@@ -25,9 +25,7 @@
 #ifndef SHARE_UTILITIES_POPULATION_COUNT_HPP
 #define SHARE_UTILITIES_POPULATION_COUNT_HPP
 
-#include "metaprogramming/conditional.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "metaprogramming/isSigned.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -49,11 +47,11 @@ inline unsigned population_count(T x) {
   STATIC_ASSERT(BitsPerWord <= 128);
   STATIC_ASSERT(BitsPerByte == 8);
   STATIC_ASSERT(std::is_integral<T>::value);
-  STATIC_ASSERT(!IsSigned<T>::value);
+  STATIC_ASSERT(!std::is_signed<T>::value);
   // We need to take care with implicit integer promotion when dealing with
   // integers < 32-bit. We chose to do this by explicitly widening constants
   // to unsigned
-  typedef typename Conditional<(sizeof(T) < sizeof(unsigned)), unsigned, T>::type P;
+  using P = std::conditional_t<(sizeof(T) < sizeof(unsigned)), unsigned, T>;
   const T all = ~T(0);           // 0xFF..FF
   const P fives = all/3;         // 0x55..55
   const P threes = (all/15) * 3; // 0x33..33

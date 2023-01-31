@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,6 @@
 public:
   // C2 compiled method's prolog code.
   void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
-
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
-  static int entry_barrier_stub_size();
 
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
@@ -292,6 +289,19 @@ public:
                      Register limit, Register result, Register chr,
                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
 
+  void arrays_hashcode(Register str1, Register cnt1, Register result,
+                       Register tmp1, Register tmp2, Register tmp3, XMMRegister vnext,
+                       XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                       XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                       XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
+                       BasicType eltype);
+
+  // helper functions for arrays_hashcode
+  int arrays_hashcode_elsize(BasicType eltype);
+  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
+  void arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype);
+  void arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype);
+  void arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype);
 
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
@@ -309,6 +319,9 @@ public:
 
   void vector_unsigned_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
                             BasicType from_elem_bt, BasicType to_elem_bt);
+
+  void vector_signed_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                          BasicType from_elem_bt, BasicType to_elem_bt);
 
   void vector_cast_int_to_subword(BasicType to_elem_bt, XMMRegister dst, XMMRegister zero,
                                   XMMRegister xtmp, Register rscratch, int vec_enc);

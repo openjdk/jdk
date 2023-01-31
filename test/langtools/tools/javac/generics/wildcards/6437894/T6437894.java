@@ -10,7 +10,7 @@
  */
 
 public class T6437894 {
-    public static void main(String... args) {
+    public static void meth() {
         b.B m;
         a.A.X x = null;
         Long.parseLong(x.toString());

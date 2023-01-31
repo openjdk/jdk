@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,7 +143,7 @@ class RegisterMap : public StackObj {
 
   void set_walk_cont(bool value) { _walk_cont = value; }
 
-  bool in_cont()        const { return _chunk() != NULL; } // Whether we are currently on the hstack; if true, frames are relativized
+  bool in_cont()        const { return _chunk() != nullptr; } // Whether we are currently on the hstack; if true, frames are relativized
   oop cont() const;
   stackChunkHandle stack_chunk() const { return _chunk; }
   void set_stack_chunk(stackChunkOop chunk);

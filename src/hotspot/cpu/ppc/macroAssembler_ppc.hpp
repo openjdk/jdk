@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -661,6 +661,8 @@ class MacroAssembler: public Assembler {
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2,
                        MacroAssembler::PreservationLevel preservation_level);
+  void resolve_global_jobject(Register value, Register tmp1, Register tmp2,
+                              MacroAssembler::PreservationLevel preservation_level);
 
   // Support for managing the JavaThread pointer (i.e.; the reference to
   // thread-local information).
@@ -698,7 +700,6 @@ class MacroAssembler: public Assembler {
 
   // Access heap oop, handle encoding and GC barriers.
   // Some GC barriers call C so use needs_frame = true if an extra frame is needed at the current call site.
- private:
   inline void access_store_at(BasicType type, DecoratorSet decorators,
                               Register base, RegisterOrConstant ind_or_offs, Register val,
                               Register tmp1, Register tmp2, Register tmp3,
