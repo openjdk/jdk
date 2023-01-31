@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,27 +41,27 @@
 #endif
 
 Register NativeInstruction::extract_rs1(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return as_Register(Assembler::extract(((unsigned*)instr)[0], 19, 15));
 }
 
 Register NativeInstruction::extract_rs2(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return as_Register(Assembler::extract(((unsigned*)instr)[0], 24, 20));
 }
 
 Register NativeInstruction::extract_rd(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return as_Register(Assembler::extract(((unsigned*)instr)[0], 11, 7));
 }
 
 uint32_t NativeInstruction::extract_opcode(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return Assembler::extract(((unsigned*)instr)[0], 6, 0);
 }
 
 uint32_t NativeInstruction::extract_funct3(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return Assembler::extract(((unsigned*)instr)[0], 14, 12);
 }
 
@@ -128,7 +128,7 @@ address NativeCall::destination() const {
   CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
-  if (nm != NULL && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
+  if (nm != nullptr && nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
     // Yes we do, so get the destination from the trampoline stub.
     const address trampoline_stub_addr = destination;
     destination = nativeCallTrampolineStub_at(trampoline_stub_addr)->destination();
@@ -157,7 +157,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
 
   // Patch the constant in the call's trampoline stub.
   address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != NULL) {
+  if (trampoline_stub_addr != nullptr) {
     assert (!is_NativeCallTrampolineStub_at(dest), "chained trampolines");
     nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
   }
@@ -166,7 +166,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   if (Assembler::reachable_from_branch_at(addr_call, dest)) {
     set_destination(dest);
   } else {
-    assert (trampoline_stub_addr != NULL, "we need a trampoline");
+    assert (trampoline_stub_addr != nullptr, "we need a trampoline");
     set_destination(trampoline_stub_addr);
   }
 
@@ -177,18 +177,18 @@ address NativeCall::get_trampoline() {
   address call_addr = addr_at(0);
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != NULL, "Could not find the containing code blob");
+  assert(code != nullptr, "Could not find the containing code blob");
 
   address jal_destination = MacroAssembler::pd_call_destination(call_addr);
-  if (code != NULL && code->contains(jal_destination) && is_NativeCallTrampolineStub_at(jal_destination)) {
+  if (code != nullptr && code->contains(jal_destination) && is_NativeCallTrampolineStub_at(jal_destination)) {
     return jal_destination;
   }
 
-  if (code != NULL && code->is_nmethod()) {
+  if (code != nullptr && code->is_nmethod()) {
     return trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 // Inserts a native call instruction at a given pc
@@ -226,7 +226,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
   // instruction in oops section.
   CodeBlob* cb = CodeCache::find_blob(instruction_address());
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     RelocIterator iter(nm, instruction_address(), next_instruction_address());
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
@@ -329,7 +329,7 @@ bool NativeInstruction::is_safepoint_poll() {
 }
 
 bool NativeInstruction::is_lwu_to_zr(address instr) {
-  assert_cond(instr != NULL);
+  assert_cond(instr != nullptr);
   return (extract_opcode(instr) == 0b0000011 &&
           extract_funct3(instr) == 0b110 &&
           extract_rd(instr) == zr);         // zr
@@ -342,7 +342,7 @@ bool NativeInstruction::is_sigill_not_entrant() {
 }
 
 void NativeIllegalInstruction::insert(address code_pos) {
-  assert_cond(code_pos != NULL);
+  assert_cond(code_pos != nullptr);
   *(juint*)code_pos = 0xffffffff; // all bits ones is permanently reserved as an illegal instruction
 }
 

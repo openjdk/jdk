@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -227,7 +227,7 @@ class SlowSignatureHandler
 
   virtual void pass_object() {
     intptr_t* addr = single_slot_addr();
-    intptr_t value = *addr == 0 ? NULL : (intptr_t)addr;
+    intptr_t value = *addr == 0 ? nullptr : (intptr_t)addr;
     if (pass_gpr(value) < 0) {
       pass_stack(value);
     }
@@ -269,11 +269,11 @@ class SlowSignatureHandler
 
   ~SlowSignatureHandler()
   {
-    _from           = NULL;
-    _to             = NULL;
-    _int_args       = NULL;
-    _fp_args        = NULL;
-    _fp_identifiers = NULL;
+    _from           = nullptr;
+    _to             = nullptr;
+    _int_args       = nullptr;
+    _fp_args        = nullptr;
+    _fp_identifiers = nullptr;
   }
 };
 

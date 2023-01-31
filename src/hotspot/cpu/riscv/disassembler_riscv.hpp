@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -40,7 +40,7 @@ static const char* pd_cpu_opts() {
 // the perfect job. In those cases, decode_instruction0 may kick in
 // and do it right.
 // If nothing had to be done, just return "here", otherwise return "here + instr_len(here)"
-static address decode_instruction0(address here, outputStream* st, address virtual_begin = NULL) {
+static address decode_instruction0(address here, outputStream* st, address virtual_begin = nullptr) {
   return here;
 }
 

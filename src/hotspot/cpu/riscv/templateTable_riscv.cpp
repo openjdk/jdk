@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -123,8 +123,8 @@ static inline Address at_tos_p5() {
 }
 
 // Miscellaneous helper routines
-// Store an oop (or NULL) at the Address described by obj.
-// If val == noreg this means store a NULL
+// Store an oop (or null) at the Address described by obj.
+// If val == noreg this means store a null
 static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Address dst,
                          Register val,
@@ -391,7 +391,7 @@ void TemplateTable::fast_aldc(LdcType type) {
     __ ld(tmp, Address(rarg, offset));
     __ resolve_oop_handle(tmp, x15, t1);
     __ bne(result, tmp, notNull);
-    __ mv(result, zr);  // NULL object reference
+    __ mv(result, zr);  // null object reference
     __ bind(notNull);
   }
 
@@ -1052,7 +1052,7 @@ void TemplateTable::aastore() {
 
   Address element_address(x14, 0);
 
-  // do array store check - check for NULL value first
+  // do array store check - check for null value first
   __ beqz(x10, is_null);
 
   // Move subklass into x11
@@ -1080,11 +1080,11 @@ void TemplateTable::aastore() {
   do_oop_store(_masm, element_address, x10, IS_ARRAY);
   __ j(done);
 
-  // Have a NULL in x10, x13=array, x12=index.  Store NULL at ary[idx]
+  // Have a null in x10, x13=array, x12=index.  Store null at ary[idx]
   __ bind(is_null);
   __ profile_null_seen(x12);
 
-  // Store a NULL
+  // Store a null
   do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
@@ -1719,7 +1719,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                x12);
     __ load_unsigned_byte(x11, Address(xbcp, 0));  // restore target bytecode
 
-    // x10: osr nmethod (osr ok) or NULL (osr not possible)
+    // x10: osr nmethod (osr ok) or null (osr not possible)
     // w11: target bytecode
     // x12: temporary
     __ beqz(x10, dispatch);     // test result -- no osr if null
@@ -2183,7 +2183,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     __ load_resolved_method_at_index(byte_no, temp, Rcache);
     __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, t0, NULL, &clinit_barrier_slow);
+    __ clinit_barrier(temp, t0, nullptr, &clinit_barrier_slow);
   }
 }
 
@@ -2276,12 +2276,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     __ la(c_rarg2, Address(c_rarg2, in_bytes(ConstantPoolCache::base_offset())));
 
     if (is_static) {
-      __ mv(c_rarg1, zr); // NULL object reference
+      __ mv(c_rarg1, zr); // null object reference
     } else {
       __ ld(c_rarg1, at_tos()); // get object pointer without popping it
       __ verify_oop(c_rarg1);
     }
-    // c_rarg1: object pointer or NULL
+    // c_rarg1: object pointer or null
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on the stack
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
@@ -2519,7 +2519,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     __ add(c_rarg2, c_rarg2, in_bytes(cp_base_offset));
     // object (tos)
     __ mv(c_rarg3, esp);
-    // c_rarg1: object pointer set up above (NULL if static)
+    // c_rarg1: object pointer set up above (null if static)
     // c_rarg2: cache entry pointer
     // c_rarg3: jvalue object on  the stack
     __ call_VM(noreg,
@@ -3540,7 +3540,7 @@ void TemplateTable::checkcast() {
   __ bind(ok_is_subtype);
   __ mv(x10, x13); // Restore object in x13
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ j(done);
     __ bind(is_null);
@@ -3595,7 +3595,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ mv(x10, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ j(done);
     __ bind(is_null);
@@ -3604,8 +3604,8 @@ void TemplateTable::instanceof() {
     __ bind(is_null);   // same as 'done'
   }
   __ bind(done);
-  // x10 = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // x10 = 1: obj != NULL and obj is     an instanceof the specified klass
+  // x10 = 0: obj == null or  obj is not an instanceof the specified klass
+  // x10 = 1: obj != null and obj is     an instanceof the specified klass
 }
 
 //-----------------------------------------------------------------------------
@@ -3666,7 +3666,7 @@ void TemplateTable::athrow() {
 void TemplateTable::monitorenter() {
   transition(atos, vtos);
 
-   // check for NULL object
+   // check for null object
    __ null_check(x10);
 
    const Address monitor_block_top(
@@ -3678,7 +3678,7 @@ void TemplateTable::monitorenter() {
    Label allocated;
 
    // initialize entry pointer
-   __ mv(c_rarg1, zr); // points to free slot or NULL
+   __ mv(c_rarg1, zr); // points to free slot or null
 
    // find a free slot in the monitor block (result in c_rarg1)
    {
@@ -3764,7 +3764,7 @@ void TemplateTable::monitorenter() {
 void TemplateTable::monitorexit() {
   transition(atos, vtos);
 
-  // check for NULL object
+  // check for null object
   __ null_check(x10);
 
   const Address monitor_block_top(

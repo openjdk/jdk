@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -49,7 +49,7 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
   });
   __ sd(t0, Address(xthread, JavaThread::saved_exception_pc_offset()));
 
-  assert(SharedRuntime::polling_page_return_handler_blob() != NULL,
+  assert(SharedRuntime::polling_page_return_handler_blob() != nullptr,
          "polling page return stub not created yet");
   address stub = SharedRuntime::polling_page_return_handler_blob()->entry_point();
 
@@ -70,13 +70,13 @@ void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
   : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
+  assert(info != nullptr, "must have info");
   _info = new CodeEmitInfo(info);
 }
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
   : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
+  assert(info != nullptr, "must have info");
   _info = new CodeEmitInfo(info);
 }
 
@@ -271,7 +271,7 @@ void DeoptimizeStub::emit_code(LIR_Assembler* ce) {
 }
 
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
-  address a = NULL;
+  address a = nullptr;
   if (_info->deoptimize_on_exception()) {
     // Deoptimize, do not throw the exception, because it is probably wrong to do it here.
     a = Runtime1::entry_for(Runtime1::predicate_failed_trap_id);
@@ -340,7 +340,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
   Address resolve(SharedRuntime::get_resolve_static_call_stub(),
                   relocInfo::static_call_type);
   address call = __ trampoline_call(resolve);
-  if (call == NULL) {
+  if (call == nullptr) {
     ce->bailout("trampoline stub overflow");
     return;
   }

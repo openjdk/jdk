@@ -55,7 +55,7 @@ static bool emit_shared_trampolines(CodeBuffer* cb, CodeBuffer::SharedTrampoline
   auto emit = [&](address dest, const CodeBuffer::Offsets &offsets) {
     masm.set_code_section(cb->stubs());
     if (!is_aligned(masm.offset() + NativeCallTrampolineStub::data_offset, wordSize)) {
-      if (cb->stubs()->maybe_expand_to_ensure_remaining(NativeInstruction::instruction_size) && cb->blob() == NULL) {
+      if (cb->stubs()->maybe_expand_to_ensure_remaining(NativeInstruction::instruction_size) && cb->blob() == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         p_succeeded = false;
         return p_succeeded;

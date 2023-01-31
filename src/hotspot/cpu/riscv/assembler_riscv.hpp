@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -381,7 +381,7 @@ public:
   }
 
   static void patch(address a, unsigned msb, unsigned lsb, unsigned val) {
-    assert_cond(a != NULL);
+    assert_cond(a != nullptr);
     assert_cond(msb >= lsb && msb <= 31);
     unsigned nbits = msb - lsb + 1;
     guarantee(val < (1U << nbits), "Field too big for insn");
@@ -1930,7 +1930,7 @@ public:
 
   // patch a 16-bit instruction.
   static void c_patch(address a, unsigned msb, unsigned lsb, uint16_t val) {
-    assert_cond(a != NULL);
+    assert_cond(a != nullptr);
     assert_cond(msb >= lsb && msb <= 15);
     unsigned nbits = msb - lsb + 1;
     guarantee(val < (1U << nbits), "Field too big for insn");
@@ -2175,7 +2175,7 @@ public:
     emit_int16(insn);                                                                        \
   }                                                                                          \
   void NAME(address dest) {                                                                  \
-    assert_cond(dest != NULL);                                                               \
+    assert_cond(dest != nullptr);                                                               \
     int64_t distance = dest - pc();                                                          \
     assert_cond(is_imm_in_range(distance, 11, 1));                                           \
     c_j(distance);                                                                           \
@@ -2203,7 +2203,7 @@ public:
     emit_int16(insn);                                                                        \
   }                                                                                          \
   void NAME(Register Rs1, address dest) {                                                    \
-    assert_cond(dest != NULL);                                                               \
+    assert_cond(dest != nullptr);                                                               \
     int64_t distance = dest - pc();                                                          \
     assert_cond(is_imm_in_range(distance, 8, 1));                                            \
     NAME(Rs1, distance);                                                                     \

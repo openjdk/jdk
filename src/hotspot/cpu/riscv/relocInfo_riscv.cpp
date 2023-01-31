@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -41,7 +41,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
   switch (type()) {
     case relocInfo::oop_type: {
       oop_Relocation *reloc = (oop_Relocation *)this;
-      // in movoop when BarrierSet::barrier_set()->barrier_set_nmethod() != NULL
+      // in movoop when BarrierSet::barrier_set()->barrier_set_nmethod() != null
       if (NativeInstruction::is_load_pc_relative_at(addr())) {
         address constptr = (address)code()->oop_addr_at(reloc->oop_index());
         bytes = MacroAssembler::pd_patch_instruction_size(addr(), constptr);
@@ -62,11 +62,11 @@ address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be an address instruction here");
   if (NativeCall::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != NULL) {
+    if (trampoline != nullptr) {
       return nativeCallTrampolineStub_at(trampoline)->destination();
     }
   }
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     // the extracted address from the instructions in address orig_addr
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
     // If call is branch to self, don't try to relocate it, just leave it
@@ -83,7 +83,7 @@ void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be an address instruction here");
   if (NativeCall::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != NULL) {
+    if (trampoline != nullptr) {
       nativeCall_at(addr())->set_destination_mt_safe(x, /* assert_lock */false);
       return;
     }
