@@ -130,7 +130,7 @@ public final class LocaleServiceProviderPool {
          * Available locales for all locale sensitive services.
          * This also contains JRE's available locales
          */
-        static final Locale[] AvailableLocalesArray;
+        static final Locale[] allAvailableLocales;
 
         static {
             Set<Locale> all = new HashSet<>();
@@ -139,7 +139,7 @@ public final class LocaleServiceProviderPool {
                     LocaleServiceProviderPool.getPool(c);
                 all.addAll(pool.getAvailableLocaleSet());
             }
-            AvailableLocalesArray = all.toArray(new Locale[0]);
+            allAvailableLocales = all.toArray(new Locale[0]);
         }
 
         // No instantiation
