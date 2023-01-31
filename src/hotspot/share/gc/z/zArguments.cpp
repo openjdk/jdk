@@ -106,9 +106,6 @@ void ZArguments::initialize() {
     FLAG_SET_DEFAULT(ZVerifyRoots, true);
     FLAG_SET_DEFAULT(ZVerifyObjects, true);
   }
-
-  // Cannot currently support stack-locking with Lilliput and ZGC.
-  FLAG_SET_DEFAULT(UseHeavyMonitors, true);
 }
 
 size_t ZArguments::heap_virtual_to_physical_ratio() {
