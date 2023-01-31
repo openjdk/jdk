@@ -480,6 +480,7 @@ EscapedState* PEAState::materialize(GraphKit* kit, Node* var, SafePointNode* map
 
   const TypeOopPtr* oop_type = var->as_Type()->type()->is_oopptr();
   Node* objx = kit->set_output_for_allocation(allocx, oop_type);
+  allocx->jvms()->set_bci(alloc->jvms()->bci());
   VirtualState* virt = static_cast<VirtualState*>(get_object_state(alloc));
 
   if (oop_type->isa_instptr()) {
