@@ -75,23 +75,16 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     public static final String ENABLED_ID = "enabled";
     public static final String PREFERRED_ID = "FilterTopComponent";
     public static final String JAVASCRIPT_HELPER_ID = "JavaScriptHelper";
-    private CheckListView view;
-    private ExplorerManager manager;
-    private FilterChain filterChain;
-    private FilterChain sequence;
-    private ScriptEngine engine;
+    private final CheckListView view;
+    private final ExplorerManager manager;
+    private final FilterChain filterChain;
+    private final FilterChain sequence;
+    private final ScriptEngine engine;
     private Lookup.Result<FilterChain> result;
-    private JComboBox comboBox;
-    private List<FilterSetting> filterSettings;
-    private FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
-    private ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
-    private ActionListener comboBoxActionListener = new ActionListener() {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            comboBoxSelectionChanged();
-        }
-    };
+    private final JComboBox comboBox;
+    private final List<FilterSetting> filterSettings;
+    private final FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
+    private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
 
     public ChangedEvent<FilterTopComponent> getFilterSettingsChangedEvent() {
         return filterSettingsChangedEvent;
@@ -247,7 +240,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
 
     private class FilterChildren extends Children.Keys<Filter> implements ChangedListener<CheckNode> {
 
-        private HashMap<Filter, Node> nodeHash = new HashMap<>();
+        private final HashMap<Filter, Node> nodeHash = new HashMap<>();
 
         @Override
         protected Node[] createNodes(Filter filter) {
@@ -332,7 +325,6 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         initComponents();
         setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
         setToolTipText(NbBundle.getMessage(FilterTopComponent.class, "HINT_FilterTopComponent"));
-        //        setIcon(Utilities.loadImage(ICON_PATH, true));
 
         sequence = new FilterChain();
         filterChain = new FilterChain();
@@ -370,7 +362,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         filterSettings = new ArrayList<>();
         updateComboBox();
 
-        comboBox.addActionListener(comboBoxActionListener);
+        comboBox.addActionListener(l -> comboBoxSelectionChanged());
         setChain(filterChain);
     }
 
@@ -386,7 +378,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     public void removeFilter(Filter f) {
-        com.sun.hotspot.igv.filter.CustomFilter cf = (com.sun.hotspot.igv.filter.CustomFilter) f;
+        CustomFilter cf = (CustomFilter) f;
 
         sequence.removeFilter(cf);
         try {
@@ -414,8 +406,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                     FileLock lock = fileObject.lock();
                     fileObject.move(lock, fileObject.getParent(), filter.getName(), "");
                     lock.releaseLock();
-                    FileObject newFileObject = fileObject.getParent().getFileObject(filter.getName());
-                    fileObject = newFileObject;
+                    fileObject = fileObject.getParent().getFileObject(filter.getName());
                 }
 
                 FileLock lock = fileObject.lock();
@@ -457,12 +448,11 @@ public final class FilterTopComponent extends TopComponent implements LookupList
                     sb.append("\n");
                 }
                 code = sb.toString();
-            } catch (FileNotFoundException ex) {
-                Exceptions.printStackTrace(ex);
             } catch (IOException ex) {
                 Exceptions.printStackTrace(ex);
             } finally {
                 try {
+                    assert is != null;
                     is.close();
                 } catch (IOException ex) {
                     Exceptions.printStackTrace(ex);
@@ -480,7 +470,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
             afterMap.put(cf, after);
 
             Boolean enabled = (Boolean) fo.getAttribute(ENABLED_ID);
-            if (enabled != null && (boolean) enabled) {
+            if (enabled != null && enabled) {
                 enabledSet.add(cf);
             }
 

@@ -28,8 +28,6 @@ import com.sun.hotspot.igv.data.Group;
 import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputNode;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
-import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.filter.FilterChainProvider;
 import com.sun.hotspot.igv.settings.Settings;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.RangeSlider;
@@ -114,6 +112,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         JPanel container = new JPanel(new BorderLayout());
         add(container, BorderLayout.NORTH);
 
+        DiagramViewModel diagramViewModel = new DiagramViewModel(graph);
         RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
         if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
