@@ -34,8 +34,9 @@ import java.util.concurrent.TimeUnit;
 public class TestDoneBeforeDoInBackground {
 
     static boolean doInBackground = false;
-    static final int WAIT_TIME = 200;
+    private static final int WAIT_TIME = 200;
     private static final long CLEANUP_TIME = 3000;
+    private static final CountDownLatch doneLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
         SwingWorker<String, String> worker =
@@ -67,6 +68,7 @@ public class TestDoneBeforeDoInBackground {
                     throw new RuntimeException("done called before doInBackground");
                 }
                 System.out.println("Done");
+                doneLatch.countDown();
             }
         };
 
@@ -81,6 +83,10 @@ public class TestDoneBeforeDoInBackground {
             throw new RuntimeException("Cancel took too long: "
                                        + ((end - start) / 1000.0d) + " s");
         }
+        if (!doneLatch.await(CLEANUP_TIME + 1000L, TimeUnit.MILLISECONDS)) {
+            throw new RuntimeException("done didn't complete in time");
+        }
+        System.out.println("doInBackground " + doInBackground);
         if (doInBackground && worker.getState() != SwingWorker.StateValue.DONE) {
             throw new RuntimeException("doInBackground is finished " +
                                        " but State is not DONE");
