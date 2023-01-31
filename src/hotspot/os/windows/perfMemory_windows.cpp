@@ -1240,6 +1240,7 @@ static bool make_user_tmp_dir(const char* dirname) {
         if (PrintMiscellaneous && Verbose) {
           warning("%s directory is insecure\n", dirname);
         }
+        free_security_attr(pDirSA);
         return false;
       }
       // The administrator should be able to delete this directory.
@@ -1255,18 +1256,15 @@ static bool make_user_tmp_dir(const char* dirname) {
                                                         dirname, lasterror);
         }
       }
-    }
-    else {
+    } else {
       if (PrintMiscellaneous && Verbose) {
         warning("CreateDirectory failed: %d\n", GetLastError());
       }
+      free_security_attr(pDirSA);
       return false;
     }
   }
-
-  // free the security attributes structure
   free_security_attr(pDirSA);
-
   return true;
 }
 
@@ -1298,6 +1296,8 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
   if (!make_user_tmp_dir(dirname)) {
     // could not make/find the directory or the found directory
     // was not secure
+    free_security_attr(lpFileSA);
+    free_security_attr(lpSmoSA);
     return nullptr;
   }
 
@@ -1329,6 +1329,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     if (PrintMiscellaneous && Verbose) {
       warning("could not create file %s: %d\n", filename, lasterror);
     }
+    free_security_attr(lpSmoSA);
     return nullptr;
   }
 

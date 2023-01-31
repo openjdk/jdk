@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,12 +134,12 @@ public:
 
   // If a word within the partial object will be written to the first word of a
   // destination region, this is the address of the destination region;
-  // otherwise this is NULL.
+  // otherwise this is null.
   HeapWord* dest_region_addr() const     { return _dest_region_addr; }
 
   // If a word within the partial object will be written to the first word of a
   // destination region, this is the address of that word within the partial
-  // object; otherwise this is NULL.
+  // object; otherwise this is null.
   HeapWord* first_src_addr() const       { return _first_src_addr; }
 
   // Record the data necessary to split the region src_region_idx.
@@ -182,7 +182,7 @@ class SpaceInfo
   // Where the dense prefix ends, or the compacted region begins.
   HeapWord* dense_prefix() const { return _dense_prefix; }
 
-  // The start array for the (generation containing the) space, or NULL if there
+  // The start array for the (generation containing the) space, or null if there
   // is no start array.
   ObjectStartArray* start_array() const { return _start_array; }
 
@@ -566,13 +566,13 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
 inline HeapWord* ParallelCompactData::RegionData::data_location() const
 {
   DEBUG_ONLY(return _data_location;)
-  NOT_DEBUG(return NULL;)
+  NOT_DEBUG(return nullptr;)
 }
 
 inline HeapWord* ParallelCompactData::RegionData::highest_ref() const
 {
   DEBUG_ONLY(return _highest_ref;)
-  NOT_DEBUG(return NULL;)
+  NOT_DEBUG(return nullptr;)
 }
 
 inline void ParallelCompactData::RegionData::set_data_location(HeapWord* addr)
@@ -841,7 +841,7 @@ ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
 #endif
 {
   _words_remaining = words;
-  _source = NULL;
+  _source = nullptr;
 }
 
 inline ParCompactionManager* ParMarkBitMapClosure::compaction_manager() const {
