@@ -70,7 +70,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.
       // Bail out because this will create big trouble later on, either
-      //  - when using istate, calculated as (null - z_ijava_state_size (= 0x70 (dbg) or 0x68 (rel)) or
+      //  - when using istate, calculated as (nullptr - z_ijava_state_size (= 0x70 (dbg) or 0x68 (rel)) or
       //  - when using fp() directly in safe_for_sender()
       //
       // There is no conclusive description (yet) how this could happen, but it does:
@@ -92,9 +92,9 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       // contents of r6:  0xffffffffffffff90
       //
       // Here is the sequence of what happens:
-      //  - ret_frame is constructed with _fp == null (for whatever reason)
+      //  - ret_frame is constructed with _fp == nullptr (for whatever reason)
       //  - ijava_state_unchecked() calculates it's result as
-      //      istate = fp() - z_ijava_state_size() = null - 0x68 DEBUG_ONLY(-8)
+      //      istate = fp() - z_ijava_state_size() = nullptr - 0x68 DEBUG_ONLY(-8)
       //  - istate->method dereferences memory at offset 8 from istate
       return false;
     }

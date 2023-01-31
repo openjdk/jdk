@@ -192,7 +192,7 @@ frame os::current_frame() {
     frame senderFrame = os::get_sender_for_C_frame(&topframe);
     assert(senderFrame.pc() != nullptr, "Sender pc should not be null");
     // Return sender of sender of current topframe which hopefully
-    // both have pc != null.
+    // both have pc != nullptr.
 #ifdef _NMT_NOINLINE_   // Is set in slowdebug builds.
     // Current_stack_pointer is not inlined, we must pop one more frame.
     frame tmp = os::get_sender_for_C_frame(&topframe);
