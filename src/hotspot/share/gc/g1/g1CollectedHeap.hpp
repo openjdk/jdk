@@ -57,6 +57,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -118,6 +119,27 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   void reset_from_card_cache(uint start_idx, size_t num_regions);
  public:
   void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
+};
+
+// Helper to claim contiguous sets of JavaThread for processing by multiple threads.
+class G1JavaThreadsListClaimer : public StackObj {
+  ThreadsListHandle _list;
+  uint _claim_step;
+
+  volatile uint _cur_claim;
+
+public:
+  G1JavaThreadsListClaimer(uint claim_step) : _list(), _claim_step(claim_step), _cur_claim(0) {
+    assert(claim_step > 0, "must be");
+  }
+
+  // Attempts to claim _claim_step JavaThreads, returning an array of claimed
+  // JavaThread* with count elements. Returns null (and a zero count) if there
+  // is no more to claim.
+  JavaThread* const* claim(uint& count);
+
+  // Total number of JavaThreads that can be claimed.
+  uint length() const { return _list.length(); }
 };
 
 class G1CollectedHeap : public CollectedHeap {

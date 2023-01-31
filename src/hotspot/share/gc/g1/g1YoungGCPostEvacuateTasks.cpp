@@ -704,30 +704,25 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsTask : public G1AbstractSubTask {
-  ThreadsListHandle _list;
-  volatile uint _list_claim;
+  G1JavaThreadsListClaimer _claimer;
 
-  JavaThread* claim_next() {
-    uint claimed = Atomic::fetch_and_add(&_list_claim, 1u);
-    if (claimed >= _list.length()) {
-      return nullptr;
-    }
-    return _list.thread_at(claimed);
-  }
+  static const uint ThreadsPerWorker = 250;
 
 public:
-
-  ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _list(), _list_claim(0) { }
+  ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker) { }
 
   void do_work(uint worker_id) override {
-    JavaThread* thread;
-    while ((thread = claim_next()) != nullptr) {
-      thread->tlab().resize();
+    JavaThread* const* list;
+    uint count;
+    while ((list = _claimer.claim(count)) != nullptr) {
+      for (uint i = 0; i < count; i++) {
+        list[i]->tlab().resize();
+      }
     }
   }
 
   double worker_cost() const override {
-    return (double)_list.length() / 20;
+    return (double)_claimer.length() / ThreadsPerWorker;
   }
 };
 

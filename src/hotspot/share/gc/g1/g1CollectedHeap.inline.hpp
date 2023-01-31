@@ -41,12 +41,26 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 inline bool G1STWIsAliveClosure::do_object_b(oop p) {
   // An object is reachable if it is outside the collection set,
   // or is inside and copied.
   return !_g1h->is_in_cset(p) || p->is_forwarded();
+}
+
+inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
+  count = 0;
+  if (_cur_claim >= _list.length()) {
+    return nullptr;
+  }
+  uint claim = Atomic::fetch_and_add(&_cur_claim, _claim_step);
+  if (claim >= _list.length()) {
+    return nullptr;
+  }
+  count = MIN2(_list.length() - claim, _claim_step);
+  return _list.list()->threads() + claim;
 }
 
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {

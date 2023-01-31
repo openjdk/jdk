@@ -201,7 +201,7 @@ public:
 
   JavaThread *const thread_at(uint i) const { return _threads[i]; }
 
-  JavaThread *const *threads() const        { return _threads; }
+  JavaThread* const* threads()              { return _threads; }
 
   // Returns -1 if target is not found.
   int find_index_of_JavaThread(JavaThread* target);
