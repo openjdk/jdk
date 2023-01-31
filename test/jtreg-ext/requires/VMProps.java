@@ -663,6 +663,8 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         // By jtreg design stderr produced here will be visible
         // in the output of a parent process.
+        // Avoid logging to stdout as it will be filtered out by the jtreg
+        // main process.
         System.err.println("VMProps: " + msg);
     }
 
