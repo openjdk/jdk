@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -287,7 +287,7 @@ public:
     else if (is_ldr_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
-    return NULL;
+    return nullptr;
   }
 
   intptr_t data() const;
@@ -582,7 +582,7 @@ public:
     next_instruction_offset     =    4 * 4
   };
 
-  address destination(nmethod* nm = NULL) const;
+  address destination(nmethod* nm = nullptr) const;
   void set_destination(address new_destination);
   ptrdiff_t destination_offset() const;
 };
@@ -702,7 +702,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
@@ -724,7 +724,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   void  verify();
 
   static bool is_deopt_at(address instr) {
-    assert(instr != NULL, "");
+    assert(instr != nullptr, "");
     uint32_t value = *(uint32_t *) instr;
     return value == 0xd4ade001;
   }

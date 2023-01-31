@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -194,7 +194,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
 
   // Patch the constant in the call's trampoline stub.
   address trampoline_stub_addr = get_trampoline();
-  if (trampoline_stub_addr != NULL) {
+  if (trampoline_stub_addr != nullptr) {
     assert (! is_NativeCallTrampolineStub_at(dest), "chained trampolines");
     nativeCallTrampolineStub_at(trampoline_stub_addr)->set_destination(dest);
   }
@@ -203,7 +203,7 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
   if (reachable) {
     set_destination(dest);
   } else {
-    assert (trampoline_stub_addr != NULL, "we need a trampoline");
+    assert (trampoline_stub_addr != nullptr, "we need a trampoline");
     set_destination(trampoline_stub_addr);
   }
 
@@ -214,7 +214,7 @@ address NativeCall::get_trampoline() {
   address call_addr = addr_at(0);
 
   CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != NULL, "Could not find the containing code blob");
+  assert(code != nullptr, "Could not find the containing code blob");
 
   address bl_destination
     = MacroAssembler::pd_call_destination(call_addr);
@@ -226,7 +226,7 @@ address NativeCall::get_trampoline() {
     return trampoline_stub_Relocation::get_trampoline_for(call_addr, (nmethod*)code);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 // Inserts a native call instruction at a given pc
@@ -267,7 +267,7 @@ void NativeMovConstReg::set_data(intptr_t x) {
   // instruction in oops section.
   CodeBlob* cb = CodeCache::find_blob(instruction_address());
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     RelocIterator iter(nm, instruction_address(), next_instruction_address());
     while (iter.next()) {
       if (iter.type() == relocInfo::oop_type) {
@@ -527,14 +527,14 @@ void NativeCallTrampolineStub::set_destination(address new_destination) {
 // trampoline, simply patch the call directly to dest.
 address NativeCall::trampoline_jump(CodeBuffer &cbuf, address dest) {
   MacroAssembler a(&cbuf);
-  address stub = NULL;
+  address stub = nullptr;
 
   if (a.far_branches()
       && ! is_NativeCallTrampolineStub_at(instruction_address() + displacement())) {
     stub = a.emit_trampoline_stub(instruction_address() - cbuf.insts()->start(), dest);
   }
 
-  if (stub == NULL) {
+  if (stub == nullptr) {
     // If we generated no stub, patch this call directly to dest.
     // This will happen if we don't need far branches or if there
     // already was a trampoline.

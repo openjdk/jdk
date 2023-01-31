@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,7 +140,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
   if (JvmtiExport::can_force_early_return()) {
     Label L;
     ldr(rscratch1, Address(rthread, JavaThread::jvmti_thread_state_offset()));
-    cbz(rscratch1, L); // if (thread->jvmti_thread_state() == NULL) exit;
+    cbz(rscratch1, L); // if (thread->jvmti_thread_state() == null) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
@@ -769,7 +769,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
            "displached header must be first word in BasicObjectLock");
 
     Label fail;
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
 
     // Fast check for recursive lock.
     //
@@ -868,7 +868,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
     cbz(header_reg, count);
 
     // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/NULL);
+    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, rscratch1, count, /*fallthrough*/nullptr);
 
     // Call the runtime routine for slow case.
     str(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
@@ -896,7 +896,7 @@ void InterpreterMacroAssembler::set_method_data_pointer_for_bcp() {
   Label set_mdp;
   stp(r0, r1, Address(pre(sp, -2 * wordSize)));
 
-  // Test MDO to avoid the call if it is NULL.
+  // Test MDO to avoid the call if it is null.
   ldr(r0, Address(rmethod, in_bytes(Method::method_data_offset())));
   cbz(r0, set_mdp);
   call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::bcp_to_di), rmethod, rbcp);
@@ -1287,7 +1287,7 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
   }
 
   // In the fall-through case, we found no matching item, but we
-  // observed the item[start_row] is NULL.
+  // observed the item[start_row] is null.
 
   // Fill in the item field and increment the count.
   int item_offset = in_bytes(item_offset_fn(start_row));
@@ -1303,13 +1303,13 @@ void InterpreterMacroAssembler::record_item_in_profile_helper(Register item, Reg
 // Example state machine code for three profile rows:
 //   // main copy of decision tree, rooted at row[1]
 //   if (row[0].rec == rec) { row[0].incr(); goto done; }
-//   if (row[0].rec != NULL) {
+//   if (row[0].rec != null) {
 //     // inner copy of decision tree, rooted at row[1]
 //     if (row[1].rec == rec) { row[1].incr(); goto done; }
-//     if (row[1].rec != NULL) {
+//     if (row[1].rec != null) {
 //       // degenerate decision tree, rooted at row[2]
 //       if (row[2].rec == rec) { row[2].incr(); goto done; }
-//       if (row[2].rec != NULL) { count.incr(); goto done; } // overflow
+//       if (row[2].rec != null) { count.incr(); goto done; } // overflow
 //       row[2].init(rec); goto done;
 //     } else {
 //       // remember row[1] is empty
@@ -1583,7 +1583,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(rscratch1, L);
     stop("InterpreterMacroAssembler::call_VM_leaf_base:"
-         " last_sp != NULL");
+         " last_sp != null");
     bind(L);
   }
 #endif /* ASSERT */
@@ -1611,7 +1611,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
     ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(rscratch1, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
-         " last_sp != NULL");
+         " last_sp != null");
     bind(L);
   }
 #endif /* ASSERT */
