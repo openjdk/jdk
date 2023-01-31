@@ -514,6 +514,9 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     private void redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
+            return;
+        }
         String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
 
         String stdoutFileName = String.format("./%s-stdout--%s.log", fileNameBase, timeStamp);
@@ -655,6 +658,9 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param msg
      */
     protected static void log(String msg) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
+            return;
+        }
         // By jtreg design stderr produced here will be visible
         // in the output of a parent process.
         System.err.println("VMProps: " + msg);
