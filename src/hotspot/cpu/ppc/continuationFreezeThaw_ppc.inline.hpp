@@ -533,7 +533,7 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
 
 inline intptr_t* ThawBase::align(const frame& hf, intptr_t* frame_sp, frame& caller, bool bottom) {
   // Unused. Alignment is done directly in new_stack_frame() / finish_thaw().
-  return NULL;
+  return nullptr;
 }
 
 static inline void derelativize_one(intptr_t* const fp, int offset) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,7 +91,7 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
 
   const int size = use_vector ? CRC32_TABLE_SIZE + vector_size : (4 BIG_ENDIAN_ONLY(+1)) * CRC32_TABLE_SIZE;
   const address consts = (address)os::malloc(size, mtInternal);
-  if (consts == NULL) {
+  if (consts == nullptr) {
     vm_exit_out_of_memory(size, OOM_MALLOC_ERROR, "CRC constants: no enough space");
   }
   juint* ptr = (juint*)consts;

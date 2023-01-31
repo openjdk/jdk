@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -160,7 +160,7 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ bctr();
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != NULL, "not yet generated!");
+  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
   __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
@@ -226,14 +226,14 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     // They are linked to Java-generated adapters via MethodHandleNatives.linkMethod.
     // They all allow an appendix argument.
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   // No need in interpreter entry for linkToNative for now.
   // Interpreter calls compiled entry through i2c.
   if (iid == vmIntrinsics::_linkToNative) {
     __ stop("Should not reach here");           // empty stubs make SG sick
-    return NULL;
+    return nullptr;
   }
 
   Register R15_argbase   = R15_esp; // parameter (preserved)
@@ -497,8 +497,8 @@ void trace_method_handle_stub(const char* adaptername,
                               intptr_t* entry_sp,
                               intptr_t* saved_regs) {
 
-  bool has_mh = (strstr(adaptername, "/static") == NULL &&
-                 strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
+  bool has_mh = (strstr(adaptername, "/static") == nullptr &&
+                 strstr(adaptername, "linkTo") == nullptr);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
   log_info(methodhandles)("MH %s %s=" INTPTR_FORMAT " sp=" INTPTR_FORMAT,
                 adaptername, mh_reg_name, p2i(mh), p2i(entry_sp));

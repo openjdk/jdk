@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -400,7 +400,7 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
     trap_null_check(r);
   } else { // explicit
     //const address exception_entry = Runtime1::entry_for(Runtime1::throw_null_pointer_exception_id);
-    assert(Lnull != NULL, "must have Label for explicit check");
+    assert(Lnull != nullptr, "must have Label for explicit check");
     cmpdi(CCR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);
   }

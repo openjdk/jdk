@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -95,7 +95,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec() {}
+  AddressLiteral() : _address(nullptr), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)
@@ -1349,14 +1349,14 @@ class Assembler : public AbstractAssembler {
   inline void emit_data(int, relocInfo::relocType rtype);
 
   // Emit an address.
-  inline address emit_addr(const address addr = NULL);
+  inline address emit_addr(const address addr = nullptr);
 
 #if !defined(ABI_ELFv2)
   // Emit a function descriptor with the specified entry point, TOC,
-  // and ENV. If the entry point is NULL, the descriptor will point
+  // and ENV. If the entry point is null, the descriptor will point
   // just past the descriptor.
   // Use values from friend functions as defaults.
-  inline address emit_fd(address entry = NULL,
+  inline address emit_fd(address entry = nullptr,
                          address toc = (address) FunctionDescriptor::friend_toc,
                          address env = (address) FunctionDescriptor::friend_env);
 #endif

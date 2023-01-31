@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -312,7 +312,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
   __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
-  // Convert null sentinel to NULL
+  // Convert null sentinel to null
   int simm16_rest = __ load_const_optimized(R11_scratch1, Universe::the_null_sentinel_addr(), R0, true);
   __ ld(R31, simm16_rest, R11_scratch1);
   __ resolve_oop_handle(R31, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
@@ -994,7 +994,7 @@ void TemplateTable::aastore() {
   // Rindex is dead!
   Register Rscratch3 = Rindex;
 
-  // Do array store check - check for NULL value first.
+  // Do array store check - check for null value first.
   __ cmpdi(CCR0, R17_tos, 0);
   __ beq(CCR0, Lis_null);
 
@@ -2242,7 +2242,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
 
     __ load_resolved_method_at_index(byte_no, Rcache, method);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, R16_thread, NULL /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, R16_thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 
   __ bind(Ldone);
@@ -2391,7 +2391,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
       }
       __ verify_oop(R17_tos);
     }
-    // tos:   object pointer or NULL if static
+    // tos:   object pointer or null if static
     // cache: cache entry pointer
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access), R17_tos, Rcache);
     if (!is_static && has_tos) {
@@ -3481,7 +3481,7 @@ void TemplateTable::invokevfinal_helper(Register Rmethod, Register Rflags, Regis
   __ sldi(Rret_type, Rret_type, LogBytesPerWord);
   __ ldx(Rret_addr, Rret_type, Rtable_addr);
 
-  // Load receiver and receiver NULL check.
+  // Load receiver and receiver null check.
   __ load_receiver(Rnum_params, Rrecv);
   __ null_check_throw(Rrecv, -1, Rscratch1);
 
@@ -3505,7 +3505,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
   prepare_invoke(byte_no, Rmethod, Rret_addr, noreg, Rreceiver, Rflags, R11_scratch1, R12_scratch2);
 
-  // Receiver NULL check.
+  // Receiver null check.
   __ null_check_throw(Rreceiver, -1, R11_scratch1);
 
   __ profile_call(R11_scratch1, R12_scratch2);
@@ -3641,7 +3641,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ profile_arguments_type(Rmethod2, Rscratch1, Rscratch2, true);
   __ call_from_interpreter(Rmethod2, Rret_addr, Rscratch1, Rscratch2);
 
-  // Vtable entry was NULL => Throw abstract method error.
+  // Vtable entry was null => Throw abstract method error.
   __ bind(Lthrow_ame);
   // Pass arguments for generating a verbose error message.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),

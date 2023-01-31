@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -419,7 +419,7 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 }
 
 inline Register MacroAssembler::encode_heap_oop(Register d, Register src) {
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     if (VM_Version::has_isel()) {
       cmpdi(CCR0, src, 0);
       Register co = encode_heap_oop_not_null(d, src);
@@ -451,7 +451,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
     sldi(d, current, CompressedOops::shift());
     current = d;
   }
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     add_const_optimized(d, current, CompressedOops::base(), R0);
     current = d;
   }
@@ -461,7 +461,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
 inline void MacroAssembler::decode_heap_oop(Register d) {
   Label isNull;
   bool use_isel = false;
-  if (CompressedOops::base() != NULL) {
+  if (CompressedOops::base() != nullptr) {
     cmpwi(CCR0, d, 0);
     if (VM_Version::has_isel()) {
       use_isel = true;

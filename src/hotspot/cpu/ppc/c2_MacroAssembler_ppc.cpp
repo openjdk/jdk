@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,7 +301,7 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
     cmpd(CCR0, ary1, ary2);
     beq(CCR0, Lskiploop);
 
-    // Return false if one of them is NULL.
+    // Return false if one of them is null.
     cmpdi(CCR0, ary1, 0);
     cmpdi(CCR1, ary2, 0);
     li(result, 0);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -78,7 +78,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp1, Register tmp2,
-                                        Label *L_handle_null = NULL);
+                                        Label *L_handle_null = nullptr);
 
   // load cpool->resolved_klass_at(index)
   void load_resolved_klass_at_offset(Register Rcpool, Register Roffset, Register Rklass);

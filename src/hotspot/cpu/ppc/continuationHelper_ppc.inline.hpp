@@ -30,7 +30,7 @@
 template<typename FKind>
 static inline intptr_t** link_address(const frame& f) {
   Unimplemented();
-  return NULL;
+  return nullptr;
 }
 
 inline int ContinuationHelper::frame_align_words(int size) {
