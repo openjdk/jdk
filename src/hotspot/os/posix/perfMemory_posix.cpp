@@ -469,7 +469,7 @@ static char* get_user_name(uid_t uid) {
       else if (p == nullptr) {
         // this check is added to protect against an observed problem
         // with getpwuid_r() on RedHat 9 where getpwuid_r returns 0,
-        // indicating success, but has p == null. This was observed when
+        // indicating success, but has p == nullptr. This was observed when
         // inserting a file descriptor exhaustion fault prior to the call
         // getpwuid_r() call. In this case, error is set to the appropriate
         // error condition, but this is undocumented behavior. This check
