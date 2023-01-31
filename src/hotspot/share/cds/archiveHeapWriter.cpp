@@ -114,6 +114,11 @@ bool ArchiveHeapWriter::is_too_large_to_archive(oop o) {
   return is_too_large_to_archive(o->size());
 }
 
+bool ArchiveHeapWriter::is_string_too_large_to_archive(oop string) {
+  typeArrayOop value = java_lang_String::value_no_keepalive(string);
+  return is_too_large_to_archive(value);
+}
+
 bool ArchiveHeapWriter::is_too_large_to_archive(size_t size) {
   assert(size > 0, "no zero-size object");
   assert(size * HeapWordSize > size, "no overflow");
@@ -202,7 +207,6 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   _heap_roots_word_size = objArrayOopDesc::object_size(length);
   size_t byte_size = _heap_roots_word_size * HeapWordSize;
   if (byte_size >= MIN_GC_REGION_ALIGNMENT) {
-    // FIXME, fail gracefully
     log_error(cds, heap)("roots array is too large. Please reduce the number of classes");
     vm_exit(1);
   }
@@ -293,11 +297,11 @@ int ArchiveHeapWriter::filler_array_length(size_t fill_bytes) {
 
 void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
   assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
-  Klass* k = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
+  Klass* oak = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_top);
   memset(mem, 0, fill_bytes);
   oopDesc::set_mark(mem, markWord::prototype());
-  narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(k); // TODO: Comment:
+  narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
   cast_to_oop(mem)->set_narrow_klass(nk);
   arrayOopDesc::set_length(mem, array_length);
 }
@@ -640,7 +644,7 @@ ArchiveHeapBitmapInfo ArchiveHeapWriter::compute_ptrmap(bool is_open) {
     }
   }
 
-  log_info(cds, heap)("calculate_ptrmap: marked %d non-null native pointers for %s heap region",
+  log_info(cds, heap)("compute_ptrmap: marked %d non-null native pointers for %s heap region",
                       num_non_null_ptrs, is_open ? "open" : "closed");
 
   if (num_non_null_ptrs == 0) {

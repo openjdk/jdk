@@ -82,9 +82,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/resourceHash.hpp"
-#if INCLUDE_G1GC
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#endif
 
 ReservedSpace MetaspaceShared::_symbol_rs;
 VirtualSpace MetaspaceShared::_symbol_vs;
@@ -331,19 +328,11 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
                                reader.last_line_no(), utf8_length);
         CLEAR_PENDING_EXCEPTION;
       } else {
-#if INCLUDE_G1GC
-        if (UseG1GC) {
-          typeArrayOop body = java_lang_String::value(str);
-          const HeapRegion* hr = G1CollectedHeap::heap()->heap_region_containing(body);
-          if (hr->is_humongous()) {
-            // Don't keep it alive, so it will be GC'ed before we dump the strings, in order
-            // to maximize free heap space and minimize fragmentation.
-            log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
-                                reader.last_line_no(), utf8_length);
-            continue;
-          }
+        if (ArchiveHeapWriter::is_string_too_large_to_archive(str)) {
+          log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
+                                 reader.last_line_no(), utf8_length);
+          continue;
         }
-#endif
         // Make sure this string is included in the dumped interned string table.
         assert(str != nullptr, "must succeed");
         _extra_interned_strings->append(OopHandle(Universe::vm_global(), str));

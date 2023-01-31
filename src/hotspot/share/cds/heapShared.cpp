@@ -285,12 +285,11 @@ bool HeapShared::archive_object(oop obj) {
   } else {
     count_allocation(obj->size());
     ArchiveHeapWriter::add_source_obj(obj);
-    obj->identity_hash(); // Need to call this in a deterministic order // FIXME --- remove this!
 
-    ArchivedObjectCache* cache = archived_object_cache();
     CachedOopInfo info = make_cached_oop_info();
-    cache->put(obj, info);
+    archived_object_cache()->put(obj, info);
     mark_native_pointers(obj);
+
     if (log_is_enabled(Debug, cds, heap)) {
       ResourceMark rm;
       log_debug(cds, heap)("Archived heap object " PTR_FORMAT " : %s",
@@ -558,8 +557,7 @@ void HeapShared::copy_interned_strings() {
 
   auto copier = [&] (oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    typeArrayOop value = java_lang_String::value_no_keepalive(s);
-    if (!ArchiveHeapWriter::is_too_large_to_archive(value)) {
+    if (!ArchiveHeapWriter::is_string_too_large_to_archive(s)) {
       bool success = archive_reachable_objects_from(1, _default_subgraph_info,
                                                     s, /*is_closed_archive=*/true);
       assert(success, "must be");
@@ -1364,8 +1362,6 @@ void HeapShared::verify_subgraph_from(oop orig_obj) {
   init_seen_objects_table();
   verify_reachable_objects_from(orig_obj);
   delete_seen_objects_table();
-
-  // TODO: run G1HeapVerifier::verify_archive_regions() at runtime!
 }
 
 void HeapShared::verify_reachable_objects_from(oop obj) {
@@ -1692,6 +1688,7 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
 //   [2] included in the SharedArchiveConfigFile.
 void HeapShared::add_to_dumped_interned_strings(oop string) {
   assert_at_safepoint(); // DumpedInternedStrings uses raw oops
+  assert(!ArchiveHeapWriter::is_string_too_large_to_archive(string), "must be");
   bool created;
   _dumped_interned_strings->put_if_absent(string, true, &created);
 }

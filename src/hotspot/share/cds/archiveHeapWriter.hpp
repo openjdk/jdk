@@ -180,6 +180,7 @@ public:
   static void add_source_obj(oop src_obj);
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
+  static bool is_string_too_large_to_archive(oop string);
   static void write(GrowableArrayCHeap<oop, mtClassShared>*,
                     GrowableArray<MemRegion>* closed_regions, GrowableArray<MemRegion>* open_regions,
                     GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,

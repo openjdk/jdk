@@ -771,14 +771,14 @@ public:
   EncodeSharedStringsAsOffsets(CompactHashtableWriter* writer) : _writer(writer) {}
   bool do_entry(oop s, bool value_ignored) {
     assert(s != nullptr, "sanity");
-    oop req_s = ArchiveHeapWriter::source_obj_to_requested_obj(s); // FIXME -- should be excluded from dumped_interned_strings
-    if (req_s != nullptr) { // could be null if the string is too big
-      unsigned int hash = java_lang_String::hash_code(s);
-      if (UseCompressedOops) {
-        _writer->add(hash, CompressedOops::narrow_oop_value(req_s));
-      } else {
-        _writer->add(hash, compute_delta(req_s));
-      }
+    assert(!ArchiveHeapWriter::is_string_too_large_to_archive(s), "must be");
+    oop req_s = ArchiveHeapWriter::source_obj_to_requested_obj(s);
+    assert(req_s != nullptr, "must have been archived");
+    unsigned int hash = java_lang_String::hash_code(s);
+    if (UseCompressedOops) {
+      _writer->add(hash, CompressedOops::narrow_oop_value(req_s));
+    } else {
+      _writer->add(hash, compute_delta(req_s));
     }
     return true; // keep iterating
   }

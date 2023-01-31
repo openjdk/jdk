@@ -295,8 +295,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
           assert(java_lang_String::is_instance(obj), "must be");
-          typeArrayOop value = java_lang_String::value_no_keepalive(obj);
-          if (!ArchiveHeapWriter::is_too_large_to_archive(value)) {
+          if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
             rr->obj_at_put(i, obj);
           }
         }
@@ -312,7 +311,8 @@ void ConstantPool::add_dumped_interned_strings() {
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop p = rr->obj_at(i);
-      if (java_lang_String::is_instance(p)) {
+      if (java_lang_String::is_instance(p) &&
+          !ArchiveHeapWriter::is_string_too_large_to_archive(p)) {
         HeapShared::add_to_dumped_interned_strings(p);
       }
     }
