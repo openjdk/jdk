@@ -757,7 +757,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
 
   const int referent_offset = java_lang_ref_Reference::referent_offset();
 
-  // Check if local 0 != null
+  // Check if local 0 != nullptr
   // If the receiver is null then it is OK to jump to the slow path.
   __ ldr(Rthis, Address(Rparams));
   __ cbz(Rthis, slow_path);

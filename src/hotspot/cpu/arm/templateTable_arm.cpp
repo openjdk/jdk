@@ -4078,8 +4078,8 @@ void TemplateTable::checkcast() {
 
 
 void TemplateTable::instanceof() {
-  // result = 0: obj == null or  obj is not an instanceof the specified klass
-  // result = 1: obj != null and obj is     an instanceof the specified klass
+  // result = 0: obj == nullptr or  obj is not an instanceof the specified klass
+  // result = 1: obj != nullptr and obj is     an instanceof the specified klass
 
   transition(atos, itos);
   Label done, is_null, not_subtype, quicked, resolved;

@@ -160,7 +160,7 @@ void InterpreterMacroAssembler::check_and_handle_earlyret() {
     const Register thread_state = R2_tmp;
 
     ldr(thread_state, Address(Rthread, JavaThread::jvmti_thread_state_offset()));
-    cbz(thread_state, L); // if (thread->jvmti_thread_state() == null) exit;
+    cbz(thread_state, L); // if (thread->jvmti_thread_state() == nullptr) exit;
 
     // Initiate earlyret handling only if it is not already being processed.
     // If the flag has the earlyret_processing bit set, it means that this code
