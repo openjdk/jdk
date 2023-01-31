@@ -27,8 +27,12 @@
  * @summary User Policy Setting is not recognized on Netscape 6
  *          when invoked as root.
  * @library /test/lib
- * @run testng/othervm Root
+ * @run testng/othervm/manual Root
  */
+
+/*
+* Run test as root user.
+* */
 
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
@@ -47,15 +51,25 @@ public class Root {
     private static final String ROOT = System.getProperty("user.home");
     private static final Path SOURCE = Paths.get(SRC, "Root.policy");
     private static final Path TARGET = Paths.get(ROOT, ".java.policy");
+    private static final Path BACKUP = Paths.get(ROOT, ".backup.policy");
 
     @BeforeTest
     public void setup() throws IOException {
+        // Backup user policy file if it already exists
+        if (TARGET.toFile().exists()) {
+            Files.copy(TARGET, BACKUP, StandardCopyOption.REPLACE_EXISTING);
+        }
         Files.copy(SOURCE, TARGET, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @AfterTest
     public void cleanUp() throws IOException {
         Files.delete(TARGET);
+        // Restore original policy file if backup exists
+        if (BACKUP.toFile().exists()) {
+            Files.copy(BACKUP, TARGET, StandardCopyOption.REPLACE_EXISTING);
+            Files.delete(BACKUP);
+        }
     }
 
     @Test
