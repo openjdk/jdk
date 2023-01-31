@@ -50,7 +50,7 @@ inline OopHandle::OopHandle(OopStorage* storage, oop obj) :
 inline void OopHandle::release(OopStorage* storage) {
   if (_obj != nullptr) {
     // Clear the OopHandle first
-    NativeAccess<>::oop_store(_obj, (oop)nullptr);
+    NativeAccess<>::oop_store(_obj, nullptr);
     storage->release(_obj);
   }
 }
