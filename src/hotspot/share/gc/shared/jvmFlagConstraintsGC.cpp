@@ -437,7 +437,7 @@ JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
 }
 
 JVMFlag::Error GCTrimNativeHeapIntervalMaxFunc(uint value, bool verbose) {
-  if (GCTrimNativeHeap && GCTrimNativeHeapIntervalMax < GCTrimNativeHeapInterval) {
+  if (GCTrimNativeHeap && value < GCTrimNativeHeapInterval) {
     JVMFlag::printError(verbose,
                         "GCTrimNativeHeapIntervalMax ( %u ) must be "
                         "greater than or equal to GCTrimNativeHeapInterval ( %u )\n",
