@@ -210,6 +210,12 @@ source %{
           return false;
         }
         break;
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
+        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -230,6 +236,8 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
         return false;
       // We use Op_LoadVectorMasked to implement the predicated Op_LoadVector.
       // Hence we turn to check whether Op_LoadVectorMasked is supported. The
@@ -4899,3 +4907,25 @@ instruct vsignum_gt128b(vReg dst, vReg src, vReg zero, vReg one, vReg tmp, pRegG
   %}
   ins_pipe(pipe_slow);
 %}
+
+dnl
+dnl BITPERM($1,        $2,      $3  )
+dnl BITPERM(insn_name, op_name, insn)
+define(`BITPERM', `
+instruct $1(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst ($2 src1 src2));
+  format %{ "$1 $dst, $src1, $src2\t# vector (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ $3($dst$$FloatRegister, size,
+                $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+dnl
+// ---------------------------------- CompressBitsV --------------------------------
+BITPERM(vcompressBits, CompressBitsV, sve_bext)
+
+// ----------------------------------- ExpandBitsV ---------------------------------
+BITPERM(vexpandBits, ExpandBitsV, sve_bdep)

@@ -182,11 +182,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseBytesL:
     return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_CompressBitsV : 0);
   case Op_ExpandBits:
-    // Not implemented. Returning 0 temporarily
-    return 0;
+    return (bt == T_INT || bt == T_LONG ? Op_ExpandBitsV : 0);
   case Op_LShiftI:
     switch (bt) {
     case T_BOOLEAN:
@@ -694,6 +692,8 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_ExpandV: return new ExpandVNode(n1, n2, vt);
   case Op_CompressV: return new CompressVNode(n1, n2, vt);
   case Op_CompressM: assert(n1 == NULL, ""); return new CompressMNode(n2, vt);
+  case Op_CompressBitsV: return new CompressBitsVNode(n1, n2, vt);
+  case Op_ExpandBitsV: return new ExpandBitsVNode(n1, n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
   default:

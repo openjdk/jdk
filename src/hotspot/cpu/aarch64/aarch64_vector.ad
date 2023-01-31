@@ -220,6 +220,12 @@ source %{
           return false;
         }
         break;
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
+        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+          return false;
+        }
+        break;
       default:
         break;
     }
@@ -240,6 +246,8 @@ source %{
       case Op_MulReductionVF:
       case Op_MulReductionVI:
       case Op_MulReductionVL:
+      case Op_CompressBitsV:
+      case Op_ExpandBitsV:
         return false;
       // We use Op_LoadVectorMasked to implement the predicated Op_LoadVector.
       // Hence we turn to check whether Op_LoadVectorMasked is supported. The
@@ -6546,6 +6554,34 @@ instruct vsignum_gt128b(vReg dst, vReg src, vReg zero, vReg one, vReg tmp, pRegG
     __ vector_signum_sve($dst$$FloatRegister, $src$$FloatRegister, $zero$$FloatRegister,
                          $one$$FloatRegister, $tmp$$FloatRegister, $pgtmp$$PRegister,
                          __ elemType_to_regVariant(bt));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ---------------------------------- CompressBitsV --------------------------------
+
+instruct vcompressBits(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (CompressBitsV src1 src2));
+  format %{ "vcompressBits $dst, $src1, $src2\t# vector (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_bext($dst$$FloatRegister, size,
+                $src1$$FloatRegister, $src2$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ----------------------------------- ExpandBitsV ---------------------------------
+
+instruct vexpandBits(vReg dst, vReg src1, vReg src2) %{
+  match(Set dst (ExpandBitsV src1 src2));
+  format %{ "vexpandBits $dst, $src1, $src2\t# vector (sve)" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
+    __ sve_bdep($dst$$FloatRegister, size,
+                $src1$$FloatRegister, $src2$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
