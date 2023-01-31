@@ -155,7 +155,7 @@ public final class LocaleServiceProviderPool {
      * @return a stream of the available locales for all provider classes
      */
     public static Stream<Locale> streamAllAvailableLocales() {
-        return Arrays.stream(AllAvailableLocales.AvailableLocalesArray);
+        return Arrays.stream(AllAvailableLocales.allAvailableLocales);
     }
 
     /**
@@ -166,7 +166,7 @@ public final class LocaleServiceProviderPool {
      * @return an array of the available locales for all provider classes
      */
     public static Locale[] getAllAvailableLocales() {
-        return AllAvailableLocales.AvailableLocalesArray.clone();
+        return AllAvailableLocales.allAvailableLocales.clone();
     }
 
     /**
