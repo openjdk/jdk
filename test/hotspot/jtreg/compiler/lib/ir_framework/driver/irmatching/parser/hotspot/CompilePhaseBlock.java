@@ -118,6 +118,17 @@ class CompilePhaseBlock {
     }
 
     private void appendLine(String line) {
-        builder.append(line).append(System.lineSeparator());
+        builder.append(escapeXML(line)).append(System.lineSeparator());
+    }
+
+    private static String escapeXML(String line) {
+        if (line.contains("&")) {
+            line = line.replace("&lt;", "<");
+            line = line.replace("&gt;", ">");
+            line = line.replace("&quot;", "\"");
+            line = line.replace("&apos;", "'");
+            line = line.replace("&amp;", "&");
+        }
+        return line;
     }
 }
