@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -136,7 +136,7 @@ static inline Address aaddress(int n) {
   return iaddress(n);
 }
 
-// Pass NULL, if no shift instruction should be emitted.
+// Pass null, if no shift instruction should be emitted.
 static inline Address iaddress(InterpreterMacroAssembler *masm, Register r) {
   if (masm) {
     masm->z_sllg(r, r, LogBytesPerWord);  // index2bytes
@@ -144,7 +144,7 @@ static inline Address iaddress(InterpreterMacroAssembler *masm, Register r) {
   return Address(Z_locals, r, Interpreter::local_offset_in_bytes(0));
 }
 
-// Pass NULL, if no shift instruction should be emitted.
+// Pass null, if no shift instruction should be emitted.
 static inline Address laddress(InterpreterMacroAssembler *masm, Register r) {
   if (masm) {
     masm->z_sllg(r, r, LogBytesPerWord);  // index2bytes
@@ -462,7 +462,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ z_ltgr(Z_tos, Z_tos);
   __ z_bre(L_do_resolve);
 
-  // Convert null sentinel to NULL.
+  // Convert null sentinel to null.
   __ load_const_optimized(Z_R1_scratch, (intptr_t)Universe::the_null_sentinel_addr());
   __ resolve_oop_handle(Z_R1_scratch);
   __ z_cg(Z_tos, Address(Z_R1_scratch));
@@ -1168,7 +1168,7 @@ void TemplateTable::aastore() {
   // Address where the store goes to, i.e. &(Rarry[index])
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
-  // do array store check - check for NULL value first.
+  // do array store check - check for null value first.
   __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
 
   Register Rsub_klass   = Z_ARG4;
@@ -1192,11 +1192,11 @@ void TemplateTable::aastore() {
 
   Register tmp3 = Rsub_klass;
 
-  // Have a NULL in Rvalue.
+  // Have a null in Rvalue.
   __ bind(is_null);
   __ profile_null_seen(tmp1);
 
-  // Store a NULL.
+  // Store a null.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
                tmp3, tmp2, tmp1, IS_ARRAY);
   __ z_bru(done);
@@ -1938,7 +1938,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       const Address mask(mdo, MethodData::backedge_mask_offset());
       __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
                                  Z_ARG2, false, Assembler::bcondZero,
-                                 UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+                                 UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
       __ z_bru(dispatch);
       __ bind(no_mdo);
     }
@@ -1949,7 +1949,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ increment_mask_and_jump(Address(m_counters, be_offset),
                                increment, mask,
                                Z_ARG2, false, Assembler::bcondZero,
-                               UseOnStackReplacement ? &backedge_counter_overflow : NULL);
+                               UseOnStackReplacement ? &backedge_counter_overflow : nullptr);
     __ bind(dispatch);
   }
 
@@ -1973,7 +1973,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow),
                Z_ARG2);
 
-    // Z_RET: osr nmethod (osr ok) or NULL (osr not possible).
+    // Z_RET: osr nmethod (osr ok) or null (osr not possible).
     __ compare64_and_branch(Z_RET, (intptr_t) 0, Assembler::bcondEqual, dispatch);
 
     // Nmethod may have been invalidated (VM may block upon call_VM return).
@@ -2386,7 +2386,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 
     __ load_resolved_method_at_index(byte_no, cache, cpe_offset, method);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, Z_thread, NULL /*L_fast_path*/, &clinit_barrier_slow);
+    __ clinit_barrier(klass, Z_thread, nullptr /*L_fast_path*/, &clinit_barrier_slow);
   }
 
   BLOCK_COMMENT("} resolve_cache_and_index");
@@ -2490,12 +2490,12 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
                         Z_ARG3, Z_R1_scratch);
 
   if (is_static) {
-    __ clear_reg(Z_ARG2, true, false); // NULL object reference. Don't set CC.
+    __ clear_reg(Z_ARG2, true, false); // null object reference. Don't set CC.
   } else {
     __ mem2reg_opt(Z_ARG2, at_tos());  // Get object pointer without popping it.
     __ verify_oop(Z_ARG2);
   }
-  // Z_ARG2: object pointer or NULL
+  // Z_ARG2: object pointer or null
   // Z_ARG3: cache entry pointer
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access),
@@ -2807,7 +2807,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache,
 
   // object(tos)
   __ load_address(Z_ARG4, Address(Z_esp, Interpreter::stackElementSize));
-  // Z_ARG2: object pointer set up above (NULL if static)
+  // Z_ARG2: object pointer set up above (null if static)
   // Z_ARG3: cache entry pointer
   // Z_ARG4: jvalue object on the stack
   __ call_VM(noreg,
@@ -3731,7 +3731,7 @@ void TemplateTable::invokedynamic(int byte_no) {
 //    spec jbb2005 shows no measurable performance degradation.
 void TemplateTable::_new() {
   transition(vtos, atos);
-  address prev_instr_address = NULL;
+  address prev_instr_address = nullptr;
   Register tags  = Z_tmp_1;
   Register RallocatedObject   = Z_tos;
   Register cpool = Z_ARG2;
@@ -3877,7 +3877,7 @@ void TemplateTable::checkcast() {
   NearLabel done, is_null, ok_is_subtype, quicked, resolved;
 
   BLOCK_COMMENT("checkcast {");
-  // If object is NULL, we are almost done.
+  // If object is null, we are almost done.
   __ compareU64_and_branch(Z_tos, (intptr_t) 0, Assembler::bcondZero, is_null);
 
   // Get cpool & tags index.
@@ -3931,7 +3931,7 @@ void TemplateTable::checkcast() {
 
   __ z_lgr(Z_tos, receiver); // Restore object.
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ z_bru(done);
     __ bind(is_null);
@@ -3950,7 +3950,7 @@ void TemplateTable::instanceof() {
   NearLabel done, is_null, ok_is_subtype, quicked, resolved;
 
   BLOCK_COMMENT("instanceof {");
-  // If object is NULL, we are almost done.
+  // If object is null, we are almost done.
   __ compareU64_and_branch(Z_tos, (intptr_t) 0, Assembler::bcondZero, is_null);
 
   // Get cpool & tags index.
@@ -4001,7 +4001,7 @@ void TemplateTable::instanceof() {
   __ bind(ok_is_subtype);
   __ load_const_optimized(Z_tos, 1);
 
-  // Collect counts on whether this test sees NULLs a lot or not.
+  // Collect counts on whether this test sees nulls a lot or not.
   if (ProfileInterpreter) {
     __ z_bru(done);
     __ bind(is_null);
@@ -4011,8 +4011,8 @@ void TemplateTable::instanceof() {
   }
 
   __ bind(done);
-  // tos = 0: obj == NULL or  obj is not an instanceof the specified klass
-  // tos = 1: obj != NULL and obj is     an instanceof the specified klass
+  // tos = 0: obj == null or  obj is not an instanceof the specified klass
+  // tos = 1: obj != null and obj is     an instanceof the specified klass
   BLOCK_COMMENT("} instanceof");
 }
 
@@ -4088,13 +4088,13 @@ void TemplateTable::monitorenter() {
 
   BLOCK_COMMENT("monitorenter {");
 
-  // Check for NULL object.
+  // Check for null object.
   __ null_check(Z_tos);
   const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
   NearLabel allocated;
   // Initialize entry pointer.
   const Register Rfree_slot = Z_tmp_1;
-  __ clear_reg(Rfree_slot, true, false); // Points to free slot or NULL. Don't set CC.
+  __ clear_reg(Rfree_slot, true, false); // Points to free slot or null. Don't set CC.
 
   // Find a free slot in the monitor block from top to bot (result in Rfree_slot).
   {
@@ -4107,7 +4107,7 @@ void TemplateTable::monitorenter() {
     __ add2reg(Rbot, -frame::z_ijava_state_size, Z_fp);
 
 #ifdef ASSERT
-    address reentry = NULL;
+    address reentry = nullptr;
     { NearLabel ok;
       __ compareU64_and_branch(Rcurr_monitor, Rbot, Assembler::bcondNotHigh, ok);
       reentry = __ stop_chain_static(reentry, "IJAVA_STATE.monitors points below monitor block bottom");
@@ -4140,7 +4140,7 @@ void TemplateTable::monitorenter() {
     __ bind(exit);
   }
 
-  // Rfree_slot != NULL -> found one
+  // Rfree_slot != null -> found one
   __ compareU64_and_branch(Rfree_slot, (intptr_t)0L, Assembler::bcondNotEqual, allocated);
 
   // Allocate one if there's no free slot.
@@ -4177,7 +4177,7 @@ void TemplateTable::monitorexit() {
 
   BLOCK_COMMENT("monitorexit {");
 
-  // Check for NULL object.
+  // Check for null object.
   __ null_check(Z_tos);
 
   NearLabel found, not_found;
@@ -4195,7 +4195,7 @@ void TemplateTable::monitorexit() {
     __ add2reg(Rbot, -frame::z_ijava_state_size, Z_fp);
 
 #ifdef ASSERT
-    address reentry = NULL;
+    address reentry = nullptr;
     { NearLabel ok;
       __ compareU64_and_branch(Rcurr_monitor, Rbot, Assembler::bcondNotHigh, ok);
       reentry = __ stop_chain_static(reentry, "IJAVA_STATE.monitors points below monitor block bottom");

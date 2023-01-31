@@ -107,13 +107,13 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
   bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool on_reference = on_weak || on_phantom;
   Label done;
-  if (on_oop && on_reference && L_handle_null == NULL) { L_handle_null = &done; }
+  if (on_oop && on_reference && L_handle_null == nullptr) { L_handle_null = &done; }
   ModRefBarrierSetAssembler::load_at(masm, decorators, type, src, dst, tmp1, tmp2, L_handle_null);
   if (on_oop && on_reference) {
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
     g1_write_barrier_pre(masm, decorators | IS_NOT_NULL,
-                         NULL /* obj */,
+                         nullptr /* obj */,
                          dst  /* pre_val */,
                          noreg/* preserve */ ,
                          tmp1, tmp2 /* tmp */,
@@ -132,7 +132,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
                                                  ) {
 
   bool not_null  = (decorators & IS_NOT_NULL) != 0,
-       preloaded = obj == NULL;
+       preloaded = obj == nullptr;
 
   const Register Robj = obj ? obj->base() : noreg,
                  Roff = obj ? obj->index() : noreg;
@@ -170,7 +170,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
     }
   }
 
-  // Is the previous value NULL?
+  // Is the previous value null?
   // If so, we don't need to record it and we're done.
   // Note: pre_val is loaded, decompressed and stored (directly or via runtime call).
   //       Register contents is preserved across runtime call if caller requests to do so.
@@ -181,12 +181,12 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 #endif
   } else {
     __ z_ltgr(Rpre_val, Rpre_val);
-    __ z_bre(filtered); // previous value is NULL, so we don't need to record it.
+    __ z_bre(filtered); // previous value is null, so we don't need to record it.
   }
 
-  // Decode the oop now. We know it's not NULL.
+  // Decode the oop now. We know it's not null.
   if (Robj != noreg && UseCompressedOops) {
-    __ oop_decoder(Rpre_val, Rpre_val, /*maybeNULL=*/false);
+    __ oop_decoder(Rpre_val, Rpre_val, /*maybenullptr=*/false);
   }
 
   // OK, it's not filtered, so we'll need to call enqueue.
@@ -285,7 +285,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   __ z_srag(Rtmp1, Rtmp1, HeapRegion::LogOfHRGrainBytes);
   __ z_bre(filtered);
 
-  // Crosses regions, storing NULL?
+  // Crosses regions, storing null?
   if (not_null) {
 #ifdef ASSERT
     __ z_ltgr(Rnew_val, Rnew_val);
@@ -298,7 +298,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   Rnew_val = noreg; // end of lifetime
 
-  // Storing region crossing non-NULL, is card already dirty?
+  // Storing region crossing non-null, is card already dirty?
   assert_different_registers(Rtmp1, Rtmp2, Rtmp3);
   // Make sure not to use Z_R0 for any of these registers.
   Register Rcard_addr = (Rtmp1 != Z_R0_scratch) ? Rtmp1 : Rtmp3;
@@ -320,7 +320,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
   __ z_cli(0, Rcard_addr, G1CardTable::dirty_card_val()); // Reload after membar.
   __ z_bre(filtered);
 
-  // Storing a region crossing, non-NULL oop, card is clean.
+  // Storing a region crossing, non-null oop, card is clean.
   // Dirty card and log.
   __ z_mvi(0, Rcard_addr, G1CardTable::dirty_card_val());
 
@@ -380,7 +380,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 
   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
 
-  // No need for post barrier if storing NULL
+  // No need for post barrier if storing null
   if (val != noreg) {
     const Register base = dst.base(),
                    idx  = dst.index();
@@ -395,7 +395,7 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
 void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
   NearLabel Ldone, Lnot_weak;
   __ z_ltgr(tmp1, value);
-  __ z_bre(Ldone);          // Use NULL result as-is.
+  __ z_bre(Ldone);          // Use null result as-is.
 
   __ z_nill(value, ~JNIHandles::tag_mask);
   __ z_lg(value, 0, value); // Resolve (untagged) jobject.
@@ -404,7 +404,7 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ z_braz(Lnot_weak);
   __ verify_oop(value, FILE_AND_LINE);
   DecoratorSet decorators = IN_NATIVE | ON_PHANTOM_OOP_REF;
-  g1_write_barrier_pre(masm, decorators, (const Address*)NULL, value, noreg, tmp1, tmp2, true);
+  g1_write_barrier_pre(masm, decorators, (const Address*)nullptr, value, noreg, tmp1, tmp2, true);
   __ bind(Lnot_weak);
   __ verify_oop(value, FILE_AND_LINE);
   __ bind(Ldone);

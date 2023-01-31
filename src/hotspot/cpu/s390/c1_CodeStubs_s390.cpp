@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,13 +47,13 @@ void C1SafepointPollStub::emit_code(LIR_Assembler* ce) {
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index, LIR_Opr array)
   : _index(index), _array(array), _throw_index_out_of_bounds_exception(false) {
-  assert(info != NULL, "must have info");
+  assert(info != nullptr, "must have info");
   _info = new CodeEmitInfo(info);
 }
 
 RangeCheckStub::RangeCheckStub(CodeEmitInfo* info, LIR_Opr index)
   : _index(index), _array(), _throw_index_out_of_bounds_exception(true) {
-  assert(info != NULL, "must have info");
+  assert(info != nullptr, "must have info");
   _info = new CodeEmitInfo(info);
 }
 
@@ -392,7 +392,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address entry = __ pc();
   NativeGeneralJump::insert_unconditional((address)_pc_start, entry);
-  address target = NULL;
+  address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
     case access_field_id:  target = Runtime1::entry_for (Runtime1::access_field_patching_id); break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -280,7 +280,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
   // don't dereference it as in case of ints, floats, etc..
 
   // UNBOX argument
-  // Load reference and check for NULL.
+  // Load reference and check for null.
   Label  do_int_Entry4Boxed;
   __ bind(do_boxed);
   {
@@ -588,7 +588,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
 }
 
 address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
-  assert(!pass_oop || message == NULL, "either oop or message but not both");
+  assert(!pass_oop || message == nullptr, "either oop or message but not both");
   address entry = __ pc();
 
   BLOCK_COMMENT("exception_handler_common {");
@@ -596,7 +596,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
   // Expression stack must be empty before entering the VM if an
   // exception happened.
   __ empty_expression_stack();
-  if (name != NULL) {
+  if (name != nullptr) {
     __ load_absolute_address(Z_ARG2, (address)name);
   } else {
     __ clear_reg(Z_ARG2, true, false);
@@ -607,7 +607,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
                CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception),
                Z_ARG2, Z_tos /*object (see TT::aastore())*/);
   } else {
-    if (message != NULL) {
+    if (message != nullptr) {
       __ load_absolute_address(Z_ARG3, (address)message);
     } else {
       __ clear_reg(Z_ARG3, true, false);
@@ -637,7 +637,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for (TosState state,
   __ resize_frame_absolute(sp_before_i2c_extension, Z_locals/*tmp*/, true/*load_fp*/);
 
   // TODO(ZASM): necessary??
-  //  // and NULL it as marker that esp is now tos until next java call
+  //  // and null it as marker that esp is now tos until next java call
   //  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
 
   __ restore_bcp();
@@ -677,7 +677,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 
   BLOCK_COMMENT("deopt_entry {");
 
-  // TODO(ZASM): necessary? NULL last_sp until next java call
+  // TODO(ZASM): necessary? null last_sp until next java call
   // __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
   __ z_lg(Z_fp, _z_abi(callers_sp), Z_SP); // Restore frame pointer.
   __ restore_bcp();
@@ -695,7 +695,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
     __ should_not_reach_here();
     __ bind(L);
   }
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation, Z_R1_scratch);
@@ -774,8 +774,8 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   // InterpreterRuntime::frequency_counter_overflow takes two
   // arguments, the first (thread) is passed by call_VM, the second
   // indicates if the counter overflow occurs at a backwards branch
-  // (NULL bcp). We pass zero for it. The call returns the address
-  // of the verified entry point for the method or NULL if the
+  // (null bcp). We pass zero for it. The call returns the address
+  // of the verified entry point for the method or null if the
   // compilation did not complete (either went background or bailed
   // out).
   __ clear_reg(Z_ARG2);
@@ -806,7 +806,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
   // Get the stack base, and in debug, verify it is non-zero.
   __ z_lg(tmp1, thread_(stack_base));
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   NearLabel base_not_zero;
   __ compareU64_and_branch(tmp1, (intptr_t)0L, Assembler::bcondNotEqual, base_not_zero);
   reentry = __ stop_chain_static(reentry, "stack base is zero in generate_stack_overflow_check");
@@ -844,7 +844,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Note also that the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "stub not yet generated");
+  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
   AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
   __ load_absolute_address(tmp1, StubRoutines::throw_StackOverflowError_entry());
   __ z_br(tmp1);
@@ -869,7 +869,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   __ get_method(method);
 
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   {
     Label L;
     __ testbit(method2_(method, access_flags), JVM_ACC_SYNCHRONIZED_BIT);
@@ -903,7 +903,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
     {
       NearLabel L;
       __ compare64_and_branch(object, (intptr_t) 0, Assembler::bcondNotEqual, L);
-      reentry = __ stop_chain_static(reentry, "synchronization object is NULL");
+      reentry = __ stop_chain_static(reentry, "synchronization object is null");
       __ bind(L);
     }
 #endif // ASSERT
@@ -1125,12 +1125,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // z_ijava_state->locals = Z_esp + parameter_count bytes
   __ z_stg(Z_locals, _z_ijava_state_neg(locals), fp);
 
-  // z_ijava_state->oop_temp = NULL;
+  // z_ijava_state->oop_temp = null;
   __ store_const(Address(fp, oop_tmp_offset), 0);
 
   // Initialize z_ijava_state->mdx.
   Register Rmdp = Z_bcp;
-  // native_call: assert that mdo == NULL
+  // native_call: assert that mdo == null
   const bool check_for_mdo = !native_call DEBUG_ONLY(|| native_call);
   if (ProfileInterpreter && check_for_mdo) {
     Label get_continue;
@@ -1200,7 +1200,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
   bool use_instruction = false;
-  address runtime_entry = NULL;
+  address runtime_entry = nullptr;
   int num_args = 1;
   bool double_precision = true;
 
@@ -1229,7 +1229,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   }
 
   // Use normal entry if neither instruction nor runtime call is used.
-  if (!use_instruction && runtime_entry == NULL) return NULL;
+  if (!use_instruction && runtime_entry == nullptr) return nullptr;
 
   address entry = __ pc();
 
@@ -1336,7 +1336,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Make sure method is native and not abstract.
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   { Label L;
     __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_btrue(L);
@@ -1704,7 +1704,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // Make sure method is not native and not abstract.
   // Rethink these assertions - they can be simplified and shared.
 #ifdef ASSERT
-  address reentry = NULL;
+  address reentry = nullptr;
   { Label L;
     __ testbit(method_(access_flags), JVM_ACC_NATIVE_BIT);
     __ z_bfalse(L);
@@ -1849,7 +1849,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     return __ addr_at(entry_off);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -1929,7 +1929,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     return __ addr_at(entry_off);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -2005,7 +2005,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
     return __ addr_at(entry_off);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
@@ -2165,7 +2165,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // The member name argument must be restored if _invokestatic is
     // re-executed after a PopFrame call.  Detect such a case in the
     // InterpreterRuntime function and return the member name
-    // argument, or NULL.
+    // argument, or null.
     __ z_lg(Z_ARG2, Address(Z_locals));
     __ get_method(Z_ARG3);
     __ call_VM(Z_tmp_1,
@@ -2378,7 +2378,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
   address entry = Interpreter::trace_code(t->tos_in());
-  guarantee(entry != NULL, "entry must have been generated");
+  guarantee(entry != nullptr, "entry must have been generated");
   __ call_stub(entry);
 }
 

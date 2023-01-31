@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -137,7 +137,7 @@ class RelAddr {
     assert(((uint64_t)target & 0x0001L) == 0, "target of a relative address must be aligned");
     assert(((uint64_t)pc     & 0x0001L) == 0, "origin of a relative address must be aligned");
 
-    if ((target == NULL) || (target == pc)) {
+    if ((target == nullptr) || (target == pc)) {
       return 0;  // Yet unknown branch destination.
     } else {
       guarantee(is_in_range_of_RelAddr(target, pc, shortForm), "target not within reach");
@@ -295,7 +295,7 @@ class AddressLiteral {
 
  protected:
   // creation
-  AddressLiteral() : _address(NULL), _rspec() {}
+  AddressLiteral() : _address(nullptr), _rspec() {}
 
  public:
   AddressLiteral(address addr, RelocationHolder const& rspec)

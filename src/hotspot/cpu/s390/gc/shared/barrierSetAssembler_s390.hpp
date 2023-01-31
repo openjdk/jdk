@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,7 +40,7 @@ public:
                                   Register dst, Register count, bool do_return = false);
 
   virtual void load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                       const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = NULL);
+                       const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null = nullptr);
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 

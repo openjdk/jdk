@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,6 +96,6 @@
                             Register preserve3 = noreg) PRODUCT_RETURN;
 
   // This platform only uses signal-based null checks. The Label is not needed.
-  void null_check(Register r, Label *Lnull = NULL) { MacroAssembler::null_check(r); }
+  void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
 
 #endif // CPU_S390_C1_MACROASSEMBLER_S390_HPP

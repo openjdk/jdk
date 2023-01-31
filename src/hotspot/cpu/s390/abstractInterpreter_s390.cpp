@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -121,9 +121,9 @@ int AbstractInterpreter::size_activation(int max_stack,
 //
 // Parameters:
 //
-// interpreter_frame != NULL:
+// interpreter_frame != null:
 //   set up the method, locals, and monitors.
-//   The frame interpreter_frame, if not NULL, is guaranteed to be the
+//   The frame interpreter_frame, if not null, is guaranteed to be the
 //   right size, as determined by a previous call to this method.
 //   It is also guaranteed to be walkable even though it is in a skeletal state
 //

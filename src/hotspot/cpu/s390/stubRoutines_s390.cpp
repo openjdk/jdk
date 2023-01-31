@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,12 +33,12 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::zarch::_partial_subtype_check = NULL;
+address StubRoutines::zarch::_partial_subtype_check = nullptr;
 
 // Comapct string intrinsics: Translate table for string inflate intrinsic. Used by trot instruction.
-address StubRoutines::zarch::_trot_table_addr = NULL;
+address StubRoutines::zarch::_trot_table_addr = nullptr;
 
-address StubRoutines::zarch::_nmethod_entry_barrier = NULL;
+address StubRoutines::zarch::_nmethod_entry_barrier = nullptr;
 
 int StubRoutines::zarch::_atomic_memory_operation_lock = StubRoutines::zarch::unlocked;
 
@@ -48,7 +48,7 @@ void StubRoutines::zarch::generate_load_absolute_address(MacroAssembler* masm, R
   __ load_absolute_address(table, table_addr);
 
 #ifdef ASSERT
-  assert(table_addr != NULL, "CRC lookup table address must be initialized by now");
+  assert(table_addr != nullptr, "CRC lookup table address must be initialized by now");
   assert(*((uint32_t*)(table_addr+4)) == (uint32_t)table_contents, "Bad CRC lookup table: 0x%8.8x, expected 0x%8.8x", *((uint32_t*)(table_addr+4)), (uint32_t)table_contents);
   {
     Label L;
@@ -90,7 +90,7 @@ void StubRoutines::zarch::generate_load_trot_table_addr(MacroAssembler* masm, Re
   __ relocate(rspec);
   __ load_absolute_address(table, _trot_table_addr);
 #ifdef ASSERT
-    assert(_trot_table_addr != NULL, "Translate table address must be initialized by now");
+    assert(_trot_table_addr != nullptr, "Translate table address must be initialized by now");
     assert((p2i(_trot_table_addr) & (TROT_ALIGNMENT-1)) == 0, "Translate table alignment error");
     for (int i = 0; i < 256; i++) {
       assert(i == *((jshort*)(_trot_table_addr+2*i)), "trot_table[%d] = %d", i, *((jshort*)(_trot_table_addr+2*i)));
