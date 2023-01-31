@@ -178,7 +178,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
         if (entery_len < frame::z_abi_160_size) {
           return frame(sender_sp, fr->sender_pc());
         } else {
-          return frame(fr->sender_sp(), fr->native_sender_pc());
+          return frame(sender_sp, fr->native_sender_pc());
         }
     }
   }
