@@ -175,8 +175,8 @@ class CodeHeap : public CHeapObj<mtCode> {
     return contains((void*)blob);
   }
 
-  void* find_start(void* p)     const;   // returns the block containing p or null
-  CodeBlob* find_blob(void* start) const;
+  virtual void* find_start(void* p)     const;   // returns the block containing p or null
+  virtual CodeBlob* find_blob(void* start) const;
   size_t alignment_unit()       const;           // alignment of any block
   size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
@@ -192,9 +192,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
   // returns the first block or null
-  void* first() const                    { return next_used(first_block()); }
+  virtual void* first() const                    { return next_used(first_block()); }
   // returns the next block given a block p or null
-  void* next(void* p) const              { return next_used(next_block(block_start(p))); }
+  virtual void* next(void* p) const              { return next_used(next_block(block_start(p))); }
 
   // Statistics
   size_t capacity() const;
