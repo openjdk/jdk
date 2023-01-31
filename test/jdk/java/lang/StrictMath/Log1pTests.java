@@ -232,7 +232,7 @@ public class Log1pTests {
         failures += testRange(x, Math.ulp(x), 1000);
 
         // ... and just below subnormal threshold ...
-        x =  Math.nextDown(Double.MIN_NORMAL);
+        x = Math.nextDown(Double.MIN_NORMAL);
         failures += testRange(x, -Math.ulp(x), 1000);
 
         // ... and near 1.0 ...

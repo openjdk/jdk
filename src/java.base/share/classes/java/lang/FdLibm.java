@@ -780,10 +780,10 @@ class FdLibm {
      * shown.
      */
     static class Log10 {
-        private static double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
+        private static final double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
 
-        private static double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
-        private static double log10_2lo = 0x1.9fef311f12b36p-42; // 3.69423907715893078616e-13;
+        private static final double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
+        private static final double log10_2lo = 0x1.9fef311f12b36p-42; // 3.69423907715893078616e-13;
 
         private Log10() {
             throw new UnsupportedOperationException();
@@ -904,38 +904,38 @@ class FdLibm {
             int k, hx, hu=0, ax;
 
             hx = __HI(x);           /* high word of x */
-            ax = hx & 0x7fffffff;
+            ax = hx & 0x7fff_ffff;
 
             k = 1;
-            if (hx < 0x3FDA827A) {                  /* x < 0.41422  */
-                if(ax >= 0x3ff00000) {                /* x <= -1.0 */
+            if (hx < 0x3FDA_827A) {                  /* x < 0.41422  */
+                if (ax >= 0x3ff0_0000)               /* x <= -1.0 */
                     if (x == -1.0) /* log1p(-1)=-inf */
                         return -INFINITY;
                     else
                         return Double.NaN;           /* log1p(x < -1) = NaN */
                 }
 
-                if (ax < 0x3e200000) {                 /* |x| < 2**-29 */
-                    if (TWO54 + x > 0.0                 /* raise inexact */
-                       && ax < 0x3c900000)            /* |x| < 2**-54 */
+                if (ax < 0x3e20_0000) {                /* |x| < 2**-29 */
+                    if (TWO54 + x > 0.0                /* raise inexact */
+                       && ax < 0x3c90_0000)            /* |x| < 2**-54 */
                         return x;
                     else
                         return x - x*x*0.5;
                 }
 
-                if (hx > 0 || hx <= 0xbfd2bec3) { /* -0.2929 < x < 0.41422 */
+                if (hx > 0 || hx <= 0xbfd2_bec3) { /* -0.2929 < x < 0.41422 */
                     k=0;
                     f=x;
                     hu=1;
                 }
             }
 
-            if (hx >= 0x7ff00000) {
+            if (hx >= 0x7ff0_0000) {
                 return x+x;
             }
 
             if (k != 0) {
-                if (hx < 0x43400000) {
+                if (hx < 0x4340_0000) {
                     u  = 1.0 + x;
                     hu = __HI(u);           /* high word of u */
                     k  = (hu >> 20) - 1023;
@@ -947,13 +947,13 @@ class FdLibm {
                     k  = (hu >> 20) - 1023;
                     c  = 0;
                 }
-                hu &= 0x000fffff;
-                if (hu < 0x6a09e) {
-                    u = __HI(u, hu | 0x3ff00000);        /* normalize u */
+                hu &= 0x000f_ffff;
+                if (hu < 0x6_a09e) {
+                    u = __HI(u, hu | 0x3ff0_0000);       /* normalize u */
                 } else {
                     k += 1;
-                    u = __HI(u, hu | 0x3fe00000);        /* normalize u/2 */
-                    hu = (0x00100000 - hu) >> 2;
+                    u = __HI(u, hu | 0x3fe0_0000);       /* normalize u/2 */
+                    hu = (0x0010_0000 - hu) >> 2;
                 }
                 f = u - 1.0;
             }
