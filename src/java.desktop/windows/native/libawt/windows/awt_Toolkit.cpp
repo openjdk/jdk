@@ -266,7 +266,7 @@ extern "C" BOOL APIENTRY DllMain(HANDLE hInstance, DWORD ul_reason_for_call,
 #ifdef DEBUG
         DTrace_DisableMutex();
         DMem_DisableMutex();
-#endif DEBUG
+#endif // DEBUG
         break;
     }
     return TRUE;
