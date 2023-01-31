@@ -303,7 +303,7 @@ public class Rational extends Number implements Comparable<Rational> {
                 // and the significand and the denominator are relative primes
                 // the significand is odd or the denominator is one
 
-                long quot = exponent <= -64 ? 0L : significand >>> -exponent; // avoid mod 64 shifting
+                long quot = exponent > -64 ? significand >>> -exponent : 0L; // avoid mod 64 shifting
                 floor = BigInteger.valueOf(quot);
                 numerator = BigInteger.valueOf(significand - (quot << -exponent));
                 denominator = BigInteger.ONE.shiftLeft(-exponent);
