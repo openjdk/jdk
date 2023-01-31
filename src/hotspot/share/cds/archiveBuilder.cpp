@@ -1060,18 +1060,18 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
       while (start < end) {
         size_t byte_size;
-        oop original_oop = ArchiveHeapWriter::output_addr_to_orig_oop(start);
+        oop original_oop = ArchiveHeapWriter::buffered_addr_to_source_obj(start);
         if (original_oop != nullptr) {
           ResourceMark rm;
           log_info(cds, map)(PTR_FORMAT ": @@ Object %s",
                              p2i(to_requested(start)), original_oop->klass()->external_name());
           byte_size = original_oop->size() * BytesPerWord;
-        } else if (start == ArchiveHeapWriter::heap_roots_output_address()) {
+        } else if (start == ArchiveHeapWriter::buffered_heap_roots_addr()) {
           // HeapShared::roots() is copied specially so it doesn't exist in
           // HeapShared::OriginalObjectTable. See HeapShared::copy_roots().
           log_info(cds, map)(PTR_FORMAT ": @@ Object HeapShared::roots (ObjArray)",
                              p2i(to_requested(start)));
-          byte_size = objArrayOopDesc::object_size(HeapShared::roots()->length()) * BytesPerWord;
+          byte_size = ArchiveHeapWriter::heap_roots_word_size() * BytesPerWord;
         } else {
           // We have reached the end of the region
           break;
@@ -1088,7 +1088,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
     }
   }
   static address to_requested(address p) {
-    return ArchiveHeapWriter::to_requested_address(p);
+    return ArchiveHeapWriter::buffered_addr_to_requested_addr(p);
   }
 #endif
 

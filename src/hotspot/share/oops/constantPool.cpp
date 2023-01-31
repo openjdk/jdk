@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classPrelinker.hpp"
@@ -295,7 +296,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
         if (tag_at(index).is_string()) {
           assert(java_lang_String::is_instance(obj), "must be");
           typeArrayOop value = java_lang_String::value_no_keepalive(obj);
-          if (!HeapShared::is_too_large_to_archive(value)) {
+          if (!ArchiveHeapWriter::is_too_large_to_archive(value)) {
             rr->obj_at_put(i, obj);
           }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "oops/oopHandle.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
@@ -38,84 +39,61 @@
 
 struct ArchiveHeapBitmapInfo;
 class MemRegion;
-template<class E> class GrowableArray;
-template <typename E, MEMFLAGS F> class GrowableArrayCHeap;
 
 class ArchiveHeapWriter : AllStatic {
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
-    oop _orig_obj;
+    oop _src_obj;
     int _field_offset;
   };
-
-  // this->_buffer cannot contain more than this number of bytes.
-  static constexpr int MAX_OUTPUT_BYTES = (int)max_jint;
 
   // The minimum region size of all collectors that are supported by CDS in
   // ArchiveHeapLoader::can_map() mode. Currently only G1 is supported. G1's region size
   // depends on -Xmx, but can never be smaller than 1 * M.
+  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
   static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
 
-  // TEMP notes: What are these?
+  // "source" vs "buffered" vs "requested"
   //
-  //                              In heap range   Real Object   Modifiable
-  //     oop orig_obj;               Y               Y             Y (but you shouldn't)
-  //     oop buffer_obj;             Y               N             Y
-  //     oop output_obj;             N               N             Y
-  //     oop requested_obj;          Y               N             N
+  // [1] HeapShared::archive_objects() identifies all of the oops that need to be stored
+  //     into the CDS archive. These are entered into HeapShared::archived_object_cache().
+  //     These are called "source objects"
   //
-  // Because of issues like JDK-8297914, we need to make an extra pass on the objects:
+  // [2] ArchiveHeapWriter::write() copies all source objects into ArchiveHeapWriter::_buffer,
+  //     which is a GrowableArray that sites outside of the valid heap range. Therefore
+  //     we avoid using the addresses of these copies as oops. They are usually
+  //     called "buffered_addr" in the code (of the type "address").
   //
-  // [1] HeapShared::archive_object() gets an orig_oop, which is a real Java object that
-  //     we want to store into CDS.
+  // [3] Each archived object has a "requested address" -- at run time, if the object
+  //     can be mapped at this address, we can avoid relocation.
   //
-  // [2] We first copy the orig_oop into _buffer, which gives us a buffered_oop. This isn't
-  //     really an oop, as it points to the interior of a byte array, and is not part of the
-  //     parseable heap. Nevertheless, we use these as regular oops in places like
-  //     java_lang_Class::process_archived_mirror() and don't see any problems. Nevertheless,
-  //     this is a hack and will be removed after JDK-8297914.
-  //
-  // [3] We make a second pass and copy all buffered_objs into the _output. This gives us
-  //     output_objs. These really aren't oops, as their locations are outside of the Java heap.
-  //     We still use some oopDesc operations on them, but these should be eliminated before we integrate ... (FIXME)
-  //
-  // [4] When patching the oop fields stored inside the output_objs, we use the requested
-  //     addresses (requested_objs) of the referents. Writing into a requested_objs will
-  //     usually give you a SEGV as it points to the top of the heap, which most likely is
-  //     not yet committed.
-  //
-  // TODO: when ArchiveHeapWriter::_buffer is eliminated, we will rename
-  //           orig_obj              -> source_obj
-  //           {_output, output_obj} -> {_buffer, buffer_obj}.
-  // This way it will be consistent with the naming convention for the metadata objects (see archiveBuilder.hpp)
+  // Note: the design and convention is the same as for the archiving of Metaspace objects.
+  // See archiveBuilder.hpp.
 
+  static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
-  static OopHandle _buffer; // a Java byte array
+  // The exclusive top of the last object that has been copied into this->_buffer.
+  static size_t _buffer_top;
 
-  // The exclusive end of the last object that has been copied into this->_buffer'
-  static int _buffer_top;
+  // The bounds of the open region inside this->_buffer.
+  static size_t _open_bottom;  // inclusive
+  static size_t _open_top;     // exclusive
 
-  static GrowableArrayCHeap<u1, mtClassShared>* _output;
+  // The bounds of the closed region inside this->_buffer.
+  static size_t _closed_bottom;  // inclusive
+  static size_t _closed_top;     // exclusive
 
-  // The exclusive top of the last object that has been copied into this->_output.
-  static int _output_top;
+  // The bottom of the copy of Heap::roots() inside this->_buffer.
+  static size_t _heap_roots_bottom;
+  static size_t _heap_roots_word_size;
 
-  // The bounds of the open region inside this->_output.
-  static int _open_bottom;  // inclusive
-  static int _open_top;     // exclusive
-
-  // The bounds of the closed region inside this->_output.
-  static int _closed_bottom;  // inclusive
-  static int _closed_top;     // exclusive
-
-  // The bottom of the copy of Heap::roots() inside this->_output.
-  static int _heap_roots_bottom;
-
-  // TODO comment ...
   static address _requested_open_region_bottom;
   static address _requested_open_region_top;
   static address _requested_closed_region_bottom;
   static address _requested_closed_region_top;
+
+  static ResourceBitMap* _closed_oopmap;
+  static ResourceBitMap* _open_oopmap;
 
   static ArchiveHeapBitmapInfo _closed_oopmap_info;
   static ArchiveHeapBitmapInfo _open_oopmap_info;
@@ -123,65 +101,102 @@ class ArchiveHeapWriter : AllStatic {
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
 
-  typedef ResourceHashtable<oop, int,
+  typedef ResourceHashtable<size_t, oop,
       36137, // prime number
       AnyObj::C_HEAP,
-      mtClassShared,
-      HeapShared::oop_hash> BufferedObjToOutputOffsetTable;
-  static BufferedObjToOutputOffsetTable* _buffered_obj_to_output_offset_table;
+      mtClassShared> BufferOffsetToSourceObjectTable;
+  static BufferOffsetToSourceObjectTable* _buffer_offset_to_source_obj_table;
 
-  typedef ResourceHashtable<int, oop,
-      36137, // prime number
-      AnyObj::C_HEAP,
-      mtClassShared> OutputOffsetToOrigObjectTable;
-  static OutputOffsetToOrigObjectTable* _output_offset_to_orig_obj_table;
+  static void allocate_buffer();
+  static void ensure_buffer_space(size_t min_bytes);
 
-  static int byte_size_of_buffered_obj(oop buffered_obj);
-  static int cast_to_int_byte_size(size_t byte_size);
+  // Both Java bytearray and GrowableArraty use int indices and lengths. Do a safe typecast with range check
+  static int to_array_index(size_t i) {
+    assert(i <= (size_t)max_jint, "must be");
+    return (size_t)i;
+  }
+  static int to_array_length(size_t n) {
+    return to_array_index(n);
+  }
 
-  static void allocate_output_array();
-  static void copy_buffered_objs_to_output();
-  static void copy_buffered_objs_to_output_by_region(bool copy_open_region);
-  static int copy_one_buffered_obj_to_output(oop buffered_obj);
-  static void fill_gc_region_gap(int required_byte_size);
-  static int filler_array_byte_size(int length);
-  static int filler_array_length(int fill_bytes);
-  static void init_filler_array_at_output_top(int array_length, int fill_bytes);
+  template <typename T> static T offset_to_buffered_address(size_t offset) {
+    return (T)(_buffer->adr_at(to_array_index(offset)));
+  }
+
+  static address buffer_bottom() {
+    return offset_to_buffered_address<address>(0);
+  }
+
+  static address buffer_top() {
+    return buffer_bottom() + _buffer_top;
+  }
+
+  static bool in_buffer(address buffered_addr) {
+    return (buffer_bottom() <= buffered_addr) && (buffered_addr < buffer_top());
+  }
+
+  static size_t buffered_address_to_offset(address buffered_addr) {
+    assert(in_buffer(buffered_addr), "sanity");
+    return buffered_addr - buffer_bottom();
+  }
+
+  static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
+  static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
+  static void copy_source_objs_to_buffer_by_region(bool copy_open_region);
+  static size_t copy_one_source_obj_to_buffer(oop src_obj);
+
+  static void maybe_fill_gc_region_gap(size_t required_byte_size);
+  static size_t filler_array_byte_size(int length);
+  static int filler_array_length(size_t fill_bytes);
+  static void init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
   static void set_requested_address_for_regions(GrowableArray<MemRegion>* closed_regions,
                                                 GrowableArray<MemRegion>* open_regions);
-  static void relocate_embedded_pointers_in_output(GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                                                   GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
+  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
+                                     GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
+                                     GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
   static ArchiveHeapBitmapInfo compute_ptrmap(bool is_open);
-  static ArchiveHeapBitmapInfo get_bitmap_info(ResourceBitMap* bitmap, bool is_open,  bool is_oopmap);
+  static ArchiveHeapBitmapInfo make_bitmap_info(ResourceBitMap* bitmap, bool is_open,  bool is_oopmap);
   static bool is_in_requested_regions(oop o);
-  static oop requested_obj_from_output_offset(int offset);
-  static oop buffered_obj_to_requested_obj(oop buffered_obj);
-  static oop buffered_obj_to_output_obj(oop buffered_obj);
+  static oop requested_obj_from_buffer_offset(size_t offset);
 
-  static void store_in_output(oop* p, oop output_referent);
-  static void store_in_output(narrowOop* p, oop output_referent);
+  static oop load_oop_from_buffer(oop* buffered_addr);
+  static oop load_oop_from_buffer(narrowOop* buffered_addr);
+  static void store_oop_in_buffer(oop* buffered_addr, oop requested_obj);
+  static void store_oop_in_buffer(narrowOop* buffered_addr, oop requested_obj);
 
-  template <typename T> static T* requested_addr_to_output_addr(T* p);
+  template <typename T> static oop load_source_field_from_requested_obj(oop requested_obj, size_t field_offset);
+  template <typename T> static void store_requested_field_in_requested_obj(oop requested_obj, size_t field_offset, oop request_field_val);
 
+  template <typename T> static T* requested_addr_to_buffered_addr(T* p);
+  template <typename T> static T* requested_field_addr_in_buffer(oop request_p, size_t field_offset);
+  template <typename T> static void relocate_field_in_requested_obj(oop requested_obj, size_t field_offset);
+  template <typename T> static void mark_oop_pointer(oop requested_obj, size_t field_offset);
+  template <typename T> static void relocate_root_at(oop requested_roots, int index);
+
+  static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
 public:
-  static void init(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static bool is_object_too_large(size_t size);
+  static void init() NOT_CDS_JAVA_HEAP_RETURN;
   static void add_source_obj(oop src_obj);
-  static HeapWord* allocate_buffer_for(oop orig_obj);
-  static HeapWord* allocate_raw_buffer(size_t size);
-  static bool is_in_buffer(oop o);
-  static void finalize(GrowableArray<MemRegion>* closed_regions, GrowableArray<MemRegion>* open_regions,
-                       GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                       GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
+  static bool is_too_large_to_archive(size_t size);
+  static bool is_too_large_to_archive(oop obj);
+  static void write(GrowableArrayCHeap<oop, mtClassShared>*,
+                    GrowableArray<MemRegion>* closed_regions, GrowableArray<MemRegion>* open_regions,
+                    GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
+                    GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
   static address heap_region_requested_bottom(int heap_region_idx);
   static oop heap_roots_requested_address();
-  static address heap_roots_output_address();
-  static oop requested_address_for_oop(oop orig_obj);
+  static address buffered_heap_roots_addr() {
+    return offset_to_buffered_address<address>(_heap_roots_bottom);
+  }
+  static size_t heap_roots_word_size() {
+    return _heap_roots_word_size;
+  }
 
-  static void mark_native_pointer(oop orig_obj, int offset);
-  static oop output_addr_to_orig_oop(address output_addr);
-  static address to_requested_address(address output_addr);
+  static void mark_native_pointer(oop src_obj, int offset);
+  static oop source_obj_to_requested_obj(oop src_obj);
+  static oop buffered_addr_to_source_obj(address buffered_addr);
+  static address buffered_addr_to_requested_addr(address buffered_addr);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP

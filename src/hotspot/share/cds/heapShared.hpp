@@ -186,20 +186,18 @@ public:
   class CachedOopInfo {
     // See "TEMP notes: What are these?" in archiveHeapWriter.hpp
     oop _orig_referrer;
-    oop _buffered_obj;
 
     // The location of this object inside ArchiveHeapWriter::_buffer
-    int _output_offset;
+    size_t _buffer_offset;
     bool _in_open_region;
   public:
-    CachedOopInfo(oop orig_referrer, oop buffered_obj, bool in_open_region)
-      : _orig_referrer(orig_referrer), _buffered_obj(buffered_obj),
-        _output_offset(-1), _in_open_region(in_open_region) {}
-    oop buffered_obj()           const { return _buffered_obj;    }
-    oop orig_referrer()          const { return _orig_referrer;   }
-    bool in_open_region()        const { return _in_open_region;  }
-    void set_output_offset(int offset) { _output_offset = offset; }
-    int output_offset()          const { return _output_offset;   }
+    CachedOopInfo(oop orig_referrer, bool in_open_region)
+      : _orig_referrer(orig_referrer),
+        _buffer_offset(0), _in_open_region(in_open_region) {}
+    oop orig_referrer()             const { return _orig_referrer;   }
+    bool in_open_region()           const { return _in_open_region;  }
+    void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
+    size_t buffer_offset()          const { return _buffer_offset;   }
   };
 
 private:
@@ -242,7 +240,7 @@ private:
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
   static void check_closed_region_object(InstanceKlass* k);
-  static CachedOopInfo make_cached_oop_info(oop archived_obj);
+  static CachedOopInfo make_cached_oop_info();
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_closed_archive,
                                        bool is_full_module_graph);
@@ -256,7 +254,7 @@ private:
 
   static void verify_subgraph_from_static_field(
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
-  static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
+  static void verify_reachable_objects_from(oop obj) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
   static void check_default_subgraph_classes();
 
@@ -321,7 +319,7 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-  static oop archive_object(oop obj);
+  static bool archive_object(oop obj);
 
   static void copy_interned_strings();
   static void copy_roots();
@@ -344,6 +342,8 @@ private:
                                           int num_loaded_regions);
   static void fill_failed_loaded_region();
   static void mark_native_pointers(oop orig_obj);
+  static bool has_been_archived(oop orig_obj);
+  static void archive_java_mirrors();
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
@@ -352,16 +352,11 @@ private:
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
-    _archived_object_cache = NULL;
+    _archived_object_cache = nullptr;
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
   }
-
-  static bool is_too_large_to_archive(oop o);
-  static oop find_archived_heap_object(oop obj);
-
-  static void archive_java_mirrors();
 
   static void archive_objects(GrowableArray<MemRegion>* closed_regions,
                               GrowableArray<MemRegion>* open_regions,
@@ -370,10 +365,10 @@ private:
   static void copy_closed_objects();
   static void copy_open_objects();
 
-  static oop archive_reachable_objects_from(int level,
-                                            KlassSubGraphInfo* subgraph_info,
-                                            oop orig_obj,
-                                            bool is_closed_archive);
+  static bool archive_reachable_objects_from(int level,
+                                             KlassSubGraphInfo* subgraph_info,
+                                             oop orig_obj,
+                                             bool is_closed_archive);
 
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static void add_to_dumped_interned_strings(oop string);
@@ -417,8 +412,6 @@ private:
                                idx <= MetaspaceShared::last_open_heap_region);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
-
-  static bool is_archived_object_during_dumptime(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void resolve_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(JavaThread* current, Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
