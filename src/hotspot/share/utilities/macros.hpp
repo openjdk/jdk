@@ -28,6 +28,8 @@
 // Use this to mark code that needs to be cleaned up (for development only)
 #define NEEDS_CLEANUP
 
+#define PRAGMA(params) _Pragma(#params)
+
 // Makes a string of the argument (which is not macro-expanded)
 #define STR(a)  #a
 
