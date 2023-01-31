@@ -1241,14 +1241,14 @@ void PhaseIterGVN::verify_optimize() {
   }
 }
 
-// Check that if type(n) == n->Value(), return true if we have a failure.
+// Check that type(n) == n->Value(), return true if we have a failure.
 // We have a list of exceptions, see detailed comments in code.
 // (1) Integer "widen" changes, but the range is the same.
 // (2) LoadNode performs deep traversals. Load is not notified for changes far away.
 // (3) CmpPNode performs deep traversals if it compares oopptr. CmpP is not notified for changes far away.
 bool PhaseIterGVN::verify_node_value(Node* n) {
   // If we assert inside type(n), because the type is still a nullptr, then maybe
-  // the node never went through gvn.transform,  which would be a bug.
+  // the node never went through gvn.transform, which would be a bug.
   const Type* told = type(n);
   const Type* tnew = n->Value(this);
   if (told == tnew) {
@@ -1702,16 +1702,16 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         //
         if (in1 != in2) { // if they are equal, the CmpI can fold them away
           if (in1 == n) {
-            // in1 modified -> could turn into X -> do traversal basen on right pattern.
+            // in1 modified -> could turn into X -> do traversal based on right pattern.
             for (uint i2 = 0; i2 < cmp->outcnt(); i2++) {
               Node* bol = cmp->raw_out(i2); // For each Bool
-              if(bol != nullptr && bol->is_Bool()) {
+              if (bol != nullptr && bol->is_Bool()) {
                 for (uint i3 = 0; i3 < bol->outcnt(); i3++) {
                   Node* iff = bol->raw_out(i3); // For each If
-                  if(iff != nullptr && iff->is_If()) {
+                  if (iff != nullptr && iff->is_If()) {
                     for (uint i4 = 0; i4 < iff->outcnt(); i4++) {
                       Node* if_proj = iff->raw_out(i4); // For each IfProj
-                      if(if_proj != nullptr && (if_proj->is_IfFalse() || if_proj->is_IfTrue())) {
+                      if (if_proj != nullptr && (if_proj->is_IfFalse() || if_proj->is_IfTrue())) {
                         for (uint i5 = 0; i5 < if_proj->outcnt(); i5++) {
                           Node* castii = if_proj->raw_out(i5); // For each CastII
                           if (castii->is_CastII() &&
@@ -1783,7 +1783,7 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
       }
     }
     // If changed LShift inputs, check And users for shift and mask (And) operation
-    if(use_op == Op_LShiftI || use_op == Op_LShiftL) {
+    if (use_op == Op_LShiftI || use_op == Op_LShiftL) {
       for (DUIterator_Fast i2max, i2 = use->fast_outs(i2max); i2 < i2max; i2++) {
         Node* u = use->fast_out(i2);
         if (u->Opcode() == Op_AndI || u->Opcode() == Op_AndL) {

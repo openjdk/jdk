@@ -54,7 +54,7 @@ public:
 // Simple integer constants
 class ConINode : public ConNode {
 public:
-  ConINode( const TypeInt *t ) : ConNode(t) {
+  ConINode(const TypeInt* t) : ConNode(t) {
     init_class_id(Class_ConI);
   }
   virtual int Opcode() const;
