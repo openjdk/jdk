@@ -178,7 +178,7 @@ public class VisibleMemberTable {
      * Maps a method m declared in {@code te} to a visible method m' in a
      * {@code te}'s supertype such that m overrides m'.
      */
-    private final Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
+    private final Map<ExecutableElement, OverrideInfo> overriddenMethodTable
             = new LinkedHashMap<>();
 
     protected VisibleMemberTable(TypeElement typeElement, BaseConfiguration configuration,
@@ -291,7 +291,7 @@ public class VisibleMemberTable {
     public ExecutableElement getOverriddenMethod(ExecutableElement e) {
         ensureInitialized();
 
-        OverriddenMethodInfo found = overriddenMethodTable.get(e);
+        OverrideInfo found = overriddenMethodTable.get(e);
         if (found != null
                 && (found.simpleOverride || utils.isUndocumentedEnclosure(utils.getEnclosingTypeElement(e)))) {
             return found.overriddenMethod;
@@ -574,8 +574,8 @@ public class VisibleMemberTable {
 
         // filter out "simple overrides" from local methods
         Predicate<ExecutableElement> nonSimpleOverride = m -> {
-            OverriddenMethodInfo p = overriddenMethodTable.get(m);
-            return p == null || !p.simpleOverride;
+            OverrideInfo i = overriddenMethodTable.get(m);
+            return i == null || !i.simpleOverride;
         };
 
         Stream<ExecutableElement> localStream = lmt.getOrderedMembers(Kind.METHODS)
@@ -682,7 +682,7 @@ public class VisibleMemberTable {
                     //  is simpleOverride=false here to force to be used because
                     //  it cannot be linked to, because package-private?
                     overriddenMethodTable.computeIfAbsent(lMethod,
-                            l -> new OverriddenMethodInfo(inheritedMethod, false));
+                            l -> new OverrideInfo(inheritedMethod, false));
                     return false;
                 }
 
@@ -694,7 +694,7 @@ public class VisibleMemberTable {
                         && !overridingSignatureChanged(lMethod, inheritedMethod)
                         && !overriddenByTable.containsKey(inheritedMethod);
                 overriddenMethodTable.computeIfAbsent(lMethod,
-                        l -> new OverriddenMethodInfo(inheritedMethod, simpleOverride));
+                        l -> new OverrideInfo(inheritedMethod, simpleOverride));
                 return simpleOverride;
             }
         }
@@ -1078,8 +1078,19 @@ public class VisibleMemberTable {
         }
     }
 
-    private record OverriddenMethodInfo(ExecutableElement overriddenMethod,
-                                        boolean simpleOverride) {
+    /*
+     * (Here "override" used as a noun, not a verb, for a short and descriptive
+     * name. Sadly, we cannot use "Override" as a complete name because a clash
+     * with @java.lang.Override would make it inconvenient.)
+     *
+     * Used to provide additional attributes to the otherwise boolean
+     * "overrides(a, b)" relationship.
+     *
+     * Overriding method could be a key in a map and an instance of this
+     * record could be the value.
+     */
+    private record OverrideInfo(ExecutableElement overriddenMethod,
+                                boolean simpleOverride) {
         @Override // for debugging
         public String toString() {
             return overriddenMethod.getEnclosingElement()
