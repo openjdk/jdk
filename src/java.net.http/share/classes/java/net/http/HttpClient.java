@@ -85,27 +85,31 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * </ul>
  *
  * <p><b>Synchronous Example</b>
- * <pre>{@code    HttpClient client = HttpClient.newBuilder()
+ * {@snippet :
+ *   HttpClient client = HttpClient.newBuilder()
  *        .version(Version.HTTP_1_1)
  *        .followRedirects(Redirect.NORMAL)
  *        .connectTimeout(Duration.ofSeconds(20))
  *        .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
  *        .authenticator(Authenticator.getDefault())
  *        .build();
+ *
  *   HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
  *   System.out.println(response.statusCode());
- *   System.out.println(response.body());  }</pre>
+ *   System.out.println(response.body());}
  *
  * <p><b>Asynchronous Example</b>
- * <pre>{@code    HttpRequest request = HttpRequest.newBuilder()
+ * {@snippet :
+ *    HttpRequest request = HttpRequest.newBuilder()
  *        .uri(URI.create("https://foo.com/"))
  *        .timeout(Duration.ofMinutes(2))
  *        .header("Content-Type", "application/json")
  *        .POST(BodyPublishers.ofFile(Paths.get("file.json")))
  *        .build();
+ *
  *   client.sendAsync(request, BodyHandlers.ofString())
  *        .thenApply(HttpResponse::body)
- *        .thenAccept(System.out::println);  }</pre>
+ *        .thenAccept(System.out::println);}
  *
  * <p> <a id="securitychecks"><b>Security checks</b></a>
  *
@@ -688,20 +692,23 @@ public abstract class HttpClient {
      * Creates a new {@code WebSocket} builder (optional operation).
      *
      * <p> <b>Example</b>
-     * <pre>{@code    HttpClient client = HttpClient.newHttpClient();
+     * {@snippet :
+     *   HttpClient client = HttpClient.newHttpClient();
      *   CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-     *           .buildAsync(URI.create("ws://websocket.example.com"), listener); }</pre>
+     *      .buildAsync(URI.create("ws://websocket.example.com"), listener);}
      *
      * <p> Finer control over the WebSocket Opening Handshake can be achieved
      * by using a custom {@code HttpClient}.
      *
      * <p> <b>Example</b>
-     * <pre>{@code    InetSocketAddress addr = new InetSocketAddress("proxy.example.com", 80);
+     * {@snippet :
+     *   InetSocketAddress addr = new InetSocketAddress("proxy.example.com", 80);
      *   HttpClient client = HttpClient.newBuilder()
      *           .proxy(ProxySelector.of(addr))
      *           .build();
+     *
      *   CompletableFuture<WebSocket> ws = client.newWebSocketBuilder()
-     *           .buildAsync(URI.create("ws://websocket.example.com"), listener); }</pre>
+     *           .buildAsync(URI.create("ws://websocket.example.com"), listener);}
      *
      * @implSpec The default implementation of this method throws
      * {@code UnsupportedOperationException}. Clients obtained through

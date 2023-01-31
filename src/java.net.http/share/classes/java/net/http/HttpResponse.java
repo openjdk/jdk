@@ -77,8 +77,10 @@ import static jdk.internal.net.http.common.Utils.charsetFrom;
  *
  * <p> The following is an example of retrieving a response as a String:
  *
- * <pre>{@code    HttpResponse<String> response = client
- *     .send(request, BodyHandlers.ofString()); }</pre>
+ * {@snippet :
+ *     HttpResponse<String> response = client
+ *     .send(request, BodyHandlers.ofString());
+ * }
  *
  * <p> The class {@link BodyHandlers BodyHandlers} provides implementations
  * of many common response handlers. Alternatively, a custom {@code BodyHandler}
@@ -211,12 +213,15 @@ public interface HttpResponse<T> {
      * predefined body handlers} that always process the response body in the
      * same way ( streams the response body to a file ).
      *
-     * <pre>{@code   HttpRequest request = HttpRequest.newBuilder()
+     * {@snippet :
+     *    HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("http://www.foo.com/"))
      *        .build();
+     *
      *  client.sendAsync(request, BodyHandlers.ofFile(Paths.get("/tmp/f")))
      *        .thenApply(HttpResponse::body)
-     *        .thenAccept(System.out::println); }</pre>
+     *        .thenAccept(System.out::println);
+     * }
      *
      * Note, that even though the pre-defined handlers do not examine the
      * response code, the response code and headers are always retrievable from
@@ -224,7 +229,7 @@ public interface HttpResponse<T> {
      *
      * <p> In the second example, the function returns a different subscriber
      * depending on the status code.
-     * <pre>{@code   HttpRequest request = HttpRequest.newBuilder()
+     * {@snippet :   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("http://www.foo.com/"))
      *        .build();
      *  BodyHandler<Path> bodyHandler = (rspInfo) -> rspInfo.statusCode() == 200
@@ -232,7 +237,8 @@ public interface HttpResponse<T> {
      *                      : BodySubscribers.replacing(Paths.get("/NULL"));
      *  client.sendAsync(request, bodyHandler)
      *        .thenApply(HttpResponse::body)
-     *        .thenAccept(System.out::println); }</pre>
+     *        .thenAccept(System.out::println);
+     * }
      *
      * @param <T> the response body type
      * @see BodyHandlers
@@ -272,7 +278,7 @@ public interface HttpResponse<T> {
      * <p>The following are examples of using the predefined body handlers to
      * convert a flow of response body data into common high-level Java objects:
      *
-     * <pre>{@code    // Receives the response body as a String
+     * {@snippet :    // Receives the response body as a String
      *   HttpResponse<String> response = client
      *     .send(request, BodyHandlers.ofString());
      *
@@ -286,7 +292,8 @@ public interface HttpResponse<T> {
      *
      *   // Discards the response body
      *   HttpResponse<Void> response = client
-     *     .send(request, BodyHandlers.discarding());  }</pre>
+     *     .send(request, BodyHandlers.discarding());
+     * }
      *
      * @since 11
      */
@@ -310,10 +317,11 @@ public interface HttpResponse<T> {
          * BodySubscriber} and {@code Flow.Subscriber}.
          *
          * <p> For example:
-         * <pre> {@code  TextSubscriber subscriber = new TextSubscriber();
+         * {@snippet :
+         *  TextSubscriber subscriber = new TextSubscriber();
          *  HttpResponse<Void> response = client.sendAsync(request,
          *      BodyHandlers.fromSubscriber(subscriber)).join();
-         *  System.out.println(response.statusCode()); }</pre>
+         *  System.out.println(response.statusCode()); }
          *
          * @param subscriber the subscriber
          * @return a response body handler
@@ -340,10 +348,11 @@ public interface HttpResponse<T> {
          * BodySubscriber} and {@code Flow.Subscriber}.
          *
          * <p> For example:
-         * <pre> {@code  TextSubscriber subscriber = ...;  // accumulates bytes and transforms them into a String
+         * {@snippet :
+         * TextSubscriber subscriber = ...;  // accumulates bytes and transforms them into a String
          *  HttpResponse<String> response = client.sendAsync(request,
          *      BodyHandlers.fromSubscriber(subscriber, TextSubscriber::getTextResult)).join();
-         *  String text = response.body(); }</pre>
+         *  String text = response.body(); }
          *
          * @param <S> the type of the Subscriber
          * @param <T> the type of the response body
@@ -380,7 +389,8 @@ public interface HttpResponse<T> {
          * text line by line.
          *
          * <p> For example:
-         * <pre> {@code  // A PrintSubscriber that implements Flow.Subscriber<String>
+         * {@snippet :
+         *  // A PrintSubscriber that implements Flow.Subscriber<String>
          *  // and print lines received by onNext() on System.out
          *  PrintSubscriber subscriber = new PrintSubscriber(System.out);
          *  client.sendAsync(request, BodyHandlers.fromLineSubscriber(subscriber))
@@ -389,7 +399,7 @@ public interface HttpResponse<T> {
          *          if (status != 200) {
          *              System.err.printf("ERROR: %d status received%n", status);
          *          }
-         *      }); }</pre>
+         *      }); }
          *
          * @param subscriber the subscriber
          * @return a response body handler
@@ -423,7 +433,8 @@ public interface HttpResponse<T> {
          * text line by line.
          *
          * <p> For example:
-         * <pre> {@code  // A LineParserSubscriber that implements Flow.Subscriber<String>
+         * {@snippet :
+         *  // A LineParserSubscriber that implements Flow.Subscriber<String>
          *  // and accumulates lines that match a particular pattern
          *  Pattern pattern = ...;
          *  LineParserSubscriber subscriber = new LineParserSubscriber(pattern);
@@ -431,7 +442,7 @@ public interface HttpResponse<T> {
          *      BodyHandlers.fromLineSubscriber(subscriber, s -> s.getMatchingLines(), "\n"));
          *  if (response.statusCode() != 200) {
          *      System.err.printf("ERROR: %d status received%n", response.statusCode());
-         *  } }</pre>
+         *  } }
          *
          *
          * @param <S> the type of the Subscriber
@@ -904,7 +915,8 @@ public interface HttpResponse<T> {
      * to convert a flow of response body data into common high-level Java
      * objects:
      *
-     * <pre>{@code    // Streams the response body to a File
+     * {@snippet :
+     *   // Streams the response body to a File
      *   HttpResponse<Path> response = client
      *     .send(request, responseInfo -> BodySubscribers.ofFile(Paths.get("example.html"));
      *
@@ -920,7 +932,7 @@ public interface HttpResponse<T> {
      *   HttpResponse<byte[]> response = client
      *     .send(request, responseInfo ->
      *        BodySubscribers.mapping(BodySubscribers.ofString(UTF_8), String::getBytes));
-     * }</pre>
+     * }
      *
      * @since 11
      */
@@ -988,9 +1000,8 @@ public interface HttpResponse<T> {
          * @apiNote This method can be used as an adapter between {@code
          * BodySubscriber} and {@code Flow.Subscriber}.
          *
-         * @implNote This is equivalent to calling <pre>{@code
-         *      fromLineSubscriber(subscriber, s -> null, StandardCharsets.UTF_8, null)
-         * }</pre>
+         * @implNote This is equivalent to calling {@snippet :
+         *      fromLineSubscriber(subscriber, s -> null, StandardCharsets.UTF_8, null)}
          *
          * @param subscriber the subscriber
          * @return a body subscriber
@@ -1330,7 +1341,7 @@ public interface HttpResponse<T> {
          * convert an {@code InputStream} into any annotated Java type.
          *
          * <p>For example:
-         * <pre> {@code  public static <W> BodySubscriber<Supplier<W>> asJSON(Class<W> targetType) {
+         * {@snippet :  public static <W> BodySubscriber<Supplier<W>> asJSON(Class<W> targetType) {
          *     BodySubscriber<InputStream> upstream = BodySubscribers.ofInputStream();
          *
          *     BodySubscriber<Supplier<W>> downstream = BodySubscribers.mapping(
@@ -1344,7 +1355,7 @@ public interface HttpResponse<T> {
          *               }
          *           });
          *    return downstream;
-         *  } }</pre>
+         *  } }
          *
          * @param <T> the upstream body type
          * @param <U> the type of the body subscriber returned

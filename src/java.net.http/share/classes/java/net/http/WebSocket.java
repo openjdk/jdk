@@ -258,7 +258,8 @@ public interface WebSocket {
      * Here is an example of a listener that requests invocations, one at a
      * time, until a complete message has been accumulated, then processes
      * the result, and completes the {@code CompletionStage}:
-     * <pre>{@code     WebSocket.Listener listener = new WebSocket.Listener() {
+     * {@snippet :
+     *        WebSocket.Listener listener = new WebSocket.Listener() {
      *
      *        List<CharSequence> parts = new ArrayList<>();
      *        CompletableFuture<?> accumulatedMessage = new CompletableFuture<>();
@@ -278,8 +279,7 @@ public interface WebSocket {
      *            }
      *            return accumulatedMessage;
      *        }
-     *    ...
-     *    } } </pre>
+     *    };}
      *
      * @since 11
      */
@@ -292,7 +292,7 @@ public interface WebSocket {
          * typically used to make a request for more invocations.
          *
          * @implSpec The default implementation is equivalent to:
-         * <pre>{@code     webSocket.request(1); }</pre>
+         * {@snippet :     webSocket.request(1); }
          *
          * @param webSocket
          *         the WebSocket that has been connected
@@ -308,8 +308,9 @@ public interface WebSocket {
          * this {@code CompletionStage} has completed.
          *
          * @implSpec The default implementation is equivalent to:
-         * <pre>{@code     webSocket.request(1);
-         *    return null; }</pre>
+         * {@snippet :
+         *    webSocket.request(1);
+         *    return null; }
          *
          * @implNote The {@code data} is always a legal UTF-16 sequence.
          *
@@ -343,8 +344,9 @@ public interface WebSocket {
          * this {@code CompletionStage} has completed.
          *
          * @implSpec The default implementation is equivalent to:
-         * <pre>{@code     webSocket.request(1);
-         *    return null; }</pre>
+         * {@snippet :
+         *    webSocket.request(1);
+         *    return null; }
          *
          * @param webSocket
          *         the WebSocket on which the data has been received
@@ -381,8 +383,9 @@ public interface WebSocket {
          * this {@code CompletionStage} has completed.
          *
          * @implSpec The default implementation is equivalent to:
-         * <pre>{@code     webSocket.request(1);
-         *    return null; }</pre>
+         * {@snippet :
+         *    webSocket.request(1);
+         *    return null; }
          *
          * @param webSocket
          *         the WebSocket on which the message has been received
@@ -412,8 +415,9 @@ public interface WebSocket {
          * this {@code CompletionStage} has completed.
          *
          * @implSpec The default implementation is equivalent to:
-         * <pre>{@code     webSocket.request(1);
-         *    return null; }</pre>
+         * {@snippet :
+         *    webSocket.request(1);
+         *    return null; }
          *
          * @param webSocket
          *         the WebSocket on which the message has been received
@@ -456,12 +460,13 @@ public interface WebSocket {
          * <p> To specify a custom closure code or reason code the
          * {@code sendClose} method may be invoked from inside the
          * {@code onClose} invocation:
-         * <pre>{@code     public CompletionStage<?> onClose(WebSocket webSocket,
-         *                                      int statusCode,
-         *                                      String reason) {
+         * {@snippet :
+         *       public CompletionStage<?> onClose(WebSocket webSocket,
+         *                            int statusCode,
+         *                            String reason) {
          *        webSocket.sendClose(CUSTOM_STATUS_CODE, CUSTOM_REASON);
          *        return new CompletableFuture<Void>();
-         *    } } </pre>
+         *    } }
          *
          * @implSpec The default implementation of this method returns
          * {@code null}, indicating that the output should be closed
@@ -654,11 +659,12 @@ public interface WebSocket {
      *
      * @apiNote Use the provided integer constant {@link #NORMAL_CLOSURE} as a
      * status code and an empty string as a reason in a typical case:
-     * <pre>{@code     CompletableFuture<WebSocket> webSocket = ...
-     *    webSocket.thenCompose(ws -> ws.sendText("Hello, ", false))
+     * {@snippet :
+     *      CompletableFuture<WebSocket> webSocket = //...
+     *      webSocket.thenCompose(ws -> ws.sendText("Hello, ", false))
      *             .thenCompose(ws -> ws.sendText("world!", true))
      *             .thenCompose(ws -> ws.sendClose(WebSocket.NORMAL_CLOSURE, ""))
-     *             .join(); }</pre>
+     *             .join(); }
      *
      * The {@code sendClose} method does not close this WebSocket's input. It
      * merely closes this WebSocket's output by sending a Close message. To
@@ -666,18 +672,19 @@ public interface WebSocket {
      * example of an application that sends a Close message, and then starts a
      * timer. Once no data has been received within the specified timeout, the
      * timer goes off and the alarm aborts {@code WebSocket}:
-     * <pre>{@code     MyAlarm alarm = new MyAlarm(webSocket::abort);
+     * {@snippet :
+     *    MyAlarm alarm = new MyAlarm(webSocket::abort);
      *    WebSocket.Listener listener = new WebSocket.Listener() {
      *
      *        public CompletionStage<?> onText(WebSocket webSocket,
      *                                         CharSequence data,
      *                                         boolean last) {
      *            alarm.snooze();
-     *            ...
+     *            // ...
      *        }
-     *        ...
+     *        // ...
      *    };
-     *    ...
+     *    // ...
      *    Runnable startTimer = () -> {
      *        MyTimer idleTimer = new MyTimer();
      *        idleTimer.add(alarm, 30, TimeUnit.SECONDS);
@@ -717,7 +724,8 @@ public interface WebSocket {
      * <p> Here is an example of a listener that requests invocations, one at a
      * time, until a complete message has been accumulated, and then processes
      * the result:
-     * <pre>{@code     WebSocket.Listener listener = new WebSocket.Listener() {
+     * {@snippet :
+     *        WebSocket.Listener listener = new WebSocket.Listener() {
      *
      *        StringBuilder text = new StringBuilder();
      *
@@ -732,8 +740,8 @@ public interface WebSocket {
      *            webSocket.request(1);
      *            return null;
      *        }
-     *    ...
-     *    } } </pre>
+     *    //...
+     *    }; }
      *
      * @param n
      *         the number of invocations
