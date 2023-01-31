@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,7 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
-import java.awt.Stroke;
 import java.awt.Window;
-import java.awt.geom.AffineTransform;
 
 import javax.swing.AbstractButton;
 import javax.swing.ButtonModel;
@@ -62,6 +60,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicBorders;
 import javax.swing.text.JTextComponent;
 
+import com.sun.java.swing.SwingUtilities3;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingUtilities2;
 
@@ -250,6 +249,14 @@ public class MetalBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
+            SwingUtilities3.paintBorder(c, g,
+                                        x, y, w, h,
+                                        this::paintUnscaledBorder);
+        }
+
+        private void paintUnscaledBorder(Component c, Graphics g,
+                                         int width, int height,
+                                         double scaleFactor) {
             Color background;
             Color highlight;
             Color shadow;
@@ -264,48 +271,6 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
 
-            AffineTransform at = null;
-            Stroke oldStk = null;
-            boolean resetTransform = false;
-            int stkWidth = 1;
-            double scaleFactor = 1;
-
-            if (g instanceof Graphics2D g2d) {
-                at = g2d.getTransform();
-                scaleFactor = at.getScaleX();
-                oldStk = g2d.getStroke();
-
-                // if m01 or m10 is non-zero, then there is a rotation or shear
-                // skip resetting the transform
-                resetTransform = ((at.getShearX() == 0) && (at.getShearY() == 0));
-
-                if (resetTransform) {
-                    g2d.setTransform(new AffineTransform());
-                    stkWidth = clipRound(Math.min(at.getScaleX(), at.getScaleY()));
-                    g2d.setStroke(new BasicStroke((float) stkWidth));
-                }
-            }
-
-            int xtranslation;
-            int ytranslation;
-            int width;
-            int height;
-
-            if (resetTransform) {
-                double xx = at.getScaleX() * x + at.getTranslateX();
-                double yy = at.getScaleY() * y + at.getTranslateY();
-                xtranslation = clipRound(xx);
-                ytranslation = clipRound(yy);
-                width = clipRound(at.getScaleX() * w + xx) - xtranslation;
-                height = clipRound(at.getScaleY() * h + yy) - ytranslation;
-            } else {
-                xtranslation = x;
-                ytranslation = y;
-                width = w;
-                height = h;
-            }
-            g.translate(xtranslation, ytranslation);
-
             // scaled border
             int thickness = (int) Math.ceil(4 * scaleFactor);
 
@@ -319,11 +284,16 @@ public class MetalBorders {
                 // midpoint at which highlight & shadow lines
                 // are positioned on the border
                 int midPoint = thickness / 2;
+                int stkWidth = clipRound(scaleFactor);
                 int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
                 int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
                 int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
                 // scaled corner
                 int corner = (int) Math.round(CORNER * scaleFactor);
+
+                if (g instanceof Graphics2D) {
+                    ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+                }
 
                 // Draw the Long highlight lines
                 g.setColor(highlight);
@@ -342,14 +312,6 @@ public class MetalBorders {
                         (width - offset) - loc2, height - corner - 1);
                 g.drawLine(corner, (height - offset) - loc2,
                         width - corner - 1, (height - offset) - loc2);
-            }
-
-            // restore previous transform
-            g.translate(-xtranslation, -ytranslation);
-            if (resetTransform) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setTransform(at);
-                g2d.setStroke(oldStk);
             }
         }
 

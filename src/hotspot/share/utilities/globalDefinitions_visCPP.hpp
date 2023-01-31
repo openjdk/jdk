@@ -85,13 +85,6 @@ typedef int64_t ssize_t;
 typedef int32_t ssize_t;
 #endif
 
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
 // Non-standard stdlib-like stuff:
 inline int strcasecmp(const char *s1, const char *s2) { return _stricmp(s1,s2); }
 inline int strncasecmp(const char *s1, const char *s2, size_t n) {

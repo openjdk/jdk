@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ class LibraryCallKit : public GraphKit {
                           RegionNode* region, Node* phi, StrIntrinsicNode::ArgEnc ae);
   bool inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae);
   bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
+  bool inline_vectorizedHashCode();
   bool inline_string_toBytesU();
   bool inline_string_getCharsU();
   bool inline_string_copy(bool compress);
@@ -265,8 +266,13 @@ class LibraryCallKit : public GraphKit {
   // Helper functions for inlining arraycopy
   bool inline_arraycopy();
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr);
+  static CallStaticJavaNode* get_uncommon_trap_from_success_proj(Node* node);
+  SafePointNode* create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const;
+  void replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc, JVMState* saved_jvms_before_guards);
+  void replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards);
+  void create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call);
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
-  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms, int saved_reexecute_sp,
+  void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
 
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;

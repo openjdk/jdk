@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,14 @@ public class FdlibmTranslit {
         return Hypot.compute(x, y);
     }
 
+    public static double cbrt(double x) {
+        return Cbrt.compute(x);
+    }
+
+    public static double log10(double x) {
+        return Log10.compute(x);
+    }
+
     /**
      * cbrt(x)
      * Return cube root of x
@@ -89,7 +97,7 @@ public class FdlibmTranslit {
         private static final double F =  1.60714285714285720630e+00; /* 45/28     = 0x3FF9B6DB, 0x6DB6DB6E */
         private static final double G =  3.57142857142857150787e-01; /* 5/14      = 0x3FD6DB6D, 0xB6DB6DB7 */
 
-        public static strictfp double compute(double x) {
+        public static double compute(double x) {
             int     hx;
             double  r, s, t=0.0, w;
             int sign; // unsigned
@@ -333,7 +341,7 @@ public class FdlibmTranslit {
         private static final double P4   = -1.65339022054652515390e-06;         /* 0xBEBBBD41, 0xC5D26BF1 */
         private static final double P5   =  4.13813679705723846039e-08;         /* 0x3E663769, 0x72BEA4D0 */
 
-        public static strictfp double compute(double x) {
+        public static double compute(double x) {
             double y,hi=0,lo=0,c,t;
             int k=0,xsb;
             /*unsigned*/ int hx;
@@ -382,6 +390,74 @@ public class FdlibmTranslit {
                 y = __HI(y, __HI(y) + ((k+1000)<<20));/* add k to y's exponent */
                 return y*twom1000;
             }
+        }
+    }
+
+    /**
+     * Return the base 10 logarithm of x
+     *
+     * Method :
+     *      Let log10_2hi = leading 40 bits of log10(2) and
+     *          log10_2lo = log10(2) - log10_2hi,
+     *          ivln10   = 1/log(10) rounded.
+     *      Then
+     *              n = ilogb(x),
+     *              if(n<0)  n = n+1;
+     *              x = scalbn(x,-n);
+     *              log10(x) := n*log10_2hi + (n*log10_2lo + ivln10*log(x))
+     *
+     * Note 1:
+     *      To guarantee log10(10**n)=n, where 10**n is normal, the rounding
+     *      mode must set to Round-to-Nearest.
+     * Note 2:
+     *      [1/log(10)] rounded to 53 bits has error  .198   ulps;
+     *      log10 is monotonic at all binary break points.
+     *
+     * Special cases:
+     *      log10(x) is NaN with signal if x < 0;
+     *      log10(+INF) is +INF with no signal; log10(0) is -INF with signal;
+     *      log10(NaN) is that NaN with no signal;
+     *      log10(10**N) = N  for N=0,1,...,22.
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following constants.
+     * The decimal values may be used, provided that the compiler will convert
+     * from decimal to binary accurately enough to produce the hexadecimal values
+     * shown.
+     */
+    static class Log10 {
+        private static double two54      =  1.80143985094819840000e+16; /* 0x43500000, 0x00000000 */
+        private static double ivln10     =  4.34294481903251816668e-01; /* 0x3FDBCB7B, 0x1526E50E */
+
+        private static double log10_2hi  =  3.01029995663611771306e-01; /* 0x3FD34413, 0x509F6000 */
+        private static double log10_2lo  =  3.69423907715893078616e-13; /* 0x3D59FEF3, 0x11F12B36 */
+
+        private static double zero   =  0.0;
+
+        public static double compute(double x) {
+            double y,z;
+            int i,k,hx;
+            /*unsigned*/ int lx;
+
+            hx = __HI(x);   /* high word of x */
+            lx = __LO(x);   /* low word of x */
+
+            k=0;
+            if (hx < 0x00100000) {                  /* x < 2**-1022  */
+                if (((hx&0x7fffffff)|lx)==0)
+                    return -two54/zero;             /* log(+-0)=-inf */
+                if (hx<0) return (x-x)/zero;        /* log(-#) = NaN */
+                k -= 54; x *= two54; /* subnormal number, scale up x */
+                hx = __HI(x);                /* high word of x */
+            }
+            if (hx >= 0x7ff00000) return x+x;
+            k += (hx>>20)-1023;
+            i  = (k&0x80000000)>>>31; // unsigned shift
+            hx = (hx&0x000fffff)|((0x3ff-i)<<20);
+            y  = (double)(k+i);
+            x = __HI(x, hx); //original: __HI(x) = hx;
+            z  = y*log10_2lo + ivln10*StrictMath.log(x); // TOOD: switch to Translit.log when available
+            return  z+y*log10_2hi;
         }
     }
 }
