@@ -131,7 +131,6 @@ public final class LocaleServiceProviderPool {
          * This also contains JRE's available locales
          */
         static final Locale[] AvailableLocalesArray;
-        static final Set<Locale> AvailableLocalesSet;
 
         static {
             Set<Locale> all = new HashSet<>();
@@ -140,7 +139,6 @@ public final class LocaleServiceProviderPool {
                     LocaleServiceProviderPool.getPool(c);
                 all.addAll(pool.getAvailableLocaleSet());
             }
-            AvailableLocalesSet = all;
             AvailableLocalesArray = all.toArray(new Locale[0]);
         }
 
@@ -156,8 +154,8 @@ public final class LocaleServiceProviderPool {
      *
      * @return a stream of the available locales for all provider classes
      */
-    public static Stream<Locale> streamAvailableLocales() {
-        return AllAvailableLocales.AvailableLocalesSet.stream();
+    public static Stream<Locale> streamAllAvailableLocales() {
+        return Arrays.stream(AllAvailableLocales.AvailableLocalesArray);
     }
 
     /**

@@ -1223,7 +1223,7 @@ public final class Locale implements Cloneable, Serializable {
      * @return A stream of installed locales.
      */
     public static Stream<Locale> streamAvailableLocales() {
-        return LocaleServiceProviderPool.streamAvailableLocales();
+        return LocaleServiceProviderPool.streamAllAvailableLocales();
     }
 
     /**

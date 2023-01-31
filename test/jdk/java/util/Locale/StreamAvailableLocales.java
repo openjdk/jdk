@@ -40,7 +40,7 @@ public class StreamAvailableLocales {
 
     /**
      * Test to validate that the methods: Locale.getAvailableLocales()
-     * and Locale.streamAvailableLocales() contain the same underlying collections
+     * and Locale.streamAvailableLocales() contain the same underlying elements
      */
     @Test
     public void testStreamEqualsArray() {
@@ -48,10 +48,10 @@ public class StreamAvailableLocales {
         Stream<Locale> streamedLocales = Locale.streamAvailableLocales();
         Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
         if (Arrays.equals(arrayLocales, convertedLocales)) {
-            System.out.println("$$$ Passed: The underlying collections" +
+            System.out.println("$$$ Passed: The underlying elements" +
                     " of getAvailableLocales() and streamAvailableLocales() are the same!");
         } else {
-            throw new RuntimeException("$$$ Error: The underlying collections" +
+            throw new RuntimeException("$$$ Error: The underlying elements" +
                     " of getAvailableLocales() and streamAvailableLocales()" +
                     " are not the same.");
         }
