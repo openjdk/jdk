@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
 }
 
 void CodeInstaller::pd_relocate_JavaMethod(CodeBuffer &, methodHandle& method, jint pc_offset, JVMCI_TRAPS) {
-  NativeCall* call = NULL;
+  NativeCall* call = nullptr;
   switch (_next_call_type) {
     case INLINE_INVOKE:
       return;

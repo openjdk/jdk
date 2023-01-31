@@ -140,7 +140,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
     || (f.unextended_sp() == f.sp()), "");
   assert(f.fp() > (intptr_t*)f.at(frame::interpreter_frame_initial_sp_offset), "");
 
-  // at(frame::interpreter_frame_last_sp_offset) can be NULL at safepoint preempts
+  // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
 
   // Make sure that locals is already relativized.

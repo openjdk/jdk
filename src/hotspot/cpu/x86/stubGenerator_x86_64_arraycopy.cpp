@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ void StubGenerator::generate_arraycopy_stubs() {
                                                                                    "oop_disjoint_arraycopy_uninit",
                                                                                    /*dest_uninitialized*/true);
     StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(false, true, entry,
-                                                                                   NULL, "oop_arraycopy_uninit",
+                                                                                   nullptr, "oop_arraycopy_uninit",
                                                                                    /*dest_uninitialized*/true);
   } else {
     StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(false, true, &entry,
@@ -124,12 +124,12 @@ void StubGenerator::generate_arraycopy_stubs() {
                                                                                     "oop_disjoint_arraycopy_uninit",
                                                                                     /*dest_uninitialized*/true);
     StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(false, true, entry,
-                                                                                    NULL, "oop_arraycopy_uninit",
+                                                                                    nullptr, "oop_arraycopy_uninit",
                                                                                     /*dest_uninitialized*/true);
   }
 
   StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy("checkcast_arraycopy", &entry_checkcast_arraycopy);
-  StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", NULL,
+  StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy("checkcast_arraycopy_uninit", nullptr,
                                                                       /*dest_uninitialized*/true);
 
   StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy",
@@ -212,7 +212,7 @@ void StubGenerator::array_overlap_test(address no_overlap_target, Label* NOLp, A
 
   __ cmpptr(to, from);
   __ lea(end_from, Address(from, count, sf, 0));
-  if (NOLp == NULL) {
+  if (NOLp == nullptr) {
     ExternalAddress no_overlap(no_overlap_target);
     __ jump_cc(Assembler::belowEqual, no_overlap);
     __ cmpptr(to, end_from);
@@ -419,7 +419,7 @@ address StubGenerator::generate_disjoint_copy_avx3_masked(address* entry, const 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -641,7 +641,7 @@ address StubGenerator::generate_conjoint_copy_avx3_masked(address* entry, const 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1040,7 +1040,7 @@ address StubGenerator::generate_disjoint_byte_copy(bool aligned, address* entry,
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1152,7 +1152,7 @@ address StubGenerator::generate_conjoint_byte_copy(bool aligned, address nooverl
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1269,7 +1269,7 @@ address StubGenerator::generate_disjoint_short_copy(bool aligned, address *entry
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1399,7 +1399,7 @@ address StubGenerator::generate_conjoint_short_copy(bool aligned, address noover
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1509,7 +1509,7 @@ address StubGenerator::generate_disjoint_int_oop_copy(bool aligned, bool is_oop,
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1616,7 +1616,7 @@ address StubGenerator::generate_conjoint_int_oop_copy(bool aligned, bool is_oop,
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
      // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1734,7 +1734,7 @@ address StubGenerator::generate_disjoint_long_oop_copy(bool aligned, bool is_oop
   // Save no-overlap entry point for generate_conjoint_long_oop_copy()
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1838,7 +1838,7 @@ address StubGenerator::generate_conjoint_long_oop_copy(bool aligned, bool is_oop
   __ enter(); // required for proper stackwalking of RuntimeStub frame
   assert_clean_int(c_rarg2, rax);    // Make sure 'count' is clean int.
 
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     // caller can pass a 64-bit byte count here (from Unsafe.copyMemory)
     BLOCK_COMMENT("Entry:");
@@ -1917,9 +1917,9 @@ void StubGenerator::generate_type_check(Register sub_klass,
 
   Label L_miss;
 
-  __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg,        &L_success, &L_miss, NULL,
+  __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg,        &L_success, &L_miss, nullptr,
                                    super_check_offset);
-  __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, NULL);
+  __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, nullptr);
 
   // Fall through on failure!
   __ BIND(L_miss);
@@ -1996,7 +1996,7 @@ address StubGenerator::generate_checkcast_copy(const char *name, address *entry,
 #endif
 
   // Caller of this entry point must set up the argument registers.
-  if (entry != NULL) {
+  if (entry != nullptr) {
     *entry = __ pc();
     BLOCK_COMMENT("Entry:");
   }
@@ -2289,13 +2289,13 @@ address StubGenerator::generate_generic_copy(const char *name,
   // (2) src_pos must not be negative.
   // (3) dst_pos must not be negative.
   // (4) length  must not be negative.
-  // (5) src klass and dst klass should be the same and not NULL.
+  // (5) src klass and dst klass should be the same and not null.
   // (6) src and dst should be arrays.
   // (7) src_pos + length must not exceed length of src.
   // (8) dst_pos + length must not exceed length of dst.
   //
 
-  //  if (src == NULL) return -1;
+  //  if (src == null) return -1;
   __ testptr(src, src);         // src oop
   size_t j1off = __ offset();
   __ jccb(Assembler::zero, L_failed_0);
@@ -2304,7 +2304,7 @@ address StubGenerator::generate_generic_copy(const char *name,
   __ testl(src_pos, src_pos); // src_pos (32-bits)
   __ jccb(Assembler::negative, L_failed_0);
 
-  //  if (dst == NULL) return -1;
+  //  if (dst == null) return -1;
   __ testptr(dst, dst);         // dst oop
   __ jccb(Assembler::zero, L_failed_0);
 
@@ -2332,12 +2332,12 @@ address StubGenerator::generate_generic_copy(const char *name,
 
   __ load_klass(r10_src_klass, src, rklass_tmp);
 #ifdef ASSERT
-  //  assert(src->klass() != NULL);
+  //  assert(src->klass() != null);
   {
     BLOCK_COMMENT("assert klasses not null {");
     Label L1, L2;
     __ testptr(r10_src_klass, r10_src_klass);
-    __ jcc(Assembler::notZero, L2);   // it is broken if klass is NULL
+    __ jcc(Assembler::notZero, L2);   // it is broken if klass is null
     __ bind(L1);
     __ stop("broken null klass");
     __ bind(L2);

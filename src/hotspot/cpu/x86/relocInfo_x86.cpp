@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   intptr_t adj = 0;
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     // We just moved this call instruction from orig_addr to addr().
     // This means its target will appear to have grown by addr() - orig_addr.
     adj = -( addr() - orig_addr );
@@ -104,7 +104,7 @@ address Relocation::pd_call_destination(address orig_addr) {
     return (address) ((NativeMovConstReg*)ni)->data();
   } else {
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   }
 }
 

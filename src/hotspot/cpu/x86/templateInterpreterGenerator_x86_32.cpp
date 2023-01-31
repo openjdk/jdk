@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ address TemplateInterpreterGenerator::generate_CRC32_update_entry() {
     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -158,7 +158,7 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -205,7 +205,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
     return entry;
   }
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -231,7 +231,7 @@ address TemplateInterpreterGenerator::generate_Float_intBitsToFloat_entry() {
     return entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 /**
@@ -257,7 +257,7 @@ address TemplateInterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
     return entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 
@@ -284,7 +284,7 @@ address TemplateInterpreterGenerator::generate_Double_longBitsToDouble_entry() {
      return entry;
    }
 
-   return NULL;
+   return nullptr;
 }
 
 /**
@@ -311,7 +311,7 @@ address TemplateInterpreterGenerator::generate_Double_doubleToRawLongBits_entry(
     return entry;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKind kind) {
@@ -320,7 +320,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   // rcx: scratrch
   // rsi: sender sp
 
-  if (!InlineIntrinsics) return NULL; // Generate a vanilla entry
+  if (!InlineIntrinsics) return nullptr; // Generate a vanilla entry
 
   address entry_point = __ pc();
 
@@ -341,7 +341,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   //
   if (kind == Interpreter::java_lang_math_fmaD) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movdbl(xmm2, Address(rsp, 5 * wordSize));
     __ movdbl(xmm1, Address(rsp, 3 * wordSize));
@@ -354,7 +354,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     return entry_point;
   } else if (kind == Interpreter::java_lang_math_fmaF) {
     if (!UseFMA) {
-      return NULL; // Generate a vanilla entry
+      return nullptr; // Generate a vanilla entry
     }
     __ movflt(xmm2, Address(rsp, 3 * wordSize));
     __ movflt(xmm1, Address(rsp, 2 * wordSize));
@@ -372,7 +372,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (VM_Version::supports_sse2() && StubRoutines::dsin() != NULL) {
+        if (VM_Version::supports_sse2() && StubRoutines::dsin() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dsin())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dsin));
@@ -382,7 +382,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_cos :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (VM_Version::supports_sse2() && StubRoutines::dcos() != NULL) {
+        if (VM_Version::supports_sse2() && StubRoutines::dcos() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dcos())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dcos));
@@ -392,7 +392,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_tan :
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dtan() != NULL) {
+        if (StubRoutines::dtan() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
@@ -408,7 +408,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log:
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dlog() != NULL) {
+        if (StubRoutines::dlog() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog));
@@ -418,7 +418,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_log10:
         __ subptr(rsp, 2 * wordSize);
         __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dlog10() != NULL) {
+        if (StubRoutines::dlog10() != nullptr) {
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog10())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dlog10));
@@ -430,7 +430,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       __ subptr(rsp, 4 * wordSize);
       __ fstp_d(Address(rsp, 0));
       __ fstp_d(Address(rsp, 2 * wordSize));
-      if (StubRoutines::dpow() != NULL) {
+      if (StubRoutines::dpow() != nullptr) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dpow())));
       } else {
         __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dpow));
@@ -440,7 +440,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_exp:
       __ subptr(rsp, 2*wordSize);
       __ fstp_d(Address(rsp, 0));
-      if (StubRoutines::dexp() != NULL) {
+      if (StubRoutines::dexp() != nullptr) {
         __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
       } else {
         __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dexp));

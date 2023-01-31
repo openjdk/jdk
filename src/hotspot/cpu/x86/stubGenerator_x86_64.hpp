@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,11 @@ class StubGenerator: public StubCodeGenerator {
   void array_overlap_test(address no_overlap_target, Label* NOLp, Address::ScaleFactor sf);
 
   void array_overlap_test(address no_overlap_target, Address::ScaleFactor sf) {
-    assert(no_overlap_target != NULL, "must be generated");
-    array_overlap_test(no_overlap_target, NULL, sf);
+    assert(no_overlap_target != nullptr, "must be generated");
+    array_overlap_test(no_overlap_target, nullptr, sf);
   }
   void array_overlap_test(Label& L_no_overlap, Address::ScaleFactor sf) {
-    array_overlap_test(NULL, &L_no_overlap, sf);
+    array_overlap_test(nullptr, &L_no_overlap, sf);
   }
 
 
