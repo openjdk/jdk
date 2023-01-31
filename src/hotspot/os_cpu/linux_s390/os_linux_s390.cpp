@@ -172,14 +172,14 @@ frame os::get_sender_for_C_frame(frame* fr) {
         return frame(fr->sender_sp(), fr->sender_pc());
       }
     } else {
-        intptr_t* sender_sp = fr->sender_sp();
-        address   sender_fp = (address)*sender_sp;
-        ptrdiff_t entery_len = sender_fp - (address)sender_sp;
-        if (entery_len < frame::z_abi_160_size) {
-          return frame(sender_sp, fr->sender_pc());
-        } else {
-          return frame(sender_sp, fr->native_sender_pc());
-        }
+      intptr_t* sender_sp = fr->sender_sp();
+      address   sender_fp = (address)*sender_sp;
+      ptrdiff_t entry_len = sender_fp - (address)sender_sp;
+      if (entry_len < frame::z_abi_160_size) {
+        return frame(sender_sp, fr->sender_pc());
+      } else {
+        return frame(sender_sp, fr->native_sender_pc());
+      }
     }
   }
 }
