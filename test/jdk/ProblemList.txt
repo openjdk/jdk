@@ -585,7 +585,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-javax/net/ssl/SSLEngine/IllegalRecordVersion.java               8298873 generic-all
 javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
 javax/net/ssl/SSLEngine/CheckStatus.java                        8298872 generic-all
 
