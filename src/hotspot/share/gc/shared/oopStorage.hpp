@@ -104,7 +104,7 @@ public:
 
   // Allocates and returns a new entry.  Returns null if memory allocation
   // failed.  Locks _allocation_mutex.
-  // postcondition: result == null or *result == nullptr.
+  // postcondition: result == nullptr or *result == nullptr.
   oop* allocate();
 
   // Maximum number of entries that can be obtained by one call to
