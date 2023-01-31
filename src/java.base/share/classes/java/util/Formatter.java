@@ -1295,7 +1295,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
@@ -1367,7 +1367,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     specified then the default value is {@code 6}. If the precision is less
  *     than the number of digits which would appear after the decimal point in
  *     the string returned by {@link
- *     Double#toString(double)} respectively, then the value will be rounded
+ *     Double#toString(double)}, then the value will be rounded
  *     using the {@linkplain java.math.RoundingMode#HALF_UP round half up
  *     algorithm}.  Otherwise, zeros may be appended to reach the precision.
  *     For a canonical representation of the value, use {@link
