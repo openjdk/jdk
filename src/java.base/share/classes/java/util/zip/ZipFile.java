@@ -1633,8 +1633,10 @@ public class ZipFile implements ZipConstants, Closeable {
             int hsh = ZipCoder.hash(name);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
+            int slashPos = -1; // Position of secondary match "name/"
+
             // Search down the target hash chain for a entry whose
-            // 32 bit hash matches the hashed name.
+            // 32 bit hash matches the hashed name
             while (idx != ZIP_ENDCHAIN) {
                 if (getEntryHash(idx) == hsh) {
                     // The CEN name must match the specified one
@@ -1656,10 +1658,8 @@ public class ZipFile implements ZipConstants, Closeable {
                         // If addSlash is true, we'll also test for "name/"
                         if (addSlash && nlen == mismatch + zc.slashLength() &&
                                 zc.hasTrailingSlash(cen, noff, nlen)) {
-                            // Entries could exist for both "name/" and "name"
-                            // Prefer an exact match
-                            int exactPos = getEntryPos(name, false);
-                            return exactPos != -1 ? exactPos : pos;
+                            // We found "name/", record its in case we don't find "name"
+                            slashPos = pos;
                         }
                     } catch (IllegalArgumentException iae) {
                         // Ignore
@@ -1667,7 +1667,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 idx = getEntryNext(idx);
             }
-            return -1;
+            return slashPos;
         }
 
         private ZipCoder zipCoderForPos(int pos) {
