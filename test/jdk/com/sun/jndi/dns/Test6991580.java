@@ -63,7 +63,6 @@ public class Test6991580 {
             + "Don't forget to save the original content of the file.",
          "3. Type \"cd " + System.getProperty("test.classes") + "\".",
          "4. Type \"" + System.getProperty("java.home") + "/bin/java"
-                 + " --add-modules java.desktop,jdk.naming.dns"
                  + " --add-opens jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED"
                  + " IPv6NameserverPlatformParsingTest\".",
          "5. If you see",
