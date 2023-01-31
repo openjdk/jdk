@@ -475,10 +475,14 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(
       ShouldNotReachHere();
   }
   const char* msg;
-  if (heap->cancelled_gc()) {
-    msg = (generation == YOUNG)? "At end of Interrupted Concurrent Young GC": "At end of Interrupted Concurrent Bootstrap GC";
+  if (heap->mode()->is_generational()) {
+    if (heap->cancelled_gc()) {
+      msg = (generation == YOUNG)? "At end of Interrupted Concurrent Young GC": "At end of Interrupted Concurrent Bootstrap GC";
+    } else {
+      msg = (generation == YOUNG)? "At end of Concurrent Young GC": "At end of Concurrent Bootstrap GC";
+    }
   } else {
-    msg = (generation == YOUNG)? "At end of Concurrent Young GC": "At end of Concurrent Bootstrap GC";
+    msg = heap->cancelled_gc() ? "At end of cancelled GC" : "At end of GC";
   }
   heap->log_heap_status(msg);
 }

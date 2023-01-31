@@ -65,6 +65,8 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
 protected:
+  static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
+
   typedef struct {
     ShenandoahHeapRegion* _region;
     size_t _garbage;
@@ -77,7 +79,7 @@ protected:
   // if (_generation->generation_mode() == OLD) _region_data represents
   //  the results of most recently completed old-gen marking pass
   // if (_generation->generation_mode() == YOUNG) _region_data represents
-  //  the resulits of most recently completed young-gen marking pass
+  //  the results of most recently completed young-gen marking pass
   //
   // Note that there is some redundancy represented in _region_data because
   // each instance is an array large enough to hold all regions.  However,

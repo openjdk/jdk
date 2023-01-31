@@ -57,7 +57,7 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahGeneration* generation) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_cycle_time_history(new TruncatedSeq(10, ShenandoahAdaptiveDecayFactor)),
+  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
   _live_memory_last_cycle(0),
   _live_memory_penultimate_cycle(0),
   _metaspace_oom()

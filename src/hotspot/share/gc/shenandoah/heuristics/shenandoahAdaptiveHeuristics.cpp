@@ -61,7 +61,8 @@ ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahGeneration*
   ShenandoahHeuristics(generation),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
-  _last_trigger(OTHER) { }
+  _last_trigger(OTHER),
+  _available(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor) { }
 
 ShenandoahAdaptiveHeuristics::~ShenandoahAdaptiveHeuristics() {}
 
@@ -243,19 +244,21 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
   ShenandoahHeuristics::record_success_concurrent(abbreviated);
 
-  size_t available = ShenandoahHeap::heap()->free_set()->available();
+  size_t available = MIN2(_generation->available(), ShenandoahHeap::heap()->free_set()->available());
 
-  _available.add(available);
   double z_score = 0.0;
-  if (_available.sd() > 0) {
-    z_score = (available - _available.avg()) / _available.sd();
+  double available_sd = _available.sd();
+  if (available_sd > 0) {
+    double available_avg = _available.avg();
+    z_score = (double(available) - available_avg) / available_sd;
+    log_debug(gc, ergo)("%s Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
+                        _generation->name(),
+                        byte_size_in_proper_unit(available), proper_unit_for_byte_size(available), z_score,
+                        byte_size_in_proper_unit(available_avg), proper_unit_for_byte_size(available_avg),
+                        byte_size_in_proper_unit(available_sd), proper_unit_for_byte_size(available_sd));
   }
 
-  log_debug(gc, ergo)("Available: " SIZE_FORMAT " %sB, z-score=%.3f. Average available: %.1f %sB +/- %.1f %sB.",
-                      byte_size_in_proper_unit(available), proper_unit_for_byte_size(available),
-                      z_score,
-                      byte_size_in_proper_unit(_available.avg()), proper_unit_for_byte_size(_available.avg()),
-                      byte_size_in_proper_unit(_available.sd()), proper_unit_for_byte_size(_available.sd()));
+  _available.add(double(available));
 
   // In the case when a concurrent GC cycle completes successfully but with an
   // unusually small amount of available memory we will adjust our trigger

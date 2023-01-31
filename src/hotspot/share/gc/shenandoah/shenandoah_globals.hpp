@@ -147,7 +147,7 @@
           "cases. In percents of (soft) max heap size.")                    \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahLearningSteps, 5, EXPERIMENTAL,                  \
+  product(uintx, ShenandoahLearningSteps, 10, EXPERIMENTAL,                 \
           "The number of cycles some heuristics take to collect in order "  \
           "to learn application and GC performance.")                       \
           range(0,100)                                                      \
@@ -181,7 +181,7 @@
           "the heuristic is to allocation spikes. Decreasing this number "  \
           "increases the sensitivity. ")                                    \
                                                                             \
-  product(double, ShenandoahAdaptiveDecayFactor, 0.5, EXPERIMENTAL,         \
+  product(double, ShenandoahAdaptiveDecayFactor, 0.1, EXPERIMENTAL,         \
           "The decay factor (alpha) used for values in the weighted "       \
           "moving average of cycle time and allocation rate. "              \
           "Larger values give more weight to recent values.")               \
