@@ -439,7 +439,7 @@ public class DeferredAttr extends JCTree.Visitor {
         Env<AttrContext> localEnv = attr.lambdaEnv(that, env);
         try {
             localEnv.info.returnResult = resultInfo;
-            JCBlock speculativeTree = (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo);
+            JCBlock speculativeTree = (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo, argumentAttr.withLocalCacheContext());
             List<JCVariableDecl> args = speculativeTree.getStatements().stream()
                     .filter(s -> s.hasTag(Tag.VARDEF))
                     .map(t -> (JCVariableDecl)t)
