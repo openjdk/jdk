@@ -328,6 +328,7 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
                                reader.last_line_no(), utf8_length);
         CLEAR_PENDING_EXCEPTION;
       } else {
+#if INCLUDE_CDS_JAVA_HEAP
         if (ArchiveHeapWriter::is_string_too_large_to_archive(str)) {
           log_warning(cds, heap)("[line %d] extra interned string ignored; size too large: %d",
                                  reader.last_line_no(), utf8_length);
@@ -336,6 +337,7 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
         // Make sure this string is included in the dumped interned string table.
         assert(str != nullptr, "must succeed");
         _extra_interned_strings->append(OopHandle(Universe::vm_global(), str));
+#endif
       }
     }
   }
