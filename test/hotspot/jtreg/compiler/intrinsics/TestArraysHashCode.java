@@ -35,7 +35,7 @@ package compiler.intrinsics;
 import jdk.internal.util.ArraysSupport;
 
 public class TestArraysHashCode {
-    
+
     static int type;
     static byte[] bytes;
 
