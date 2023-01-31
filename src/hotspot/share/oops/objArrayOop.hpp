@@ -72,7 +72,7 @@ class objArrayOopDesc : public arrayOopDesc {
   static size_t object_size(int length) {
     // This returns the object size in HeapWords.
     size_t asz = (size_t)length * heapOopSize;
-    size_t size_words = align_up(base_offset_in_bytes() + asz, HeapWordSize) / HeapWordSize;
+    size_t size_words = heap_word_size(base_offset_in_bytes() + asz);
     size_t osz = align_object_size(size_words);
     assert(osz < max_jint, "no overflow");
     return osz;

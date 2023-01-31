@@ -91,13 +91,8 @@ TEST_VM(arrayOopDesc, base_offset) {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_FLOAT),   16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_LONG),    16);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_DOUBLE),  16);
-    if (UseCompressedOops) {
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 16);
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  16);
-    } else {
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT), 16);
-      EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),  16);
-    }
+    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_OBJECT),  16);
+    EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_ARRAY),   16);
   } else {
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BOOLEAN), 20);
     EXPECT_EQ(arrayOopDesc::base_offset_in_bytes(T_BYTE),    20);

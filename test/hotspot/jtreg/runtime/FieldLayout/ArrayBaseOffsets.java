@@ -1,5 +1,5 @@
 /*
- * Copyright (C2 2022, Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (C) 2022, Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id=with-coop-no-ccp
+ * @test id=with-coops-no-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
@@ -37,7 +37,7 @@
  * @run main/othervm -XX:+UseCompressedOops -XX:+UseCompressedClassPointers ArrayBaseOffsets
  */
 /*
- * @test id=no-coop-no-ccp
+ * @test id=no-coops-no-ccp
  * @library /test/lib
  * @requires vm.bits == "64"
  * @modules java.base/jdk.internal.misc
@@ -70,18 +70,30 @@ import jdk.test.lib.Platform;
 
 public class ArrayBaseOffsets {
 
+    private static final boolean COOP;
+    private static final boolean CCP;
+
+    static {
+        if (Platform.is64bit()) {
+            RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+            List<String> vmargs = runtime.getInputArguments();
+            CCP = !vmargs.contains("-XX:-UseCompressedClassPointers");
+            COOP = System.getProperty("java.vm.compressedOopsMode") != null;
+        } else {
+            COOP = CCP = false;
+        }
+    }
+
     static public void main(String[] args) {
         Unsafe unsafe = Unsafe.getUnsafe();
         int intOffset, longOffset;
         if (Platform.is64bit()) {
-            RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-            List<String> vmargs = runtime.getInputArguments();
-            if (vmargs.contains("-XX:-UseCompressedClassPointers")) {
-                intOffset = 20;
-                longOffset = 24;
-            } else {
+            if (CCP) {
                 intOffset = 16;
                 longOffset = 16;
+            } else {
+                intOffset = 20;
+                longOffset = 24;
             }
         } else {
             intOffset = 12;
@@ -95,9 +107,7 @@ public class ArrayBaseOffsets {
         Asserts.assertEquals(unsafe.arrayBaseOffset(long[].class),    longOffset, "Misplaced long    array base");
         Asserts.assertEquals(unsafe.arrayBaseOffset(float[].class),   intOffset,  "Misplaced float   array base");
         Asserts.assertEquals(unsafe.arrayBaseOffset(double[].class),  longOffset, "Misplaced double  array base");
-        boolean narrowOops = System.getProperty("java.vm.compressedOopsMode") != null ||
-                             !Platform.is64bit();
-        int expected_objary_offset = narrowOops ? intOffset : longOffset;
-        Asserts.assertEquals(unsafe.arrayBaseOffset(Object[].class),  expected_objary_offset, "Misplaced object  array base");
+        int expectedObjArrayOffset = (COOP || !Platform.is64bit()) ? intOffset : longOffset;
+        Asserts.assertEquals(unsafe.arrayBaseOffset(Object[].class),  expectedObjArrayOffset, "Misplaced object  array base");
     }
 }

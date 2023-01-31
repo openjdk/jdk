@@ -414,7 +414,7 @@ size_t CollectedHeap::max_tlab_size() const {
 
 void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
   int payload_start = arrayOopDesc::base_offset_in_bytes(T_INT);
-  if (!is_aligned(payload_start, BytesPerWord)) {
+  if (!is_aligned(payload_start, HeapWordSize)) {
     assert(is_aligned(payload_start, BytesPerInt), "base offset must be 32-bit-aligned");
     *(reinterpret_cast<juint*>(start) + (payload_start / BytesPerInt)) = value;
     payload_start += BytesPerInt;
