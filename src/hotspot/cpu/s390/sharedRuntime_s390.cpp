@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2754,8 +2754,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // set the "unpack" frame as last_Java_frame.
   // `Deoptimization::uncommon_trap' expects it and considers its
   // sender frame as the deoptee frame.
-  int offs = __ offset();
-  __ get_PC(Z_R1_scratch, offs);
+  __ get_PC(Z_R1_scratch);
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1_scratch);
 
   __ z_lgr(klass_index_reg, Z_ARG1);  // passed implicitly as ARG2
@@ -2820,8 +2819,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // skeletal interpreter frame, (resized) caller of deoptee, ...).
 
   // set the "unpack" frame as last_Java_frame
-  offs = __ offset();
-  __ get_PC(Z_R1_scratch, offs);
+  __ get_PC(Z_R1_scratch);
   __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1_scratch);
 
   // indicate it is the uncommon trap case
