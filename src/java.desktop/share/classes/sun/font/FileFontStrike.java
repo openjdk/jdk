@@ -741,7 +741,9 @@ public class FileFontStrike extends PhysicalStrike {
     private int getGlyphImageMinX(long ptr, int origMinX) {
 
         byte format = StrikeCache.unsafe.getByte(ptr+StrikeCache.formatOffset);
-        if (format != StrikeCache.PIXEL_FORMAT_LCD) return origMinX;
+        if (format != StrikeCache.PIXEL_FORMAT_LCD) {
+            return origMinX;
+        }
 
         int height = StrikeCache.unsafe.getChar(ptr+StrikeCache.heightOffset);
         int rowBytes =

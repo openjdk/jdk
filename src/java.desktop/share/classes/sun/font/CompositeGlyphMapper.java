@@ -129,7 +129,9 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
                 int glyphCode = mapper.charToVariationGlyph(unicode, variationSelector);
                 if (glyphCode != mapper.getMissingGlyphCode()) {
                     glyphCode = compositeGlyphCode(slot, glyphCode);
-                    if (variationSelector == 0) setCachedGlyphCode(unicode, glyphCode);
+                    if (variationSelector == 0) {
+                        setCachedGlyphCode(unicode, glyphCode);
+                    }
                     return glyphCode;
                 }
             }
@@ -139,7 +141,9 @@ public class CompositeGlyphMapper extends CharToGlyphMapper {
 
     @Override
     public int charToVariationGlyph(int unicode, int variationSelector) {
-        if (variationSelector == 0) return charToGlyph(unicode);
+        if (variationSelector == 0) {
+            return charToGlyph(unicode);
+        }
         else {
             int glyph = convertToGlyph(unicode, variationSelector);
             // Glyph variation not found, fallback to base glyph.

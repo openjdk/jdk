@@ -53,8 +53,9 @@ public final class CCompositeGlyphMapper extends CompositeGlyphMapper {
 
     @Override
     public int charToVariationGlyph(int unicode, int variationSelector) {
-        if (variationSelector == 0) return charToGlyph(unicode);
-        else {
+        if (variationSelector == 0) {
+            return charToGlyph(unicode);
+        } else {
             int glyph = convertToGlyph(unicode, variationSelector);
             if (glyph == missingGlyph) glyph = charToGlyph(unicode);
             return glyph;

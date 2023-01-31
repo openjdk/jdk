@@ -983,10 +983,18 @@ static FT_BBox getTransformedBitmapBoundingBox(FT_GlyphSlot ftglyph,
     int i;
     for (i = 1; i < 4; i++) {
         FT_Vector_Transform(corners + i, transform);
-        if (corners[i].x < bb.xMin) bb.xMin = corners[i].x;
-        if (corners[i].x > bb.xMax) bb.xMax = corners[i].x;
-        if (corners[i].y < bb.yMin) bb.yMin = corners[i].y;
-        if (corners[i].y > bb.yMax) bb.yMax = corners[i].y;
+        if (corners[i].x < bb.xMin) {
+            bb.xMin = corners[i].x;
+        }
+        if (corners[i].x > bb.xMax) {
+            bb.xMax = corners[i].x;
+        }
+        if (corners[i].y < bb.yMin) {
+            bb.yMin = corners[i].y;
+        }
+        if (corners[i].y > bb.yMax) {
+            bb.yMax = corners[i].y;
+        }
     }
     bb.xMin = FT26Dot6ToInt(bb.xMin);
     bb.yMin = FT26Dot6ToInt(bb.yMin);
@@ -1036,10 +1044,18 @@ static SampledBGRABitmap createSampledBGRABitmap(FT_GlyphSlot ftglyph,
                         yFrom = y * yDownscale + yOffset,
                         xTo = xFrom + xDownscale,
                         yTo = yFrom + yDownscale;
-                if (xFrom < 0) xFrom = 0;
-                if (xTo > (int) ftglyph->bitmap.width) xTo = (int) ftglyph->bitmap.width;
-                if (yFrom < 0) yFrom = 0;
-                if (yTo > (int) ftglyph->bitmap.rows) yTo = (int) ftglyph->bitmap.rows;
+                if (xFrom < 0) {
+                    xFrom = 0;
+                }
+                if (xTo > (int) ftglyph->bitmap.width) {
+                    xTo = (int) ftglyph->bitmap.width;
+                }
+                if (yFrom < 0) {
+                    yFrom = 0;
+                }
+                if (yTo > (int) ftglyph->bitmap.rows) {
+                    yTo = (int) ftglyph->bitmap.rows;
+                }
                 int i, j;
                 for (j = yFrom; j < yTo; j++) {
                     for (i = xFrom; i < xTo; i++) {
@@ -1100,8 +1116,12 @@ static void transformBGRABitmapGlyph(FT_GlyphSlot ftglyph, GlyphInfo* glyphInfo,
                                                        FT_MulFix(inv.xy, inv.xy)));
     int invScaleY = (int) sqrt((double) FTFixedToFloat(FT_MulFix(inv.yx, inv.yx) +
                                                        FT_MulFix(inv.yy, inv.yy)));
-    if (invScaleX < 1) invScaleX = 1;
-    if (invScaleY < 1) invScaleY = 1;
+    if (invScaleX < 1) {
+        invScaleX = 1;
+    }
+    if (invScaleY < 1) {
+        invScaleY = 1;
+    }
     SampledBGRABitmap sampledBitmap =
             createSampledBGRABitmap(ftglyph, invScaleX, invScaleY);
     int x, y;
@@ -1320,10 +1340,14 @@ static jlong
     glyphInfo->width     = width;
     glyphInfo->height    = height;
 
-    if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_BGRA;
-    else if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD ||
-             ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD_V) glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_LCD;
-    else glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_GREYSCALE;
+    if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA) {
+        glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_BGRA;
+    } else if (ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD ||
+             ftglyph->bitmap.pixel_mode == FT_PIXEL_MODE_LCD_V) {
+        glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_LCD;
+    } else {
+        glyphInfo->format = sun_font_StrikeCache_PIXEL_FORMAT_GREYSCALE;
+    }
 
     if (renderImage) {
         if (context->fixedSizeIndex == -1) {
@@ -1779,13 +1803,17 @@ static jboolean addColorLayersRenderData(JNIEnv* env, FTScalerContext *context,
 
     FT_Color* colors;
     error = FT_Palette_Select(scalerInfo->face, 0, &colors);
-    if (error) return JNI_FALSE;
+    if (error) {
+        return JNI_FALSE;
+    }
 
     FT_LayerIterator iterator;
     iterator.p = NULL;
     FT_UInt glyphIndex, colorIndex;
     if (!FT_Get_Color_Glyph_Layer(scalerInfo->face, glyphCode,
-                                  &glyphIndex, &colorIndex, &iterator)) return JNI_FALSE;
+                                  &glyphIndex, &colorIndex, &iterator)) {
+        return JNI_FALSE;
+    }
     (*env)->CallVoidMethod(env, result, sunFontIDs.glyphRenderDataSetColorLayersListMID, iterator.num_layers);
     do {
         FT_Outline* outline = getFTOutlineNoSetup(context, scalerInfo, glyphIndex, xpos, ypos);
@@ -1817,7 +1845,9 @@ static void addBitmapRenderData(JNIEnv *env, jobject scaler, jobject font2D,
 
     FT_GlyphSlot ftglyph = scalerInfo->face->glyph;
 
-    if (ftglyph->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) return;
+    if (ftglyph->bitmap.pixel_mode != FT_PIXEL_MODE_BGRA) {
+        return;
+    }
 
     int pitch = ftglyph->bitmap.pitch / 4;
     int size = pitch * ftglyph->bitmap.rows;
@@ -1885,7 +1915,9 @@ Java_sun_font_FreetypeFontScaler_getGlyphRenderDataNative(
     }
 
     FT_Error error = setupFTContext(env, font2D, scalerInfo, context);
-    if (error) return;
+    if (error) {
+        return;
+    }
 
     if (context->fixedSizeIndex == -1) {
         if (!context->colorFont ||

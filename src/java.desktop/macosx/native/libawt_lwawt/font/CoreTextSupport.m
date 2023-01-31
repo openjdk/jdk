@@ -89,7 +89,9 @@ ReleaseCTStateDictionary(CFDictionaryRef ctStateDict)
 }
 
 int NextUnicode(const UniChar unicodes[], UnicodeScalarValue *codePoint, const size_t index, const size_t limit) {
-    if (index >= limit) return 0;
+    if (index >= limit) {
+        return 0;
+    }
     UniChar unicode = unicodes[index];
     UniChar nextUnicode = (index+1) < limit ? unicodes[index+1] : 0;
     bool surrogatePair = unicode >= HI_SURROGATE_START && unicode <= HI_SURROGATE_END
@@ -116,13 +118,17 @@ void CTS_GetGlyphsAsIntsForCharacters
     for (i = 0; i < count; i += size) {
         UnicodeScalarValue codePoint, variationCodePoint;
         int codePointSize = size = NextUnicode(unicodes, &codePoint, i, count);
-        if (size == 0) break;
+        if (size == 0) {
+            break;
+        }
 
         int variationSize = NextUnicode(unicodes, &variationCodePoint, i + size , count);
         bool hasVariationSelector = variationSize > 0 &&
                 ((variationCodePoint >= VSS_START && variationCodePoint <= VSS_END) ||
                  (variationCodePoint >= VS_START && variationCodePoint <= VS_END));
-        if (hasVariationSelector) size += variationSize;
+        if (hasVariationSelector) {
+            size += variationSize;
+        }
 
         CGGlyph glyph = glyphs[i];
         if (glyph > 0 && (!hasVariationSelector || glyphs[i + codePointSize] > 0)) {

@@ -44,7 +44,9 @@ public class GlyphRenderData {
 
     public GlyphRenderData() {}
     public GlyphRenderData(GlyphRenderData i) {
-        if (i.outline != null) outline = (GeneralPath) i.outline.clone();
+        if (i.outline != null) {
+            outline = (GeneralPath) i.outline.clone();
+        }
         if (i.colorLayers != null) {
             colorLayers = new ArrayList<>(i.colorLayers.size());
             for (ColorLayer l : i.colorLayers) {
@@ -64,21 +66,32 @@ public class GlyphRenderData {
      */
     public void merge(GlyphRenderData i) {
         if (i.outline != null) {
-            if (outline == null) outline = i.outline;
-            else outline.append(i.outline.getPathIterator(null), false);
+            if (outline == null) {
+                outline = i.outline;
+            } else {
+                outline.append(i.outline.getPathIterator(null), false);
+            }
         }
         if (i.colorLayers != null) {
-            if (colorLayers == null) colorLayers = i.colorLayers;
-            else colorLayers.addAll(i.colorLayers);
+            if (colorLayers == null) {
+                colorLayers = i.colorLayers;
+            } else {
+                colorLayers.addAll(i.colorLayers);
+            }
         }
         if (i.bitmaps != null) {
-            if (bitmaps == null) bitmaps = i.bitmaps;
-            else bitmaps.addAll(i.bitmaps);
+            if (bitmaps == null) {
+                bitmaps = i.bitmaps;
+            } else {
+                bitmaps.addAll(i.bitmaps);
+            }
         }
     }
 
     public void transform(AffineTransform transform) {
-        if (outline != null) outline.transform(transform);
+        if (outline != null) {
+            outline.transform(transform);
+        }
         if (colorLayers != null) {
             for (ColorLayer layer : colorLayers) {
                 layer.outline.transform(transform);
@@ -92,7 +105,9 @@ public class GlyphRenderData {
     }
 
     public void draw(Graphics2D g) {
-        if (outline != null) g.fill(outline);
+        if (outline != null) {
+            g.fill(outline);
+        }
         if (colorLayers != null) {
             Color color = g.getColor();
             for (ColorLayer layer : colorLayers) {
@@ -158,7 +173,9 @@ public class GlyphRenderData {
                            double m02, double m12,
                            int width, int height, int pitch,
                            int colorModel, int[] data) {
-        if (bitmaps == null) bitmaps = new ArrayList<>();
+        if (bitmaps == null) {
+            bitmaps = new ArrayList<>();
+        }
         DirectColorModel color = BITMAP_COLOR_MODELS[colorModel];
         DataBuffer buffer = new DataBufferInt(data, data.length);
         WritableRaster raster = Raster.createPackedRaster(buffer, width, height, pitch, color.getMasks(), null);

@@ -145,15 +145,22 @@ public class OutlineTextRendererEmoji {
                     windows++;
                 }
             }
-            if (alpha == windows) result /= 3.0;
-            else result = (result + alpha) / 4.0;
+            if (alpha == windows) {
+                result /= 3.0;
+            } else {
+                result = (result + alpha) / 4.0;
+            }
             return result / (double) windows;
         }
 
         private static double[] vec(double... v) {
-            if (v.length == 0) return new double[4];
-            else if (v.length == 1) return new double[] {v[0],v[0],v[0],v[0]};
-            else return v;
+            if (v.length == 0) {
+                return new double[4];
+            } else if (v.length == 1) {
+                return new double[] {v[0],v[0],v[0],v[0]};
+            } else {
+                return v;
+            }
         }
         private static double[] vec(int color) {
             return vec(color & 0xff, (color >> 8) & 0xff, (color >> 16) & 0xff, (color >> 24) & 0xff);
@@ -176,10 +183,15 @@ public class OutlineTextRendererEmoji {
     private static void requireFont(String macOS, String windows, String linux) {
         String os = System.getProperty("os.name").toLowerCase();
         String font;
-        if (os.contains("mac")) font = macOS;
-        else if (os.contains("windows")) font = windows;
-        else if (os.contains("linux")) font = linux;
-        else return;
+        if (os.contains("mac")) {
+            font = macOS;
+        } else if (os.contains("windows")) {
+            font = windows;
+        } else if (os.contains("linux")) {
+            font = linux;
+        } else {
+            return;
+        }
         String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
             System.err.println("Required font not found: " + font);

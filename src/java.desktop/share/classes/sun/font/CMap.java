@@ -1170,7 +1170,9 @@ abstract class CMap {
     }
 
     char getVariationGlyph(int charCode, int variationSelector) {
-        if (variationSelector == 0) return getGlyph(charCode);
+        if (variationSelector == 0) {
+            return getGlyph(charCode);
+        }
         char glyph = 0;
         if (uvs != null) {
             int targetSelector = uvs.findVariationSelectorIndex(variationSelector);

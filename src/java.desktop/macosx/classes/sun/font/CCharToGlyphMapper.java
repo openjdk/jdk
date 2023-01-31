@@ -101,7 +101,9 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     }
 
     public int charToVariationGlyph(int unicode, int variationSelector) {
-        if (variationSelector == 0) return charToGlyph(unicode);
+        if (variationSelector == 0) {
+            return charToGlyph(unicode);
+        }
         final char[] unicodeArray = new char[4];
         final int[] glyphArray = new int[4];
 

@@ -114,10 +114,15 @@ public class Emoji {
     private static void requireFont(String macOS, String windows, String linux) {
         String os = System.getProperty("os.name").toLowerCase();
         String font;
-        if (os.contains("mac")) font = macOS;
-        else if (os.contains("windows")) font = windows;
-        else if (os.contains("linux")) font = linux;
-        else return;
+        if (os.contains("mac")) {
+            font = macOS;
+        } else if (os.contains("windows")) {
+            font = windows;
+        } else if (os.contains("linux")) {
+            font = linux;
+        } else {
+            return;
+        }
         String[] fs = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
         if (Stream.of(fs).noneMatch(s -> s.equals(font))) {
             System.err.println("Required font not found: " + font);

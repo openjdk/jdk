@@ -86,13 +86,17 @@ public class X11TextRenderer extends GlyphListPipe {
                     if (gl.isColorGlyph(i)) {
                         int end;
                         for (end = i + 1; end < gl.getNumGlyphs(); end++) {
-                            if (!gl.isColorGlyph(end)) break;
+                            if (!gl.isColorGlyph(end)) {
+                                break;
+                            }
                         }
                         sg2d.loops.drawGlyphListColorLoop.
                                 DrawGlyphListColor(sg2d, sg2d.surfaceData,
                                         gl, i, end);
                         i = end - 1;
-                    } else gl.setGlyphIndex(i);
+                    } else {
+                        gl.setGlyphIndex(i);
+                    }
                 }
             }
         } finally {
