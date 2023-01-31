@@ -60,6 +60,7 @@ package java.lang;
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
+    private static final double TWO54   =  0x1.0p54; // 1.80143985094819840000e+16
 
     private FdLibm() {
         throw new UnsupportedOperationException("No FdLibm instances for you.");
@@ -779,7 +780,6 @@ class FdLibm {
      * shown.
      */
     static class Log10 {
-        private static double two54     = 0x1.0p54;              // 1.80143985094819840000e+16;
         private static double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
 
         private static double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
@@ -799,13 +799,13 @@ class FdLibm {
             k=0;
             if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
                 if (((hx & 0x7fff_ffff) | lx) == 0) {
-                    return -two54/0.0;               /* log(+-0)=-inf */
+                    return -TWO54/0.0;               /* log(+-0)=-inf */
                 }
                 if (hx < 0) {
                     return (x - x)/0.0;              /* log(-#) = NaN */
                 }
                 k -= 54;
-                x *= two54; /* subnormal number, scale up x */
+                x *= TWO54; /* subnormal number, scale up x */
                 hx = __HI(x);
             }
 
@@ -889,16 +889,15 @@ class FdLibm {
      *       See HP-15C Advanced Functions Handbook, p.193.
      */
     static class Log1p {
-        private static double ln2_hi  =  6.93147180369123816490e-01;  /* 3fe62e42 fee00000 */
-        private static double ln2_lo  =  1.90821492927058770002e-10;  /* 3dea39ef 35793c76 */
-        private static double two54   =  1.80143985094819840000e+16;  /* 43500000 00000000 */
-        private static double Lp1 = 6.666666666666735130e-01;  /* 3FE55555 55555593 */
-        private static double Lp2 = 3.999999999940941908e-01;  /* 3FD99999 9997FA04 */
-        private static double Lp3 = 2.857142874366239149e-01;  /* 3FD24924 94229359 */
-        private static double Lp4 = 2.222219843214978396e-01;  /* 3FCC71C5 1D8E78AF */
-        private static double Lp5 = 1.818357216161805012e-01;  /* 3FC74664 96CB03DE */
-        private static double Lp6 = 1.531383769920937332e-01;  /* 3FC39A09 D078C69F */
-        private static double Lp7 = 1.479819860511658591e-01;  /* 3FC2F112 DF3E5244 */
+        private static final double ln2_hi = 0x1.62e42feep-1;       // 6.93147180369123816490e-01
+        private static final double ln2_lo = 0x1.a39ef35793c76p-33; // 1.90821492927058770002e-10
+        private static final double Lp1    = 0x1.5555555555593p-1;  // 6.666666666666735130e-01
+        private static final double Lp2    = 0x1.999999997fa04p-2;  // 3.999999999940941908e-01
+        private static final double Lp3    = 0x1.2492494229359p-2;  // 2.857142874366239149e-01
+        private static final double Lp4    = 0x1.c71c51d8e78afp-3;  // 2.222219843214978396e-01
+        private static final double Lp5    = 0x1.7466496cb03dep-3;  // 1.818357216161805012e-01
+        private static final double Lp6    = 0x1.39a09d078c69fp-3;  // 1.531383769920937332e-01
+        private static final double Lp7    = 0x1.2f112df3e5244p-3;  // 1.479819860511658591e-01
 
         public static double compute(double x) {
             double hfsq, f=0, c=0, s, z, R, u;
@@ -911,23 +910,24 @@ class FdLibm {
             if (hx < 0x3FDA827A) {                  /* x < 0.41422  */
                 if(ax >= 0x3ff00000) {                /* x <= -1.0 */
                     if (x == -1.0) /* log1p(-1)=-inf */
-                        return -two54 / 0.0;
+                        return -INFINITY;
                     else
-                        return (x-x)/(x-x);           /* log1p(x<-1)=NaN */
+                        return Double.NaN;           /* log1p(x < -1) = NaN */
                 }
 
                 if (ax < 0x3e200000) {                 /* |x| < 2**-29 */
-                    if (two54 + x > 0.0                 /* raise inexact */
+                    if (TWO54 + x > 0.0                 /* raise inexact */
                        && ax < 0x3c900000)            /* |x| < 2**-54 */
                         return x;
                     else
                         return x - x*x*0.5;
                 }
 
-                if (hx > 0 || hx <= 0xbfd2bec3) {
+                if (hx > 0 || hx <= 0xbfd2bec3) { /* -0.2929 < x < 0.41422 */
                     k=0;
                     f=x;
-                    hu=1;}  /* -0.2929 < x < 0.41422 */
+                    hu=1;
+                }
             }
 
             if (hx >= 0x7ff00000) {
