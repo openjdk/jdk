@@ -163,6 +163,9 @@ ZFILE_Open(const char *fname, int flags) {
         return fhandle;
     }
 #else
+#ifdef O_CLOEXEC
+    flags |= O_CLOEXEC;
+#endif
     return open(fname, flags, 0);
 #endif
 }
@@ -177,15 +180,6 @@ ZFILE_Close(ZFILE zfd) {
     CloseHandle((HANDLE) zfd);
 #else
     close(zfd);
-#endif
-}
-
-static int
-ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
-#ifdef WIN32
-    return (int) IO_Read(zfd, buf, nbytes);
-#else
-    return read(zfd, buf, nbytes);
 #endif
 }
 
@@ -213,45 +207,59 @@ InitializeZip()
     return 0;
 }
 
-/*
- * Reads len bytes of data into buf.
- * Returns 0 if all bytes could be read, otherwise returns -1.
- */
-static int
-readFully(ZFILE zfd, void *buf, jlong len) {
-  char *bp = (char *) buf;
-
-  while (len > 0) {
-        jlong limit = ((((jlong) 1) << 31) - 1);
-        jint count = (len < limit) ?
-            (jint) len :
-            (jint) limit;
-        jint n = ZFILE_read(zfd, bp, count);
-        if (n > 0) {
-            bp += n;
-            len -= n;
-        } else if (n == -1 && errno == EINTR) {
-          /* Retry after EINTR (interrupted by signal). */
-            continue;
-        } else { /* EOF or IO error */
-            return -1;
-        }
+static jlong readFullyAt(ZFILE zfd, void *buf, jlong nbytes, jlong offset) {
+  assert(nbytes >= 0);
+  assert(offset >= 0);
+#ifdef WIN32
+  jlong total = 0;
+  OVERLAPPED overlapped;
+  DWORD number_of_bytes_to_read;
+  DWORD number_of_bytes_read;
+  while (total < nbytes) {
+    memset(&overlapped, '\0', sizeof(overlapped));
+    overlapped.Offset = (DWORD) offset;
+    overlapped.OffsetHigh = (DWORD) (offset >> 32);
+    if ((nbytes - total) > 0xffffffffu) {
+      number_of_bytes_to_read = 0xffffffffu;
+    } else {
+      number_of_bytes_to_read = (DWORD) (nbytes - total);
     }
-    return 0;
-}
-
-/*
- * Reads len bytes of data from the specified offset into buf.
- * Returns 0 if all bytes could be read, otherwise returns -1.
- */
-static int
-readFullyAt(ZFILE zfd, void *buf, jlong len, jlong offset)
-{
-    if (IO_Lseek(zfd, offset, SEEK_SET) == -1) {
-        return -1; /* lseek failure. */
+    number_of_bytes_read = 0;
+    if (!ReadFile((HANDLE) zfd, buf, number_of_bytes_to_read, &number_of_bytes_read, &overlapped)) {
+      return -1;
     }
-
-    return readFully(zfd, buf, len);
+    buf = ((char*) buf) + number_of_bytes_read;
+    offset += (jlong) number_of_bytes_read;
+    total += (jlong) number_of_bytes_read;
+  }
+  assert(total == nbytes);
+  return total;
+#else
+  jlong total = 0;
+  size_t to_read;
+  ssize_t result;
+  while (total < nbytes) {
+    if ((nbytes - total) > SSIZE_MAX) {
+      to_read = (size_t) SSIZE_MAX;
+    } else {
+      to_read = (size_t) (nbytes - total);
+    }
+    result = pread(zfd, buf, to_read, (off_t) offset);
+    if (result == -1) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return -1;
+    } else if (result == 0) {
+      return -1;
+    }
+    buf = ((char*) buf) + ((size_t) result);
+    offset += (jlong) result;
+    total += (jlong) result;
+  }
+  assert(total == nbytes);
+  return total;
+#endif
 }
 
 /*
@@ -870,7 +878,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     }
 
     // Assumption, zfd refers to start of file. Trivially, reuse errbuf.
-    if (readFully(zfd, errbuf, 4) != -1) {  // errors will be handled later
+    if (readFullyAt(zfd, errbuf, 4, 0) != -1) {  // errors will be handled later
         zip->locsig = LOCSIG_AT(errbuf) ? JNI_TRUE : JNI_FALSE;
     }
 
@@ -973,7 +981,7 @@ readCENHeader(jzfile *zip, jlong cenpos, jint bufsize)
     censize = CENSIZE(cen);
     if (censize <= bufsize) return cen;
     if ((cen = realloc(cen, censize)) == NULL)              goto Catch;
-    if (readFully(zfd, cen+bufsize, censize-bufsize) == -1) goto Catch;
+    if (readFullyAt(zfd, cen+bufsize, censize-bufsize, cenpos+bufsize) == -1) goto Catch;
     return cen;
 
  Catch:
