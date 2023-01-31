@@ -78,9 +78,6 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
   if (MemTracker::tracking_level() == NMT_off) {
     output()->print_cr("Native memory tracking is not enabled");
     return;
-  } else if (MemTracker::tracking_level() == NMT_minimal) {
-     output()->print_cr("Native memory tracking has been shutdown");
-     return;
   }
 
   const char* scale_value = _scale.value();

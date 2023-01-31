@@ -113,8 +113,7 @@ void MallocHeader::mark_block_as_dead() {
 }
 
 void MallocHeader::release() {
-  // Tracking already shutdown, no housekeeping is needed anymore
-  if (MemTracker::tracking_level() <= NMT_minimal) return;
+  assert(MemTracker::enabled(), "Sanity");
 
   check_block_integrity();
 
@@ -222,15 +221,7 @@ void MallocHeader::check_block_integrity() const {
 
 bool MallocHeader::record_malloc_site(const NativeCallStack& stack, size_t size,
   size_t* bucket_idx, size_t* pos_idx, MEMFLAGS flags) const {
-  bool ret = MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
-
-  // Something went wrong, could be OOM or overflow malloc site table.
-  // We want to keep tracking data under OOM circumstance, so transition to
-  // summary tracking.
-  if (!ret) {
-    MemTracker::transition_to(NMT_summary);
-  }
-  return ret;
+  return MallocSiteTable::allocation_at(stack, size, bucket_idx, pos_idx, flags);
 }
 
 bool MallocHeader::get_stack(NativeCallStack& stack) const {
@@ -244,18 +235,6 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 
   if (level == NMT_detail) {
     return MallocSiteTable::initialize();
-  }
-  return true;
-}
-
-bool MallocTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  assert(from != NMT_off, "Can not transition from off state");
-  assert(to != NMT_off, "Can not transition to off state");
-  assert (from != NMT_minimal, "cannot transition from minimal state");
-
-  if (from == NMT_detail) {
-    assert(to == NMT_minimal || to == NMT_summary, "Just check");
-    MallocSiteTable::shutdown();
   }
   return true;
 }
@@ -281,7 +260,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
 #ifdef ASSERT
-  if (level > NMT_minimal) {
+  if (level > NMT_off) {
     // Read back
     assert(get_size(memblock) == size,   "Wrong size");
     assert(get_flags(memblock) == flags, "Wrong flags");
