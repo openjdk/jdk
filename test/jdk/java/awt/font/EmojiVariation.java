@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8269806
  * @summary Checks that variation selectors work.
  */
