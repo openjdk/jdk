@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ void VM_Version::get_isa() {
   strcpy(isa_buf, _isa);
   char* saved_ptr;
   char* isa_ext = strtok_r(isa_buf, "_", &saved_ptr);
-  while (isa_ext != NULL) {
+  while (isa_ext != nullptr) {
     // special case for rv64* string
     if (strncmp(isa_ext, "rv64", sizeof "rv64" - 1) == 0) {
       const char* base_ext = os::strdup(isa_ext + 4); // skip "rv64"
@@ -147,6 +147,6 @@ void VM_Version::get_isa() {
     }
 
     // read next isa extension string, if any
-    isa_ext = strtok_r(NULL, "_", &saved_ptr);
+    isa_ext = strtok_r(nullptr, "_", &saved_ptr);
   }
 }
