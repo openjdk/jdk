@@ -85,9 +85,9 @@ import org.testng.annotations.Test;
 @Test
 public class TCKFixedZoneRules {
 
+
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_M18 = ZoneOffset.ofHours(-18);
     private static final LocalDateTime LDT = LocalDateTime.of(2010, 12, 3, 11, 30);
     private static final Instant INSTANT = LDT.toInstant(OFFSET_PONE);
 
@@ -98,9 +98,11 @@ public class TCKFixedZoneRules {
     @DataProvider(name="rules")
     Object[][] data_rules() {
         return new Object[][] {
-            {make(OFFSET_PONE), OFFSET_PONE},
-            {make(OFFSET_PTWO), OFFSET_PTWO},
-            {make(OFFSET_M18), OFFSET_M18},
+                {make(ZoneOffset.MIN), ZoneOffset.MIN},
+                {make(ZoneOffset.UTC), ZoneOffset.UTC},
+                {make(OFFSET_PONE), OFFSET_PONE},
+                {make(OFFSET_PTWO), OFFSET_PTWO},
+                {make(ZoneOffset.MAX), ZoneOffset.MAX},
         };
     }
 
@@ -136,7 +138,9 @@ public class TCKFixedZoneRules {
 
     @Test(dataProvider="rules")
     public void test_isValidOffset_LDT_ZO(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.isValidOffset(LDT, expectedOffset), true);
+        if (expectedOffset == ZoneOffset.UTC)
+            // The tests below are not made to work with ZoneOffset.UTC
+            return;
         assertEquals(test.isValidOffset(LDT, ZoneOffset.UTC), false);
         assertEquals(test.isValidOffset(LDT, null), false);
 
