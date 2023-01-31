@@ -173,9 +173,11 @@ public class VisibleMemberTable {
     private Map<Kind, List<Element>> visibleMembers;
     private final Map<ExecutableElement, PropertyMembers> propertyMap = new HashMap<>();
 
-    // FIXME whose methods are those? Are those from superclasses only?
-    //  Because it's one-one not one-to-many.
-    // Keeps track of method overrides
+    //  FIXME: Figure out why it is one-one and not one-to-many.
+    /**
+     * Maps a method m declared in {@code te} to a visible method m' in a
+     * {@code te}'s supertype such that m overrides m'.
+     */
     private final Map<ExecutableElement, OverriddenMethodInfo> overriddenMethodTable
             = new LinkedHashMap<>();
 
@@ -551,6 +553,13 @@ public class VisibleMemberTable {
                     list.add(method);
                 }
             });
+            // Lists of visible methods from different parents may share some
+            // methods. These are the methods that such parents inherited from
+            // their common ancestor.
+            //
+            // Such methods won't result in duplicates in parentMethods as we
+            // purposefully don't track duplicates.
+            // FIXME: add a test to assert order (LinkedHashSet)
             parentMethods.addAll(pvmt.getAllVisibleMembers(Kind.METHODS));
         }
 
@@ -584,8 +593,25 @@ public class VisibleMemberTable {
 
         // copy over overridden tables from the lineage
         for (VisibleMemberTable pvmt : parents) {
-            overriddenMethodTable.putAll(pvmt.overriddenMethodTable); // FIXME: no rules for merging, such as ordering, weird
+            // a key in overriddenMethodTable is a method _declared_ in the respective parent;
+            // no two _different_ parents can share a declared method, by definition;
+            // if parents in the list are different (i.e. the list of parents doesn't contain duplicates),
+            //   then no keys are equal and thus no replace happens
+            // if the list of parents contains duplicates, values for the equal keys are equal,
+            //   so no harm if they are replaced in the map
+            assert putAllIsNonReplacing(overriddenMethodTable, pvmt.overriddenMethodTable);
+            overriddenMethodTable.putAll(pvmt.overriddenMethodTable);
         }
+    }
+
+    private static <K, V> boolean putAllIsNonReplacing(Map<K, V> dst, Map<K, V> src) {
+        for (var e : src.entrySet()) {
+            if (dst.containsKey(e.getKey())
+                    && !Objects.equals(dst.get(e.getKey()), e.getValue())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean isEnclosureInterface(Element e) {
@@ -628,6 +654,7 @@ public class VisibleMemberTable {
         Elements elementUtils = config.docEnv.getElementUtils();
 
         // Check the local methods in this type.
+        // List contains overloads and probably something else, but one match is enough, hence short-circuiting
         List<Element> lMethods = lmt.getMembers(inheritedMethod, Kind.METHODS);
         for (Element le : lMethods) {
             ExecutableElement lMethod = (ExecutableElement) le;
@@ -645,6 +672,8 @@ public class VisibleMemberTable {
             // Check for overriding methods.
             if (elementUtils.overrides(lMethod, inheritedMethod,
                     utils.getEnclosingTypeElement(lMethod))) {
+
+                assert utils.getEnclosingTypeElement(lMethod).equals(te);
 
                 // Disallow package-private super methods to leak in
                 TypeElement encl = utils.getEnclosingTypeElement(inheritedMethod);
@@ -1051,5 +1080,10 @@ public class VisibleMemberTable {
 
     private record OverriddenMethodInfo(ExecutableElement overriddenMethod,
                                         boolean simpleOverride) {
+        @Override // for debugging
+        public String toString() {
+            return overriddenMethod.getEnclosingElement()
+                    + "::" + overriddenMethod + ", simple=" + simpleOverride;
+        }
     }
 }
