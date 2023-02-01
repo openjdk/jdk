@@ -67,9 +67,6 @@ private:
 
   void check_out_of_memory();
 
-  void pause_native_trim();
-  void resume_native_trim(GCCause::Cause cause);
-
   void gc(const ZDriverRequest& request);
 
 protected:

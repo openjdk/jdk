@@ -266,6 +266,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
 
 template <typename T>
 bool ZDriver::pause() {
+  GCTrimNative::PauseMark trim_native_pause;
   for (;;) {
     T op;
     VMThread::execute(&op);
@@ -448,8 +449,6 @@ public:
 void ZDriver::gc(const ZDriverRequest& request) {
   ZDriverGCScope scope(request);
 
-  pause_native_trim();
-
   // Phase 1: Pause Mark Start
   pause_mark_start();
 
@@ -483,23 +482,6 @@ void ZDriver::gc(const ZDriverRequest& request) {
   // Phase 10: Concurrent Relocate
   concurrent(relocate);
 
-  resume_native_trim(request.cause());
-
-}
-
-void ZDriver::pause_native_trim() {
-  // Pause native trimming for the duration of the GC
-  GCTrimNative::pause_periodic_trim();
-}
-
-void ZDriver::resume_native_trim(GCCause::Cause cause) {
-  bool schedule_trim_now =
-      cause == GCCause::_z_high_usage || GCCause::is_user_requested_gc(cause);
-  if (schedule_trim_now) {
-    GCTrimNative::schedule_trim();
-  } else {
-    GCTrimNative::unpause_periodic_trim();
-  }
 }
 
 void ZDriver::run_service() {

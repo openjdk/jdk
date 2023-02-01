@@ -36,19 +36,44 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
 
-#define PING log_debug(gc, trim)("NativeTrimmer: %s %d", __FILE__, __LINE__);
+// A class holding trim results for a single trim operation.
+class TrimResult {
+
+  // time (ms) trim happened (javaTimeMillis)
+  const uint64_t _time;
+  // time (ms) trim itself took.
+  const uint64_t _duration;
+  // memory relief
+  const os::size_change_t _size_change;
+
+public:
+  TrimResult(uint64_t t, uint64_t d, os::size_change_t size_change) :
+    _time(t), _duration(d), _size_change(size_change) {}
+  TrimResult(const TrimResult& other) :
+    _time(other._time), _duration(other._duration), _size_change(other._size_change) {}
+  uint64_t time() const { return _time; }
+  uint64_t duration() const { return _duration; }
+  const os::size_change_t& size_change() const { return _size_change; }
+
+  // Returns size reduction; positive if memory was reduced
+  ssize_t size_reduction() const {
+    return checked_cast<ssize_t>(_size_change.before) -
+           checked_cast<ssize_t>(_size_change.after);
+  }
+
+};
 
 // A FIFO of the last n trim results
 class TrimHistory {
 
-  static const int _max = 8;
+  static const int _max = 4;
 
   // Size changes for the last n trims, young to old
-  os::size_change_t _histo[_max];
+  TrimResult _histo[_max];
   int _num;
 
   void push_elements() {
-    for (int i = _max; i > 0; i--) {
+    for (int i = _max - 1; i > 0; i--) {
       _histo[i] = _histo[i - 1];
     }
   }
@@ -59,37 +84,49 @@ public:
 
   void reset() { _num = 0; }
 
-  void add(const os::size_change_t* sc) {
-    assert(sc->before <= INT64_MAX &&
-           sc->after <= INT64_MAX, "invalid sample");
+  void add(const TrimResult& result) {
     push_elements();
-    _histo[0] = *sc;
+    _histo[0] = result;
     if (_num < _max) {
       _num++;
     }
   }
 
-  // Small heuristic to check if periodic trimming should continue, or be stepped
-  // down.
-  // We want to prevent situations where we keep reclaiming lots of memory yet the malloc
-  // load keeps bouncing back. That would be an indication for malloc spikes that are
-  // frequent enough to make trimming questionable.
-  // Note that we cannot measure malloc load directly, we only can measure RSS. So this can get
-  //   quite fuzzy. We accept that.
-  // Note also that in most situations trimming is benign or at least harmless:
-  // - Rare malloc spikes are an ideal trimming scenario - we gain memory and get to keep it.
-  // - If we have no gains in the first place, trying to trim is benign since its cheap.
-  // - a constant malloc churn typically wont give much room for trimming since it reuses
-  //   memory almost immediately, which again makes trimming cheap, so we continue to do it
-  //   at the set pace.
+  // Small heuristic to check if periodic trimming has been fruitful so far.
+  // If this heuristic finds trimming to be harmful, we will inject one longer
+  // trim interval (standard interval * GCTrimNativeStepDownFactor).
+  //
+  // Trimming costs are the trim itself plus the re-aquisition costs of memory should the
+  // released memory be malloced again. Trimming gains are the memory reduction over time.
+  // Lasting gains are good; gains that don't last are not.
+  //
+  // There are roughly three usage pattern:
+  // - rare malloc spikes interspersed with long idle periods. Trimming is beneficial
+  //   since the relieved memory pressure holds for a long time.
+  // - a constant low-intensity malloc drone. Trimming does not help much here but its
+  //   harmless too since trimming is cheap if it does not recover much.
+  // - frequent malloc spikes with short idle periods; trimmed memory will be re-aquired
+  //   after only a short relief; here, trimming could be harmful since we pay a lot for
+  //   not much relief. We want to alleviate these scenarios.
+  //
+  // Putting numbers on these things is difficult though. We cannot observe malloc
+  // load directly, only RSS. For every trim we know the RSS reduction (from, to). So
+  // for subsequent trims we also can glean from (<next sample>.from) whether RSS bounced
+  // back. But that is quite vague since RSS may have been influenced by a ton of other
+  // developments, especially for longer trim intervals.
+  //
+  // Therefore this heuristic may produce false positives and negatives. We try to err on
+  // the side of too much trimming here and to identify only situations that are clearly
+  // harmful. Note that the GCTrimNativeStepDownFactor (4) is gentle enough for wrong
+  // heuristic results not to be too harmful.
   bool recommend_pause() {
-    if (_num < _max) {
-      return false; // not enough data
+    if (_num < _max / 2) {
+      return false; // not enough data;
     }
     int num_significant_trims = 0;
     int num_bouncebacks = 0;
-    for (int i = _max - 1; i > 0; i--) { // oldest to youngest
-      const ssize_t sz_before = checked_cast<ssize_t>(_histo[i].before);
+    for (int i = _num - 1; i > 0; i--) { // oldest to youngest
+      const ssize_t sz_before = checked_cast<ssize_t>(_histo[i].size_change().before);
       const ssize_t sz_after = checked_cast<ssize_t>(_histo[i].after);
       const ssize_t gains = sz_before - sz_after;
       if (gains > (ssize_t)MIN2(32 * M, _histo[i].before / 10)) { // considered significant
@@ -103,6 +140,8 @@ public:
         }
       }
     }
+    log_trace(gc, trim)("Last %d trims yielded significant gains; %d showed bounceback.",
+                        num_significant_trims, num_bouncebacks);
     return (num_significant_trims >= (_max / 2) &&
             num_significant_trims == num_bouncebacks);
   }
@@ -131,7 +170,7 @@ class NativeTrimmer : public ConcurrentGCThread {
     assert(GCTrimNativeHeap, "Sanity");
     assert(os::can_trim_native_heap(), "Sanity");
 
-    log_info(gc, trim)("NativeTrimmer started.");
+    log_info(gc, trim)("NativeTrimmer start.");
 
     int64_t ntt = 0;
     int64_t tnow = 0;
@@ -149,16 +188,13 @@ class NativeTrimmer : public ConcurrentGCThread {
             ml.wait(ntt - tnow); // sleep till next point
           }
           if (should_terminate()) {
-            PING
-            log_info(gc, trim)("NativeTrimmer stopped.");
+            log_info(gc, trim)("NativeTrimmer stop.");
             return;
           }
           tnow = now();
           ntt = _next_trim_time;
         } while (ntt > tnow);
       }
-
-      PING
 
       // 2 - Trim
       os::size_change_t sc;
@@ -260,7 +296,7 @@ public:
       _trim_history.reset();
       ml.notify_all();
     }
-    log_debug(gc, trim)("NativeTrimmer paused");
+    log_debug(gc, trim)("NativeTrimmer pause");
   }
 
   void unpause() {
@@ -272,7 +308,7 @@ public:
       _next_trim_time = _next_trim_time_saved;
       ml.notify_all();
     }
-    log_debug(gc, trim)("NativeTrimmer paused");
+    log_debug(gc, trim)("NativeTrimmer unpause");
   }
 
   void schedule_trim() {
@@ -281,7 +317,11 @@ public:
       _next_trim_time = 0;
       ml.notify_all();
     }
-    log_debug(gc, trim)("NativeTrimmer immediate trim");
+    if (_periodic_trim_enabled) {
+      log_debug(gc, trim)("NativeTrimmer unpause+trim");
+    } else {
+      log_debug(gc, trim)("NativeTrimmer trim");
+    }
   }
 
 }; // NativeTrimmer
@@ -308,7 +348,7 @@ void GCTrimNative::initialize() {
       if (GCTrimNativeHeapIntervalMax == 0) { // default
        FLAG_SET_ERGO(GCTrimNativeHeapIntervalMax, GCTrimNativeHeapInterval * 4);
       }
-      log_info(gc, trim)("Periodic native trim enabled (interval: %u-%u seconds).",
+      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds, step-down-interval: %u seconds).",
                           GCTrimNativeHeapInterval, GCTrimNativeHeapIntervalMax);
     } else {
       log_info(gc, trim)("Periodic native trim disabled (we trim at full gc only).");

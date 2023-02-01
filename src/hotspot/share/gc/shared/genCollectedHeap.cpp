@@ -509,6 +509,8 @@ void GenCollectedHeap::do_collection(bool           full,
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
 
+  GCTrimNative::PauseThenTrimMark trim_native_pause;
+
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
@@ -631,9 +633,6 @@ void GenCollectedHeap::do_collection(bool           full,
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
     update_full_collections_completed();
-
-    // Trim the native heap, without a delay since this is a full gc
-    GCTrimNative::schedule_trim();
 
     print_heap_change(pre_gc_values);
 

@@ -288,10 +288,6 @@ public class TestTrimNative {
         boolean isShenandoah() { return this == GC.shenandoah; }
     }
 
-    static private boolean usesNativeTrimmer(GC gc) {
-        return gc.isG1() || gc.isParallel() || gc.isZ();
-    }
-
     static private final OutputAnalyzer runTestWithOptions(String[] extraOptions, String[] testArgs) throws IOException {
 
         List<String> allOptions = new ArrayList<String>();
@@ -342,7 +338,7 @@ public class TestTrimNative {
             }
             if (numTrimsFound > maxExpected) {
                 throw new RuntimeException("Abnormal high number of trim attempts found (more than " + maxExpected +
-                                            "). Does the interval setting not work?");
+                        "). Does the interval setting not work?");
             }
         }
         if (numTrimsFound < minExpected) {
@@ -362,11 +358,11 @@ public class TestTrimNative {
         long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
         if (rssReductionTotal < expectedMinimalReduction) {
             throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
-                                       " to see at least a combined reduction of " + expectedMinimalReduction + ".");
+                    " to see at least a combined reduction of " + expectedMinimalReduction + ".");
         }
     }
 
-    // Test that GCTrimNativeHeap=1 causes a trim-native on full gc
+    // Test that we trim on full gc
     static private final void testWithFullGC(GC gc) throws IOException {
         System.out.println("testWithFullGC");
         int sleeptime_secs = 2;
@@ -374,19 +370,15 @@ public class TestTrimNative {
                 new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap" },
                 new String[] { "true" /* full gc */, String.valueOf(sleeptime_secs * 1000) /* ms after peak */ }
         );
+        output.shouldContain("Native trim enabled.");
+        output.shouldContain("Periodic native trim enabled (interval: 30 seconds, step-down-interval: 120 seconds).");
+        output.shouldContain("NativeTrimmer start");
+        output.shouldContain("NativeTrimmer pause");
+        output.shouldContain("NativeTrimmer unpause+trim");
+        output.shouldContain("NativeTrimmer stop");
         // With default interval time of 30 seconds, auto trimming should never kick in, so the only
         // log line we expect to see is the one from the full-gc induced trim.
         parseOutputAndLookForNegativeTrim(output, 1, 1);
-        // For GCs that use the NativeTrimmer, we want to see the NativeTrimmer paused during the GC, as well as
-        // started and shut down properly.
-        if (usesNativeTrimmer(gc)) {
-            output.shouldContain("NativeTrimmer started");
-            output.shouldContain("NativeTrimmer paused");
-            output.shouldContain("NativeTrimmer unpaused");
-            output.shouldContain("NativeTrimmer stopped");
-        } else {
-            output.shouldNotContain("NativeTrimmer");
-        }
     }
 
     // Test that GCTrimNativeHeap=1 causes a trim-native automatically, without GC (for now, shenandoah only)
@@ -400,29 +392,33 @@ public class TestTrimNative {
         );
         long t2 = System.currentTimeMillis();
         int runtime_s = (int)((t2 - t1) / 1000);
+        output.shouldContain("Native trim enabled.");
+        output.shouldContain("Periodic native trim enabled (interval: 1 seconds, step-down-interval: 4 seconds).");
         // With an interval time of 1 second and a runtime of 6..x seconds we expect to see x log lines (+- fudge factor).
-        parseOutputAndLookForNegativeTrim(output, runtime_s - 4, runtime_s + 2);
+        parseOutputAndLookForNegativeTrim(output, runtime_s - 4, runtime_s);
     }
 
     // Test that trim-native correctly honors interval
     static private final void testAutoWithHighInterval(GC gc) throws IOException {
-        // We pass a very high interval. This should disable the feature for this short-lived test, we should see no trim
+        // We pass a high interval than the expected test runtime. We expect no trims.
         System.out.println("testAutoWithHighInterval");
         OutputAnalyzer output = runTestWithOptions (
-                new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=30" },
+                new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=12" },
                 new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
         );
+        output.shouldContain("Native trim enabled.");
+        output.shouldContain("Periodic native trim enabled (interval: 12 seconds, step-down-interval: 48 seconds).");
         output.shouldNotContain("Trim native heap");
     }
 
-    // Test that trim-native correctly honors interval
     static private final void testAutoWithZeroInterval(GC gc) throws IOException {
-        // We pass a very high interval. This should disable the feature for this short-lived test, we should see no trim
-        System.out.println("testAutoWithHighInterval");
+        System.out.println("testAutoWithZeroInterval");
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { gc.getSwitchName(), "-XX:+GCTrimNativeHeap", "-XX:GCTrimNativeHeapInterval=0" },
-                new String[] { "false" /* full gc */, "6000" /* ms after peak */ }
+                new String[] { "false" /* full gc */, "4000" /* ms after peak */ }
         );
+        output.shouldContain("Native trim enabled.");
+        output.shouldContain("Periodic native trim disabled");
         output.shouldNotContain("Trim native heap");
     }
 
@@ -435,6 +431,7 @@ public class TestTrimNative {
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
         output.shouldContain("GCTrimNativeHeap disabled");
+        output.shouldNotContain("Native trim enabled.");
         output.shouldNotContain("Trim native heap");
     }
 
@@ -446,6 +443,7 @@ public class TestTrimNative {
                 new String[] { "-XX:-GCTrimNativeHeap" },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
+        output.shouldNotContain("Native trim enabled.");
         output.shouldNotContain("Trim native heap");
     }
 
@@ -457,6 +455,7 @@ public class TestTrimNative {
                 new String[] { },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
+        output.shouldNotContain("Native trim enabled.");
         output.shouldNotContain("Trim native heap");
     }
 
