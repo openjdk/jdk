@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpConnectTimeoutException;
@@ -276,7 +278,10 @@ class Http2Connection  {
         }
     }
 
-    volatile boolean closed;
+    private static final int HALF_CLOSED_LOCAL  = 1;
+    private static final int HALF_CLOSED_REMOTE = 2;
+    private static final int SHUTDOWN_REQUESTED = 4;
+    volatile int closedState;
 
     //-------------------------------------
     final HttpConnection connection;
@@ -658,13 +663,15 @@ class Http2Connection  {
     }
 
     void close() {
-        Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
-        if (connection.channel().isOpen()) {
-            GoAwayFrame f = new GoAwayFrame(0,
-                    ErrorFrame.NO_ERROR,
-                    "Requested by user".getBytes(UTF_8));
-            // TODO: set last stream. For now zero ok.
-            sendFrame(f);
+        if (markHalfClosedLocal()) {
+            if (connection.channel().isOpen()) {
+                Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
+                GoAwayFrame f = new GoAwayFrame(0,
+                        ErrorFrame.NO_ERROR,
+                        "Requested by user".getBytes(UTF_8));
+                // TODO: set last stream. For now zero ok.
+                sendFrame(f);
+            }
         }
     }
 
@@ -726,21 +733,20 @@ class Http2Connection  {
     }
 
     void shutdown(Throwable t) {
-        if (debug.on()) debug.log(() -> "Shutting down h2c (closed="+closed+"): " + t);
-        if (closed == true) return;
-        synchronized (this) {
-            if (closed == true) return;
-            closed = true;
-        }
+        int state = closedState;
+        if (debug.on()) debug.log(() -> "Shutting down h2c (state="+describeClosedState(state)+"): " + t);
+        if (!markShutdownRequested()) return;
         if (Log.errors()) {
-            if (!(t instanceof EOFException) || isActive()) {
+            if (t!= null && (!(t instanceof EOFException) || isActive())) {
                 Log.logError(t);
             } else if (t != null) {
                 Log.logError("Shutting down connection: {0}", t.getMessage());
+            } else {
+                Log.logError("Shutting down connection");
             }
         }
         Throwable initialCause = this.cause;
-        if (initialCause == null) this.cause = t;
+        if (initialCause == null && t != null) this.cause = t;
         client2.deleteConnection(this);
         for (Stream<?> s : streams.values()) {
             try {
@@ -877,7 +883,7 @@ class Http2Connection  {
     }
 
     final void dropDataFrame(DataFrame df) {
-        if (closed) return;
+        if (isMarked(closedState, SHUTDOWN_REQUESTED)) return;
         if (debug.on()) {
             debug.log("Dropping data frame for stream %d (%d payload bytes)",
                     df.streamid(), df.payloadLength());
@@ -887,7 +893,7 @@ class Http2Connection  {
 
     final void ensureWindowUpdated(DataFrame df) {
         try {
-            if (closed) return;
+            if (isMarked(closedState, SHUTDOWN_REQUESTED)) return;
             int length = df.payloadLength();
             if (length > 0) {
                 windowUpdater.update(length);
@@ -960,7 +966,8 @@ class Http2Connection  {
     }
 
     boolean isOpen() {
-        return !closed && connection.channel().isOpen();
+        return !isMarked(closedState, SHUTDOWN_REQUESTED)
+                && connection.channel().isOpen();
     }
 
     void resetStream(int streamid, int code) {
@@ -1084,8 +1091,10 @@ class Http2Connection  {
     private void protocolError(int errorCode, String msg)
         throws IOException
     {
-        GoAwayFrame frame = new GoAwayFrame(0, errorCode);
-        sendFrame(frame);
+        if (markHalfClosedLocal()) {
+            GoAwayFrame frame = new GoAwayFrame(0, errorCode);
+            sendFrame(frame);
+        }
         shutdown(new IOException("protocol error" + (msg == null?"":(": " + msg))));
     }
 
@@ -1118,9 +1127,11 @@ class Http2Connection  {
     private void handleGoAway(GoAwayFrame frame)
         throws IOException
     {
-        shutdown(new IOException(
-                        connection.channel().getLocalAddress()
-                        +": GOAWAY received"));
+        if (markHalfClosedLRemote()) {
+            shutdown(new IOException(
+                    connection.channel().getLocalAddress()
+                            + ": GOAWAY received"));
+        }
     }
 
     /**
@@ -1219,7 +1230,7 @@ class Http2Connection  {
         // to prevent the SelectorManager thread from exiting until
         // the stream is closed.
         synchronized (this) {
-            if (!closed) {
+            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
                 if (debug.on()) {
                     debug.log("Opened stream %d", streamid);
                 }
@@ -1235,7 +1246,6 @@ class Http2Connection  {
         }
         if (debug.on()) debug.log("connection closed: closing stream %d", stream);
         stream.cancel();
-
     }
 
     /**
@@ -1369,7 +1379,7 @@ class Http2Connection  {
             }
             publisher.signalEnqueued();
         } catch (IOException e) {
-            if (!closed) {
+            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
                 Log.logError(e);
                 shutdown(e);
             }
@@ -1387,7 +1397,7 @@ class Http2Connection  {
             publisher.enqueue(encodeFrame(frame));
             publisher.signalEnqueued();
         } catch (IOException e) {
-            if (!closed) {
+            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
                 Log.logError(e);
                 shutdown(e);
             }
@@ -1405,7 +1415,7 @@ class Http2Connection  {
             publisher.enqueueUnordered(encodeFrame(frame));
             publisher.signalEnqueued();
         } catch (IOException e) {
-            if (!closed) {
+            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
                 Log.logError(e);
                 shutdown(e);
             }
@@ -1625,6 +1635,62 @@ class Http2Connection  {
 
         AbstractAsyncSSLConnection getConnection() {
             return connection;
+        }
+    }
+
+    private boolean isMarked(int state, int mask) {
+        return (state & mask) == mask;
+    }
+
+    private boolean markShutdownRequested() {
+        return markClosedState(SHUTDOWN_REQUESTED);
+    }
+
+    private boolean markHalfClosedLocal() {
+        return markClosedState(HALF_CLOSED_LOCAL);
+    }
+
+    private boolean markHalfClosedLRemote() {
+        return markClosedState(HALF_CLOSED_REMOTE);
+    }
+
+    private boolean markClosedState(int flag) {
+        int state, desired;
+        do {
+            state = desired = closedState;
+            if ((state & flag) == flag) return false;
+            desired = state | flag;
+        } while (!CLOSED_STATE.compareAndSet(this, state, desired));
+        return true;
+    }
+
+    String describeClosedState(int state) {
+        if (state == 0) return "active";
+        String desc = null;
+        if (isMarked(state, SHUTDOWN_REQUESTED)) {
+            desc = "shutdown";
+        }
+        if (isMarked(state, HALF_CLOSED_LOCAL | HALF_CLOSED_REMOTE)) {
+            if (desc == null) return "closed";
+            else return desc + "+closed";
+        }
+        if (isMarked(state, HALF_CLOSED_LOCAL)) {
+            if (desc == null) return "half-closed-local";
+            else return desc + "+half-closed-local";
+        }
+        if (isMarked(state, HALF_CLOSED_REMOTE)) {
+            if (desc == null) return "half-closed-remote";
+            else return desc + "+half-closed-remote";
+        }
+        return "0x" + Integer.toString(state, 16);
+    }
+
+    private static final VarHandle CLOSED_STATE;
+    static {
+        try {
+            CLOSED_STATE = MethodHandles.lookup().findVarHandle(Http2Connection.class, "closedState", int.class);
+        } catch (Exception x) {
+            throw new ExceptionInInitializerError(x);
         }
     }
 }

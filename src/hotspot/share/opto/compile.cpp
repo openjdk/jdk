@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -976,6 +976,12 @@ void Compile::Init(bool aliasing) {
   DEBUG_ONLY( _modified_nodes = NULL; ) // Used in Optimize()
 
   _immutable_memory = NULL; // filled in at first inquiry
+
+#ifdef ASSERT
+  _type_verify_symmetry = true;
+  _phase_optimize_finished = false;
+  _exception_backedge = false;
+#endif
 
   // Globally visible Nodes
   // First set TOP to NULL to give safe behavior during creation of RootNode

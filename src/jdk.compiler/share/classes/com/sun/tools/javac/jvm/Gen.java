@@ -131,6 +131,7 @@ public class Gen extends JCTree.Visitor {
         // ignore cldc because we cannot have both stackmap formats
         this.stackMap = StackMapFormat.JSR202;
         annotate = Annotate.instance(context);
+        qualifiedSymbolCache = new HashMap<>();
     }
 
     /** Switches
@@ -174,6 +175,12 @@ public class Gen extends JCTree.Visitor {
     Set<JCMethodInvocation> invocationsWithPatternMatchingCatch = Set.of();
     ListBuffer<int[]> patternMatchingInvocationRanges;
 
+    /** Cache the symbol to reflect the qualifying type.
+     *  key: corresponding type
+     *  value: qualified symbol
+     */
+    Map<Type, Symbol> qualifiedSymbolCache;
+
     /** Generate code to load an integer constant.
      *  @param n     The integer to be loaded.
      */
@@ -215,6 +222,46 @@ public class Gen extends JCTree.Visitor {
         } else {
             code.emitop0(iconst_m1);
         }
+    }
+
+    /** Construct a symbol to reflect the qualifying type that should
+     *  appear in the byte code as per JLS 13.1.
+     *
+     *  For {@literal target >= 1.2}: Clone a method with the qualifier as owner (except
+     *  for those cases where we need to work around VM bugs).
+     *
+     *  For {@literal target <= 1.1}: If qualified variable or method is defined in a
+     *  non-accessible class, clone it with the qualifier class as owner.
+     *
+     *  @param sym    The accessed symbol
+     *  @param site   The qualifier's type.
+     */
+    Symbol binaryQualifier(Symbol sym, Type site) {
+
+        if (site.hasTag(ARRAY)) {
+            if (sym == syms.lengthVar ||
+                sym.owner != syms.arrayClass)
+                return sym;
+            // array clone can be qualified by the array type in later targets
+            Symbol qualifier;
+            if ((qualifier = qualifiedSymbolCache.get(site)) == null) {
+                qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name, site, syms.noSymbol);
+                qualifiedSymbolCache.put(site, qualifier);
+            }
+            return sym.clone(qualifier);
+        }
+
+        if (sym.owner == site.tsym ||
+            (sym.flags() & (STATIC | SYNTHETIC)) == (STATIC | SYNTHETIC)) {
+            return sym;
+        }
+
+        // leave alone methods inherited from Object
+        // JLS 13.1.
+        if (sym.owner == syms.objectType.tsym)
+            return sym;
+
+        return sym.clone(site.tsym);
     }
 
     /** Insert a reference to given type in the constant pool,
@@ -2280,11 +2327,11 @@ public class Gen extends JCTree.Visitor {
             result = items.makeLocalItem((VarSymbol)sym);
         } else if ((sym.flags() & STATIC) != 0) {
             if (!isAccessSuper(env.enclMethod))
-                sym = types.binaryQualifier(sym, env.enclClass.type);
+                sym = binaryQualifier(sym, env.enclClass.type);
             result = items.makeStaticItem(sym);
         } else {
             items.makeThisItem().load();
-            sym = types.binaryQualifier(sym, env.enclClass.type);
+            sym = binaryQualifier(sym, env.enclClass.type);
             result = items.makeMemberItem(sym, nonVirtualForPrivateAccess(sym));
         }
     }
@@ -2337,7 +2384,7 @@ public class Gen extends JCTree.Visitor {
                 result = items.makeDynamicItem(sym);
                 return;
             } else {
-                sym = types.binaryQualifier(sym, tree.selected.type);
+                sym = binaryQualifier(sym, tree.selected.type);
             }
             if ((sym.flags() & STATIC) != 0) {
                 if (!selectSuper && (ssym == null || ssym.kind != TYP))
@@ -2443,7 +2490,7 @@ public class Gen extends JCTree.Visitor {
             toplevel = null;
             endPosTable = null;
             nerrs = 0;
-            types.clearQualifiedSymbolCache();
+            qualifiedSymbolCache.clear();
         }
     }
 

@@ -49,28 +49,20 @@
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
-  if (top_obj != NULL) {
-    if (_sp->block_is_obj(top_obj)) {
-      if (_precision == CardTable::ObjHeadPreciseArray) {
-        if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-          // An arrayOop is starting on the dirty card - since we do exact
-          // store checks for objArrays we are done.
-        } else {
-          // Otherwise, it is possible that the object starting on the dirty
-          // card spans the entire card, and that the store happened on a
-          // later card.  Figure out where the object ends.
-          // Use the block_size() method of the space over which
-          // the iteration is being done.  That space (e.g. CMS) may have
-          // specific requirements on object sizes which will
-          // be reflected in the block_size() method.
-          top = top_obj + cast_to_oop(top_obj)->size();
-        }
-      }
+  if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
+    if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
+      // An arrayOop is starting on the dirty card - since we do exact
+      // store checks for objArrays we are done.
     } else {
-      top = top_obj;
+      // Otherwise, it is possible that the object starting on the dirty
+      // card spans the entire card, and that the store happened on a
+      // later card.  Figure out where the object ends.
+      assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
+             "Block size and object size mismatch");
+      top = top_obj + cast_to_oop(top_obj)->size();
     }
   } else {
-    assert(top == _sp->end(), "only case where top_obj == NULL");
+    top = (_sp->toContiguousSpace())->top();
   }
   return top;
 }
@@ -78,26 +70,13 @@ HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
 void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
                                             HeapWord* bottom,
                                             HeapWord* top) {
-  // 1. Blocks may or may not be objects.
-  // 2. Even when a block_is_obj(), it may not entirely
-  //    occupy the block if the block quantum is larger than
-  //    the object size.
-  // We can and should try to optimize by calling the non-MemRegion
-  // version of oop_iterate() for all but the extremal objects
-  // (for which we need to call the MemRegion version of
-  // oop_iterate()) To be done post-beta XXX
-  for (; bottom < top; bottom += _sp->block_size(bottom)) {
-    // As in the case of contiguous space above, we'd like to
-    // just use the value returned by oop_iterate to increment the
-    // current pointer; unfortunately, that won't work in CMS because
-    // we'd need an interface change (it seems) to have the space
-    // "adjust the object size" (for instance pad it up to its
-    // block alignment or minimum block size restrictions. XXX
-    if (_sp->block_is_obj(bottom) &&
-        !_sp->obj_allocated_since_save_marks(cast_to_oop(bottom))) {
-      cast_to_oop(bottom)->oop_iterate(_cl, mr);
-    }
-  }
+  // Note that this assumption won't hold if we have a concurrent
+  // collector in this space, which may have freed up objects after
+  // they were dirtied and before the stop-the-world GC that is
+  // examining cards here.
+  assert(bottom < top, "ought to be at least one obj on a dirty card.");
+
+  walk_mem_region_with_cl(mr, bottom, top, _cl);
 }
 
 // We get called with "mr" representing the dirty region
@@ -115,12 +94,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   HeapWord* bottom_obj;
   HeapWord* top_obj;
 
-  assert(_precision == CardTable::ObjHeadPreciseArray ||
-         _precision == CardTable::Precise,
-         "Only ones we deal with for now.");
-
-  assert(_precision != CardTable::ObjHeadPreciseArray ||
-         _last_bottom == NULL || top <= _last_bottom,
+  assert(_last_bottom == NULL || top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
 
@@ -136,9 +110,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   top = get_actual_top(top, top_obj);
 
   // If the previous call did some part of this region, don't redo.
-  if (_precision == CardTable::ObjHeadPreciseArray &&
-      _min_done != NULL &&
-      _min_done < top) {
+  if (_min_done != NULL && _min_done < top) {
     top = _min_done;
   }
 
@@ -148,9 +120,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   bottom = MIN2(bottom, top);
   MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
-         (_precision != CardTable::ObjHeadPreciseArray ||
-          _min_done == NULL ||
-          top <= _min_done),
+         (_min_done == NULL || top <= _min_done),
          "overlap!");
 
   // Walk the region if it is not empty; otherwise there is nothing to do.
@@ -161,83 +131,23 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   _min_done = bottom;
 }
 
-HeapWord* ContiguousSpaceDCTOC::get_actual_top(HeapWord* top,
-                                               HeapWord* top_obj) {
-  if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
-    if (_precision == CardTable::ObjHeadPreciseArray) {
-      if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
-        // An arrayOop is starting on the dirty card - since we do exact
-        // store checks for objArrays we are done.
-      } else {
-        // Otherwise, it is possible that the object starting on the dirty
-        // card spans the entire card, and that the store happened on a
-        // later card.  Figure out where the object ends.
-        assert(_sp->block_size(top_obj) == cast_to_oop(top_obj)->size(),
-          "Block size and object size mismatch");
-        top = top_obj + cast_to_oop(top_obj)->size();
-      }
+void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
+                                                    HeapWord* bottom,
+                                                    HeapWord* top,
+                                                    OopIterateClosure* cl) {
+  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);
+  if (bottom < top) {
+    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();
+    while (next_obj < top) {
+      /* Bottom lies entirely below top, so we can call the */
+      /* non-memRegion version of oop_iterate below. */
+      cast_to_oop(bottom)->oop_iterate(cl);
+      bottom = next_obj;
+      next_obj = bottom + cast_to_oop(bottom)->size();
     }
-  } else {
-    top = (_sp->toContiguousSpace())->top();
+    /* Last object. */
+    cast_to_oop(bottom)->oop_iterate(cl, mr);
   }
-  return top;
-}
-
-void ContiguousSpaceDCTOC::walk_mem_region(MemRegion mr,
-                                           HeapWord* bottom,
-                                           HeapWord* top) {
-  // Note that this assumption won't hold if we have a concurrent
-  // collector in this space, which may have freed up objects after
-  // they were dirtied and before the stop-the-world GC that is
-  // examining cards here.
-  assert(bottom < top, "ought to be at least one obj on a dirty card.");
-
-  if (_boundary != NULL) {
-    // We have a boundary outside of which we don't want to look
-    // at objects, so create a filtering closure around the
-    // oop closure before walking the region.
-    FilteringClosure filter(_boundary, _cl);
-    walk_mem_region_with_cl(mr, bottom, top, &filter);
-  } else {
-    // No boundary, simply walk the heap with the oop closure.
-    walk_mem_region_with_cl(mr, bottom, top, _cl);
-  }
-
-}
-
-// We must replicate this so that the static type of "FilteringClosure"
-// (see above) is apparent at the oop_iterate calls.
-#define ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(ClosureType) \
-void ContiguousSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,        \
-                                                   HeapWord* bottom,    \
-                                                   HeapWord* top,       \
-                                                   ClosureType* cl) {   \
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);              \
-  if (bottom < top) {                                                   \
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();          \
-    while (next_obj < top) {                                            \
-      /* Bottom lies entirely below top, so we can call the */          \
-      /* non-memRegion version of oop_iterate below. */                 \
-      cast_to_oop(bottom)->oop_iterate(cl);                             \
-      bottom = next_obj;                                                \
-      next_obj = bottom + cast_to_oop(bottom)->size();                  \
-    }                                                                   \
-    /* Last object. */                                                  \
-    cast_to_oop(bottom)->oop_iterate(cl, mr);                           \
-  }                                                                     \
-}
-
-// (There are only two of these, rather than N, because the split is due
-// only to the introduction of the FilteringClosure, a local part of the
-// impl of this abstraction.)
-ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(OopIterateClosure)
-ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
-
-DirtyCardToOopClosure*
-ContiguousSpace::new_dcto_cl(OopIterateClosure* cl,
-                             CardTable::PrecisionStyle precision,
-                             HeapWord* boundary) {
-  return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
 }
 
 void Space::initialize(MemRegion mr,

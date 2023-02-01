@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
                         } else {
                             content.add(", ");
                         }
-                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.TREE, intf, content);
+                        addPreQualifiedClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, intf, content);
                     }
                 }
             }
@@ -159,6 +159,6 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param content the content to which the information will be added
      */
     protected void addPartialInfo(TypeElement typeElement, Content content) {
-        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.TREE, typeElement, content);
+        addPreQualifiedStrongClassLink(HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS, typeElement, content);
     }
 }
