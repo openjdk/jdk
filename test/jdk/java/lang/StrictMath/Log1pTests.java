@@ -254,7 +254,7 @@ public class Log1pTests {
 
          for (double testPoint : conditionalPoints) {
              failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
-         } 
+         }
 
          x = Tests.createRandomDouble(random);
 
