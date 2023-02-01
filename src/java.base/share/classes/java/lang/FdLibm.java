@@ -931,7 +931,7 @@ class FdLibm {
             }
 
             if (hx >= 0x7ff0_0000) {
-                return x+x;
+                return x + x;
             }
 
             if (k != 0) {
@@ -979,7 +979,7 @@ class FdLibm {
             z = s * s;
             R = z * (Lp1 + z * (Lp2 + z * (Lp3 + z * (Lp4 + z * (Lp5 + z * (Lp6 + z*Lp7))))));
             if (k == 0) {
-                return f-(hfsq-s*(hfsq+R));
+                return f - (hfsq - s*(hfsq + R));
             } else {
                 return k * ln2_hi - ((hfsq - (s*(hfsq + R) + (k * ln2_lo+c))) - f);
             }
