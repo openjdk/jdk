@@ -24,9 +24,9 @@
 /*
  * @test
  * @bug 4948079
- * @summary SSLEngineResult needs updating [none yet]
+ * @summary Verify return values from SSLEngine wrap/unwrap (TLSv1.2) operations
  *
- * @run main/othervm -Djsse.enableCBCProtection=false CheckStatus
+ * @run main CheckStatus
  *
  * @author Brad Wetmore
  */
@@ -132,9 +132,7 @@ public class CheckStatus {
             "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256" };
 
         clientEngine.setEnabledCipherSuites(suite1);
-        clientEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
         serverEngine.setEnabledCipherSuites(suite1);
-        serverEngine.setEnabledProtocols(new String[]{"TLSv1.2"});
 
         log("================");
 
@@ -633,15 +631,8 @@ public class CheckStatus {
     }
 
     public static void main(String args[]) throws Exception {
-        // reset the security property to make sure that the algorithms
-        // and keys used in this test are not disabled.
-        Security.setProperty("jdk.tls.disabledAlgorithms", "");
-
-        CheckStatus cs;
-
-        cs = new CheckStatus();
+        CheckStatus cs = new CheckStatus();
         cs.test();
-
         System.out.println("Test Passed.");
     }
 
@@ -675,7 +666,7 @@ public class CheckStatus {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
+        SSLContext sslCtx = SSLContext.getInstance("TLSv1.2");
 
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -695,38 +686,21 @@ public class CheckStatus {
         clientToServer = ByteBuffer.allocateDirect(netBufferMax);
         serverToClient = ByteBuffer.allocateDirect(netBufferMax);
 
-        clientOut = ByteBuffer.wrap("Hi Engine2, I'm SSLEngine1".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Engine1, I'm SSLEngine2".getBytes());
+        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
 
-        log("AppOut1 = " + clientOut);
-        log("AppOut2 = " + serverOut);
+        log("Client out = " + clientOut);
+        log("Server out = " + serverOut);
         log("");
     }
 
-    private static void runDelegatedTasks(SSLEngine engine) throws Exception {
+    private static void runDelegatedTasks(SSLEngine engine) {
 
         Runnable runnable;
         while ((runnable = engine.getDelegatedTask()) != null) {
-            log("running delegated task...");
+            log("Running delegated task...");
             runnable.run();
         }
-    }
-
-    private static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("Data transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
     }
 
     private static void log(String str) {
