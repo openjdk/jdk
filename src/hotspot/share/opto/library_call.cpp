@@ -5988,7 +5988,6 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   Node* initialValue   = argument(3);
   Node* basic_type     = argument(4);
 
-  array = must_be_not_null(array, true);
   if (basic_type == top()) {
     return false; // failed input validation
   }
@@ -5997,6 +5996,9 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   if (!basic_type_t->is_con()) {
     return false; // Only intrinsify if mode argument is constant
   }
+
+  array = must_be_not_null(array, true);
+
   BasicType bt = (BasicType)basic_type_t->get_con();
 
   // Resolve address of first element
