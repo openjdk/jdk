@@ -58,9 +58,9 @@ template<
     >
 class ResourceHashtableBase : public STORAGE {
   static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
-                "Destructors for K is only called with C_HEAP");
+                "Destructor for K is only called with C_HEAP");
   static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
-                "Destructors for V is only called with C_HEAP");
+                "Destructor for V is only called with C_HEAP");
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
