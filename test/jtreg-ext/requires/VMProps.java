@@ -513,9 +513,10 @@ public class VMProps implements Callable<Map<String, String>> {
         return "" + isSupported;
     }
 
-    private void redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
+    // Returns comma-separated file names for stdout and stderr.
+    private String redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
         if (!Boolean.getBoolean("jtreg.log.vmprops")) {
-            return;
+            return "";
         }
         String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
 
@@ -526,17 +527,45 @@ public class VMProps implements Callable<Map<String, String>> {
         String stderrFileName = String.format("./%s-stderr--%s.log", fileNameBase, timeStamp);
         pb.redirectError(new File(stderrFileName));
         log(msg + ": child process stderr redirected to " + stderrFileName);
-   }
+
+        return stdoutFileName + "," + stderrFileName;
+    }
+
+    private void printLogfileContent(String logFileNames) {
+        if (logFileNames.isEmpty()) {
+            return;
+        }
+
+        log("------------- stdout: ");
+        try {
+            Files.lines(Path.of(logFileNames.split(",")[0]))
+                .forEach(line -> log(line));
+        } catch (IOException ie) {
+            log("Exception while reading stdout file: " + ie);
+        }
+        log("------------- ");
+
+        log("------------- stderr: ");
+        try {
+            Files.lines(Path.of(logFileNames.split(",")[1]))
+                .forEach(line -> log(line));
+        } catch (IOException ie) {
+            log("Exception while reading stderr file: " + ie);
+        }
+        log("------------- ");
+    }
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
         ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-        redirectOutputToLogFile("checkDockerSupport(): <container> ps", pb, "container-ps");
+        String logFileNames = redirectOutputToLogFile("checkDockerSupport(): <container> ps",
+                                                      pb, "container-ps");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
 
         log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
+        printLogfileContent(logFileNames);
         return (exitValue == 0);
     }
 
