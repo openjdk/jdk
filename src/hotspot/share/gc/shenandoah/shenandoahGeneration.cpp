@@ -729,12 +729,16 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* heap, Shena
     old_bytes_reserved_for_alloc_supplement += additional_regions_to_loan * region_size_bytes;
     working_old_available -= additional_regions_to_loan * region_size_bytes;
   }
-  size_t allocation_supplement = old_bytes_reserved_for_alloc_supplement;
+  size_t allocation_supplement = old_bytes_reserved_for_alloc_supplement + old_bytes_loaned_for_young_evac;
+  assert(allocation_supplement % ShenandoahHeapRegion::region_size_bytes() == 0,
+         "allocation_supplement must be multiple of region size");
+
   heap->set_alloc_supplement_reserve(allocation_supplement);
 
   // TODO: young_available, which feeds into alloc_budget_evac_and_update is lacking memory available within
   // existing young-gen regions that were not selected for the collection set.  Add this in and adjust the
   // log message (where it says "empty-region allocation budget").
+
 
   log_debug(gc)("Memory reserved for young evacuation: " SIZE_FORMAT "%s for evacuating " SIZE_FORMAT
                 "%s out of young available: " SIZE_FORMAT "%s",
@@ -979,6 +983,8 @@ size_t ShenandoahGeneration::available() const {
 }
 
 size_t ShenandoahGeneration::adjust_available(intptr_t adjustment) {
+  assert(adjustment % ShenandoahHeapRegion::region_size_bytes() == 0,
+         "Adjustment to generation size must be multiple of region size");
   _adjusted_capacity = soft_max_capacity() + adjustment;
   return _adjusted_capacity;
 }
