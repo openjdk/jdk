@@ -908,7 +908,7 @@ class FdLibm {
 
             k = 1;
             if (hx < 0x3FDA_827A) {                  /* x < 0.41422  */
-                if (ax >= 0x3ff0_0000)               /* x <= -1.0 */
+                if (ax >= 0x3ff0_0000) {             /* x <= -1.0 */
                     if (x == -1.0) /* log1p(-1)=-inf */
                         return -INFINITY;
                     else

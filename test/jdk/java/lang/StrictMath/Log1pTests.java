@@ -235,17 +235,26 @@ public class Log1pTests {
         x = Math.nextDown(Double.MIN_NORMAL);
         failures += testRange(x, -Math.ulp(x), 1000);
 
-        // ... and near 1.0 ...
-        x = 1.0;
-        failures += testRange(x, Math.ulp(x), 1000);
-        x = Math.nextDown(1.0);
-        failures += testRange(x, -Math.ulp(x), 1000);
+         double[] conditionalPoints = {
+              1.0,
+             -0x1.0p-29,
+              0x1.0p-29,
 
-        // ... and near 2^-29 ...
-        x = 0x1.0p-29;
-        failures += testRange(x, Math.ulp(x), 1000);
-        x = Math.nextDown(1.0);
-        failures += testRange(x, -Math.ulp(x), 1000);
+             -0x1.0p-54,
+              0x1.0p-54,
+
+              -0.2930,
+              -0.2929,
+              -0.2928,
+
+               0.41421,
+               0.41422,
+               0.41423,
+         };
+
+         for (double testPoint : conditionalPoints) {
+             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
+         } 
 
          x = Tests.createRandomDouble(random);
 
@@ -261,6 +270,15 @@ public class Log1pTests {
     private static int testRange(double start, double increment, int count) {
         int failures = 0;
         double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testLog1pCase(x, FdlibmTranslit.log1p(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeMidpoint(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
         for (int i = 0; i < count; i++, x += increment) {
             failures += testLog1pCase(x, FdlibmTranslit.log1p(x));
         }
