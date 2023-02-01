@@ -152,7 +152,7 @@ public class TestNativeMemoryUsageEvents {
                 .filter(e -> e.getEventType().getName().equals(UsageTotalEvent))
                 .findFirst().orElse(null);
 
-        // Verify that the heap has grown between the first and last sample.
+        // Verify that the first total event has more reserved than committed memory.
         long firstReserved = firstTotal.getLong("reserved");
         long firstCommitted = firstTotal.getLong("committed");
         assertGreaterThan(firstReserved, firstCommitted, "initial reserved should be greater than initial committed");
