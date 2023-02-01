@@ -461,19 +461,6 @@ public final class ZoneOffset
         SECONDS_CACHE_VH.setRelease(SECONDS_CACHE, slot, value);
     }
 
-    // Atomically sets a new value in SECONDS_CACHE if, and only if, the slot is null
-    // returning if the slot was set.
-/*    boolean trySetSecondsPerMinute(int slot) {
-        ZoneOffset cached = (ZoneOffset) SECONDS_CACHE_VH.get(SECONDS_CACHE, slot);
-        if (cached != null)
-            return cached;
-        synchronized (SECONDS_CACHE) {
-            ZoneOffset retry = SECONDS_CACHE.get(slot);
-            if (retry != null)
-                // Someone else beat us in the synchronization race
-                return retry;
-    }*/
-
     private static int cacheSlot(int totalSeconds) {
         return MAX_SECONDS_CACHE_SLOT + totalSeconds / (15 * SECONDS_PER_MINUTE);
     }
