@@ -737,8 +737,10 @@ public abstract class ResourceBundle {
                 // are modules and callerModules the same and non-null?
                 Module module = getModule();
                 Module caller = getCallerModule();
-                return Objects.equals(module, otherEntry.getModule()) &&
-                       Objects.equals(caller, otherEntry.getCallerModule());
+                if (module == null || caller == null) {
+                    return false;
+                }
+                return module.equals(caller);
             }
             return false;
         }
