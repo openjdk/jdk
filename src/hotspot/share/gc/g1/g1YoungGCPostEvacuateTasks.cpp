@@ -706,6 +706,7 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsTask : public G1AbstractSubTask {
   G1JavaThreadsListClaimer _claimer;
 
+  // There is not much work per thread so the number of threads per worker is high.
   static const uint ThreadsPerWorker = 250;
 
 public:

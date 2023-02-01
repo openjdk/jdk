@@ -193,7 +193,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Rebuild Free List", Level.DEBUG),
         new LogMessageWithLevel("Serial Rebuild Free List", Level.TRACE),
         new LogMessageWithLevel("Parallel Rebuild Free List", Level.TRACE),
-        new LogMessageWithLevel("Prepare for Mutator", Level.DEBUG),
+        new LogMessageWithLevel("Prepare For Mutator", Level.DEBUG),
         new LogMessageWithLevel("Expand Heap After Collection", Level.DEBUG),
     };
 

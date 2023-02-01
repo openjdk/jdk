@@ -135,7 +135,7 @@ public:
 
   // Attempts to claim _claim_step JavaThreads, returning an array of claimed
   // JavaThread* with count elements. Returns null (and a zero count) if there
-  // is no more to claim.
+  // are no more threads to claim.
   JavaThread* const* claim(uint& count);
 
   // Total number of JavaThreads that can be claimed.
