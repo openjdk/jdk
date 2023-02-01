@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ protected:
   }
 
   typedef ResourceHashtable<oop, ClassLoaderStats,
-                            256, AnyObj::RESOURCE_AREA, mtInternal,
+                            256, AnyObj::C_HEAP, mtInternal,
                             ClassLoaderStatsClosure::oop_hash> StatsTable;
 
   outputStream* _out;
@@ -125,11 +125,15 @@ protected:
 public:
   ClassLoaderStatsClosure(outputStream* out) :
     _out(out),
-    _stats(new StatsTable()),
+    _stats(new (mtInternal)StatsTable()),
     _total_loaders(0),
     _total_classes(0),
     _total_chunk_sz(0),
     _total_block_sz(0) {
+  }
+
+  ~ClassLoaderStatsClosure() {
+    delete _stats;
   }
 
   virtual void do_cld(ClassLoaderData* cld);
