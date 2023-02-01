@@ -47,6 +47,7 @@ class TrimResult {
   const os::size_change_t _size_change;
 
 public:
+  TrimResult() : _time(-1) {}
   TrimResult(uint64_t t, uint64_t d, os::size_change_t size_change) :
     _time(t), _duration(d), _size_change(size_change) {}
   TrimResult(const TrimResult& other) :
@@ -55,41 +56,42 @@ public:
   uint64_t duration() const { return _duration; }
   const os::size_change_t& size_change() const { return _size_change; }
 
+  bool is_valid() const { return _time != -1; }
+
   // Returns size reduction; positive if memory was reduced
   ssize_t size_reduction() const {
     return checked_cast<ssize_t>(_size_change.before) -
            checked_cast<ssize_t>(_size_change.after);
   }
-
 };
 
 // A FIFO of the last n trim results
 class TrimHistory {
-
   static const int _max = 4;
 
-  // Size changes for the last n trims, young to old
   TrimResult _histo[_max];
-  int _num;
-
-  void push_elements() {
-    for (int i = _max - 1; i > 0; i--) {
-      _histo[i] = _histo[i - 1];
-    }
-  }
+  int _pos; // position of next write
 
 public:
 
-  TrimHistory() : _num(0) {}
-
-  void reset() { _num = 0; }
+  TrimHistory() : _pos(0) {}
 
   void add(const TrimResult& result) {
-    push_elements();
-    _histo[0] = result;
-    if (_num < _max) {
-      _num++;
+    _histo[_pos] = result;
+    if (++_pos == _max) {
+      _pos = 0;
     }
+  }
+
+  // Returns pointer to youngest result, plus iterator
+  const TrimResult* youngest(int& it) const {
+    it = 0;
+    return _num > 0 ? _histo : nullptr;
+  }
+
+  const TrimResult* next_older(int& it) const {
+    it++;
+    return _num > it ? _histo + it : nullptr;
   }
 
   // Small heuristic to check if periodic trimming has been fruitful so far.
