@@ -255,7 +255,7 @@ public class TypeAnnotations {
             if (s.kind == MDL)
                 return AnnotationType.DECLARATION;
         } else {
-            //log.error(TreeInfo.diagnosticPositionFor(anno.type.tsym, pos), Errors.AnnotationUnrecognizedAttributeName(anno.type, e.value.name));
+            // there is an erroneous target, an error should have been reported already
             return AnnotationType.DECLARATION;
         }
         return AnnotationType.NONE;
