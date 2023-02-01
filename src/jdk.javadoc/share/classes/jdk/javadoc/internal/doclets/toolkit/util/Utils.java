@@ -418,7 +418,7 @@ public class Utils {
     }
 
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
-        return amirror.getAnnotationType().equals(getFunctionalInterface()) &&
+        return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }

@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -263,12 +264,12 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableMethods(Content target) throws DocletException {
         Content serializableMethodsHeader = methodWriter.getSerializableMethodsHeader();
-        SortedSet<ExecutableElement> members = utils.serializationMethods(currentTypeElement);
-        if (!members.isEmpty()) {
-            for (ExecutableElement member : members) {
-                currentMember = member;
+        Iterator<ExecutableElement> members = utils.serializationMethods(currentTypeElement).iterator();
+        if (members.hasNext()) {
+            while (members.hasNext()) {
+                currentMember = members.next();
                 Content methodsContent = methodWriter.getMethodsContentHeader(
-                        currentMember == members.last());
+                        !members.hasNext());
 
                 buildMethodSubHeader(methodsContent);
                 buildDeprecatedMethodInfo(methodsContent);
@@ -400,14 +401,14 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableFields(Content target)
             throws DocletException {
-        SortedSet<VariableElement> members = utils.serializableFields(currentTypeElement);
-        if (!members.isEmpty()) {
+        Iterator<VariableElement> members = utils.serializableFields(currentTypeElement).iterator();
+        if (members.hasNext()) {
             Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
-            for (VariableElement ve : members) {
-                currentMember = ve;
+            while (members.hasNext()) {
+                currentMember = members.next();
                 if (!utils.definesSerializableFields(currentTypeElement)) {
                     Content fieldsContent = fieldWriter.getFieldsContentHeader(
-                            currentMember == members.last());
+                            !members.hasNext());
 
                     buildFieldSubHeader(fieldsContent);
                     buildFieldDeprecationInfo(fieldsContent);

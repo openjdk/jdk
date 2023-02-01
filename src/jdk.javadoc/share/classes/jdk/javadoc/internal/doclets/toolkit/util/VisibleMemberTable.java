@@ -53,6 +53,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -242,7 +243,7 @@ public class VisibleMemberTable {
     public List<Element> getVisibleMembers(Kind kind) {
         Predicate<Element> declaredAndLeafMembers = e -> {
             TypeElement encl = utils.getEnclosingTypeElement(e);
-            return encl == te || utils.isUndocumentedEnclosure(encl);
+            return Objects.equals(encl, te) || utils.isUndocumentedEnclosure(encl);
         };
         return getVisibleMembers(kind, declaredAndLeafMembers);
     }
@@ -255,7 +256,7 @@ public class VisibleMemberTable {
      * @return a list of visible enclosed members in this type
      */
     public List<Element> getMembers(Kind kind) {
-        Predicate<Element> onlyLocallyDeclaredMembers = e -> utils.getEnclosingTypeElement(e) == te;
+        Predicate<Element> onlyLocallyDeclaredMembers = e -> Objects.equals(utils.getEnclosingTypeElement(e), te);
         return getVisibleMembers(kind, onlyLocallyDeclaredMembers);
     }
 
@@ -904,7 +905,7 @@ public class VisibleMemberTable {
 
         List<ExecutableElement> propertyMethods = list.stream()
                 .map(e -> (ExecutableElement) e)
-                .filter(e -> utils.getEnclosingTypeElement(e) == te)
+                .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), te))
                 .toList();
 
         // Compute additional properties related sundries.
