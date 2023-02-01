@@ -39,7 +39,9 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,7 +54,7 @@ public class Root {
     private static final Path SOURCE = Paths.get(SRC, "Root.policy");
     private static final Path TARGET = Paths.get(ROOT, ".java.policy");
     private static final Path BACKUP = Paths.get(ROOT, ".backup.policy");
-    private static final String USER = System.getProperty("user.name");
+    private static final String ROOT_USER_ID = "0";
 
     @BeforeTest
     public void setup() throws IOException {
@@ -74,11 +76,23 @@ public class Root {
     }
 
     @Test
-    private void test() {
+    private void test() throws InterruptedException, IOException {
         System.out.println("Run test as root user.");
 
-        if (!"root".equalsIgnoreCase(USER)) {
-            throw new RuntimeException("This test needs to be run with root privilege.");
+        Process process = Runtime.getRuntime().exec("id -u");
+        process.waitFor();
+        if (process.exitValue() != 0) {
+            throw new RuntimeException("Failed to retrieve user id.");
+        }
+
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(process.getInputStream()))) {
+            String line = reader.readLine();
+
+            if (!ROOT_USER_ID.equals(line)) {
+                throw new RuntimeException(
+                        "This test needs to be run with root privilege.");
+            }
         }
 
         Policy p = Policy.getPolicy();
