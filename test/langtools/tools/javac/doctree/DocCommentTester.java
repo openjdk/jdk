@@ -510,11 +510,6 @@ public class DocCommentTester {
                 return null;
             }
 
-            public Void visitMarkdown(MarkdownTree node, Void p) {
-                header(node, compress(node.getContent()));
-                return null;
-            }
-
             public Void visitParam(ParamTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -534,6 +529,11 @@ public class DocCommentTester {
                 indent(-1);
                 indent();
                 out.println("]");
+                return null;
+            }
+
+            public Void visitRawText(RawTextTree node, Void p) {
+                header(node, compress(node.getContent()));
                 return null;
             }
 

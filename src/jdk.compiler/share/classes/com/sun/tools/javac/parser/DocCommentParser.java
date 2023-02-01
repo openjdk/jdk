@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
 import com.sun.source.doctree.UnknownInlineTagTree;
@@ -83,7 +84,7 @@ public class DocCommentParser {
     private final DocTreeMaker m;
     private final Names names;
     private final boolean isFileContent;
-    private final boolean isMarkdown;
+    private final DocTree.Kind textKind;
 
     /** The input buffer, index of most recent character read,
      *  index of one past last character in buffer.
@@ -104,6 +105,7 @@ public class DocCommentParser {
 
     private static final String MARKDOWN_PREFIX = "md";
 
+    // TODO: isFileContent should be replaces by file extension if applicable
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource,
                             Comment comment, boolean isFileContent) {
         this.fac = fac;
@@ -112,10 +114,16 @@ public class DocCommentParser {
         this.comment = comment;
         names = fac.names;
         this.isFileContent = isFileContent;
-        String t = comment.getText();
-        this.isMarkdown = t.startsWith(MARKDOWN_PREFIX) && Character.isWhitespace(t.charAt(MARKDOWN_PREFIX.length()));
+        textKind = getTextKind(comment);
         m = fac.docTreeMaker;
         tagParsers = createTagParsers();
+    }
+
+    private static DocTree.Kind getTextKind(Comment c) {
+        String t = c.getText();
+        return (t.startsWith(MARKDOWN_PREFIX) && Character.isWhitespace(t.charAt(MARKDOWN_PREFIX.length())))
+                ? DocTree.Kind.MARKDOWN
+                : DocTree.Kind.TEXT;
     }
 
     public DocCommentParser(ParserFactory fac, DiagnosticSource diagSource, Comment comment) {
@@ -132,7 +140,7 @@ public class DocCommentParser {
         c.getChars(0, c.length(), buf, 0);
         buf[buf.length - 1] = EOI;
         buflen = buf.length - 1;
-        bp = -1 + (isMarkdown ? MARKDOWN_PREFIX.length() : 0);
+        bp = -1 + (textKind == DocTree.Kind.MARKDOWN ? MARKDOWN_PREFIX.length() : 0);
         nextChar();
 
         List<DCTree> preamble = isFileContent ? blockContent(Phase.PREAMBLE) : List.nil();
@@ -140,7 +148,7 @@ public class DocCommentParser {
         List<DCTree> tags = blockTags();
         List<DCTree> postamble = isFileContent ? blockContent(Phase.POSTAMBLE) : List.nil();
 
-        int pos = isMarkdown ? 0
+        int pos = textKind == DocTree.Kind.MARKDOWN  ? 0
                 : !preamble.isEmpty() ? preamble.head.pos
                 : !body.isEmpty() ? body.head.pos
                 : !tags.isEmpty() ? tags.head.pos
@@ -188,52 +196,56 @@ public class DocCommentParser {
                     break;
 
                 case '&':
-                    if (isMarkdown) {
-                        defaultBlockCharacter();
-                    } else {
-                        entity(trees);
+                    switch (textKind) {
+                        case MARKDOWN -> defaultBlockCharacter();
+                        case TEXT -> entity(trees);
+                        default -> throw unknownTextKind(textKind);
                     }
                     break;
 
                 case '<':
-                    if (isMarkdown) {
-                        defaultBlockCharacter();
-                    } else {
-                        newline = false;
-                        if (isFileContent) {
-                            switch (phase) {
-                                case PREAMBLE:
-                                    if (isEndPreamble()) {
-                                        trees.add(html());
-                                        if (textStart == -1) {
-                                            textStart = bp;
-                                            lastNonWhite = -1;
+                    switch (textKind) {
+                        case MARKDOWN -> {
+                            defaultBlockCharacter();
+                        }
+                        case TEXT -> {
+                            newline = false;
+                            if (isFileContent) {
+                                switch (phase) {
+                                    case PREAMBLE:
+                                        if (isEndPreamble()) {
+                                            trees.add(html());
+                                            if (textStart == -1) {
+                                                textStart = bp;
+                                                lastNonWhite = -1;
+                                            }
+                                            // mark this as the start, for processing purposes
+                                            newline = true;
+                                            break loop;
                                         }
-                                        // mark this as the start, for processing purposes
-                                        newline = true;
-                                        break loop;
-                                    }
-                                    break;
-                                case BODY:
-                                    if (isEndBody()) {
-                                        addPendingText(trees, lastNonWhite);
-                                        break loop;
-                                    }
-                                    break;
-                                default:
-                                    // fallthrough
+                                        break;
+                                    case BODY:
+                                        if (isEndBody()) {
+                                            addPendingText(trees, lastNonWhite);
+                                            break loop;
+                                        }
+                                        break;
+                                    default:
+                                        // fallthrough
+                                }
+                            }
+                            addPendingText(trees, bp - 1);
+                            trees.add(html());
+
+                            if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
+                                break; // Ignore newlines after html tags, in the meta content
+                            }
+                            if (textStart == -1) {
+                                textStart = bp;
+                                lastNonWhite = -1;
                             }
                         }
-                        addPendingText(trees, bp - 1);
-                        trees.add(html());
-
-                        if (phase == Phase.PREAMBLE || phase == Phase.POSTAMBLE) {
-                            break; // Ignore newlines after html tags, in the meta content
-                        }
-                        if (textStart == -1) {
-                            textStart = bp;
-                            lastNonWhite = -1;
-                        }
+                        default -> throw unknownTextKind(textKind);
                     }
                     break;
 
@@ -265,6 +277,10 @@ public class DocCommentParser {
             textStart = bp;
         lastNonWhite = bp;
         nextChar();
+    }
+
+    private IllegalStateException unknownTextKind(DocTree.Kind textKind) {
+        return new IllegalStateException(textKind.toString());
     }
 
     /**
@@ -613,22 +629,24 @@ public class DocCommentParser {
                     break;
 
                 case '&':
-                    if (isMarkdown) {
-                        defaultInlineCharacter();
-                    } else {
-                        entity(trees);
+                    switch (textKind) {
+                        case MARKDOWN -> defaultInlineCharacter();
+                        case TEXT -> entity(trees);
+                        default -> throw unknownTextKind(textKind);
                     }
                     break;
 
                 case '<':
-                    if (isMarkdown) {
-                        defaultInlineCharacter();
-                    } else {
-                        newline = false;
-                        addPendingText(trees, bp - 1);
-                        trees.add(html());
-                        textStart = bp;
-                        lastNonWhite = -1;
+                    switch (textKind) {
+                        case MARKDOWN -> defaultInlineCharacter();
+                        case TEXT -> {
+                            newline = false;
+                            addPendingText(trees, bp - 1);
+                            trees.add(html());
+                            textStart = bp;
+                            lastNonWhite = -1;
+                        }
+                        default -> throw unknownTextKind(textKind);
                     }
                     break;
 
@@ -980,7 +998,7 @@ public class DocCommentParser {
                         }
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, false);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                     nextChar();
                 } else {
                     vkind = ValueKind.UNQUOTED;
@@ -988,7 +1006,7 @@ public class DocCommentParser {
                     while (bp < buflen && !isUnquotedAttrValueTerminator(ch)) {
                         attrValueChar(v);
                     }
-                    addPendingText(v, bp - 1, false);
+                    addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                 }
                 skipWhitespace();
                 value = v.toList();
@@ -1016,16 +1034,19 @@ public class DocCommentParser {
     }
 
     protected void addPendingText(ListBuffer<DCTree> list, int textEnd) {
-        addPendingText(list, textEnd, isMarkdown);
+        addPendingText(list, textEnd, textKind);
     }
 
-    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, boolean useMarkdown) {
+    protected void addPendingText(ListBuffer<DCTree> list, int textEnd, DocTree.Kind kind) {
         if (textStart != -1) {
             if (textStart <= textEnd) {
-                if (useMarkdown) {
-                    list.add(m.at(textStart).newMarkdownTree(newString(textStart, textEnd + 1)));
-                } else {
-                    list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                switch (kind) {
+                    case TEXT ->
+                            list.add(m.at(textStart).newTextTree(newString(textStart, textEnd + 1)));
+                    case MARKDOWN ->
+                            list.add(m.at(textStart).newRawTextTree(DocTree.Kind.MARKDOWN, newString(textStart, textEnd + 1)));
+                    default ->
+                        throw new IllegalArgumentException(kind.toString());
                 }
             }
             textStart = -1;
@@ -1570,7 +1591,7 @@ public class DocCommentParser {
                                 while (bp < buflen && ch != quote) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, false);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                                 nextChar();
                             } else {
                                 vkind = ValueKind.UNQUOTED;
@@ -1579,7 +1600,7 @@ public class DocCommentParser {
                                 while (bp < buflen && (ch != '}' && ch != ':' && !isUnquotedAttrValueTerminator(ch))) {
                                     nextChar();
                                 }
-                                addPendingText(v, bp - 1, false);
+                                addPendingText(v, bp - 1, DocTree.Kind.TEXT);
                             }
                             skipWhitespace();
                             value = v.toList();

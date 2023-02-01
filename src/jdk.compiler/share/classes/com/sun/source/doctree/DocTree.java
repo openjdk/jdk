@@ -154,7 +154,7 @@ public interface DocTree {
         LITERAL("literal"),
 
         /**
-         * Used for instances of {@link MarkdownTree}
+         * Used for instances of {@link RawTextTree}
          * representing a fragment of Markdown content.
          *
          * @since 21

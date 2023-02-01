@@ -71,7 +71,7 @@ import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
-import com.sun.source.doctree.MarkdownTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
@@ -1255,7 +1255,10 @@ public class HtmlDocletWriter {
 
         boolean handle(DocTree tree, InlineVisitor visitor) {
             boolean allDone;
-            if (tree instanceof MarkdownTree t) {
+            if (tree instanceof RawTextTree t) {
+                if (t.getKind() != Kind.MARKDOWN) {
+                    throw new IllegalStateException(t.getKind().toString());
+                }
                 String code = t.getContent();
                 // handle the (unlikely) case of FFFC characters existing in the code
                 int start = 0;

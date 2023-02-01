@@ -41,15 +41,15 @@ class MarkdownTest {
 /*
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 5
-    Markdown[MARKDOWN, pos:4, abc_<_def_&_ghi_]
+    RawText[MARKDOWN, pos:4, abc_<_def_&_ghi_]
     Literal[CODE, pos:20, 123]
-    Markdown[MARKDOWN, pos:31, _jkl_]
+    RawText[MARKDOWN, pos:31, _jkl_]
     UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:36
       tag:unknown
       content: 1
         Text[TEXT, pos:45]
     ]
-    Markdown[MARKDOWN, pos:46, _mno.]
+    RawText[MARKDOWN, pos:46, _mno.]
   body: empty
   block tags: empty
 ]
@@ -66,15 +66,15 @@ DocComment[DOC_COMMENT, pos:0
   block tags: 1
     Since[SINCE, pos:4
       body: 5
-        Markdown[MARKDOWN, pos:11, abc_<_def_&_ghi_]
+        RawText[MARKDOWN, pos:11, abc_<_def_&_ghi_]
         Literal[CODE, pos:27, 123]
-        Markdown[MARKDOWN, pos:38, _jkl_]
+        RawText[MARKDOWN, pos:38, _jkl_]
         UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:43
           tag:unknown
           content: 1
             Text[TEXT, pos:52]
         ]
-        Markdown[MARKDOWN, pos:53, _mno.]
+        RawText[MARKDOWN, pos:53, _mno.]
     ]
 ]
 */
@@ -86,22 +86,22 @@ DocComment[DOC_COMMENT, pos:0
 /*
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Markdown[MARKDOWN, pos:4, 123_]
+    RawText[MARKDOWN, pos:4, 123_]
     Link[LINK, pos:8
       reference:
         Reference[REFERENCE, pos:15, Object]
       body: 5
-        Markdown[MARKDOWN, pos:22, abc_<_def_&_ghi_]
+        RawText[MARKDOWN, pos:22, abc_<_def_&_ghi_]
         Literal[CODE, pos:38, 123]
-        Markdown[MARKDOWN, pos:49, _jkl_]
+        RawText[MARKDOWN, pos:49, _jkl_]
         UnknownInlineTag[UNKNOWN_INLINE_TAG, pos:54
           tag:unknown
           content: 1
             Text[TEXT, pos:63]
         ]
-        Markdown[MARKDOWN, pos:64, _mno]
+        RawText[MARKDOWN, pos:64, _mno]
     ]
-    Markdown[MARKDOWN, pos:69, _456.]
+    RawText[MARKDOWN, pos:69, _456.]
   body: empty
   block tags: empty
 ]

@@ -208,21 +208,6 @@ public interface DocTreeVisitor<R,P> {
     R visitLiteral(LiteralTree node, P p);
 
     /**
-     * Visits a {@code MarkdownTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     *
-     * @implSpec Visits the provided {@code MarkdownTree} node
-     * by calling {@code visitOther(node, p)}.
-     *
-     * @since 21
-     */
-    default R visitMarkdown(MarkdownTree node, P p) {
-        return visitOther(node, p);
-    }
-
-    /**
      * Visits a {@code ParamTree} node.
      * @param node the node being visited
      * @param p a parameter value
@@ -243,6 +228,21 @@ public interface DocTreeVisitor<R,P> {
      * @since 9
      */
     default R visitProvides(ProvidesTree node, P p) {
+        return visitOther(node, p);
+    }
+
+    /**
+     * Visits a {@code RawTextTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @implSpec Visits the provided {@code RawTextTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @since 21
+     */
+    default R visitRawText(RawTextTree node, P p) {
         return visitOther(node, p);
     }
 

@@ -380,16 +380,6 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public Void visitMarkdown(MarkdownTree node, Void p) {
-        try {
-            print(node.getContent());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-        return null;
-    }
-
-    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitParam(ParamTree node, Void p) {
         try {
             printTagName(node);
@@ -417,6 +407,16 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
                 print(" ");
                 print(node.getDescription());
             }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitRawText(RawTextTree node, Void p) {
+        try {
+            print(node.getContent());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

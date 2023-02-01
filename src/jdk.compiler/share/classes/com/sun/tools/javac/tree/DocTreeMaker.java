@@ -66,10 +66,10 @@ import com.sun.tools.javac.tree.DCTree.DCIndex;
 import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
 import com.sun.tools.javac.tree.DCTree.DCLink;
 import com.sun.tools.javac.tree.DCTree.DCLiteral;
-import com.sun.tools.javac.tree.DCTree.DCMarkdown;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCProvides;
 import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.DCTree.DCRawText;
 import com.sun.tools.javac.tree.DCTree.DCReturn;
 import com.sun.tools.javac.tree.DCTree.DCSee;
 import com.sun.tools.javac.tree.DCTree.DCSerial;
@@ -335,8 +335,8 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCMarkdown newMarkdownTree(String text) {
-        DCMarkdown tree = new DCMarkdown(text);
+    public DCRawText newRawTextTree(DocTree.Kind kind, String text) {
+        DCTree.DCRawText tree = new DCRawText(kind, text);
         tree.pos = pos;
         return tree;
     }
@@ -552,7 +552,7 @@ public class DocTreeMaker implements DocTreeFactory {
 
                     // TODO: merge MARKDOWN and TEXT code, perhaps with generic method
                     case MARKDOWN -> {
-                        DCMarkdown mt = (DCMarkdown) dt;
+                        DCRawText mt = (DCRawText) dt;
                         String s = mt.getContent();
                         DocTree peekedNext = itr.hasNext()
                                 ? alist.get(itr.nextIndex())
@@ -560,12 +560,12 @@ public class DocTreeMaker implements DocTreeFactory {
                         int sbreak = getSentenceBreak(s, peekedNext);
                         if (sbreak > 0) {
                             s = s.substring(0, sbreak).stripTrailing();
-                            DCMarkdown text = this.at(spos).newMarkdownTree(s);
+                            DCRawText text = this.at(spos).newRawTextTree(DocTree.Kind.MARKDOWN, s);
                             fs.add(text);
                             foundFirstSentence = true;
                             int nwPos = skipWhiteSpace(mt.getContent(), sbreak);
                             if (nwPos > 0) {
-                                DCMarkdown text2 = this.at(spos + nwPos).newMarkdownTree(mt.getContent().substring(nwPos));
+                                DCRawText text2 = this.at(spos + nwPos).newRawTextTree(Kind.MARKDOWN, mt.getContent().substring(nwPos));
                                 body.add(text2);
                             }
                             continue;
@@ -576,9 +576,9 @@ public class DocTreeMaker implements DocTreeFactory {
                             if (sbrk) {
                                 DocTree next = itr.next();
                                 s = s.stripTrailing();
-                                DCMarkdown text = this.at(spos).newMarkdownTree(s);
+                                DCRawText text = this.at(spos).newRawTextTree(Kind.MARKDOWN, s);
                                 fs.add(text);
-                                body.add((DCMarkdown) next);  // TODO: why the cast?
+                                body.add((DCRawText) next);  // TODO: why the cast?
                                 foundFirstSentence = true;
                                 continue;
                             }

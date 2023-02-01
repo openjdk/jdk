@@ -244,7 +244,7 @@ DocComment[DOC_COMMENT, pos:1
 /*
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
-    Markdown[MARKDOWN, pos:5, abc_<_def]
+    RawText[MARKDOWN, pos:5, abc_<_def]
   body: empty
   block tags: empty
 ]

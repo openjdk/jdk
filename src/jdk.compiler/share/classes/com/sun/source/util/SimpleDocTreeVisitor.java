@@ -328,22 +328,6 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
      * @return  the result of {@code defaultAction}
-     *
-     * @since 21
-     */
-    @Override
-    public R visitMarkdown(MarkdownTree node, P p) {
-        return defaultAction(node, p);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation calls {@code defaultAction}.
-     *
-     * @param node {@inheritDoc}
-     * @param p {@inheritDoc}
-     * @return  the result of {@code defaultAction}
      */
     @Override
     public R visitParam(ParamTree node, P p) {
@@ -363,6 +347,22 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      */
     @Override
     public R visitProvides(ProvidesTree node, P p) {
+        return defaultAction(node, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 21
+     */
+    @Override
+    public R visitRawText(RawTextTree node, P p) {
         return defaultAction(node, p);
     }
 
