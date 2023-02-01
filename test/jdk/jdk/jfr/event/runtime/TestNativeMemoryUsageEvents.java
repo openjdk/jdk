@@ -147,6 +147,17 @@ public class TestNativeMemoryUsageEvents {
         assertGreaterThan(lastSample, firstSample, "heap should have grown and NMT should show that");
     }
 
+    private static void verifyTotalDiffBetweenReservedAndCommitted(List<RecordedEvent> events) throws Exception {
+        RecordedEvent firstTotal = events.stream()
+                .filter(e -> e.getEventType().getName().equals(UsageTotalEvent))
+                .findFirst().orElse(null);
+
+        // Verify that the heap has grown between the first and last sample.
+        long firstReserved = firstTotal.getLong("reserved");
+        long firstCommitted = firstTotal.getLong("committed");
+        assertGreaterThan(firstReserved, firstCommitted, "initial reserved should be greater than initial committed");
+    }
+
     private static void verifyNoUsageEvents(List<RecordedEvent> events) throws Exception {
         Events.hasNotEvent(events, UsageEvent);
         Events.hasNotEvent(events, UsageTotalEvent);
@@ -167,6 +178,7 @@ public class TestNativeMemoryUsageEvents {
             if (nmtEnabled) {
                 verifyExpectedEventTypes(events);
                 verifyHeapGrowth(events);
+                verifyTotalDiffBetweenReservedAndCommitted(events);
             } else {
                 verifyNoUsageEvents(events);
             }
