@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ class FreeBlock: public HeapBlock {
 
  public:
   // Initialization
-  void initialize(size_t length)             { HeapBlock::initialize(length); _link= NULL; }
+  void initialize(size_t length)             { HeapBlock::initialize(length); _link= nullptr; }
 
   // Accessors
   FreeBlock* link() const                    { return _link; }
@@ -153,7 +153,7 @@ class CodeHeap : public CHeapObj<mtCode> {
   bool  expand_by(size_t size);                  // expands committed memory by size
 
   // Memory allocation
-  void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return NULL
+  void* allocate (size_t size); // Allocate 'size' bytes in the code cache or return null
   void  deallocate(void* p);    // Deallocate memory
   // Free the tail of segments allocated by the last call to 'allocate()' which exceed 'used_size'.
   // ATTENTION: this is only safe to use if there was no other call to 'allocate()' after
@@ -175,8 +175,8 @@ class CodeHeap : public CHeapObj<mtCode> {
     return contains((void*)blob);
   }
 
-  virtual void* find_start(void* p)     const;   // returns the block containing p or NULL
-  virtual CodeBlob* find_blob(void* start) const;
+  void* find_start(void* p)     const;   // returns the block containing p or null
+  CodeBlob* find_blob(void* start) const;
   size_t alignment_unit()       const;           // alignment of any block
   size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
@@ -191,10 +191,10 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t allocated_in_freelist() const           { return _freelist_segments * CodeCacheSegmentSize; }
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
-  // returns the first block or NULL
-  virtual void* first() const                    { return next_used(first_block()); }
-  // returns the next block given a block p or NULL
-  virtual void* next(void* p) const              { return next_used(next_block(block_start(p))); }
+  // returns the first block or null
+  void* first() const                    { return next_used(first_block()); }
+  // returns the next block given a block p or null
+  void* next(void* p) const              { return next_used(next_block(block_start(p))); }
 
   // Statistics
   size_t capacity() const;

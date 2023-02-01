@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ bool SafepointSynchronize::thread_not_running(ThreadSafepointState *cur_state) {
 static void assert_list_is_valid(const ThreadSafepointState* tss_head, int still_running) {
   int a = 0;
   const ThreadSafepointState *tmp_tss = tss_head;
-  while (tmp_tss != NULL) {
+  while (tmp_tss != nullptr) {
     ++a;
     assert(tmp_tss->is_running(), "Illegal initial state");
     tmp_tss = tmp_tss->get_next();
@@ -228,11 +228,11 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   // Iterate through all threads until it has been determined how to stop them all at a safepoint.
   int still_running = nof_threads;
-  ThreadSafepointState *tss_head = NULL;
+  ThreadSafepointState *tss_head = nullptr;
   ThreadSafepointState **p_prev = &tss_head;
   for (; JavaThread *cur = jtiwh.next(); ) {
     ThreadSafepointState *cur_tss = cur->safepoint_state();
-    assert(cur_tss->get_next() == NULL, "Must be NULL");
+    assert(cur_tss->get_next() == nullptr, "Must be nullptr");
     if (thread_not_running(cur_tss)) {
       --still_running;
     } else {
@@ -240,7 +240,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
       p_prev = cur_tss->next_ptr();
     }
   }
-  *p_prev = NULL;
+  *p_prev = nullptr;
 
   DEBUG_ONLY(assert_list_is_valid(tss_head, still_running);)
 
@@ -248,7 +248,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   // If there is no thread still running, we are already done.
   if (still_running <= 0) {
-    assert(tss_head == NULL, "Must be empty");
+    assert(tss_head == nullptr, "Must be empty");
     return 1;
   }
 
@@ -263,14 +263,14 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
     p_prev = &tss_head;
     ThreadSafepointState *cur_tss = tss_head;
-    while (cur_tss != NULL) {
+    while (cur_tss != nullptr) {
       assert(cur_tss->is_running(), "Illegal initial state");
       if (thread_not_running(cur_tss)) {
         --still_running;
-        *p_prev = NULL;
+        *p_prev = nullptr;
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
-        tmp->set_next(NULL);
+        tmp->set_next(nullptr);
       } else {
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
@@ -287,7 +287,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     iterations++;
   } while (still_running > 0);
 
-  assert(tss_head == NULL, "Must be empty");
+  assert(tss_head == nullptr, "Must be empty");
 
   return iterations;
 }
@@ -598,10 +598,10 @@ void SafepointSynchronize::do_cleanup_tasks() {
   TraceTime timer("safepoint cleanup tasks", TRACETIME_LOG(Info, safepoint, cleanup));
 
   CollectedHeap* heap = Universe::heap();
-  assert(heap != NULL, "heap not initialized yet?");
+  assert(heap != nullptr, "heap not initialized yet?");
   ParallelCleanupTask cleanup;
   WorkerThreads* cleanup_workers = heap->safepoint_workers();
-  if (cleanup_workers != NULL) {
+  if (cleanup_workers != nullptr) {
     // Parallel cleanup using GC provided thread pool.
     cleanup_workers->run_task(&cleanup);
   } else {
@@ -684,7 +684,7 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
 // Implementation of Safepoint blocking point
 
 void SafepointSynchronize::block(JavaThread *thread) {
-  assert(thread != NULL, "thread must be set");
+  assert(thread != nullptr, "thread must be set");
 
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
@@ -805,7 +805,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
 
 ThreadSafepointState::ThreadSafepointState(JavaThread *thread)
   : _at_poll_safepoint(false), _thread(thread), _safepoint_safe(false),
-    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(NULL) {
+    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr) {
 }
 
 void ThreadSafepointState::create(JavaThread *thread) {
@@ -816,7 +816,7 @@ void ThreadSafepointState::create(JavaThread *thread) {
 void ThreadSafepointState::destroy(JavaThread *thread) {
   if (thread->safepoint_state()) {
     delete(thread->safepoint_state());
-    thread->set_safepoint_state(NULL);
+    thread->set_safepoint_state(nullptr);
   }
 }
 
@@ -893,7 +893,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
   address real_return_addr = self->saved_exception_pc();
 
   CodeBlob *cb = CodeCache::find_blob(real_return_addr);
-  assert(cb != NULL && cb->is_compiled(), "return address should be in nmethod");
+  assert(cb != nullptr && cb->is_compiled(), "return address should be in nmethod");
   CompiledMethod* nm = (CompiledMethod*)cb;
 
   // Find frame of caller
