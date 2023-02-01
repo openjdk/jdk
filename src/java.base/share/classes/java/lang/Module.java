@@ -317,7 +317,7 @@ public final class Module implements AnnotatedElement {
         }
     }
 
-    // Atomically sets {@code enableNativeAccess} if not already set
+    // Atomically sets enableNativeAccess if not already set
     // returning if the value was updated
     private static boolean trySetEnableNativeAccess(Module target) {
         synchronized (target) {
