@@ -231,6 +231,16 @@ void usage() {
   fprintf(stderr, "       invoke test_native_overflow_initial\n");
 }
 
+void init_thread_or_die(pthread_t *thr, pthread_attr_t *thread_attr) {
+  size_t stack_size = get_java_stacksize();
+  if (pthread_attr_init(thread_attr) != 0 ||
+      pthread_attr_setstacksize(thread_attr, stack_size) != 0) {
+    printf("Failed to set stacksize. Exiting test.\n");
+    exit(0);
+  }
+
+}
+
 
 int main (int argc, const char** argv) {
   JavaVMInitArgs vm_args;
@@ -271,15 +281,8 @@ int main (int argc, const char** argv) {
     exit(7);
   }
 
-  size_t stack_size = get_java_stacksize();
   pthread_t thr;
   pthread_attr_t thread_attr;
-
-  if (pthread_attr_init(&thread_attr) != 0 ||
-      pthread_attr_setstacksize(&thread_attr, stack_size) != 0) {
-    printf("Failed to set stacksize. Exiting test.\n");
-    exit(0);
-  }
 
   if (argc < 2) {
     fprintf(stderr, "No test selected");
@@ -297,6 +300,7 @@ int main (int argc, const char** argv) {
   }
 
   if (strcmp(argv[1], "test_java_overflow") == 0) {
+    init_thread_or_die(&thr, &thread_attr);
     printf("\nTesting JAVA_OVERFLOW\n");
     printf("Testing stack guard page behaviour for other thread\n");
 
@@ -317,6 +321,7 @@ int main (int argc, const char** argv) {
   }
 
   if (strcmp(argv[1], "test_native_overflow") == 0) {
+    init_thread_or_die(&thr, &thread_attr);
     printf("\nTesting NATIVE_OVERFLOW\n");
     printf("Testing stack guard page behaviour for other thread\n");
 
