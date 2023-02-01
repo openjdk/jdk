@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
@@ -264,19 +265,15 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableMethods(Content target) throws DocletException {
         Content serializableMethodsHeader = methodWriter.getSerializableMethodsHeader();
-        Iterator<ExecutableElement> members = utils.serializationMethods(currentTypeElement).iterator();
-        if (members.hasNext()) {
-            while (members.hasNext()) {
-                currentMember = members.next();
-                Content methodsContent = methodWriter.getMethodsContentHeader(
-                        !members.hasNext());
+        for (var i = utils.serializationMethods(currentTypeElement).iterator(); i.hasNext(); ) {
+            currentMember = i.next();
+            Content methodsContent = methodWriter.getMethodsContentHeader(!i.hasNext());
 
-                buildMethodSubHeader(methodsContent);
-                buildDeprecatedMethodInfo(methodsContent);
-                buildMethodInfo(methodsContent);
+            buildMethodSubHeader(methodsContent);
+            buildDeprecatedMethodInfo(methodsContent);
+            buildMethodInfo(methodsContent);
 
-                serializableMethodsHeader.add(methodsContent);
-            }
+            serializableMethodsHeader.add(methodsContent);
         }
         if (!utils.serializationMethods(currentTypeElement).isEmpty()) {
             target.add(methodWriter.getSerializableMethods(
@@ -401,14 +398,13 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableFields(Content target)
             throws DocletException {
-        Iterator<VariableElement> members = utils.serializableFields(currentTypeElement).iterator();
-        if (members.hasNext()) {
+        Collection<VariableElement> members = utils.serializableFields(currentTypeElement);
+        if (!members.isEmpty()) {
             Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
-            while (members.hasNext()) {
-                currentMember = members.next();
+            for (var i = members.iterator(); i.hasNext();) {
+                currentMember = i.next();
                 if (!utils.definesSerializableFields(currentTypeElement)) {
-                    Content fieldsContent = fieldWriter.getFieldsContentHeader(
-                            !members.hasNext());
+                    Content fieldsContent = fieldWriter.getFieldsContentHeader(!i.hasNext());
 
                     buildFieldSubHeader(fieldsContent);
                     buildFieldDeprecationInfo(fieldsContent);
