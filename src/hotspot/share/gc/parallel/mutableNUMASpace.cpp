@@ -53,7 +53,7 @@ MutableNUMASpace::MutableNUMASpace(size_t alignment) : MutableSpace(alignment), 
     }
 #endif // LINUX
 
-  int lgrp_limit = (int)os::numa_get_groups_num();
+  size_t lgrp_limit = os::numa_get_groups_num();
   int *lgrp_ids = NEW_C_HEAP_ARRAY(int, lgrp_limit, mtGC);
   int lgrp_num = (int)os::numa_get_leaf_groups(lgrp_ids, lgrp_limit);
   assert(lgrp_num > 0, "There should be at least one locality group");
