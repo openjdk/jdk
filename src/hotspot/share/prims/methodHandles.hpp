@@ -79,7 +79,7 @@ class MethodHandles: AllStatic {
   static void add_dependent_nmethod(oop call_site, nmethod* nm);
   static void clean_dependency_context(oop call_site);
 
-  static void flush_dependent_nmethods(Handle call_site, Handle target);
+  static void flush_dependent_nmethods(DeoptimizationScope* deopt_scope, Handle call_site, Handle target);
 
   // Generate MethodHandles adapters.
   static void generate_adapters();

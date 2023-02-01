@@ -1178,15 +1178,20 @@ void InstanceKlass::initialize_impl(TRAPS) {
 void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaThread* current) {
   MonitorLocker ml(current, _init_monitor);
 
-  // Now flush all code that assume the class is not linked.
-  // Set state under the Compile_lock also.
   if (state == linked && UseVtableBasedCHA && Universe::is_fully_initialized()) {
-    MutexLocker ml(current, Compile_lock);
+    DeoptimizationScope deopt_scope;
+    {
+      // Now flush all code that assume the class is not linked.
+      // Set state under the Compile_lock also.
+      MutexLocker ml(current, Compile_lock);
 
-    set_init_thread(nullptr); // reset _init_thread before changing _init_state
-    set_init_state(state);
+      set_init_thread(nullptr); // reset _init_thread before changing _init_state
+      set_init_state(state);
 
-    CodeCache::flush_dependents_on(this);
+      CodeCache::flush_dependents_on(&deopt_scope, this);
+    }
+    // Perform the deopt handshake outside Compile_lock.
+    deopt_scope.deoptimize_marked();
   } else {
     set_init_thread(nullptr); // reset _init_thread before changing _init_state
     set_init_state(state);
@@ -2325,8 +2330,8 @@ inline DependencyContext InstanceKlass::dependencies() {
   return dep_context;
 }
 
-int InstanceKlass::mark_dependent_nmethods(KlassDepChange& changes) {
-  return dependencies().mark_dependent_nmethods(changes);
+void InstanceKlass::mark_dependent_nmethods(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
+  dependencies().mark_dependent_nmethods(deopt_scope, changes);
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
@@ -3272,7 +3277,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   return found;
 }
 
-int InstanceKlass::mark_osr_nmethods(const Method* m) {
+int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
   MutexLocker ml(CompiledMethod_lock->owned_by_self() ? nullptr : CompiledMethod_lock,
                  Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
@@ -3280,7 +3285,7 @@ int InstanceKlass::mark_osr_nmethods(const Method* m) {
   while (osr != nullptr) {
     assert(osr->is_osr_method(), "wrong kind of nmethod found in chain");
     if (osr->method() == m) {
-      osr->mark_for_deoptimization();
+      deopt_scope->mark(osr);
       found++;
     }
     osr = osr->osr_link();

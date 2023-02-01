@@ -367,7 +367,7 @@ public:
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
 
   // Setup link to hierarchy
-  static void add_to_hierarchy(InstanceKlass* k);
+  static void add_to_hierarchy(DeoptimizationScope* deopt_scope, InstanceKlass* k);
 protected:
 
   // Basic find on loaded classes

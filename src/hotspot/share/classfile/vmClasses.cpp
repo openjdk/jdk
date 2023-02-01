@@ -249,7 +249,9 @@ void vmClasses::resolve_shared_class(InstanceKlass* klass, ClassLoaderData* load
   SystemDictionary::load_shared_class_misc(klass, loader_data);
   Dictionary* dictionary = loader_data->dictionary();
   dictionary->add_klass(THREAD, klass->name(), klass);
-  SystemDictionary::add_to_hierarchy(klass);
+  DeoptimizationScope deopt_scope;
+  SystemDictionary::add_to_hierarchy(&deopt_scope, klass);
+  deopt_scope.deoptimize_marked();
   assert(klass->is_loaded(), "Must be in at least loaded state");
 }
 

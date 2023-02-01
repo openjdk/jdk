@@ -1160,6 +1160,8 @@ void nmethod::finalize_relocations() {
 
 void nmethod::make_deoptimized() {
   if (!Continuations::enabled()) {
+    // Don't deopt this again.
+    set_deoptimized_done();
     return;
   }
 
@@ -1202,7 +1204,7 @@ void nmethod::make_deoptimized() {
     }
   }
   // Don't deopt this again.
-  mark_deoptimized();
+  set_deoptimized_done();
 }
 
 void nmethod::verify_clean_inline_caches() {

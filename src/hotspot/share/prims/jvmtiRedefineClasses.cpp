@@ -4094,22 +4094,18 @@ void VM_RedefineClasses::transfer_old_native_function_registrations(InstanceKlas
 void VM_RedefineClasses::flush_dependent_code() {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
 
-  bool deopt_needed;
+  DeoptimizationScope deopt_scope;
 
   // This is the first redefinition, mark all the nmethods for deoptimization
   if (!JvmtiExport::all_dependencies_are_recorded()) {
+    CodeCache::mark_all_nmethods_for_evol_deoptimization(&deopt_scope);
     log_debug(redefine, class, nmethod)("Marked all nmethods for deopt");
-    CodeCache::mark_all_nmethods_for_evol_deoptimization();
-    deopt_needed = true;
   } else {
-    int deopt = CodeCache::mark_dependents_for_evol_deoptimization();
-    log_debug(redefine, class, nmethod)("Marked %d dependent nmethods for deopt", deopt);
-    deopt_needed = (deopt != 0);
+    CodeCache::mark_dependents_for_evol_deoptimization(&deopt_scope);
+    log_debug(redefine, class, nmethod)("Marked dependent nmethods for deopt");
   }
 
-  if (deopt_needed) {
-    CodeCache::flush_evol_dependents();
-  }
+  deopt_scope.deoptimize_marked();
 
   // From now on we know that the dependency information is complete
   JvmtiExport::set_all_dependencies_are_recorded(true);

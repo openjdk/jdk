@@ -1243,9 +1243,8 @@ void CodeCache::cleanup_inline_caches_whitebox() {
 // Keeps track of time spent for checking dependencies
 NOT_PRODUCT(static elapsedTimer dependentCheckTime;)
 
-int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
+void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, KlassDepChange& changes) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  int number_of_marked_CodeBlobs = 0;
 
   // search the hierarchy looking for nmethods which are affected by the loading of this class
 
@@ -1257,7 +1256,7 @@ int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
   NoSafepointVerifier nsv;
   for (DepChange::ContextStream str(changes, nsv); str.next(); ) {
     Klass* d = str.klass();
-    number_of_marked_CodeBlobs += InstanceKlass::cast(d)->mark_dependent_nmethods(changes);
+    InstanceKlass::cast(d)->mark_dependent_nmethods(deopt_scope, changes);
   }
 
 #ifndef PRODUCT
@@ -1269,8 +1268,6 @@ int CodeCache::mark_for_deoptimization(KlassDepChange& changes) {
     dependentCheckTime.stop();
   }
 #endif
-
-  return number_of_marked_CodeBlobs;
 }
 
 CompiledMethod* CodeCache::find_compiled(void* start) {
@@ -1325,13 +1322,12 @@ void CodeCache::old_nmethods_do(MetadataClosure* f) {
 }
 
 // Walk compiled methods and mark dependent methods for deoptimization.
-int CodeCache::mark_dependents_for_evol_deoptimization() {
+void CodeCache::mark_dependents_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
   // Each redefinition creates a new set of nmethods that have references to "old" Methods
   // So delete old method table and create a new one.
   reset_old_method_table();
 
-  int number_of_marked_CodeBlobs = 0;
   CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
@@ -1339,25 +1335,20 @@ int CodeCache::mark_dependents_for_evol_deoptimization() {
     // This includes methods whose inline caches point to old methods, so
     // inline cache clearing is unnecessary.
     if (nm->has_evol_metadata()) {
-      nm->mark_for_deoptimization();
+      deopt_scope->mark(nm);
       add_to_old_table(nm);
-      number_of_marked_CodeBlobs++;
     }
   }
-
-  // return total count of nmethods marked for deoptimization, if zero the caller
-  // can skip deoptimization
-  return number_of_marked_CodeBlobs;
 }
 
-void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
+void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* deopt_scope) {
   assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
   CompiledMethodIterator iter(CompiledMethodIterator::all_blobs);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->method()->is_method_handle_intrinsic()) {
       if (nm->can_be_deoptimized()) {
-        nm->mark_for_deoptimization();
+        deopt_scope->mark(nm);
       }
       if (nm->has_evol_metadata()) {
         add_to_old_table(nm);
@@ -1366,48 +1357,30 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization() {
   }
 }
 
-// Flushes compiled methods dependent on redefined classes, that have already been
-// marked for deoptimization.
-void CodeCache::flush_evol_dependents() {
-  assert(SafepointSynchronize::is_at_safepoint(), "Can only do this at a safepoint!");
-
-  // CodeCache can only be updated by a thread_in_VM and they will all be
-  // stopped during the safepoint so CodeCache will be safe to update without
-  // holding the CodeCache_lock.
-
-  // At least one nmethod has been marked for deoptimization
-
-  Deoptimization::deoptimize_all_marked();
-}
 #endif // INCLUDE_JVMTI
 
 // Mark methods for deopt (if safe or possible).
-void CodeCache::mark_all_nmethods_for_deoptimization() {
+void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
   CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->is_native_method()) {
-      nm->mark_for_deoptimization();
+      deopt_scope->mark(nm);
     }
   }
 }
 
-int CodeCache::mark_for_deoptimization(Method* dependee) {
+void CodeCache::mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  int number_of_marked_CodeBlobs = 0;
 
   CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (nm->is_dependent_on_method(dependee)) {
-      ResourceMark rm;
-      nm->mark_for_deoptimization();
-      number_of_marked_CodeBlobs++;
+      deopt_scope->mark(nm);
     }
   }
-
-  return number_of_marked_CodeBlobs;
 }
 
 void CodeCache::make_marked_nmethods_deoptimized() {
@@ -1416,51 +1389,39 @@ void CodeCache::make_marked_nmethods_deoptimized() {
     CompiledMethod* nm = iter.method();
     if (nm->is_marked_for_deoptimization() && !nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
       nm->make_not_entrant();
-      make_nmethod_deoptimized(nm);
+      nm->make_deoptimized();
     }
   }
 }
 
-void CodeCache::make_nmethod_deoptimized(CompiledMethod* nm) {
-  if (nm->is_marked_for_deoptimization() && nm->can_be_deoptimized()) {
-    nm->make_deoptimized();
-  }
-}
-
 // Flushes compiled methods dependent on dependee.
-void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
+void CodeCache::flush_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
   if (!has_nmethods_with_dependencies()) {
     return;
   }
 
-  int marked = 0;
   if (dependee->is_linked()) {
     // Class initialization state change.
     KlassInitDepChange changes(dependee);
-    marked = mark_for_deoptimization(changes);
+    mark_for_deoptimization(deopt_scope, changes);
   } else {
     // New class is loaded.
     NewKlassDepChange changes(dependee);
-    marked = mark_for_deoptimization(changes);
-  }
-
-  if (marked > 0) {
-    // At least one nmethod has been marked for deoptimization
-    Deoptimization::deoptimize_all_marked();
+    mark_for_deoptimization(deopt_scope, changes);
   }
 }
 
 // Flushes compiled methods dependent on dependee
-void CodeCache::flush_dependents_on_method(const methodHandle& m_h) {
+void CodeCache::flush_dependents_on_method_for_breakpoint(const methodHandle& m_h) {
   // --- Compile_lock is not held. However we are at a safepoint.
   assert_locked_or_safepoint(Compile_lock);
 
+  DeoptimizationScope deopt_scope;
   // Compute the dependent nmethods
-  if (mark_for_deoptimization(m_h()) > 0) {
-    Deoptimization::deoptimize_all_marked();
-  }
+  mark_for_deoptimization(&deopt_scope, m_h());
+  deopt_scope.deoptimize_marked();
 }
 
 void CodeCache::verify() {

@@ -1590,7 +1590,11 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
     // the address field to still be pointing at the nmethod.
    } else {
     // Deoptimize the nmethod immediately.
-    Deoptimization::deoptimize_all_marked(nm);
+    DeoptimizationScope deopt_scope;
+    deopt_scope.mark(nm);
+    nm->make_not_entrant();
+    nm->make_deoptimized();
+    deopt_scope.deoptimize_marked();
 
     // A HotSpotNmethod instance can only reference a single nmethod
     // during its lifetime so simply clear it here.
