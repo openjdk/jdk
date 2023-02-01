@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
    pthread_attr_setguardsize(&attr, 0);
    pthread_attr_setstacksize(&attr, adjusted_stack_size);
-   pthread_create (&id,&attr,run,(void *)&args);
-   pthread_join(id,NULL);
+   pthread_create(&id, &attr, run, (void *)&args);
+   pthread_join(id, NULL);
 #else
    run(&args);
 #endif //AIX
