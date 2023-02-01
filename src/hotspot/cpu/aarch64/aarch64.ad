@@ -4322,6 +4322,17 @@ operand immI_cmp_cond()
   interface(CONST_INTER);
 %}
 
+// BoolTest condition for unsigned compare
+operand immI_cmpU_cond()
+%{
+  predicate(n->get_int() > (int)(BoolTest::unsigned_compare));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 operand immL_255()
 %{
   predicate(n->get_long() == 255L);
@@ -4414,6 +4425,28 @@ operand immI26()
 operand immI19()
 %{
   predicate(((-(1 << 18)) <= n->get_int()) && (n->get_int() < (1 << 18)));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 5 bit signed integer
+operand immI5()
+%{
+  predicate(((-(1 << 4)) <= n->get_int()) && (n->get_int() < (1 << 4)));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 7 bit unsigned integer
+operand immIU7()
+%{
+  predicate((0 <= n->get_int()) && (n->get_int() < (1 << 7)));
   match(ConI);
 
   op_cost(0);
@@ -4556,6 +4589,28 @@ operand immLoffset8()
 operand immLoffset16()
 %{
   predicate(Address::offset_ok_for_immed(n->get_long(), 4));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 5 bit signed long integer
+operand immL5()
+%{
+  predicate(((-(1 << 4)) <= n->get_long()) && (n->get_long() < (1 << 4)));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 7 bit unsigned long integer
+operand immLU7()
+%{
+  predicate((0 <= n->get_long()) && (n->get_long() < (1 << 7)));
   match(ConL);
 
   op_cost(0);

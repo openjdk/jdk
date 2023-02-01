@@ -3786,26 +3786,41 @@ public:
   INSN(sve_fac, 0b01100101, 0b11, 1); // Floating-point absolute compare vectors
 #undef INSN
 
-// SVE Integer Compare - Signed Immediate
+// SVE Integer Compare - 5 bits signed imm and 7 bits unsigned imm
 void sve_cmp(Condition cond, PRegister Pd, SIMD_RegVariant T,
-             PRegister Pg, FloatRegister Zn, int imm5) {
+             PRegister Pg, FloatRegister Zn, int imm) {
   starti;
   assert(T != Q, "invalid size");
-  guarantee(-16 <= imm5 && imm5 <= 15, "invalid immediate");
   int cond_op;
-  switch(cond) {
-    case EQ: cond_op = 0b1000; break;
-    case NE: cond_op = 0b1001; break;
-    case GE: cond_op = 0b0000; break;
-    case GT: cond_op = 0b0001; break;
-    case LE: cond_op = 0b0011; break;
-    case LT: cond_op = 0b0010; break;
-    default:
-      ShouldNotReachHere();
+  if (cond == HI || cond == HS || cond == LO || cond == LS) {
+    guarantee(0 <= imm && imm <= 127, "invalid immediate");
+    switch(cond) {
+      case HI: cond_op = 0b01; break;
+      case HS: cond_op = 0b00; break;
+      case LO: cond_op = 0b10; break;
+      case LS: cond_op = 0b11; break;
+      default:
+        ShouldNotReachHere();
+    }
+    f(0b00100100, 31, 24), f(T, 23, 22), f(0b1, 21), f(imm, 20, 14),
+    f((cond_op >> 1) & 0x1, 13), pgrf(Pg, 10), rf(Zn, 5);
+    f(cond_op & 0x1, 4), prf(Pd, 0);
+  } else {
+    guarantee(-16 <= imm && imm <= 15, "invalid immediate");
+    switch(cond) {
+      case EQ: cond_op = 0b1000; break;
+      case NE: cond_op = 0b1001; break;
+      case GE: cond_op = 0b0000; break;
+      case GT: cond_op = 0b0001; break;
+      case LE: cond_op = 0b0011; break;
+      case LT: cond_op = 0b0010; break;
+      default:
+        ShouldNotReachHere();
+    }
+    f(0b00100101, 31, 24), f(T, 23, 22), f(0b0, 21), sf(imm, 20, 16),
+    f((cond_op >> 1) & 0x7, 15, 13), pgrf(Pg, 10), rf(Zn, 5);
+    f(cond_op & 0x1, 4), prf(Pd, 0);
   }
-  f(0b00100101, 31, 24), f(T, 23, 22), f(0b0, 21), sf(imm5, 20, 16),
-  f((cond_op >> 1) & 0x7, 15, 13), pgrf(Pg, 10), rf(Zn, 5);
-  f(cond_op & 0x1, 4), prf(Pd, 0);
 }
 
 // SVE Floating-point compare vector with zero
