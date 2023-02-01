@@ -44,14 +44,47 @@
 #include FT_LCD_FILTER_H
 #include FT_MODULE_H
 
-// Linux is built with system Freetype by default,
-// and it's often a bit old and doesn't have FT_COLOR_H.
-// Thus, we disable colored outlines on Linux to be able
-// to build on older Linuxes, this is not a big problem,
-// as Linux uses bitmap emoji anyway.
 #if defined(_WIN32) || defined(__APPLE__)
 #include FT_COLOR_H
-#define ENABLE_COLOR_OUTLINES
+#define COLOR_OUTLINES_AVAILABLE (1)
+#else
+// Linux is built with system Freetype by default,
+// and it's often a bit old and doesn't have FT_COLOR_H.
+// Thus, we load required symbols dynamically on Linux.
+#define DYNAMIC_COLOR_OUTLINES
+
+typedef struct FT_Color__Dynamic {
+    FT_Byte  blue;
+    FT_Byte  green;
+    FT_Byte  red;
+    FT_Byte  alpha;
+} FT_Color_Dynamic;
+
+typedef struct FT_LayerIterator__Dynamic {
+    FT_UInt   num_layers;
+    FT_UInt   layer;
+    FT_Byte*  p;
+} FT_LayerIterator_Dynamic;
+
+#define FT_Color FT_Color_Dynamic
+#define FT_LayerIterator FT_LayerIterator_Dynamic
+
+typedef FT_Error (*FT_Palette_Select_Func)(FT_Face     face,
+                                           FT_UShort   palette_index,
+                                           FT_Color*  *apalette);
+
+typedef FT_Bool (*FT_Get_Color_Glyph_Layer_Func)(FT_Face            face,
+                                                 FT_UInt            base_glyph,
+                                                 FT_UInt           *aglyph_index,
+                                                 FT_UInt           *acolor_index,
+                                                 FT_LayerIterator*  iterator);
+
+FT_Palette_Select_Func FT_Palette_Select_Dynamic = NULL;
+FT_Get_Color_Glyph_Layer_Func FT_Get_Color_Glyph_Layer_Dynamic = NULL;
+
+#define FT_Palette_Select FT_Palette_Select_Dynamic
+#define FT_Get_Color_Glyph_Layer FT_Get_Color_Glyph_Layer_Dynamic
+#define COLOR_OUTLINES_AVAILABLE (FT_Palette_Select && FT_Get_Color_Glyph_Layer)
 #endif
 
 #include "fontscaler.h"
@@ -145,6 +178,17 @@ Java_sun_font_FreetypeFontScaler_initIDs(
     debugFonts = JNU_CallStaticMethodByName(env, &ignoreException,
                                             "sun/font/FontUtilities",
                                             "debugFonts", "()Z").z;
+
+#ifdef DYNAMIC_COLOR_OUTLINES
+    void *lib = dlopen("libfreetype.so", RTLD_LOCAL|RTLD_LAZY);
+    if (!lib) {
+        lib = dlopen("libfreetype.so.6", RTLD_LOCAL|RTLD_LAZY);
+    }
+    if (lib) {
+        FT_Palette_Select = (FT_Palette_Select_Func)dlsym(lib, "FT_Palette_Select");
+        FT_Get_Color_Glyph_Layer = (FT_Get_Color_Glyph_Layer_Func)dlsym(lib, "FT_Get_Color_Glyph_Layer");
+    }
+#endif
 }
 
 static void freeNativeResources(JNIEnv *env, FTScalerInfo* scalerInfo) {
@@ -1798,7 +1842,7 @@ static jboolean addColorLayersRenderData(JNIEnv* env, FTScalerContext *context,
                                          FTScalerInfo* scalerInfo, jint glyphCode,
                                          jfloat xpos, jfloat ypos, jobject result) {
 
-#ifdef ENABLE_COLOR_OUTLINES
+    if (!COLOR_OUTLINES_AVAILABLE) return JNI_FALSE;
     FT_Error error;
 
     FT_Color* colors;
@@ -1830,9 +1874,6 @@ static jboolean addColorLayersRenderData(JNIEnv* env, FTScalerContext *context,
                                      &glyphIndex, &colorIndex, &iterator));
 
     return JNI_TRUE;
-#else
-    return JNI_FALSE;
-#endif
 }
 
 static void addBitmapRenderData(JNIEnv *env, jobject scaler, jobject font2D,
