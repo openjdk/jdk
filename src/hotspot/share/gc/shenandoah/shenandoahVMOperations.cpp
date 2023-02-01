@@ -91,7 +91,7 @@ void VM_ShenandoahFinalRoots::doit() {
         HeapWord* top = r->top();
         if (top > tams) {
           r->reset_age();
-        } else {
+        } else if (heap->is_aging_cycle()){
           r->increment_age();
         }
       }
