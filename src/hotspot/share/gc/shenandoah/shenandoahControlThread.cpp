@@ -273,7 +273,12 @@ void ShenandoahControlThread::run_service() {
       {
         switch (_mode) {
           case concurrent_normal: {
-            if ((generation == YOUNG) && (age_period-- == 0)) {
+            // At this point:
+            //  if (generation == YOUNG), this is a normal YOUNG cycle
+            //  if (generation == OLD), this is a bootstrap OLD cycle
+            //  if (generation == GLOBAL), this is a GLOBAL cycle triggered by System.gc()
+            // In all three cases, we want to age old objects if this is an aging cycle
+            if (age_period-- == 0) {
               heap->set_aging_cycle(true);
               age_period = ShenandoahAgingCyclePeriod - 1;
             }
