@@ -978,9 +978,9 @@ void Compile::Init(bool aliasing) {
   _immutable_memory = NULL; // filled in at first inquiry
 
 #ifdef ASSERT
-  _type_verify_symmetry = true;
   _phase_optimize_finished = false;
   _exception_backedge = false;
+  _type_verify = NULL;
 #endif
 
   // Globally visible Nodes
@@ -1076,12 +1076,6 @@ void Compile::Init(bool aliasing) {
   Copy::zero_to_bytes(_alias_cache, sizeof(_alias_cache));
   // A NULL adr_type hits in the cache right away.  Preload the right answer.
   probe_alias_cache(NULL)->_index = AliasIdxTop;
-
-#ifdef ASSERT
-  _phase_optimize_finished = false;
-  _exception_backedge = false;
-  _type_verify = NULL;
-#endif
 }
 
 //---------------------------init_start----------------------------------------
