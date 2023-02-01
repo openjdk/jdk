@@ -37,7 +37,6 @@
  * @run main/othervm -Dorg.jcp.xml.dsig.secureValidation=false SecureValidationSystemProperty
  */
 
-
 import java.io.File;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -51,7 +50,7 @@ import static jdk.test.lib.security.XMLUtils.Validator;
 public class SecureValidationSystemProperty {
 
     private final static String DIR = System.getProperty("test.src", ".");
-    private final static String DATA_DIR = 
+    private final static String DATA_DIR =
         DIR + System.getProperty("file.separator") + "data";
 
     public static void main(String[] args) throws Exception{
