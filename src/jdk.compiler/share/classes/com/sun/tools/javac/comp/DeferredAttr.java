@@ -439,7 +439,9 @@ public class DeferredAttr extends JCTree.Visitor {
         Env<AttrContext> localEnv = attr.lambdaEnv(that, env);
         try {
             localEnv.info.returnResult = resultInfo;
-            JCBlock speculativeTree = (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo, argumentAttr.withLocalCacheContext());
+            JCBlock speculativeTree = hasTypeDeclaration(that) ?
+                    (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo, argumentAttr.withLocalCacheContext()) :
+                    (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo);
             List<JCVariableDecl> args = speculativeTree.getStatements().stream()
                     .filter(s -> s.hasTag(Tag.VARDEF))
                     .map(t -> (JCVariableDecl)t)
@@ -454,6 +456,42 @@ public class DeferredAttr extends JCTree.Visitor {
             return speculativeLambda;
         } finally {
             localEnv.info.scope.leave();
+        }
+    }
+
+    boolean hasTypeDeclaration(JCLambda lambda) {
+        TypeDeclVisitor typeDeclVisitor = new TypeDeclVisitor();
+        if (lambda.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
+            lambda.getBody().accept(typeDeclVisitor);
+            return typeDeclVisitor.result;
+        } else {
+            JCBlock body = (JCBlock)lambda.body;
+            for (JCTree stat : body.stats) {
+                stat.accept(typeDeclVisitor);
+                if (typeDeclVisitor.result) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    static class TypeDeclVisitor extends JCTree.Visitor {
+        boolean result = false;
+
+        @Override
+        public void visitTree(JCTree that) {
+            // ignore
+        }
+
+        @Override
+        public void visitParens(JCParens tree) {
+            tree.expr.accept(this);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl that) {
+            result = true;
         }
     }
 
