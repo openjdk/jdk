@@ -167,13 +167,13 @@ protected:
     bool do_object_b(oop p);
   };
 
-  class FastKeepAliveClosure: public OopClosure {
+  class KeepAliveClosure: public OopClosure {
     ScanWeakRefClosure* _cl;
     CardTableRS* _rs;
     HeapWord* _boundary;
     template <class T> void do_oop_work(T* p);
   public:
-    FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
+    KeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
   };

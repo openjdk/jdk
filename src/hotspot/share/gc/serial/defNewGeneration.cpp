@@ -76,15 +76,15 @@ bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
   return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || p->is_forwarded();
 }
 
-DefNewGeneration::FastKeepAliveClosure::
-FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
+DefNewGeneration::KeepAliveClosure::
+KeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
   _cl(cl) {
   _rs = GenCollectedHeap::heap()->rem_set();
   _boundary = g->reserved().end();
 }
 
-void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
-void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
+void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
+void DefNewGeneration::KeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
 
 DefNewGeneration::FastEvacuateFollowersClosure::
 FastEvacuateFollowersClosure(SerialHeap* heap,
@@ -578,7 +578,7 @@ void DefNewGeneration::collect(bool   full,
   // "evacuate followers".
   evacuate_followers.do_void();
 
-  FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
+  KeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);

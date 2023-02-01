@@ -37,7 +37,7 @@
 // Methods of protected closure types
 
 template <class T>
-inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
+inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
 #ifdef ASSERT
   {
     // We never expect to see a null reference being processed
