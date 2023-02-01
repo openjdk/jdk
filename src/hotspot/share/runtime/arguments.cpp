@@ -3983,9 +3983,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     return JNI_EINVAL;
   }
 #endif // _LP64
-  // During testing CDS appeared to cause LSan to report many false positives, so disable it.
-  UseSharedSpaces = false;
-  RequireSharedSpaces = false;
 #endif // LEAK_SANITIZER
 
   // Verify NMT arguments
