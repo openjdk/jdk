@@ -275,8 +275,8 @@ int main (int argc, const char** argv) {
   pthread_t thr;
   pthread_attr_t thread_attr;
 
-  if (!pthread_attr_init(&thread_attr) ||
-      !pthread_attr_setstacksize(&thread_attr, stack_size)) {
+  if (pthread_attr_init(&thread_attr) != 0 ||
+      pthread_attr_setstacksize(&thread_attr, stack_size) != 0) {
     printf("Failed to set stacksize. Exiting test.\n");
     exit(0);
   }
