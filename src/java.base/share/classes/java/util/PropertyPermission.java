@@ -469,27 +469,20 @@ final class PropertyPermissionCollection extends PermissionCollection
         String propName = pp.getName();
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.merge(propName, pp,
-            new java.util.function.BiFunction<>() {
-                @Override
-                public PropertyPermission apply(PropertyPermission existingVal,
-                                                PropertyPermission newVal) {
-
-                    int oldMask = existingVal.getMask();
-                    int newMask = newVal.getMask();
-                    if (oldMask != newMask) {
-                        int effective = oldMask | newMask;
-                        if (effective == newMask) {
-                            return newVal;
-                        }
-                        if (effective != oldMask) {
-                            return new PropertyPermission(propName, effective);
-                        }
+        // permission if applicable.
+        perms.merge(propName, pp, (existingVal, newVal) -> {
+                int oldMask = existingVal.getMask();
+                int newMask = newVal.getMask();
+                if (oldMask != newMask) {
+                    int effective = oldMask | newMask;
+                    if (effective == newMask) {
+                        return newVal;
                     }
-                    return existingVal;
+                    if (effective != oldMask) {
+                        return new PropertyPermission(propName, effective);
+                    }
                 }
+                return existingVal;
             }
         );
 
