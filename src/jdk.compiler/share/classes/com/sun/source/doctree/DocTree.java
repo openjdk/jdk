@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,12 @@ public interface DocTree {
          * representing some invalid text.
          */
         ERRONEOUS,
+
+        /**
+         * Used for instances of {@link EscapeTree}
+         * representing some escaped documentation text.
+         */
+        ESCAPE,
 
         /**
          * Used for instances of {@link ThrowsTree}
@@ -250,7 +256,7 @@ public interface DocTree {
 
         /**
          * Used for instances of {@link TextTree}
-         * representing some documentation text.
+         * representing some plain documentation text.
          */
         TEXT,
 

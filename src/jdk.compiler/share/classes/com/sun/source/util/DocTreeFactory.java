@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import com.sun.source.doctree.DocTypeTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.HiddenTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
@@ -174,6 +175,15 @@ public interface DocTreeFactory {
      * @return an {@code ErroneousTree} object
      */
     ErroneousTree newErroneousTree(String text, Diagnostic<JavaFileObject> diag);
+
+    /**
+     * Creates a new {@code EscapeTree} object, to represent an escaped character.
+     * @param ch the character
+     * @return an {@code EscapeTree} object
+     *
+     * @since 21
+     */
+    EscapeTree newEscapeTree(char ch);
 
     /**
      * Creates a new {@code ThrowsTree} object, to represent an {@code @exception} tag.

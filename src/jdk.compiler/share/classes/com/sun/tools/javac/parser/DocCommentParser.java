@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,10 @@ public class DocCommentParser {
         }
     }
 
+    char peekChar() {
+        return buf[bp < buflen ? bp + 1 : buflen];
+    }
+
     protected List<DCTree> blockContent() {
         return blockContent(Phase.BODY);
     }
@@ -225,8 +229,27 @@ public class DocCommentParser {
 
                 case '@':
                     if (newline) {
-                        addPendingText(trees, lastNonWhite);
-                        break loop;
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            nextChar();
+                            newline = false;
+                            textStart = bp;
+                            break;
+                        } else {
+                            addPendingText(trees, lastNonWhite);
+                            break loop;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        nextChar();
+                        newline = false;
+                        textStart = bp;
+                        break;
                     }
                     // fallthrough
 
@@ -293,10 +316,22 @@ public class DocCommentParser {
         newline = false;
         nextChar();
         if (ch == '@') {
-            addPendingText(list, bp - 2);
-            list.add(inlineTag());
-            textStart = bp;
-            lastNonWhite = -1;
+            if (peekChar() == '@') {
+                if (textStart == -1) {
+                    textStart = bp - 1;
+                }
+                addPendingText(list, bp - 1);
+                nextChar();
+                list.add(m.at(bp - 1).newEscapeTree('@'));
+                nextChar();
+                textStart = -1;
+                lastNonWhite = bp;
+            } else {
+                addPendingText(list, bp - 2);
+                list.add(inlineTag());
+                textStart = bp;
+                lastNonWhite = -1;
+            }
         } else {
             if (textStart == -1)
                 textStart = bp - 1;
@@ -624,8 +659,26 @@ public class DocCommentParser {
                     break;
 
                 case '@':
-                    if (newline)
-                        break loop;
+                    if (newline) {
+                        char peek = peekChar();
+                        if (peek == '@' || peek == '*') {
+                            addPendingText(trees, bp - 1);
+                            nextChar();
+                            trees.add(m.at(bp - 1).newEscapeTree(ch));
+                            nextChar();
+                            newline = false;
+                            textStart = bp;
+                            break;
+                        }
+                    } else if (textStart != -1 && buf[bp - 1] == '*' && peekChar() == '/') {
+                        addPendingText(trees, bp - 1);
+                        nextChar();
+                        trees.add(m.at(bp - 1).newEscapeTree('/'));
+                        nextChar();
+                        newline = false;
+                        textStart = bp;
+                        break;
+                    }
                     // fallthrough
 
                 default:

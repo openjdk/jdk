@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import com.sun.source.doctree.CommentTree;
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
@@ -423,6 +424,11 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitDocComment(DocCommentTree node, Void p) {
                 return node.getBody();
+            }
+
+            @Override
+            public List<? extends DocTree> visitEscape(EscapeTree node, Void p) {
+                return asList(node.getBody());
             }
 
             @Override

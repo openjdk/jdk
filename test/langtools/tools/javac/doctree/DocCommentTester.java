@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,6 +462,11 @@ public class DocCommentTester {
                 return null;
             }
 
+            public Void visitEscape(EscapeTree node, Void p) {
+                header(node, node.getBody());
+                return null;
+            }
+
             public Void visitHidden(HiddenTree node, Void p) {
                 header(node);
                 indent(+1);
@@ -917,7 +922,7 @@ public class DocCommentTester {
          * Maintain contents of at-code and at-literal inline tags.
          */
         String normalize(String s) {
-            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@", ".\n@");
+            String s2 = s.trim().replaceFirst("\\.\\s*\\n *@(?![@*])", ".\n@");
             StringBuilder sb = new StringBuilder();
             Pattern p = Pattern.compile("\\{@(code|literal)( )?");
             Matcher m = p.matcher(s2);
@@ -935,7 +940,7 @@ public class DocCommentTester {
             return s.replaceAll("\\{@docRoot\\s+}", "{@docRoot}")
                     .replaceAll("\\{@inheritDoc\\s+}", "{@inheritDoc}")
                     .replaceAll("(\\{@value\\s+[^}]+)\\s+(})", "$1$2")
-                    .replaceAll("\n[ \t]+@", "\n@");
+                    .replaceAll("\n[ \t]+@(?![@*])", "\n@");
         }
 
         int copyLiteral(String s, int start, StringBuilder sb) {
