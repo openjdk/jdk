@@ -289,6 +289,10 @@ void ShenandoahControlThread::run_service() {
             break;
           }
           case stw_full: {
+            if (age_period-- == 0) {
+              heap->set_aging_cycle(true);
+              age_period = ShenandoahAgingCyclePeriod - 1;
+            }
             service_stw_full_cycle(cause);
             break;
           }

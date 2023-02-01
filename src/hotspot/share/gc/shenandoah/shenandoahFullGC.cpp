@@ -597,7 +597,11 @@ public:
 
       // After full gc compaction, all regions have age 0.  Embed the region's age into the object's age in order to preserve
       // tenuring progress.
-      _heap->increase_object_age(p, from_region_age + 1);
+      if (_heap->is_aging_cycle()) {
+        _heap->increase_object_age(p, from_region_age + 1);
+      } else {
+        _heap->increase_object_age(p, from_region_age);
+      }
 
       if (_young_compact_point + obj_size > _young_to_region->end()) {
         ShenandoahHeapRegion* new_to_region;
