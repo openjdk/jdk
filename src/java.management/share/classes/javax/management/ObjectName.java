@@ -2016,12 +2016,21 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     }
 
     private final boolean matchDomains(ObjectName name) {
+        boolean useOptimized = (this.getClass() == ObjectName.class) &&
+                               (name.getClass() == ObjectName.class);
+
         if (isDomainPattern()) {
             // wildmatch domains
             // This ObjectName is the pattern
             // The other ObjectName is the string.
+            if (useOptimized)
+                return Util.wildmatch(name._canonicalName, _canonicalName,
+                           0, name.getDomainLength(), 0, getDomainLength());
             return Util.wildmatch(name.getDomain(),getDomain());
         }
+        if (useOptimized)
+            return getDomainLength() == name.getDomainLength() &&
+                   _canonicalName.regionMatches(0, name._canonicalName, 0, getDomainLength());
         return getDomain().equals(name.getDomain());
     }
 
