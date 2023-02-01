@@ -85,10 +85,14 @@ public class TestMemoryWithCgroupV1 {
         // capabilities or the cgroup is not mounted. Memory limited without swap."
         // we only have Memory and Swap Limit is: <huge integer> in the output
         try {
-            out.shouldContain("Memory and Swap Limit is: " + expectedReadLimit)
-                .shouldContain(
+            if (out.getOutput().contains("memory_and_swap_limit_in_bytes: not supported")) {
+                System.out.println("memory_and_swap_limit_in_bytes not supported, avoiding Memory and Swap Limit check");
+            } else {
+                out.shouldContain("Memory and Swap Limit is: " + expectedReadLimit)
+                    .shouldContain(
                         "Memory and Swap Limit has been reset to " + expectedResetLimit + " because swappiness is 0")
-                .shouldContain("Memory & Swap Limit: " + expectedLimit);
+                    .shouldContain("Memory & Swap Limit: " + expectedLimit);
+            }
         } catch (RuntimeException ex) {
             System.out.println("Expected Memory and Swap Limit output missing.");
             System.out.println("You may need to add 'cgroup_enable=memory swapaccount=1' to the Linux kernel boot parameters.");

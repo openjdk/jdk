@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -62,8 +63,8 @@ public final class Utils {
                     MethodType.methodType(boolean.class, byte.class));
             BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findVirtual(MemorySegment.class, "address",
-                    MethodType.methodType(long.class));
+            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
+                    MethodType.methodType(long.class, MemorySegment.class));
             LONG_TO_ADDRESS_SAFE = lookup.findStatic(Utils.class, "longToAddressSafe",
                     MethodType.methodType(MemorySegment.class, long.class));
             LONG_TO_ADDRESS_UNSAFE = lookup.findStatic(Utils.class, "longToAddressUnsafe",

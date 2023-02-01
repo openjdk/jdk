@@ -55,7 +55,7 @@ import jtreg.SkippedException;
 public class TestSearchScript extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestSearchScript tester = new TestSearchScript();
+        var tester = new TestSearchScript();
         tester.runTests();
     }
 

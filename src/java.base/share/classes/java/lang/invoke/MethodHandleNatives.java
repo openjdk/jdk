@@ -52,8 +52,6 @@ class MethodHandleNatives {
     static native void expand(MemberName self);
     static native MemberName resolve(MemberName self, Class<?> caller, int lookupMode,
             boolean speculativeResolve) throws LinkageError, ClassNotFoundException;
-    static native int getMembers(Class<?> defc, String matchName, String matchSig,
-            int matchFlags, Class<?> caller, int skip, MemberName[] results);
 
     /// Field layout queries parallel to jdk.internal.misc.Unsafe:
     static native long objectFieldOffset(MemberName self);  // e.g., returns vmindex
@@ -119,10 +117,7 @@ class MethodHandleNatives {
             MN_CALLER_SENSITIVE    = 0x00100000, // @CallerSensitive annotation detected
             MN_TRUSTED_FINAL       = 0x00200000, // trusted final field
             MN_REFERENCE_KIND_SHIFT = 24, // refKind
-            MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
-            // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-            MN_SEARCH_SUPERCLASSES = 0x00100000,
-            MN_SEARCH_INTERFACES   = 0x00200000;
+            MN_REFERENCE_KIND_MASK = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT;
 
         /**
          * Constant pool reference-kind codes, as used by CONSTANT_MethodHandle CP entries.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import jdk.internal.util.ArraysSupport;
  */
 public class BufferedInputStream extends FilterInputStream {
 
-    private static int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
 
     /**
      * As this class is used early during bootstrap, it's motivated to use
@@ -342,7 +342,7 @@ public class BufferedInputStream extends FilterInputStream {
      *
      * </ul> If the first {@code read} on the underlying stream returns
      * {@code -1} to indicate end-of-file then this method returns
-     * {@code -1}.  Otherwise this method returns the number of bytes
+     * {@code -1}.  Otherwise, this method returns the number of bytes
      * actually read.
      *
      * <p> Subclasses of this class are encouraged, but not required, to

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,15 +73,12 @@ class MutableNUMASpace : public MutableSpace {
 
     struct SpaceStats {
       size_t _local_space, _remote_space, _unbiased_space, _uncommited_space;
-      size_t _large_pages, _small_pages;
 
       SpaceStats() {
         _local_space = 0;
         _remote_space = 0;
         _unbiased_space = 0;
         _uncommited_space = 0;
-        _large_pages = 0;
-        _small_pages = 0;
       }
     };
 
@@ -91,7 +88,7 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(NULL) {
+    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
@@ -201,7 +198,7 @@ class MutableNUMASpace : public MutableSpace {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkerThreads* pretouch_workers = NULL);
+                          WorkerThreads* pretouch_workers = nullptr);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
@@ -221,12 +218,12 @@ class MutableNUMASpace : public MutableSpace {
   virtual size_t free_in_words() const;
 
   using MutableSpace::capacity_in_words;
-  virtual size_t capacity_in_words(Thread* thr) const;
+
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging

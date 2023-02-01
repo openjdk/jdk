@@ -3129,41 +3129,50 @@ public final class String
             (ch < Character.MIN_HIGH_SURROGATE ||
              ch > Character.MAX_LOW_SURROGATE))
         {
-            int off = 0;
-            int next = 0;
-            boolean limited = limit > 0;
-            ArrayList<String> list = new ArrayList<>();
-            while ((next = indexOf(ch, off)) != -1) {
-                if (!limited || list.size() < limit - 1) {
-                    list.add(substring(off, next));
-                    off = next + 1;
-                } else {    // last one
-                    //assert (list.size() == limit - 1);
-                    int last = length();
-                    list.add(substring(off, last));
-                    off = last;
-                    break;
-                }
-            }
-            // If no match was found, return this
-            if (off == 0)
-                return new String[]{this};
-
-            // Add remaining segment
-            if (!limited || list.size() < limit)
-                list.add(substring(off, length()));
-
-            // Construct result
-            int resultSize = list.size();
-            if (limit == 0) {
-                while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
-                    resultSize--;
-                }
-            }
-            String[] result = new String[resultSize];
-            return list.subList(0, resultSize).toArray(result);
+            // All the checks above can potentially be constant folded by
+            // a JIT/AOT compiler when the regex is a constant string.
+            // That requires method inlining of the checks, which is only
+            // possible when the actual split logic is in a separate method
+            // because the large split loop can usually not be inlined.
+            return split(ch, limit);
         }
         return Pattern.compile(regex).split(this, limit);
+    }
+
+    private String[] split(char ch, int limit) {
+        int off = 0;
+        int next = 0;
+        boolean limited = limit > 0;
+        ArrayList<String> list = new ArrayList<>();
+        while ((next = indexOf(ch, off)) != -1) {
+            if (!limited || list.size() < limit - 1) {
+                list.add(substring(off, next));
+                off = next + 1;
+            } else {    // last one
+                //assert (list.size() == limit - 1);
+                int last = length();
+                list.add(substring(off, last));
+                off = last;
+                break;
+            }
+        }
+        // If no match was found, return this
+        if (off == 0)
+            return new String[]{this};
+
+        // Add remaining segment
+        if (!limited || list.size() < limit)
+            list.add(substring(off, length()));
+
+        // Construct result
+        int resultSize = list.size();
+        if (limit == 0) {
+            while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
+                resultSize--;
+            }
+        }
+        String[] result = new String[resultSize];
+        return list.subList(0, resultSize).toArray(result);
     }
 
     /**
@@ -4067,9 +4076,9 @@ public final class String
 
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
-     * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
-     * point</a> is passed through uninterpreted.
+     * from this sequence.  Any char which maps to a {@linkplain
+     * Character##unicode surrogate code point} is passed through
+     * uninterpreted.
      *
      * @return an IntStream of char values from this sequence
      * @since 9

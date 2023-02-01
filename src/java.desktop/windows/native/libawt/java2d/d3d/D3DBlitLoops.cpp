@@ -55,77 +55,7 @@ extern "C" BlitFunc AnyIntIsomorphicCopy;
 extern "C" BlitFunc ByteIndexedToIntArgbConvert;
 extern "C" BlitFunc ByteIndexedToIntArgbPreConvert;
 
-#define GETMIN(v1, v2)    (((v1) > (t=(v2))) && ((v1) = t))
-#define GETMAX(v1, v2)    (((v1) < (t=(v2))) && ((v1) = t))
-
-#ifdef D3D_PPL_DLL
-
-JNIEXPORT void JNICALL
-SurfaceData_IntersectBounds(SurfaceDataBounds *dst, SurfaceDataBounds *src)
-{
-    int t;
-    GETMAX(dst->x1, src->x1);
-    GETMAX(dst->y1, src->y1);
-    GETMIN(dst->x2, src->x2);
-    GETMIN(dst->y2, src->y2);
-}
-
-JNIEXPORT void JNICALL
-SurfaceData_IntersectBoundsXYXY(SurfaceDataBounds *bounds,
-                                jint x1, jint y1, jint x2, jint y2)
-{
-    int t;
-    GETMAX(bounds->x1, x1);
-    GETMAX(bounds->y1, y1);
-    GETMIN(bounds->x2, x2);
-    GETMIN(bounds->y2, y2);
-}
-
-JNIEXPORT void JNICALL
-SurfaceData_IntersectBoundsXYWH(SurfaceDataBounds *bounds,
-                                jint x, jint y, jint w, jint h)
-{
-    w = (w <= 0) ? x : x+w;
-    if (w < x) {
-        w = 0x7fffffff;
-    }
-    if (bounds->x1 < x) {
-        bounds->x1 = x;
-    }
-    if (bounds->x2 > w) {
-        bounds->x2 = w;
-    }
-    h = (h <= 0) ? y : y+h;
-    if (h < y) {
-        h = 0x7fffffff;
-    }
-    if (bounds->y1 < y) {
-        bounds->y1 = y;
-    }
-    if (bounds->y2 > h) {
-        bounds->y2 = h;
-    }
-}
-
-JNIEXPORT void JNICALL
-SurfaceData_IntersectBlitBounds(SurfaceDataBounds *src,
-                                SurfaceDataBounds *dst,
-                                jint dx, jint dy)
-{
-    int t;
-    GETMAX(dst->x1, src->x1 + dx);
-    GETMAX(dst->y1, src->y1 + dy);
-    GETMIN(dst->x2, src->x2 + dx);
-    GETMIN(dst->y2, src->y2 + dy);
-    GETMAX(src->x1, dst->x1 - dx);
-    GETMAX(src->y1, dst->y1 - dy);
-    GETMIN(src->x2, dst->x2 - dx);
-    GETMIN(src->y2, dst->y2 - dy);
-}
-
-#endif /* D3D_PPL_DLL */
-
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBL_CopySurfaceToIntArgbImage(IDirect3DSurface9 *pSurface,
                                 SurfaceDataRasInfo *pDstInfo,
                                 jint srcx, jint srcy,
@@ -199,7 +129,7 @@ D3DBL_CopySurfaceToIntArgbImage(IDirect3DSurface9 *pSurface,
     return pSurface->UnlockRect();
 }
 
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBL_CopyImageToIntXrgbSurface(SurfaceDataRasInfo *pSrcInfo,
                                 int srctype,
                                 D3DResource *pDstSurfaceRes,
@@ -558,7 +488,7 @@ D3DBlitTextureToSurface(D3DContext *d3dc,
  * into the appropriate location in the destination surface.
  *
  */
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBlitToSurfaceViaTexture(D3DContext *d3dc, SurfaceDataRasInfo *srcInfo,
                            int srctype, D3DSDOps *srcOps,
                            jboolean swsurface, jint hint,
@@ -687,7 +617,7 @@ D3DBlitSwToTexture(D3DContext *d3dc,
  * Surface->Surface inner loops will be invoked, depending on the transform
  * state.
  */
-D3DPIPELINE_API HRESULT
+HRESULT
 D3DBlitLoops_IsoBlit(JNIEnv *env,
                      D3DContext *d3dc, jlong pSrcOps, jlong pDstOps,
                      jboolean xform, jint hint,

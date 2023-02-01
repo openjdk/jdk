@@ -91,11 +91,12 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
 
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  eden()->oop_since_save_marks_iterate(cl);
-  to()->oop_since_save_marks_iterate(cl);
-  from()->oop_since_save_marks_iterate(cl);
+  // No allocation in eden and from spaces, so no iteration required.
+  assert(eden()->saved_mark_at_top(), "inv");
+  assert(from()->saved_mark_at_top(), "inv");
 
-  save_marks();
+  to()->oop_since_save_marks_iterate(cl);
+  to()->set_saved_mark();
 }
 
 #endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
