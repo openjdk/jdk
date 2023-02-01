@@ -131,7 +131,6 @@ class CallInfo;
 
 class ConstantPoolCacheEntry {
   friend class VMStructs;
-  friend class constantPoolCacheKlass;
   friend class ConstantPool;
   friend class InterpreterRuntime;
 
@@ -444,7 +443,7 @@ class ConstantPoolCache: public MetaspaceObj {
   MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
+  void set_archived_references(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
   inline objArrayOop resolved_references();
@@ -474,7 +473,6 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
-  friend class constantPoolCacheKlass;
   friend class ConstantPoolCacheEntry;
 
  public:

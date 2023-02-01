@@ -35,6 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.LoopArrayIndexComputeTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
@@ -90,9 +91,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusConstant() {
         int[] res = new int[SIZE];
@@ -103,7 +104,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0"})
@@ -117,9 +118,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexMinusInvariant() {
         int[] res = new int[SIZE];
@@ -131,7 +132,7 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
         counts = {IRNode.MUL_V, ">0"})

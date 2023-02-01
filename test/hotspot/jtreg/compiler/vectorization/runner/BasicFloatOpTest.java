@@ -35,6 +35,7 @@
  *                   -XX:+WhiteBoxAPI
  *                   compiler.vectorization.runner.BasicFloatOpTest
  *
+ * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64")
  * @requires vm.compiler2.enabled & vm.flagless
  */
 
@@ -140,7 +141,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.MAX_V, ">0"})
     public float[] vectorMax() {
         float[] res = new float[SIZE];
@@ -151,7 +152,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.MIN_V, ">0"})
     public float[] vectorMin() {
         float[] res = new float[SIZE];
@@ -162,7 +163,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulAdd() {
         float[] res = new float[SIZE];
@@ -173,7 +176,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulSub1() {
         float[] res = new float[SIZE];
@@ -184,7 +189,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorMulSub2() {
         float[] res = new float[SIZE];
@@ -195,7 +202,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulAdd1() {
         float[] res = new float[SIZE];
@@ -206,7 +215,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulAdd2() {
         float[] res = new float[SIZE];
@@ -217,7 +228,9 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "fma", "true"},
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        counts = {IRNode.FMA_V, ">0"})
+    @IR(applyIfCPUFeatureAnd = {"fma", "true", "avx", "true"},
         counts = {IRNode.FMA_V, ">0"})
     public float[] vectorNegateMulSub() {
         float[] res = new float[SIZE];

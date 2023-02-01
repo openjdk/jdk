@@ -933,7 +933,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  static void start_codecache_marking_cycle_if_inactive();
+  static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
+  static void finish_codecache_marking_cycle();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
@@ -1272,8 +1273,6 @@ public:
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
   void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.
@@ -1329,10 +1328,6 @@ public:
 
   // Override
   void print_tracing_info() const override;
-
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

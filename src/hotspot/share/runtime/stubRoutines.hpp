@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static UnsafeCopyMemory* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(NULL), _end_pc(NULL), _error_exit_pc(NULL) {}
+  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -117,7 +117,7 @@ class UnsafeCopyMemoryMark : public StackObj {
   UnsafeCopyMemory*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = NULL);
+  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
   ~UnsafeCopyMemoryMark();
 };
 
@@ -270,8 +270,8 @@ class StubRoutines: AllStatic {
 
   static bool contains(address addr) {
     return
-      (_code1 != NULL && _code1->blob_contains(addr)) ||
-      (_code2 != NULL && _code2->blob_contains(addr)) ;
+      (_code1 != nullptr && _code1->blob_contains(addr)) ||
+      (_code2 != nullptr && _code2->blob_contains(addr)) ;
   }
 
   static RuntimeBlob* code1() { return _code1; }
