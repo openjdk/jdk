@@ -647,6 +647,9 @@ const int ObjectAlignmentInBytes = 8;
           "Show exception messages from RuntimeExceptions that contain "    \
           "snippets of the failing code. Disable this to improve privacy.") \
                                                                             \
+  product(bool, ForceLoadDisassembler, false, MANAGEABLE,                   \
+          "Always loading hotspot disassembler")                            \
+                                                                            \
   product(bool, PrintWarnings, true,                                        \
           "Print JVM warnings to output stream")                            \
                                                                             \

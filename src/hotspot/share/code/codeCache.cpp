@@ -66,6 +66,7 @@
 #include "utilities/align.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/xmlstream.hpp"
+#include "compiler/disassembler.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compilation.hpp"
 #include "c1/c1_Compiler.hpp"
@@ -1794,7 +1795,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
   }
 }
 
-void CodeCache::print_codelist(outputStream* st) {
+void CodeCache::print_codelist(outputStream* st, char* decode_method_name) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
@@ -1806,6 +1807,14 @@ void CodeCache::print_codelist(outputStream* st) {
                  cm->compile_id(), cm->comp_level(), cm->get_state(),
                  method_name,
                  (intptr_t)cm->header_begin(), (intptr_t)cm->code_begin(), (intptr_t)cm->code_end());
+    if (decode_method_name != NULL &&
+        strlen(decode_method_name) > 0 &&
+        strstr(method_name, decode_method_name) != NULL) {
+      st->print_cr("[Disassembly]");
+      Disassembler::decode((nmethod*)cm, st);
+      st->bol();
+      st->print_cr("[/Disassembly]");
+    }
   }
 }
 

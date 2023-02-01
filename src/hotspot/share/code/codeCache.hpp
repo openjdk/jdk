@@ -228,7 +228,7 @@ class CodeCache : AllStatic {
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 
   // Dcmd (Diagnostic commands)
-  static void print_codelist(outputStream* st);
+  static void print_codelist(outputStream* st, char* decode_method_name);
   static void print_layout(outputStream* st);
 
   // The full limits of the codeCache

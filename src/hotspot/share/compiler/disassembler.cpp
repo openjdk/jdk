@@ -769,8 +769,9 @@ void* Disassembler::dll_load(char* buf, int buflen, int offset, char* ebuf, int 
 
 bool Disassembler::load_library(outputStream* st) {
   // Do not try to load multiple times. Failed once -> fails always.
-  // To force retry in debugger: assign _tried_to_load_library=0
-  if (_tried_to_load_library) {
+  // To force retry in debugger: assign _tried_to_load_library=0 or
+  // turn on ForceLoadDisassembler in the fly
+  if (!ForceLoadDisassembler && _tried_to_load_library) {
     return _library_usable;
   }
 

@@ -586,9 +586,11 @@ public:
 };
 #endif // LINUX
 
-class CodeListDCmd : public DCmd {
+class CodeListDCmd : public DCmdWithParser {
+private:
+  DCmdArgument<char*> _decode;
 public:
-  CodeListDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  CodeListDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.codelist";
   }

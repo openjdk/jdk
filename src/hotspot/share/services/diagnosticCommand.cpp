@@ -827,8 +827,14 @@ void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&printCompileQueueOp);
 }
 
+CodeListDCmd::CodeListDCmd(outputStream* output, bool heap) :
+  DCmdWithParser(output, heap),
+  _decode("decode", "Decode the instructions of specified compiled method", "STRING", false, "") {
+  _dcmdparser.add_dcmd_option(&_decode);
+}
+
 void CodeListDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::print_codelist(output());
+  CodeCache::print_codelist(output(), _decode.value());
 }
 
 void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {

@@ -82,10 +82,7 @@ class Disassembler : public AbstractDisassembler {
   // about which decoding format is used.
   // We can also enforce using the abstract disassembler.
   static bool is_abstract() {
-    if (!_tried_to_load_library) {
-      load_library();
-    }
-    return ! _library_usable;
+    return !load_library();
   }
 
   // Check out if we are doing a live disassembly or a post-mortem
