@@ -2399,7 +2399,7 @@ address StubGenerator::generate_base64_decodeBlock() {
   // If AVX512 VBMI not supported, just compile non-AVX code
   if(VM_Version::supports_avx512_vbmi() &&
      VM_Version::supports_avx512bw()) {
-    __ cmpl(length, 128);     // 128-bytes is break-even for AVX-512
+    __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
     __ jcc(Assembler::lessEqual, L_bruteForce);
 
     __ cmpl(isMIME, 0);
