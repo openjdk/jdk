@@ -47,7 +47,7 @@ import org.openide.util.lookup.InstanceContent;
  */
 public class FilterNode extends CheckNode implements LookupListener, ChangedListener<FilterTopComponent> {
 
-    private Filter filter;
+    private final Filter filter;
     private Lookup.Result<FilterChain> result;
 
     public FilterNode(Filter filter) {

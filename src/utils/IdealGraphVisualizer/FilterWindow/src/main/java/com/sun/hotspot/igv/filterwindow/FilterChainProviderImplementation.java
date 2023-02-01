@@ -38,9 +38,4 @@ public class FilterChainProviderImplementation implements FilterChainProvider {
     public FilterChain getFilterChain() {
         return FilterTopComponent.findInstance().getFilterChain();
     }
-
-    @Override
-    public FilterChain getSequence() {
-        return FilterTopComponent.findInstance().getSequence();
-    }
 }

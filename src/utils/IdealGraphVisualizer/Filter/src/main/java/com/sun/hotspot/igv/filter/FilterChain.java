@@ -37,10 +37,10 @@ import java.util.List;
  */
 public class FilterChain implements ChangedEventProvider<FilterChain> {
 
-    private List<Filter> filters;
-    private transient ChangedEvent<FilterChain> changedEvent;
+    private final List<Filter> filters;
+    private final transient ChangedEvent<FilterChain> changedEvent;
 
-    private ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
+    private final ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
         @Override
         public void changed(Filter source) {
             changedEvent.fire();
@@ -62,11 +62,6 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         return changedEvent;
     }
 
-    public Filter getFilterAt(int index) {
-        assert index >= 0 && index < filters.size();
-        return filters.get(index);
-    }
-
     public void apply(Diagram d) {
         for (Filter f : filters) {
             f.apply(d);
@@ -81,7 +76,6 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
                 applied.add(f);
             }
         }
-
 
         for (Filter f : filters) {
             if (!applied.contains(f)) {

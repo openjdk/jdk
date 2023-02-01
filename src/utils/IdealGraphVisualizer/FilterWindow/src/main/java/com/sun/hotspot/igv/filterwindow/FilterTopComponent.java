@@ -32,8 +32,6 @@ import com.sun.hotspot.igv.filter.FilterSetting;
 import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Level;
@@ -67,7 +65,7 @@ import org.openide.windows.WindowManager;
  *
  * @author Thomas Wuerthinger
  */
-public final class FilterTopComponent extends TopComponent implements LookupListener, ExplorerManager.Provider {
+public final class FilterTopComponent extends TopComponent implements ExplorerManager.Provider {
 
     private static FilterTopComponent instance;
     public static final String FOLDER_ID = "Filters";
@@ -80,8 +78,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     private final FilterChain filterChain;
     private final FilterChain sequence;
     private final ScriptEngine engine;
-    private Lookup.Result<FilterChain> result;
-    private final JComboBox comboBox;
+    private final JComboBox<FilterSetting> comboBox;
     private final List<FilterSetting> filterSettings;
     private final FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
@@ -105,13 +102,10 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     }
 
     private void comboBoxSelectionChanged() {
-
-        Object o = comboBox.getSelectedItem();
-        if (o == null) {
+        FilterSetting s = getFilterSetting();
+        if (s == null) {
             return;
         }
-        assert o instanceof FilterSetting;
-        FilterSetting s = (FilterSetting) o;
 
         if (s != customFilterSetting) {
             FilterChain chain = getFilterChain();
@@ -150,6 +144,14 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         }
 
         this.updateComboBoxSelection();
+    }
+
+    public void setFilterSetting(FilterSetting filterSetting) {
+        comboBox.setSelectedItem(filterSetting);
+    }
+
+    public FilterSetting getFilterSetting() {
+        return (FilterSetting) comboBox.getSelectedItem();
     }
 
     public void addFilterSetting() {
@@ -347,7 +349,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
         toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
 
-        comboBox = new JComboBox();
+        comboBox = new JComboBox<>();
         toolBar.add(comboBox);
         this.add(toolBar, BorderLayout.NORTH);
         toolBar.add(SaveFilterSettingsAction.get(SaveFilterSettingsAction.class));
@@ -363,7 +365,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
         updateComboBox();
 
         comboBox.addActionListener(l -> comboBoxSelectionChanged());
-        setChain(filterChain);
+        updateComboBoxSelection();
     }
 
     public void newFilter() {
@@ -392,7 +394,7 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     private static class FilterChangedListener implements ChangedListener<Filter> {
 
         private FileObject fileObject;
-        private CustomFilter filter;
+        private final CustomFilter filter;
 
         public FilterChangedListener(FileObject fo, CustomFilter cf) {
             fileObject = fo;
@@ -562,28 +564,6 @@ public final class FilterTopComponent extends TopComponent implements LookupList
     @Override
     public ExplorerManager getExplorerManager() {
         return manager;
-    }
-
-    @Override
-    public void componentOpened() {
-        Lookup.Template<FilterChain> tpl = new Lookup.Template<>(FilterChain.class);
-        result = Utilities.actionsGlobalContext().lookup(tpl);
-        result.addLookupListener(this);
-    }
-
-    @Override
-    public void componentClosed() {
-        result.removeLookupListener(this);
-        result = null;
-    }
-
-    @Override
-    public void resultChanged(LookupEvent lookupEvent) {
-        setChain(Utilities.actionsGlobalContext().lookup(FilterChain.class));
-    }
-
-    public void setChain(FilterChain chain) {
-        updateComboBoxSelection();
     }
 
     private FileObject getFileObject(CustomFilter cf) {
