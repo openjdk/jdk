@@ -1504,13 +1504,15 @@ public class Resolve {
                 sym = findField(env1, env1.enclClass.sym.type, name, env1.enclClass.sym);
             }
             if (sym.exists()) {
-                if (staticOnly &&
-                        sym.kind == VAR &&
+                if (sym.kind == VAR &&
                         sym.owner.kind == TYP &&
-                        (sym.flags() & STATIC) == 0)
-                    return new StaticError(sym);
-                else
-                    return sym;
+                        (sym.flags() & STATIC) == 0) {
+                    if (staticOnly)
+                        return new StaticError(sym);
+                    if (env1.info.ctorPrologue && (sym.flags_field & SYNTHETIC) == 0)
+                        return new RefBeforeCtorCalledError(sym);
+                }
+                return sym;
             } else {
                 bestSoFar = bestOf(bestSoFar, sym);
             }
@@ -2007,11 +2009,15 @@ public class Resolve {
                     env1, env1.enclClass.sym.type, name, argtypes, typeargtypes,
                     allowBoxing, useVarargs);
                 if (sym.exists()) {
-                    if (staticOnly &&
-                        sym.kind == MTH &&
-                        sym.owner.kind == TYP &&
-                        (sym.flags() & STATIC) == 0) return new StaticError(sym);
-                    else return sym;
+                    if (sym.kind == MTH &&
+                            sym.owner.kind == TYP &&
+                            (sym.flags() & STATIC) == 0) {
+                        if (staticOnly)
+                            return new StaticError(sym);
+                        if (env1.info.ctorPrologue && env1 == env)
+                            return new RefBeforeCtorCalledError(sym);
+                    }
+                    return sym;
                 } else {
                     bestSoFar = bestOf(bestSoFar, sym);
                 }
@@ -3757,7 +3763,10 @@ public class Resolve {
             if (env1.enclClass.sym == c) {
                 Symbol sym = env1.info.scope.findFirst(name);
                 if (sym != null) {
-                    if (staticOnly) sym = new StaticError(sym);
+                    if (staticOnly)
+                        sym = new StaticError(sym);
+                    else if (env1.info.ctorPrologue)
+                        sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
                 }
@@ -3771,6 +3780,8 @@ public class Resolve {
             //this might be a default super call if one of the superinterfaces is 'c'
             for (Type t : pruneInterfaces(env.enclClass.type)) {
                 if (t.tsym == c) {
+                    if (env.info.ctorPrologue)
+                        log.error(pos, Errors.CantRefBeforeCtorCalled(name));
                     env.info.defaultSuperCallSite = t;
                     return new VarSymbol(0, names._super,
                             types.asSuper(env.enclClass.type, c), env.enclClass.sym);
@@ -3872,8 +3883,8 @@ public class Resolve {
         Type thisType = (t.tsym.owner.kind.matches(KindSelector.VAL_MTH)
                          ? resolveSelf(pos, env, t.getEnclosingType().tsym, names._this)
                          : resolveSelfContaining(pos, env, t.tsym, isSuperCall)).type;
-        if (env.info.isSelfCall && thisType.tsym == env.enclClass.sym) {
-            log.error(pos, Errors.CantRefBeforeCtorCalled("this"));
+        if ((env.info.isSelfCall || env.info.ctorPrologue) && thisType.tsym == env.enclClass.sym) {
+            log.error(pos, Errors.CantRefBeforeCtorCalled(names._this));
         }
         return thisType;
     }
@@ -4585,6 +4596,31 @@ public class Resolve {
                 : sym);
             return diags.create(dkind, log.currentSource(), pos,
                     "non-static.cant.be.ref", kindName(sym), errSym);
+        }
+    }
+
+    /**
+     * Specialization of {@link StaticError} for accesses in a constructor prologue.
+     */
+    class RefBeforeCtorCalledError extends InvalidSymbolError {
+
+        RefBeforeCtorCalledError(Symbol sym) {
+            super(STATICERR, sym, "prologue error");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                DiagnosticPosition pos,
+                Symbol location,
+                Type site,
+                Name name,
+                List<Type> argtypes,
+                List<Type> typeargtypes) {
+            Symbol errSym = ((sym.kind == TYP && sym.type.hasTag(CLASS))
+                ? types.erasure(sym.type).tsym
+                : sym);
+            return diags.create(dkind, log.currentSource(), pos,
+                    "cant.ref.before.ctor.called", errSym);
         }
     }
 

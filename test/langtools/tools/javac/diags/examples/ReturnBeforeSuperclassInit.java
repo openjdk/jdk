@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,12 @@
  * questions.
  */
 
-// key: compiler.err.call.must.be.first.stmt.in.ctor
+// key: compiler.err.return.before.superclass.initialized
 
-class CallMustBeFirst {
-    CallMustBeFirst() {
-        int i = 0;
+class ReturnBeforeSuperclassInit {
+    ReturnBeforeSuperclassInit(boolean maybe) {
+        if (maybe)
+            return;
         super();
     }
 }

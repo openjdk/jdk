@@ -938,6 +938,8 @@ public class Attr extends JCTree.Visitor {
         Optional<ArgumentAttr.LocalCacheContext> localCacheContext =
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
+        boolean ctorProloguePrev = env.info.ctorPrologue;
+        env.info.ctorPrologue = false;
         try {
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
@@ -973,6 +975,7 @@ public class Attr extends JCTree.Visitor {
             }
         } finally {
             localCacheContext.ifPresent(LocalCacheContext::leave);
+            env.info.ctorPrologue = ctorProloguePrev;
         }
     }
 
@@ -982,6 +985,8 @@ public class Attr extends JCTree.Visitor {
 
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
+        boolean ctorProloguePrev = env.info.ctorPrologue;
+        env.info.ctorPrologue = false;
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             deferredLintHandler.flush(tree.pos());
@@ -1045,6 +1050,9 @@ public class Attr extends JCTree.Visitor {
                 chk.validate(tree.recvparam, newEnv);
             }
 
+            // Is this method a constructor?
+            boolean isConstructor = tree.name == names.init;
+
             if (env.enclClass.sym.isRecord() && tree.sym.owner.kind == TYP) {
                 // lets find if this method is an accessor
                 Optional<? extends RecordComponent> recordComponent = env.enclClass.sym.getRecordComponents().stream()
@@ -1072,14 +1080,11 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
 
-                if (tree.name == names.init) {
+                if (isConstructor) {
                     // if this a constructor other than the canonical one
                     if ((tree.sym.flags_field & RECORD) == 0) {
-                        JCMethodInvocation app = TreeInfo.firstConstructorCall(tree);
-                        if (app == null ||
-                                TreeInfo.name(app.meth) != names._this ||
-                                !checkFirstConstructorStat(app, tree, false)) {
-                            log.error(tree, Errors.FirstStatementMustBeCallToAnotherConstructor(env.enclClass.sym));
+                        if (!TreeInfo.hasConstructorCall(tree, names._this)) {
+                            log.error(tree, Errors.NonCanonicalConstructorInvokeAnotherConstructor(env.enclClass.sym));
                         }
                     } else {
                         // but if it is the canonical:
@@ -1105,11 +1110,7 @@ public class Attr extends JCTree.Visitor {
                                 );
                             }
 
-                            JCMethodInvocation app = TreeInfo.firstConstructorCall(tree);
-                            if (app != null &&
-                                    (TreeInfo.name(app.meth) == names._this ||
-                                            TreeInfo.name(app.meth) == names._super) &&
-                                    checkFirstConstructorStat(app, tree, false)) {
+                            if (TreeInfo.hasAnyConstructorCall(tree)) {
                                 log.error(tree, Errors.InvalidCanonicalConstructorInRecord(
                                         Fragments.Canonical, env.enclClass.sym.name,
                                         Fragments.CanonicalMustNotContainExplicitConstructorInvocation));
@@ -1187,16 +1188,14 @@ public class Attr extends JCTree.Visitor {
                 // Add an implicit super() call unless an explicit call to
                 // super(...) or this(...) is given
                 // or we are compiling class java.lang.Object.
-                if (tree.name == names.init && owner.type != syms.objectType) {
-                    JCBlock body = tree.body;
-                    if (body.stats.isEmpty() ||
-                            TreeInfo.getConstructorInvocationName(body.stats, names) == names.empty) {
-                        JCStatement supCall = make.at(body.pos).Exec(make.Apply(List.nil(),
+                if (isConstructor && owner.type != syms.objectType) {
+                    if (!TreeInfo.hasAnyConstructorCall(tree)) {
+                        JCStatement supCall = make.at(tree.body.pos).Exec(make.Apply(List.nil(),
                                 make.Ident(names._super), make.Idents(List.nil())));
-                        body.stats = body.stats.prepend(supCall);
+                        tree.body.stats = tree.body.stats.prepend(supCall);
                     } else if ((env.enclClass.sym.flags() & ENUM) != 0 &&
                             (tree.mods.flags & GENERATEDCONSTR) == 0 &&
-                            TreeInfo.isSuperCall(body.stats.head)) {
+                            TreeInfo.hasConstructorCall(tree, names._super)) {
                         // enum constructors are not allowed to call super
                         // directly, so make sure there aren't any super calls
                         // in enum constructors, except in the compiler
@@ -1226,6 +1225,9 @@ public class Attr extends JCTree.Visitor {
                 annotate.queueScanTreeAndTypeAnnotate(tree.body, localEnv, m, null);
                 annotate.flush();
 
+                // Start of constructor prologue
+                localEnv.info.ctorPrologue = isConstructor;
+
                 // Attribute method body.
                 attribStat(tree.body, localEnv);
             }
@@ -1235,6 +1237,7 @@ public class Attr extends JCTree.Visitor {
         } finally {
             chk.setLint(prevLint);
             chk.setMethod(prevMethod);
+            env.info.ctorPrologue = ctorProloguePrev;
         }
     }
 
@@ -2492,9 +2495,8 @@ public class Attr extends JCTree.Visitor {
 
         ListBuffer<Type> argtypesBuf = new ListBuffer<>();
         if (isConstructorCall) {
-            // We are seeing a ...this(...) or ...super(...) call.
-            // Check that this is the first statement in a constructor.
-            checkFirstConstructorStat(tree, env.enclMethod, true);
+            // We are seeing a this()/super() call. End of constructor prologue.
+            env.info.ctorPrologue = false;
 
             // Record the fact
             // that this is a constructor call (using isSelfCall).
@@ -2633,26 +2635,6 @@ public class Attr extends JCTree.Visitor {
             } else {
                 return restype;
             }
-        }
-
-        /** Check that given application node appears as first statement
-         *  in a constructor call.
-         *  @param tree          The application node
-         *  @param enclMethod    The enclosing method of the application.
-         *  @param error         Should an error be issued?
-         */
-        boolean checkFirstConstructorStat(JCMethodInvocation tree, JCMethodDecl enclMethod, boolean error) {
-            if (enclMethod != null && enclMethod.name == names.init) {
-                JCBlock body = enclMethod.body;
-                if (body.stats.head.hasTag(EXEC) &&
-                    ((JCExpressionStatement) body.stats.head).expr == tree)
-                    return true;
-            }
-            if (error) {
-                log.error(tree.pos(),
-                        Errors.CallMustBeFirstStmtInCtor(TreeInfo.name(tree.meth)));
-            }
-            return false;
         }
 
         /** Obtain a method type with given argument types.
@@ -5604,6 +5586,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(l.head.pos(), Errors.IclsCantHaveStaticDecl(c));
             }
         }
+
+        // Check for proper placement of super()/init() calls.
+        chk.checkSuperInitCalls(tree);
 
         // Check for cycles among non-initial constructors.
         chk.checkCyclicConstructors(tree);

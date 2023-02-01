@@ -2256,19 +2256,20 @@ public class Lower extends TreeTranslator {
             tree.defs = tree.defs.prepend(l.head);
             enterSynthetic(tree.pos(), l.head.sym, currentClass.members());
         }
-        // If this$n was accessed, add the field definition and
-        // update initial constructors to initialize it
+        // If this$n was accessed, add the field definition and prepend
+        // initializer code to any super() invocation to initialize it
         if (currentClass.hasOuterInstance() && shouldEmitOuterThis(currentClass)) {
             tree.defs = tree.defs.prepend(otdef);
             enterSynthetic(tree.pos(), otdef.sym, currentClass.members());
 
-           for (JCTree def : tree.defs) {
-                if (TreeInfo.isInitialConstructor(def)) {
-                  JCMethodDecl mdef = (JCMethodDecl) def;
-                  mdef.body.stats = mdef.body.stats.prepend(
-                      initOuterThis(mdef.body.pos, mdef.params.head.sym));
-                }
-            }
+            tree.defs.stream()
+              .filter(TreeInfo::isConstructor)
+              .map(JCMethodDecl.class::cast)
+              .filter(mdef -> TreeInfo.hasConstructorCall(mdef, names._super))
+              .forEach(mdef -> {
+                List<JCStatement> initializer = List.of(initOuterThis(mdef.body.pos, mdef.params.head.sym));
+                TreeInfo.mapSuperCalls(mdef.body, supercall -> make.Block(0, initializer.append(supercall)));
+            });
         }
 
         proxies = prevProxies;
@@ -2731,19 +2732,18 @@ public class Lower extends TreeTranslator {
                 tree.params = tree.params.prepend(otdef);
             }
 
-            // If this is an initial constructor, i.e., it does not start with
-            // this(...), insert initializers for this$n and proxies
-            // before (pre-1.4, after) the call to superclass constructor.
-            JCStatement selfCall = translate(tree.body.stats.head);
+            // Determine whether this constructor has a super() invocation
+            boolean invokesSuper = TreeInfo.hasConstructorCall(tree, names._super);
 
-            List<JCStatement> added = List.nil();
+            // Create initializers for this$n and proxies
+            ListBuffer<JCStatement> added = new ListBuffer<>();
             if (fvs.nonEmpty()) {
                 List<Type> addedargtypes = List.nil();
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
                     m.capturedLocals =
                         m.capturedLocals.prepend((VarSymbol)
                                                 (proxies.get(l.head)));
-                    if (TreeInfo.isInitialConstructor(tree)) {
+                    if (invokesSuper) {
                         added = added.prepend(
                           initField(tree.body.pos, proxies.get(l.head), prevProxies.get(l.head)));
                     }
@@ -2757,13 +2757,18 @@ public class Lower extends TreeTranslator {
                     syms.methodClass);
             }
 
+            // Recursively translate existing local statements
+            tree.body.stats = translate(tree.body.stats);
+
+            // Prepend initializers in front of super() call
+            if (added.nonEmpty()) {
+                List<JCStatement> initializers = added.toList();
+                TreeInfo.mapSuperCalls(tree.body, supercall -> make.Block(0, initializers.append(supercall)));
+            }
+
             // pop local variables from proxy stack
             proxies = prevProxies;
 
-            // recursively translate following local statements and
-            // combine with this- or super-call
-            List<JCStatement> stats = translate(tree.body.stats.tail);
-            tree.body.stats = stats.prepend(selfCall).prependList(added);
             outerThisStack = prevOuterThisStack;
         } else {
             Map<Symbol, Symbol> prevLambdaTranslationMap =

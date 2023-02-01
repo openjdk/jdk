@@ -57,6 +57,10 @@ public class AttrContext {
      */
     boolean constructorArgs = false;
 
+    /** Are we in the 'prologue' part of a constructor, prior to an explicit this()/super()?
+     */
+    boolean ctorPrologue = false;
+
     /** Are we evaluating the selector of a `super' or type name?
      */
     boolean selectSuper = false;
@@ -138,6 +142,7 @@ public class AttrContext {
         info.staticLevel = staticLevel;
         info.isSelfCall = isSelfCall;
         info.constructorArgs = constructorArgs;
+        info.ctorPrologue = ctorPrologue;
         info.selectSuper = selectSuper;
         info.pendingResolutionPhase = pendingResolutionPhase;
         info.lint = lint;
