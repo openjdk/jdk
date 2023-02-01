@@ -330,7 +330,7 @@
   /* Constant Pool Cache */                                                                                                          \
   /***********************/                                                                                                          \
                                                                                                                                      \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             int)                                   \
+  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             intx)                                   \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _f1,                                  Metadata*)                             \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
   volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \

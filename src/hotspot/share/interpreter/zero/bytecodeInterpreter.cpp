@@ -2248,19 +2248,19 @@ run:
 
       CASE(_invokedynamic): {
         if (UseNewIndyCode) {
-          u4 index = Bytes::get_native_u4(pc+1);
-          ResolvedIndyInfo indy_info = cp->resolved_indy_info(index);
+          u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
+          ResolvedIndyInfo* indy_info = cp->resolved_indy_info(index);
           if (!indy_info->is_resolved()) {
             CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                     handle_exception);
-            //cache = cp->constant_pool()->invokedynamic_cp_cache_entry_at(index);
+            indy_info = cp->resolved_indy_info(index); // get resolved entry
           }
-          Method* method = indy_info(index)->method();
+          Method* method = indy_info->method();
           if (VerifyOops) method->verify();
 
           if (indy_info->has_appendix()) {
             constantPoolHandle cp(THREAD, METHOD->constants());
-            SET_STACK_OBJECT(cache->appendix_if_resolved(cp), 0);
+            SET_STACK_OBJECT(cp->resolved_reference_from_indy(index), 0);
             MORE_STACK(1);
           }
 

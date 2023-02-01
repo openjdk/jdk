@@ -612,6 +612,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
     {
       // leave a breadcrumb
       jbyte bad_value = scratch_cp->tag_at(scratch_i).value();
+      ShouldNotReachHere();
     } break;
   } // end switch tag value
 } // end append_entry()

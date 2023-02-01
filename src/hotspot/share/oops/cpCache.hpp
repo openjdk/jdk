@@ -137,7 +137,7 @@ class ConstantPoolCacheEntry {
   friend class InterpreterRuntime;
 
  private:
-  volatile int     _indices;  // constant pool index & rewrite bytecodes
+  volatile intx     _indices;  // constant pool index & rewrite bytecodes
   Metadata* volatile   _f1;       // entry specific metadata field
   volatile intx        _f2;       // entry specific int/metadata field
   volatile intx     _flags;    // flags
@@ -293,8 +293,8 @@ class ConstantPoolCacheEntry {
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method* method_if_resolved(const constantPoolHandle& cpool) const;
-  oop     appendix_if_resolved(const constantPoolHandle& cpool) const;
+  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
+  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -474,6 +474,7 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<ResolvedIndyInfo>* resolved_indy_info()   { return _resolved_indy_info; }
   ResolvedIndyInfo* resolved_indy_info(int index) { return _resolved_indy_info->adr_at(index); }
   int resolved_indy_info_length() const           { return _resolved_indy_info->length();      }
+  // oop resolved_reference_from_indy(int index)
   void print_resolved_indy_info(outputStream* st) const {
     for (int i = 0; i < _resolved_indy_info->length(); i++) {
         _resolved_indy_info->at(i).print_on(st);

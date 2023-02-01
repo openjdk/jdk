@@ -991,7 +991,8 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   if (UseNewIndyCode && resolved_indy_info()) {
     assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-    // resolved_indy_info(index)->print_on(tty);
+    //tty->print_cr("Indy index is %d", index);
+    //resolved_indy_info(index)->print_on(tty);
   }
 
   // The interpreter assembly code does not check byte_2,

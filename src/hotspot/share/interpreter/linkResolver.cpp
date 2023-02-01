@@ -1398,7 +1398,6 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
       assert(resolved_method->can_be_statically_bound(), "cannot override this method");
       selected_method = resolved_method;
     } else {
-      // goes down this path <DELETE THIS COMMENT LATER>
       selected_method = methodHandle(THREAD, recv_klass->method_at_vtable(vtable_index));
     }
   }
@@ -1812,7 +1811,6 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 void LinkResolver::resolve_dynamic_call(CallInfo& result,
                                         BootstrapInfo& bootstrap_specifier,
                                         TRAPS) {
-
   // JSR 292:  this must resolve to an implicitly generated method
   // such as MH.linkToCallSite(*...) or some other call-site shape.
   // The appendix argument is likely to be a freshly-created CallSite.
@@ -1829,10 +1827,6 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       // if it fails this way:  We neither record a successful linkage,
       // nor do we memorize a LE for posterity.
       return;
-    }
-    if (UseNewIndyCode) {
-      // I forget why this is here
-      // ShouldNotReachHere();
     }
     // JVMS 5.4.3 says: If an attempt by the Java Virtual Machine to resolve
     // a symbolic reference fails because an error is thrown that is an
@@ -1854,6 +1848,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
             "Resolution failure flag wasn't set");
     }
   }
+
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);
   // Exceptions::wrap_dynamic_exception not used because
   // set_handle doesn't throw linkage errors

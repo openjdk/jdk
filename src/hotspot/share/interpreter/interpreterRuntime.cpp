@@ -940,9 +940,6 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
   int index = last_frame.get_index_u4(bytecode);
-  if (UseNewIndyCode) {
-    //index = pool->decode_invokedynamic_index(index);
-  }
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.

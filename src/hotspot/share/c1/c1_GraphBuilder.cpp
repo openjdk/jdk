@@ -2024,10 +2024,6 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     // try to find a precise receiver type
     if (will_link && !target->is_static()) {
       int index = state()->stack_size() - (target->arg_size_no_receiver() + 1);
-      if (UseNewIndyCode && index < 0) {
-        tty->print_cr("Stack size %d, Argsize %d", state()->stack_size(), target->arg_size_no_receiver() + 1);
-        target->print();
-      }
       receiver = state()->stack_at(index);
       ciType* type = receiver->exact_type();
       if (type != NULL && type->is_loaded() &&
