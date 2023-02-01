@@ -305,7 +305,7 @@ public class VisibleMemberTable {
      *
      * @param e the method to check
      */
-    public boolean isNotSimpleOverride(ExecutableElement e) {
+    private boolean isNotSimpleOverride(ExecutableElement e) {
         ensureInitialized();
 
         var info = overriddenMethodTable.get(e);
