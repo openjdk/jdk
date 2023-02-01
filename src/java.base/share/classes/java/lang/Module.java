@@ -317,12 +317,8 @@ public final class Module implements AnnotatedElement {
         }
     }
 
-    /**
-     * Atomically sets {@code enableNativeAccess} if not already set.
-     *
-     * @param target module for which the enableNativeAccess should potentially be updated
-     * @return if the value was updated.
-     */
+    // Atomically sets {@code enableNativeAccess} if not already set
+    // returning if the value was updated
     private static boolean trySetEnableNativeAccess(Module target) {
         synchronized (target) {
             if (!target.enableNativeAccess) {
