@@ -2187,7 +2187,7 @@ void AwtWindow::CheckWindowDPIChange() {
     if (prevScaleRec.screen != -1 && prevScaleRec.screen != m_screenNum) {
         Devices::InstanceAccess devices;
         AwtWin32GraphicsDevice *device = devices->GetDevice(m_screenNum);
-        if (device) {
+        if (device && !::IsZoomed(GetHWnd())) {
             if (prevScaleRec.scaleX != device->GetScaleX()
                     || prevScaleRec.scaleY != device->GetScaleY()) {
                 RECT rect;
