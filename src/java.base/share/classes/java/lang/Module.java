@@ -113,6 +113,8 @@ public final class Module implements AnnotatedElement {
     private final ModuleDescriptor descriptor;
 
     // true, if this module allows restricted native access
+    // Accessing this variable is mostly done under synchronization as
+    // constructs like VarHandle and AtomicBoolean are not available at this stage.
     @Stable
     private boolean enableNativeAccess;
 
@@ -259,7 +261,7 @@ public final class Module implements AnnotatedElement {
      * Update this module to allow access to restricted methods.
      */
     Module implAddEnableNativeAccess() {
-        casEnableNativeAccess(this);
+        trySetEnableNativeAccess(this);
         return this;
     }
 
@@ -299,7 +301,7 @@ public final class Module implements AnnotatedElement {
             if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
                 throw new IllegalCallerException("Illegal native access from: " + this);
             } else {
-                if (casEnableNativeAccess(target)) {
+                if (trySetEnableNativeAccess(target)) {
                     // warn and set flag, so that only one warning is reported per module
                     String cls = owner.getName();
                     String mtd = cls + "::" + methodName;
@@ -315,7 +317,13 @@ public final class Module implements AnnotatedElement {
         }
     }
 
-    private static boolean casEnableNativeAccess(Module target) {
+    /**
+     * Atomically sets {@code enableNativeAccess} if not already set.
+     *
+     * @param target module for which the enableNativeAccess should potentially be updated
+     * @return if the value was updated.
+     */
+    private static boolean trySetEnableNativeAccess(Module target) {
         synchronized (target) {
             if (!target.enableNativeAccess) {
                 target.enableNativeAccess = true;
@@ -329,7 +337,7 @@ public final class Module implements AnnotatedElement {
      * Update all unnamed modules to allow access to restricted methods.
      */
     static void implAddEnableNativeAccessToAllUnnamed() {
-        casEnableNativeAccess(ALL_UNNAMED_MODULE);
+        trySetEnableNativeAccess(ALL_UNNAMED_MODULE);
     }
 
     // --
