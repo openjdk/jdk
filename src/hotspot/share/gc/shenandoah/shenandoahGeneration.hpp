@@ -115,9 +115,8 @@ private:
   void reset_bytes_allocated_since_gc_start();
   void increase_allocated(size_t bytes);
 
-  // Changing the size of the generation will reset the times learned for the heuristic. The heuristic will need to
-  // relearn collection performance metrics. This also has the effect of preventing further capacity changes from the
-  // heuristics until at least ShenandoahLearningSteps(5) number of cycles has completed.
+  // These methods change the capacity of the region by adding or subtracting the given number of bytes from the current
+  // capacity.
   void increase_capacity(size_t increment);
   void decrease_capacity(size_t decrement);
 
