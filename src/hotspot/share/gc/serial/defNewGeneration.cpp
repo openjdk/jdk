@@ -76,18 +76,10 @@ bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
   return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || p->is_forwarded();
 }
 
-DefNewGeneration::KeepAliveClosure::
-KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
-  _rs = GenCollectedHeap::heap()->rem_set();
-}
-
-void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
-void DefNewGeneration::KeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
-
-
 DefNewGeneration::FastKeepAliveClosure::
 FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
-  DefNewGeneration::KeepAliveClosure(cl) {
+  _cl(cl) {
+  _rs = GenCollectedHeap::heap()->rem_set();
   _boundary = g->reserved().end();
 }
 
