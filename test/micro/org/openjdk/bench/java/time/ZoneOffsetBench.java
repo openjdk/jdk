@@ -49,7 +49,7 @@ import java.util.stream.IntStream;
 public class ZoneOffsetBench {
 
     // An array with all the cached values [-18h, 18h]
-    private static final int CACHED_SECONDS[] = IntStream.rangeClosed(-18, 18 - 1)
+    private static final int CACHED_SECONDS[] = IntStream.range(-18, 18)
             // Convert hour to seconds
             .map(h -> h * 3600)
             // Include each even quarter of an hour
