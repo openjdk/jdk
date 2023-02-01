@@ -333,7 +333,7 @@ final class StringUTF16 {
 
     private static int compareToCIImpl(byte[] value, int toffset, int tlen,
                                       byte[] other, int ooffset, int olen) {
-        if (value == other) {
+        if (value == other && toffset == ooffset) {
             return 0;
         }
         int tlast = toffset + tlen;
@@ -420,9 +420,6 @@ final class StringUTF16 {
     }
 
     public static int compareToCI_Latin1(byte[] value, byte[] other) {
-        if (value == other) {
-            return 0;
-        }
         return -StringLatin1.compareToCI_UTF16(other, value);
     }
 

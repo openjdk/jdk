@@ -105,9 +105,6 @@ final class StringLatin1 {
 
     @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
-        if (value == other) {
-            return 0;
-        }
         int len1 = value.length;
         int len2 = other.length;
         return compareTo(value, other, len1, len2);
@@ -128,9 +125,6 @@ final class StringLatin1 {
 
     @IntrinsicCandidate
     public static int compareToUTF16(byte[] value, byte[] other) {
-        if (value == other) {
-            return 0;
-        }
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         return compareToUTF16Values(value, other, len1, len2);
@@ -140,9 +134,6 @@ final class StringLatin1 {
      * Checks the boundary and then compares the byte arrays.
      */
     public static int compareToUTF16(byte[] value, byte[] other, int len1, int len2) {
-        if (value == other) {
-            return 0;
-        }
         checkOffset(len1, length(value));
         checkOffset(len2, StringUTF16.length(other));
 
@@ -150,9 +141,6 @@ final class StringLatin1 {
     }
 
     private static int compareToUTF16Values(byte[] value, byte[] other, int len1, int len2) {
-        if (value == other) {
-            return 0;
-        }
         int lim = Math.min(len1, len2);
         for (int k = 0; k < lim; k++) {
             char c1 = getChar(value, k);
@@ -188,9 +176,6 @@ final class StringLatin1 {
     }
 
     public static int compareToCI_UTF16(byte[] value, byte[] other) {
-        if (value == other) {
-            return 0;
-        }
         int len1 = length(value);
         int len2 = StringUTF16.length(other);
         int lim = Math.min(len1, len2);
@@ -410,7 +395,7 @@ final class StringLatin1 {
     // case insensitive
     public static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
-        if (value == other) {
+        if (value == other && toffset == ooffset) {
             return true;
         }
         int last = toffset + len;
@@ -432,7 +417,7 @@ final class StringLatin1 {
 
     public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
                                                 byte[] other, int ooffset, int len) {
-        if (value == other) {
+        if (value == other && toffset == ooffset) {
             return true;
         }
         int last = toffset + len;

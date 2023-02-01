@@ -2234,9 +2234,6 @@ public final class String
      */
     public boolean regionMatches(boolean ignoreCase, int toffset,
             String other, int ooffset, int len) {
-        if (value == other.value) {
-            return true;
-        }
         if (!ignoreCase) {
             return regionMatches(toffset, other, ooffset, len);
         }
