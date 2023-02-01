@@ -408,7 +408,6 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return true if CDS is supported by the VM to be tested.
      */
     protected String vmCDS() {
-        log("vmCDS()");
         return "" + WB.isCDSIncluded();
     }
 
@@ -539,7 +538,7 @@ public class VMProps implements Callable<Map<String, String>> {
         log("------------- stdout: ");
         try {
             Files.lines(Path.of(logFileNames.split(",")[0]))
-                .forEach(line -> log(line));
+                 .forEach(line -> log(line));
         } catch (IOException ie) {
             log("Exception while reading stdout file: " + ie);
         }
@@ -565,7 +564,10 @@ public class VMProps implements Callable<Map<String, String>> {
         int exitValue = p.exitValue();
 
         log(String.format("checkDockerSupport(): exitValue = %s, pid = %s", exitValue, p.pid()));
-        printLogfileContent(logFileNames);
+        if (exitValue != 0) {
+            printLogfileContent(logFileNames);
+        }
+
         return (exitValue == 0);
     }
 
