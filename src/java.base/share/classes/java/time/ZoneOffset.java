@@ -72,6 +72,8 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
@@ -85,7 +87,6 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import jdk.internal.vm.annotation.Stable;
 
@@ -144,7 +145,12 @@ public final class ZoneOffset
     private static final int MAX_SECONDS_CACHE_SLOT = MAX_SECONDS / (15 * SECONDS_PER_MINUTE);
 
     /** Cache of time-zone offset by offset in seconds [-18h, +18h] for each even quarter of an hour. */
-    private static final AtomicReferenceArray<ZoneOffset> SECONDS_CACHE = new AtomicReferenceArray<>(MAX_SECONDS_CACHE_SLOT * 2 + 1);
+    @Stable
+    private static final ZoneOffset[] SECONDS_CACHE = new ZoneOffset[MAX_SECONDS_CACHE_SLOT * 2 + 1];
+
+    /** Access to the SECONDS_CACHE must be made via VarHandle volatile access */
+    private static final VarHandle SECONDS_CACHE_VH = MethodHandles.arrayElementVarHandle(ZoneOffset[].class);
+
     /** Cache of time-zone offset by ID. */
     private static final ConcurrentMap<String, ZoneOffset> ID_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
     /**
@@ -429,18 +435,44 @@ public final class ZoneOffset
         }
         if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
             int slot = cacheSlot(totalSeconds);
-            ZoneOffset cached = SECONDS_CACHE.get(slot);
-            if (cached != null)
-                return cached;
-            // There is no guarantee we might create several instances for the same totalSeconds
-            ZoneOffset newZoneOffset = new ZoneOffset(totalSeconds);
-            SECONDS_CACHE.set(slot, newZoneOffset);
-            ID_CACHE.putIfAbsent(newZoneOffset.getId(), newZoneOffset);
-            return newZoneOffset;
+            // Happens-before semantics are needed for double-checked locking
+            // to prevent reading uninitialized ZoneOffset objects due to reordering.
+            ZoneOffset cached = getAcquireSecondsCache(slot);
+            if (cached == null) {
+                synchronized (SECONDS_CACHE) {
+                    cached = getAcquireSecondsCache(slot);
+                    if (cached == null) {
+                        cached = new ZoneOffset(totalSeconds);
+                        setReleaseSecondsCache(slot, cached);
+                        ID_CACHE.putIfAbsent(cached.getId(), cached);
+                    }
+                }
+            }
+            return cached;
         } else {
             return new ZoneOffset(totalSeconds);
         }
     }
+
+    static ZoneOffset getAcquireSecondsCache(int slot) {
+        return (ZoneOffset) SECONDS_CACHE_VH.getAcquire(SECONDS_CACHE, slot);
+    }
+    static void setReleaseSecondsCache(int slot, ZoneOffset value) {
+        SECONDS_CACHE_VH.setRelease(SECONDS_CACHE, slot, value);
+    }
+
+    // Atomically sets a new value in SECONDS_CACHE if, and only if, the slot is null
+    // returning if the slot was set.
+/*    boolean trySetSecondsPerMinute(int slot) {
+        ZoneOffset cached = (ZoneOffset) SECONDS_CACHE_VH.get(SECONDS_CACHE, slot);
+        if (cached != null)
+            return cached;
+        synchronized (SECONDS_CACHE) {
+            ZoneOffset retry = SECONDS_CACHE.get(slot);
+            if (retry != null)
+                // Someone else beat us in the synchronization race
+                return retry;
+    }*/
 
     private static int cacheSlot(int totalSeconds) {
         return MAX_SECONDS_CACHE_SLOT + totalSeconds / (15 * SECONDS_PER_MINUTE);
