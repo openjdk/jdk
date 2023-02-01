@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,9 +210,7 @@ public class EdDSASignature extends SignatureSpi {
         if (publicKeyBytes == null) {
             throw new SignatureException("Missing publicKey");
         }
-        if (message == null) {
-            return false;
-        }
+        ensureMessageInit();
         boolean result = ops.verify(this.sigParams, this.publicKeyPoint,
             this.publicKeyBytes, message.getMessage(), sigBytes);
         message = null;

@@ -32,6 +32,7 @@
 class DirtyCardToOopClosure;
 class Generation;
 class Space;
+class TenuredSpace;
 
 // This RemSet uses a card table both as shared data structure
 // for a mod ref barrier set and for the rem set information.
@@ -47,7 +48,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void younger_refs_in_space_iterate(Space* sp, HeapWord* gen_boundary, OopIterateClosure* cl);
+  void younger_refs_in_space_iterate(TenuredSpace* sp, OopIterateClosure* cl);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
@@ -70,8 +71,7 @@ public:
   // Iterate over the portion of the card-table which covers the given
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
-  void non_clean_card_iterate(Space* sp,
-                              HeapWord* gen_boundary,
+  void non_clean_card_iterate(TenuredSpace* sp,
                               MemRegion mr,
                               OopIterateClosure* cl,
                               CardTableRS* ct);

@@ -101,7 +101,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(w, testValue),
             tvh -> setter.set(tvh, w, testValue),
-            ".*\\Qexpected (Widget," + fieldType.getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (Widget," + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -115,7 +115,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.get(w),
             tvh -> getter.get(tvh, w),
-            ".*\\Qexpected (Widget)" + fieldType.getSimpleName() + " \\E.*");
+            ".*\\Qhandle's method type (Widget)" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -129,7 +129,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(testValue),
             tvh -> staticSetter.set(tvh, testValue),
-            ".*\\Qexpected (" + fieldType.getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (" + fieldType.getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataObjectAccess")
@@ -142,7 +142,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.get(),
             tvh -> staticGetter.get(tvh),
-            ".*\\Qexpected ()" + fieldType.getSimpleName() + " \\E.*");
+            ".*\\Qhandle's method type ()" + fieldType.getSimpleName() + " \\E.*");
     }
 
     @Test(dataProvider = "dataSetArray")
@@ -153,7 +153,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(arr, 0, testValue),
             tvh -> setter.set(tvh, arr, testValue),
-            ".*\\Qexpected (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (" + arrayClass.getSimpleName() + ",int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetBuffer")
@@ -164,7 +164,7 @@ public class VarHandleTestExact {
         doTest(vh,
             tvh -> tvh.set(buff, 0, testValue),
             tvh -> setter.set(tvh, buff, testValue),
-            ".*\\Qexpected (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
+            ".*\\Qhandle's method type (ByteBuffer,int," + arrayClass.componentType().getSimpleName() + ")void \\E.*");
     }
 
     @Test(dataProvider = "dataSetMemorySegment")
@@ -175,7 +175,7 @@ public class VarHandleTestExact {
             doTest(vh,
                 tvh -> tvh.set(seg, 0L, testValue),
                 tvh -> setter.set(tvh, seg, 0L, testValue),
-                ".*\\Qexpected (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
+                ".*\\Qhandle's method type (MemorySegment,long," + carrier.getSimpleName() + ")void \\E.*");
         }
     }
 

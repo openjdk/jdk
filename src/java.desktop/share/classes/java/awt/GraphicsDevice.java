@@ -136,7 +136,7 @@ public abstract class GraphicsDevice {
          * contain or might contain pixels with arbitrary alpha values
          * between and including 0.0 and 1.0.
          */
-        PERPIXEL_TRANSLUCENT;
+        PERPIXEL_TRANSLUCENT
     }
 
     /**

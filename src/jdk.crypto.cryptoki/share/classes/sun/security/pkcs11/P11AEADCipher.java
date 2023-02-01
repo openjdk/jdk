@@ -110,9 +110,9 @@ final class P11AEADCipher extends CipherSpi {
     private SecureRandom random = JCAUtil.getSecureRandom();
 
     // dataBuffer is cleared upon doFinal calls
-    private ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream dataBuffer = new ByteArrayOutputStream();
     // aadBuffer is cleared upon successful init calls
-    private ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream aadBuffer = new ByteArrayOutputStream();
     private boolean updateCalled = false;
 
     private boolean requireReinit = false;

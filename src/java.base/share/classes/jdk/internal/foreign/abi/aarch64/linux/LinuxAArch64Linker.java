@@ -65,14 +65,14 @@ public final class LinuxAArch64Linker extends AbstractLinker {
         return CallArranger.LINUX.arrangeUpcall(target, targetType, function, scope);
     }
 
-    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope session) {
-        LinuxAArch64VaList.Builder builder = LinuxAArch64VaList.builder(session);
+    public static VaList newVaList(Consumer<VaList.Builder> actions, SegmentScope scope) {
+        LinuxAArch64VaList.Builder builder = LinuxAArch64VaList.builder(scope);
         actions.accept(builder);
         return builder.build();
     }
 
-    public static VaList newVaListOfAddress(long address, SegmentScope session) {
-        return LinuxAArch64VaList.ofAddress(address, session);
+    public static VaList newVaListOfAddress(long address, SegmentScope scope) {
+        return LinuxAArch64VaList.ofAddress(address, scope);
     }
 
     public static VaList emptyVaList() {

@@ -28,6 +28,7 @@
 #include "memory/allStatic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/stackWatermarkKind.hpp"
+#include "utilities/growableArray.hpp"
 
 class frame;
 class JavaThread;
@@ -83,7 +84,7 @@ public:
 //  ----------  <-- watermark (callee SP from the snapshot, SP at the
 //                             point of unwinding, might be above or below
 //                             due to frame resizing)
-class StackWatermark : public CHeapObj<mtInternal> {
+class StackWatermark : public CHeapObj<mtThread> {
   friend class StackWatermarkFramesIterator;
 protected:
   volatile uint32_t _state;
@@ -93,7 +94,7 @@ protected:
   StackWatermarkFramesIterator* _iterator;
   Mutex _lock;
   StackWatermarkKind _kind;
-  StackWatermark* _linked_watermark;
+  GrowableArrayCHeap<StackWatermark*, mtThread> _linked_watermarks;
 
   void process_one();
 
@@ -116,6 +117,8 @@ protected:
   // opposed to due to frames being unwound by the owning thread.
   virtual bool process_on_iteration() { return true; }
 
+  void process_linked_watermarks();
+
   bool processing_started(uint32_t state) const;
   bool processing_completed(uint32_t state) const;
 
@@ -129,7 +132,8 @@ public:
   StackWatermark* next() const { return _next; }
   void set_next(StackWatermark* n) { _next = n; }
 
-  void link_watermark(StackWatermark* watermark);
+  void push_linked_watermark(StackWatermark* watermark);
+  void pop_linked_watermark();
 
   uintptr_t watermark();
   uintptr_t last_processed();

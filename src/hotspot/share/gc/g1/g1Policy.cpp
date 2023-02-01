@@ -71,8 +71,6 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
-  _predicted_surviving_bytes_from_survivor(0),
-  _predicted_surviving_bytes_from_old(0),
   _rs_length(0),
   _pending_cards_at_gc_start(0),
   _concurrent_start_to_mixed(),
@@ -105,8 +103,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-  // We may immediately start allocating regions and placing them on the
-  // collection set list. Initialize the per-collection set info
+
+  // We immediately start allocating regions placing them in the collection set.
+  // Initialize the collection set info.
   _collection_set->start_incremental_building();
 }
 
@@ -190,17 +189,14 @@ uint G1Policy::calculate_desired_eden_length_by_mmu() const {
 void G1Policy::update_young_length_bounds() {
   assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   bool for_young_only_phase = collector_state()->in_young_only_phase();
-  // Request at least one eden region to ensure progress.
-  bool after_gc = true;
   update_young_length_bounds(_analytics->predict_pending_cards(for_young_only_phase),
-                             _analytics->predict_rs_length(for_young_only_phase),
-                             after_gc);
+                             _analytics->predict_rs_length(for_young_only_phase));
 }
 
-void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length, bool after_gc) {
+void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length) {
   uint old_young_list_target_length = young_list_target_length();
 
-  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length, after_gc);
+  uint new_young_list_desired_length = calculate_young_desired_length(pending_cards, rs_length);
   uint new_young_list_target_length = calculate_young_target_length(new_young_list_desired_length);
   uint new_young_list_max_length = calculate_young_max_length(new_young_list_target_length);
 
@@ -239,7 +235,7 @@ void G1Policy::update_young_length_bounds(size_t pending_cards, size_t rs_length
 // value smaller than what is already allocated or what can actually be allocated.
 // This return value is only an expectation.
 //
-uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length, bool after_gc) const {
+uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_length) const {
   uint min_young_length_by_sizer = _young_gen_sizer.min_desired_young_length();
   uint max_young_length_by_sizer = _young_gen_sizer.max_desired_young_length();
 
@@ -253,17 +249,17 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Size of the already allocated young gen.
   const uint allocated_young_length = _g1h->young_regions_count();
   // This is the absolute minimum young length that we can return. Ensure that we
-  // don't go below any user-defined minimum bound; but we might have already
-  // allocated more than that for various reasons. In this case, use that.
-  uint absolute_min_young_length = MAX2(allocated_young_length, min_young_length_by_sizer);
+  // don't go below any user-defined minimum bound.  Also, we must have at least
+  // one eden region, to ensure progress. But when revising during the ensuing
+  // mutator phase we might have already allocated more than either of those, in
+  // which case use that.
+  uint absolute_min_young_length = MAX3(min_young_length_by_sizer,
+                                        survivor_length + 1,
+                                        allocated_young_length);
   // Calculate the absolute max bounds. After evac failure or when revising the
   // young length we might have exceeded absolute min length or absolute_max_length,
   // so adjust the result accordingly.
   uint absolute_max_young_length = MAX2(max_young_length_by_sizer, absolute_min_young_length);
-
-  // The absolute minimum young gen length (as provided by the young gen sizer) ensures
-  // that we desire at least one young gen region.
-  assert(absolute_min_young_length > 0, "must be");
 
   uint desired_eden_length_by_mmu = 0;
   uint desired_eden_length_by_pause = 0;
@@ -293,28 +289,14 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   // Clamp to absolute min/max after we determined desired lengths.
   desired_young_length = clamp(desired_young_length, absolute_min_young_length, absolute_max_young_length);
 
-  // After a garbage collection, make room for at least one eden region (i.e. in addition to
-  // already allocated survivor regions).
-  // This may make desired regions go over absolute maximum length by the heap sizer, however
-  // the immediate full gcs after that young gc (particularly on small heaps) are worse.
-  if (after_gc && (allocated_young_length >= desired_young_length)) {
-   log_trace(gc, ergo, heap)("Young desired length: Desired young region length less than already "
-                              "allocated region length, but requesting one eden region minimum. "
-                              "Expanding desired young length from %u to %u.",
-                              desired_young_length,
-                              allocated_young_length + 1);
-    desired_young_length = allocated_young_length + 1;
-  }
-
-  log_trace(gc, ergo, heap)("Young desired length %u (after gc: %s) "
+  log_trace(gc, ergo, heap)("Young desired length %u "
                             "survivor length %u "
                             "allocated young length %u "
                             "absolute min young length %u "
                             "absolute max young length %u "
                             "desired eden length by mmu %u "
                             "desired eden length by pause %u ",
-                            desired_young_length, BOOL_TO_STR(after_gc),
-                            survivor_length,
+                            desired_young_length, survivor_length,
                             allocated_young_length, absolute_min_young_length,
                             absolute_max_young_length, desired_eden_length_by_mmu,
                             desired_eden_length_by_pause);
@@ -548,10 +530,7 @@ void G1Policy::revise_young_list_target_length(size_t rs_length) {
   size_t thread_buffer_cards = _analytics->predict_dirtied_cards_in_thread_buffers();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   size_t pending_cards = dcqs.num_cards() + thread_buffer_cards;
-  // We are only revising young gen length to meet pause time goal, so do not request
-  // at least one eden region for progress. At this point we actually want to run into
-  // a GC soon if young gen is already (too) large.
-  update_young_length_bounds(pending_cards, rs_length, false /* need_one_eden_region */);
+  update_young_length_bounds(pending_cards, rs_length);
 }
 
 void G1Policy::record_full_collection_start() {
@@ -583,7 +562,6 @@ void G1Policy::record_full_collection_end() {
   // also call this on any additional surv rate groups
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-  update_survival_estimates_for_next_collection();
   _survivor_surv_rate_group->reset();
   update_young_length_bounds();
 
@@ -660,8 +638,6 @@ void G1Policy::record_young_collection_start() {
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  _collection_set->reset_bytes_used_before();
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();
@@ -897,8 +873,6 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   }
 
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
-
-  update_survival_estimates_for_next_collection();
 
   // Do not update dynamic IHOP due to G1 periodic collection as it is highly likely
   // that in this case we are not running in a "normal" operating mode.
@@ -1576,88 +1550,6 @@ void G1Policy::calculate_optional_collection_set_regions(G1CollectionSetCandidat
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. Total predicted time: %.3fms",
                             num_optional_regions, max_optional_regions, total_prediction_ms);
-}
-
-// Number of regions required to store the given number of bytes, taking
-// into account the target amount of wasted space in PLABs.
-static size_t get_num_regions_adjust_for_plab_waste(size_t byte_count) {
-  size_t byte_count_adjusted = byte_count * (size_t)(100 + TargetPLABWastePct) / 100.0;
-
-  // Round up the region count
-  return (byte_count_adjusted + HeapRegion::GrainBytes - 1) / HeapRegion::GrainBytes;
-}
-
-bool G1Policy::preventive_collection_required(uint alloc_region_count) {
-  if (!G1UsePreventiveGC || !Universe::is_fully_initialized()) {
-    // Don't attempt any preventive GC's if the feature is disabled,
-    // or before initialization is complete.
-    return false;
-  }
-
-  if (_g1h->young_regions_count() == 0 && !_collection_set->has_candidates()) {
-    return false;
-  }
-
-  uint eden_count = _g1h->eden_regions_count();
-  size_t const eden_surv_bytes_pred = _eden_surv_rate_group->accum_surv_rate_pred(eden_count) * HeapRegion::GrainBytes;
-  size_t const total_young_predicted_surviving_bytes = eden_surv_bytes_pred + _predicted_surviving_bytes_from_survivor;
-
-  uint required_regions = (uint)(get_num_regions_adjust_for_plab_waste(total_young_predicted_surviving_bytes) +
-                                get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old));
-
-  if (required_regions > _g1h->num_free_or_available_regions() - alloc_region_count) {
-    log_debug(gc, ergo, cset)("Preventive GC, insufficient free or available regions. "
-                              "Predicted need %u. Curr Eden %u (Pred %u). Curr Survivor %u (Pred %u). Curr Old %u (Pred %u) Free or Avail %u (Free %u) Alloc %u",
-                              required_regions,
-                              eden_count,
-                              (uint)get_num_regions_adjust_for_plab_waste(eden_surv_bytes_pred),
-                              _g1h->survivor_regions_count(),
-                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_survivor),
-                              _g1h->old_regions_count(),
-                              (uint)get_num_regions_adjust_for_plab_waste(_predicted_surviving_bytes_from_old),
-                              _g1h->num_free_or_available_regions(),
-                              _g1h->num_free_regions(),
-                              alloc_region_count);
-
-    return true;
-  }
-
-  return false;
-}
-
-void G1Policy::update_survival_estimates_for_next_collection() {
-  // Predict the number of bytes of surviving objects from survivor and old
-  // regions and update the associated members.
-
-  // Survivor regions
-  size_t survivor_bytes = 0;
-  const GrowableArray<HeapRegion*>* survivor_regions = _g1h->survivor()->regions();
-  for (GrowableArrayIterator<HeapRegion*> it = survivor_regions->begin();
-       it != survivor_regions->end();
-       ++it) {
-    survivor_bytes += predict_bytes_to_copy(*it);
-  }
-
-  _predicted_surviving_bytes_from_survivor = survivor_bytes;
-
-  // Old regions
-  if (!_collection_set->has_candidates()) {
-    _predicted_surviving_bytes_from_old = 0;
-    return;
-  }
-
-  // Use the minimum old gen collection set as conservative estimate for the number
-  // of regions to take for this calculation.
-  G1CollectionSetCandidates *candidates = _collection_set->candidates();
-  uint iterate_count = MIN2(candidates->num_remaining(), calc_min_old_cset_length(candidates));
-  uint current_index = candidates->cur_idx();
-  size_t old_bytes = 0;
-  for (uint i = 0; i < iterate_count; i++) {
-    HeapRegion *region = candidates->at(current_index + i);
-    old_bytes += predict_bytes_to_copy(region);
-  }
-
-  _predicted_surviving_bytes_from_old = old_bytes;
 }
 
 void G1Policy::transfer_survivors_to_cset(const G1SurvivorRegions* survivors) {

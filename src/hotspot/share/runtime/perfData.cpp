@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PerfDataList*   PerfDataManager::_all = NULL;
-PerfDataList*   PerfDataManager::_sampled = NULL;
-PerfDataList*   PerfDataManager::_constants = NULL;
+PerfDataList*   PerfDataManager::_all = nullptr;
+PerfDataList*   PerfDataManager::_sampled = nullptr;
+PerfDataList*   PerfDataManager::_constants = nullptr;
 volatile bool   PerfDataManager::_has_PerfData = 0;
 
 /*
@@ -80,11 +80,12 @@ const char* PerfDataManager::_name_spaces[] = {
 };
 
 PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
-                  : _name(NULL), _v(v), _u(u), _on_c_heap(false), _valuep(NULL) {
+                  : _name(nullptr), _v(v), _u(u), _on_c_heap(false), _valuep(nullptr) {
 
   const char* prefix = PerfDataManager::ns_to_string(ns);
 
-  _name = NEW_C_HEAP_ARRAY(char, strlen(name) + strlen(prefix) + 2, mtInternal);
+  const size_t _name_size = strlen(name) + strlen(prefix) + 2;
+  _name = NEW_C_HEAP_ARRAY(char, _name_size, mtInternal);
   assert(strlen(name) != 0, "invalid name");
 
   if (ns == NULL_NS) {
@@ -100,7 +101,7 @@ PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
      }
   }
   else {
-    sprintf(_name, "%s.%s", prefix, name);
+    os::snprintf_checked(_name, _name_size, "%s.%s", prefix, name);
     // set the F_Supported flag based on the given namespace.
     if (PerfDataManager::is_stable_supported(ns) ||
         PerfDataManager::is_unstable_supported(ns)) {
@@ -135,7 +136,7 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
   size = ((size + align) & ~align);
   char* psmp = PerfMemory::alloc(size);
 
-  if (psmp == NULL) {
+  if (psmp == nullptr) {
     // out of PerfMemory memory resources. allocate on the C heap
     // to avoid vm termination.
     psmp = NEW_C_HEAP_ARRAY(char, size, mtInternal);
@@ -193,7 +194,7 @@ PerfLong::PerfLong(CounterNS ns, const char* namep, Units u, Variability v)
 PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
                                  Variability v, jlong* sampled)
                                 : PerfLong(ns, namep, u, v),
-                                  _sampled(sampled), _sample_helper(NULL) {
+                                  _sampled(sampled), _sample_helper(nullptr) {
 
   sample();
 }
@@ -201,13 +202,13 @@ PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
 PerfLongVariant::PerfLongVariant(CounterNS ns, const char* namep, Units u,
                                  Variability v, PerfLongSampleHelper* helper)
                                 : PerfLong(ns, namep, u, v),
-                                  _sampled(NULL), _sample_helper(helper) {
+                                  _sampled(nullptr), _sample_helper(helper) {
 
   sample();
 }
 
 void PerfLongVariant::sample() {
-  if (_sample_helper != NULL) {
+  if (_sample_helper != nullptr) {
     *(jlong*)_valuep = _sample_helper->take_sample();
   }
 }
@@ -222,8 +223,8 @@ PerfByteArray::PerfByteArray(CounterNS ns, const char* namep, Units u,
 void PerfString::set_string(const char* s2) {
 
   // copy n bytes of the string, assuring the null string is
-  // copied if s2 == NULL.
-  strncpy((char *)_valuep, s2 == NULL ? "" : s2, _length);
+  // copied if s2 == nullptr.
+  strncpy((char *)_valuep, s2 == nullptr ? "" : s2, _length);
 
   // assure the string is null terminated when strlen(s2) >= _length
   ((char*)_valuep)[_length-1] = '\0';
@@ -232,13 +233,13 @@ void PerfString::set_string(const char* s2) {
 PerfStringConstant::PerfStringConstant(CounterNS ns, const char* namep,
                                        const char* initial_value)
                      : PerfString(ns, namep, V_Constant,
-                                  initial_value == NULL ? 1 :
+                                  initial_value == nullptr ? 1 :
                                   MIN2((jint)(strlen((char*)initial_value)+1),
                                        (jint)(PerfMaxStringConstLength+1)),
                                   initial_value) {
 
   if (PrintMiscellaneous && Verbose) {
-    if (is_valid() && initial_value != NULL &&
+    if (is_valid() && initial_value != nullptr &&
         ((jint)strlen(initial_value) > (jint)PerfMaxStringConstLength)) {
 
       warning("Truncating PerfStringConstant: name = %s,"
@@ -254,7 +255,7 @@ PerfStringConstant::PerfStringConstant(CounterNS ns, const char* namep,
 
 void PerfDataManager::destroy() {
 
-  if (_all == NULL)
+  if (_all == nullptr)
     // destroy already called, or initialization never happened
     return;
 
@@ -269,8 +270,8 @@ void PerfDataManager::destroy() {
   os::naked_short_sleep(1);  // 1ms sleep to let other thread(s) run
 
   log_debug(perf, datacreation)("Total = %d, Sampled = %d, Constants = %d",
-                                _all->length(), _sampled == NULL ? 0 : _sampled->length(),
-                                _constants == NULL ? 0 : _constants->length());
+                                _all->length(), _sampled == nullptr ? 0 : _sampled->length(),
+                                _constants == nullptr ? 0 : _constants->length());
 
   for (int index = 0; index < _all->length(); index++) {
     PerfData* p = _all->at(index);
@@ -281,9 +282,9 @@ void PerfDataManager::destroy() {
   delete(_sampled);
   delete(_constants);
 
-  _all = NULL;
-  _sampled = NULL;
-  _constants = NULL;
+  _all = nullptr;
+  _sampled = nullptr;
+  _constants = nullptr;
 }
 
 void PerfDataManager::add_item(PerfData* p, bool sampled) {
@@ -291,7 +292,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
   MutexLocker ml(PerfDataManager_lock);
 
   // Default sizes determined using -Xlog:perf+datacreation=debug
-  if (_all == NULL) {
+  if (_all == nullptr) {
     _all = new PerfDataList(191);
     _has_PerfData = true;
   }
@@ -302,7 +303,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
   _all->append(p);
 
   if (p->variability() == PerfData::V_Constant) {
-    if (_constants == NULL) {
+    if (_constants == nullptr) {
       _constants = new PerfDataList(51);
     }
     _constants->append(p);
@@ -310,7 +311,7 @@ void PerfDataManager::add_item(PerfData* p, bool sampled) {
   }
 
   if (sampled) {
-    if (_sampled == NULL) {
+    if (_sampled == nullptr) {
       _sampled = new PerfDataList(1);
     }
     _sampled->append(p);
@@ -321,20 +322,20 @@ PerfDataList* PerfDataManager::sampled() {
 
   MutexLocker ml(PerfDataManager_lock);
 
-  if (_sampled == NULL)
-    return NULL;
+  if (_sampled == nullptr)
+    return nullptr;
 
   PerfDataList* clone = _sampled->clone();
   return clone;
 }
 
 char* PerfDataManager::counter_name(const char* ns, const char* name) {
-   assert(ns != NULL, "ns string required");
-   assert(name != NULL, "name string required");
+   assert(ns != nullptr, "ns string required");
+   assert(name != nullptr, "name string required");
 
    size_t len = strlen(ns) + strlen(name) + 2;
    char* result = NEW_RESOURCE_ARRAY(char, len);
-   sprintf(result, "%s.%s", ns, name);
+   os::snprintf_checked(result, len, "%s.%s", ns, name);
    return result;
 }
 
@@ -393,7 +394,7 @@ PerfStringVariable* PerfDataManager::create_string_variable(CounterNS ns,
                                                             const char* s,
                                                             TRAPS) {
 
-  if (max_length == 0 && s != NULL) max_length = (int)strlen(s);
+  if (max_length == 0 && s != nullptr) max_length = (int)strlen(s);
 
   assert(max_length != 0, "PerfStringVariable with length 0");
 
@@ -435,7 +436,7 @@ PerfLongVariable* PerfDataManager::create_long_variable(CounterNS ns,
                                                         TRAPS) {
 
   // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
+  if (!UsePerfData) return nullptr;
 
   PerfLongVariable* p = new PerfLongVariable(ns, name, u, sh);
 
@@ -475,7 +476,7 @@ PerfLongCounter* PerfDataManager::create_long_counter(CounterNS ns,
                                                       TRAPS) {
 
   // Sampled counters not supported if UsePerfData is false
-  if (!UsePerfData) return NULL;
+  if (!UsePerfData) return nullptr;
 
   PerfLongCounter* p = new PerfLongCounter(ns, name, u, sh);
 
@@ -510,7 +511,7 @@ PerfDataList::~PerfDataList() {
 
 bool PerfDataList::by_name(void* name, PerfData* pd) {
 
-  if (pd == NULL)
+  if (pd == nullptr)
     return false;
 
   return strcmp((const char*)name, pd->name()) == 0;
@@ -523,14 +524,14 @@ PerfData* PerfDataList::find_by_name(const char* name) {
   if (i >= 0 && i <= _set->length())
     return _set->at(i);
   else
-    return NULL;
+    return nullptr;
 }
 
 PerfDataList* PerfDataList::clone() {
 
   PerfDataList* copy = new PerfDataList(this);
 
-  assert(copy != NULL, "just checking");
+  assert(copy != nullptr, "just checking");
 
   return copy;
 }

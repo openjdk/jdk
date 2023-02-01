@@ -128,7 +128,7 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
 
   // java.lang.management MemoryManager and MemoryPool support
-  GCMemoryManager _incremental_memory_manager;
+  GCMemoryManager _young_gc_memory_manager;
   GCMemoryManager _full_gc_memory_manager;
   GCMemoryManager _conc_gc_memory_manager;
 
@@ -137,11 +137,11 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   MemoryPool* _old_gen_pool;
 
   // jstat performance counters
-  //  incremental collections both young and mixed
-  CollectorCounters*   _incremental_collection_counters;
+  //  young stop-the-world collections (including mixed)
+  CollectorCounters*   _young_collection_counters;
   //  full stop-the-world collections
   CollectorCounters*   _full_collection_counters;
-  //  stop-the-world phases in G1
+  //  stop-the-world phases in G1 concurrent collection
   CollectorCounters*   _conc_collection_counters;
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with

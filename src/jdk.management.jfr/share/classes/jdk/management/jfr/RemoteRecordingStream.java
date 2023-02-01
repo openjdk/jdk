@@ -295,14 +295,6 @@ public final class RemoteRecordingStream implements EventStream {
         }
     }
 
-    private Map<String, String> getRecordingOptions() throws IOException {
-        try {
-            return mbean.getRecordingOptions(recordingId);
-        } catch (Exception e) {
-            throw new IOException("Could not get recording options: " + e.getMessage(), e);
-        }
-    }
-
     /**
      * Replaces all settings for this recording stream.
      * <p>

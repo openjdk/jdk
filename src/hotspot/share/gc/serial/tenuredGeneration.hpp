@@ -65,13 +65,13 @@ class TenuredGeneration: public Generation {
 
   void assert_correct_size_change_locking();
 
-  ContiguousSpace*    _the_space;       // Actual space holding objects
+  TenuredSpace*       _the_space;       // Actual space holding objects
 
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
   // Accessing spaces
-  ContiguousSpace* space() const { return _the_space; }
+  TenuredSpace* space() const { return _the_space; }
 
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
@@ -132,7 +132,7 @@ class TenuredGeneration: public Generation {
   void oop_since_save_marks_iterate(OopClosureType* cl);
 
   void save_marks();
-  void reset_saved_marks();
+
   bool no_allocs_since_save_marks();
 
   inline size_t block_size(const HeapWord* addr) const;

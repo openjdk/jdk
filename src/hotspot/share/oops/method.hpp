@@ -774,13 +774,13 @@ public:
   // however, can be GC'ed away if the class is unloaded or if the method is
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to NULL (as is the case for any weak reference).
-  static jmethodID make_jmethod_id(ClassLoaderData* loader_data, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* loader_data, jmethodID mid);
+  static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
+  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
   // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity);
+  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
 
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;

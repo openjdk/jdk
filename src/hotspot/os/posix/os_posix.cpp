@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#ifdef AIX
+#include "loadlib_aix.hpp"
+#endif
 #ifdef LINUX
 #include "os_linux.hpp"
 #endif
@@ -747,6 +750,8 @@ void os::dll_unload(void *lib) {
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
   }
+  // Update the dll cache
+  AIX_ONLY(LoadedLibraries::reload());
   LINUX_ONLY(os::free(l_pathdup));
 }
 
@@ -1869,17 +1874,17 @@ PlatformMonitor::~PlatformMonitor() {
 #endif // PLATFORM_MONITOR_IMPL_INDIRECT
 
 // Must already be locked
-int PlatformMonitor::wait(jlong millis) {
-  assert(millis >= 0, "negative timeout");
+int PlatformMonitor::wait(uint64_t millis) {
   if (millis > 0) {
     struct timespec abst;
     // We have to watch for overflow when converting millis to nanos,
     // but if millis is that large then we will end up limiting to
-    // MAX_SECS anyway, so just do that here.
+    // MAX_SECS anyway, so just do that here. This also handles values
+    // larger than int64_t max.
     if (millis / MILLIUNITS > MAX_SECS) {
-      millis = jlong(MAX_SECS) * MILLIUNITS;
+      millis = uint64_t(MAX_SECS) * MILLIUNITS;
     }
-    to_abstime(&abst, millis_to_nanos(millis), false, false);
+    to_abstime(&abst, millis_to_nanos(int64_t(millis)), false, false);
 
     int ret = OS_TIMEOUT;
     int status = pthread_cond_timedwait(cond(), mutex(), &abst);

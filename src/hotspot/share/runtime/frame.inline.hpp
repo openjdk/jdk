@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ inline bool frame::is_entry_frame() const {
 }
 
 inline bool frame::is_stub_frame() const {
-  return StubRoutines::is_stub_code(pc()) || (_cb != NULL && _cb->is_adapter_blob());
+  return StubRoutines::is_stub_code(pc()) || (_cb != nullptr && _cb->is_adapter_blob());
 }
 
 inline bool frame::is_first_frame() const {
@@ -59,11 +59,11 @@ inline bool frame::is_first_frame() const {
 }
 
 inline bool frame::is_upcall_stub_frame() const {
-  return _cb != NULL && _cb->is_upcall_stub();
+  return _cb != nullptr && _cb->is_upcall_stub();
 }
 
 inline bool frame::is_compiled_frame() const {
-  if (_cb != NULL &&
+  if (_cb != nullptr &&
       _cb->is_compiled() &&
       ((CompiledMethod*)_cb)->is_java_method()) {
     return true;
@@ -82,7 +82,7 @@ inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_m
       return (address)((intptr_t)reg_map->as_RegisterMap()->stack_chunk()->relativize_usp_offset(*this, sp_offset_in_bytes));
     }
     address usp = (address)unextended_sp();
-    assert(reg_map->thread() == NULL || reg_map->thread()->is_in_usable_stack(usp), INTPTR_FORMAT, p2i(usp));
+    assert(reg_map->thread() == nullptr || reg_map->thread()->is_in_usable_stack(usp), INTPTR_FORMAT, p2i(usp));
     return (usp + sp_offset_in_bytes);
   }
 }
@@ -93,11 +93,11 @@ inline oop* frame::oopmapreg_to_oop_location(VMReg reg, const RegisterMapT* reg_
 }
 
 inline CodeBlob* frame::get_cb() const {
-  // if (_cb == NULL) _cb = CodeCache::find_blob(_pc);
-  if (_cb == NULL) {
+  // if (_cb == nullptr) _cb = CodeCache::find_blob(_pc);
+  if (_cb == nullptr) {
     int slot;
     _cb = CodeCache::find_blob_and_oopmap(_pc, slot);
-    if (_oop_map == NULL && slot >= 0) {
+    if (_oop_map == nullptr && slot >= 0) {
       _oop_map = _cb->oop_map_for_slot(slot, _pc);
     }
   }

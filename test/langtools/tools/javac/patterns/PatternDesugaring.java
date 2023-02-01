@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @bug 8291769
+ * @bug 8291769 8300195
  * @summary Verify the compiled code does not have unwanted constructs.
+ * @enablePreview
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -34,11 +35,17 @@
  * @run main PatternDesugaring
 */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import toolbox.TestRunner;
@@ -196,6 +203,105 @@ public class PatternDesugaring extends TestRunner {
         System.err.println("decompiled: " + decompiled);
 
         validate.accept(decompiled);
+    }
+
+    @Test
+    public void testRuleCases(Path base) throws Exception {
+        doTestRun(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   public static void main(String... args) {
+                       System.out.println(test(new R("a")));
+                       System.out.println(test(new R(3)));
+                       System.out.println(test(new R(new R("a"))));
+                       System.out.println(test(new R(new R(3))));
+                   }
+                   public static int test(Object obj) {
+                       int res;
+                       switch (obj) {
+                           case R(String s) -> res = s.length();
+                           case R(Integer i) -> res = i;
+                           case R(R(String s)) -> res = 10 + s.length();
+                           case R(R(Integer i)) -> res = 10 + i;
+                           default -> res = -1;
+                       }
+                       return res;
+                   }
+                   record R(Object o) {}
+               }
+               """,
+               output -> {
+                   String expectedOutput = """
+                                           1
+                                           3
+                                           11
+                                           13
+                                           """;
+                   if (!Objects.equals(output, expectedOutput)) {
+                       throw new AssertionError("Unexpected output," +
+                                                " expected: " + expectedOutput +
+                                                " actual: " + output);
+                   }
+               });
+    }
+
+    private void doTestRun(Path base, String[] libraryCode, String testCode, Consumer<String> validate) throws Exception {
+        Path current = base.resolve(".");
+        Path libClasses = current.resolve("libClasses");
+
+        Files.createDirectories(libClasses);
+
+        if (libraryCode.length != 0) {
+            Path libSrc = current.resolve("lib-src");
+
+            for (String code : libraryCode) {
+                tb.writeJavaFiles(libSrc, code);
+            }
+
+            new JavacTask(tb)
+                    .options("--enable-preview",
+                             "-source", JAVA_VERSION)
+                    .outdir(libClasses)
+                    .files(tb.findJavaFiles(libSrc))
+                    .run();
+        }
+
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src, testCode);
+
+        Path classes = current.resolve("libClasses");
+
+        Files.createDirectories(libClasses);
+
+        var log =
+                new JavacTask(tb)
+                    .options("--enable-preview",
+                             "-source", JAVA_VERSION,
+                             "-XDrawDiagnostics",
+                             "-Xlint:-preview",
+                             "--class-path", libClasses.toString(),
+                             "-XDshould-stop.at=FLOW")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.SUCCESS)
+                    .writeAll();
+
+        ClassLoader cl = new URLClassLoader(new URL[] {classes.toUri().toURL()});
+        Class<?> testClass = cl.loadClass("test.Test");
+        Method main = testClass.getMethod("main", String[].class);
+        PrintStream prevOut = System.out;
+        var data = new ByteArrayOutputStream();
+        try (var outStream = new PrintStream(data, true, StandardCharsets.UTF_8)) {
+            System.setOut(outStream);
+            main.invoke(null, (Object) new String[0]);
+        } finally {
+            System.setOut(prevOut);
+        }
+        String output = new String(data.toByteArray(), StandardCharsets.UTF_8);
+        output = output.replaceAll("\\R", "\n");
+        validate.accept(output);
     }
 
 }

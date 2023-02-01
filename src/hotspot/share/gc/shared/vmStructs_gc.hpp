@@ -235,8 +235,6 @@
                                                                             \
   declare_constant(CardTable::clean_card)                                   \
   declare_constant(CardTable::dirty_card)                                   \
-  declare_constant(CardTable::Precise)                                      \
-  declare_constant(CardTable::ObjHeadPreciseArray)                          \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \

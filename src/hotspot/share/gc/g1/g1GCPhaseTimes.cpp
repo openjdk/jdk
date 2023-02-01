@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,6 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[ClearCardTable] = new WorkerDataArray<double>("ClearLoggedCards", "Clear Logged Cards (ms):", max_gc_threads);
   _gc_par_phases[RecalculateUsed] = new WorkerDataArray<double>("RecalculateUsed", "Recalculate Used Memory (ms):", max_gc_threads);
   _gc_par_phases[ResetHotCardCache] = new WorkerDataArray<double>("ResetHotCardCache", "Reset Hot Card Cache (ms):", max_gc_threads);
-  _gc_par_phases[PurgeCodeRoots] = new WorkerDataArray<double>("PurgeCodeRoots", "Purge Code Roots (ms):", max_gc_threads);
 #if COMPILER2_OR_JVMCI
   _gc_par_phases[UpdateDerivedPointers] = new WorkerDataArray<double>("UpdateDerivedPointers", "Update Derived Pointers (ms):", max_gc_threads);
 #endif
@@ -412,8 +411,7 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
   const double pre_concurrent_start_ms = average_time_ms(ResetMarkingState) +
                                          average_time_ms(NoteStartOfMark);
 
-  const double sum_ms = _root_region_scan_wait_time_ms +
-                        _cur_prepare_tlab_time_ms +
+  const double sum_ms = _cur_prepare_tlab_time_ms +
                         _cur_concatenate_dirty_card_logs_time_ms +
                         _recorded_young_cset_choice_time_ms +
                         _recorded_non_young_cset_choice_time_ms +
@@ -423,9 +421,6 @@ double G1GCPhaseTimes::print_pre_evacuate_collection_set() const {
 
   info_time("Pre Evacuate Collection Set", sum_ms);
 
-  if (_root_region_scan_wait_time_ms > 0.0) {
-    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
-  }
   debug_time("Prepare TLABs", _cur_prepare_tlab_time_ms);
   debug_time("Concatenate Dirty Card Logs", _cur_concatenate_dirty_card_logs_time_ms);
   debug_time("Choose Collection Set", (_recorded_young_cset_choice_time_ms + _recorded_non_young_cset_choice_time_ms));
@@ -523,7 +518,6 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
     debug_phase(_gc_par_phases[ClearRetainedRegionBitmaps], 1);
   }
   debug_phase(_gc_par_phases[ResetHotCardCache], 1);
-  debug_phase(_gc_par_phases[PurgeCodeRoots], 1);
 #if COMPILER2_OR_JVMCI
   debug_phase(_gc_par_phases[UpdateDerivedPointers], 1);
 #endif
@@ -557,6 +551,10 @@ void G1GCPhaseTimes::print_other(double accounted_ms) const {
 }
 
 void G1GCPhaseTimes::print(bool evacuation_failed) {
+  if (_root_region_scan_wait_time_ms > 0.0) {
+    debug_time("Root Region Scan Waiting", _root_region_scan_wait_time_ms);
+  }
+
   // Check if some time has been recorded for verification and only then print
   // the message. We do not use Verify*GC here to print because VerifyGCType
   // further limits actual verification.
@@ -565,10 +563,17 @@ void G1GCPhaseTimes::print(bool evacuation_failed) {
   }
 
   double accounted_ms = 0.0;
+
+  accounted_ms += _root_region_scan_wait_time_ms;
+  accounted_ms += _cur_verify_before_time_ms;
+
   accounted_ms += print_pre_evacuate_collection_set();
   accounted_ms += print_evacuate_initial_collection_set();
   accounted_ms += print_evacuate_optional_collection_set();
   accounted_ms += print_post_evacuate_collection_set(evacuation_failed);
+
+  accounted_ms += _cur_verify_after_time_ms;
+
   print_other(accounted_ms);
 
   // See above comment on the _cur_verify_before_time_ms check.

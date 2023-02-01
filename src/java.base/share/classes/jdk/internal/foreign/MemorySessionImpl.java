@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -175,15 +175,15 @@ public abstract sealed class MemorySessionImpl
         return owner;
     }
 
-    public static boolean sameOwnerThread(SegmentScope session1, SegmentScope session2) {
-        return ((MemorySessionImpl) session1).ownerThread() ==
-                ((MemorySessionImpl) session2).ownerThread();
+    public static boolean sameOwnerThread(SegmentScope scope1, SegmentScope scope2) {
+        return ((MemorySessionImpl) scope1).ownerThread() ==
+                ((MemorySessionImpl) scope2).ownerThread();
     }
 
     @Override
     public final boolean isAccessibleBy(Thread thread) {
         Objects.requireNonNull(thread);
-        return owner == thread;
+        return owner == null || owner == thread;
     }
 
     /**

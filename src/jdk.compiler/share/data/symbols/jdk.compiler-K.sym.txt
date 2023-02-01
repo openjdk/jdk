@@ -186,6 +186,9 @@ header extends java/lang/Object implements com/sun/source/tree/ExpressionTree fl
 class name com/sun/source/tree/ContinueTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
+class name com/sun/source/tree/DeconstructionPatternTree
+-method name getVariable descriptor ()Lcom/sun/source/tree/VariableTree;
+
 class name com/sun/source/tree/DirectiveTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
@@ -196,7 +199,18 @@ class name com/sun/source/tree/EmptyStatementTree
 header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
 
 class name com/sun/source/tree/EnhancedForLoopTree
-header extends java/lang/Object implements com/sun/source/tree/StatementTree flags 601
+header extends java/lang/Object implements com/sun/source/tree/StatementTree nestMembers com/sun/source/tree/EnhancedForLoopTree$DeclarationKind flags 601
+innerclass innerClass com/sun/source/tree/EnhancedForLoopTree$DeclarationKind outerClass com/sun/source/tree/EnhancedForLoopTree innerClassName DeclarationKind flags 4019
+method name getVariableOrRecordPattern descriptor ()Lcom/sun/source/tree/Tree; flags 401 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+method name getDeclarationKind descriptor ()Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind; flags 401 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+
+class name com/sun/source/tree/EnhancedForLoopTree$DeclarationKind
+header extends java/lang/Enum nestHost com/sun/source/tree/EnhancedForLoopTree flags 4031 signature Ljava/lang/Enum<Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+innerclass innerClass com/sun/source/tree/EnhancedForLoopTree$DeclarationKind outerClass com/sun/source/tree/EnhancedForLoopTree innerClassName DeclarationKind flags 4019
+field name VARIABLE descriptor Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind; flags 4019
+field name PATTERN descriptor Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind; flags 4019
+method name values descriptor ()[Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind; flags 9
+method name valueOf descriptor (Ljava/lang/String;)Lcom/sun/source/tree/EnhancedForLoopTree$DeclarationKind; flags 9
 
 class name com/sun/source/tree/ErroneousTree
 header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
@@ -223,7 +237,17 @@ class name com/sun/source/tree/ImportTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601
 
 class name com/sun/source/tree/InstanceOfTree
-header extends java/lang/Object implements com/sun/source/tree/ExpressionTree flags 601
+header extends java/lang/Object implements com/sun/source/tree/ExpressionTree nestMembers com/sun/source/tree/InstanceOfTree$TestKind flags 601
+innerclass innerClass com/sun/source/tree/InstanceOfTree$TestKind outerClass com/sun/source/tree/InstanceOfTree innerClassName TestKind flags 4019
+method name getTestKind descriptor ()Lcom/sun/source/tree/InstanceOfTree$TestKind; flags 401 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+
+class name com/sun/source/tree/InstanceOfTree$TestKind
+header extends java/lang/Enum nestHost com/sun/source/tree/InstanceOfTree flags 4031 signature Ljava/lang/Enum<Lcom/sun/source/tree/InstanceOfTree$TestKind;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;RECORD_PATTERNS;,reflective=Ztrue)
+innerclass innerClass com/sun/source/tree/InstanceOfTree$TestKind outerClass com/sun/source/tree/InstanceOfTree innerClassName TestKind flags 4019
+field name TYPE descriptor Lcom/sun/source/tree/InstanceOfTree$TestKind; flags 4019
+field name PATTERN descriptor Lcom/sun/source/tree/InstanceOfTree$TestKind; flags 4019
+method name values descriptor ()[Lcom/sun/source/tree/InstanceOfTree$TestKind; flags 9
+method name valueOf descriptor (Ljava/lang/String;)Lcom/sun/source/tree/InstanceOfTree$TestKind; flags 9
 
 class name com/sun/source/tree/IntersectionTypeTree
 header extends java/lang/Object implements com/sun/source/tree/Tree flags 601

@@ -157,9 +157,21 @@ header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Lja
 innerclass innerClass java/lang/System$Logger outerClass java/lang/System innerClassName Logger flags 609
 innerclass innerClass java/lang/System$Logger$Level outerClass java/lang/System$Logger innerClassName Level flags 4019
 
-class name javax/management/loading/MLetContent
-header extends java/lang/Object flags 21
+class name javax/management/loading/MLet
+header extends java/net/URLClassLoader implements javax/management/loading/MLetMBean,javax/management/MBeanRegistration,java/io/Externalizable flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="20")
+innerclass innerClass java/lang/System$Logger outerClass java/lang/System innerClassName Logger flags 609
+innerclass innerClass java/lang/System$Logger$Level outerClass java/lang/System$Logger innerClassName Level flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name javax/management/loading/MLetContent
+header extends java/lang/Object flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="20")
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name javax/management/loading/MLetMBean
+header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="20")
+
+class name javax/management/loading/PrivateMLet
+header extends javax/management/loading/MLet implements javax/management/loading/PrivateClassLoader flags 21 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(forRemoval=Ztrue,since="20")
 
 class name javax/management/modelmbean/InvalidTargetObjectTypeException
 header extends java/lang/Exception flags 21

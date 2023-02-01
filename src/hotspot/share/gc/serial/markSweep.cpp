@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,12 +52,12 @@ Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 Stack<PreservedMark, mtGC>    MarkSweep::_preserved_overflow_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
-PreservedMark*          MarkSweep::_preserved_marks = NULL;
-ReferenceProcessor*     MarkSweep::_ref_processor   = NULL;
-STWGCTimer*             MarkSweep::_gc_timer        = NULL;
-SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
+PreservedMark*          MarkSweep::_preserved_marks = nullptr;
+ReferenceProcessor*     MarkSweep::_ref_processor   = nullptr;
+STWGCTimer*             MarkSweep::_gc_timer        = nullptr;
+SerialOldTracer*        MarkSweep::_gc_tracer       = nullptr;
 
-StringDedup::Requests*  MarkSweep::_string_dedup_requests = NULL;
+StringDedup::Requests*  MarkSweep::_string_dedup_requests = nullptr;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
@@ -65,7 +65,7 @@ MarkAndPushClosure MarkSweep::mark_and_push_closure(ClassLoaderData::_claim_stw_
 CLDToOopClosure    MarkSweep::follow_cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
 CLDToOopClosure    MarkSweep::adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
 
-template <class T> inline void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
+template <class T> void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
   mark_and_push(p);
 }
 
@@ -75,15 +75,15 @@ void MarkSweep::push_objarray(oop obj, size_t index) {
   _objarray_stack.push(task);
 }
 
-inline void MarkSweep::follow_array(objArrayOop array) {
-  MarkSweep::follow_klass(array->klass());
+void MarkSweep::follow_array(objArrayOop array) {
+  mark_and_push_closure.do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     MarkSweep::push_objarray(array, 0);
   }
 }
 
-inline void MarkSweep::follow_object(oop obj) {
+void MarkSweep::follow_object(oop obj) {
   assert(obj->is_gc_marked(), "should be marked");
   if (obj->is_objArray()) {
     // Handle object arrays explicitly to allow them to
@@ -128,7 +128,7 @@ MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;
 
 void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
 
-template <class T> inline void MarkSweep::follow_root(T* p) {
+template <class T> void MarkSweep::follow_root(T* p) {
   assert(!Universe::heap()->is_in(p),
          "roots shouldn't be things within the heap");
   T heap_oop = RawAccess<>::oop_load(p);
@@ -172,6 +172,41 @@ void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
   _ref_processor = rp;
   mark_and_push_closure.set_ref_discoverer(_ref_processor);
 }
+
+void MarkSweep::mark_object(oop obj) {
+  if (StringDedup::is_enabled() &&
+      java_lang_String::is_instance(obj) &&
+      SerialStringDedup::is_candidate_from_mark(obj)) {
+    _string_dedup_requests->add(obj);
+  }
+
+  // some marks may contain information we need to preserve so we store them away
+  // and overwrite the mark.  We'll restore it at the end of markSweep.
+  markWord mark = obj->mark();
+  obj->set_mark(markWord::prototype().set_marked());
+
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (obj->mark_must_be_preserved(mark)) {
+    preserve_mark(obj, mark);
+  }
+}
+
+template <class T> void MarkSweep::mark_and_push(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    if (!obj->mark().is_marked()) {
+      mark_object(obj);
+      _marking_stack.push(obj);
+    }
+  }
+}
+
+template <typename T>
+void MarkAndPushClosure::do_oop_work(T* p)            { MarkSweep::mark_and_push(p); }
+void MarkAndPushClosure::do_oop(      oop* p)         { do_oop_work(p); }
+void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
 
 AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 

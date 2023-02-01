@@ -43,20 +43,20 @@ public sealed class MappedMemorySegmentImpl extends NativeMemorySegmentImpl {
 
     static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, SegmentScope session) {
-        super(min, length, readOnly, session);
+    public MappedMemorySegmentImpl(long min, UnmapperProxy unmapper, long length, boolean readOnly, SegmentScope scope) {
+        super(min, length, readOnly, scope);
         this.unmapper = unmapper;
     }
 
     @Override
     ByteBuffer makeByteBuffer() {
         return NIO_ACCESS.newMappedByteBuffer(unmapper, min, (int)length, null,
-                session == MemorySessionImpl.GLOBAL ? null : this);
+                scope == MemorySessionImpl.GLOBAL ? null : this);
     }
 
     @Override
-    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope session) {
-        return new MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, session);
+    MappedMemorySegmentImpl dup(long offset, long size, boolean readOnly, SegmentScope scope) {
+        return new MappedMemorySegmentImpl(min + offset, unmapper, size, readOnly, scope);
     }
 
     // mapped segment methods

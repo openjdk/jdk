@@ -61,7 +61,7 @@ public class UpcallLinker {
         }
     }
 
-    public static MemorySegment make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, SegmentScope session) {
+    public static MemorySegment make(ABIDescriptor abi, MethodHandle target, CallingSequence callingSequence, SegmentScope scope) {
         assert callingSequence.forUpcall();
         Binding.VMLoad[] argMoves = argMoveBindings(callingSequence);
         Binding.VMStore[] retMoves = retMoveBindings(callingSequence);
@@ -93,7 +93,7 @@ public class UpcallLinker {
         CallRegs conv = new CallRegs(args, rets);
         long entryPoint = makeUpcallStub(doBindings, abi, conv,
                 callingSequence.needsReturnBuffer(), callingSequence.returnBufferSize());
-        return UpcallStubs.makeUpcall(entryPoint, session);
+        return UpcallStubs.makeUpcall(entryPoint, scope);
     }
 
     private static void checkPrimitive(MethodType type) {
@@ -130,7 +130,7 @@ public class UpcallLinker {
     private static Object invokeInterpBindings(Object[] lowLevelArgs, InvocationData invData) throws Throwable {
         Binding.Context allocator = invData.callingSequence.allocationSize() != 0
                 ? Binding.Context.ofBoundedAllocator(invData.callingSequence.allocationSize())
-                : Binding.Context.ofSession();
+                : Binding.Context.ofScope();
         try (allocator) {
             /// Invoke interpreter, got array of high-level arguments back
             Object[] highLevelArgs = new Object[invData.callingSequence.calleeMethodType().parameterCount()];

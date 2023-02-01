@@ -41,15 +41,12 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   CFLAGS_JDKLIB += -fvisibility=hidden
   CXXFLAGS_JDKLIB += -fvisibility=hidden
   LDFLAGS_JDKLIB += -Wl,--exclude-libs,ALL
-  EXPORT_ALL_SYMBOLS := -fvisibility=default
 else ifeq ($(TOOLCHAIN_TYPE), clang)
   CFLAGS_JDKLIB += -fvisibility=hidden
   CXXFLAGS_JDKLIB += -fvisibility=hidden
-  EXPORT_ALL_SYMBOLS := -fvisibility=default
 else ifeq ($(TOOLCHAIN_TYPE), xlc)
   CFLAGS_JDKLIB += -qvisibility=hidden
   CXXFLAGS_JDKLIB += -qvisibility=hidden
-  EXPORT_ALL_SYMBOLS := -qvisibility=default
 endif
 
 # Put the libraries here.

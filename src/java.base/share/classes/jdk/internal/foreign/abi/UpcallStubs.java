@@ -50,13 +50,13 @@ public final class UpcallStubs {
         registerNatives();
     }
 
-    static MemorySegment makeUpcall(long entry, SegmentScope session) {
-        ((MemorySessionImpl) session).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
+    static MemorySegment makeUpcall(long entry, SegmentScope scope) {
+        ((MemorySessionImpl) scope).addOrCleanupIfFail(new MemorySessionImpl.ResourceList.ResourceCleanup() {
             @Override
             public void cleanup() {
                 freeUpcallStub(entry);
             }
         });
-        return MemorySegment.ofAddress(entry, 0, session);
+        return MemorySegment.ofAddress(entry, 0, scope);
     }
 }

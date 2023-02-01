@@ -1442,7 +1442,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   }
   LoopNode* head = loop->_head->as_Loop();
 
-  if (head->unique_ctrl_out()->Opcode() == Op_NeverBranch) {
+  if (head->unique_ctrl_out()->is_NeverBranch()) {
     // do nothing for infinite loops
     return false;
   }

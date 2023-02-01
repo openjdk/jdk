@@ -94,7 +94,9 @@ public final class LauncherIconVerifier {
                 Files.copy(getDefaultAppLauncher(expectedIcon == null
                         && !expectedDefault), iconContainer);
                 if (expectedIcon != null) {
-                    setIcon(expectedIcon, iconContainer);
+                    Executor.tryRunMultipleTimes(() -> {
+                        setIcon(expectedIcon, iconContainer);
+                    }, 3, 5);
                 }
 
                 Path extractedExpectedIcon = extractIconFromExecutable(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2547,7 +2547,8 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
     while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
-            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
+           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
              (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
               ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
@@ -2555,6 +2556,22 @@ Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
 
     return ctrl;
   }
+
+bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
+  if (iff->in(1) == NULL || !iff->in(1)->is_Bool()) {
+    return false;
+  }
+  if (iff->in(1)->in(1) == NULL || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
+    return false;
+  }
+  if (iff->in(1)->in(1)->in(1) != NULL && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  if (iff->in(1)->in(1)->in(2) != NULL && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  return false;
+}
 
 Node* CountedLoopNode::skip_predicates() {
   Node* ctrl = in(LoopNode::EntryControl);
@@ -3615,6 +3632,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
@@ -3914,7 +3942,7 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
-void IdealLoopTree::dump_head() const {
+void IdealLoopTree::dump_head() {
   tty->sp(2 * _nest);
   tty->print("Loop: N%d/N%d ", _head->_idx, _tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
@@ -3962,7 +3990,7 @@ void IdealLoopTree::dump_head() const {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
-    if (cl->range_checks_present()) tty->print(" rc ");
+    if (range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
@@ -3985,7 +4013,7 @@ void IdealLoopTree::dump_head() const {
 
 //------------------------------dump-------------------------------------------
 // Dump loops by loop tree
-void IdealLoopTree::dump() const {
+void IdealLoopTree::dump() {
   dump_head();
   if (_child) _child->dump();
   if (_next)  _next ->dump();
@@ -4201,30 +4229,7 @@ bool PhaseIdealLoop::only_has_infinite_loops() {
     assert(head->is_Region(), "");
     worklist.push(head);
   }
-  // BFS traversal down the CFG, except through NeverBranch exits
-  for (uint i = 0; i < worklist.size(); ++i) {
-    Node* n = worklist.at(i);
-    assert(n->is_CFG(), "only traverse CFG");
-    if (n->is_Root()) {
-      // Found root -> there was an exit!
-      return false;
-    } else if (n->Opcode() == Op_NeverBranch) {
-      // Only follow the loop-internal projection, not the NeverBranch exit
-      ProjNode* proj = n->as_Multi()->proj_out_or_null(0);
-      assert(proj != nullptr, "must find loop-internal projection of NeverBranch");
-      worklist.push(proj);
-    } else {
-      // Traverse all CFG outputs
-      for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-        Node* use = n->fast_out(i);
-        if (use->is_CFG()) {
-          worklist.push(use);
-        }
-      }
-    }
-  }
-  // No exit found for any loop -> all are infinite
-  return true;
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 
@@ -4595,8 +4600,7 @@ void PhaseIdealLoop::build_and_optimize() {
             IdealLoopTree *lpt_next = lpt->_next;
             if (lpt_next && lpt_next->is_counted()) {
               CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              has_range_checks(lpt_next);
-              if (cl->is_post_loop() && cl->range_checks_present()) {
+              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
                 if (!cl->is_multiversioned()) {
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
                     // Cause the rce loop to be optimized away if we fail
@@ -5459,7 +5463,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
     return NULL;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == NULL || !iffm->is_If()) {
+  if (iffm == NULL || iffm->Opcode() != Op_If) {
     return NULL;
   }
   Node* bolzm = iffm->in(1);
@@ -5823,6 +5827,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_CountPositives:
       pinned = false;
     }
@@ -6199,7 +6204,7 @@ void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idom
 void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
   Node* next;
   uint padding = 3;
-  uint node_index_padding_width = static_cast<int>(log10(C->unique())) + 1;
+  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
   for (int i = idom_list.size() - 1; i >= 0; i--) {
     if (i == 9 || i == 99) {
       padding++;

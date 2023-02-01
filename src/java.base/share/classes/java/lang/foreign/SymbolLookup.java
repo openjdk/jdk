@@ -189,9 +189,7 @@ public interface SymbolLookup {
      * @param scope the scope associated with symbols obtained from the returned lookup.
      * @return a new symbol lookup suitable to find symbols in a library with the given name.
      * @throws IllegalArgumentException if {@code name} does not identify a valid library.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static SymbolLookup libraryLookup(String name, SegmentScope scope) {
@@ -215,9 +213,7 @@ public interface SymbolLookup {
      * @param scope the scope associated with symbols obtained from the returned lookup.
      * @return a new symbol lookup suitable to find symbols in a library with the given path.
      * @throws IllegalArgumentException if {@code path} does not point to a valid library.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is either absent, or does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static SymbolLookup libraryLookup(Path path, SegmentScope scope) {

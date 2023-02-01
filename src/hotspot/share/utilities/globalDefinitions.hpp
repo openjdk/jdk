@@ -35,6 +35,8 @@
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
 #include <cstddef>
+#include <cstdint>
+#include <type_traits>
 
 class oopDesc;
 
@@ -120,6 +122,7 @@ class oopDesc;
 
 // Format 64-bit quantities.
 #define INT64_FORMAT             "%"          PRId64
+#define INT64_PLUS_FORMAT        "%+"         PRId64
 #define INT64_FORMAT_X           "0x%"        PRIx64
 #define INT64_FORMAT_X_0         "0x%016"     PRIx64
 #define INT64_FORMAT_W(width)    "%"   #width PRId64
@@ -130,6 +133,7 @@ class oopDesc;
 
 // Format integers which change size between 32- and 64-bit.
 #define SSIZE_FORMAT             "%"          PRIdPTR
+#define SSIZE_PLUS_FORMAT        "%+"         PRIdPTR
 #define SSIZE_FORMAT_W(width)    "%"   #width PRIdPTR
 #define SIZE_FORMAT              "%"          PRIuPTR
 #define SIZE_FORMAT_X            "0x%"        PRIxPTR
@@ -186,6 +190,7 @@ FORBID_C_FUNCTION(void exit(int), "use os::exit");
 FORBID_C_FUNCTION(void _exit(int), "use os::exit");
 FORBID_C_FUNCTION(char* strerror(int), "use os::strerror");
 FORBID_C_FUNCTION(char* strtok(char*, const char*), "use strtok_r");
+FORBID_C_FUNCTION(int sprintf(char*, const char*, ...), "use os::snprintf");
 FORBID_C_FUNCTION(int vsprintf(char*, const char*, va_list), "use os::vsnprintf");
 FORBID_C_FUNCTION(int vsnprintf(char*, size_t, const char*, va_list), "use os::vsnprintf");
 
@@ -521,6 +526,13 @@ T2 checked_cast(T1 thing) {
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
+
+// Additional Java basic types
+
+typedef uint8_t  jubyte;
+typedef uint16_t jushort;
+typedef uint32_t juint;
+typedef uint64_t julong;
 
 // Unsigned byte types for os and stream.hpp
 
@@ -1051,7 +1063,6 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
 #define       badAddress        ((address)::badAddressVal)
-#define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
@@ -1286,5 +1297,9 @@ template<typename K> bool primitive_equals(const K& k0, const K& k1) {
 
 // Allow use of C++ thread_local when approved - see JDK-8282469.
 #define APPROVED_CPP_THREAD_LOCAL thread_local
+
+// Converts any type T to a reference type.
+template<typename T>
+std::add_rvalue_reference_t<T> declval() noexcept;
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
