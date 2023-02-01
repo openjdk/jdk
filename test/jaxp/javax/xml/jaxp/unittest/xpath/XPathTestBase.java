@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
-import static javax.xml.xpath.XPathConstants.BOOLEAN;
-import static javax.xml.xpath.XPathConstants.NUMBER;
-import static javax.xml.xpath.XPathConstants.STRING;
-import static javax.xml.xpath.XPathConstants.NODE;
-import static javax.xml.xpath.XPathConstants.NODESET;
 import javax.xml.xpath.XPathNodes;
 import javax.xml.xpath.XPathEvaluationResult;
 
@@ -51,41 +46,122 @@ import org.w3c.dom.Node;
  * Base class for XPath test
  */
 class XPathTestBase {
+    static final String DECLARATION = "<?xml version=\"1.0\" " +
+            "encoding=\"UTF-8\" standalone=\"yes\"?>";
 
-    static final String rawXML
-            = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>"
-            + "<Customers>"
-            + "    <Customer id=\"1\">"
+    static final String DTD = """
+            <!DOCTYPE Customers [
+               <!ELEMENT Customers (Customer*)>
+               <!ELEMENT Customer (Name, Phone, Email, Address)>
+               <!ELEMENT Name (#PCDATA)>
+               <!ELEMENT Phone (#PCDATA)>
+               <!ELEMENT Email (#PCDATA)>
+               <!ELEMENT Address (Street, City, State)>
+               <!ELEMENT Street (#PCDATA)>
+               <!ELEMENT City (#PCDATA)>
+               <!ELEMENT State (#PCDATA)>
+               <!ATTLIST Customer id ID #REQUIRED>
+               <!ATTLIST Email id ID #REQUIRED>
+            ]>
+
+            """;
+
+    static final String RAW_XML
+            = "<Customers xmlns:foo=\"foo\">"
+            + "    <Customer id=\"x1\">"
             + "        <Name>name1</Name>"
             + "        <Phone>1111111111</Phone>"
-            + "        <Email>123@xyz.com</Email>"
+            + "        <Email id=\"x\">123@xyz.com</Email>"
             + "        <Address>"
             + "            <Street>1111 111st ave</Street>"
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
-            + "    <Customer id=\"2\">"
-            + "        <Name>name1</Name>"
+            + "    <Customer id=\"x2\">"
+            + "        <Name>name2</Name>"
             + "        <Phone>2222222222</Phone>"
-            + "        <Email>123@xyz.com</Email>"
+            + "        <Email id=\"y\">123@xyz.com</Email>"
             + "        <Address>"
             + "            <Street>2222 222nd ave</Street>"
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
-            + "    <Customer id=\"3\">"
-            + "        <Name>name1</Name>"
+            + "    <Customer id=\"x3\">"
+            + "        <Name>name3</Name>"
             + "        <Phone>3333333333</Phone>"
-            + "        <Email>123@xyz.com</Email>"
+            + "        <Email id=\"z\">123@xyz.com</Email>"
             + "        <Address>"
             + "            <Street>3333 333rd ave</Street>"
             + "            <City>The City</City>"
             + "            <State>The State</State>"
             + "        </Address>"
             + "    </Customer>"
+            + "    <foo:Customer foo:id=\"x1\">"
+            + "        <foo:Name>name1</foo:Name>"
+            + "        <foo:Phone>1111111111</foo:Phone>"
+            + "        <foo:Email foo:id=\"x\">123@xyz.com</foo:Email>"
+            + "        <foo:Address>"
+            + "            <foo:Street>1111 111st ave</foo:Street>"
+            + "            <foo:City>The City</foo:City>"
+            + "            <foo:State>The State</foo:State>"
+            + "        </foo:Address>"
+            + "    </foo:Customer>"
             + "</Customers>";
+
+    // Number of root element.
+    final int ROOT = 1;
+    // Number of Customer elements.
+    final int CUSTOMERS = 3;
+    // Number of id attributes.
+    final int ID_ATTRIBUTES = 6;
+    // Number of child elements of Customer.
+    final int CUSTOMER_ELEMENTS = 7;
+    // Number of Customer in the foo namespace.
+    final int FOO_CUSTOMERS = 1;
+    // Number of id attributes in the foo namespace.
+    final int FOO_ID_ATTRIBUTES = 2;
+
+    /**
+     * Returns a {@link org.w3c.dom.Document} for XML with DTD.
+     * @return a DOM Document
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
+    public static Document getDtdDocument() throws RuntimeException {
+        return documentOf(DECLARATION + DTD + RAW_XML);
+    }
+
+    /**
+     * Returns a {@link org.w3c.dom.Document} for raw XML.
+     * @return a DOM Document
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
+    public static Document getDocument() throws RuntimeException {
+        return documentOf(DECLARATION + RAW_XML);
+    }
+
+    /**
+     * Returns a {@link org.w3c.dom.Document} for input XML string.
+     * @param xml the input xml string.
+     * @return a DOM Document.
+     * @throws RuntimeException if any error occurred during document
+     *  initialization.
+     */
+    public static Document documentOf(String xml) throws RuntimeException {
+        try {
+            var dBF = DocumentBuilderFactory.newInstance();
+            dBF.setValidating(false);
+            dBF.setNamespaceAware(true);
+            return dBF.newDocumentBuilder().parse(
+                    new ByteArrayInputStream(xml.getBytes("UTF-8")));
+        } catch (Exception e) {
+            System.out.println("Exception while initializing XML document");
+            throw new RuntimeException(e.getMessage());
+        }
+    }
 
     void verifyResult(XPathEvaluationResult<?> result, Object expected) {
         switch (result.type()) {
@@ -126,13 +202,13 @@ class XPathTestBase {
     public Object[][] getInvalidNumericTypes() {
         XPath xpath = XPathFactory.newInstance().newXPath();
         return new Object[][]{{xpath, AtomicInteger.class},
-            {xpath, AtomicInteger.class},
-            {xpath, AtomicLong.class},
-            {xpath, BigDecimal.class},
-            {xpath, BigInteger.class},
-            {xpath, Byte.class},
-            {xpath, Float.class},
-            {xpath, Short.class}
+                {xpath, AtomicInteger.class},
+                {xpath, AtomicLong.class},
+                {xpath, BigDecimal.class},
+                {xpath, BigInteger.class},
+                {xpath, Byte.class},
+                {xpath, Float.class},
+                {xpath, Short.class}
         };
     }
 
@@ -140,13 +216,8 @@ class XPathTestBase {
      * DataProvider: XPath and Document objects
      */
     @DataProvider(name = "document")
-    public Object[][] getDocument() throws Exception {
-        DocumentBuilderFactory dBF = DocumentBuilderFactory.newInstance();
-        dBF.setValidating(false);
-        dBF.setNamespaceAware(true);
-        Document doc = dBF.newDocumentBuilder().parse(
-                new ByteArrayInputStream(rawXML.getBytes("UTF-8")));
-
+    public Object[][] getDocuments() throws RuntimeException {
+        Document doc = getDocument();
         return new Object[][]{{XPathFactory.newInstance().newXPath(), doc}};
     }
 }
