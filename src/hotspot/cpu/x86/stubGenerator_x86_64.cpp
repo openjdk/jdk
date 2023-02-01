@@ -2156,7 +2156,7 @@ address StubGenerator::base64_vbmi_join_2_3_addr() {
   return start;
 }
 
-address StubGenerator::base64_AVX2_tables_addr() {
+address StubGenerator::base64_AVX2_decode_tables_addr() {
   __ align64();
   StubCodeMark mark(this, "StubRoutines", "AVX2_tables_base64");
   address start = __ pc();
@@ -2164,6 +2164,7 @@ address StubGenerator::base64_AVX2_tables_addr() {
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
   __ emit_data64(0x2f2f2f2f2f2f2f2f, relocInfo::none);
+  __ emit_data64(0x5f5f5f5f5f5f5f5f, relocInfo::none);  // for URL
 
   // Permute table
   __ emit_data64(0x0000000100000000, relocInfo::none);
@@ -2171,23 +2172,11 @@ address StubGenerator::base64_AVX2_tables_addr() {
   __ emit_data64(0x0000000600000005, relocInfo::none);
   __ emit_data64(0xffffffffffffffff, relocInfo::none);
 
-  // lut_lo
-  __ emit_data64(0x1111111111111115, relocInfo::none);
-  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
-  __ emit_data64(0x1111111111111115, relocInfo::none);
-  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
-
   // lut_hi
   __ emit_data64(0x0804080402011010, relocInfo::none);
   __ emit_data64(0x1010101010101010, relocInfo::none);
   __ emit_data64(0x0804080402011010, relocInfo::none);
   __ emit_data64(0x1010101010101010, relocInfo::none);
-
-  // lut_roll
-  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
-  __ emit_data64(0x0000000000000000, relocInfo::none);
-  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
-  __ emit_data64(0x0000000000000000, relocInfo::none);
 
   // merge table
   __ emit_data64(0x0140014001400140, relocInfo::none);
@@ -2206,6 +2195,40 @@ address StubGenerator::base64_AVX2_tables_addr() {
   __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
   __ emit_data64(0x090a040506000102, relocInfo::none);
   __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
+
+  return start;
+}
+
+address StubGenerator::base64_AVX2_decode_URL_tables_addr() {
+  __ align64();
+  StubCodeMark mark(this, "StubRoutines", "AVX2_tables_URL_base64");
+  address start = __ pc();
+
+  assert(((unsigned long long)start & 0x3f) == 0,
+         "Alignment problem (0x%08llx)", (unsigned long long)start);
+  // lut_lo
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1a1b1b1b1a131111, relocInfo::none);
+
+  // lut_roll
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf04131000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+
+  // lut_lo URL
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1b1b1a1b1b131111, relocInfo::none);
+  __ emit_data64(0x1111111111111115, relocInfo::none);
+  __ emit_data64(0x1b1b1a1b1b131111, relocInfo::none);
+
+  // lut_roll URL
+  __ emit_data64(0xb9b9bfbf04111000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf04111000, relocInfo::none);
+  __ emit_data64(0x0000000000000000, relocInfo::none);
 
   return start;
 }
@@ -2633,43 +2656,31 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   if (VM_Version::supports_avx2()) {
     Label L_tailProc, L_topLoop, L_enterLoop;
-    ////////////////////////////////////////////
-    //
-    //  **** Make sure inputs match ****
-    // size_t fast_avx2_base64_decode(char *out, const char *src, size_t srclen)
-    //
-    // Handle isURL / MIME?!?!  r12 is used for length calculation (from out)
-    //
-    // rbx is out, r12 is saved out, rdx is size, rsi is src
-    //
-    ////////////////////////////////////////////
 
-    // *************** NEEDS TO BE FIXED ************
-    __ cmpl(isURL, 0);
-    __ jcc(Assembler::notZero, L_tailProc);
-
+    // Check for buffer too small (for algorithm)
     __ cmpl(length, 44);
     __ jcc(Assembler::belowEqual, L_tailProc);
 
     __ cmpl(isMIME, 0);
     __ jcc(Assembler::notEqual, L_tailProc);
 
-    // Set up constants
-    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_tables_addr()));
-    __ vpbroadcastq(xmm4, Address(r13, 0), Assembler::AVX_256bit);
-    __ vmovdqu(xmm11, Address(r13, 0x28));
+    __ shll(isURL, 3);
 
-    // The 0x2f2f..2f vector is used both as a table and a mask.  For now, just initialize
-    // using movq instead of a broadcast (slight performance increase).
-    // Will likely be changed back when URL is accelerated.
-    // __ vpbroadcastb(xmm10, Address(r13, 0), Assembler::AVX_256bit);
+    // Set up constants
+    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
+    __ vpbroadcastq(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
     __ vmovdqu(xmm10, xmm4);
-    __ vmovdqu(xmm9, Address(r13, 0x48));
-    __ vmovdqu(xmm8, Address(r13, 0x68));
-    __ vmovdqu(xmm7, Address(r13, 0x88));
-    __ vmovdqu(xmm6, Address(r13, 0xa8));
-    __ vmovdqu(xmm13, Address(r13, 0xc8));
-    __ vmovdqu(xmm12, Address(r13, 0x08));
+    __ vmovdqu(xmm12, Address(r13, 0x10));  // permute
+    __ vmovdqu(xmm9, Address(r13, 0x30));  // lut_hi
+    __ vmovdqu(xmm7, Address(r13, 0x50)); // merge
+    __ vmovdqu(xmm6, Address(r13, 0x70)); // merge mult
+    __ vmovdqu(xmm13, Address(r13, 0x90)); // shuffle
+
+    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_URL_tables_addr()));
+    __ shll(isURL, 2);
+    __ vmovdqu(xmm11, Address(r13, isURL, Address::times_1, 0x00));  // lut_lo
+    __ vmovdqu(xmm8, Address(r13, isURL, Address::times_1, 0x20)); // lut_roll
+    __ shrl(isURL, 5);  // restore isURL
     __ jmp(L_enterLoop);
 
     __ align32();
@@ -3984,7 +3995,8 @@ void StubGenerator::generate_all() {
       StubRoutines::x86::_avx2_shuffle_base64 = base64_avx2_shuffle_addr();
       StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
       StubRoutines::x86::_avx2_lut_base64 = base64_avx2_lut_addr();
-      StubRoutines::x86::_avx2_tables_base64 = base64_AVX2_tables_addr();
+      StubRoutines::x86::_avx2_decode_tables_base64 = base64_AVX2_decode_tables_addr();
+      StubRoutines::x86::_avx2_decode_tables_url_base64 = base64_AVX2_decode_URL_tables_addr();
     }
     StubRoutines::x86::_encoding_table_base64 = base64_encoding_table_addr();
     if (VM_Version::supports_avx512_vbmi()) {

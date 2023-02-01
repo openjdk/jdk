@@ -441,7 +441,8 @@ class StubGenerator: public StubCodeGenerator {
   address base64_vbmi_join_1_2_addr();
   address base64_vbmi_join_2_3_addr();
   address base64_decoding_table_addr();
-  address base64_AVX2_tables_addr();
+  address base64_AVX2_decode_tables_addr();
+  address base64_AVX2_decode_URL_tables_addr();
 
   // Code for generating Base64 decoding.
   //
