@@ -1642,28 +1642,26 @@ public class ZipFile implements ZipConstants, Closeable {
                     // The CEN name must match the specified one
                     int pos = getEntryPos(idx);
 
-                    try {
-                        ZipCoder zc = zipCoderForPos(pos);
 
-                        int noff = pos + CENHDR;
-                        int nlen = CENNAM(cen, pos);
+                    ZipCoder zc = zipCoderForPos(pos);
 
-                        int mismatch = zc.mismatch(name, cen, noff, noff + nlen);
+                    int noff = pos + CENHDR;
+                    int nlen = CENNAM(cen, pos);
 
-                        // Exact match for "name"
-                        if (mismatch == -1) {
-                            return pos;
-                        }
+                    int mismatch = zc.mismatch(name, cen, noff, noff + nlen);
 
-                        // If addSlash is true, we'll also test for "name/"
-                        if (addSlash && nlen == mismatch + zc.slashLength() &&
-                                zc.hasTrailingSlash(cen, noff, nlen)) {
-                            // We found "name/", record its in case we don't find "name"
-                            slashPos = pos;
-                        }
-                    } catch (IllegalArgumentException iae) {
-                        // Ignore
+                    // Exact match for "name"
+                    if (mismatch == -1) {
+                        return pos;
                     }
+
+                    // If addSlash is true, we'll also test for "name/"
+                    if (addSlash && nlen == mismatch + zc.slashLength() &&
+                            zc.hasTrailingSlash(cen, noff, nlen)) {
+                        // We found "name/", record its in case we don't find "name"
+                        slashPos = pos;
+                    }
+
                 }
                 idx = getEntryNext(idx);
             }
