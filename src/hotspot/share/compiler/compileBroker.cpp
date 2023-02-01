@@ -2782,13 +2782,13 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
     ts.update(); // record starting point
     MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
     MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
-    if ((function_lock_1 != nullptr) || (function_lock_1 != nullptr)) {
+    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
       out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if ((function_lock_1 != nullptr) || (function_lock_1 != nullptr)) {
+    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
       out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }

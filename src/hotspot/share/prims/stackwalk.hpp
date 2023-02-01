@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,11 @@ public:
   const RegisterMap* reg_map() override { return _map; };
 
   void next()   override;
-  bool at_end() override { return _jvf == NULL; }
+  bool at_end() override { return _jvf == nullptr; }
 
   Method* method() override { return _jvf->method(); }
   int bci()        override { return _jvf->bci(); }
-  oop cont()       override { return continuation() != NULL ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
+  oop cont()       override { return continuation() != nullptr ? continuation(): ContinuationEntry::cont_oop_or_null(_cont_entry, _map->thread()); }
 
   void fill_frame(int index, objArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;

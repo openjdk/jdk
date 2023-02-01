@@ -132,7 +132,6 @@ class CallInfo;
 
 class ConstantPoolCacheEntry {
   friend class VMStructs;
-  friend class constantPoolCacheKlass;
   friend class ConstantPool;
   friend class InterpreterRuntime;
 
@@ -504,7 +503,6 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
-  friend class constantPoolCacheKlass;
   friend class ConstantPoolCacheEntry;
 
  public:
