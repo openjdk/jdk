@@ -46,7 +46,7 @@
 // Override weak symbol exposed by LSan to override default options. This is called by LSan
 // extremely early during library loading, before main is called.  We need to override the default
 // options because LSan will perform leak checking at program exit. Unfortunately Hotspot does not
-// shutdown cleaning at the moment and some leaks occur, we want to ignore these. Instead we
+// shutdown cleanly at the moment and some leaks occur, we want to ignore these. Instead we
 // explicitly perform leak checking early during JVM shutdown.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_options() {
   return
