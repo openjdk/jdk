@@ -86,6 +86,8 @@ public class SynthTableUI extends BasicTableUI
     private TableCellRenderer booleanRenderer;
     private TableCellRenderer objectRenderer;
 
+    private boolean showHorizLines;
+    private boolean showVertLines;
 //
 //  The installation/uninstall procedures and support
 //
@@ -178,6 +180,8 @@ public class SynthTableUI extends BasicTableUI
             if (rowHeight != null) {
                 LookAndFeel.installProperty(table, "rowHeight", rowHeight);
             }
+            showHorizLines = table.getShowHorizontalLines();
+            showVertLines = table.getShowVerticalLines();
             boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
             if (!showGrid) {
                 table.setShowGrid(false);
@@ -227,9 +231,11 @@ public class SynthTableUI extends BasicTableUI
             table.setTransferHandler(null);
         }
         SynthContext context = getContext(table, ENABLED);
-        boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
-        if (!showGrid) {
-            table.setShowGrid(true);
+        if (showHorizLines) {
+            table.setShowHorizontalLines(true);
+        }
+        if (showVertLines) {
+            table.setShowVerticalLines(true);
         }
         style.uninstallDefaults(context);
         style = null;
