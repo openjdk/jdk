@@ -53,7 +53,6 @@ public class EngineCloseOnAlert {
     private static KeyManagerFactory KMF;
     private static TrustManagerFactory TMF;
 
-    private static final String[] TLS12ONLY = { "TLSv1.2" };
     private static final String[] ONECIPHER =
             { "TLS_RSA_WITH_AES_128_CBC_SHA" };
 
@@ -88,6 +87,7 @@ public class EngineCloseOnAlert {
         }
     }
 
+    private static final String TLSv12 = "TLSv1.2";
     private static final TestCase clientReceivesAlert = new TestCase() {
         @Override
         public void runTest() throws Exception {
@@ -101,15 +101,13 @@ public class EngineCloseOnAlert {
             // match the requested ciphers offered by the client.  This
             // will generate an alert from the server to the client.
 
-            SSLContext context = SSLContext.getDefault();
+            SSLContext context = SSLContext.getInstance(TLSv12);
+            context.init(null, null, null);
+
             SSLEngine client = context.createSSLEngine();
-            client.setEnabledProtocols(TLS12ONLY);
             SSLEngine server = context.createSSLEngine();
-            server.setEnabledProtocols(TLS12ONLY);
             client.setUseClientMode(true);
-            client.setEnabledProtocols(TLS12ONLY);
             server.setUseClientMode(false);
-            server.setEnabledProtocols(TLS12ONLY);
             SSLEngineResult clientResult;
             SSLEngineResult serverResult;
 
@@ -188,17 +186,16 @@ public class EngineCloseOnAlert {
     private static final TestCase serverReceivesAlert = new TestCase() {
         @Override
         public void runTest() throws Exception {
-            SSLContext cliContext = SSLContext.getDefault();
-            SSLContext servContext = SSLContext.getInstance("TLS");
+            SSLContext cliContext = SSLContext.getInstance(TLSv12);
+            cliContext.init(null, null, null);
+            SSLContext servContext = SSLContext.getInstance(TLSv12);
             servContext.init(KMF.getKeyManagers(), TMF.getTrustManagers(),
                     null);
             SSLEngine client = cliContext.createSSLEngine();
             SSLEngine server = servContext.createSSLEngine();
             client.setUseClientMode(true);
-            client.setEnabledProtocols(TLS12ONLY);
             client.setEnabledCipherSuites(ONECIPHER);
             server.setUseClientMode(false);
-            server.setEnabledProtocols(TLS12ONLY);
             SSLEngineResult clientResult;
             SSLEngineResult serverResult;
             ByteBuffer raw = ByteBuffer.allocate(32768);
