@@ -283,10 +283,14 @@ void ShenandoahControlThread::run_service() {
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
 
+      // Expedite next native trim. This also trims if periodic trims are disabled.
+      TrimNative::schedule_trim();
+
       // GC is over, we are at idle now
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_idle();
       }
+
     } else {
       // Allow allocators to know we have seen this much regions
       if (ShenandoahPacing && (allocs_seen > 0)) {
@@ -425,7 +429,7 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
-  TrimNative::PauseThenTrimMark trim_pause_mark;
+  TrimNative::PauseMark trim_pause_mark;
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 

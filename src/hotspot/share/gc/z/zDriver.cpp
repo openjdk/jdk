@@ -321,6 +321,7 @@ void ZDriver::concurrent_reset_relocation_set() {
 }
 
 void ZDriver::pause_verify() {
+  TrimNative::PauseMark trim_native_pause;
   if (VerifyBeforeGC || VerifyDuringGC || VerifyAfterGC) {
     // Full verification
     VM_Verify op;
@@ -430,6 +431,9 @@ public:
 
     // Signal that we have completed a visit to all live objects
     Universe::heap()->record_whole_heap_examined_timestamp();
+
+    // Expedite next native trim. This also trims if periodic trims are disabled.
+    TrimNative::schedule_trim();
   }
 };
 

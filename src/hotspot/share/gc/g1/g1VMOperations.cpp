@@ -34,6 +34,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "memory/universe.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 

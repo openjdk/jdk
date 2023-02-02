@@ -692,25 +692,22 @@
           range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
                                                                             \
-  product(bool, GCTrimNativeHeap, false, EXPERIMENTAL,                      \
+  product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
           "GC will attempt to trim the native heap periodically and "       \
-          "after full GCs.")                                                \
+          "at the end of a GC cycle.")                                      \
                                                                             \
-  product(uint, GCTrimNativeHeapInterval, 30, EXPERIMENTAL,                 \
-          "If GCTrimNativeHeap is enabled: interval, in seconds, in which " \
-          "the VM will attempt to trim the native heap. This is a lower "   \
-          "bound; the JVM may increase the interval time up to "            \
-          "GCTrimNativeHeapIntervalMax."                                    \
-          "A value of 0 disables periodic trimming altogether while "       \
-          "leaving trimming after full gc enabled.")                        \
+  product(uint, TrimNativeHeapInterval, 5, EXPERIMENTAL,                    \
+          "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
+          "the GC will attempt to trim the native heap. If "                \
+          "TrimNativeHeapAdaptiveStepDown is enabled, the JVM may lower "   \
+          "the frequency of trimming."                                      \
+          "A value of 0 disables periodic trimming altogether while still " \
+          "trimming after a GC cycle.")                                     \
           range(0, (24 * 60 * 60))                                          \
                                                                             \
-  product(uint, GCTrimNativeHeapIntervalMax, 0, EXPERIMENTAL,               \
-          "If GCTrimNativeHeap is enabled and GCTrimNativeHeapInterval is " \
-          "not 0: upper bound for the interval time, in seconds, in which " \
-          "the VM will attempt to trim the native heap.")                   \
-          range(0, max_juint)                                               \
-          constraint(GCTrimNativeHeapIntervalMaxFunc,AtParse)               \
+  product(bool, TrimNativeHeapAdaptiveStepDown, false, EXPERIMENTAL,        \
+          "If TrimNativeHeap and periodic trimming are enabled: if true, "  \
+          "the GC may step down trimming frequency if needed. ")            \
                                                                             \
           // end of GC_FLAGS
 

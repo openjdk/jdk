@@ -1077,8 +1077,6 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool do_maximal_compaction) {
   assert_at_safepoint_on_vm_thread();
 
-  TrimNative::PauseThenTrimMark trim_pause_mark;
-
   if (GCLocker::check_active_before_gc()) {
     // Full GC was not completed.
     return false;
@@ -2790,6 +2788,7 @@ void G1CollectedHeap::retire_tlabs() {
 
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
   ResourceMark rm;
+  TrimNative::PauseThenTrimMark trim_native_pause;
 
   IsGCActiveMark active_gc_mark;
   GCIdMark gc_id_mark;

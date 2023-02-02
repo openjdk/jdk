@@ -442,9 +442,6 @@ class os: AllStatic {
   // Does the platform support trimming the native heap?
   static bool can_trim_native_heap();
 
-  // Does the platform recommend trimming?
-  static bool should_trim_native_heap();
-
   // Trim the C-heap. Optionally returns working set size change (RSS+Swap) in *rss_change.
   // Note: If trimming succeeded but no size change information could be obtained,
   // rss_change.after will contain SIZE_MAX upon return.

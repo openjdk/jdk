@@ -57,7 +57,6 @@ inline void os::map_stack_shadow_pages(address sp) {
 
 // stubbed-out trim-native support
 inline bool os::can_trim_native_heap() { return false; }
-inline bool os::should_trim_native_heap() { return false; }
 inline bool os::trim_native_heap(os::size_change_t* rss_change) { return false; }
 
 #endif // OS_BSD_OS_BSD_INLINE_HPP

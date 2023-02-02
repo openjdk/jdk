@@ -56,6 +56,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "jvm.h"
@@ -1229,6 +1230,8 @@ void G1ConcurrentMark::remark() {
     return;
   }
 
+  TrimNative::PauseMark trim_native_pause;
+
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_remark_start();
 
@@ -1444,6 +1447,8 @@ void G1ConcurrentMark::cleanup() {
   if (has_aborted()) {
     return;
   }
+
+  TrimNative::PauseThenTrimMark trim_native_pause;
 
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_cleanup_start();

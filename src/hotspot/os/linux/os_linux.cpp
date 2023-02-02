@@ -5415,32 +5415,3 @@ bool os::trim_native_heap(os::size_change_t* rss_change) {
   return false; // musl
 #endif
 }
-
-static const size_t retain_size = 2 * M;
-
-bool os::should_trim_native_heap() {
-#ifdef __GLIBC__
-  bool rc = true;
-  // We try, using mallinfo, to predict whether a malloc_trim(3) will be beneficial.
-  //
-  // "mallinfo::keepcost" is no help even if manpage claims this to be the projected
-  // trim size. In practice it is just a very small value with no relation to the actual
-  // effect trimming will have.
-  //
-  // Our best bet is "mallinfo::fordblks", the total chunk size of free blocks. Since
-  // only free blocks can be trimmed, a very low bar is to require their combined size
-  // to be higher than our retain size. Note, however, that "mallinfo::fordblks" includes
-  // already-trimmed blocks, since glibc trims by calling madvice(MADV_DONT_NEED) on free
-  // chunks but does not update its bookkeeping.
-  //
-  // In the end we want to prevent obvious bogus attempts to trim, and for that fordblks
-  // is good enough.
-  os::Linux::glibc_mallinfo mi;
-  bool possibly_wrapped;
-  os::Linux::get_mallinfo(&mi, &possibly_wrapped);
-  // If we cannot say for sure because we use an older glibc, assume trimming makes sense.
-  return possibly_wrapped ? true : retain_size < mi.fordblks;
-#else
-  return false; // musl
-#endif
-}
