@@ -1955,7 +1955,7 @@ static void parse_os_info_helper(FILE* fp, char* distro, size_t length, bool get
   char buf[256];
   while (fgets(buf, sizeof(buf), fp)) {
     // Edit out extra stuff in expected format
-    if (strstr(buf, "DISTRIB_DESCRIPTION=") != null || strstr(buf, "PRETTY_NAME=") != nullptr) {
+    if (strstr(buf, "DISTRIB_DESCRIPTION=") != nullptr || strstr(buf, "PRETTY_NAME=") != nullptr) {
       char* ptr = strstr(buf, "\"");  // the name is in quotes
       if (ptr != nullptr) {
         ptr++; // go beyond first quote
