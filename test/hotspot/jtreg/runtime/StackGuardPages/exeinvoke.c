@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,8 +124,6 @@ void call_method_on_jvm(const char* method) {
   jmethodID method_id;
   int res;
 
-  printf("run_native_overflow %ld\n", (long) gettid());
-
   res = (*_jvm)->AttachCurrentThread(_jvm, (void **)&env, NULL);
   if (res != JNI_OK) {
     fprintf(stderr, "Test ERROR. Can't attach to current thread\n");
@@ -174,6 +172,7 @@ void *run_native_overflow(void *p) {
   // Test that stack guard page is correctly set for initial and non initial thread
   // and correctly removed for the initial thread
   volatile int res;
+  printf("run_native_overflow %ld\n", (long) gettid());
   call_method_on_jvm("printAlive");
 
   // Initialize statics used in do_overflow
@@ -187,8 +186,6 @@ void *run_native_overflow(void *p) {
 
   if (_last_si_code == SEGV_ACCERR) {
     printf("Test PASSED. Got access violation accessing guard page at %d\n", _rec_count);
-    // Use _y in side-effect to ensure that compiler doesn't optimize it away
-    printf("You can ignore this value: %d", _peek_value);
   }
 
   res = (*_jvm)->DetachCurrentThread(_jvm);
