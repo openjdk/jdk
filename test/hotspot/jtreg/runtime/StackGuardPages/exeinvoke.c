@@ -55,9 +55,9 @@ static jmp_buf  context;
 
 static volatile int _last_si_code = -1;
 static volatile int _failures = 0;
-static volatile int _rec_count = 0;
-static volatile int _kp_rec_count = 0;
-static int _y = 0;
+static volatile int _rec_count = 0; // Number of allocations to hit stack guard page
+static volatile int _kp_rec_count = 0; // Kept record of rec_count, for retrying
+static int _peek_value = 0; // Used for accessing memory to cause SIGSEGV
 
 pid_t gettid() {
   return (pid_t) syscall(SYS_gettid);
@@ -165,7 +165,7 @@ void do_overflow(){
     for(;;) {
       _rec_count++;
       p = (int*)alloca(128);
-      _y = p[0]; // Peek
+      _peek_value = p[0]; // Peek
     }
   }
 }
@@ -188,7 +188,7 @@ void *run_native_overflow(void *p) {
   if (_last_si_code == SEGV_ACCERR) {
     printf("Test PASSED. Got access violation accessing guard page at %d\n", _rec_count);
     // Use _y in side-effect to ensure that compiler doesn't optimize it away
-    printf("You can ignore this value: %d", _y);
+    printf("You can ignore this value: %d", _peek_value);
   }
 
   res = (*_jvm)->DetachCurrentThread(_jvm);
