@@ -1636,7 +1636,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int slashPos = -1; // Position of secondary match "name/"
 
             // Search down the target hash chain for a entry whose
-            // 32 bit hash matches the hashed name
+            // 32 bit hash matches the hashed name.
             while (idx != ZIP_ENDCHAIN) {
                 if (getEntryHash(idx) == hsh) {
                     // The CEN name must match the specified one
