@@ -57,6 +57,7 @@ static volatile int _last_si_code = -1;
 static volatile int _failures = 0;
 static volatile int _rec_count = 0;
 static volatile int _kp_rec_count = 0;
+static int _y = 0;
 
 pid_t gettid() {
   return (pid_t) syscall(SYS_gettid);
@@ -159,11 +160,12 @@ void *run_java_overflow (void *p) {
 }
 
 void do_overflow(){
-  volatile void *p;
+  volatile int *p = NULL;
   if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
     for(;;) {
       _rec_count++;
-      p = alloca(128);
+      p = (int*)alloca(128);
+      _y = p[0]; // Peek
     }
   }
 }
@@ -185,6 +187,8 @@ void *run_native_overflow(void *p) {
 
   if (_last_si_code == SEGV_ACCERR) {
     printf("Test PASSED. Got access violation accessing guard page at %d\n", _rec_count);
+    // Use _y in side-effect to ensure that compiler doesn't optimize it away
+    printf("You can ignore this value: %d", _y);
   }
 
   res = (*_jvm)->DetachCurrentThread(_jvm);
