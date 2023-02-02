@@ -34,7 +34,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"

@@ -39,7 +39,6 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"

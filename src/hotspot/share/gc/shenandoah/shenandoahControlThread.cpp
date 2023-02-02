@@ -40,7 +40,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"

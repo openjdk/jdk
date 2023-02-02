@@ -49,7 +49,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "runtime/atomic.hpp"

@@ -42,7 +42,7 @@
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"

@@ -57,7 +57,7 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/iterator.hpp"

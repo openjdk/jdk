@@ -26,7 +26,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/gcTrimNativeHeap.hpp"
+#include "gc/shared/trimNative.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zBreakpoint.hpp"
 #include "gc/z/zCollectedHeap.hpp"
