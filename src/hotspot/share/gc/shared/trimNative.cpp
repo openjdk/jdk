@@ -112,7 +112,7 @@ public:
 
 };
 
-class NativeTrimmer : public ConcurrentGCThread {
+class NativeTrimmerThread : public ConcurrentGCThread {
 
   Monitor* _lock;
 
@@ -334,7 +334,7 @@ tty->cr();
 
 public:
 
-  NativeTrimmer() :
+  NativeTrimmerThread() :
     _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
     _interval_ms(GCTrimNativeHeapInterval * 1000),
     _max_interval_ms(GCTrimNativeHeapIntervalMax * 1000),
@@ -387,7 +387,7 @@ public:
 
 }; // NativeTrimmer
 
-static NativeTrimmer* g_trimmer_thread = nullptr;
+static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
 /// GCTrimNative outside facing methods
 
@@ -415,7 +415,7 @@ void GCTrimNative::initialize() {
       log_info(gc, trim)("Periodic native trim disabled (we trim at full gc only).");
     }
 
-    g_trimmer_thread = new NativeTrimmer();
+    g_trimmer_thread = new NativeTrimmerThread();
   }
 }
 
