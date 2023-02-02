@@ -801,6 +801,9 @@ public class JavacParser implements Parser {
             } else {
                 //type test pattern:
                 JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+                if (e == null) {
+                    var.startPos = pos;
+                }
                 pattern = toP(F.at(pos).BindingPattern(var));
             }
         }

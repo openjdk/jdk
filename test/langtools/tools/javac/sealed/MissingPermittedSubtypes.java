@@ -138,8 +138,6 @@ public class MissingPermittedSubtypes extends TestRunner {
             List<String> expectedErrors = List.of(
                    "Test1.java:5:24: compiler.err.cant.access: lib.B1, (compiler.misc.class.file.not.found: lib.B1)",
                    "Test1.java:8:29: compiler.err.cant.ref.non.effectively.final.var: obj, (compiler.misc.lambda)",
-                   "- compiler.note.preview.filename: Test1.java, DEFAULT",
-                   "- compiler.note.preview.recompile",
                    "2 errors");
 
             if (!expectedErrors.equals(log)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,34 @@
  * @test
  * @bug 8206986 8243548
  * @summary Verify that an switch expression over enum can be exhaustive without default.
+ * @compile --release 20 ExhaustiveEnumSwitch.java
+ * @compile ExhaustiveEnumSwitchExtra.java
+ * @run main ExhaustiveEnumSwitch IncompatibleClassChangeError
  * @compile ExhaustiveEnumSwitch.java
  * @compile ExhaustiveEnumSwitchExtra.java
- * @run main ExhaustiveEnumSwitch
+ * @run main ExhaustiveEnumSwitch MatchException
  */
 
 public class ExhaustiveEnumSwitch {
     public static void main(String... args) {
-        new ExhaustiveEnumSwitch().run();
+        boolean matchException = "MatchException".equals(args[0]);
+        new ExhaustiveEnumSwitch().run(matchException);
     }
 
-    private void run() {
+    private void run(boolean matchException) {
         ExhaustiveEnumSwitchEnum v = ExhaustiveEnumSwitchEnum.valueOf("F");
 
         try {
             print(v);
             throw new AssertionError("Expected exception did not occur.");
         } catch (IncompatibleClassChangeError err) {
-            //ok
+            if (matchException) {
+                throw new AssertionError("Expected IncompatibleClassChangeError, but got MatchException!");
+            }
+        } catch (MatchException ex) {
+            if (!matchException) {
+                throw new AssertionError("Expected MatchException, but got IncompatibleClassChangeError!");
+            }
         }
     }
 
