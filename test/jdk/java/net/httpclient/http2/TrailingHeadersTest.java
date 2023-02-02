@@ -25,8 +25,9 @@
  @test
  * @summary Trailing headers should be ignored by the client when using HTTP/2
  *          and not affect the rest of the exchange.
- * @library /test/lib server
  * @bug 8296410
+ * @library /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -34,6 +35,7 @@
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=all TrailingHeadersTest
  */
 
+import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.HeaderFrame;
@@ -69,6 +71,13 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.function.BiPredicate;
 
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -89,12 +98,16 @@ public class TrailingHeadersTest {
 
     @BeforeTest
     public void setup() throws Exception {
+        Properties props = new Properties();
+        // For triggering trailing headers to send after Push Promise Response headers are sent
+        props.setProperty("sendTrailingHeadersAfterPushPromise", "1");
+
         http2TestServer = new Http2TestServer("Test_Server",
                                               false,
                                               0,
-                                              Executors.newCachedThreadPool(),
+                                              null,
                                               0,
-                                              new Properties(),
+                                              props,
                                        null);
         http2TestServer.setExchangeSupplier(TrailingHeadersExchange::new);
         http2TestServer.addHandler(new ResponseTrailersHandler(), "/ResponseTrailingHeaders");
@@ -102,8 +115,6 @@ public class TrailingHeadersTest {
         http2TestServer.addHandler(new PushPromiseTrailersHandler(), "/PushPromiseTrailingHeaders");
         http2TestServer.addHandler(new WarmupHandler(), "/WarmupHandler");
 
-        // For triggering trailing headers to send after Push Promise Response headers are sent
-        http2TestServer.properties.setProperty("sendTrailingHeadersAfterPushPromise", "1");
         http2TestServer.start();
 
         trailingURI = URI.create("http://" + http2TestServer.serverAuthority() + "/ResponseTrailingHeaders");
@@ -211,8 +222,8 @@ public class TrailingHeadersTest {
 
             this.sendResponseHeaders(200, resp.length);
             DataFrame dataFrame = new DataFrame(this.streamid, 0, ByteBuffer.wrap(resp));
-            this.conn.outputQ.put(dataFrame);
-            this.conn.outputQ.put(headerFrame);
+            this.conn.addToOutputQ(dataFrame);
+            this.conn.addToOutputQ(headerFrame);
         }
 
         @Override
@@ -228,11 +239,10 @@ public class TrailingHeadersTest {
             }
             HttpHeaders combinedHeaders = headersBuilder.build();
             OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
-            // Indicates to the client that a continuation should be expected
             pp.setFlag(HeaderFrame.END_HEADERS);
 
             try {
-                conn.outputQ.put(pp);
+                this.conn.addToOutputQ(pp);
             } catch (IOException ex) {
                 testLog.println("serverPush(): pushPromise exception: " + ex);
             }

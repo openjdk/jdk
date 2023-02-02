@@ -963,13 +963,15 @@ public class Http2TestServerConnection {
                         SettingsFrame.INITIAL_WINDOW_SIZE), this) {
 
             @Override
-            protected void sendEndStream() throws IOException {
-                // For testing the client-side effects of sending trailing headers after Push Promise response headers
-                if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
-                    System.err.println("Sending trailing headers after push promise response headers");
-                    outputQ.put(getTrailingHeadersFrame(promisedStreamid));
-                } else {
-                    super.sendEndStream();
+            protected void sendEndStream() {
+                try {
+                    if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
+                        conn.outputQ.put(getTrailingHeadersFrame(promisedStreamid, List.of()));
+                    } else {
+                        super.sendEndStream();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         };
@@ -993,15 +995,9 @@ public class Http2TestServerConnection {
 
     }
 
-    private HeadersFrame getTrailingHeadersFrame(int promisedStreamid) {
-        /*
-        HttpHeadersBuilder hb = createNewHeadersBuilder();
-        hb.addHeader("x-trailing-header", "trailing-value");
-        HttpHeaders headers = hb.build();
-        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), encodeHeaders(headers));
-        */
+    private HeadersFrame getTrailingHeadersFrame(int promisedStreamid, List<ByteBuffer> headerBlocks) {
         // TODO: see if there is a safe way to encode headers without interrupting connection thread
-        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), List.of());
+        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), headerBlocks);
     }
 
     // returns a minimal response with status 200
