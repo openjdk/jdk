@@ -465,35 +465,14 @@ public class DeferredAttr extends JCTree.Visitor {
         }
     }
 
-    boolean hasTypeDeclaration(JCLambda lambda) {
+    boolean hasTypeDeclaration(JCTree tree) {
         TypeDeclVisitor typeDeclVisitor = new TypeDeclVisitor();
-        if (lambda.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
-            lambda.getBody().accept(typeDeclVisitor);
-            return typeDeclVisitor.result;
-        } else {
-            JCBlock body = (JCBlock)lambda.body;
-            for (JCTree stat : body.stats) {
-                stat.accept(typeDeclVisitor);
-                if (typeDeclVisitor.result) {
-                    return true;
-                }
-            }
-            return false;
-        }
+        typeDeclVisitor.scan(tree);
+        return typeDeclVisitor.result;
     }
 
-    static class TypeDeclVisitor extends JCTree.Visitor {
+    static class TypeDeclVisitor extends TreeScanner {
         boolean result = false;
-
-        @Override
-        public void visitTree(JCTree that) {
-            // ignore
-        }
-
-        @Override
-        public void visitParens(JCParens tree) {
-            tree.expr.accept(this);
-        }
 
         @Override
         public void visitClassDef(JCClassDecl that) {
@@ -509,7 +488,7 @@ public class DeferredAttr extends JCTree.Visitor {
      */
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
-                null, AttributionMode.SPECULATIVE, null);
+                null, AttributionMode.SPECULATIVE, !hasTypeDeclaration(tree) ? null : argumentAttr.withLocalCacheContext());
     }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
