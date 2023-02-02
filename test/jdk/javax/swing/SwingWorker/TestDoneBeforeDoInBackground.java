@@ -35,7 +35,7 @@ public class TestDoneBeforeDoInBackground {
 
     private static boolean doInBackground = false;
     private static final int WAIT_TIME = 200;
-    private static final long CLEANUP_TIME = 3000;
+    private static final long CLEANUP_TIME = 1000;
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
