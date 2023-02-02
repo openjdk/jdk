@@ -2667,7 +2667,7 @@ public final class System {
             public int mismatchUTF8(String str, byte[] b, int fromIndex, int toIndex) {
                 byte[] encoded = str.isLatin1() ? str.value() : str.getBytes(UTF_8.INSTANCE);
                 if (false) {
-                    // Arrays.mismatch without the range checks (~3% faster micro getEntryHit)
+                    // Arrays.mismatch without the range checks (~5% faster micro getEntryHit)
                     int aLength = encoded.length;
                     int bLength = toIndex - fromIndex;
                     int length = Math.min(aLength, bLength);
