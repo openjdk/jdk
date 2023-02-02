@@ -36,9 +36,9 @@ import org.openide.util.ImageUtilities;
  */
 public class HideDuplicatesAction extends AbstractAction {
 
-    public HideDuplicatesAction() {
+    public HideDuplicatesAction(boolean selected) {
         putValue(AbstractAction.SMALL_ICON, new ImageIcon(ImageUtilities.loadImage(iconResource())));
-        putValue(Action.SELECTED_KEY, false);
+        putValue(Action.SELECTED_KEY, selected);
         putValue(Action.SHORT_DESCRIPTION, "Hide graphs which are the same as the previous graph");
     }
 

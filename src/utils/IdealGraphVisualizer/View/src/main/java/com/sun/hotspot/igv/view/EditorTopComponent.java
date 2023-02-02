@@ -76,20 +76,14 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     private static final String SCENE_STRING = "scene";
 
     public EditorTopComponent(InputGraph graph) {
+        this(new DiagramViewModel(graph));
+    }
+
+    public EditorTopComponent(DiagramViewModel diagramViewModel) {
         initComponents();
 
         LookupHistory.init(InputGraphProvider.class);
         setFocusable(true);
-        FilterChain filterChain;
-        FilterChain sequence;
-        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
-        if (provider == null) {
-            filterChain = new FilterChain();
-            sequence = new FilterChain();
-        } else {
-            filterChain = provider.getFilterChain();
-            sequence = provider.getSequence();
-        }
 
         setName(NbBundle.getMessage(EditorTopComponent.class, "CTL_EditorTopComponent"));
         setToolTipText(NbBundle.getMessage(EditorTopComponent.class, "HINT_EditorTopComponent"));
@@ -120,7 +114,6 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         JPanel container = new JPanel(new BorderLayout());
         add(container, BorderLayout.NORTH);
 
-        DiagramViewModel diagramViewModel = new DiagramViewModel(graph, filterChain, sequence);
         RangeSlider rangeSlider = new RangeSlider(diagramViewModel);
         if (diagramViewModel.getGroup().getGraphs().size() == 1) {
             rangeSlider.setVisible(false);
@@ -147,7 +140,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
             setToolTipText(diagramViewModel.getGroup().getDisplayName());
         });
 
-        diagramViewModel.getGraphChangedEvent().addListener(model -> graphChanged(model));
+        diagramViewModel.getGraphChangedEvent().addListener(this::graphChanged);
 
         cardLayout = new CardLayout();
         centerPanel = new JPanel();
@@ -188,26 +181,25 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         ButtonGroup layoutButtons = new ButtonGroup();
 
         JToggleButton seaLayoutButton = new JToggleButton(new EnableSeaLayoutAction(this));
-        seaLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.SEA_OF_NODES);
+        seaLayoutButton.setSelected(diagramViewModel.getShowSea());
         layoutButtons.add(seaLayoutButton);
         toolBar.add(seaLayoutButton);
 
         JToggleButton blockLayoutButton = new JToggleButton(new EnableBlockLayoutAction(this));
-        blockLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CLUSTERED_SEA_OF_NODES);
+        blockLayoutButton.setSelected(diagramViewModel.getShowBlocks());
         layoutButtons.add(blockLayoutButton);
         toolBar.add(blockLayoutButton);
 
         EnableCFGLayoutAction cfgLayoutAction = new EnableCFGLayoutAction(this);
         JToggleButton cfgLayoutButton = new JToggleButton(cfgLayoutAction);
-        cfgLayoutButton.setSelected(Settings.get().getInt(Settings.DEFAULT_VIEW, Settings.DEFAULT_VIEW_DEFAULT) == Settings.DefaultView.CONTROL_FLOW_GRAPH);
+        cfgLayoutButton.setSelected(diagramViewModel.getShowCFG());
         layoutButtons.add(cfgLayoutButton);
         toolBar.add(cfgLayoutButton);
 
         toolBar.addSeparator();
-        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
-        toolBar.add(new JToggleButton(new PredSuccAction()));
-        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, true)));
-        toolBar.add(new JToggleButton(new HideDuplicatesAction()));
+        toolBar.add(new JToggleButton(new PredSuccAction(diagramViewModel.getShowNodeHull())));
+        toolBar.add(new JToggleButton(new ShowEmptyBlocksAction(cfgLayoutAction, diagramViewModel.getShowEmptyBlocks())));
+        toolBar.add(new JToggleButton(new HideDuplicatesAction(diagramViewModel.getHideDuplicates())));
 
         toolBar.addSeparator();
         UndoAction undoAction = UndoAction.get(UndoAction.class);
@@ -218,12 +210,12 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
         toolBar.add(redoAction);
 
         toolBar.addSeparator();
-
         JToggleButton globalSelectionButton = new JToggleButton(GlobalSelectionAction.get(GlobalSelectionAction.class));
         globalSelectionButton.setHideActionText(true);
         toolBar.add(globalSelectionButton);
         toolBar.add(new JToggleButton(new SelectionModeAction()));
         toolBar.addSeparator();
+        toolBar.add(new JToggleButton(new OverviewAction(centerPanel)));
         toolBar.add(new ZoomLevelAction(scene));
         toolBar.add(Box.createHorizontalGlue());
 
@@ -398,12 +390,18 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
 
     @Override
     public TopComponent cloneComponent() {
-        EditorTopComponent etc = new EditorTopComponent(getModel().getFirstGraph());
-        etc.getModel().setSelectedNodes(new HashSet<>(getModel().getSelectedNodes()));
-        etc.getModel().setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
+        DiagramViewModel model = new DiagramViewModel(getModel().getFirstGraph());
         if (getModel().getGraph().isDiffGraph()) {
-            etc.getModel().setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
+            model.setPositions(getModel().getFirstPosition(), getModel().getSecondPosition());
         }
+        model.setHiddenNodes(new HashSet<>(getModel().getHiddenNodes()));
+        model.setShowCFG(getModel().getShowCFG());
+        model.setShowSea(getModel().getShowSea());
+        model.setShowBlocks(getModel().getShowBlocks());
+        model.setShowNodeHull(getModel().getShowNodeHull());
+        model.setShowEmptyBlocks(getModel().getShowEmptyBlocks());
+        model.setHideDuplicates(getModel().getHideDuplicates());
+        EditorTopComponent etc = new EditorTopComponent(model);
         etc.resetUndoRedo();
         return etc;
     }
