@@ -417,6 +417,15 @@ void before_exit(JavaThread* thread, bool halt) {
     }
   }
 
+  // At this point only one thread is executing this logic. Any other threads
+  // attempting to invoke before_exit() will wait above and return early once
+  // this thread finishes before_exit().
+
+  // Do not add any additional shutdown logic between the above mutex logic and
+  // leak sanitizer logic below. Any additional shutdown code which performs some
+  // cleanup should be added after the leak sanitizer logic below.
+
+#ifdef LEAK_SANITIZER
   // If we are built with LSan, we need to perform leak checking. If we are
   // terminating normally, not halting and no VM error, we perform a normal
   // leak check which terminates if leaks are found. If we are not terminating
@@ -425,10 +434,12 @@ void before_exit(JavaThread* thread, bool halt) {
   if (!halt && !VMError::is_error_reported()) {
     LSAN_DO_LEAK_CHECK();
   } else {
-    int result = LSAN_DO_RECOVERABLE_LEAK_CHECK();
     // Ignore the return value.
-    static_cast<void>(result);
+    static_cast<void>(LSAN_DO_RECOVERABLE_LEAK_CHECK());
   }
+#endif
+
+  // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {

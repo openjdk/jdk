@@ -3972,19 +3972,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
-#ifdef LEAK_SANITIZER
-#ifdef _LP64
-  // LSAN relies on pointers to be natively aligned. Using compressed class pointers breaks this
-  // expectation and results in nondeterministic leak reports.
-  if (FLAG_SET_CMDLINE(UseCompressedOops, false) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-  if (FLAG_SET_CMDLINE(UseCompressedClassPointers, false) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
-#endif // _LP64
-#endif // LEAK_SANITIZER
-
   // Verify NMT arguments
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {

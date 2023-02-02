@@ -125,11 +125,13 @@ jint init_globals() {
   if (status != JNI_OK)
     return status;
 
+#ifdef LEAK_SANITIZER
   {
     // Register the Java heap with LSan.
     VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
     LSAN_REGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
   }
+#endif // LEAK_SANITIZER
 
   AsyncLogWriter::initialize();
   gc_barrier_stubs_init();  // depends on universe_init, must be before interpreter_init
@@ -191,11 +193,13 @@ void exit_globals() {
       StringTable::dump(tty);
     }
     ostream_exit();
+#ifdef LEAK_SANITIZER
     {
       // Unregister the Java heap with LSan.
       VirtualSpaceSummary summary = Universe::heap()->create_heap_space_summary();
       LSAN_UNREGISTER_ROOT_REGION(summary.start(), summary.reserved_size());
     }
+#endif // LEAK_SANITIZER
   }
 }
 
