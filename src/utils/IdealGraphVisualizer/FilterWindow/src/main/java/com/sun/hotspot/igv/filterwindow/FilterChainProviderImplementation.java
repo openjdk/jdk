@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,10 @@
  */
 package com.sun.hotspot.igv.filterwindow;
 
+import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.filter.FilterChain;
 import com.sun.hotspot.igv.filter.FilterChainProvider;
+import javax.swing.JComboBox;
 import org.openide.util.lookup.ServiceProvider;
 
 /**
@@ -36,6 +38,16 @@ public class FilterChainProviderImplementation implements FilterChainProvider {
 
     @Override
     public FilterChain getFilterChain() {
-        return FilterTopComponent.findInstance().getFilterChain();
+        return FilterTopComponent.findInstance().getCurrentChain();
+    }
+
+    @Override
+    public void setFilterChain(FilterChain filterChain) {
+        FilterTopComponent.findInstance().setFilterChain(filterChain);
+    }
+
+    @Override
+    public void setFilterChainSelectionChangedListener(ChangedListener<JComboBox<FilterChain>> listener) {
+        FilterTopComponent.findInstance().setFilterChainSelectionChangedListener(listener);
     }
 }

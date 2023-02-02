@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  */
 package com.sun.hotspot.igv.filter;
 
+import com.sun.hotspot.igv.data.ChangedListener;
+import javax.swing.JComboBox;
+
 /**
  *
  * @author Thomas Wuerthinger
@@ -30,4 +33,8 @@ package com.sun.hotspot.igv.filter;
 public interface FilterChainProvider {
 
     FilterChain getFilterChain();
+
+    void setFilterChain(FilterChain filterChain);
+
+    void setFilterChainSelectionChangedListener(ChangedListener<JComboBox<FilterChain>> listener);
 }

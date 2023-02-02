@@ -44,7 +44,6 @@ import org.openide.actions.UndoAction;
 import org.openide.awt.Toolbar;
 import org.openide.awt.ToolbarPool;
 import org.openide.awt.UndoRedo;
-import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.Utilities;
 import org.openide.util.actions.Presenter;
@@ -374,6 +373,7 @@ public final class EditorTopComponent extends TopComponent implements TopCompone
     @Override
     protected void componentActivated() {
         super.componentActivated();
+        getModel().activateModel();
         quickSearchToolbar.add(quickSearchPresenter);
         quickSearchPresenter.revalidate();
     }

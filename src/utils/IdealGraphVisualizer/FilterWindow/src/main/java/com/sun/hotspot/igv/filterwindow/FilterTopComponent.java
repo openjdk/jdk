@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.filter.CustomFilter;
 import com.sun.hotspot.igv.filter.Filter;
 import com.sun.hotspot.igv.filter.FilterChain;
-import com.sun.hotspot.igv.filter.FilterSetting;
 import com.sun.hotspot.igv.filterwindow.actions.*;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -75,16 +74,67 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public static final String JAVASCRIPT_HELPER_ID = "JavaScriptHelper";
     private final CheckListView view;
     private final ExplorerManager manager;
-    private final FilterChain filterChain;
-    private final FilterChain sequence;
     private final ScriptEngine engine;
-    private final JComboBox<FilterSetting> comboBox;
-    private final List<FilterSetting> filterSettings;
-    private final FilterSetting customFilterSetting = new FilterSetting("-- Custom --");
+    private final JComboBox<FilterChain> comboBox;
+    private final FilterChain sequence;
+    private final FilterChain defaultFilterChain = new FilterChain("Default");
     private final ChangedEvent<FilterTopComponent> filterSettingsChangedEvent;
+    private ChangedEvent<JComboBox<FilterChain>> filterChainSelectionChangedEvent;
+
+    private FilterTopComponent() {
+        filterSettingsChangedEvent = new ChangedEvent<>(this);
+        initComponents();
+        setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
+        setToolTipText(NbBundle.getMessage(FilterTopComponent.class, "HINT_FilterTopComponent"));
+
+        ScriptEngineManager sem = new ScriptEngineManager();
+        engine = sem.getEngineByName("ECMAScript");
+        try {
+            engine.eval(getJsHelperText());
+        } catch (ScriptException ex) {
+            Exceptions.printStackTrace(ex);
+        }
+        engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("IO", System.out);
+
+        comboBox = new JComboBox<>();
+        comboBox.addItem(defaultFilterChain);
+        comboBox.setSelectedItem(defaultFilterChain);
+        filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
+        sequence = new FilterChain();
+        initFilters();
+
+        manager = new ExplorerManager();
+        manager.setRootContext(new AbstractNode(new FilterChildren()));
+        associateLookup(ExplorerUtils.createLookup(manager, getActionMap()));
+        view = new CheckListView();
+
+        ToolbarPool.getDefault().setPreferredIconSize(16);
+        Toolbar toolBar = new Toolbar();
+        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
+        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
+
+        toolBar.add(comboBox);
+        this.add(toolBar, BorderLayout.NORTH);
+        toolBar.add(SaveFilterSettingsAction.get(SaveFilterSettingsAction.class));
+        toolBar.add(RemoveFilterSettingsAction.get(RemoveFilterSettingsAction.class));
+        toolBar.addSeparator();
+        toolBar.add(NewFilterAction.get(NewFilterAction.class));
+        toolBar.add(RemoveFilterAction.get(RemoveFilterAction.class).createContextAwareInstance(this.getLookup()));
+        toolBar.add(MoveFilterUpAction.get(MoveFilterUpAction.class).createContextAwareInstance(this.getLookup()));
+        toolBar.add(MoveFilterDownAction.get(MoveFilterDownAction.class).createContextAwareInstance(this.getLookup()));
+        this.add(view, BorderLayout.CENTER);
+
+        comboBox.addActionListener(l -> comboBoxSelectionChanged());
+        comboBoxSelectionChanged();
+    }
 
     public ChangedEvent<FilterTopComponent> getFilterSettingsChangedEvent() {
         return filterSettingsChangedEvent;
+    }
+
+    public void setFilterChainSelectionChangedListener(ChangedListener<JComboBox<FilterChain>> listener) {
+        filterChainSelectionChangedEvent = new ChangedEvent<>(comboBox);
+        filterChainSelectionChangedEvent.addListener(listener);
     }
 
     public FilterChain getSequence() {
@@ -102,69 +152,36 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     }
 
     private void comboBoxSelectionChanged() {
-        FilterSetting s = getFilterSetting();
-        if (s == null) {
+        FilterChain currentChain = getCurrentChain();
+        if (currentChain == null) {
             return;
         }
 
-        if (s != customFilterSetting) {
-            FilterChain chain = getFilterChain();
-            chain.getChangedEvent().beginAtomic();
-            List<Filter> toRemove = new ArrayList<>();
-            for (Filter f : chain.getFilters()) {
-                if (!s.containsFilter(f)) {
-                    toRemove.add(f);
-                }
-            }
-            for (Filter f : toRemove) {
-                chain.removeFilter(f);
-            }
-
-            for (Filter f : s.getFilters()) {
-                if (!chain.containsFilter(f)) {
-                    chain.addFilter(f);
-                }
-            }
-
-            chain.getChangedEvent().endAtomic();
-            filterSettingsChangedEvent.fire();
-        } else {
-            this.updateComboBoxSelection();
-        }
-
-        SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(comboBox.getSelectedItem() != this.customFilterSetting);
-        SystemAction.get(SaveFilterSettingsAction.class).setEnabled(comboBox.getSelectedItem() == this.customFilterSetting);
+        filterSettingsChangedEvent.fire();
+        filterChainSelectionChangedEvent.fire();
+        currentChain.getChangedEvent().fire();
+        SystemAction.get(RemoveFilterSettingsAction.class).setEnabled(currentChain != defaultFilterChain);
+        SystemAction.get(SaveFilterSettingsAction.class).setEnabled(true);
     }
 
-    private void updateComboBox() {
-        comboBox.removeAllItems();
-        comboBox.addItem(customFilterSetting);
-        for (FilterSetting s : filterSettings) {
-            comboBox.addItem(s);
-        }
-
-        this.updateComboBoxSelection();
+    public FilterChain getCurrentChain() {
+        return (FilterChain) comboBox.getSelectedItem();
     }
 
-    public void setFilterSetting(FilterSetting filterSetting) {
-        comboBox.setSelectedItem(filterSetting);
-    }
-
-    public FilterSetting getFilterSetting() {
-        return (FilterSetting) comboBox.getSelectedItem();
+    public void setFilterChain(FilterChain filterChain) {
+        comboBox.setSelectedItem(filterChain);
     }
 
     public void addFilterSetting() {
         NotifyDescriptor.InputLine l = new NotifyDescriptor.InputLine("Name of the new profile:", "Filter Profile");
         if (DialogDisplayer.getDefault().notify(l) == NotifyDescriptor.OK_OPTION) {
             String name = l.getInputText();
-
-            FilterSetting toRemove = null;
-            for (FilterSetting s : filterSettings) {
+            for (int i=0; i<comboBox.getItemCount(); i++) {
+                FilterChain s = comboBox.getItemAt(i);
                 if (s.getName().equals(name)) {
                     NotifyDescriptor.Confirmation conf = new NotifyDescriptor.Confirmation("Filter profile \"" + name + "\" already exists, do you want to replace it?", "Filter");
                     if (DialogDisplayer.getDefault().notify(conf) == NotifyDescriptor.YES_OPTION) {
-                        toRemove = s;
+                        comboBox.removeItem(s);
                         break;
                     } else {
                         return;
@@ -172,71 +189,24 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
                 }
             }
 
-            if (toRemove != null) {
-                filterSettings.remove(toRemove);
+            FilterChain setting = new FilterChain(name);
+            FilterChain chain = getCurrentChain();
+            for (Filter f : chain.getFilters()) {
+                setting.addFilter(f);
             }
-            FilterSetting setting = createFilterSetting(name);
-            filterSettings.add(setting);
 
-            // Sort alphabetically
-            filterSettings.sort(Comparator.comparing(FilterSetting::getName));
-
-            updateComboBox();
+            comboBox.addItem(setting);
+            comboBox.setSelectedItem(setting);
         }
-    }
-
-    public boolean canRemoveFilterSetting() {
-        return comboBox.getSelectedItem() != customFilterSetting;
     }
 
     public void removeFilterSetting() {
-        if (canRemoveFilterSetting()) {
-            Object o = comboBox.getSelectedItem();
-            assert o instanceof FilterSetting;
-            FilterSetting f = (FilterSetting) o;
-            assert f != customFilterSetting;
-            assert filterSettings.contains(f);
-            NotifyDescriptor.Confirmation l = new NotifyDescriptor.Confirmation("Do you really want to remove filter profile \"" + f + "\"?", "Filter Profile");
+        if (getCurrentChain() != defaultFilterChain) {
+            FilterChain filter = getCurrentChain();
+            NotifyDescriptor.Confirmation l = new NotifyDescriptor.Confirmation("Do you really want to remove filter profile \"" + filter + "\"?", "Filter Profile");
             if (DialogDisplayer.getDefault().notify(l) == NotifyDescriptor.YES_OPTION) {
-                filterSettings.remove(f);
-                updateComboBox();
+                comboBox.removeItem(filter);
             }
-        }
-    }
-
-    private FilterSetting createFilterSetting(String name) {
-        FilterSetting s = new FilterSetting(name);
-        FilterChain chain = this.getFilterChain();
-        for (Filter f : chain.getFilters()) {
-            s.addFilter(f);
-        }
-        return s;
-    }
-
-    private void updateComboBoxSelection() {
-        List<Filter> filters = this.getFilterChain().getFilters();
-        boolean found = false;
-        for (FilterSetting s : filterSettings) {
-            if (s.getFilterCount() == filters.size()) {
-                boolean ok = true;
-                for (Filter f : filters) {
-                    if (!s.containsFilter(f)) {
-                        ok = false;
-                    }
-                }
-
-                if (ok) {
-                    if (comboBox.getSelectedItem() != s) {
-                        comboBox.setSelectedItem(s);
-                    }
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (!found && comboBox.getSelectedItem() != customFilterSetting) {
-            comboBox.setSelectedItem(customFilterSetting);
         }
     }
 
@@ -258,7 +228,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
 
         public FilterChildren() {
             sequence.getChangedEvent().addListener(source -> addNotify());
-
             setBefore(false);
         }
 
@@ -272,7 +241,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         public void changed(CheckNode source) {
             FilterNode node = (FilterNode) source;
             Filter f = node.getFilter();
-            FilterChain chain = getFilterChain();
+            FilterChain chain = getCurrentChain();
             if (node.isSelected()) {
                 if (!chain.containsFilter(f)) {
                     chain.addFilter(f);
@@ -284,12 +253,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             }
             view.revalidate();
             view.repaint();
-            updateComboBoxSelection();
         }
-    }
-
-    public FilterChain getFilterChain() {
-        return filterChain;
     }
 
     private static String getJsHelperText() {
@@ -320,52 +284,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
             }
         }
         return sb.toString();
-    }
-
-    private FilterTopComponent() {
-        filterSettingsChangedEvent = new ChangedEvent<>(this);
-        initComponents();
-        setName(NbBundle.getMessage(FilterTopComponent.class, "CTL_FilterTopComponent"));
-        setToolTipText(NbBundle.getMessage(FilterTopComponent.class, "HINT_FilterTopComponent"));
-
-        sequence = new FilterChain();
-        filterChain = new FilterChain();
-        ScriptEngineManager sem = new ScriptEngineManager();
-        engine = sem.getEngineByName("ECMAScript");
-        try {
-            engine.eval(getJsHelperText());
-        } catch (ScriptException ex) {
-            Exceptions.printStackTrace(ex);
-        }
-        engine.getContext().getBindings(ScriptContext.ENGINE_SCOPE).put("IO", System.out);
-        initFilters();
-        manager = new ExplorerManager();
-        manager.setRootContext(new AbstractNode(new FilterChildren()));
-        associateLookup(ExplorerUtils.createLookup(manager, getActionMap()));
-        view = new CheckListView();
-
-        ToolbarPool.getDefault().setPreferredIconSize(16);
-        Toolbar toolBar = new Toolbar();
-        toolBar.setBorder((Border) UIManager.get("Nb.Editor.Toolbar.border")); //NOI18N
-        toolBar.setMinimumSize(new Dimension(0,0)); // MacOS BUG with ToolbarWithOverflow
-
-        comboBox = new JComboBox<>();
-        toolBar.add(comboBox);
-        this.add(toolBar, BorderLayout.NORTH);
-        toolBar.add(SaveFilterSettingsAction.get(SaveFilterSettingsAction.class));
-        toolBar.add(RemoveFilterSettingsAction.get(RemoveFilterSettingsAction.class));
-        toolBar.addSeparator();
-        toolBar.add(NewFilterAction.get(NewFilterAction.class));
-        toolBar.add(RemoveFilterAction.get(RemoveFilterAction.class).createContextAwareInstance(this.getLookup()));
-        toolBar.add(MoveFilterUpAction.get(MoveFilterUpAction.class).createContextAwareInstance(this.getLookup()));
-        toolBar.add(MoveFilterDownAction.get(MoveFilterDownAction.class).createContextAwareInstance(this.getLookup()));
-        this.add(view, BorderLayout.CENTER);
-
-        filterSettings = new ArrayList<>();
-        updateComboBox();
-
-        comboBox.addActionListener(l -> comboBoxSelectionChanged());
-        updateComboBoxSelection();
     }
 
     public void newFilter() {
@@ -464,7 +382,6 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
 
             String displayName = fo.getName();
 
-
             final CustomFilter cf = new CustomFilter(displayName, code, engine);
             map.put(displayName, cf);
 
@@ -505,7 +422,7 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
         for (CustomFilter cf : customFilters) {
             sequence.addFilter(cf);
             if (enabledSet.contains(cf)) {
-                filterChain.addFilter(cf);
+                getCurrentChain().addFilter(cf);
             }
         }
     }
@@ -594,74 +511,5 @@ public final class FilterTopComponent extends TopComponent implements ExplorerMa
     public void requestActive() {
         super.requestActive();
         view.requestFocus();
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        super.writeExternal(out);
-
-        out.writeInt(filterSettings.size());
-        for (FilterSetting f : filterSettings) {
-            out.writeUTF(f.getName());
-
-            out.writeInt(f.getFilterCount());
-            for (Filter filter : f.getFilters()) {
-                CustomFilter cf = (CustomFilter) filter;
-                out.writeUTF(cf.getName());
-            }
-        }
-
-        CustomFilter prev = null;
-        for (Filter f : this.sequence.getFilters()) {
-            CustomFilter cf = (CustomFilter) f;
-            FileObject fo = getFileObject(cf);
-            if (getFilterChain().containsFilter(cf)) {
-                fo.setAttribute(ENABLED_ID, true);
-            } else {
-                fo.setAttribute(ENABLED_ID, false);
-            }
-
-            if (prev == null) {
-                fo.setAttribute(AFTER_ID, null);
-            } else {
-                fo.setAttribute(AFTER_ID, prev.getName());
-            }
-
-            prev = cf;
-        }
-    }
-
-    public CustomFilter findFilter(String name) {
-        for (Filter f : sequence.getFilters()) {
-
-            CustomFilter cf = (CustomFilter) f;
-            if (cf.getName().equals(name)) {
-                return cf;
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        super.readExternal(in);
-
-        int filterSettingsCount = in.readInt();
-        for (int i = 0; i < filterSettingsCount; i++) {
-            String name = in.readUTF();
-            FilterSetting s = new FilterSetting(name);
-            int filterCount = in.readInt();
-            for (int j = 0; j < filterCount; j++) {
-                String filterName = in.readUTF();
-                CustomFilter filter = findFilter(filterName);
-                if (filter != null) {
-                    s.addFilter(filter);
-                }
-            }
-
-            filterSettings.add(s);
-        }
-        updateComboBox();
     }
 }

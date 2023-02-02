@@ -52,7 +52,7 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     private ArrayList<InputGraph> graphs;
     private Set<Integer> hiddenNodes;
     private Set<Integer> selectedNodes;
-    private final FilterChain filterChain;
+    private FilterChain filterChain;
     private Diagram diagram;
     private InputGraph cachedInputGraph;
     private final ChangedEvent<DiagramViewModel> diagramChangedEvent;
@@ -295,6 +295,10 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
     }
 
     private void filterChanged() {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        if (provider != null) {
+            filterChain = provider.getFilterChain();
+        }
         rebuildDiagram();
         diagramChangedEvent.fire();
     }
@@ -429,6 +433,18 @@ public class DiagramViewModel extends RangeSliderModel implements ChangedListene
 
     void addTitleCallback(Consumer<InputGraph> titleCallback) {
         titleChangedListener = titleCallback::accept;
+    }
+
+    void activateModel() {
+        FilterChainProvider provider = Lookup.getDefault().lookup(FilterChainProvider.class);
+        if (provider != null) {
+            provider.setFilterChainSelectionChangedListener(l -> {
+                filterChain.getChangedEvent().removeListener(filterChainChangedListener);
+                filterChain = provider.getFilterChain();
+                filterChain.getChangedEvent().addListener(filterChainChangedListener);
+            });
+            provider.setFilterChain(filterChain);
+        }
     }
 
     void close() {

@@ -106,6 +106,6 @@ public class FilterNode extends CheckNode implements LookupListener, ChangedList
 
     @Override
     public void changed(FilterTopComponent source) {
-        setSelected(source.getFilterChain().containsFilter(filter));
+        setSelected(source.getCurrentChain().containsFilter(filter));
     }
 }
