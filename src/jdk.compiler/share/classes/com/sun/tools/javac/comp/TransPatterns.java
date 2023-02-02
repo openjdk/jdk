@@ -334,7 +334,7 @@ public class TransPatterns extends TreeTranslator {
             }
             JCMethodInvocation componentAccessor =
                     make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
-                             component.accessor));
+                             component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
             if (deconstructorCalls == null) {
                 deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
             }
@@ -482,7 +482,7 @@ public class TransPatterns extends TreeTranslator {
             LoadableConstant[] staticArgValues =
                     cases.stream()
                          .flatMap(c -> c.labels.stream())
-                         .map(l -> toLoadableConstant(l, types.classBound(seltype)))
+                         .map(l -> toLoadableConstant(l, seltype))
                          .filter(c -> c != null)
                          .toArray(s -> new LoadableConstant[s]);
 
