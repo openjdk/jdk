@@ -39,9 +39,6 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
  public:
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
-  static int entry_barrier_stub_size();
-
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, Register tmp3,
@@ -195,8 +192,8 @@
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min);
 
- void reduce_operation(Register dst, VectorRegister tmp,
-                       Register src1, VectorRegister src2,
-                       BasicType bt, REDUCTION_OP op);
+ void rvv_reduce_integral(Register dst, VectorRegister tmp,
+                          Register src1, VectorRegister src2,
+                          BasicType bt, int opc);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

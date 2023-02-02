@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
-  nonstatic_field(InstanceKlass,               _misc_status._flags,                           u2)                                    \
+  nonstatic_field(InstanceKlass,               _misc_flags._flags,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
                                                                                                                                      \
   volatile_nonstatic_field(JavaFrameAnchor,    _last_Java_sp,                                 intptr_t*)                             \
@@ -174,6 +174,7 @@
                                                                                                                                      \
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                             OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
@@ -269,8 +270,6 @@
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
-  static_field(os,                             _polling_page,                                 address)                               \
-                                                                                                                                     \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
@@ -317,6 +316,7 @@
   static_field(StubRoutines,                _ghash_processBlocks,                             address)                               \
   static_field(StubRoutines,                _md5_implCompress,                                address)                               \
   static_field(StubRoutines,                _md5_implCompressMB,                              address)                               \
+  static_field(StubRoutines,                _chacha20Block,                                   address)                               \
   static_field(StubRoutines,                _sha1_implCompress,                               address)                               \
   static_field(StubRoutines,                _sha1_implCompressMB,                             address)                               \
   static_field(StubRoutines,                _sha256_implCompress,                             address)                               \
@@ -651,8 +651,8 @@
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
                                                                           \
-  declare_constant(InstanceKlassMiscStatus::_misc_has_nonstatic_concrete_methods)   \
-  declare_constant(InstanceKlassMiscStatus::_misc_declares_nonstatic_concrete_methods) \
+  declare_constant(InstanceKlassFlags::_misc_has_nonstatic_concrete_methods)   \
+  declare_constant(InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods) \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

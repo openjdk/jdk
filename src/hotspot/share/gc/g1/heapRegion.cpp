@@ -36,7 +36,6 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/g1/heapRegionTracer.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
@@ -218,6 +217,10 @@ void HeapRegion::clear_humongous() {
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
+}
+
+void HeapRegion::prepare_remset_for_scan() {
+  return _rem_set->reset_table_scanner();
 }
 
 HeapRegion::HeapRegion(uint hrm_index,

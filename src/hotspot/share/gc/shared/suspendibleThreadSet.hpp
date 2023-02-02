@@ -41,11 +41,10 @@ class SuspendibleThreadSet : public AllStatic {
   friend class SuspendibleThreadSetLeaver;
 
 private:
+  static uint          _nthreads;
+  static uint          _nthreads_stopped;
   static volatile bool _suspend_all;
-
-  static uint   _nthreads;
-  static uint   _nthreads_stopped;
-  static double _suspend_all_start;
+  static double        _suspend_all_start;
 
   static bool is_synchronized();
 
@@ -55,14 +54,19 @@ private:
   // Removes the current thread from the set.
   static void leave();
 
-  static bool suspend_all() { return Atomic::load(&_suspend_all); }
+  // Suspends the current thread if a suspension is in progress.
+  static void yield_slow();
 
 public:
   // Returns true if an suspension is in progress.
-  static bool should_yield() { return suspend_all(); }
+  static bool should_yield() { return Atomic::load(&_suspend_all); }
 
   // Suspends the current thread if a suspension is in progress.
-  static void yield();
+  static void yield() {
+    if (should_yield()) {
+      yield_slow();
+    }
+  }
 
   // Returns when all threads in the set are suspended.
   static void synchronize();

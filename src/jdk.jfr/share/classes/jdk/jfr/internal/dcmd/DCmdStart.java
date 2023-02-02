@@ -153,6 +153,11 @@ final class DCmdStart extends AbstractDCmd {
         recording.setSettings(s);
         SafePath safePath = null;
 
+        // Generate dump filename if user has specified a time-bound recording
+        if (duration != null && path == null) {
+            path = resolvePath(recording, null).toString();
+        }
+
         if (path != null) {
             try {
                 if (dumpOnExit == null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,12 @@ public final class AAShapePipe
 {
     static final RenderingEngine RDR_ENGINE = RenderingEngine.getInstance();
 
+    private static final boolean DO_RENDER = !sun.java2d.marlin.MarlinProperties.isSkipRenderTiles();
+
     // Per-thread TileState (~1K very small so do not use any Weak Reference)
     private static final ReentrantContextProvider<TileState> TILE_STATE_PROVIDER =
-            new ReentrantContextProviderTL<TileState>(
-                    ReentrantContextProvider.REF_HARD)
-            {
+            new ReentrantContextProviderTL<>(
+                    ReentrantContextProvider.REF_HARD) {
                 @Override
                 protected TileState newContext() {
                     return new TileState();
@@ -160,10 +161,11 @@ public final class AAShapePipe
         Object context = null;
         try {
             // reentrance: outpipe may also use AAShapePipe:
-            context = outpipe.startSequence(sg, s,
-                                            ts.computeDevBox(abox),
-                                            abox);
-
+            if (DO_RENDER) {
+                context = outpipe.startSequence(sg, s,
+                                                ts.computeDevBox(abox),
+                                                abox);
+            }
             // copy of int[] abox as local variables for performance:
             final int x0 = abox[0];
             final int y0 = abox[1];
@@ -185,9 +187,13 @@ public final class AAShapePipe
 
                     final int a = aatg.getTypicalAlpha();
 
-                    if (a == 0x00 || !outpipe.needTile(context, x, y, w, h)) {
+                    if ((a == 0x00)
+                            || (DO_RENDER && !outpipe.needTile(context, x, y, w, h)))
+                    {
                         aatg.nextTile();
-                        outpipe.skipTile(context, x, y);
+                        if (DO_RENDER) {
+                            outpipe.skipTile(context, x, y);
+                        }
                         continue;
                     }
                     if (a == 0xff) {
@@ -197,8 +203,9 @@ public final class AAShapePipe
                         atile = alpha;
                         aatg.getAlpha(alpha, 0, tw);
                     }
-
-                    outpipe.renderPathTile(context, atile, 0, tw, x, y, w, h);
+                    if (DO_RENDER) {
+                        outpipe.renderPathTile(context, atile, 0, tw, x, y, w, h);
+                    }
                 }
             }
         } finally {

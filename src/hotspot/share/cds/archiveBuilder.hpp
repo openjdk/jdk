@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ private:
       if (follow_mode == point_to_it) {
         _buffered_addr = ref->obj();
       } else {
-        _buffered_addr = NULL;
+        _buffered_addr = nullptr;
       }
     }
 
@@ -167,8 +167,8 @@ private:
     MetaspaceClosure::Ref* ref() const { return  _ref; }
     void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
-      assert(_buffered_addr == NULL, "cannot be copied twice");
-      assert(addr != NULL, "must be a valid copy");
+      assert(_buffered_addr == nullptr, "cannot be copied twice");
+      assert(addr != nullptr, "must be a valid copy");
       _buffered_addr = addr;
     }
     void set_ptrmap_start(uintx v) { _ptrmap_start = v;    }
@@ -226,8 +226,8 @@ private:
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region
-  ResizeableResourceHashtable<address, SourceObjInfo, ResourceObj::C_HEAP, mtClassShared> _src_obj_table;
-  ResizeableResourceHashtable<address, address, ResourceObj::C_HEAP, mtClassShared> _buffered_to_src_table;
+  ResizeableResourceHashtable<address, SourceObjInfo, AnyObj::C_HEAP, mtClassShared> _src_obj_table;
+  ResizeableResourceHashtable<address, address, AnyObj::C_HEAP, mtClassShared> _buffered_to_src_table;
   GrowableArray<Klass*>* _klasses;
   GrowableArray<Symbol*>* _symbols;
   GrowableArray<SpecialRefInfo>* _special_refs;
@@ -422,12 +422,12 @@ public:
   GrowableArray<Symbol*>* symbols() const { return _symbols; }
 
   static bool is_active() {
-    return (_current != NULL);
+    return (_current != nullptr);
   }
 
   static ArchiveBuilder* current() {
     assert_is_vm_thread();
-    assert(_current != NULL, "ArchiveBuilder must be active");
+    assert(_current != nullptr, "ArchiveBuilder must be active");
     return _current;
   }
 
@@ -447,7 +447,7 @@ public:
 
   static Klass* get_buffered_klass(Klass* src_klass) {
     Klass* klass = (Klass*)current()->get_buffered_addr((address)src_klass);
-    assert(klass != NULL && klass->is_klass(), "must be");
+    assert(klass != nullptr && klass->is_klass(), "must be");
     return klass;
   }
 

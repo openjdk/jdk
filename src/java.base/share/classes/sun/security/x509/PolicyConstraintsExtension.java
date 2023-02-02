@@ -50,21 +50,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class PolicyConstraintsExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.PolicyConstraints";
-    /**
-     * Attribute names.
-     */
+public class PolicyConstraintsExtension extends Extension {
+
     public static final String NAME = "PolicyConstraints";
-    public static final String REQUIRE = "require";
-    public static final String INHIBIT = "inhibit";
 
     private static final byte TAG_REQUIRE = 0;
     private static final byte TAG_INHIBIT = 1;
@@ -73,7 +62,7 @@ implements CertAttrSet<String> {
     private int inhibit = -1;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (require == -1 && inhibit == -1) {
             this.extensionValue = null;
             return;
@@ -105,22 +94,24 @@ implements CertAttrSet<String> {
      * @param require require explicit policy (-1 for optional).
      * @param inhibit inhibit policy mapping (-1 for optional).
      */
-    public PolicyConstraintsExtension(int require, int inhibit)
-    throws IOException {
+    public PolicyConstraintsExtension(int require, int inhibit) {
         this(Boolean.TRUE, require, inhibit);
     }
 
     /**
      * Create a PolicyConstraintsExtension object with specified
      * criticality and both require explicit policy and inhibit
-     * policy mapping.
+     * policy mapping. At least one should be provided (not -1).
      *
      * @param critical true if the extension is to be treated as critical.
      * @param require require explicit policy (-1 for optional).
      * @param inhibit inhibit policy mapping (-1 for optional).
      */
-    public PolicyConstraintsExtension(Boolean critical, int require, int inhibit)
-    throws IOException {
+    public PolicyConstraintsExtension(Boolean critical, int require, int inhibit) {
+        if (require == -1 && inhibit == -1) {
+            throw new IllegalArgumentException(
+                    "require and inhibit cannot both be -1");
+        }
         this.require = require;
         this.inhibit = inhibit;
         this.extensionId = PKIXExtensions.PolicyConstraints_Id;
@@ -197,10 +188,9 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.PolicyConstraints_Id;
           critical = true;
@@ -209,46 +199,19 @@ implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (!(obj instanceof Integer)) {
-            throw new IOException("Attribute value should be of type Integer.");
-        }
-        if (name.equalsIgnoreCase(REQUIRE)) {
-            require = ((Integer)obj).intValue();
-        } else if (name.equalsIgnoreCase(INHIBIT)) {
-            inhibit = ((Integer)obj).intValue();
-        } else {
-          throw new IOException("Attribute name " + "[" + name + "]" +
-                                " not recognized by " +
-                                "CertAttrSet:PolicyConstraints.");
-        }
-        encodeThis();
+    public int getRequire() {
+        return require;
+    }
+
+    public int getInhibit() {
+        return inhibit;
     }
 
     /**
-     * Get the attribute value.
-     */
-    public Integer get(String name) throws IOException {
-        if (name.equalsIgnoreCase(REQUIRE)) {
-            return require;
-        } else if (name.equalsIgnoreCase(INHIBIT)) {
-            return inhibit;
-        } else {
-          throw new IOException("Attribute name not recognized by " +
-                                "CertAttrSet:PolicyConstraints.");
-        }
-    }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

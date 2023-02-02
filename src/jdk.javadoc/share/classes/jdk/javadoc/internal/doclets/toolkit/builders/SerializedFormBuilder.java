@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.javadoc.internal.doclets.toolkit.builders;
 
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -263,19 +265,15 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableMethods(Content target) throws DocletException {
         Content serializableMethodsHeader = methodWriter.getSerializableMethodsHeader();
-        SortedSet<ExecutableElement> members = utils.serializationMethods(currentTypeElement);
-        if (!members.isEmpty()) {
-            for (ExecutableElement member : members) {
-                currentMember = member;
-                Content methodsContent = methodWriter.getMethodsContentHeader(
-                        currentMember == members.last());
+        for (var i = utils.serializationMethods(currentTypeElement).iterator(); i.hasNext(); ) {
+            currentMember = i.next();
+            Content methodsContent = methodWriter.getMethodsContentHeader(!i.hasNext());
 
-                buildMethodSubHeader(methodsContent);
-                buildDeprecatedMethodInfo(methodsContent);
-                buildMethodInfo(methodsContent);
+            buildMethodSubHeader(methodsContent);
+            buildDeprecatedMethodInfo(methodsContent);
+            buildMethodInfo(methodsContent);
 
-                serializableMethodsHeader.add(methodsContent);
-            }
+            serializableMethodsHeader.add(methodsContent);
         }
         if (!utils.serializationMethods(currentTypeElement).isEmpty()) {
             target.add(methodWriter.getSerializableMethods(
@@ -400,14 +398,13 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected void buildSerializableFields(Content target)
             throws DocletException {
-        SortedSet<VariableElement> members = utils.serializableFields(currentTypeElement);
+        Collection<VariableElement> members = utils.serializableFields(currentTypeElement);
         if (!members.isEmpty()) {
             Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
-            for (VariableElement ve : members) {
-                currentMember = ve;
+            for (var i = members.iterator(); i.hasNext();) {
+                currentMember = i.next();
                 if (!utils.definesSerializableFields(currentTypeElement)) {
-                    Content fieldsContent = fieldWriter.getFieldsContentHeader(
-                            currentMember == members.last());
+                    Content fieldsContent = fieldWriter.getFieldsContentHeader(!i.hasNext());
 
                     buildFieldSubHeader(fieldsContent);
                     buildFieldDeprecationInfo(fieldsContent);

@@ -68,8 +68,6 @@ public:
   inline stackChunkOop parent() const;
   inline void set_parent(stackChunkOop value);
   template<typename P>
-  inline bool is_parent_null() const;
-  template<typename P>
   inline void set_parent_raw(oop value);
   template<DecoratorSet decorators>
   inline void set_parent_access(oop value);
@@ -94,7 +92,8 @@ public:
   inline void set_max_thawing_size(int value);
 
   inline oop cont() const;
-  template<typename P> inline oop cont() const;
+  template<typename P>
+  inline oop cont() const;
   inline void set_cont(oop value);
   template<typename P>
   inline void set_cont_raw(oop value);
@@ -154,6 +153,7 @@ public:
   void relativize_derived_pointers_concurrently();
   void transform();
 
+  inline void* gc_data() const;
   inline BitMapView bitmap() const;
   inline BitMap::idx_t bit_index_for(intptr_t* p) const;
   inline intptr_t* address_for_bit(BitMap::idx_t index) const;
@@ -185,6 +185,9 @@ public:
 
   inline void copy_from_stack_to_chunk(intptr_t* from, intptr_t* to, int size);
   inline void copy_from_chunk_to_stack(intptr_t* from, intptr_t* to, int size);
+
+  template <typename OopT>
+  inline oop load_oop(OopT* addr);
 
   using oopDesc::print_on;
   void print_on(bool verbose, outputStream* st) const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,22 +70,7 @@ public class ThreadsListHandleInErrorHandlingTest {
     System.out.println("Found specific fatal error.");
 
     // Extract hs_err_pid file.
-    String hs_err_file = output_detail.firstMatch("# *(\\S*hs_err_pid\\d+\\.log)", 1);
-    if (hs_err_file == null) {
-        throw new RuntimeException("Did not find hs_err_pid file in output.\n");
-    }
-
-    File f = new File(hs_err_file);
-    if (!f.exists()) {
-        throw new RuntimeException("hs_err_pid file missing at "
-                                   + f.getAbsolutePath() + ".\n");
-    }
-
-    System.out.println("Found hs_err_pid file. Scanning...");
-
-    FileInputStream fis = new FileInputStream(f);
-    BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-    String line = null;
+    File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output_detail);
 
     Pattern [] pattern = new Pattern[] {
         // The "Current thread" line should show a hazard ptr
@@ -101,31 +86,9 @@ public class ThreadsListHandleInErrorHandlingTest {
         // should show no nested hazard ptrs:
         Pattern.compile("=>.* JavaThread \"main\" .*, _nested_threads_hazard_ptr_cnt=0.*"),
     };
-    int currentPattern = 0;
 
-    String lastLine = null;
-    while ((line = br.readLine()) != null) {
-        if (currentPattern < pattern.length) {
-            if (pattern[currentPattern].matcher(line).matches()) {
-                System.out.println("Found: " + line + ".");
-                currentPattern++;
-            }
-        }
-        lastLine = line;
-    }
-    br.close();
+    HsErrFileUtils.checkHsErrFileContent(hs_err_file, pattern, false);
 
-    if (currentPattern < pattern.length) {
-        throw new RuntimeException("hs_err_pid file incomplete (first missing pattern: " +  currentPattern + ")");
-    }
-
-    if (!lastLine.equals("END.")) {
-        throw new RuntimeException("hs-err file incomplete (missing END marker.)");
-    } else {
-        System.out.println("End marker found.");
-    }
-
-    System.out.println("Done scanning hs_err_pid_file.");
     System.out.println("PASSED.");
   }
 }

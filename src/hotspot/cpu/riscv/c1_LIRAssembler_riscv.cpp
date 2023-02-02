@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1202,7 +1202,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   if (op->fast_check()) {
     // get object class
     // not a safepoint as obj null check happens earlier
-    __ load_klass(t0, obj);
+    __ load_klass(t0, obj, t1);
     __ bne(t0, k_RInfo, *failure_target, /* is_far */ true);
     // successful cast, fall through to profile or jump
   } else {
@@ -1924,7 +1924,7 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  __ pause();
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {
@@ -1967,7 +1967,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
           __ encode_heap_oop(t0, obj);
           obj = t0;
         }
-        assert_different_registers(obj, addr.base(), tmp, dst);
+        assert_different_registers(obj, addr.base(), tmp);
+        assert_different_registers(dst, addr.base(), tmp);
         __ la(tmp, addr);
         (_masm->*xchg)(dst, obj, tmp);
         if (is_oop && UseCompressedOops) {

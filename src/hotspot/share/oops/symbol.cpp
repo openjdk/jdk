@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,25 @@ void Symbol::print_as_signature_external_parameters(outputStream *os) {
   }
 }
 
+void Symbol::print_as_field_external_type(outputStream *os) {
+  SignatureStream ss(this, false);
+  assert(!ss.is_done(), "must have at least one element in field ref");
+  assert(!ss.at_return_type(), "field ref cannot be a return type");
+  assert(!Signature::is_method(this), "field ref cannot be a method");
+
+  if (ss.is_array()) {
+    print_array(os, ss);
+  } else if (ss.is_reference()) {
+    print_class(os, ss);
+  } else {
+    os->print("%s", type2name(ss.type()));
+  }
+#ifdef ASSERT
+  ss.next();
+  assert(ss.is_done(), "must have at most one element in field ref");
+#endif
+}
+
 // Increment refcount while checking for zero.  If the Symbol's refcount becomes zero
 // a thread could be concurrently removing the Symbol.  This is used during SymbolTable
 // lookup to avoid reviving a dead Symbol.
@@ -321,10 +340,8 @@ bool Symbol::try_increment_refcount() {
 // this caller.
 void Symbol::increment_refcount() {
   if (!try_increment_refcount()) {
-#ifdef ASSERT
     print();
     fatal("refcount has gone to zero");
-#endif
   }
 #ifndef PRODUCT
   if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
@@ -344,10 +361,8 @@ void Symbol::decrement_refcount() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
@@ -367,10 +382,8 @@ void Symbol::make_permanent() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       int hash = extract_hash(old_value);

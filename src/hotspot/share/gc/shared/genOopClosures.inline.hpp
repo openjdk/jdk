@@ -98,23 +98,6 @@ void DefNewScanClosure::barrier(T* p) {
   }
 }
 
-#endif // INCLUDE_SERIALGC
-
-template <class T> void FilteringClosure::do_oop_work(T* p) {
-  T heap_oop = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(heap_oop)) {
-    oop obj = CompressedOops::decode_not_null(heap_oop);
-    if (cast_from_oop<HeapWord*>(obj) < _boundary) {
-      _cl->do_oop(p);
-    }
-  }
-}
-
-inline void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
-inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
-
-#if INCLUDE_SERIALGC
-
 // Note similarity to FastScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
 template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {

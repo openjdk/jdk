@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class TestEventMetadata {
         Set<String> eventNames= new HashSet<>();
         for (EventType eventType : eventTypes) {
             verifyEventType(eventType);
-            verifyValueDesscriptors(eventType.getFields(), types);
+            verifyValueDescriptors(eventType.getFields(), types);
             System.out.println();
             String eventName = eventType.getName();
             if (eventNames.contains(eventName)) {
@@ -116,11 +116,11 @@ public class TestEventMetadata {
         }
     }
 
-    private static void verifyValueDesscriptors(List<ValueDescriptor> fields, Set<String> visitedTypes) {
+    private static void verifyValueDescriptors(List<ValueDescriptor> fields, Set<String> visitedTypes) {
         for (ValueDescriptor v : fields) {
             if (!visitedTypes.contains(v.getTypeName())) {
                 visitedTypes.add(v.getTypeName());
-                verifyValueDesscriptors(v.getFields(), visitedTypes);
+                verifyValueDescriptors(v.getFields(), visitedTypes);
             }
             verifyValueDescriptor(v);
         }

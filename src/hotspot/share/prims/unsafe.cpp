@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jni.h"
-#include "jvm.h"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -32,6 +30,8 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jni.h"
+#include "jvm.h"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
@@ -116,7 +116,7 @@ static inline void assert_field_offset_sane(oop p, jlong field_offset) {
 #ifdef ASSERT
   jlong byte_offset = field_offset_to_byte_offset(field_offset);
 
-  if (p != NULL) {
+  if (p != nullptr) {
     assert(byte_offset >= 0 && byte_offset <= (jlong)MAX_OBJECT_SIZE, "sane offset");
     if (byte_offset == (jint)byte_offset) {
       void* ptr_plus_disp = cast_from_oop<address>(p) + byte_offset;
@@ -381,7 +381,7 @@ UNSAFE_ENTRY(void, Unsafe_CopyMemory0(JNIEnv *env, jobject unsafe, jobject srcOb
   void* dst = index_oop_from_field_offset_long(dstp, dstOffset);
   {
     GuardUnsafeAccess guard(thread);
-    if (StubRoutines::unsafe_arraycopy() != NULL) {
+    if (StubRoutines::unsafe_arraycopy() != nullptr) {
       MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, thread));
       StubRoutines::UnsafeArrayCopy_stub()(src, dst, sz);
     } else {
@@ -398,7 +398,7 @@ UNSAFE_LEAF(void, Unsafe_CopySwapMemory0(JNIEnv *env, jobject unsafe, jobject sr
   size_t sz = (size_t)size;
   size_t esz = (size_t)elemSize;
 
-  if (srcObj == NULL && dstObj == NULL) {
+  if (srcObj == nullptr && dstObj == nullptr) {
     // Both src & dst are in native memory
     address src = (address)srcOffset;
     address dst = (address)dstOffset;
@@ -435,14 +435,14 @@ UNSAFE_LEAF (void, Unsafe_WriteBack0(JNIEnv *env, jobject unsafe, jlong line)) {
 #endif
 
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
-  assert(StubRoutines::data_cache_writeback() != NULL, "sanity");
+  assert(StubRoutines::data_cache_writeback() != nullptr, "sanity");
   (StubRoutines::DataCacheWriteback_stub())(addr_from_java(line));
 } UNSAFE_END
 
 static void doWriteBackSync0(bool is_pre)
 {
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current()));
-  assert(StubRoutines::data_cache_writeback_sync() != NULL, "sanity");
+  assert(StubRoutines::data_cache_writeback_sync() != nullptr, "sanity");
   (StubRoutines::DataCacheWritebackSync_stub())(is_pre);
 }
 
@@ -471,8 +471,8 @@ UNSAFE_LEAF (void, Unsafe_WriteBackPostSync0(JNIEnv *env, jobject unsafe)) {
 ////// Random queries
 
 static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
-  assert(clazz != NULL, "clazz must not be NULL");
-  assert(name != NULL, "name must not be NULL");
+  assert(clazz != nullptr, "clazz must not be null");
+  assert(name != nullptr, "name must not be null");
 
   ResourceMark rm(THREAD);
   char *utf_name = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(name));
@@ -494,7 +494,7 @@ static jlong find_field_offset(jclass clazz, jstring name, TRAPS) {
 }
 
 static jlong find_field_offset(jobject field, int must_be_static, TRAPS) {
-  assert(field != NULL, "field must not be NULL");
+  assert(field != nullptr, "field must not be null");
 
   oop reflected   = JNIHandles::resolve_non_null(field);
   oop mirror      = java_lang_reflect_Field::clazz(reflected);
@@ -526,14 +526,14 @@ UNSAFE_ENTRY(jlong, Unsafe_StaticFieldOffset0(JNIEnv *env, jobject unsafe, jobje
 } UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBase0(JNIEnv *env, jobject unsafe, jobject field)) {
-  assert(field != NULL, "field must not be NULL");
+  assert(field != nullptr, "field must not be null");
 
   // Note:  In this VM implementation, a field address is always a short
   // offset from the base of a klass metaobject.  Thus, the full dynamic
   // range of the return type is never used.  However, some implementations
   // might put the static field inside an array shared by many classes,
   // or even at a fixed address, in which case the address could be quite
-  // large.  In that last case, this function would return NULL, since
+  // large.  In that last case, this function would return null, since
   // the address would operate alone, without any base pointer.
 
   oop reflected   = JNIHandles::resolve_non_null(field);
@@ -548,12 +548,12 @@ UNSAFE_ENTRY(jobject, Unsafe_StaticFieldBase0(JNIEnv *env, jobject unsafe, jobje
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized0(JNIEnv *env, jobject unsafe, jobject clazz)) {
-  assert(clazz != NULL, "clazz must not be NULL");
+  assert(clazz != nullptr, "clazz must not be null");
 
   oop mirror = JNIHandles::resolve_non_null(clazz);
 
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass != NULL && klass->should_be_initialized()) {
+  if (klass != nullptr && klass->should_be_initialized()) {
     InstanceKlass* k = InstanceKlass::cast(klass);
     k->initialize(CHECK);
   }
@@ -561,12 +561,12 @@ UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized0(JNIEnv *env, jobject unsafe, j
 UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_ShouldBeInitialized0(JNIEnv *env, jobject unsafe, jobject clazz)) {
-  assert(clazz != NULL, "clazz must not be NULL");
+  assert(clazz != nullptr, "clazz must not be null");
 
   oop mirror = JNIHandles::resolve_non_null(clazz);
   Klass* klass = java_lang_Class::as_Klass(mirror);
 
-  if (klass != NULL && klass->should_be_initialized()) {
+  if (klass != nullptr && klass->should_be_initialized()) {
     return true;
   }
 
@@ -575,12 +575,12 @@ UNSAFE_ENTRY(jboolean, Unsafe_ShouldBeInitialized0(JNIEnv *env, jobject unsafe, 
 UNSAFE_END
 
 static void getBaseAndScale(int& base, int& scale, jclass clazz, TRAPS) {
-  assert(clazz != NULL, "clazz must not be NULL");
+  assert(clazz != nullptr, "clazz must not be null");
 
   oop mirror = JNIHandles::resolve_non_null(clazz);
   Klass* k = java_lang_Class::as_Klass(mirror);
 
-  if (k == NULL || !k->is_array_klass()) {
+  if (k == nullptr || !k->is_array_klass()) {
     THROW(vmSymbols::java_lang_InvalidClassException());
   } else if (k->is_objArray_klass()) {
     base  = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
@@ -633,18 +633,18 @@ static inline void throw_new(JNIEnv *env, const char *ename) {
     return;
   }
 
-  env->ThrowNew(cls, NULL);
+  env->ThrowNew(cls, nullptr);
 }
 
 static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data, int offset, int length, jobject loader, jobject pd) {
   // Code lifted from JDK 1.3 ClassLoader.c
 
   jbyte *body;
-  char *utfName = NULL;
+  char *utfName = nullptr;
   jclass result = 0;
   char buf[128];
 
-  assert(data != NULL, "Class bytes must not be NULL");
+  assert(data != nullptr, "Class bytes must not be null");
   assert(length >= 0, "length must not be negative: %d", length);
 
   if (UsePerfData) {
@@ -652,7 +652,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
   }
 
   body = NEW_C_HEAP_ARRAY_RETURN_NULL(jbyte, length, mtInternal);
-  if (body == NULL) {
+  if (body == nullptr) {
     throw_new(env, "java/lang/OutOfMemoryError");
     return 0;
   }
@@ -662,13 +662,13 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
     goto free_body;
   }
 
-  if (name != NULL) {
+  if (name != nullptr) {
     uint len = env->GetStringUTFLength(name);
     int unicode_len = env->GetStringLength(name);
 
     if (len >= sizeof(buf)) {
       utfName = NEW_C_HEAP_ARRAY_RETURN_NULL(char, len + 1, mtInternal);
-      if (utfName == NULL) {
+      if (utfName == nullptr) {
         throw_new(env, "java/lang/OutOfMemoryError");
         goto free_body;
       }
@@ -752,11 +752,11 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSetLong(JNIEnv *env, jobject unsafe, job
 } UNSAFE_END
 
 static void post_thread_park_event(EventThreadPark* event, const oop obj, jlong timeout_nanos, jlong until_epoch_millis) {
-  assert(event != NULL, "invariant");
-  event->set_parkedClass((obj != NULL) ? obj->klass() : NULL);
+  assert(event != nullptr, "invariant");
+  event->set_parkedClass((obj != nullptr) ? obj->klass() : nullptr);
   event->set_timeout(timeout_nanos);
   event->set_until(until_epoch_millis);
-  event->set_address((obj != NULL) ? (u8)cast_from_oop<uintptr_t>(obj) : 0);
+  event->set_address((obj != nullptr) ? (u8)cast_from_oop<uintptr_t>(obj) : 0);
   event->commit();
 }
 
@@ -782,14 +782,14 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 } UNSAFE_END
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
-  if (jthread != NULL) {
+  if (jthread != nullptr) {
     ThreadsListHandle tlh;
-    JavaThread* thr = NULL;
-    oop java_thread = NULL;
+    JavaThread* thr = nullptr;
+    oop java_thread = nullptr;
     (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
-    if (java_thread != NULL) {
+    if (java_thread != nullptr) {
       // This is a valid oop.
-      if (thr != NULL) {
+      if (thr != nullptr) {
         // The JavaThread is alive.
         Parker* p = thr->parker();
         HOTSPOT_THREAD_UNPARK((uintptr_t) p);

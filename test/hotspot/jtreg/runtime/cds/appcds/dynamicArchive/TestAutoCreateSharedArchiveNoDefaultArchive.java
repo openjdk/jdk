@@ -112,8 +112,8 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
                                                          "-version");
             TestCommon.executeAndLog(pb, "show-version")
                       .shouldHaveExitValue(0)
-                      .shouldContain("UseSharedSpaces: Initialize static archive failed")
-                      .shouldContain("UseSharedSpaces: Unable to map shared spaces")
+                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("sharing");
         }
         // delete existing jsa file
@@ -132,8 +132,8 @@ public class TestAutoCreateSharedArchiveNoDefaultArchive {
                                                          mainClass);
             TestCommon.executeAndLog(pb, "no-default-archive")
                       .shouldHaveExitValue(0)
-                      .shouldContain("UseSharedSpaces: Initialize static archive failed")
-                      .shouldContain("UseSharedSpaces: Unable to map shared spaces")
+                      .shouldContain("Initialize static archive failed")
+                      .shouldContain("Unable to map shared spaces")
                       .shouldNotContain("Dumping shared data to file");
             if (jsaFile.exists()) {
                 throw new RuntimeException("Archive file " + jsaFileName + " should not be created at exit");

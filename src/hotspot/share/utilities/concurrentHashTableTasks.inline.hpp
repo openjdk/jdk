@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public:
 
     void set(size_t claim_size, InternalTable* table) {
       assert(table != nullptr, "precondition");
+      _next = 0;
       _limit = table->_size;
       _size  = MIN2(claim_size, _limit);
     }
@@ -168,7 +169,7 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   bool do_task(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f) {
     size_t start, stop;
-    assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
            "Should be locked");
     if (!this->claim(&start, &stop)) {
       return false;
@@ -176,7 +177,7 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
     BucketsOperation::_cht->do_bulk_delete_locked_for(thread, start, stop,
                                                       eval_f, del_f,
                                                       BucketsOperation::_is_mt);
-    assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
            "Should be locked");
     return true;
   }
@@ -209,13 +210,13 @@ class ConcurrentHashTable<CONFIG, F>::GrowTask :
   // Re-sizes a portion of the table. Returns true if there is more work.
   bool do_task(Thread* thread) {
     size_t start, stop;
-    assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
            "Should be locked");
     if (!this->claim(&start, &stop)) {
       return false;
     }
     BucketsOperation::_cht->internal_grow_range(thread, start, stop);
-    assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
+    assert(BucketsOperation::_cht->_resize_lock_owner != nullptr,
            "Should be locked");
     return true;
   }

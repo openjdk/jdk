@@ -15,7 +15,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version cldrVersion CDATA #FIXED "42" >
     <!--@MATCH:version-->
     <!--@VALUE-->
-<!ATTLIST version unicodeVersion CDATA #FIXED "14.0.0" >
+<!ATTLIST version unicodeVersion CDATA #FIXED "15.0.0" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 

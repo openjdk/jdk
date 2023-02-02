@@ -126,11 +126,7 @@ vmTestbase_nsk_monitoring_quick = \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime003/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime004/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime005/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset002/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset003/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset004/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset005/TestDescription.java \
+  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel001/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel002/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel003/TestDescription.java \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,12 +70,12 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code DecimalFormat}. If you need to customize the format object, do
  * something like this:
  *
- * <blockquote><pre>
- * NumberFormat f = NumberFormat.getInstance(loc);
- * if (f instanceof DecimalFormat) {
- *     ((DecimalFormat) f).setDecimalSeparatorAlwaysShown(true);
+ * <blockquote>{@snippet lang=java :
+ * NumberFormat numFormat = NumberFormat.getInstance(loc);
+ * if (numFormat instanceof DecimalFormat decFormat) {
+ *     decFormat.setDecimalSeparatorAlwaysShown(true);
  * }
- * </pre></blockquote>
+ * }</blockquote>
  *
  * <p>A {@code DecimalFormat} comprises a <em>pattern</em> and a set of
  * <em>symbols</em>.  The pattern may be set directly using
@@ -338,31 +338,27 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h3>Example</h3>
  *
- * <blockquote><pre><strong>{@code
+ * <blockquote>{@snippet lang=java :
  * // Print out a number using the localized number, integer, currency,
- * // and percent format for each locale}</strong>{@code
+ * // and percent format for each locale
  * Locale[] locales = NumberFormat.getAvailableLocales();
  * double myNumber = -1234.56;
  * NumberFormat form;
  * for (int j = 0; j < 4; ++j) {
  *     System.out.println("FORMAT");
- *     for (int i = 0; i < locales.length; ++i) {
- *         if (locales[i].getCountry().length() == 0) {
- *            continue; // Skip language-only locales
+ *     for (Locale locale : locales) {
+ *         if (locale.getCountry().length() == 0) {
+ *             continue; // Skip language-only locales
  *         }
- *         System.out.print(locales[i].getDisplayName());
- *         switch (j) {
- *         case 0:
- *             form = NumberFormat.getInstance(locales[i]); break;
- *         case 1:
- *             form = NumberFormat.getIntegerInstance(locales[i]); break;
- *         case 2:
- *             form = NumberFormat.getCurrencyInstance(locales[i]); break;
- *         default:
- *             form = NumberFormat.getPercentInstance(locales[i]); break;
- *         }
- *         if (form instanceof DecimalFormat) {
- *             System.out.print(": " + ((DecimalFormat) form).toPattern());
+ *         System.out.print(locale.getDisplayName());
+ *         form = switch (j) {
+ *             case 0 -> NumberFormat.getInstance(locale);
+ *             case 1 -> NumberFormat.getIntegerInstance(locale);
+ *             case 2 -> NumberFormat.getCurrencyInstance(locale);
+ *             default -> NumberFormat.getPercentInstance(locale);
+ *         };
+ *         if (form instanceof DecimalFormat decForm) {
+ *             System.out.print(": " + decForm.toPattern());
  *         }
  *         System.out.print(" -> " + form.format(myNumber));
  *         try {
@@ -370,7 +366,7 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *         } catch (ParseException e) {}
  *     }
  * }
- * }</pre></blockquote>
+ * }</blockquote>
  *
  * @see          <a href="http://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">Java Tutorial</a>
  * @see          NumberFormat

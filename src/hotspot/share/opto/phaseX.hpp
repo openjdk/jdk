@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -595,6 +595,8 @@ class PhaseCCP : public PhaseIterGVN {
   void push_loadp(Unique_Node_List& worklist, const Node* use) const;
   static void push_load_barrier(Unique_Node_List& worklist, const BarrierSetC2* barrier_set, const Node* use);
   void push_and(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_cast_ii(Unique_Node_List& worklist, const Node* parent, const Node* use) const;
+  void push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const;
 
  public:
   PhaseCCP( PhaseIterGVN *igvn ); // Compute conditional constants
@@ -602,6 +604,11 @@ class PhaseCCP : public PhaseIterGVN {
 
   // Worklist algorithm identifies constants
   void analyze();
+#ifdef ASSERT
+  void verify_type(Node* n, const Type* tnew, const Type* told);
+  // For every node n on verify list, check if type(n) == n->Value()
+  void verify_analyze(Unique_Node_List& worklist_verify);
+#endif
   // Recursive traversal of program.  Used analysis to modify program.
   virtual Node *transform( Node *n );
   // Do any transformation after analysis

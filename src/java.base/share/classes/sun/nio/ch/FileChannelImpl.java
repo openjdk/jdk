@@ -29,7 +29,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -1208,12 +1208,12 @@ public class FileChannelImpl
 
     @Override
     public MemorySegment map(MapMode mode, long offset, long size,
-                             MemorySession session)
+                             SegmentScope session)
             throws IOException
     {
         Objects.requireNonNull(mode,"Mode is null");
         Objects.requireNonNull(session, "Session is null");
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(session);
+        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
         sessionImpl.checkValidState();
         if (offset < 0)
             throw new IllegalArgumentException("Requested bytes offset must be >= 0.");

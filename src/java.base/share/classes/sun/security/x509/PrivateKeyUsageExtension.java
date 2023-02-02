@@ -55,21 +55,10 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @see Extension
- * @see CertAttrSet
  */
-public class PrivateKeyUsageExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.PrivateKeyUsage";
-    /**
-     * Sub attributes name for this CertAttrSet.
-     */
+public class PrivateKeyUsageExtension extends Extension {
+
     public static final String NAME = "PrivateKeyUsage";
-    public static final String NOT_BEFORE = "not_before";
-    public static final String NOT_AFTER = "not_after";
 
     // Private data members
     private static final byte TAG_BEFORE = 0;
@@ -79,7 +68,7 @@ implements CertAttrSet<String> {
     private Date        notAfter = null;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (notBefore == null && notAfter == null) {
             this.extensionValue = null;
             return;
@@ -104,15 +93,19 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * The default constructor for PrivateKeyUsageExtension.
+     * The default constructor for PrivateKeyUsageExtension. At least one
+     * of the arguments must be non null.
      *
      * @param notBefore the date/time before which the private key
-     *         should not be used.
+     *         should not be used
      * @param notAfter the date/time after which the private key
      *         should not be used.
      */
-    public PrivateKeyUsageExtension(Date notBefore, Date notAfter)
-    throws IOException {
+    public PrivateKeyUsageExtension(Date notBefore, Date notAfter) {
+        if (notBefore == null && notAfter == null) {
+            throw new IllegalArgumentException(
+                    "notBefore and notAfter cannot both be null");
+        }
         this.notBefore = notBefore;
         this.notAfter = notAfter;
 
@@ -236,10 +229,9 @@ implements CertAttrSet<String> {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.PrivateKeyUsage_Id;
             critical = false;
@@ -248,48 +240,19 @@ implements CertAttrSet<String> {
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     * @exception CertificateException on attribute handling errors.
-     */
-    public void set(String name, Object obj)
-    throws CertificateException, IOException {
-        if (!(obj instanceof Date)) {
-            throw new CertificateException("Attribute must be of type Date.");
-        }
-        if (name.equalsIgnoreCase(NOT_BEFORE)) {
-            notBefore = (Date)obj;
-        } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-            notAfter = (Date)obj;
-        } else {
-          throw new CertificateException("Attribute name not recognized by"
-                           + " CertAttrSet:PrivateKeyUsage.");
-        }
-        encodeThis();
+    public Date getNotBefore() {
+        return new Date(notBefore.getTime());
+    }
+
+    public Date getNotAfter() {
+        return new Date(notAfter.getTime());
     }
 
     /**
-     * Get the attribute value.
-     * @exception CertificateException on attribute handling errors.
-     */
-    public Date get(String name) throws CertificateException {
-      if (name.equalsIgnoreCase(NOT_BEFORE)) {
-          return (new Date(notBefore.getTime()));
-      } else if (name.equalsIgnoreCase(NOT_AFTER)) {
-          return (new Date(notAfter.getTime()));
-      } else {
-          throw new CertificateException("Attribute name not recognized by"
-                           + " CertAttrSet:PrivateKeyUsage.");
-      }
-  }
-
-
-
-    /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-      return(NAME);
+      return NAME;
     }
 }

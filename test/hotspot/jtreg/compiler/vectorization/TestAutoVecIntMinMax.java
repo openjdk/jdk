@@ -34,7 +34,7 @@ import jdk.test.lib.Utils;
  * @library /test/lib /
  * @requires vm.compiler2.enabled
  * @requires (os.simpleArch == "x64" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3))
- *           | os.arch == "aarch64" | os.arch == "riscv64"
+ *           | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseRVV == true)
  * @run driver compiler.c2.irTests.TestAutoVecIntMinMax
  */
 

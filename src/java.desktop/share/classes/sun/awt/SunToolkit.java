@@ -130,7 +130,7 @@ public abstract class SunToolkit extends Toolkit
         touchKeyboardAutoShowIsEnabled = Boolean.parseBoolean(
             GetPropertyAction.privilegedGetProperty(
                 "awt.touchKeyboardAutoShowIsEnabled", "true"));
-    };
+    }
 
     /**
      * Special mask for the UngrabEvent events, in addition to the
@@ -410,7 +410,7 @@ public abstract class SunToolkit extends Toolkit
 
     public static void setLWRequestStatus(Window changed,boolean status){
         AWTAccessor.getWindowAccessor().setLWRequestStatus(changed, status);
-    };
+    }
 
     public static void checkAndSetPolicy(Container cont) {
         FocusTraversalPolicy defaultPolicy = KeyboardFocusManager.

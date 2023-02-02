@@ -1821,7 +1821,7 @@ public class JPEGImageWriter extends ImageWriter {
     private synchronized void clearThreadLock() {
         Thread currThread = Thread.currentThread();
         if (theThread == null || theThread != currThread) {
-            throw new IllegalStateException("Attempt to clear thread lock form wrong thread. " +
+            throw new IllegalStateException("Attempt to clear thread lock from wrong thread. " +
                                             "Locked thread: " + theThread +
                                             "; current thread: " + currThread);
         }

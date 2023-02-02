@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,14 +242,15 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
         "windows-x64", "windows-x86", "windows-aarch64",
-        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
+        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
+        "linux-riscv64"
     ];
 
     // These are the base settings for all the main build profiles.
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
-        configure_args: concat("--enable-jtreg-failure-handler",
+        configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
@@ -519,6 +520,17 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--disable-warnings-as-errors"
             ],
         },
+
+        "linux-riscv64": {
+            target_os: "linux",
+            target_cpu: "riscv64",
+            build_cpu: "x64",
+            dependencies: ["devkit", "gtest", "build_devkit"],
+            configure_args: [
+                "--openjdk-target=riscv64-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
     };
 
     // Add the base settings to all the main profiles
@@ -714,7 +726,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
        "linux-s390x": {
             platform: "linux-s390x",
-        }
+        },
+        "linux-riscv64": {
+            platform: "linux-riscv64",
+        },
     }
     // Generate common artifacts for all main profiles
     Object.keys(artifactData).forEach(function (name) {
@@ -944,7 +959,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: input.build_cpu,
             dependencies: [
                 "jtreg", "gnumake", "boot_jdk", "devkit", "jib", "jcov", testedProfileJdk,
-                testedProfileTest, testedProfile + ".jdk_symbols",
+                testedProfileTest,
             ],
             src: "src.conf",
             make_args: testOnlyMake,
@@ -958,6 +973,9 @@ var getJibProfilesProfiles = function (input, common, data) {
             labels: "test"
         }
     };
+    if (!testedProfile.endsWith("-jcov")) {
+        testOnlyProfilesPrebuilt["run-test-prebuilt"]["dependencies"].push(testedProfile + ".jdk_symbols");
+    }
 
     // If actually running the run-test-prebuilt profile, verify that the input
     // variable is valid and if so, add the appropriate target_* values from
@@ -987,11 +1005,25 @@ var getJibProfilesProfiles = function (input, common, data) {
             dependencies: [ "lldb" ],
             environment_path: [
                 input.get("gnumake", "install_path") + "/bin",
-                input.get("lldb", "install_path") + "/Xcode.app/Contents/Developer/usr/bin",
+                input.get("lldb", "install_path") + "/Xcode/Contents/Developer/usr/bin",
             ],
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    } else if (input.build_os == "windows") {
+        // On windows, add the devkit debugger to the path in all the run-test profiles
+        // to make them available to the jtreg failure handler.
+        var archDir = "x64";
+        if (input.build_arch == "aarch64") {
+            archDir = "arm64"
+        }
+        windowsRunTestExtra = {
+            environment_path: [
+                input.get("devkit", "install_path") + "/10/Debuggers/" + archDir
+            ]
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], windowsRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], windowsRunTestExtra);
     }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When
@@ -1032,12 +1064,13 @@ var getJibProfilesDependencies = function (input, common) {
 
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
-        macosx: "Xcode12.4+1.0",
-        windows_x64: "VS2022-17.1.0+1.0",
+        macosx: "Xcode12.4+1.1",
+        windows_x64: "VS2022-17.1.0+1.1",
         linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0"
+        linux_s390x: "gcc8.2.0-Fedora27+1.0",
+        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1076,17 +1109,6 @@ var getJibProfilesDependencies = function (input, common) {
             + boot_jdk_platform + "_bin" + boot_jdk_ext,
         configure_args: "--with-boot-jdk=" + common.boot_jdk_home,
         environment_path: common.boot_jdk_home + "/bin"
-    }
-
-    var pandoc_version;
-    if (input.build_cpu == "aarch64") {
-        if (input.build_os == "macosx") {
-            pandoc_version = "2.14.0.2+1.0";
-        } else {
-            pandoc_version = "2.5+1.0";
-        }
-    } else {
-        pandoc_version = "2.3.1+1.0";
     }
 
     var makeRevision = "4.0+1.0";
@@ -1134,7 +1156,7 @@ var getJibProfilesDependencies = function (input, common) {
             organization: common.organization,
             ext: "tar.gz",
             module: "devkit-macosx" + (input.build_cpu == "x64" ? "_x64" : ""),
-            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.1" : devkit_platform_revisions[devkit_platform])
+            revision: (input.build_cpu == "x64" ? "Xcode11.3.1-MacOSX10.15+1.2" : devkit_platform_revisions[devkit_platform])
         },
 
         cups: {
@@ -1146,9 +1168,9 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "jpg",
             product: "jtreg",
-            version: "7",
+            version: "7.1.1",
             build_number: "1",
-            file: "bundles/jtreg-7+1.zip",
+            file: "bundles/jtreg-7.1.1+1.zip",
             environment_name: "JT_HOME",
             environment_path: input.get("jtreg", "home_path") + "/bin",
             configure_args: "--with-jtreg=" + input.get("jtreg", "home_path"),
@@ -1162,7 +1184,7 @@ var getJibProfilesDependencies = function (input, common) {
 
         jcov: {
             organization: common.organization,
-            revision: "3.0-13-jdk-asm+1.0",
+            revision: "3.0-14-jdk-asm+1.0",
             ext: "zip",
             environment_name: "JCOV_HOME",
         },
@@ -1202,7 +1224,7 @@ var getJibProfilesDependencies = function (input, common) {
         pandoc: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: pandoc_version,
+            revision: "2.19.2+1.0",
             module: "pandoc-" + input.build_platform,
             configure_args: "PANDOC=" + input.get("pandoc", "install_path") + "/pandoc/pandoc",
             environment_path: input.get("pandoc", "install_path") + "/pandoc"
@@ -1228,7 +1250,7 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.8.1"
+            revision: "1.13.0+1.0"
         },
     };
 

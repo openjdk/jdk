@@ -112,21 +112,22 @@ public class HandshakeUrlEncodingTest {
                     .join();
                 fail("Expected to throw");
             } catch (CompletionException ce) {
-                Throwable t = getCompletionCause(ce);
+                final Throwable t = getCompletionCause(ce);
                 if (!(t instanceof WebSocketHandshakeException)) {
                     throw new AssertionError("Unexpected exception", t);
                 }
-                WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
+                final WebSocketHandshakeException wse = (WebSocketHandshakeException) t;
                 assertNotNull(wse.getResponse());
-                assertNotNull(wse.getResponse().body());
-                assertEquals(wse.getResponse().body().getClass(), String.class);
-                String body = (String)wse.getResponse().body();
-                String expectedBody = "/?&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
+                assertNotNull(wse.getResponse().uri());
+                assertNotNull(wse.getResponse().statusCode());
+                final String rawQuery = wse.getResponse().uri().getRawQuery();
+                final String expectedRawQuery = "&raw=abc+def/ghi=xyz&encoded=abc%2Bdef%2Fghi%3Dxyz";
+                assertEquals(rawQuery, expectedRawQuery);
+                final String body = (String) wse.getResponse().body();
+                final String expectedBody = "/?" + expectedRawQuery;
                 assertEquals(body, expectedBody);
                 out.println("Status code is " + wse.getResponse().statusCode());
-                out.println("Response is " + body);
-                assertNotNull(wse.getResponse().statusCode());
-                out.println("Status code is " + wse.getResponse().statusCode());
+                out.println("Response is " + wse.getResponse());
                 assertEquals(wse.getResponse().statusCode(), 400);
             }
         }

@@ -26,7 +26,7 @@
  * @summary Stress test Thread.yield
  * @requires vm.debug != true
  * @enablePreview
- * @run main YieldALot 500000
+ * @run main YieldALot 350000
  */
 
 /*

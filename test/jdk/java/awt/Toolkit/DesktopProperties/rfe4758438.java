@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.InputStream;
  * @test
  * @key headful
  * @bug 4758438
+ * @requires os.family == "linux"
  * @summary Testcase to check the implementation of RFE 4758438
  *          The RFE suggests that the GNOME desktop properties
  *          should be made accessible through the
@@ -43,12 +44,14 @@ public class rfe4758438 implements PropertyChangeListener {
 
     enum PROPS {
         drag_threshold(
+                "org.gnome.desktop.peripherals.mouse  drag-threshold",
                 "org.gnome.settings-daemon.peripherals.mouse drag-threshold",
                 "/desktop/gnome/peripherals/mouse/drag_threshold",
                 "gnome.Net/DndDragThreshold",
                 "int",
                 new String[]{"5", "6"}),
         double_click(
+                "org.gnome.desktop.peripherals.mouse double-click",
                 "org.gnome.settings-daemon.peripherals.mouse double-click",
                 "/desktop/gnome/peripherals/mouse/double_click",
                 "gnome.Net/DoubleClickTime",
@@ -56,31 +59,43 @@ public class rfe4758438 implements PropertyChangeListener {
                 new String[]{"200","300"}),
         cursor_blink(
                 "org.gnome.desktop.interface cursor-blink",
+                null,
                 "/desktop/gnome/interface/cursor_blink",
                 "gnome.Net/CursorBlink",
                 "bool",
                 new String[]{"true","false"}),
         cursor_blink_time(
                 "org.gnome.desktop.interface cursor-blink-time",
+                null,
                 "/desktop/gnome/interface/cursor_blink_time",
                 "gnome.Net/CursorBlinkTime",
                 "int",
                 new String[]{"1000","1500"}),
         gtk_theme(
                 "org.gnome.desktop.interface gtk-theme",
+                null,
                 "/desktop/gnome/interface/gtk_theme",
                 "gnome.Net/ThemeName",
                 "string",
                 new String[]{"Crux","Simple"});
 
         public final String gsettings;
+        public final String gsettingsFallback;
         public final String gconftool;
         public final String java;
         public final String type;
         public final String[] values;
 
-        PROPS(String gsettings, String gconftool, String java, String type, String[] values){
+        PROPS(
+                String gsettings,
+                String gsettingsFallback,
+                String gconftool,
+                String java,
+                String type,
+                String[] values
+        ){
             this.gsettings = gsettings;
+            this.gsettingsFallback = gsettingsFallback;
             this.gconftool = gconftool;
             this.java = java;
             this.type = type;
@@ -90,10 +105,10 @@ public class rfe4758438 implements PropertyChangeListener {
 
     static boolean useGsettings;
     static String tool;
-    Toolkit toolkit = Toolkit.getDefaultToolkit();
+    final Toolkit toolkit = Toolkit.getDefaultToolkit();
     String changedProperty;
     Object changedValue;
-    Object lock = new Object();
+    final Object lock = new Object();
 
     /**
      * Implementation of PropertyChangeListener method
@@ -105,7 +120,7 @@ public class rfe4758438 implements PropertyChangeListener {
         synchronized(lock) {
             try {
                 lock.notifyAll();
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
     }
@@ -132,6 +147,34 @@ public class rfe4758438 implements PropertyChangeListener {
         System.out.println("Test passed");
     }
 
+    String prepareCommand(PROPS property, boolean useMain) {
+        //Create the command to execute
+        StringBuffer sb = new StringBuffer(tool);
+        if (useGsettings) {
+            sb.append(" set ");
+            sb.append( useMain
+                    ? property.gsettings
+                    : property.gsettingsFallback
+            );
+            sb.append(" ");
+        } else {
+            sb.append(" --set --type=");
+            sb.append(property.type);
+            sb.append(" ");
+            sb.append(property.gconftool);
+            sb.append(" ");
+        }
+        return sb.toString();
+    }
+
+    int doTestCommand(String cmd) throws Exception {
+        //Initialize the variables and execute the command
+        changedProperty = "";
+        changedValue = null;
+
+        return executeCommand(cmd);
+    }
+
     /**
      * Do the test for each property. Find the current value
      * of the property, set the property to a value not equal
@@ -146,10 +189,10 @@ public class rfe4758438 implements PropertyChangeListener {
 
         //For boolean type values, getDesktopProperty method returns Integer objects
         if (property.type.equals("bool")) {
-            if (obj.equals(new Integer(1))) {
-                obj = new String("true");
+            if (obj.equals(1)) {
+                obj = "true";
             } else {
-                obj = new String("false");
+                obj = "false";
             }
         }
         Object value = property.values[0];
@@ -157,56 +200,53 @@ public class rfe4758438 implements PropertyChangeListener {
             value = property.values[1];
         }
 
-        //Create the command to execute
-        StringBuffer sb = new StringBuffer(tool);
-        if (useGsettings) {
-            sb.append(" set ");
-            sb.append(property.gsettings);
-            sb.append(" ");
-        } else {
-            sb.append(" --set --type=");
-            sb.append(property.type);
-            sb.append(" ");
-            sb.append(property.gconftool);
-            sb.append(" ");
-        }
-        String tempCommand = sb.toString();
-        sb.append(value.toString());
+        String tempCommand = prepareCommand(property, true);
 
-        //Initialize the variables and execute the command
-        changedProperty = "";
-        changedValue = null;
-        if (executeCommand(sb.toString()) != 0)
-            throw new RuntimeException("Could not execute the command");
+        int retVal = doTestCommand(tempCommand + value);
+
+        if (retVal != 0) {
+            if (useGsettings && property.gsettingsFallback != null) {
+                System.out.printf("Failed:\n\t%s\nTrying fallback:\n\t", tempCommand);
+                tempCommand = prepareCommand(property, false);
+                System.out.println(tempCommand);
+
+                retVal = doTestCommand(tempCommand + value);
+            }
+
+            if (retVal != 0) {
+                throw new RuntimeException("Could not execute the command");
+            }
+        }
 
         synchronized(lock) {
             try {
                 lock.wait(5000);
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
         }
+
         if (property.type.equals("bool")) {
-            if (changedValue.equals(new Integer(1))) {
-                changedValue = new String("true");
+            if (changedValue.equals(1)) {
+                changedValue = "true";
             } else {
-                changedValue = new String("false");
+                changedValue = "false";
             }
         }
 
         //Check if the event got triggered
         if (!changedProperty.equals(property.java)) {
             //Reset the property
-            executeCommand(tempCommand + obj.toString());
+            executeCommand(tempCommand + obj);
             throw new RuntimeException("PropertyChangedEvent did not occur for " + property.java);
         } else if (!changedValue.toString().equals(value.toString())) {
             //Reset the property
-            executeCommand(tempCommand + obj.toString());
+            executeCommand(tempCommand + obj);
             throw new RuntimeException("New value of the property is different from " +
                                        "the value supplied");
         }
 
         //Reset the property
-        executeCommand(tempCommand + obj.toString());
+        executeCommand(tempCommand + obj);
     }
 
     /**
@@ -231,9 +271,9 @@ public class rfe4758438 implements PropertyChangeListener {
             stderr.append((char) es.read());
 
         if (stdout.length() > 0)
-            System.out.println(stdout.toString());
+            System.out.println(stdout);
         if (stderr.length() > 0)
-            System.err.println(stderr.toString());
+            System.err.println(stderr);
         return process.exitValue();
     }
 }

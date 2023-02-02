@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,9 @@
  *          policy 1: no custom permission
  *          policy 2: custom permission for test classes
  *          policy 3: custom permission for test classes and httpclient
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
- * @library /test/lib ../http2/server
- * @compile ../HttpServerAdapters.java
- * @build jdk.test.lib.net.SimpleSSLContext SecureZipFSProvider
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        SecureZipFSProvider
  * @run testng/othervm/java.security.policy=FilePublisherPermsTest1.policy FilePublisherPermsTest
  * @run testng/othervm/java.security.policy=FilePublisherPermsTest2.policy FilePublisherPermsTest
  * @run testng/othervm/java.security.policy=FilePublisherPermsTest3.policy FilePublisherPermsTest
@@ -71,6 +66,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.*;
 import java.util.Map;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
