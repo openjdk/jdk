@@ -24,7 +24,7 @@
 /*
  * @test id=default_gc
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -42,7 +42,7 @@
 /*
  * @test id=zgc
  * @enablePreview
- * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64")
+ * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64")
  * @requires vm.gc.Z
  * @library /test/lib
  * @library ../
@@ -61,7 +61,7 @@
 /*
  * @test id=shenandoah
  * @enablePreview
- * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64")
+ * @requires (((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64")
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library ../

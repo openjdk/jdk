@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,12 +23,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.foreign.abi.ppc64.linux;
 
-/*
- * @test
- * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "ppc64le" | os.arch == "riscv64"
- * @build invoker_module/* lookup_module/*
- * @run testng/othervm --enable-native-access=invoker_module
- *                     lookup_module/handle.lookup.MethodHandleLookup
+import jdk.internal.foreign.abi.ppc64.CallArranger;
+
+/**
+ * PPC64 CallArranger specialized for Linux ABI.
  */
+public class LinuxPPC64CallArranger extends CallArranger {
+}

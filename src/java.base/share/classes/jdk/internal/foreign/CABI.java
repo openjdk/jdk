@@ -33,6 +33,7 @@ public enum CABI {
     WIN_64,
     LINUX_AARCH_64,
     MAC_OS_AARCH_64,
+    LINUX_PPC_64,
     LINUX_RISCV_64;
 
     private static final CABI ABI;
@@ -59,6 +60,10 @@ public enum CABI {
                 // The Linux ABI follows the standard AAPCS ABI
                 ABI = LINUX_AARCH_64;
             }
+        } else if (ARCH.equals("ppc64le")) {
+            // ppc64le only exists for Linux (which uses useABIv2 = true).
+            // Big Endian linux / AIX implementation is not yet complete (useABIv2 = false).
+            ABI = LINUX_PPC_64;
         } else if (ARCH.equals("riscv64")) {
             if (OS.startsWith("Linux")) {
                 ABI = LINUX_RISCV_64;
