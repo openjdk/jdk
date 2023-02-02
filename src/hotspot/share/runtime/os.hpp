@@ -188,7 +188,6 @@ class os: AllStatic {
 
  private:
   static OSThread*          _starting_thread;
-  static address            _polling_page;
   static PageSizes          _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);

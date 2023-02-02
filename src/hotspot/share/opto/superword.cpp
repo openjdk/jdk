@@ -180,11 +180,10 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
       if (cl->is_vectorized_loop() && cl->is_main_loop() && !cl->is_reduction_loop()) {
         IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
         CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
-        _phase->has_range_checks(lpt_next);
         // Main loop SLP works well for manually unrolled loops. But post loop
         // vectorization doesn't work for these. To bail out the optimization
         // earlier, we have range check and loop stride conditions below.
-        if (cl_next->is_post_loop() && !cl_next->range_checks_present() &&
+        if (cl_next->is_post_loop() && !lpt_next->range_checks_present() &&
             cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
           if (!cl_next->is_vectorized_loop()) {
             // Propagate some main loop attributes to its corresponding scalar

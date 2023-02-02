@@ -1266,7 +1266,7 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   }
   // Exception (2)
   // LoadNode performs deep traversals. Load is not notified for changes far away.
-  if (n->is_Load()) {
+  if (n->is_Load() && !told->singleton()) {
     // MemNode::can_see_stored_value looks up through many memory nodes,
     // which means we would need to notify modifications from far up in
     // the inputs all the way down to the LoadNode. We don't do that.
@@ -1929,19 +1929,15 @@ PhaseCCP::~PhaseCCP() {
 
 
 #ifdef ASSERT
-static bool ccp_type_widens(const Type* t, const Type* t0) {
-  assert(t->meet(t0) == t->remove_speculative(), "Not monotonic");
-  switch (t->base() == t0->base() ? t->base() : Type::Top) {
-  case Type::Int:
-    assert(t0->isa_int()->_widen <= t->isa_int()->_widen, "widen increases");
-    break;
-  case Type::Long:
-    assert(t0->isa_long()->_widen <= t->isa_long()->_widen, "widen increases");
-    break;
-  default:
-    break;
+void PhaseCCP::verify_type(Node* n, const Type* tnew, const Type* told) {
+  if (tnew->meet(told) != tnew->remove_speculative()) {
+    n->dump(1);
+    tty->print("told = "); told->dump(); tty->cr();
+    tty->print("tnew = "); tnew->dump(); tty->cr();
+    fatal("Not monotonic");
   }
-  return true;
+  assert(!told->isa_int() || !tnew->isa_int() || told->is_int()->_widen <= tnew->is_int()->_widen, "widen increases");
+  assert(!told->isa_long() || !tnew->isa_long() || told->is_long()->_widen <= tnew->is_long()->_widen, "widen increases");
 }
 #endif //ASSERT
 
@@ -1976,7 +1972,7 @@ void PhaseCCP::analyze() {
     }
     const Type* new_type = n->Value(this);
     if (new_type != type(n)) {
-      assert(ccp_type_widens(new_type, type(n)), "ccp type must widen");
+      DEBUG_ONLY(verify_type(n, new_type, type(n));)
       dump_type_and_node(n, new_type);
       set_type(n, new_type);
       push_child_nodes_to_worklist(worklist, n);

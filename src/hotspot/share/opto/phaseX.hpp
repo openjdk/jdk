@@ -620,6 +620,7 @@ class PhaseCCP : public PhaseIterGVN {
   // Worklist algorithm identifies constants
   void analyze();
 #ifdef ASSERT
+  void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()
   void verify_analyze(Unique_Node_List& worklist_verify);
 #endif
