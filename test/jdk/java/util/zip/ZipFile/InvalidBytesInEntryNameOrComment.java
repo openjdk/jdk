@@ -44,9 +44,9 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @summary Validate that opening ZIP files files with invalid UTF-8
  * byte sequences in the name or comment fields fails with ZipException
- * @run testng/othervm InvalidEntryNameOrCommentEncoding
+ * @run testng/othervm InvalidBytesInEntryNameOrComment
  */
-public class InvalidEntryNameOrCommentEncoding {
+public class InvalidBytesInEntryNameOrComment {
 
     // Offsets for navigating the CEN fields
     private static final int EOC_OFF = 6;   // Offset from EOF to find CEN offset
