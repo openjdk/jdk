@@ -1437,6 +1437,7 @@ void Arguments::set_mode_flags(Mode mode) {
     break;
   case _comp:
     UseInterpreter           = false;
+    BackgroundCompilation    = false;
     ClipInlining             = false;
     break;
   }
