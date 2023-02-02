@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 
 public class TestDoneBeforeDoInBackground {
 
-    static boolean doInBackground = false;
+    private static boolean doInBackground = false;
     private static final int WAIT_TIME = 200;
     private static final long CLEANUP_TIME = 3000;
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -86,7 +86,8 @@ public class TestDoneBeforeDoInBackground {
         if (!doneLatch.await(CLEANUP_TIME + 1000L, TimeUnit.MILLISECONDS)) {
             throw new RuntimeException("done didn't complete in time");
         }
-        System.out.println("doInBackground " + doInBackground);
+        System.out.println("doInBackground " + doInBackground +
+                           " getState " + worker.getState());
         if (doInBackground && worker.getState() != SwingWorker.StateValue.DONE) {
             throw new RuntimeException("doInBackground is finished " +
                                        " but State is not DONE");
