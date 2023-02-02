@@ -3836,6 +3836,9 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
 
+  // Please keep this inside the _attaching_via_jni section.
+  post_thread_start_event(thread);
+
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have
   // to regrab the threads_lock
@@ -3849,8 +3852,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(thread);
   }
-
-  post_thread_start_event(thread);
 
   *(JNIEnv**)penv = thread->jni_environment();
 
