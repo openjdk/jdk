@@ -1717,8 +1717,6 @@ void SuperWord::combine_packs() {
       for (int j = i + 1; j < _packset.length(); j++) {
         Node_List* p2 = _packset.at(j);
         if (p2 == NULL) continue;
-        assert(i != j, "sanity"); // TODO remove
-        if (i == j) continue; // TODO remove
         if (p1->at(p1->size()-1) == p2->at(0)) {
           if (can_combine_packs(p1, p2)) {
             for (uint k = 1; k < p2->size(); k++) {
@@ -2230,109 +2228,116 @@ bool SuperWord::profitable(Node_List* p) {
 }
 
 #ifdef ASSERT
-void SuperWord::verify_packs() {
-  if (TraceSuperWord) {
-    tty->print_cr("\nVerify packset with the dependence_graph.");
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
-      tty->print_cr("Pack: %d", i);
-      print_pack(p); // print all nodes in pack
-      for (uint j = 0; j < p->size(); j++) {
-        Node* n = p->at(j);
-        DepMem* d = _dg.dep(n);
-        if (d != nullptr) {
-          d->print(); // and the dependence_graph
+class Packset_Graph {
+ private:
+  int _size;
+  GrowableArray<GrowableArray<int>> _in_edges;
+  GrowableArray<GrowableArray<int>> _out_edges;
+ public:
+  Packset_Graph(int size) : _size(size), _in_edges(size), _out_edges(size) {
+    for (int i = 0; i < _size; i++) {
+      _in_edges.push(GrowableArray<int>());
+      _out_edges.push(GrowableArray<int>());
+    }
+  }
+  int size() { return _size; }
+  GrowableArray<int>& in_edges(int idx) { return _in_edges.at(idx); }
+  GrowableArray<int>& out_edges(int idx) { return _out_edges.at(idx); }
+  void print() {
+    tty->print_cr("Packset graph:");
+    for (int i = 0; i < _size; i++) {
+      tty->print("  %d ( ", i);
+      for (int j = 0; j < _in_edges.at(i).length(); j++) {
+        tty->print("%d ", _in_edges.at(i).at(j));
+      }
+      tty->print(") [ ");
+      for (int j = 0; j < _in_edges.at(i).length(); j++) {
+        tty->print("%d ", _in_edges.at(i).at(j));
+      }
+      tty->print_cr("]");
+    }
+  }
+  // Schedule the graph to worklist. Removes all packs from graph
+  // that are scheduled. Returns true iff all packs were scheduled.
+  // Implies: returns false iff we have a cyclic dependency.
+  // Implementation via topological sort.
+  bool schedule() {
+    GrowableArray<int> worklist;
+    // Directly schedule all packs that have no precedence.
+    for (int i = 0; i < size(); i++) {
+      if (in_edges(i).is_empty()) { // no precedence
+        worklist.push(i); // schedule i
+      }
+    }
+    // Continue scheduling by removing the already scheduled nodes from the remaining graph.
+    for (int i = 0; i < worklist.length(); i++) {
+      int p = worklist.at(i);
+      if (TraceSuperWord) {
+        tty->print_cr("verify: schedule pack[%d]", p);
+      }
+      for (int j = 0; j < out_edges(p).length(); j++){
+        int p_use = out_edges(p).at(j);
+        in_edges(p_use).remove(p); // p_use loses p as precedence
+        if (in_edges(p_use).is_empty()) {
+          worklist.push(p_use); // p_use just lost the last precedence (it was p)
         }
       }
     }
+    return worklist.length() == size(); // were all packs scheduled to worklist?
   }
+};
 
+void SuperWord::verify_packs() {
   // Build a packset graph.
   // Have edge (p, p') if any "def" \in p, "use" \in p': "def" \in use->DepPreds
   // If these edges for a directed cycle, we have a failure and cannot schedule.
   ResourceMark rm;
-  int m = _packset.length();
-  GrowableArray<GrowableArray<int>> packset_in(m);  // pack id -> input pack ids
-  GrowableArray<GrowableArray<int>> packset_out(m); // pack id -> output pack ids
-  for (int i_use = 0; i_use < _packset.length(); i_use++) {
-    packset_in.push(GrowableArray<int>());
-    packset_out.push(GrowableArray<int>());
-  }
+  Packset_Graph graph(_packset.length());
 
   for (int i_use = 0; i_use < _packset.length(); i_use++) {
     Node_List* p_use = _packset.at(i_use);
     for (int i_def = 0; i_def < _packset.length(); i_def++) {
       Node_List* p_def = _packset.at(i_def);
+      // For every "use" and "def", check if we need edge "def" -> "use"
       bool need_edge = false;
       for (uint j_use = 0; j_use < p_use->size(); j_use++) {
-        Node* use = p_use->at(j_use);
+        Node* use = p_use->at(j_use); // for every node in "use" pack
         for (DepPreds preds(use, _dg); !preds.done(); preds.next()) {
-          Node* pred = preds.current();
-          if (!in_bb(pred)) {
-            continue; // outside block -> ignore
-          }
+          Node* pred = preds.current(); // find preds of "use" node
           if (my_pack(pred) != p_def) {
-            continue; // not in a pack, or wrong pack -> ignorue
+            continue; // not in a pack, or wrong pack -> ignore
           }
-          if (use->is_reduction() && pred->is_reduction() && i_use == i_def) {
+          if (i_use == i_def && use->is_reduction()) {
             if (TraceSuperWord) {
-              tty->print_cr("verify: reduction pack[%d], N%d -> N%d",
-                            i_use, pred->_idx, use->_idx);
+              tty->print_cr("verify: reduction pack[%d], %d %s -> %d %s",
+                            i_use, pred->_idx, pred->Name(), use->_idx, use->Name());
             }
             continue; // nodes in same pack, reduction -> self cycle allowed -> ignore
           }
           need_edge = true;
           if (TraceSuperWord) {
-            tty->print_cr("verify: edge pack[%d] -> pack[%d], N%d -> N%d",
-                          i_def, i_use, pred->_idx, use->_idx);
+            tty->print_cr("verify: edge pack[%d] -> pack[%d], %d %s -> %d %s",
+                          i_def, i_use, pred->_idx, pred->Name(), use->_idx, use->Name());
           }
         }
       }
       if (need_edge) {
-        packset_in.at(i_use).push(i_def);
-        packset_out.at(i_def).push(i_use);
+        graph.in_edges(i_use).push(i_def);
+        graph.out_edges(i_def).push(i_use);
       }
     }
   }
 
   if (TraceSuperWord) {
-    tty->print_cr("Resulting packset graph:");
-    for (int i_use = 0; i_use < packset_in.length(); i_use++) {
-      tty->print("  %d (", i_use);
-      for (int j = 0; j < packset_in.at(i_use).length(); j++) {
-        tty->print("%d ", packset_in.at(i_use).at(j));
-      }
-      tty->print(") [");
-      for (int j = 0; j < packset_out.at(i_use).length(); j++) {
-        tty->print("%d ", packset_out.at(i_use).at(j));
-      }
-      tty->print_cr("]");
-    }
+    graph.print();
   }
 
-  // Try to schedule the packs with topological sort, let's hope we find no cycles.
-  GrowableArray<int> worklist;
-  // Directly schedule all packs that have no precedence.
-  for (int i = 0; i < packset_in.length(); i++) {
-    if (packset_in.at(i).is_empty()) { // no precedence
-      worklist.push(i); // schedule i
-    }
+  if (!graph.schedule()) {
+    tty->print_cr("\nCycle detected in SuperWord packset. Printing remaining graph:");
+    graph.print();
+    print_packset();
+    assert(false, "cycle detected in SuperWord packset");
   }
-  // Continue scheduling by removing the already scheduled nodes from the remaining graph.
-  for (int i = 0; i < worklist.length(); i++) {
-    int p = worklist.at(i);
-    if (TraceSuperWord) {
-      tty->print_cr("verify: schedule pack[%d]", p);
-    }
-    for (int j = 0; j < packset_out.at(p).length(); j++){
-      int p_use = packset_out.at(p).at(j);
-      packset_in.at(p_use).remove(p); // p_use loses p as precedence
-      if (packset_in.at(p_use).is_empty()) {
-        worklist.push(p_use); // p_use just lost the last precedence (it was p)
-      }
-    }
-  }
-  assert(worklist.length() ==  _packset.length(), "no cycle in pack dependencies");
 }
 #endif
 
