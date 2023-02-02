@@ -111,14 +111,14 @@ void FileMapInfo::fail_stop(const char *msg, ...) {
 void FileMapInfo::fail_continue(const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  fail_continue_impl(LogLevel::Info, msg, ap);
+  fail_continue_impl(LogLevel::Warning, msg, ap);
   va_end(ap);
 }
 
-void FileMapInfo::fail_continue(LogLevelType level, const char *msg, ...) {
+void FileMapInfo::fail_continue_nowarn(const char *msg, ...) {
   va_list ap;
   va_start(ap, msg);
-  fail_continue_impl(level, msg, ap);
+  fail_continue_impl(LogLevel::Info, msg, ap);
   va_end(ap);
 }
 
@@ -1134,7 +1134,7 @@ bool FileMapInfo::validate_shared_path_table() {
       const char* mismatch_msg = "shared class paths mismatch";
       const char* hint_msg = log_is_enabled(Info, class, path) ?
           "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
-      fail_continue(LogLevel::Warning, "%s%s", mismatch_msg, hint_msg);
+      fail_continue("%s%s", mismatch_msg, hint_msg);
       return false;
     }
   }
@@ -1212,7 +1212,7 @@ public:
     assert(_archive_name != nullptr, "Archive name is null");
     _fd = os::open(_archive_name, O_RDONLY | O_BINARY, 0);
     if (_fd < 0) {
-      FileMapInfo::fail_continue("Specified shared archive not found (%s)", _archive_name);
+      FileMapInfo::fail_continue_nowarn("Specified shared archive not found (%s)", _archive_name);
       return false;
     }
     return initialize(_fd);
@@ -1494,7 +1494,7 @@ bool FileMapInfo::open_for_read() {
   int fd = os::open(_full_path, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
     if (errno == ENOENT) {
-      fail_continue("Specified shared archive not found (%s)", _full_path);
+      fail_continue_nowarn("Specified shared archive not found (%s)", _full_path);
     } else {
       fail_continue("Failed to open shared archive file (%s)",
                     os::strerror(errno));
@@ -2606,21 +2606,21 @@ bool FileMapInfo::initialize() {
     // are replaced at runtime by JVMTI ClassFileLoadHook. All of those classes are resolved
     // during the JVMTI "early" stage, so we can still use CDS if
     // JvmtiExport::has_early_class_hook_env() is false.
-    FileMapInfo::fail_continue("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+    FileMapInfo::fail_continue_nowarn("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
     return false;
   }
 
   if (!Arguments::has_jimage()) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
+    FileMapInfo::fail_continue_nowarn("The shared archive file cannot be used with an exploded module build.");
     return false;
   }
 
   if (!open_for_read() || !init_from_file(_fd) || !validate_header()) {
     if (_is_static) {
-      FileMapInfo::fail_continue("Initialize static archive failed.");
+      FileMapInfo::fail_continue_nowarn("Initialize static archive failed.");
       return false;
     } else {
-      FileMapInfo::fail_continue("Initialize dynamic archive failed.");
+      FileMapInfo::fail_continue_nowarn("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         DynamicDumpSharedSpaces = true;
         ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
@@ -2663,13 +2663,13 @@ int FileMapHeader::compute_crc() {
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
   if (_obj_alignment != ObjectAlignmentInBytes) {
-    FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
+    FileMapInfo::fail_continue_nowarn("The shared archive file's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of %d.",
                   _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
   if (_compact_strings != CompactStrings) {
-    FileMapInfo::fail_continue("The shared archive file's CompactStrings setting (%s)"
+    FileMapInfo::fail_continue_nowarn("The shared archive file's CompactStrings setting (%s)"
                   " does not equal the current CompactStrings setting (%s).",
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
@@ -2689,7 +2689,7 @@ bool FileMapHeader::validate() {
 
   if (!_verify_local && BytecodeVerificationLocal) {
     //  we cannot load boot classes, so there's no point of using the CDS archive
-    FileMapInfo::fail_continue("The shared archive file's BytecodeVerificationLocal setting (%s)"
+    FileMapInfo::fail_continue_nowarn("The shared archive file's BytecodeVerificationLocal setting (%s)"
                                " does not equal the current BytecodeVerificationLocal setting (%s).",
                                _verify_local ? "enabled" : "disabled",
                                BytecodeVerificationLocal ? "enabled" : "disabled");
@@ -2701,7 +2701,7 @@ bool FileMapHeader::validate() {
   if (_has_platform_or_app_classes
       && !_verify_remote // we didn't verify the archived platform/app classes
       && BytecodeVerificationRemote) { // but we want to verify all loaded platform/app classes
-    FileMapInfo::fail_continue("The shared archive file was created with less restrictive "
+    FileMapInfo::fail_continue_nowarn("The shared archive file was created with less restrictive "
                                "verification setting than the current setting.");
     // Pretend that we didn't have any archived platform/app classes, so they won't be loaded
     // by SystemDictionaryShared.
@@ -2726,7 +2726,7 @@ bool FileMapHeader::validate() {
   log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d",
                           compressed_oops(), compressed_class_pointers());
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
-    FileMapInfo::fail_continue("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
+    FileMapInfo::fail_continue_nowarn("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
     return false;
   }
