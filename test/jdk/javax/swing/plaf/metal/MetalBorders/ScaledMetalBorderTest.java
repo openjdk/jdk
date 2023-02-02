@@ -46,9 +46,9 @@ import javax.swing.UIManager;
  * @test
  * @bug 8015739 8294484
  * @key headful
- * @summary Tests whether background color of JInternalFrame is visible
- * in the border region at different scales by checking the midpoints
- * and corners of the border.
+ * @summary Tests whether Metal borders for JFrame, JDialog and JInternalFrame
+ * scales correctly without any distortions by checking the midpoints and
+ * corners of the border.
  *
  * @requires (os.family == "windows")
  * @run main/othervm -Dsun.java2d.uiScale=1 ScaledMetalBorderTest
@@ -64,9 +64,9 @@ import javax.swing.UIManager;
  * @test
  * @bug 8015739 8294484
  * @key headful
- * @summary Tests whether background color of JInternalFrame is visible
- * in the border region at different scales by checking the midpoints
- * and corners of the border.
+ * @summary Tests whether Metal borders for JFrame, JDialog and JInternalFrame
+ * scales correctly without any distortions by checking the midpoints and
+ * corners of the border.
  *
  * @requires (os.family == "mac" | os.family == "linux")
  * @run main/othervm -Dsun.java2d.uiScale=1 ScaledMetalBorderTest
