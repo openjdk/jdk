@@ -205,9 +205,9 @@ public abstract class MessageDigestSpi {
      */
     public Object clone() throws CloneNotSupportedException {
         if (this instanceof Cloneable) {
-            var o = super.clone();
-            if (((MessageDigestSpi)o).tempArray != null) {
-                ((MessageDigestSpi)o).tempArray = tempArray.clone();
+            MessageDigestSpi o = (MessageDigestSpi)super.clone();
+            if (o.tempArray != null) {
+                o.tempArray = tempArray.clone();
             }
             return o;
         } else {
