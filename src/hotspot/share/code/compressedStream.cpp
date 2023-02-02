@@ -76,6 +76,7 @@ CompressedWriteStream::CompressedWriteStream(int initial_size) : CompressedStrea
   _buffer   = NEW_RESOURCE_ARRAY(u_char, initial_size);
   _size     = initial_size;
   _position = 0;
+  _zero_count = 0;
 }
 
 void CompressedWriteStream::grow() {

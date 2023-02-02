@@ -50,14 +50,19 @@ class CompressedStream : public ResourceObj {
   void set_position(int position)      { _position = position; }
 };
 
-
+// Compress stream implementation over the Unsigned5 compression algorithm
+// mixed with Zero-Run-Length-Encoding (variation of RLE compression schema).
+// unsigned5(int) takes 1..5 bytes, and zero byte is never produced (see
+// unsigned5 description). Once we see a zero byte, it is a special mark
+// followed by byte representing number of zero values in a stream.
 class CompressedReadStream : public CompressedStream {
  private:
-  inline u_char read()                 { return _buffer[_position++]; }
+  u_char _remaining_zeroes;
+  inline u_char read()                 { _remaining_zeroes = 0; return _buffer[_position++]; }
 
  public:
   CompressedReadStream(u_char* buffer, int position = 0)
-  : CompressedStream(buffer, position) {}
+  : CompressedStream(buffer, position), _remaining_zeroes(0) {}
 
   jboolean read_bool()                 { return (jboolean) read();      }
   jbyte    read_byte()                 { return (jbyte   ) read();      }
@@ -69,7 +74,23 @@ class CompressedReadStream : public CompressedStream {
   jlong    read_long();                // jlong_from(2*read_signed_int())
 
   jint     read_int() {
+    if (_remaining_zeroes > 0) {
+      _remaining_zeroes--;
+      return 0;
+    }
+    if (_buffer[_position] == 0) {
+      _position++;
+      _remaining_zeroes = _buffer[_position++];
+      assert(_remaining_zeroes > 0, "corrupted stream");
+      _remaining_zeroes--;
+      return 0;
+    }
     return UNSIGNED5::read_uint(_buffer, _position, 0);
+  }
+
+  void set_position(int position) {
+    _position = position;
+    _remaining_zeroes = 0;
   }
 };
 
@@ -81,6 +102,8 @@ class CompressedWriteStream : public CompressedStream {
   }
   void store(u_char b) {
     _buffer[_position++] = b;
+    // Writing unencoded data ends the RLE sequence of zero integers
+    _zero_count = 0;
   }
   void write(u_char b) {
     if (full()) grow();
@@ -88,13 +111,29 @@ class CompressedWriteStream : public CompressedStream {
   }
   void grow();
 
+  // Handle encoding of subsequent zeroes. Return true if
+  // input value is completely handled and no unsigned5 encoding required
+  bool handle_zero(juint value) {
+    if (value == 0) {
+      _zero_count = (_zero_count == 0xFF) ? 0 : _zero_count;
+      if (++_zero_count > 2) {
+        _buffer[_position - 2] = 0;
+        _buffer[_position - 1] = _zero_count;
+        return true;
+      }
+    } else { // value != 0
+      _zero_count = 0;
+    }
+    return false;
+  }
  protected:
   int _size;
+  u_char _zero_count;
 
  public:
   CompressedWriteStream(int initial_size);
   CompressedWriteStream(u_char* buffer, int initial_size, int position = 0)
-  : CompressedStream(buffer, position) { _size = initial_size; }
+  : CompressedStream(buffer, position) { _size = initial_size; _zero_count = 0; }
 
   void write_bool(jboolean value)      { write(value);      }
   void write_byte(jbyte value)         { write(value);      }
@@ -106,9 +145,12 @@ class CompressedWriteStream : public CompressedStream {
   void write_long(jlong value);        // write_signed_int(<low,high>)
 
   void write_int(juint value) {
+    if (handle_zero(value)) return;
     UNSIGNED5::write_uint_grow(value, _buffer, _position, _size,
                                [&](int){ grow(); });
   }
+
+  int position() { _zero_count = 0; return _position; }
 };
 
 #endif // SHARE_CODE_COMPRESSEDSTREAM_HPP

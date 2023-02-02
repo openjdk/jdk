@@ -30,6 +30,8 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class CompressedReadStream extends CompressedStream {
+  private int remainingZeroes;
+
   /** Equivalent to CompressedReadStream(buffer, 0) */
   public CompressedReadStream(Address buffer) {
     this(buffer, 0);
@@ -37,6 +39,7 @@ public class CompressedReadStream extends CompressedStream {
 
   public CompressedReadStream(Address buffer, int position) {
     super(buffer, position);
+    remainingZeroes = 0;
   }
 
   public boolean readBoolean() {
@@ -79,12 +82,29 @@ public class CompressedReadStream extends CompressedStream {
 
   //--------------------------------------------------------------------------------
   public int readInt() {
+    if (remainingZeroes > 0) {
+      remainingZeroes--;
+      return 0;
+    }
+    short nextByte = read(position);
+    if ((int) nextByte == 0) {
+      remainingZeroes = read(++position);
+      position++;
+      remainingZeroes--;
+      return 0;
+    }
     // UNSIGNED5::read_uint(_buffer, &_position, limit=0)
     return (int) Unsigned5.readUint(this, position,
                                     // bytes are fetched here:
                                     CompressedReadStream::read,
                                     // updated position comes through here:
                                     CompressedReadStream::setPosition);
+  }
+
+  @Override
+  public void setPosition(int position) {
+    this.position = position;
+    remainingZeroes = 0;
   }
 
   private short read(int index) {
