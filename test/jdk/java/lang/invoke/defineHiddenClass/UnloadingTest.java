@@ -222,7 +222,7 @@ public class UnloadingTest {
         }
 
         boolean tryUnload() {
-            return ForceGC.wait(() -> weakRef.refersTo(null));
+            return ForceGC.wait(() -> weakRef.refersTo(null), 2000L);
         }
     }
 
