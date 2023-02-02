@@ -138,7 +138,7 @@ void call_method_on_jvm(const char* method) {
 
   method_id = (*env)->GetStaticMethodID(env, class_id, method, "()V");
   if (method_id == NULL) {
-    fprintf(stderr, "Test ERROR. Can't find method DoOverflow.printAlive\n");
+    fprintf(stderr, "Test ERROR. Can't find method DoOverflow.%s\n", method);
     exit(7);
   }
 
