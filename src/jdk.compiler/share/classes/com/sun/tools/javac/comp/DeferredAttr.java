@@ -439,6 +439,12 @@ public class DeferredAttr extends JCTree.Visitor {
         Env<AttrContext> localEnv = attr.lambdaEnv(that, env);
         try {
             localEnv.info.returnResult = resultInfo;
+            /* we should be on the safe side for lambdas that declare a local type as it could be that the cache
+             * we use for speculative attribution gets corrupted, see JDK-8295019, so it is better to use a local cache.
+             * This approach could potentially imply a performance hit but most lambdas in general don't declare local
+             * types so this should impact only a fraction of the lambda expressions. Worst case scenario, the local type
+             * can be declared outside of the lambda body.
+             */
             JCBlock speculativeTree = hasTypeDeclaration(that) ?
                     (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo, argumentAttr.withLocalCacheContext()) :
                     (JCBlock)attribSpeculative(lambdaBlock, localEnv, resultInfo);
