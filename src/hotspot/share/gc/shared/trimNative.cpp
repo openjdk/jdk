@@ -391,7 +391,7 @@ static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
 /// GCTrimNative outside facing methods
 
-void GCTrimNative::initialize() {
+void TrimNative::initialize() {
 
   if (GCTrimNativeHeap) {
 
@@ -419,25 +419,25 @@ void GCTrimNative::initialize() {
   }
 }
 
-void GCTrimNative::cleanup() {
+void TrimNative::cleanup() {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->stop();
   }
 }
 
-void GCTrimNative::pause_periodic_trim() {
+void TrimNative::pause_periodic_trim() {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->pause();
   }
 }
 
-void GCTrimNative::unpause_periodic_trim() {
+void TrimNative::unpause_periodic_trim() {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->unpause();
   }
 }
 
-void GCTrimNative::schedule_trim() {
+void TrimNative::schedule_trim() {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->schedule_trim();
   }

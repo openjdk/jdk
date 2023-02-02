@@ -1712,7 +1712,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   }
 
   // Pause native trimming for the duration of the GC
-  GCTrimNative::PauseThenTrimMark trim_native_pause;
+  TrimNative::PauseThenTrimMark trim_native_pause;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 

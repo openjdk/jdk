@@ -1077,7 +1077,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
                                          bool do_maximal_compaction) {
   assert_at_safepoint_on_vm_thread();
 
-  GCTrimNative::PauseThenTrimMark trim_pause_mark;
+  TrimNative::PauseThenTrimMark trim_pause_mark;
 
   if (GCLocker::check_active_before_gc()) {
     // Full GC was not completed.
@@ -1753,7 +1753,7 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-  GCTrimNative::initialize();
+  TrimNative::initialize();
 }
 
 void G1CollectedHeap::ref_processing_init() {

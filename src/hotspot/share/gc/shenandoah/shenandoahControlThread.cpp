@@ -425,7 +425,7 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
-  GCTrimNative::PauseThenTrimMark trim_pause_mark;
+  TrimNative::PauseThenTrimMark trim_pause_mark;
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
@@ -440,7 +440,7 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
-  GCTrimNative::PauseMark trim_pause_mark;
+  TrimNative::PauseMark trim_pause_mark;
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,28 +28,35 @@
 
 #include "memory/allStatic.hpp"
 
-class GCTrimNative : public AllStatic {
+class TrimNative : public AllStatic {
 public:
 
   static void initialize();
   static void cleanup();
 
-  // Pause/unpause periodic trim
+  // Pause periodic trim (if enabled).
   static void pause_periodic_trim();
+
+  // Unpause periodic trim (if enabled).
   static void unpause_periodic_trim();
 
-  // Schedule an explicit trim now. If periodic trims are enabled and have been paused,
-  // they are unpaused.
+  // Schedule an explicit trim now.
+  // If periodic trims are enabled and had been paused, they are unpaused
+  // and the interval is reset.
   static void schedule_trim();
 
+  // Pause periodic trimming while in scope; when leaving scope,
+  // resume periodic trimming.
   struct PauseMark {
-    PauseMark()   { GCTrimNative::pause_periodic_trim(); }
-    ~PauseMark()  { GCTrimNative::unpause_periodic_trim(); }
+    PauseMark()   { pause_periodic_trim(); }
+    ~PauseMark()  { unpause_periodic_trim(); }
   };
 
+  // Pause periodic trimming while in scope; when leaving scope,
+  // trim immediately and resume periodic trimming with a new interval.
   struct PauseThenTrimMark {
-    PauseThenTrimMark()   { GCTrimNative::pause_periodic_trim(); }
-    ~PauseThenTrimMark()  { GCTrimNative::schedule_trim(); }
+    PauseThenTrimMark()   { pause_periodic_trim(); }
+    ~PauseThenTrimMark()  { schedule_trim(); }
   };
 
 };

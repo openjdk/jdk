@@ -203,7 +203,7 @@ void GenCollectedHeap::post_initialize() {
 
   ScavengableNMethods::initialize(&_is_scavengable);
 
-  GCTrimNative::initialize();
+  TrimNative::initialize();
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -509,7 +509,7 @@ void GenCollectedHeap::do_collection(bool           full,
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
 
-  GCTrimNative::PauseThenTrimMark trim_native_pause;
+  TrimNative::PauseThenTrimMark trim_native_pause;
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)

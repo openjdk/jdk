@@ -266,7 +266,7 @@ void ZDriver::collect(const ZDriverRequest& request) {
 
 template <typename T>
 bool ZDriver::pause() {
-  GCTrimNative::PauseMark trim_native_pause;
+  TrimNative::PauseMark trim_native_pause;
   for (;;) {
     T op;
     VMThread::execute(&op);

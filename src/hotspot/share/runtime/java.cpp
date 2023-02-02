@@ -451,7 +451,7 @@ void before_exit(JavaThread* thread, bool halt) {
     StringDedup::stop();
   }
 
-  GCTrimNative::cleanup();
+  TrimNative::cleanup();
 
   // Stop concurrent GC threads
   Universe::heap()->stop();

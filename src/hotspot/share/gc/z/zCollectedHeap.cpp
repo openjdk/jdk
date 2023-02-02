@@ -75,7 +75,7 @@ jint ZCollectedHeap::initialize() {
 
   Universe::calculate_verify_data((HeapWord*)0, (HeapWord*)UINTPTR_MAX);
 
-  GCTrimNative::initialize();
+  TrimNative::initialize();
 
   return JNI_OK;
 }
