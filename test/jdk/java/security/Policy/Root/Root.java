@@ -34,6 +34,7 @@
 * Run test as root user.
 * */
 
+import jdk.test.lib.Platform;
 import org.testng.Assert;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -79,19 +80,21 @@ public class Root {
     private void test() throws InterruptedException, IOException {
         System.out.println("Run test as root user.");
 
-        Process process = Runtime.getRuntime().exec("id -u");
-        process.waitFor();
-        if (process.exitValue() != 0) {
-            throw new RuntimeException("Failed to retrieve user id.");
-        }
+        if (!Platform.isWindows()) {
+            Process process = Runtime.getRuntime().exec("id -u");
+            process.waitFor();
+            if (process.exitValue() != 0) {
+                throw new RuntimeException("Failed to retrieve user id.");
+            }
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(process.getInputStream()))) {
-            String line = reader.readLine();
+            try (BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream()))) {
+                String line = reader.readLine();
 
-            if (!ROOT_USER_ID.equals(line)) {
-                throw new RuntimeException(
-                        "This test needs to be run with root privilege.");
+                if (!ROOT_USER_ID.equals(line)) {
+                    throw new RuntimeException(
+                            "This test needs to be run with root privilege.");
+                }
             }
         }
 
