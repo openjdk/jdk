@@ -81,7 +81,7 @@ public class CenSizeTooLarge {
     public void shouldRejectTooLargeCenSize() throws IOException {
         int size = MAX_CEN_SIZE +1;
 
-        Path zip = zipWithCenSize("cen-size-too-large.zip", size, zipBytes);
+        Path zip = zipWithCenSize(size, "cen-size-too-large.zip");
 
         try (ZipFile zf = new ZipFile(zip.toFile())) {
         }
@@ -102,7 +102,7 @@ public class CenSizeTooLarge {
 
         int size = MAX_CEN_SIZE;
 
-        Path zip = zipWithCenSize("cen-size-on-limit.zip", size, zipBytes);
+        Path zip = zipWithCenSize(size, "cen-size-on-limit.zip");
 
         try (ZipFile zf = new ZipFile(zip.toFile())) {
         }
@@ -115,7 +115,7 @@ public class CenSizeTooLarge {
      * The resulting ZIP is technically not valid, but it does allow us
      * to test that the large CEN size is rejected
      */
-    private Path zipWithCenSize(String name, int cenSize, byte[] zipBytes) throws IOException {
+    private Path zipWithCenSize(int cenSize, String name) throws IOException {
         Path z = Path.of(name);
 
         // Change the "Central directory size" field of the
