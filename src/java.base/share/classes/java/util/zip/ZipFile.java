@@ -1639,16 +1639,14 @@ public class ZipFile implements ZipConstants, Closeable {
             // 32 bit hash matches the hashed name.
             while (idx != ZIP_ENDCHAIN) {
                 if (getEntryHash(idx) == hsh) {
-                    // The CEN name must match the specified one
+                    // Compare the lookup name with the name encoded in the CEN
+
                     int pos = getEntryPos(idx);
-
-
-                    ZipCoder zc = zipCoderForPos(pos);
-
                     int noff = pos + CENHDR;
                     int nlen = CENNAM(cen, pos);
 
-                    // Compare the lookup name with the name encoded in the CEN
+                    ZipCoder zc = zipCoderForPos(pos);
+
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
                         case EXACT_MATCH:
                             // Exact match for "name"
@@ -1660,7 +1658,6 @@ public class ZipFile implements ZipConstants, Closeable {
                         case NO_MATCH:
                             // Hash collision, continue search
                     }
-
                 }
                 idx = getEntryNext(idx);
             }
