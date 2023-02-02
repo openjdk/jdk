@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,17 @@
 
 /*
  * @test
- * @bug 4851638
- * @summary Tests for StrictMath.expm1
- * @compile -Xdiags:verbose Expm1Tests.java
+ * @bug 4851638 8301396
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build Expm1Tests
  * @run main Expm1Tests
+ * @summary Tests for StrictMath.expm1
  */
+import jdk.test.lib.RandomFactory;
 
 /**
  * The tests in ../Math/Expm1Tests.java test properties that should
@@ -43,12 +49,95 @@
 public class Expm1Tests {
     private Expm1Tests(){}
 
-    static int testExpm1Case(double input, double expected) {
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testAgainstTranslit();
+        failures += testExpm1();
+
+        if (failures > 0) {
+            System.err.println("Testing expm1 incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.expm1 against transliteration port of expm1.
+     */
+    private static int testAgainstTranslit() {
+        int failures = 0;
+        double x;
+
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRange(x, Math.ulp(x), 1000);
+
+        // ... and just below subnormal threshold ...
+         x =  Math.nextDown(Double.MIN_NORMAL);
+         failures += testRange(x, -Math.ulp(x), 1000);
+
+        // ... and near 1.0 ...
+         failures += testRangeMidpoint(1.0, Math.ulp(x), 2000);
+         // (Note: probes every-other value less than 1.0 due to
+         // change in the size of an ulp at 1.0.
+
+         // Probe near decision points in the FDLIBM algorithm.
+         double LN2 = StrictMath.log(2.0);
+         double[] decisionPoints = {
+               7.09782712893383973096e+02, // overflow threshold
+               56.0 * LN2,
+              -56.0 * LN2,
+               0.5 * LN2,
+              -0.5 * LN2,
+               1.5 * LN2,
+              -1.5 * LN2,
+               0x1.0p-54,
+              -0x1.0p-54,
+         };
+
+         for (double testPoint : decisionPoints) {
+             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
+         }
+
+         x = Tests.createRandomDouble(random);
+
+         // Make the increment twice the ulp value in case the random
+         // value is near an exponent threshold. Don't worry about test
+         // elements overflowing to infinity if the starting value is
+         // near Double.MAX_VALUE.
+         failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    private static int testRange(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testExpm1Case(x, FdlibmTranslit.expm1(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeMidpoint(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testExpm1Case(x, FdlibmTranslit.expm1(x));
+        }
+        return failures;
+    }
+
+    private static int testExpm1Case(double input, double expected) {
         return Tests.test("StrictMath.expm1(double)", input,
                           StrictMath::expm1, expected);
     }
 
-    static int testExpm1() {
+    private static int testExpm1() {
         int failures = 0;
 
         // Test cases in the range [-36.75, 710]
@@ -780,17 +869,5 @@ public class Expm1Tests {
             failures+=testExpm1Case(testCase[0], testCase[1]);
 
         return failures;
-    }
-
-    public static void main(String [] argv) {
-        int failures = 0;
-
-        failures += testExpm1();
-
-        if (failures > 0) {
-            System.err.println("Testing expm1 incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
-        }
     }
 }
