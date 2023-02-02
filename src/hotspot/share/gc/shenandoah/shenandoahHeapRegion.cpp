@@ -590,7 +590,7 @@ void ShenandoahHeapRegion::global_oop_iterate_objects_and_fill_dead(OopIterateCl
 // DO NOT CANCEL.  If this worker thread has accepted responsibility for scanning a particular range of addresses, it
 // must finish the work before it can be cancelled.
 void ShenandoahHeapRegion::oop_iterate_humongous_slice(OopIterateClosure* blk, bool dirty_only,
-                                                       HeapWord* start, size_t words, bool write_table, bool is_concurrent) {
+                                                       HeapWord* start, size_t words, bool write_table) {
   assert(words % CardTable::card_size_in_words() == 0, "Humongous iteration must span whole number of cards");
   assert(is_humongous(), "only humongous region here");
   ShenandoahHeap* heap = ShenandoahHeap::heap();

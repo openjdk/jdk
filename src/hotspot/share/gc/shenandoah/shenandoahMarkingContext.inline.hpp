@@ -37,39 +37,39 @@ inline bool ShenandoahMarkingContext::mark_weak(oop obj) {
   return !allocated_after_mark_start(obj) && _mark_bit_map.mark_weak(cast_from_oop<HeapWord *>(obj));
 }
 
-inline bool ShenandoahMarkingContext::is_marked(oop obj) const {
+inline bool ShenandoahMarkingContext::is_marked(const oop obj) const {
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked(cast_from_oop<HeapWord *>(obj));
 }
 
-inline bool ShenandoahMarkingContext::is_marked_strong(oop obj) const {
+inline bool ShenandoahMarkingContext::is_marked_strong(const oop obj) const {
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_strong(cast_from_oop<HeapWord*>(obj));
 }
 
-inline bool ShenandoahMarkingContext::is_marked_weak(oop obj) const {
+inline bool ShenandoahMarkingContext::is_marked_weak(const oop obj) const {
   return allocated_after_mark_start(obj) || _mark_bit_map.is_marked_weak(cast_from_oop<HeapWord *>(obj));
 }
 
-inline bool ShenandoahMarkingContext::is_marked_or_old(oop obj) const {
+inline bool ShenandoahMarkingContext::is_marked_or_old(const oop obj) const {
   return is_marked(obj) || ShenandoahHeap::heap()->is_old(obj);
 }
 
-inline bool ShenandoahMarkingContext::is_marked_strong_or_old(oop obj) const {
+inline bool ShenandoahMarkingContext::is_marked_strong_or_old(const oop obj) const {
   return is_marked_strong(obj) || ShenandoahHeap::heap()->is_old(obj);
 }
 
-inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(HeapWord* start, HeapWord* limit) const {
+inline HeapWord* ShenandoahMarkingContext::get_next_marked_addr(const HeapWord* start, const HeapWord* limit) const {
   return _mark_bit_map.get_next_marked_addr(start, limit);
 }
 
-inline bool ShenandoahMarkingContext::allocated_after_mark_start(oop obj) const {
-  HeapWord* addr = cast_from_oop<HeapWord*>(obj);
+inline bool ShenandoahMarkingContext::allocated_after_mark_start(const oop obj) const {
+  const HeapWord* addr = cast_from_oop<HeapWord*>(obj);
   return allocated_after_mark_start(addr);
 }
 
-inline bool ShenandoahMarkingContext::allocated_after_mark_start(HeapWord* addr) const {
+inline bool ShenandoahMarkingContext::allocated_after_mark_start(const HeapWord* addr) const {
   uintx index = ((uintx) addr) >> ShenandoahHeapRegion::region_size_bytes_shift();
   HeapWord* top_at_mark_start = _top_at_mark_starts[index];
-  bool alloc_after_mark_start = addr >= top_at_mark_start;
+  const bool alloc_after_mark_start = addr >= top_at_mark_start;
   return alloc_after_mark_start;
 }
 
@@ -112,7 +112,7 @@ inline void ShenandoahMarkingContext::reset_top_at_mark_start(ShenandoahHeapRegi
   _top_at_mark_starts_base[r->index()] = r->bottom();
 }
 
-inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(ShenandoahHeapRegion* r) const {
+inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(const ShenandoahHeapRegion* r) const {
   return _top_at_mark_starts_base[r->index()];
 }
 

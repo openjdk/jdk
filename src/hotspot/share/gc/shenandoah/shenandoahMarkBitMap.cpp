@@ -65,7 +65,8 @@ HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
   ShenandoahMarkingContext* ctx = heap->marking_context();
   HeapWord* tams = ctx->top_at_mark_start(r);
   assert(limit != NULL, "limit must not be NULL");
-  assert(limit <= tams, "limit must be less than TAMS");
+  assert(limit <= r->top(), "limit must be less than top");
+  assert(addr <= tams, "addr must be less than TAMS");
 #endif
 
   // Round addr up to a possible object boundary to be safe.

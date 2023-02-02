@@ -96,7 +96,7 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
       if (end_of_range > region->top()) {
         end_of_range = region->top();
       }
-      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, _is_concurrent, worker_id);
+      scanner->process_region_slice(region, assignment._chunk_offset, clusters, end_of_range, &cl, false, worker_id);
     }
 #ifdef ENABLE_REMEMBERED_SET_CANCELLATION
     // This check is currently disabled to avoid crashes that occur
@@ -112,9 +112,9 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 }
 
 size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
-  // The group size is calculated from the number of regions.  Suppose the entire heap size is N.  The first group processes
-  // N/2 of total heap size.  The second group processes N/4 of total heap size.  The third group processes N/2 of total heap
-  // size, and so on.  Note that N/2 + N/4 + N/8 + N/16 + ...  sums to N if expanded to infinite terms.
+  // The group size is calculated from the number of regions.  Suppose the heap has N regions.  The first group processes
+  // N/2 regions.  The second group processes N/4 regions, the third group N/8 regions and so on.
+  // Note that infinite series N/2 + N/4 + N/8 + N/16 + ...  sums to N.
   //
   // The normal group size is the number of regions / 2.
   //
@@ -123,7 +123,7 @@ size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
   //
   // The last group also has more than the normal entries because it finishes the total scanning effort.  The chunk sizes are
   // different for each group.  The intention is that the first group processes roughly half of the heap, the second processes
-  // a quarter of the remaining heap, the third processes an eight of what remains and so on.  The smallest chunk size
+  // half of the remaining heap, the third processes half of what remains and so on.  The smallest chunk size
   // is represented by _smallest_chunk_size_words.  We do not divide work any smaller than this.
   //
 
@@ -315,4 +315,9 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
 
 void ShenandoahRegionChunkIterator::reset() {
   _index = 0;
+}
+
+ShenandoahVerifyNoYoungRefsClosure::ShenandoahVerifyNoYoungRefsClosure():
+  _heap(ShenandoahHeap::heap()) {
+  assert(_heap->mode()->is_generational(), "Don't use when non-generational");
 }

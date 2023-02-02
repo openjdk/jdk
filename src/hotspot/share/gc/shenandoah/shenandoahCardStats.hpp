@@ -29,13 +29,28 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 
+enum CardStatType {
+  DIRTY_RUN = 0,
+  CLEAN_RUN = 1,
+  DIRTY_CARDS = 2,
+  CLEAN_CARDS = 3,
+  MAX_DIRTY_RUN = 4,
+  MAX_CLEAN_RUN = 5,
+  DIRTY_SCAN_OBJS = 6,
+  ALTERNATIONS = 7,
+  MAX_CARD_STAT_TYPE = 8
+};
+
+enum CardStatLogType {
+  CARD_STAT_SCAN_RS = 0,
+  CARD_STAT_UPDATE_REFS = 1,
+  MAX_CARD_STAT_LOG_TYPE = 2
+};
+
 class ShenandoahCardStats: public CHeapObj<mtGC> {
 private:
   size_t _cards_in_cluster;
   HdrSeq* _local_card_stats;
-
-  bool _last_dirty;
-  bool _last_clean;
 
   size_t _dirty_card_cnt;
   size_t _clean_card_cnt;
@@ -46,11 +61,7 @@ private:
   size_t _max_dirty_run;
   size_t _max_clean_run;
 
-  size_t _dirty_obj_cnt;
-  size_t _clean_obj_cnt;
-
-  size_t _dirty_scan_cnt;
-  size_t _clean_scan_cnt;
+  size_t _dirty_scan_obj_cnt;
 
   size_t _alternation_cnt;
 
@@ -58,113 +69,68 @@ public:
   ShenandoahCardStats(size_t cards_in_cluster, HdrSeq* card_stats) :
     _cards_in_cluster(cards_in_cluster),
     _local_card_stats(card_stats),
-    _last_dirty(false),
-    _last_clean(false),
     _dirty_card_cnt(0),
     _clean_card_cnt(0),
-    _dirty_run(0),
-    _clean_run(0),
     _max_dirty_run(0),
     _max_clean_run(0),
-    _dirty_obj_cnt(0),
-    _clean_obj_cnt(0),
-    _dirty_scan_cnt(0),
-    _clean_scan_cnt(0),
+    _dirty_scan_obj_cnt(0),
     _alternation_cnt(0)
   { }
 
-private:
-  void increment_card_cnt_work(bool dirty) {
-    if (dirty) { // dirty card
-      if (_last_dirty) {
-        assert(_dirty_run > 0 && _clean_run == 0 && !_last_clean, "Error");
-        _dirty_run++;
-      } else {
-        if (_last_clean) {
-          _alternation_cnt++;
-        }
-        update_run(false);
-        _last_dirty = true;
-        _dirty_run = 1;
-      }
-    } else { // clean card
-      if (_last_clean) {
-        assert(_clean_run > 0 && _dirty_run == 0 && !_last_dirty, "Error");
-        _clean_run++;
-      } else {
-        if (_last_dirty) {
-          _alternation_cnt++;
-        }
-        update_run(false);
-        _last_clean = true;
-        _clean_run = 1;
-      }
+  ~ShenandoahCardStats() {
+    record();
+   }
+
+   void record() {
+    if (ShenandoahEnableCardStats) {
+      // Update global stats for distribution of dirty/clean cards as a percentage of chunk
+      _local_card_stats[DIRTY_CARDS].add((double)_dirty_card_cnt*100/(double)_cards_in_cluster);
+      _local_card_stats[CLEAN_CARDS].add((double)_clean_card_cnt*100/(double)_cards_in_cluster);
+
+      // Update global stats for max dirty/clean run distribution as a percentage of chunk
+      _local_card_stats[MAX_DIRTY_RUN].add((double)_max_dirty_run*100/(double)_cards_in_cluster);
+      _local_card_stats[MAX_CLEAN_RUN].add((double)_max_clean_run*100/(double)_cards_in_cluster);
+
+      // Update global stats for dirty obj scan counts
+      _local_card_stats[DIRTY_SCAN_OBJS].add(_dirty_scan_obj_cnt);
+
+      // Update global stats for alternation counts
+      _local_card_stats[ALTERNATIONS].add(_alternation_cnt);
     }
   }
-
-  inline void increment_obj_cnt_work(bool dirty)  {
-    assert(!dirty || (_last_dirty && _dirty_run > 0), "Error");
-    assert(dirty  || (_last_clean && _clean_run > 0), "Error");
-    dirty ? _dirty_obj_cnt++ : _clean_obj_cnt++;
-  }
-
-  inline void increment_scan_cnt_work(bool dirty) {
-    assert(!dirty || (_last_dirty && _dirty_run > 0), "Error");
-    assert(dirty  || (_last_clean && _clean_run > 0), "Error");
-    dirty ? _dirty_scan_cnt++ : _clean_scan_cnt++;
-  }
-
-  void update_run_work(bool cluster) PRODUCT_RETURN;
 
 public:
-  inline void increment_card_cnt(bool dirty) {
+  inline void record_dirty_run(size_t len) {
     if (ShenandoahEnableCardStats) {
-      increment_card_cnt_work(dirty);
+      _alternation_cnt++;
+      if (len > _max_dirty_run) {
+        _max_dirty_run = len;
+      }
+      _dirty_card_cnt += len;
+      assert(len <= _cards_in_cluster, "Error");
+      _local_card_stats[DIRTY_RUN].add((double)len*100.0/(double)_cards_in_cluster);
     }
   }
 
-  inline void increment_obj_cnt(bool dirty) {
+  inline void record_clean_run(size_t len) {
     if (ShenandoahEnableCardStats) {
-      increment_obj_cnt_work(dirty);
+      _alternation_cnt++;
+      if (len > _max_clean_run) {
+        _max_clean_run = len;
+      }
+      _clean_card_cnt += len;
+      assert(len <= _cards_in_cluster, "Error");
+      _local_card_stats[CLEAN_RUN].add((double)len*100.0/(double)_cards_in_cluster);
     }
   }
 
-  inline void increment_scan_cnt(bool dirty) {
+  inline void record_scan_obj_cnt(size_t i) {
     if (ShenandoahEnableCardStats) {
-      increment_scan_cnt_work(dirty);
+      _dirty_scan_obj_cnt += i;
     }
   }
-
-  inline void update_run(bool record) {
-    if (ShenandoahEnableCardStats) {
-      update_run_work(record);
-    }
-  }
-
-  bool is_clean() PRODUCT_RETURN0;
 
   void log() const PRODUCT_RETURN;
-};
-
-enum CardStatType {
-  DIRTY_RUN = 0,
-  CLEAN_RUN = 1,
-  DIRTY_CARDS = 2,
-  CLEAN_CARDS = 3,
-  MAX_DIRTY_RUN = 4,
-  MAX_CLEAN_RUN = 5,
-  DIRTY_OBJS = 6,
-  CLEAN_OBJS = 7,
-  DIRTY_SCANS = 8,
-  CLEAN_SCANS= 9,
-  ALTERNATIONS = 10,
-  MAX_CARD_STAT_TYPE = 11
-};
-
-enum CardStatLogType {
-  CARD_STAT_SCAN_RS = 0,
-  CARD_STAT_UPDATE_REFS = 1,
-  MAX_CARD_STAT_LOG_TYPE = 2
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCARDSTATS_HPP

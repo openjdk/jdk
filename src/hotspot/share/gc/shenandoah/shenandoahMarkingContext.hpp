@@ -59,18 +59,18 @@ public:
   inline bool mark_weak(oop obj);
 
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
-  inline bool is_marked(oop) const;
-  inline bool is_marked_strong(oop obj) const;
-  inline bool is_marked_weak(oop obj) const;
-  inline bool is_marked_or_old(oop obj) const;
-  inline bool is_marked_strong_or_old(oop obj) const;
+  inline bool is_marked(const oop) const;
+  inline bool is_marked_strong(const oop obj) const;
+  inline bool is_marked_weak(const oop obj) const;
+  inline bool is_marked_or_old(const oop obj) const;
+  inline bool is_marked_strong_or_old(const oop obj) const;
 
-  inline HeapWord* get_next_marked_addr(HeapWord* addr, HeapWord* limit) const;
+  inline HeapWord* get_next_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
 
-  inline bool allocated_after_mark_start(oop obj) const;
-  inline bool allocated_after_mark_start(HeapWord* addr) const;
+  inline bool allocated_after_mark_start(const oop obj) const;
+  inline bool allocated_after_mark_start(const HeapWord* addr) const;
 
-  inline HeapWord* top_at_mark_start(ShenandoahHeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(const ShenandoahHeapRegion* r) const;
   inline void capture_top_at_mark_start(ShenandoahHeapRegion* r);
   inline void reset_top_at_mark_start(ShenandoahHeapRegion* r);
   void initialize_top_at_mark_start(ShenandoahHeapRegion* r);

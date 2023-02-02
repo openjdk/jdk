@@ -2709,7 +2709,7 @@ private:
             if (r->is_humongous()) {
               if (start_of_range < end_of_range) {
                 // Need to examine both dirty and clean cards during mixed evac.
-                r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true, CONCURRENT);
+                r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true);
               }
             } else {
               // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
@@ -2779,7 +2779,7 @@ private:
                 CardTable::card_size_in_words() * ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
               size_t clusters = assignment._chunk_size / cluster_size;
               assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
-              scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, CONCURRENT, worker_id);
+              scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
             }
           }
           if (ShenandoahPacing && (start_of_range < end_of_range)) {
