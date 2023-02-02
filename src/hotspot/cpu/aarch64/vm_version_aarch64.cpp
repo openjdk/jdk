@@ -565,8 +565,9 @@ void VM_Version::initialize() {
 }
 
 #if defined(LINUX)
-static int check_info_file(const char* fpath, const char* virt1,
-                           const char* virt2) {
+static bool check_info_file(const char* fpath,
+                            const char* virt1, VirtualizationType vt1,
+                            const char* virt2, VirtualizationType vt2) {
   char line[500];
   FILE* fp = os::fopen(fpath, "r");
   if (fp == nullptr) {
@@ -574,16 +575,18 @@ static int check_info_file(const char* fpath, const char* virt1,
   }
   while (fgets(line, sizeof(line), fp) != nullptr) {
     if (strcasestr(line, virt1) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt1;
       fclose(fp);
-      return 1;
+      return true;
     }
     if (virt2 != NULL && strcasestr(line, virt2) != 0) {
+      Abstract_VM_Version::_detected_virtualization = vt2;
       fclose(fp);
-      return 2;
+      return true;
     }
   }
   fclose(fp);
-  return 0;
+  return false;
 }
 #endif
 
@@ -591,18 +594,10 @@ void VM_Version::check_virtualizations() {
 #if defined(LINUX)
   const char* pname_file = "/sys/devices/virtual/dmi/id/product_name";
   const char* tname_file = "/sys/hypervisor/type";
-  int resp = check_info_file(pname_file, "KVM", "VMWare");
-  if (resp == 1) {
-    Abstract_VM_Version::_detected_virtualization = KVM;
+  if (check_info_file(pname_file, "KVM", KVM, "VMWare", VMWare)) {
     return;
   }
-  if (resp == 2) {
-    Abstract_VM_Version::_detected_virtualization = VMWare;
-    return;
-  }
-  if (check_info_file(tname_file, "Xen", NULL) == 1) {
-    Abstract_VM_Version::_detected_virtualization = XenHVM;
-  }
+  check_info_file(tname_file, "Xen", XenHVM, NULL, NoDetectedVirtualization);
 #endif
 }
 
