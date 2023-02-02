@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
+#include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -33,6 +34,7 @@
 #include "classfile_constants.h"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
+
 
 #include <cstddef>
 #include <type_traits>
@@ -660,23 +662,13 @@ inline double percent_of(T numerator, T denominator) {
 //----------------------------------------------------------------------------------------------------
 // Special casts
 // Cast floats into same-size integers and vice-versa w/o changing bit-pattern
-typedef union {
-  jfloat f;
-  jint i;
-} FloatIntConv;
 
-typedef union {
-  jdouble d;
-  jlong l;
-  julong ul;
-} DoubleLongConv;
+inline jint    jint_cast    (jfloat  x)  { return PrimitiveConversions::cast<jint>(x);    } // 8297539. Template #5 of cast<To>(From).
+inline jfloat  jfloat_cast  (jint    x)  { return PrimitiveConversions::cast<jfloat>(x);  } // 8297539. Tempalte #5
 
-inline jint    jint_cast    (jfloat  x)  { return ((FloatIntConv*)&x)->i; }
-inline jfloat  jfloat_cast  (jint    x)  { return ((FloatIntConv*)&x)->f; }
-
-inline jlong   jlong_cast   (jdouble x)  { return ((DoubleLongConv*)&x)->l;  }
-inline julong  julong_cast  (jdouble x)  { return ((DoubleLongConv*)&x)->ul; }
-inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
+inline jlong   jlong_cast   (jdouble x)  { return PrimitiveConversions::cast<jlong>(x);   } // 8297539. Tempalte #5
+inline julong  julong_cast  (jdouble x)  { return PrimitiveConversions::cast<julong>(x);  } // 8297539. Tempalte #5
+inline jdouble jdouble_cast (jlong   x)  { return PrimitiveConversions::cast<jdouble>(x); } // 8297539. Tempalte #5
 
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
@@ -886,14 +878,8 @@ inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
 class JavaValue {
 
  public:
-  typedef union JavaCallValue {
-    jfloat   f;
-    jdouble  d;
-    jint     i;
-    jlong    l;
-    jobject  h;
-    oopDesc* o;
-  } JavaCallValue;
+  // 8297539. Define it large enough to hold all possible primitive types.
+  typedef long long JavaCallValue;
 
  private:
   BasicType _type;
@@ -904,35 +890,71 @@ class JavaValue {
 
   JavaValue(jfloat value) {
     _type    = T_FLOAT;
-    _value.f = value;
+    // 8297539. This matches with Template #6 of cast<To>(From).
+    _value = PrimitiveConversions::cast<JavaCallValue>(value);
   }
 
   JavaValue(jdouble value) {
     _type    = T_DOUBLE;
-    _value.d = value;
+    // 8297539. This matches with Template #5 of cast<To>(From).
+    _value = PrimitiveConversions::cast<JavaCallValue>(value);
   }
 
- jfloat get_jfloat() const { return _value.f; }
- jdouble get_jdouble() const { return _value.d; }
- jint get_jint() const { return _value.i; }
- jlong get_jlong() const { return _value.l; }
- jobject get_jobject() const { return _value.h; }
- oopDesc* get_oop() const { return _value.o; }
+ jfloat get_jfloat() const    { return PrimitiveConversions::cast<jfloat>(_value);  } // 8297539. Tempalte #6.
+ jdouble get_jdouble() const  { return PrimitiveConversions::cast<jdouble>(_value); } // 8297539. Tempalte #5.
+ jint get_jint() const        { return PrimitiveConversions::cast<jint>(_value);    } // 8297539. Tempalte #7.
+ jlong get_jlong() const      { return PrimitiveConversions::cast<jlong>(_value);   } // 8297539. Tempalte #1.
+ jobject get_jobject() const {
+  #ifdef ARM32
+    // 8297539. In arm32 archs, this call compiles to cast<jobject>(const JavaCallValue&) and
+    // does not match with any of the cast<To>(From) instances.
+    return *(jobject*)(&_value);
+  #else
+    return PrimitiveConversions::cast<jobject>(_value);
+  #endif
+ }
+ oopDesc* get_oop() const     {
+  #ifdef ARM32
+    // 8297539. In arm32 archs, this call compiles to cast<oopDesc*>(const JavaCallValue&) and
+    // does not match with any of the cast<To>(From) instances.
+    return (oopDesc*)(&_value);
+  #else
+    // 8297539. This matches with Template #4 of cast<To>(From).
+    return PrimitiveConversions::cast<oopDesc*>(_value);
+  #endif
+ }
+
  JavaCallValue* get_value_addr() { return &_value; }
  BasicType get_type() const { return _type; }
 
- void set_jfloat(jfloat f) { _value.f = f;}
- void set_jdouble(jdouble d) { _value.d = d;}
- void set_jint(jint i) { _value.i = i;}
- void set_jlong(jlong l) { _value.l = l;}
- void set_jobject(jobject h) { _value.h = h;}
- void set_oop(oopDesc* o) { _value.o = o;}
+ void set_jfloat(jfloat f)   { _value = PrimitiveConversions::cast<JavaCallValue>(f); } // 8297539. Tempalte #6.
+ void set_jdouble(jdouble d) { _value = PrimitiveConversions::cast<JavaCallValue>(d); } // 8297539. Tempalte #5.
+ void set_jint(jint i)       { _value = PrimitiveConversions::cast<JavaCallValue>(i); } // 8297539. Tempalte #7.
+ void set_jlong(jlong l)     { _value = PrimitiveConversions::cast<JavaCallValue>(l); } // 8297539. Tempalte #1.
+ void set_jobject(jobject h) {
+  #ifdef ARM32
+    // 8297539. In arm32 archs, this call compiles to cast<JavaCallValue>(_jobject*&) and
+    // does not match with any of the cast<To>(From) instances.
+    _value = *(JavaCallValue*)h;
+  #else
+    _value = PrimitiveConversions::cast<JavaCallValue>(h);
+  #endif
+ }
+ void set_oop(oopDesc* o)    {
+  #ifdef ARM32
+    // 8297539. In arm32 archs, this call compiles to cast<JavaCallValue>(oopDesc*&) and
+    // does not match with any of the cast<To>(From) instances.
+    _value = *(JavaCallValue*)o;
+  #else
+    _value = PrimitiveConversions::cast<JavaCallValue>(o);
+  #endif
+ }
  void set_type(BasicType t) { _type = t; }
 
- jboolean get_jboolean() const { return (jboolean) (_value.i);}
- jbyte get_jbyte() const { return (jbyte) (_value.i);}
- jchar get_jchar() const { return (jchar) (_value.i);}
- jshort get_jshort() const { return (jshort) (_value.i);}
+ jboolean get_jboolean() const { return PrimitiveConversions::cast<jboolean>(PrimitiveConversions::cast<jint>(_value)); } // 8297539. Tempalte #7.
+ jbyte get_jbyte() const       { return PrimitiveConversions::cast<jbyte>(PrimitiveConversions::cast<jint>(_value));    } // 8297539. Tempalte #7.
+ jchar get_jchar() const       { return PrimitiveConversions::cast<jchar>(PrimitiveConversions::cast<jint>(_value));    } // 8297539. Tempalte #7.
+ jshort get_jshort() const     { return PrimitiveConversions::cast<jshort>(PrimitiveConversions::cast<jint>(_value));   } // 8297539. Tempalte #7.
 
 };
 

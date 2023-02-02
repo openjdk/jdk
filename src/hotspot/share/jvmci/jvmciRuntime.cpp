@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -703,21 +704,15 @@ JRT_END
 PRAGMA_DIAG_POP
 
 JRT_LEAF(void, JVMCIRuntime::log_primitive(JavaThread* thread, jchar typeChar, jlong value, jboolean newline))
-  union {
-      jlong l;
-      jdouble d;
-      jfloat f;
-  } uu;
-  uu.l = value;
   switch (typeChar) {
     case 'Z': tty->print(value == 0 ? "false" : "true"); break;
     case 'B': tty->print("%d", (jbyte) value); break;
     case 'C': tty->print("%c", (jchar) value); break;
     case 'S': tty->print("%d", (jshort) value); break;
     case 'I': tty->print("%d", (jint) value); break;
-    case 'F': tty->print("%f", uu.f); break;
+    case 'F': tty->print("%f", PrimitiveConversions::cast<jfloat>(value)); break; // 8297539. This matches with Template #6 of cast<To>(from).
     case 'J': tty->print(JLONG_FORMAT, value); break;
-    case 'D': tty->print("%lf", uu.d); break;
+    case 'D': tty->print("%lf", PrimitiveConversions::cast<jdouble>(value)); break;// 8297539. This matches with Template #5 of cast<To>(From).
     default: assert(false, "unknown typeChar"); break;
   }
   if (newline) {

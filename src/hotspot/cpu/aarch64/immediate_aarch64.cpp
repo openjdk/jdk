@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +27,7 @@
 #include <stdint.h>
 
 #include "precompiled.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "immediate_aarch64.hpp"
 
@@ -387,18 +389,12 @@ uint32_t encoding_for_logical_immediate(uint64_t immediate)
 
 uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp)
 {
-  union {
-    float fpval;
-    double dpval;
-    uint64_t val;
-  };
-
   uint32_t s, e, f;
   s = (imm8 >> 7 ) & 0x1;
   e = (imm8 >> 4) & 0x7;
   f = imm8 & 0xf;
   // the fp value is s * n/16 * 2r where n is 16+e
-  fpval = (16.0 + f) / 16.0;
+  float fpval = (16.0 + f) / 16.0;
   // n.b. exponent is signed
   if (e < 4) {
     int epos = e;
@@ -416,9 +412,12 @@ uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp)
     fpval = -fpval;
   }
   if (is_dp) {
-    dpval = (double)fpval;
+    double dpval = (double)fpval;
+    // 8297539. This matches with Template #5 of cast<To>(From).
+    return PrimitiveConversions::cast<uint64_t>(dpval);
   }
-  return val;
+  // 8297539. This matches with Template #6 of cast<To>(From).
+  return PrimitiveConversions::cast<uint64_t>(fpval);
 }
 
 uint32_t encoding_for_fp_immediate(float immediate)
@@ -430,12 +429,8 @@ uint32_t encoding_for_fp_immediate(float immediate)
   // where n is 16+f and imm1:s, imm4:f, simm3:r
   // return the imm8 result [s:r:f]
   //
-
-  union {
-    float fpval;
-    uint32_t val;
-  };
-  fpval = immediate;
+  // 8297539. This matches with Template #5 of cast<To>(From).
+  uint32_t val = PrimitiveConversions::cast<uint32_t>(immediate);
   uint32_t s, r, f, res;
   // sign bit is 31
   s = (val >> 31) & 0x1;

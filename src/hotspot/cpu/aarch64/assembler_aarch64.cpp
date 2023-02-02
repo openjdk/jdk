@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,6 +27,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "immediate_aarch64.hpp"
 #include "memory/resourceArea.hpp"
 
@@ -410,13 +411,8 @@ bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint6
 }
 
 static uint64_t doubleTo64Bits(jdouble d) {
-  union {
-    jdouble double_value;
-    uint64_t double_bits;
-  };
-
-  double_value = d;
-  return double_bits;
+    // 8297539. This matches with Template #5  of cast<To>(From).
+    return PrimitiveConversions::cast<uint64_t>(d);
 }
 
 bool Assembler::operand_valid_for_float_immediate(double imm) {
@@ -499,12 +495,9 @@ unsigned Assembler::pack(double value) {
 // Packed operands for  Floating-point Move (immediate)
 
 static float unpack(unsigned value) {
-  union {
-    unsigned ival;
-    float val;
-  };
-  ival = fp_immediate_for_encoding(value, 0);
-  return val;
+  unsigned ival = fp_immediate_for_encoding(value, 0);
+  // 8297539. This matches with Template #5 of cast<To>(From).
+  return PrimitiveConversions::cast<float>(ival);
 }
 
 address Assembler::locate_next_instruction(address inst) {

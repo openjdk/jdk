@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,52 +26,45 @@
 #define SHARE_RUNTIME_SHAREDRUNTIMEMATH_HPP
 
 #include <math.h>
+#include "metaprogramming/primitiveConversions.hpp"
 
-// Used to access the lower/higher 32 bits of a double
-typedef union {
-    double d;
-    struct {
 #ifdef VM_LITTLE_ENDIAN
-      int lo;
-      int hi;
+  #define _Lo 0
+  #define _Hi 1
 #else
-      int hi;
-      int lo;
+  #define _Hi 0
+  #define _Lo 1
 #endif
-    } split;
-} DoubleIntConv;
-
 static inline int high(double d) {
-  DoubleIntConv x;
-  x.d = d;
-  return x.split.hi;
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  int *di = PrimitiveConversions::cast<int*>(&d);
+  return di[_Hi];
 }
 
 static inline int low(double d) {
-  DoubleIntConv x;
-  x.d = d;
-  return x.split.lo;
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  int *di = PrimitiveConversions::cast<int*>(&d);
+  return di[_Lo];
 }
 
 static inline void set_high(double* d, int high) {
-  DoubleIntConv conv;
-  conv.d = *d;
-  conv.split.hi = high;
-  *d = conv.d;
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  int *di = PrimitiveConversions::cast<int*>(d);
+  di[_Hi] = high;
 }
 
 static inline void set_low(double* d, int low) {
-  DoubleIntConv conv;
-  conv.d = *d;
-  conv.split.lo = low;
-  *d = conv.d;
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  int *di = PrimitiveConversions::cast<int*>(d);
+  di[_Lo] = low;
 }
 
 static double copysignA(double x, double y) {
-  DoubleIntConv convX;
-  convX.d = x;
-  convX.split.hi = (convX.split.hi & 0x7fffffff) | (high(y) & 0x80000000);
-  return convX.d;
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  int *di = PrimitiveConversions::cast<int*>(&x);
+  di[_Hi] = (di[_Hi] & 0x7fffffff) | (high(y) & 0x80000000);
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  return *PrimitiveConversions::cast<double*>(di);
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,37 +279,33 @@ class VFP {
   class float_num : public fpnum {
    public:
     float_num(float v) {
-      _num.val = v;
+      // 8297539. This matches with Template #5 of cast<To>(From).
+     _num_bits = PrimitiveConversions::cast<unsigned int>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num.bits << 9) >> (19+9); }
-    virtual bool f_lo_is_null() const { return (_num.bits & ((1 << 19) - 1)) == 0; }
-    virtual int e() const { return ((_num.bits << 1) >> (23+1)) - 127; }
-    virtual unsigned int s() const { return _num.bits >> 31; }
+    virtual unsigned int f_hi4() const { return (_num_bits << 9) >> (19+9); }
+    virtual bool f_lo_is_null() const { return (_num_bits & ((1 << 19) - 1)) == 0; }
+    virtual int e() const { return ((_num_bits << 1) >> (23+1)) - 127; }
+    virtual unsigned int s() const { return _num_bits >> 31; }
 
    private:
-    union {
-      float val;
-      unsigned int bits;
-    } _num;
+    unsigned int _num_bits;
   };
 
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      _num.val = v;
+      // 8297539. This matches with Template #5 of cast<To>(From).
+      _num_bits = PrimitiveConversions::cast<unsigned long long>(v);
     }
 
-    virtual unsigned int f_hi4() const { return (_num.bits << 12) >> (48+12); }
-    virtual bool f_lo_is_null() const { return (_num.bits & ((1LL << 48) - 1)) == 0; }
-    virtual int e() const { return ((_num.bits << 1) >> (52+1)) - 1023; }
-    virtual unsigned int s() const { return _num.bits >> 63; }
+    virtual unsigned int f_hi4() const { return (_num_bits << 12) >> (48+12); }
+    virtual bool f_lo_is_null() const { return (_num_bits & ((1LL << 48) - 1)) == 0; }
+    virtual int e() const { return ((_num_bits << 1) >> (52+1)) - 1023; }
+    virtual unsigned int s() const { return _num_bits >> 63; }
 
    private:
-    union {
-      double val;
-      unsigned long long bits;
-    } _num;
+    unsigned long long _num_bits;
   };
 };
 #endif

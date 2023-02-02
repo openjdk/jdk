@@ -37,6 +37,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -673,30 +674,23 @@ void MacroAssembler::mov_metadata(Register rd, Metadata* o, int metadata_index) 
 
 void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jfloat f;
-    jint i;
-  } accessor;
-  accessor.f = c;
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i);
+  // 8297539. This matches with Template #5 of cast<To>(From).
+  emit_int32(PrimitiveConversions::cast<jint>(c));
   bind(skip_constant);
 }
 
 void MacroAssembler::mov_double(FloatRegister fd, jdouble c, AsmCondition cond) {
   Label skip_constant;
-  union {
-    jdouble d;
-    jint i[2];
-  } accessor;
-  accessor.d = c;
 
   fldd(fd, Address(PC), cond);
   b(skip_constant);
-  emit_int32(accessor.i[0]);
-  emit_int32(accessor.i[1]);
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  jint *accessor = PrimitiveConversions::cast<jint*>(&c);
+  emit_int32(accessor[0]);
+  emit_int32(accessor[1]);
   bind(skip_constant);
 }
 

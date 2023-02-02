@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "runtime/stackValueCollection.hpp"
 
 jint StackValueCollection::int_at(int slot) const {
@@ -61,15 +62,13 @@ jdouble StackValueCollection::double_at(int slot) const {
   intptr_t res = at(slot+1)->get_int();
   return *((jdouble*) (&res));
 #else
-  union {
-    jdouble jd;
-    jint    array[2];
-  } value;
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
-  value.array[0] = at(slot+1)->get_int();
-  value.array[1] = at(slot  )->get_int();
-  return value.jd;
+  jint value_array[2] ;
+  value_array[0] = at(slot+1)->get_int();
+  value_array[1] = at(slot  )->get_int();
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  return *PrimitiveConversions::cast<jdouble *>(value_array);
 #endif
 }
 
@@ -82,16 +81,15 @@ void StackValueCollection::set_int_at(int slot, jint value) {
 void StackValueCollection::set_long_at(int slot, jlong value) {
 #ifdef _LP64
   at(slot+1)->set_int(value);
+
 #else
-  union {
-    jlong jl;
-    jint  array[2];
-  } x;
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
-  x.jl = value;
-  at(slot+1)->set_int(x.array[0]);
-  at(slot+0)->set_int(x.array[1]);
+  // 8297539. In arm32 bit builds, no cast<To>(From) can be found by compiler.
+  // So it is not possible to use jint *x_array = PrimitiveConversions::cast<jint*>(&value);
+  jint *x_array = (jint*)(&value);
+  at(slot+1)->set_int(x_array[0]);
+  at(slot+0)->set_int(x_array[1]);
 #endif
 }
 
@@ -118,15 +116,13 @@ void StackValueCollection::set_double_at(int slot, jdouble value) {
 #ifdef _LP64
   at(slot+1)->set_int(*(intptr_t*)(&value));
 #else
-  union {
-    jdouble jd;
-    jint    array[2];
-  } x;
   // Interpreter stack is reversed in memory:
   // low memory location is in higher java local slot.
-  x.jd = value;
-  at(slot+1)->set_int(x.array[0]);
-  at(slot+0)->set_int(x.array[1]);
+  // 8297539. This matches with Template #8 of cast<To>(From).
+  // Note: It was expected that this cast can also be used for set_long_at() above.
+  jint *x_array = PrimitiveConversions::cast<jint*>(&value);
+  at(slot+1)->set_int(x_array[0]);
+  at(slot+0)->set_int(x_array[1]);
 #endif
 }
 

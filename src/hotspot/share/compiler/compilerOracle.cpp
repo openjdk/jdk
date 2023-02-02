@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
@@ -127,18 +128,12 @@ class TypedMethodOptionMatcher : public MethodMatcher {
   enum CompileCommand _option;
  public:
 
-  union {
-    bool bool_value;
-    intx intx_value;
-    uintx uintx_value;
-    double double_value;
-    ccstr ccstr_value;
-  } _u;
+  int64_t _u_value;
 
   TypedMethodOptionMatcher() : MethodMatcher(),
     _next(nullptr),
     _option(CompileCommand::Unknown) {
-      memset(&_u, 0, sizeof(_u));
+      _u_value = 0;
   }
 
   ~TypedMethodOptionMatcher();
@@ -159,7 +154,9 @@ class TypedMethodOptionMatcher : public MethodMatcher {
   void set_next(TypedMethodOptionMatcher* next) {_next = next; }
   TypedMethodOptionMatcher* next() { return _next; }
   enum CompileCommand option() { return _option; }
-  template<typename T> T value();
+  template<typename T> T value() {
+    return PrimitiveConversions::cast<T>(_u_value);
+  }
   template<typename T> void set_value(T value);
   void print();
   void print_all();
@@ -167,44 +164,16 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 };
 
 // A few templated accessors instead of a full template class.
-template<> intx TypedMethodOptionMatcher::value<intx>() {
-  return _u.intx_value;
-}
-
-template<> uintx TypedMethodOptionMatcher::value<uintx>() {
-  return _u.uintx_value;
-}
-
-template<> bool TypedMethodOptionMatcher::value<bool>() {
-  return _u.bool_value;
-}
-
-template<> double TypedMethodOptionMatcher::value<double>() {
-  return _u.double_value;
-}
-
-template<> ccstr TypedMethodOptionMatcher::value<ccstr>() {
-  return _u.ccstr_value;
-}
-
-template<> void TypedMethodOptionMatcher::set_value(intx value) {
-  _u.intx_value = value;
-}
-
-template<> void TypedMethodOptionMatcher::set_value(uintx value) {
-  _u.uintx_value = value;
-}
-
-template<> void TypedMethodOptionMatcher::set_value(double value) {
-  _u.double_value = value;
-}
-
-template<> void TypedMethodOptionMatcher::set_value(bool value) {
-  _u.bool_value = value;
+  template<> ccstr TypedMethodOptionMatcher::value<ccstr>() {
+    // 8297539. There is no Template in cast<to>(From) for this case.
+    return (ccstr)(_u_value);
+  }
+template<typename T> void TypedMethodOptionMatcher::set_value(T value) {
+  _u_value = PrimitiveConversions::cast<int64_t>(value);
 }
 
 template<> void TypedMethodOptionMatcher::set_value(ccstr value) {
-  _u.ccstr_value = (const ccstr)os::strdup_check_oom(value);
+  _u_value = (int64_t)(const ccstr)os::strdup_check_oom(value);
 }
 
 void TypedMethodOptionMatcher::print() {
