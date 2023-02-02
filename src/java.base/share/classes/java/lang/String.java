@@ -1872,11 +1872,11 @@ public final class String
         }
         byte v1[] = value;
         byte v2[] = sb.getValue();
-        if (v1 == v2) {
-            return true;
-        }
         byte coder = coder();
         if (coder == sb.getCoder()) {
+            if (v1 == v2) {
+                return true;
+            }
             int n = v1.length;
             for (int i = 0; i < n; i++) {
                 if (v1[i] != v2[i]) {
