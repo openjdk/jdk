@@ -646,7 +646,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // only need to check for mismatch of trailing slash
             if (nlen > 0 &&
                 !name.isEmpty() &&
-                zc.hasTrailingSlash(cen, pos + CENHDR, nlen) &&
+                zc.hasTrailingSlash(cen, pos + CENHDR + nlen) &&
                 !name.endsWith("/"))
             {
                 name += '/';
@@ -1648,23 +1648,24 @@ public class ZipFile implements ZipConstants, Closeable {
                     int noff = pos + CENHDR;
                     int nlen = CENNAM(cen, pos);
 
-                    int mismatch = zc.mismatch(name, cen, noff, noff + nlen);
+                    var comparison = zc.compare(name, cen, noff, nlen, addSlash);
 
-                    // Exact match for "name"
-                    if (mismatch == -1) {
-                        return pos;
-                    }
-
-                    // If addSlash is true, we'll also test for "name/"
-                    if (addSlash && nlen == mismatch + zc.slashLength() &&
-                            zc.hasTrailingSlash(cen, noff, nlen)) {
-                        // Returned later if we found no exact match for "name"
-                        slashPos = pos;
+                    switch (comparison) {
+                        case EXACT_MATCH:
+                            // Found exact match for "name/"
+                            return pos;
+                        case SLASH_MATCH:
+                            // Found match for "name/", take note
+                            slashPos = pos;
+                            break;
+                        case NO_MATCH:
+                            // Hash collision, continue searching
                     }
 
                 }
                 idx = getEntryNext(idx);
             }
+            // No exact match found
             return slashPos;
         }
 

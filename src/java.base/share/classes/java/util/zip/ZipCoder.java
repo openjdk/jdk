@@ -55,6 +55,15 @@ class ZipCoder {
         return new ZipCoder(charset);
     }
 
+    /**
+     * Return values for {@link #compare(String, byte[], int, int, boolean)}
+     */
+    enum Comparison {
+        EXACT_MATCH,
+        SLASH_MATCH,
+        NO_MATCH
+    }
+
     String toString(byte[] ba, int off, int length) {
         try {
             return decoder().decode(ByteBuffer.wrap(ba, off, length)).toString();
@@ -134,21 +143,10 @@ class ZipCoder {
         return hsh;
     }
 
-    /**
-     * Returns true if a byte array range ends with '/' in this encoding
-     */
-    boolean hasTrailingSlash(byte[] a, int off, int len) {
+    boolean hasTrailingSlash(byte[] a, int end) {
         byte[] slashBytes = slashBytes();
-        int end = off + len;
         return end >= slashBytes.length &&
             Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
-    }
-
-    /**
-     * Returns the number of bytes '/' encodes to in this encoding
-     */
-    int slashLength() {
-        return slashBytes().length;
     }
 
     private byte[] slashBytes;
@@ -196,19 +194,29 @@ class ZipCoder {
     }
 
     /**
-     * Returns the mismatch of a string and a given byte array range,
-     * as if the string was first encoded in this ZipCoder's charset
+     * Compares a string with a second string which is encoded in a given
+     * byte array range, as if the second string was first decoded from
+     * bytes using this ZipCoder's charset
      *
-     * See {@link Arrays#mismatch(byte[], int, int, byte[], int, int)} for the
-     * semantics of the parameters and return value of this method.
+     * If the two strings match exactly, return {@link #EXACT_MATCH}
+     * If addSlash is true and the two strings only differ by the second string
+     * having a trailing '/', then return {@link #SLASH_MATCH}
+     * Otherwise, return {@link #NO_MATCH}
      *
-     * While a general implementation will need to encode the String,
-     * this can be avoided if the String coder is known and
+     * While a general implementation will need to decode bytes into a
+     * String for comparison, this can be avoided if the String coder is known and
      * matches the charset of this ZipCoder
      */
-    int mismatch(String str, byte[] b, int fromIndex, int toIndex) {
-        byte[] encoded = getBytes(str);
-        return Arrays.mismatch(encoded, 0, encoded.length, b, fromIndex, toIndex);
+    Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
+        String decoded = toString(b, off, len);
+        if (decoded.equals(str)) {
+            return Comparison.EXACT_MATCH;
+        } else if (addSlash && decoded.length() == str.length() + 1
+                && decoded.endsWith("/")) {
+            return Comparison.SLASH_MATCH;
+        } else {
+            return Comparison.NO_MATCH;
+        }
     }
     static final class UTF8ZipCoder extends ZipCoder {
 
@@ -255,19 +263,22 @@ class ZipCoder {
         }
 
         @Override
-        boolean hasTrailingSlash(byte[] a, int off, int len) {
-            int end = off + len;
+        boolean hasTrailingSlash(byte[] a, int end) {
             return end > 0 && a[end - 1] == '/';
         }
 
-        @Override
-        int slashLength() {
-            return 1;
-        }
 
         @Override
-        int mismatch(String str, byte[] b, int fromIndex, int toIndex) {
-            return JLA.mismatchUTF8(str, b, fromIndex, toIndex);
+        Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
+            int mismatch = JLA.mismatchUTF8(str, b, off, off + len);
+            if(mismatch == -1) {
+                return Comparison.EXACT_MATCH;
+            } else if (addSlash && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
+                return Comparison.SLASH_MATCH;
+            } else {
+                return Comparison.NO_MATCH;
+            }
+
         }
     }
 }
