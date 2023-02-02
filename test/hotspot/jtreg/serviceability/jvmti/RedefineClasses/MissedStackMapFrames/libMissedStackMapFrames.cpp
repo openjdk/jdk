@@ -27,11 +27,11 @@
 #include <string.h>
 
 static void _log(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-    fflush(0);
+  va_list args;
+  va_start(args, format);
+  vprintf(format, args);
+  va_end(args);
+  fflush(0);
 }
 
 static jvmtiEnv* jvmti = nullptr;
@@ -44,65 +44,65 @@ static const char* testClassNames[] = {
 static const int testClassCount = sizeof(testClassNames) / sizeof(testClassNames[0]);
 
 struct SavedClassBytes {
-    struct Buffer {
-        unsigned char* bytes;
-        jint len;
+  struct Buffer {
+    unsigned char* bytes;
+    jint len;
 
-        Buffer() : bytes(nullptr), len(0) {}
+    Buffer() : bytes(nullptr), len(0) {}
 
-        void save(const unsigned char *bytes, jint len) {
-            jvmtiError err = jvmti->Allocate(len, &this->bytes);
-            if (err != JVMTI_ERROR_NONE) {
-                _log("ClassFileLoadHook: failed to allocate %ld bytes for saved class bytes: %d", len, err);
-                return;
-            }
-            memcpy(this->bytes, bytes, len);
-            this->len = len;
+    void save(const unsigned char *bytes, jint len) {
+      jvmtiError err = jvmti->Allocate(len, &this->bytes);
+      if (err != JVMTI_ERROR_NONE) {
+          _log("ClassFileLoadHook: failed to allocate %ld bytes for saved class bytes: %d\n", len, err);
+          return;
+      }
+      memcpy(this->bytes, bytes, len);
+      this->len = len;
+    }
+
+    jbyteArray get(JNIEnv *env) {
+      if (bytes == nullptr) {
+        _log("SavedClassBytes: NULL\n");
+        return nullptr;
+      }
+
+      jbyteArray result = env->NewByteArray(len);
+      if (result == nullptr) {
+        _log("SavedClassBytes: NewByteArray(%ld) failed\n", len);
+      } else {
+        jbyte* arrayPtr = env->GetByteArrayElements(result, nullptr);
+        if (arrayPtr == nullptr) {
+          _log("SavedClassBytes: Failed to get array elements\n");
+          result = nullptr;
+        } else {
+          memcpy(arrayPtr, bytes, len);
+          env->ReleaseByteArrayElements(result, arrayPtr, 0);
         }
+      }
+      return result;
+    }
 
-        jbyteArray get(JNIEnv *env) {
-            if (bytes == nullptr) {
-                _log("SavedClassBytes: NULL\n");
-                return nullptr;
-            }
+  };
 
-            jbyteArray result = env->NewByteArray(len);
-            if (result == nullptr) {
-                _log("SavedClassBytes: NewByteArray(%ld) failed\n", len);
-            } else {
-                jbyte* arrayPtr = env->GetByteArrayElements(result, nullptr);
-                if (arrayPtr == nullptr) {
-                    _log("SavedClassBytes: Failed to get array elements\n");
-                    result = nullptr;
-                } else {
-                    memcpy(arrayPtr, bytes, len);
-                    env->ReleaseByteArrayElements(result, arrayPtr, 0);
-                }
-            }
-            return result;
-        }
+  jclass klass;
 
-    };
+  Buffer load;
+  Buffer retransform;
 
-    jclass klass;
-
-    Buffer load;
-    Buffer retransform;
-
-    SavedClassBytes() : klass(nullptr) {}
+  SavedClassBytes() : klass(nullptr) {}
 };
 
 static SavedClassBytes savedBytes[testClassCount];
 
 static int testClassIndex(const char *name) {
-    if (name != nullptr) {
-        for (int i = 0; i < testClassCount; i++) {
-            if (strcmp(name, testClassNames[i]) == 0) {
-                return i;
-            }
-        }
+  if (name != nullptr) {
+    for (int i = 0; i < testClassCount; i++) {
+      if (strcmp(name, testClassNames[i]) == 0) {
+        return i;
+      }
     }
-    return -1;
+  }
+  return -1;
 }
 
 
@@ -119,105 +119,105 @@ callbackClassFileLoadHook(jvmtiEnv *jvmti_env,
         const unsigned char* class_data,
         jint* new_class_data_len,
         unsigned char** new_class_data) {
-    int idx = testClassIndex(name);
-    if (idx >= 0) {
-        if (class_being_redefined == nullptr) {
-            // load
-            savedBytes[idx].load.save(class_data, class_data_len);
-        } else {
-            // retransform/redefine
-            savedBytes[idx].retransform.save(class_data, class_data_len);
-        }
+  int idx = testClassIndex(name);
+  if (idx >= 0) {
+    if (class_being_redefined == nullptr) {
+      // load
+      savedBytes[idx].load.save(class_data, class_data_len);
+    } else {
+      // retransform/redefine
+      savedBytes[idx].retransform.save(class_data, class_data_len);
     }
+  }
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM* jvm, char* options, void* reserved) {
-    jint res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK) {
-        _log("Failed to get JVMTI interface: %ld\n", res);
-        return JNI_ERR;
-    }
+  jint res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
+  if (res != JNI_OK) {
+    _log("Failed to get JVMTI interface: %ld\n", res);
+    return JNI_ERR;
+  }
 
-    jvmtiCapabilities caps;
-    memset(&caps, 0, sizeof(caps));
+  jvmtiCapabilities caps;
+  memset(&caps, 0, sizeof(caps));
 
-    caps.can_retransform_classes = 1;
-    jvmtiError err = jvmti->AddCapabilities(&caps);
-    if (err != JVMTI_ERROR_NONE) {
-        _log("Failed to add capabilities: %d\n", err);
-        return JNI_ERR;
-    }
+  caps.can_retransform_classes = 1;
+  jvmtiError err = jvmti->AddCapabilities(&caps);
+  if (err != JVMTI_ERROR_NONE) {
+    _log("Failed to add capabilities: %d\n", err);
+    return JNI_ERR;
+  }
 
-    jvmtiEventCallbacks eventCallbacks;
-    memset(&eventCallbacks, 0, sizeof(eventCallbacks));
-    eventCallbacks.ClassFileLoadHook = callbackClassFileLoadHook;
-    err = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
-    if (err != JVMTI_ERROR_NONE) {
-        _log("Error setting event callbacks: %d\n", err);
-        return JNI_ERR;
-    }
+  jvmtiEventCallbacks eventCallbacks;
+  memset(&eventCallbacks, 0, sizeof(eventCallbacks));
+  eventCallbacks.ClassFileLoadHook = callbackClassFileLoadHook;
+  err = jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks));
+  if (err != JVMTI_ERROR_NONE) {
+    _log("Error setting event callbacks: %d\n", err);
+    return JNI_ERR;
+  }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
-    if (err != JVMTI_ERROR_NONE) {
-        _log("SetEventNotificationMode(JVMTI_ENABLE) error %d\n", err);
-        return JNI_ERR;
-    }
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
+  if (err != JVMTI_ERROR_NONE) {
+    _log("SetEventNotificationMode(JVMTI_ENABLE) error %d\n", err);
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }
 
 JNIEXPORT void JNICALL
 Agent_OnUnload(JavaVM* jvm) {
-    return;
+  return;
 }
 
 
 JNIEXPORT jboolean JNICALL
 Java_MissedStackMapFrames_doTest(JNIEnv* env, jclass klass) {
 
-    jboolean result = JNI_TRUE;
-    _log(">>nTest\n");
+  jboolean result = JNI_TRUE;
+  _log(">>nTest\n");
 
-    for (int i = 0; i < testClassCount; i++) {
-        _log("Loading %s...\n", testClassNames[i]);
+  for (int i = 0; i < testClassCount; i++) {
+    _log("Loading %s...\n", testClassNames[i]);
 
-        savedBytes[i].klass = env->FindClass(testClassNames[i]);
-        if (savedBytes[i].klass == nullptr) {
-            _log("Load error\n");
-            result = JNI_FALSE;
-            continue;
-        }
-        savedBytes[i].klass = (jclass)env->NewGlobalRef(savedBytes[i].klass);
-
-        _log("Retransforming %s...\n", testClassNames[i]);
-        jvmtiError err = jvmti->RetransformClasses(1, &savedBytes[i].klass);
-        if (err != JVMTI_ERROR_NONE) {
-            _log("RetransformClasses error %d\n", err);
-            result = JNI_FALSE;
-        }
+    savedBytes[i].klass = env->FindClass(testClassNames[i]);
+    if (savedBytes[i].klass == nullptr) {
+      _log("Load error\n");
+      result = JNI_FALSE;
+      continue;
     }
-    _log("<<nTest\n");
-    return result;
+    savedBytes[i].klass = (jclass)env->NewGlobalRef(savedBytes[i].klass);
+
+    _log("Retransforming %s...\n", testClassNames[i]);
+    jvmtiError err = jvmti->RetransformClasses(1, &savedBytes[i].klass);
+    if (err != JVMTI_ERROR_NONE) {
+      _log("RetransformClasses error %d\n", err);
+      result = JNI_FALSE;
+    }
+  }
+  _log("<<nTest\n");
+  return result;
 }
 
 JNIEXPORT jint JNICALL
 Java_MissedStackMapFrames_testCount(JNIEnv* env, jclass klass) {
-    return testClassCount;
+  return testClassCount;
 }
 
 JNIEXPORT jclass JNICALL
 Java_MissedStackMapFrames_testClass(JNIEnv* env, jclass klass, jint idx) {
-    return savedBytes[idx].klass;
+  return savedBytes[idx].klass;
 }
 
 JNIEXPORT jbyteArray JNICALL
 Java_MissedStackMapFrames_loadBytes(JNIEnv* env, jclass klass, jint idx) {
-    return savedBytes[idx].load.get(env);
+  return savedBytes[idx].load.get(env);
 }
 
 JNIEXPORT jbyteArray JNICALL
 Java_MissedStackMapFrames_retransformBytes(JNIEnv* env, jclass klass, jint idx) {
-    return savedBytes[idx].retransform.get(env);
+  return savedBytes[idx].retransform.get(env);
 }
 
 } // extern "C"

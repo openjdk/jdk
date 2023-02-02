@@ -84,12 +84,21 @@ public class MissedStackMapFrames {
         return frameCount[0];
     }
 
-    private static void checkStackMapFrames(String mode, byte[] classfileBuffer) {
+    private static int checkStackMapFrames(String mode, byte[] classfileBuffer) {
         log(mode + ", len = " + classfileBuffer.length);
         int frameCount = getStackMapFrameCount(classfileBuffer);
         log("  Has stack map frames: " + frameCount);
         if (frameCount == 0) {
             throw new RuntimeException(mode + " - no stack frames");
+        }
+        return frameCount;
+    }
+
+    private static void checkStackMapFrames(String mode, byte[] classfileBuffer, int expectedCount) {
+        int actualCount = checkStackMapFrames(mode, classfileBuffer);
+        if (actualCount != expectedCount) {
+            throw new RuntimeException(mode + " - unexpected stack frames count: " + actualCount
+                                       + " (expected " + expectedCount + ")");
         }
     }
 
@@ -104,7 +113,7 @@ public class MissedStackMapFrames {
             byte[] loadBytes = loadBytes(i);
             byte[] retransformBytes = retransformBytes(i);
             checkStackMapFrames(cls + "(load)", loadBytes);
-            checkStackMapFrames(cls + "(retranform)", retransformBytes);
+            checkStackMapFrames(cls + "(retransform)", retransformBytes);
         }
     }
 
