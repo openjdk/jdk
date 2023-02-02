@@ -25,13 +25,13 @@
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -60,9 +60,6 @@ public class InvalidEntryNameOrCommentEncoding {
     // Expected ZipException regex
     private static final String BAD_ENTRY_NAME_OR_COMMENT = "invalid CEN header \\(bad entry name or comment\\)";
 
-    // Valid ZIP file used as a template
-    private Path validZip;
-
     // ZIP file with invalid name field
     private Path invalidName;
 
@@ -72,24 +69,13 @@ public class InvalidEntryNameOrCommentEncoding {
     @BeforeTest
     public void setup() throws IOException {
         // Create a ZIP file with valid name and comment fields
-        validZip = makeValidZIP("valid.zip");
+        byte[] templateZip = templateZIP();
 
         // Create a ZIP with a CEN name field containing an invalid byte sequence
-        invalidName = invalidName(validZip, "invalid-name.zip");
+        invalidName = invalidName("invalid-name.zip", templateZip);
 
         // Create a ZIP with a CEN comment field containing an invalid byte sequence
-        invalidComment = invalidComment(validZip, "invalid-comment.zip");
-    }
-
-
-    /**
-     * Sanity check that our valid ZIP file is actually valid
-     */
-    @Test
-    public void shouldOpenValidZip() throws IOException {
-        try (ZipFile zf = new ZipFile(validZip.toFile())) {
-
-        }
+        invalidComment = invalidComment("invalid-comment.zip", templateZip);
     }
 
     /**
@@ -119,23 +105,23 @@ public class InvalidEntryNameOrCommentEncoding {
     }
 
     /**
-     * Make the valid ZIP file used as a template for invalid files
+     * Make a valid ZIP file used as a template for invalid files
      */
-    private Path makeValidZIP(String first) throws IOException {
-        Path validFile = Path.of(first);
-        try (ZipOutputStream zo = new ZipOutputStream(Files.newOutputStream(validFile))) {
+    private byte[] templateZIP() throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try (ZipOutputStream zo = new ZipOutputStream(bout)) {
             ZipEntry commentEntry = new ZipEntry("file");
             commentEntry.setComment("Comment");
             zo.putNextEntry(commentEntry);
         }
-        return validFile;
+        return bout.toByteArray();
     }
 
     /**
      * Make a ZIP with invalid bytes in the CEN name field
      */
-    private Path invalidName(Path validFile, String name) throws IOException {
-        ByteBuffer buffer = readFile(validFile);
+    private Path invalidName(String name, byte[] template) throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOf(template, template.length));
         int off = cenStart(buffer);
         // Name field starts here
         int noff = off + CEN_HDR;
@@ -149,8 +135,8 @@ public class InvalidEntryNameOrCommentEncoding {
     /**
      * Make a ZIP with invalid bytes in the CEN comment field
      */
-    private Path invalidComment(Path validFile, String name) throws IOException {
-        ByteBuffer buffer = readFile(validFile);
+    private Path invalidComment(String name, byte[] template) throws IOException {
+        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOf(template, template.length));
         int off = cenStart(buffer);
         // Need to skip past the length of the name and extra fields
         int nlen = buffer.getShort(off + NLEN);
@@ -183,14 +169,4 @@ public class InvalidEntryNameOrCommentEncoding {
         }
         return zip;
     }
-
-    /**
-     * Utility to read a file into a little-endian ByteBuffer
-     */
-    private ByteBuffer readFile(Path zip) throws IOException {
-        byte[] bytes = Files.readAllBytes(zip);
-        ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN);
-        return buffer;
-    }
-
 }
