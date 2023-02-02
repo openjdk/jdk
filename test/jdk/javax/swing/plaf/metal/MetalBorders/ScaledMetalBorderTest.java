@@ -44,7 +44,7 @@ import javax.swing.UIManager;
 
 /*
  * @test
- * @bug 8294484
+ * @bug 8015739 8294484
  * @key headful
  * @summary Tests whether background color of JInternalFrame is visible
  * in the border region at different scales by checking the midpoints
@@ -62,7 +62,7 @@ import javax.swing.UIManager;
 
 /*
  * @test
- * @bug 8015739
+ * @bug 8015739 8294484
  * @key headful
  * @summary Tests whether background color of JInternalFrame is visible
  * in the border region at different scales by checking the midpoints
