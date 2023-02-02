@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,11 @@ class MachNode;
 class Node;
 #endif // COMPILER2
 
+const int ZBarrierRelocationFormatLoadBadMask   = 0;
+const int ZBarrierRelocationFormatMarkBadMask   = 1;
+const int ZBarrierRelocationFormatStoreGoodBits = 2;
+const int ZBarrierRelocationFormatStoreBadMask  = 3;
+
 class ZBarrierSetAssembler : public ZBarrierSetAssemblerBase {
 public:
   virtual void load_at(MacroAssembler* masm,
@@ -59,6 +64,27 @@ public:
                        Address src,
                        Register tmp1,
                        Register tmp2);
+
+  void store_barrier_fast(MacroAssembler* masm,
+                          Address ref_addr,
+                          Register rnew_zaddress,
+                          Register rnew_zpointer,
+                          Register rtmp,
+                          bool in_nmethod,
+                          bool is_atomic,
+                          Label& medium_path,
+                          Label& medium_path_continuation) const;
+
+  void store_barrier_medium(MacroAssembler* masm,
+                            Address ref_addr,
+                            Register rtmp1,
+                            Register rtmp2,
+                            Register rtmp3,
+                            bool is_native,
+                            bool is_atomic,
+                            Label& medium_path_continuation,
+                            Label& slow_path,
+                            Label& slow_path_continuation) const;
 
   virtual void store_at(MacroAssembler* masm,
                         DecoratorSet decorators,
@@ -81,8 +107,7 @@ public:
                             DecoratorSet decorators,
                             BasicType type,
                             size_t bytes,
-                            Register dst1,
-                            Register dst2,
+                            Register dst,
                             Address src,
                             Register tmp);
 
@@ -91,8 +116,7 @@ public:
                              BasicType type,
                              size_t bytes,
                              Address dst,
-                             Register src1,
-                             Register src2,
+                             Register src,
                              Register tmp1,
                              Register tmp2,
                              Register tmp3);

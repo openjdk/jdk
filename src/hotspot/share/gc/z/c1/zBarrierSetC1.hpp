@@ -60,6 +60,7 @@ private:
   LIR_Opr _ref_addr;
   LIR_Opr _new_zaddress;
   LIR_Opr _new_zpointer;
+  LIR_Opr _tmp;
   bool    _is_atomic;
   address _runtime_stub;
 
@@ -67,12 +68,14 @@ public:
   ZStoreBarrierStubC1(LIRAccess& access,
                       LIR_Opr new_zaddress,
                       LIR_Opr new_zpointer,
+                      LIR_Opr tmp,
                       bool is_atomic,
                       address runtime_stub);
 
   LIR_Opr ref_addr() const;
   LIR_Opr new_zaddress() const;
   LIR_Opr new_zpointer() const;
+  LIR_Opr tmp() const;
   bool is_atomic() const;
   address runtime_stub() const;
 

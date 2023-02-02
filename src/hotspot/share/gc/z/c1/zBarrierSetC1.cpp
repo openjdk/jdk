@@ -95,11 +95,13 @@ void ZLoadBarrierStubC1::print_name(outputStream* out) const {
 ZStoreBarrierStubC1::ZStoreBarrierStubC1(LIRAccess& access,
                                          LIR_Opr new_zaddress,
                                          LIR_Opr new_zpointer,
+                                         LIR_Opr tmp,
                                          bool is_atomic,
                                          address runtime_stub) :
     _ref_addr(access.resolved_addr()),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
+    _tmp(tmp),
     _is_atomic(is_atomic),
     _runtime_stub(runtime_stub) {
   assert(_ref_addr->is_address(), "Must be an address");
@@ -117,6 +119,10 @@ LIR_Opr ZStoreBarrierStubC1::new_zpointer() const {
   return _new_zpointer;
 }
 
+LIR_Opr ZStoreBarrierStubC1::tmp() const {
+  return _tmp;
+}
+
 bool ZStoreBarrierStubC1::is_atomic() const {
   return _is_atomic;
 }
@@ -129,6 +135,7 @@ void ZStoreBarrierStubC1::visit(LIR_OpVisitState* visitor) {
   visitor->do_slow_case();
   visitor->do_input(_ref_addr);
   visitor->do_temp(_new_zpointer);
+  visitor->do_temp(_tmp);
 }
 
 void ZStoreBarrierStubC1::emit_code(LIR_Assembler* ce) {
@@ -376,10 +383,12 @@ LIR_Opr ZBarrierSetC1::store_barrier(LIRAccess& access, LIR_Opr new_zaddress, bo
   }
 
   LIR_Opr new_zpointer = gen->new_register(T_OBJECT);
+  LIR_Opr tmp = gen->new_pointer_register();
   ZStoreBarrierStubC1* const stub =
       new ZStoreBarrierStubC1(access,
                               new_zaddress_reg,
                               new_zpointer,
+                              tmp,
                               is_atomic,
                               store_barrier_on_oop_field_runtime_stub(is_atomic));
 
@@ -444,7 +453,13 @@ LIR_Opr ZBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LIRItem& cm
   __ cas_obj(access.resolved_addr()->as_address_ptr()->base(),
              cmp_value_opr,
              new_value_zpointer,
+#ifdef RISCV
+             access.gen()->new_register(T_OBJECT),
+             access.gen()->new_register(T_OBJECT),
+             access.gen()->new_register(T_OBJECT));
+#else
              LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr);
+#endif
   LIR_Opr result = access.gen()->new_register(T_INT);
   __ cmove(lir_cond_equal, LIR_OprFact::intConst(1), LIR_OprFact::intConst(0),
            result, T_INT);

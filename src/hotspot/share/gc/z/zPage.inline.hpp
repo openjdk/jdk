@@ -466,6 +466,10 @@ inline zaddress ZPage::alloc_object(size_t size) {
 
   const size_t aligned_size = align_up(size, object_alignment());
   const zoffset addr = top();
+  if (is_overflow(addr, aligned_size)) {
+    return zaddress::null;
+  }
+
   const zoffset new_top = addr + aligned_size;
 
   if (new_top > end()) {
@@ -485,6 +489,9 @@ inline zaddress ZPage::alloc_object_atomic(size_t size) {
   zoffset addr = top();
 
   for (;;) {
+    if (is_overflow(addr, aligned_size)) {
+      return zaddress::null;
+    }
     const zoffset new_top = addr + aligned_size;
     if (new_top > end()) {
       // Not enough space left

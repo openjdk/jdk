@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 inline uintptr_t ZPointer::remap_bits(uintptr_t colored) {
-  return (colored ^ ZPointerRemappedMask) & ZPointerRemappedMask;
+  return colored & ZPointerRemappedMask;
 }
 
 inline constexpr int ZPointer::load_shift_lookup(uintptr_t value) {

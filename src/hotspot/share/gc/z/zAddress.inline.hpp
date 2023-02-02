@@ -39,7 +39,7 @@
 
 inline uintptr_t untype(zoffset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert((value & ~ZAddressOffsetMask) == 0, "must have no other bits");
+  assert(value <= ZAddressOffsetMax, "must have no other bits");
   return value;
 }
 
@@ -50,13 +50,18 @@ inline uintptr_t untype(zoffset_end offset) {
 }
 
 inline zoffset to_zoffset(uintptr_t value) {
-  assert((value & ~ZAddressOffsetMask) == 0, "must have no other bits");
+  assert(value <= ZAddressOffsetMax, "must have no other bits");
   return zoffset(value);
 }
 
 inline zoffset to_zoffset(zoffset_end offset) {
   const uintptr_t value = untype(offset);
   return to_zoffset(value);
+}
+
+inline bool is_overflow(zoffset offset, size_t size) {
+  const uintptr_t value = untype(offset);
+  return value + size > ZAddressOffsetMax;
 }
 
 inline zoffset operator+(zoffset offset, size_t size) {
