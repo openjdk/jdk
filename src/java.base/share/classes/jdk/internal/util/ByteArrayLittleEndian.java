@@ -41,12 +41,12 @@ public final class ByteArrayLittleEndian {
     private ByteArrayLittleEndian() {
     }
 
-    private static final VarHandle SHORT = create(short[].class);
-    private static final VarHandle CHAR = create(char[].class);
-    private static final VarHandle INT = create(int[].class);
-    private static final VarHandle FLOAT = create(float[].class);
-    private static final VarHandle LONG = create(long[].class);
-    private static final VarHandle DOUBLE = create(double[].class);
+    private static final VarHandle SHORT = createLittleEndian(short[].class);
+    private static final VarHandle CHAR = createLittleEndian(char[].class);
+    private static final VarHandle INT = createLittleEndian(int[].class);
+    private static final VarHandle FLOAT = createLittleEndian(float[].class);
+    private static final VarHandle LONG = createLittleEndian(long[].class);
+    private static final VarHandle DOUBLE = createLittleEndian(double[].class);
 
     /*
      * Methods for unpacking primitive values from byte arrays starting at
@@ -417,7 +417,7 @@ public final class ByteArrayLittleEndian {
         DOUBLE.set(array, offset, value);
     }
 
-    private static VarHandle create(Class<?> viewArrayClass) {
+    private static VarHandle createLittleEndian(Class<?> viewArrayClass) {
         return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.LITTLE_ENDIAN);
     }
 
