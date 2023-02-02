@@ -338,6 +338,7 @@ void CompileTask::log_task(xmlStream* log) {
 void CompileTask::log_task_queued() {
   ttyLocker ttyl;
   ResourceMark rm;
+  NoSafepointVerifier nsv;
 
   xtty->begin_elem("task_queued");
   log_task(xtty);
