@@ -124,8 +124,9 @@ class AutoJavaByteArray {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaByteArray(JNIEnv* env, jbyteArray byteArray, jint releaseMode = JNI_ABORT)
-    : env(env), byteArray(byteArray), releaseMode(releaseMode),
-      bytePtr(env->GetByteArrayElements(byteArray, nullptr)) {
+    : env(env), byteArray(byteArray),
+      bytePtr(env->GetByteArrayElements(byteArray, nullptr)),
+      releaseMode(releaseMode) {
   }
 
   ~AutoJavaByteArray() {

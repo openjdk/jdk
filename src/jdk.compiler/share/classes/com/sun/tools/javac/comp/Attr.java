@@ -5116,11 +5116,11 @@ public class Attr extends JCTree.Visitor {
     }
 
     Type checkIntersection(JCTree tree, List<JCExpression> bounds) {
-        Set<Type> boundSet = new HashSet<>();
+        Set<Symbol> boundSet = new HashSet<>();
         if (bounds.nonEmpty()) {
             // accept class or interface or typevar as first bound.
             bounds.head.type = checkBase(bounds.head.type, bounds.head, env, false, false, false);
-            boundSet.add(types.erasure(bounds.head.type));
+            boundSet.add(types.erasure(bounds.head.type).tsym);
             if (bounds.head.type.isErroneous()) {
                 return bounds.head.type;
             }

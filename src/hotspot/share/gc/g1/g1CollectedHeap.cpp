@@ -1025,9 +1025,6 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   // Rebuild the code root lists for each region
   rebuild_code_roots();
 
-  // Purge code root memory
-  purge_code_root_memory();
-
   // Start a new incremental collection set for the next pause
   start_new_collection_set();
 
@@ -2486,55 +2483,6 @@ void G1CollectedHeap::print_tracing_info() const {
   concurrent_mark()->print_summary_info();
 }
 
-#ifndef PRODUCT
-// Helpful for debugging RSet issues.
-
-class PrintRSetsClosure : public HeapRegionClosure {
-private:
-  const char* _msg;
-  size_t _occupied_sum;
-
-public:
-  bool do_heap_region(HeapRegion* r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
-    size_t occupied = hrrs->occupied();
-    _occupied_sum += occupied;
-
-    tty->print_cr("Printing RSet for region " HR_FORMAT, HR_FORMAT_PARAMS(r));
-    if (occupied == 0) {
-      tty->print_cr("  RSet is empty");
-    } else {
-      tty->print_cr("hrrs " PTR_FORMAT, p2i(hrrs));
-    }
-    tty->print_cr("----------");
-    return false;
-  }
-
-  PrintRSetsClosure(const char* msg) : _msg(msg), _occupied_sum(0) {
-    tty->cr();
-    tty->print_cr("========================================");
-    tty->print_cr("%s", msg);
-    tty->cr();
-  }
-
-  ~PrintRSetsClosure() {
-    tty->print_cr("Occupied Sum: " SIZE_FORMAT, _occupied_sum);
-    tty->print_cr("========================================");
-    tty->cr();
-  }
-};
-
-void G1CollectedHeap::print_cset_rsets() {
-  PrintRSetsClosure cl("Printing CSet RSets");
-  collection_set_iterate_all(&cl);
-}
-
-void G1CollectedHeap::print_all_rsets() {
-  PrintRSetsClosure cl("Printing All RSets");;
-  heap_region_iterate(&cl);
-}
-#endif // PRODUCT
-
 bool G1CollectedHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<G1CollectedHeap>::print_location(st, addr);
 }
@@ -3371,10 +3319,6 @@ void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
 }
 
-void G1CollectedHeap::purge_code_root_memory() {
-  G1CodeRootSet::purge();
-}
-
 class RebuildCodeRootClosure: public CodeBlobClosure {
   G1CollectedHeap* _g1h;
 
@@ -3416,15 +3360,23 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
 }
 
-void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start) {
+  // We can reach here with an active code cache marking cycle either because the
+  // previous G1 concurrent marking cycle was undone (if heap occupancy after the
+  // concurrent start young collection was below the threshold) or aborted. See
+  // CodeCache::on_gc_marking_cycle_finish() why this is.  We must not start a new code
+  // cache cycle then. If we are about to start a new g1 concurrent marking cycle we
+  // still have to arm all nmethod entry barriers. They are needed for adding oop
+  // constants to the SATB snapshot. Full GC does not need nmethods to be armed.
   if (!CodeCache::is_gc_marking_cycle_active()) {
-    // This is the normal case when we do not call collect when a
-    // concurrent mark is ongoing. We then start a new code marking
-    // cycle. If, on the other hand, a concurrent mark is ongoing, we
-    // will be conservative and use the last code marking cycle. Code
-    // caches marked between the two concurrent marks will live a bit
-    // longer than needed.
     CodeCache::on_gc_marking_cycle_start();
+  }
+  if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
+}
+
+void G1CollectedHeap::finish_codecache_marking_cycle() {
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }
