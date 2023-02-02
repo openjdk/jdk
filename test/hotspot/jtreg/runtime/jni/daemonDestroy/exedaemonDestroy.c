@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
    pthread_attr_t attr;
    pthread_attr_init(&attr);
    pthread_attr_setstacksize(&attr, adjusted_stack_size);
-   pthread_create(&id, &attr, run, (void *)&args);
+   result = pthread_create(&id, &attr, run, (void *)&args);
    if (result != 0) {
      fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
      return -1;
