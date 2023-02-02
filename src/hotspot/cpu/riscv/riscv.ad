@@ -7312,7 +7312,7 @@ instruct minD_reg_reg(fRegD dst, fRegD src1, fRegD src2, rFlagsReg cr) %{
 %}
 
 // Float.isInfinite
-instruct isIniniteF_reg_reg(iRegINoSp dst, fRegF src)
+instruct isInfiniteF_reg_reg(iRegINoSp dst, fRegF src)
 %{
   match(Set dst (IsInfiniteF src));
 
