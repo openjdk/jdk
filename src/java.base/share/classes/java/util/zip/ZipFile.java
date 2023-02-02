@@ -1658,7 +1658,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // If addSlash is true, we'll also test for "name/"
                     if (addSlash && nlen == mismatch + zc.slashLength() &&
                             zc.hasTrailingSlash(cen, noff, nlen)) {
-                        // We found "name/", record its in case we don't find "name"
+                        // Returned later if we found no exact match for "name"
                         slashPos = pos;
                     }
 
