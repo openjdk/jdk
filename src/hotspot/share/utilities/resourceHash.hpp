@@ -303,6 +303,12 @@ class ResourceHashtableBase : public STORAGE {
     return TableStatistics(summary, literal_bytes, sizeof(Node*), sizeof(Node));
   }
 
+  // This method calculates the "shallow" size. If you want the recursive size, use statistics_calculate.
+  size_t mem_size() const {
+    return sizeof(*this) +
+      table_size() * sizeof(Node*) +
+      number_of_entries() * sizeof(Node);
+  }
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>

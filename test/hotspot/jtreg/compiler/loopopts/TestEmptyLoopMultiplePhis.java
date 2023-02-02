@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,37 @@
  * questions.
  */
 
-package compiler.lib.ir_framework.driver.irmatching.parser;
-
 /**
- * Exception thrown when facing an unexpected format during parsing of the hotspot-pid* file
+ * @test
+ * @bug 8298118
+ * @summary Test that the JVM doesn't fail due to split-if causing empty loop to temporarily have more than one phi
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,compiler.loopopts.TestEmptyLoopMultiplePhis::test
+ *      compiler.loopopts.TestEmptyLoopMultiplePhis
  */
-class FileCorruptedException extends RuntimeException {
-    public FileCorruptedException(String s) {
-        super(s);
+
+package compiler.loopopts;
+
+public class TestEmptyLoopMultiplePhis {
+    static int[] iArrFld = new int[10];
+    static int x;
+
+    static void test(int a) {
+        int i;
+        for (int j = 6; j < 129; ++j) {
+            a >>= 37388;
+            a += 1001;
+        }
+        a >>>= -8;
+        for (i = 0; i < 8; ++i) {
+            iArrFld[i] = i;
+        }
+        for (int j = i; j < 7; ) {
+            x = a;
+        }
+    }
+
+    public static void main(String[] strArr) {
+        test(2);
     }
 }

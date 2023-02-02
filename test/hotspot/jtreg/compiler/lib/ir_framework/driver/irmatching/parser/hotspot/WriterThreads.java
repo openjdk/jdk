@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,30 @@
  * questions.
  */
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "allthr002.cpp"
+package compiler.lib.ir_framework.driver.irmatching.parser.hotspot;
+
+import compiler.lib.ir_framework.TestFramework;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * This class keeps track of all {@link WriterThread} instances.
+ */
+class WriterThreads {
+    private final Map<Integer, WriterThread> mapIdToThread = new HashMap<>();
+
+    WriterThread parse(String line) {
+        int writerThreadId = parseWriterThreadId(line);
+        return mapIdToThread.computeIfAbsent(writerThreadId, c -> new WriterThread());
+    }
+
+    private static int parseWriterThreadId(String line) {
+        Pattern pattern = Pattern.compile("='(\\d+)'");
+        Matcher matcher = pattern.matcher(line);
+        TestFramework.check(matcher.find(), "should find writer thread id");
+        return Integer.parseInt(matcher.group(1));
+    }
+}

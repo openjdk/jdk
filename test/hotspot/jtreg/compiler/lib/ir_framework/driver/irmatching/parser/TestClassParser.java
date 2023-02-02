@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,14 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.driver.irmatching.Matchable;
 import compiler.lib.ir_framework.driver.irmatching.NonIRTestClass;
+import compiler.lib.ir_framework.driver.irmatching.TestClass;
 import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchable;
+import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
+import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.LoggedMethods;
+import compiler.lib.ir_framework.shared.TestFormat;
 
-import java.util.Map;
+import java.util.SortedSet;
 
 /**
  * Class to parse the ideal compile phase and PrintOptoAssembly outputs of the test class and store them into a
@@ -35,10 +40,10 @@ import java.util.Map;
  *
  * @see IRMethod
  */
-public class MethodCompilationParser {
+public class TestClassParser {
     private final Class<?> testClass;
 
-    public MethodCompilationParser(Class<?> testClass) {
+    public TestClassParser(Class<?> testClass) {
         this.testClass = testClass;
     }
 
@@ -48,11 +53,25 @@ public class MethodCompilationParser {
      */
     public Matchable parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
-        Map<String, TestMethod> testMethodMap = irEncodingParser.parse(irEncoding);
-        if (!testMethodMap.isEmpty()) {
-            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethodMap);
-            return hotSpotPidFileParser.parse(hotspotPidFileName);
+        TestMethods testMethods = irEncodingParser.parse(irEncoding);
+        if (testMethods.hasTestMethods()) {
+            HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
+            LoggedMethods loggedMethods = hotSpotPidFileParser.parse(hotspotPidFileName);
+            return createTestClass(testMethods, loggedMethods);
         }
         return new NonIRTestClass();
     }
+
+    /**
+     * Create test class with IR methods for all test methods identified by {@link IREncodingParser} by combining them
+     * with the parsed compilation output from {@link HotSpotPidFileParser}.
+     */
+    private Matchable createTestClass(TestMethods testMethods, LoggedMethods loggedMethods) {
+        IRMethodBuilder irMethodBuilder = new IRMethodBuilder(testMethods, loggedMethods);
+        SortedSet<IRMethodMatchable> irMethods = irMethodBuilder.build();
+        TestFormat.throwIfAnyFailures();
+        return new TestClass(irMethods);
+    }
+
 }
+
