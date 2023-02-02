@@ -270,8 +270,6 @@
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
-  static_field(os,                             _polling_page,                                 address)                               \
-                                                                                                                                     \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
   static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \

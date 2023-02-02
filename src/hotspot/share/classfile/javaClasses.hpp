@@ -268,7 +268,7 @@ class java_lang_Class : AllStatic {
   // Conversion
   static Klass* as_Klass(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
-  static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
+  static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
   static void print_signature(oop java_class, outputStream *st);
   static const char* as_external_name(oop java_class);
@@ -911,7 +911,7 @@ class java_lang_boxing_object: AllStatic {
   static void compute_offsets();
   static oop initialize_and_allocate(BasicType type, TRAPS);
  public:
-  // Allocation. Returns a boxed value, or NULL for invalid type.
+  // Allocation. Returns a boxed value, or null for invalid type.
   static oop create(BasicType type, jvalue* value, TRAPS);
   // Accessors. Returns the basic type being boxed, or T_ILLEGAL for invalid oop.
   static BasicType get_value(oop box, jvalue* value);
@@ -1072,7 +1072,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::LambdaForm_klass() != NULL &&
+    return vmClasses::LambdaForm_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::LambdaForm_klass());
   }
   static bool is_instance(oop obj);
@@ -1102,7 +1102,7 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::NativeEntryPoint_klass() != NULL &&
+    return vmClasses::NativeEntryPoint_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
   }
   static bool is_instance(oop obj);
@@ -1140,7 +1140,7 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::ABIDescriptor_klass() != NULL &&
+    return vmClasses::ABIDescriptor_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
   }
   static bool is_instance(oop obj);
@@ -1168,7 +1168,7 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::VMStorage_klass() != NULL &&
+    return vmClasses::VMStorage_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::VMStorage_klass());
   }
   static bool is_instance(oop obj);
@@ -1192,7 +1192,7 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::CallConv_klass() != NULL &&
+    return vmClasses::CallConv_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::CallConv_klass());
   }
   static bool is_instance(oop obj);
