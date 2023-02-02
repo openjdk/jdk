@@ -1633,7 +1633,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int hsh = ZipCoder.hash(name);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
-            int slashPos = -1; // Position of secondary match "name/"
+            int slashMatch = -1; // Position of secondary match "name/"
 
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
@@ -1648,25 +1648,24 @@ public class ZipFile implements ZipConstants, Closeable {
                     int noff = pos + CENHDR;
                     int nlen = CENNAM(cen, pos);
 
-                    var comparison = zc.compare(name, cen, noff, nlen, addSlash);
-
-                    switch (comparison) {
+                    // Compare the lookup name with the name encoded in the CEN
+                    switch (zc.compare(name, cen, noff, nlen, addSlash)) {
                         case EXACT_MATCH:
-                            // Found exact match for "name/"
+                            // Exact match for "name"
                             return pos;
                         case SLASH_MATCH:
-                            // Found match for "name/", take note
-                            slashPos = pos;
+                            // Match for "name/", take note
+                            slashMatch = pos;
                             break;
                         case NO_MATCH:
-                            // Hash collision, continue searching
+                            // Hash collision, continue search
                     }
 
                 }
                 idx = getEntryNext(idx);
             }
-            // No exact match found
-            return slashPos;
+            // No exact match found, will return either slashMatch or -1
+            return slashMatch;
         }
 
         private ZipCoder zipCoderForPos(int pos) {

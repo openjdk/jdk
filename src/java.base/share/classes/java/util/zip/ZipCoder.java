@@ -196,16 +196,16 @@ class ZipCoder {
     /**
      * Compares a string with a second string which is encoded in a given
      * byte array range, as if the second string was first decoded from
-     * bytes using this ZipCoder's charset
+     * bytes using this ZipCoder's charset.
      *
-     * If the two strings match exactly, return {@link #EXACT_MATCH}
+     * If the two strings match exactly, return {@link Comparison#EXACT_MATCH}.
      * If addSlash is true and the two strings only differ by the second string
-     * having a trailing '/', then return {@link #SLASH_MATCH}
-     * Otherwise, return {@link #NO_MATCH}
+     * having a trailing '/', then return {@link Comparison#SLASH_MATCH}.
+     * Otherwise, return {@link Comparison#NO_MATCH}
      *
      * While a general implementation will need to decode bytes into a
-     * String for comparison, this can be avoided if the String coder is known and
-     * matches the charset of this ZipCoder
+     * String for comparison, this can be avoided if the String coder
+     * is known and matches the charset of this ZipCoder.
      */
     Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
         String decoded = toString(b, off, len);
