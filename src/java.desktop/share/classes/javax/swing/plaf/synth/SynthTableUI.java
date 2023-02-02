@@ -227,6 +227,10 @@ public class SynthTableUI extends BasicTableUI
             table.setTransferHandler(null);
         }
         SynthContext context = getContext(table, ENABLED);
+        boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
+        if (!showGrid) {
+            table.setShowGrid(true);
+        }
         style.uninstallDefaults(context);
         style = null;
     }
