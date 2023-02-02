@@ -41,8 +41,8 @@ import static org.testng.Assert.assertEquals;
 
 /**
  * @test
- * @summary Validate that ZipFile rejects to open files with invalid UTF-8 byte sequences in
- * the name or comment CEN header fields
+ * @summary Validate that opening ZIP files files with invalid UTF-8
+ * byte sequences in the name or comment fields fails with ZipException
  * @run testng/othervm InvalidEntryNameOrCommentEncoding
  */
 public class InvalidEntryNameOrCommentEncoding {
