@@ -180,8 +180,8 @@ public class Domination {
         record R(int a) {}
         Object o = null;
         switch (o) {
-            case ((R r)): return 1;
-            case ((R(int a))): return -1;
+            case R r: return 1;
+            case R(int a): return -1;
         }
     }
 
@@ -189,8 +189,8 @@ public class Domination {
         record R(int a) {}
         Object o = null;
         switch (o) {
-            case ((R(int a))): return 1;
-            case ((R(int a))): return -1;
+            case R(int a): return 1;
+            case R(int a): return -1;
         }
     }
 

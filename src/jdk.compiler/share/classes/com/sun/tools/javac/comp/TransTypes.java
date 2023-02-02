@@ -583,12 +583,6 @@ public class TransTypes extends TreeTranslator {
         result = retype(tree, tree.type, pt);
     }
 
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        tree.pattern = translate(tree.pattern, null);
-        result = tree;
-    }
-
     public void visitRecordPattern(JCRecordPattern tree) {
         tree.fullComponentTypes = tree.record.getRecordComponents()
                                              .map(rc -> types.memberType(tree.type, rc));

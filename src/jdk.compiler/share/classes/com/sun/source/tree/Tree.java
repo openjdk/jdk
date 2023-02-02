@@ -227,13 +227,6 @@ public interface Tree {
         BINDING_PATTERN(BindingPatternTree.class),
 
         /**
-         * Used for instances of {@link ParenthesizedPatternTree}.
-         *
-         * @since 21
-         */
-        PARENTHESIZED_PATTERN(ParenthesizedPatternTree.class),
-
-        /**
          * Used for instances of {@link DefaultCaseLabelTree}.
          *
          * @since 21

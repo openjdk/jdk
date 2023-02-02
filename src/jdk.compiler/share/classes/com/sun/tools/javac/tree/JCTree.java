@@ -240,7 +240,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         /** Patterns.
          */
         BINDINGPATTERN,
-        PARENTHESIZEDPATTERN,
         RECORDPATTERN,
 
         /* Case labels.
@@ -2400,41 +2399,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
     }
 
-    public static class JCParenthesizedPattern extends JCPattern
-            implements ParenthesizedPatternTree {
-        public JCPattern pattern;
-
-        public JCParenthesizedPattern(JCPattern pattern) {
-            this.pattern = pattern;
-        }
-
-        @Override @DefinedBy(Api.COMPILER_TREE)
-        public PatternTree getPattern() {
-            return pattern;
-        }
-
-        @Override
-        public void accept(Visitor v) {
-            v.visitParenthesizedPattern(this);
-        }
-
-        @DefinedBy(Api.COMPILER_TREE)
-        public Kind getKind() {
-            return Kind.PARENTHESIZED_PATTERN;
-        }
-
-        @Override
-        @DefinedBy(Api.COMPILER_TREE)
-        public <R, D> R accept(TreeVisitor<R, D> v, D d) {
-            return v.visitParenthesizedPattern(this, d);
-        }
-
-        @Override
-        public Tag getTag() {
-            return PARENTHESIZEDPATTERN;
-        }
-    }
-
     public static class JCRecordPattern extends JCPattern
             implements DeconstructionPatternTree {
         public JCExpression deconstructor;
@@ -3528,7 +3492,6 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         public void visitDefaultCaseLabel(JCDefaultCaseLabel that) { visitTree(that); }
         public void visitConstantCaseLabel(JCConstantCaseLabel that) { visitTree(that); }
         public void visitPatternCaseLabel(JCPatternCaseLabel that) { visitTree(that); }
-        public void visitParenthesizedPattern(JCParenthesizedPattern that) { visitTree(that); }
         public void visitRecordPattern(JCRecordPattern that) { visitTree(that); }
         public void visitIndexed(JCArrayAccess that)         { visitTree(that); }
         public void visitSelect(JCFieldAccess that)          { visitTree(that); }

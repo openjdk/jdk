@@ -4073,7 +4073,6 @@ public class Attr extends JCTree.Visitor {
         Type clazztype;
         JCTree typeTree;
         if (tree.pattern.getTag() == BINDINGPATTERN ||
-            tree.pattern.getTag() == PARENTHESIZEDPATTERN ||
             tree.pattern.getTag() == RECORDPATTERN) {
             attribExpr(tree.pattern, env, exprtype);
             clazztype = tree.pattern.type;
@@ -4223,11 +4222,6 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.deconstructor, env, true);
         result = tree.type;
         matchBindings = new MatchBindings(outBindings.toList(), List.nil());
-    }
-
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        attribExpr(tree.pattern, env);
-        result = tree.type = tree.pattern.type;
     }
 
     public void visitIndexed(JCArrayAccess tree) {

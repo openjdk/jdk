@@ -68,9 +68,7 @@ public class NewCaseStructureTest extends TestRunner {
     @Test
     public void testCorrectMultiLabelCaseStructure(Path base) throws Exception {
         for (String pattern : new String[] {"String s",
-                                            "(String s)",
                                             "R(int i)",
-                                            "(R(int i))",
                                             "null, default",
                                             "null",
                                             "1",
@@ -327,7 +325,7 @@ public class NewCaseStructureTest extends TestRunner {
                public class Test {
                    private int test(Integer o) {
                        return switch (o) {
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                            case 0 -> 0;
                            case Integer i -> 0;
                        };
@@ -344,8 +342,8 @@ public class NewCaseStructureTest extends TestRunner {
                    private int test(Integer o) {
                        return switch (o) {
                            default -> 0;
-                           case (Integer i) when i > 0 -> 0;
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                        };
                    }
                }
@@ -358,7 +356,7 @@ public class NewCaseStructureTest extends TestRunner {
                public class Test {
                    private int test(Integer o) {
                        return switch (o) {
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                            default -> 0;
                            case null -> 0;
                        };
@@ -375,7 +373,7 @@ public class NewCaseStructureTest extends TestRunner {
                    private int test(Integer o) {
                        return switch (o) {
                            case null, default -> 0;
-                           case (Integer i) when i > 0 -> 0;
+                           case Integer i when i > 0 -> 0;
                        };
                    }
                }

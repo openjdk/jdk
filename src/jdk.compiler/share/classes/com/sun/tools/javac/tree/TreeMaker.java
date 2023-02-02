@@ -506,12 +506,6 @@ public class TreeMaker implements JCTree.Factory {
         return tree;
     }
 
-    public JCParenthesizedPattern ParenthesizedPattern(JCPattern pattern) {
-        JCParenthesizedPattern tree = new JCParenthesizedPattern(pattern);
-        tree.pos = pos;
-        return tree;
-    }
-
     public JCRecordPattern RecordPattern(JCExpression deconstructor, List<JCPattern> nested) {
         JCRecordPattern tree = new JCRecordPattern(deconstructor, nested);
         tree.pos = pos;

@@ -928,17 +928,6 @@ public class Pretty extends JCTree.Visitor {
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern patt) {
-        try {
-            print("(");
-            printExpr(patt.pattern);
-            print(")");
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
     public void visitRecordPattern(JCRecordPattern tree) {
         try {
             printExpr(tree.deconstructor);

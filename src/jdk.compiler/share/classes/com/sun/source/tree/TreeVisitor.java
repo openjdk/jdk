@@ -327,15 +327,6 @@ public interface TreeVisitor<R,P> {
     R visitNewArray(NewArrayTree node, P p);
 
     /**
-     * Visits a {@code ParenthesizedPatternTree} node.
-     * @param node the node being visited
-     * @param p a parameter value
-     * @return a result value
-     * @since 21
-     */
-    R visitParenthesizedPattern(ParenthesizedPatternTree node, P p);
-
-    /**
      * Visits a {@code NewClassTree} node.
      * @param node the node being visited
      * @param p a parameter value

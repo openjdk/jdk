@@ -323,11 +323,6 @@ public class TreeScanner extends Visitor {
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        scan(tree.pattern);
-    }
-
-    @Override
     public void visitRecordPattern(JCRecordPattern that) {
         scan(that.deconstructor);
         scan(that.nested);

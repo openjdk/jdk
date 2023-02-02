@@ -381,12 +381,6 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        tree.pattern = translate(tree.pattern);
-        result = tree;
-    }
-
     public void visitIndexed(JCArrayAccess tree) {
         tree.indexed = translate(tree.indexed);
         tree.index = translate(tree.index);

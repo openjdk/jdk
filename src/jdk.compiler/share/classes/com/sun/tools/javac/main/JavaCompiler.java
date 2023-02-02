@@ -1534,11 +1534,6 @@ public class JavaCompiler {
                 super.visitRecordPattern(that);
             }
             @Override
-            public void visitParenthesizedPattern(JCTree.JCParenthesizedPattern tree) {
-                hasPatterns = true;
-                super.visitParenthesizedPattern(tree);
-            }
-            @Override
             public void visitSwitch(JCSwitch tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitch(tree);

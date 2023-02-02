@@ -873,21 +873,6 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
-     * @since 21
-     */
-    @Override
-    public R visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        return scan(node.getPattern(), p);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @implSpec This implementation scans the children in left to right order.
-     *
-     * @param node  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of scanning
      */
     @Override
     public R visitMemberReference(MemberReferenceTree node, P p) {

@@ -53,11 +53,11 @@ public class DisambiguatePatterns {
                                  ExpressionType.PATTERN);
         test.disambiguationTest("String s when s.isEmpty()",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("(String s)",
+        test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("(@Ann String s)",
+        test.disambiguationTest("@Ann String s",
                                  ExpressionType.PATTERN);
-        test.disambiguationTest("((String s))",
+        test.disambiguationTest("String s",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("(String) s",
                                  ExpressionType.EXPRESSION);
@@ -77,7 +77,7 @@ public class DisambiguatePatterns {
                                  ExpressionType.EXPRESSION);
         test.disambiguationTest("(a << b || a < b | a >>> b)",
                                  ExpressionType.EXPRESSION);
-        test.disambiguationTest("(a < c.d > b)",
+        test.disambiguationTest("a < c.d > b",
                                  ExpressionType.PATTERN);
         test.disambiguationTest("a<? extends c.d> b",
                                  ExpressionType.PATTERN);

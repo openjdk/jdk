@@ -4502,12 +4502,6 @@ public class Check {
                     return false;
                 }
             }
-            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
-                existingPattern = parenthesized.pattern;
-            }
-            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
-                currentPattern = parenthesized.pattern;
-            }
             if (currentPattern instanceof JCBindingPattern) {
                 return existingPattern instanceof JCBindingPattern;
             } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {

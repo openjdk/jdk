@@ -133,24 +133,24 @@ public class Guards {
 
     String typeGuardAfterParenthesizedTrueSwitchStatement(Object o) {
         switch (o) {
-            case (Integer i) when i == 0: o = String.valueOf(i); return "true";
-            case (Integer i) when i == 2: o = String.valueOf(i); return "second";
+            case Integer i when i == 0: o = String.valueOf(i); return "true";
+            case Integer i when i == 2: o = String.valueOf(i); return "second";
             case Object x: return "any";
         }
     }
 
     String typeGuardAfterParenthesizedTrueSwitchExpression(Object o) {
         return switch (o) {
-            case (Integer i) when i == 0: o = String.valueOf(i); yield "true";
-            case (Integer i) when i == 2: o = String.valueOf(i); yield "second";
+            case Integer i when i == 0: o = String.valueOf(i); yield "true";
+            case Integer i when i == 2: o = String.valueOf(i); yield "second";
             case Object x: yield "any";
         };
     }
 
     String typeGuardAfterParenthesizedTrueIfStatement(Object o) {
-        if (o != null && o instanceof (Integer i) && i == 0) {
+        if (o != null && o instanceof Integer i && i == 0) {
             return "true";
-        } else if (o != null && o instanceof (Integer i) && i == 2 && (o = i) != null) {
+        } else if (o != null && o instanceof Integer i && i == 2 && (o = i) != null) {
             return "second";
         } else {
             return "any";

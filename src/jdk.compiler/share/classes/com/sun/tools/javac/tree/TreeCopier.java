@@ -498,13 +498,6 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
-    public JCTree visitParenthesizedPattern(ParenthesizedPatternTree node, P p) {
-        JCParenthesizedPattern t = (JCParenthesizedPattern) node;
-        JCPattern pattern = copy(t.pattern, p);
-        return M.at(t.pos).ParenthesizedPattern(pattern);
-    }
-
-    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitDefaultCaseLabel(DefaultCaseLabelTree node, P p) {
         JCDefaultCaseLabel t = (JCDefaultCaseLabel) node;
         return M.at(t.pos).DefaultCaseLabel();

@@ -61,7 +61,7 @@ public class DeconstructionDesugaring {
 
     private int runCheckStatement(Object o) {
         switch (o) {
-            case (((R1((((R2((((String s))))))))))) -> { return 1; }
+            case R1(R2(String s)) -> { return 1; }
             case R1(R2(Integer i)) -> { return 2; }
             case R1(R2(Double d)) -> { return 3; }
             case R1(R2(CharSequence cs)) -> { return 4; }
@@ -75,7 +75,7 @@ public class DeconstructionDesugaring {
 
     private int runCheckExpression(Object o) {
         return switch (o) {
-            case (((R1((((R2((((String s))))))))))) -> 1;
+            case R1(R2(String s)) -> 1;
             case R1(R2(Integer i)) -> 2;
             case R1(R2(Double d)) -> 3;
             case R1(R2(CharSequence cs)) -> 4;

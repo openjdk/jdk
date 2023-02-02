@@ -93,7 +93,6 @@ import com.sun.tools.javac.tree.JCTree.JCFieldAccess;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
-import com.sun.tools.javac.tree.JCTree.JCParenthesizedPattern;
 import com.sun.tools.javac.tree.JCTree.JCPattern;
 import com.sun.tools.javac.tree.JCTree.JCPatternCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -194,8 +193,7 @@ public class TransPatterns extends TreeTranslator {
     @Override
     public void visitTypeTest(JCInstanceOf tree) {
         if (tree.pattern instanceof JCPattern pattern) {
-            //first, resolve any parenthesized and record patterns:
-            pattern = TreeInfo.skipParens(pattern);
+            //first, resolve any record patterns:
             JCExpression extraConditions = null;
             if (pattern instanceof JCRecordPattern recordPattern) {
                 UnrolledRecordPattern unrolledRecordPattern = unrollRecordPattern(recordPattern);
@@ -279,11 +277,6 @@ public class TransPatterns extends TreeTranslator {
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        result = translate(tree.pattern);
-    }
-
-    @Override
     public void visitRecordPattern(JCRecordPattern tree) {
         //record patterns should be resolved by the constructs that use them.
         Assert.error();
@@ -333,7 +326,7 @@ public class TransPatterns extends TreeTranslator {
             }
             JCMethodInvocation componentAccessor =
                     make.App(make.Select(convert(make.Ident(recordBinding), recordBinding.type), //TODO - cast needed????
-                             component.accessor));
+                             component.accessor)).setType(types.erasure(component.accessor.getReturnType()));
             if (deconstructorCalls == null) {
                 deconstructorCalls = Collections.newSetFromMap(new IdentityHashMap<>());
             }
@@ -532,9 +525,6 @@ public class TransPatterns extends TreeTranslator {
                             JCExpression guard = translate(label.guard);
                             if (hasJoinedNull) {
                                 JCPattern pattern = label.pat;
-                                while (pattern instanceof JCParenthesizedPattern parenthesized) {
-                                    pattern = parenthesized.pattern;
-                                }
                                 Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
                                 VarSymbol binding = ((JCBindingPattern) pattern).var.sym;
                                 guard = makeBinary(Tag.OR,

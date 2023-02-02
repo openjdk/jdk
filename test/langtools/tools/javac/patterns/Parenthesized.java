@@ -25,6 +25,7 @@
  * @test
  * @bug 8262891 8269354
  * @summary Test parenthesized pattern
+ * @compile/fail/ref=Parenthesized.out -XDrawDiagnostics Parenthesized.java
  */
 public class Parenthesized {
     public static void main(String... args) {

@@ -252,28 +252,28 @@ public class SwitchErrors {
     void nullAndParenthesized1(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R r)): break;
+            case null, R r: break;
             default: break;
         }
     }
     void nullAndParenthesized2(Object o) {
         record R(Object o) {}
         switch (o) {
-            case null, ((R(var v))): break;
+            case null, R(var v): break;
             default: break;
         }
     }
     void nullAndParenthesized3(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R r)): case null: break;
+            case R r: case null: break;
             default: break;
         }
     }
     void nullAndParenthesized4(Object o) {
         record R(Object o) {}
         switch (o) {
-            case ((R(var v))): case null: break;
+            case R(var v): case null: break;
             default: break;
         }
     }

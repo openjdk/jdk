@@ -764,48 +764,39 @@ public class JavacParser implements Parser {
     public JCPattern parsePattern(int pos, JCModifiers mods, JCExpression parsedType,
                                   boolean allowVar, boolean checkGuard) {
         JCPattern pattern;
-        if (token.kind == LPAREN && parsedType == null) {
-            //parenthesized pattern:
-            int startPos = token.pos;
-            accept(LPAREN);
-            JCPattern p = parsePattern(token.pos, null, null, true, false);
-            accept(RPAREN);
-            pattern = toP(F.at(startPos).ParenthesizedPattern(p));
+        mods = mods != null ? mods : optFinal(0);
+        JCExpression e;
+        if (parsedType == null) {
+            boolean var = token.kind == IDENTIFIER && token.name() == names.var;
+            e = unannotatedType(allowVar, TYPE | NOLAMBDA);
+            if (var) {
+                e = null;
+            }
         } else {
-            mods = mods != null ? mods : optFinal(0);
-            JCExpression e;
-            if (parsedType == null) {
-                boolean var = token.kind == IDENTIFIER && token.name() == names.var;
-                e = unannotatedType(allowVar, TYPE | NOLAMBDA);
-                if (var) {
-                    e = null;
-                }
-            } else {
-                e = parsedType;
-            }
-            if (token.kind == LPAREN) {
-                //deconstruction pattern:
-                checkSourceLevel(Feature.RECORD_PATTERNS);
-                ListBuffer<JCPattern> nested = new ListBuffer<>();
-                if (!peekToken(RPAREN)) {
-                    do {
-                        nextToken();
-                        JCPattern nestedPattern = parsePattern(token.pos, null, null, true, false);
-                        nested.append(nestedPattern);
-                    } while (token.kind == COMMA);
-                } else {
+            e = parsedType;
+        }
+        if (token.kind == LPAREN) {
+            //deconstruction pattern:
+            checkSourceLevel(Feature.RECORD_PATTERNS);
+            ListBuffer<JCPattern> nested = new ListBuffer<>();
+            if (!peekToken(RPAREN)) {
+                do {
                     nextToken();
-                }
-                accept(RPAREN);
-                pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+                    JCPattern nestedPattern = parsePattern(token.pos, null, null, true, false);
+                    nested.append(nestedPattern);
+                } while (token.kind == COMMA);
             } else {
-                //type test pattern:
-                JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
-                if (e == null) {
-                    var.startPos = pos;
-                }
-                pattern = toP(F.at(pos).BindingPattern(var));
+                nextToken();
             }
+            accept(RPAREN);
+            pattern = toP(F.at(pos).RecordPattern(e, nested.toList()));
+        } else {
+            //type test pattern:
+            JCVariableDecl var = toP(F.at(token.pos).VarDef(mods, ident(), e, null));
+            if (e == null) {
+                var.startPos = pos;
+            }
+            pattern = toP(F.at(pos).BindingPattern(var));
         }
         return pattern;
     }
