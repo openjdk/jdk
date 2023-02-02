@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -121,7 +122,7 @@ public class InvalidEntryNameOrCommentEncoding {
      * Make a ZIP with invalid bytes in the CEN name field
      */
     private Path invalidName(String name, byte[] template) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOf(template, template.length));
+        ByteBuffer buffer = copyTemplate(template);
         int off = cenStart(buffer);
         // Name field starts here
         int noff = off + CEN_HDR;
@@ -133,10 +134,19 @@ public class InvalidEntryNameOrCommentEncoding {
     }
 
     /**
+     * Make a copy of the ZIP template and wrap it in a little-endian
+     * ByteBuffer
+     */
+    private ByteBuffer copyTemplate(byte[] template) {
+        return ByteBuffer.wrap(Arrays.copyOf(template, template.length))
+                .order(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    /**
      * Make a ZIP with invalid bytes in the CEN comment field
      */
     private Path invalidComment(String name, byte[] template) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(Arrays.copyOf(template, template.length));
+        ByteBuffer buffer = copyTemplate(template);
         int off = cenStart(buffer);
         // Need to skip past the length of the name and extra fields
         int nlen = buffer.getShort(off + NLEN);
