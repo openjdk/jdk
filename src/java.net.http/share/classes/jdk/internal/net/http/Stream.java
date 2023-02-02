@@ -1358,7 +1358,7 @@ class Stream<T> extends ExchangeImpl<T> {
         CompletableFuture<HttpResponse<T>> responseCF;
         final HttpRequestImpl pushReq;
         HttpResponse.BodyHandler<T> pushHandler;
-        private boolean finalPushResponseCodeReceived = false;
+        private volatile boolean finalPushResponseCodeReceived;
 
         PushedStream(PushGroup<T> pushGroup,
                      Http2Connection connection,
@@ -1490,7 +1490,8 @@ class Stream<T> extends ExchangeImpl<T> {
                 completeResponse(response);
             } else {
                 if (Log.headers()) {
-                    StringBuilder sb = new StringBuilder("TRAILING HEADERS:\n");
+                    StringBuilder sb = new StringBuilder("TRAILING HEADERS");
+                    sb.append(" (streamid=").append(streamid).append("):\n");
                     Log.dumpHeaders(sb, "    ", responseHeaders);
                     Log.logHeaders(sb.toString());
                 }

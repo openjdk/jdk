@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,10 +128,14 @@ class BodyOutputStream extends OutputStream {
             closed = true;
         }
         try {
-            send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
+            sendEndStream();
         } catch (IOException ex) {
             System.err.println("TestServer: OutputStream.close exception: " + ex);
             ex.printStackTrace();
         }
+    }
+
+    protected void sendEndStream() throws IOException {
+        send(EMPTY_BARRAY, 0, 0, DataFrame.END_STREAM);
     }
 }

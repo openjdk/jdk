@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -954,19 +954,26 @@ public class Http2TestServerConnection {
         final BodyOutputStream oo = new BodyOutputStream(
                 promisedStreamid,
                 clientSettings.getParameter(
-                        SettingsFrame.INITIAL_WINDOW_SIZE), this);
+                        SettingsFrame.INITIAL_WINDOW_SIZE), this) {
+
+            @Override
+            protected void sendEndStream() throws IOException {
+                // For testing the client-side effects of sending trailing headers after Push Promise response headers
+                if (properties.getProperty("sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
+                    System.err.println("Sending trailing headers after push promise response headers");
+                    outputQ.put(getTrailingHeadersFrame(promisedStreamid));
+                } else {
+                    super.sendEndStream();
+                }
+            }
+        };
+
         outStreams.put(promisedStreamid, oo);
         oo.goodToGo();
         exec.submit(() -> {
             try {
                 ResponseHeaders oh = getPushResponse(promisedStreamid);
                 outputQ.put(oh);
-
-                // For testing the client-side effects of sending trailing headers after Push Promise response headers
-                if (properties.getProperty("TrailingHeadersTest.sendTrailingHeadersAfterPushPromise", "0").equals("1")) {
-                    System.err.println("Sending trailing headers after push promise response headers");
-                    outputQ.put(getTrailingHeadersFrame(promisedStreamid));
-                }
 
                 ii.transferTo(oo);
             } catch (Throwable ex) {
@@ -985,9 +992,10 @@ public class Http2TestServerConnection {
         HttpHeadersBuilder hb = createNewHeadersBuilder();
         hb.addHeader("x-trailing-header", "trailing-value");
         HttpHeaders headers = hb.build();
+        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), encodeHeaders(headers));
         */
         // TODO: see if there is a safe way to encode headers without interrupting connection thread
-        return new HeadersFrame(promisedStreamid, HeaderFrame.END_HEADERS, List.of());
+        return new HeadersFrame(promisedStreamid, (HeaderFrame.END_HEADERS | HeaderFrame.END_STREAM), List.of());
     }
 
     // returns a minimal response with status 200

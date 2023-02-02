@@ -103,7 +103,7 @@ public class TrailingHeadersTest {
         http2TestServer.addHandler(new WarmupHandler(), "/WarmupHandler");
 
         // For triggering trailing headers to send after Push Promise Response headers are sent
-        http2TestServer.properties.setProperty("TrailingHeadersTest.sendTrailingHeadersAfterPushPromise", "1");
+        http2TestServer.properties.setProperty("sendTrailingHeadersAfterPushPromise", "1");
         http2TestServer.start();
 
         trailingURI = URI.create("http://" + http2TestServer.serverAuthority() + "/ResponseTrailingHeaders");
@@ -199,10 +199,12 @@ public class TrailingHeadersTest {
         }
 
         public void sendResponseThenTrailers() throws IOException {
+            /*
             HttpHeadersBuilder hb = this.conn.createNewHeadersBuilder();
             hb.setHeader("x-sample", "val");
+            HeaderFrame headerFrame = new HeadersFrame(this.streamid, 0, this.conn.encodeHeaders(hb.build()));
+            */
             // TODO: see if there is a safe way to encode headers without interrupting connection thread
-            // HeaderFrame headerFrame = new HeadersFrame(this.streamid, 0, this.conn.encodeHeaders(hb.build()));
             HeaderFrame headerFrame = new HeadersFrame(this.streamid, 0, List.of());
             headerFrame.setFlag(HeaderFrame.END_HEADERS);
             headerFrame.setFlag(HeaderFrame.END_STREAM);
