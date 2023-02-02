@@ -75,21 +75,13 @@ public class ImageInputStreamBench {
     }
 
     @Benchmark
-    public int readInt() throws IOException {
-        int sum = 0;
-        for (int i = 0; i < 100; i++) {
-            sum += imageInputStream.readInt();
-        }
-        return sum;
+    public void readInt(Blackhole bh) throws IOException {
+        bh.consume(imageInputStream.readInt());
     }
 
     @Benchmark
-    public long readLong() throws IOException {
-        long sum = 0;
-        for (int i = 0; i < 100; i++) {
-            sum += imageInputStream.readLong();
-        }
-        return sum;
+    public void readLong(Blackhole bh) throws IOException {
+        bh.consume(imageInputStream.readLong());
     }
 
 }
