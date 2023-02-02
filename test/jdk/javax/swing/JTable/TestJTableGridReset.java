@@ -58,28 +58,28 @@ public class TestJTableGridReset {
             System.out.println("Testing L&F: " + laf.getClassName());
             SwingUtilities.invokeAndWait(() -> {
                 setLookAndFeel(laf);
-	        table = new JTable();
+                table = new JTable();
                 table.setShowHorizontalLines(true);
                 table.setShowVerticalLines(true);
-	    });
-	    SwingUtilities.updateComponentTreeUI(table);
+            });
+            SwingUtilities.updateComponentTreeUI(table);
             SwingUtilities.invokeAndWait(() -> {
-	        origHorizLines = table.getShowHorizontalLines();
+                origHorizLines = table.getShowHorizontalLines();
                 origVertLines = table.getShowVerticalLines();
-	    });
-	    UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-	    SwingUtilities.updateComponentTreeUI(table);
+            });
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+            SwingUtilities.updateComponentTreeUI(table);
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-	    SwingUtilities.updateComponentTreeUI(table);
+            SwingUtilities.updateComponentTreeUI(table);
             SwingUtilities.invokeAndWait(() -> {
-	        curHorizLines = table.getShowHorizontalLines();
+                curHorizLines = table.getShowHorizontalLines();
                 curVertLines = table.getShowVerticalLines();
-	    });
-	    System.out.println("origHorizLines " + origHorizLines +
+            });
+            System.out.println("origHorizLines " + origHorizLines +
                                " origVertLines " + origVertLines);
-	    System.out.println("curHorizLines " + curHorizLines +
+            System.out.println("curHorizLines " + curHorizLines +
                                 " curVertLines " + curVertLines);
-	    if (origHorizLines != curHorizLines ||
+            if (origHorizLines != curHorizLines ||
                 origVertLines != curVertLines) {
                 throw new RuntimeException("Horizontal/Vertical grid lines not restored");
             }
