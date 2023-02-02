@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package sun.security.rsa;
 
-import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.*;
@@ -354,7 +353,7 @@ public class RSAKeyFactory extends KeyFactorySpi {
     private PrivateKey generatePrivate(KeySpec keySpec)
             throws GeneralSecurityException {
         if (keySpec instanceof PKCS8EncodedKeySpec) {
-            byte[] encoded = ((EncodedKeySpec)keySpec).getEncoded();
+            byte[] encoded = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
             try {
                 return RSAPrivateCrtKeyImpl.newKey(type, "PKCS#8", encoded);
             } finally {
