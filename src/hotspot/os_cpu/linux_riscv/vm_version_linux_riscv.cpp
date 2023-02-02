@@ -60,7 +60,8 @@ VM_Version::VM_MODE VM_Version::get_satp_mode() {
 
 void VM_Version::get_os_cpu_info() {
   /**
-   * cpuinfo in riscv would like:
+   * The following is an example of theoutput
+   * typical of /proc/cpuinfo:
    * processor       : 1
    * hard            : 1
    * isa             : rv64imafdc
