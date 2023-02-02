@@ -25,7 +25,6 @@
  * @test
  * @bug 7110149 8184306 6341887
  * @summary Test basic deflater & inflater functionality
- * @library /test/lib
  * @key randomness
  */
 
@@ -33,7 +32,6 @@ import java.io.*;
 import java.nio.*;
 import java.util.*;
 import java.util.zip.*;
-import jdk.test.lib.Platform;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -129,12 +127,27 @@ public class DeInflate {
 
         def.setInput(in, 0, len);
         def.finish();
-        int m = def.deflate(out1);
+        int m = 0;
 
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
+        while (!def.finished()) {
+            int temp_counter = def.deflate(out1);
+            m += temp_counter;
+            baos.write(out1, 0, temp_counter);
+        }
+        out1 = baos.toByteArray();
+        baos.reset();
         Inflater inf = new Inflater(nowrap);
         inf.setInput(out1, 0, m);
-        int n = inf.inflate(out2);
+        int n = 0;
 
+        while (!inf.finished()) {
+            int temp_counter = inf.inflate(out2);
+            n += temp_counter;
+            baos.write(out2, 0,  temp_counter);
+        }
+        out2 = baos.toByteArray();
+        baos.close();
         if (n != len ||
             !Arrays.equals(Arrays.copyOf(in, len), Arrays.copyOf(out2, len)) ||
             inf.inflate(out2) != 0) {
@@ -270,7 +283,7 @@ public class DeInflate {
 
         byte[] dataIn = new byte[1024 * 512];
         rnd.nextBytes(dataIn);
-        byte[] dataOut1 = new byte[dataIn.length + 1024 * (Platform.isS390x() ? 64 : 1)];
+        byte[] dataOut1 = new byte[dataIn.length + 1024];
         byte[] dataOut2 = new byte[dataIn.length];
 
         Deflater defNotWrap = new Deflater(Deflater.DEFAULT_COMPRESSION, false);
