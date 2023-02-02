@@ -46,7 +46,7 @@ public class TestTypeSpeculation {
     private static final Long testLong = 42L;
     private static final Double testDouble = 42.0D;
 
-    
+
     @DontInline
     public void test1_no_inline() {
     }
