@@ -170,7 +170,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
     const Type* cached_t = Value(phase); // cache the type to validate consistency
     switch (C->static_subtype_check(superk, subk)) {
       case Compile::SSC_easy_test: {
-        return verify_helper(phase, load_klass(phase, obj_or_subklass), cached_t);
+        return verify_helper(phase, load_klass(phase), cached_t);
       }
       case Compile::SSC_full_test: {
         Node* p1 = phase->transform(new AddPNode(superklass, superklass, phase->MakeConX(in_bytes(Klass::super_check_offset_offset()))));
@@ -180,7 +180,7 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
         int cacheoff_con = in_bytes(Klass::secondary_super_cache_offset());
         bool might_be_cache = (phase->find_int_con(chk_off, cacheoff_con) == cacheoff_con);
         if (!might_be_cache) {
-          Node* subklass = load_klass(phase, obj_or_subklass);
+          Node* subklass = load_klass(phase);
           Node* chk_off_X = chk_off;
 #ifdef _LP64
           chk_off_X = phase->transform(new ConvI2LNode(chk_off_X));
@@ -203,7 +203,8 @@ bool SubTypeCheckNode::verify(PhaseGVN* phase) {
   return true;
 }
 
-Node* SubTypeCheckNode::load_klass(PhaseGVN* phase, Node* obj_or_subklass) const {
+Node* SubTypeCheckNode::load_klass(PhaseGVN* phase) const {
+  Node* obj_or_subklass = in(ObjOrSubKlass);
   const Type* sub_t = phase->type(obj_or_subklass);
   Node* subklass = NULL;
   if (sub_t->isa_oopptr()) {
