@@ -159,11 +159,11 @@ void *run_java_overflow (void *p) {
 }
 
 void do_overflow(){
-  volatile int *p;
+  volatile void *p;
   if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
     for(;;) {
       _rec_count++;
-      p = (int*)alloca(sizeof(int));
+      p = alloca(128);
     }
   }
 }
@@ -238,7 +238,6 @@ void init_thread_or_die(pthread_t *thr, pthread_attr_t *thread_attr) {
     printf("Failed to set stacksize. Exiting test.\n");
     exit(0);
   }
-
 }
 
 
