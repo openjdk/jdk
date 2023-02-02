@@ -138,9 +138,10 @@ public class TCKFixedZoneRules {
 
     @Test(dataProvider="rules")
     public void test_isValidOffset_LDT_ZO(ZoneRules test, ZoneOffset expectedOffset) {
-        if (expectedOffset == ZoneOffset.UTC)
+        if (expectedOffset == ZoneOffset.UTC) {
             // The tests below are not made to work with ZoneOffset.UTC
             return;
+        }
         assertEquals(test.isValidOffset(LDT, ZoneOffset.UTC), false);
         assertEquals(test.isValidOffset(LDT, null), false);
 
