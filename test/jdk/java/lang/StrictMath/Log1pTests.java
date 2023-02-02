@@ -235,24 +235,24 @@ public class Log1pTests {
         x = Math.nextDown(Double.MIN_NORMAL);
         failures += testRange(x, -Math.ulp(x), 1000);
 
-         double[] conditionalPoints = {
-              1.0,
-             -0x1.0p-29,
-              0x1.0p-29,
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             1.0,
+            -0x1.0p-29,
+             0x1.0p-29,
+            -0x1.0p-54,
+             0x1.0p-54,
 
-             -0x1.0p-54,
-              0x1.0p-54,
+            -0.2930, // approx. sqrt(2)/2 -1
+            -0.2929,
+            -0.2928,
 
-              -0.2930,
-              -0.2929,
-              -0.2928,
-
-               0.41421,
-               0.41422,
-               0.41423,
+             0.41421, // approx. sqrt(2) -1
+             0.41422,
+             0.41423,
          };
 
-         for (double testPoint : conditionalPoints) {
+         for (double testPoint : decisionPoints) {
              failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
          }
 
