@@ -1979,9 +1979,6 @@ public final class String
         if (anotherString == null) {
             return false;
         }
-        if (value == anotherString.value) {
-            return true;
-        }
         return (this == anotherString) ? true
                 : (anotherString.length() == length())
                 && regionMatches(true, 0, anotherString, 0, length());
@@ -2158,6 +2155,9 @@ public final class String
                 toffset = toffset << 1;
                 ooffset = ooffset << 1;
                 len = len << 1;
+            }
+            if (tv == ov && toffset == ooffset) {
+                return true;
             }
             while (len-- > 0) {
                 if (tv[toffset++] != ov[ooffset++]) {
