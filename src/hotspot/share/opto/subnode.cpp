@@ -1191,7 +1191,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   }
 
   // Bypass the dependent load, and compare directly
-  this->set_req_X(1,ldk2, phase);
+  this->set_req_X(1, ldk2, phase);
 
   return this;
 }

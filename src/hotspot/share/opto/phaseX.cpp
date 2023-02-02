@@ -1703,21 +1703,20 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         if (in1 != in2) { // if they are equal, the CmpI can fold them away
           if (in1 == n) {
             // in1 modified -> could turn into X -> do traversal based on right pattern.
-            for (uint i2 = 0; i2 < cmp->outcnt(); i2++) {
-              Node* bol = cmp->raw_out(i2); // For each Bool
-              if (bol != nullptr && bol->is_Bool()) {
-                for (uint i3 = 0; i3 < bol->outcnt(); i3++) {
-                  Node* iff = bol->raw_out(i3); // For each If
-                  if (iff != nullptr && iff->is_If()) {
-                    for (uint i4 = 0; i4 < iff->outcnt(); i4++) {
-                      Node* if_proj = iff->raw_out(i4); // For each IfProj
-                      if (if_proj != nullptr && (if_proj->is_IfFalse() || if_proj->is_IfTrue())) {
-                        for (uint i5 = 0; i5 < if_proj->outcnt(); i5++) {
-                          Node* castii = if_proj->raw_out(i5); // For each CastII
-                          if (castii->is_CastII() &&
-                              castii->as_CastII()->carry_dependency()) {
-                            _worklist.push(castii);
-                          }
+            for (DUIterator_Fast i2max, i2 = cmp->fast_outs(i2max); i2 < i2max; i2++) {
+              Node* bol = cmp->fast_out(i2); // For each Bool
+              if (bol->is_Bool()) {
+                for (DUIterator_Fast i3max, i3 = bol->fast_outs(i3max); i3 < i3max; i3++) {
+                  Node* iff = bol->fast_out(i3); // For each If
+                  if (iff->is_If()) {
+                    for (DUIterator_Fast i4max, i4 = iff->fast_outs(i4max); i4 < i4max; i4++) {
+                      Node* if_proj = iff->fast_out(i4); // For each IfProj
+                      assert(if_proj->is_IfProj(), "If only has IfTrue and IfFalse as outputs");
+                      for (DUIterator_Fast i5max, i5 = if_proj->fast_outs(i5max); i5 < i5max; i5++) {
+                        Node* castii = if_proj->fast_out(i5); // For each CastII
+                        if (castii->is_CastII() &&
+                            castii->as_CastII()->carry_dependency()) {
+                          _worklist.push(castii);
                         }
                       }
                     }
@@ -1729,8 +1728,8 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
             // Only in2 modified -> can assume X == in2 (left pattern).
             assert(n == in2, "only in2 modified");
             // Find all CastII with input in1.
-            for (uint j = 0; j < in1->outcnt(); j++) {
-              Node* castii = in1->raw_out(j);
+            for (DUIterator_Fast jmax, j = in1->fast_outs(jmax); j < jmax; j++) {
+              Node* castii = in1->fast_out(j);
               if (castii->is_CastII() && castii->as_CastII()->carry_dependency()) {
                 // Find If.
                 if (castii->in(0) != nullptr && castii->in(0)->in(0) != nullptr && castii->in(0)->in(0)->is_If()) {
