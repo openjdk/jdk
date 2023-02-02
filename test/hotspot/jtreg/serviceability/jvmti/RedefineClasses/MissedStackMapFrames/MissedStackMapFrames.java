@@ -112,8 +112,8 @@ public class MissedStackMapFrames {
             Class cls = testClass(i);
             byte[] loadBytes = loadBytes(i);
             byte[] retransformBytes = retransformBytes(i);
-            checkStackMapFrames(cls + "(load)", loadBytes);
-            checkStackMapFrames(cls + "(retransform)", retransformBytes);
+            int loadCount = checkStackMapFrames(cls + "(load)", loadBytes);
+            checkStackMapFrames(cls + "(retransform)", retransformBytes, loadCount);
         }
     }
 
