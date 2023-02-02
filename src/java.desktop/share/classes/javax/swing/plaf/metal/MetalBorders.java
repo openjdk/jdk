@@ -85,8 +85,6 @@ public class MetalBorders {
      */
     public MetalBorders() {}
 
-    private static final int CORNER = 14;
-
     /**
      * The class represents the 3D border.
      */
@@ -244,6 +242,7 @@ public class MetalBorders {
             implements UIResource
             permits FrameBorder, DialogBorder, InternalFrameBorderImpl {
 
+        protected static final int CORNER = 14;
         protected record Colors(Color background, Color highlight, Color shadow) {}
 
         protected static Colors activeWindowBorder =  new Colors(
@@ -260,8 +259,8 @@ public class MetalBorders {
         public void paintBorder(Component c, Graphics g,
                                 int x, int y, int w, int h) {
             SwingUtilities3.paintBorder(c, g,
-                    x, y, w, h,
-                    this::paintUnscaledBorder);
+                                        x, y, w, h,
+                                        this::paintUnscaledBorder);
         }
 
         protected abstract Colors getBorderColors(Component c);
@@ -325,6 +324,7 @@ public class MetalBorders {
 
     @SuppressWarnings("serial")
     private static final class InternalFrameBorderImpl extends AbstractMetalBorder {
+
         @Override
         protected Colors getBorderColors(Component c) {
             if (c instanceof JInternalFrame
