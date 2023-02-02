@@ -44,56 +44,67 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
+/**
+ * This test augments {@link TestTooManyEntries}. It creates small ZIPs where the
+ * the CEN size is manipulated directly to the desired value. While this means the ZIP files
+ * produced are technically invalid, it helps this test run fast with much less resources
+ */
 public class CenSizeTooLarge {
 
     private static final int ENDHDR = 22;          // End of central directory record size
     private static final int CEN_SIZE_OFFSET = 12; // Offset of CEN size field within ENDHDR
-    private Path huge; // ZIP file with CEN size exceeding limit
-    private Path big;  // ZIP file with CEN size exactly on the limit
+    // Maximum allowed CEN size allowed by ZipFile
+    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ENDHDR -1;
+
+    // Expected message when CEN size is too large
+    private static final String INVALID_CEN_BAD_SIZE = "invalid END header \\(bad central directory size\\)";
+    // Expected message when CEN size does not match file size
+    private static final String INVALID_CEN_SIZE_TOO_LARGE = "invalid END header \\(central directory size too large\\)";
+
+    // A valid ZIP file, used as a template
+    private byte[] zipBytes;
 
     /**
-     * Create ZIP files with CEN sizes exactly on and exceeding the CEN size limit
+     * Create a valid ZIP file, used as a template
      */
     @BeforeTest
     public void setup() throws IOException {
-        var limit = Integer.MAX_VALUE - ENDHDR - 1;
-        var exceedingLimit = limit + 1;
-        big = zipWithCenSize("bigZip.zip", limit);
-        huge = zipWithCenSize("hugeZip.zip", exceedingLimit);
+        zipBytes = templateZip();
     }
 
     /**
      * Validates that an end of central directory record with
      * a CEN length exceeding the CEN limit is rejected
      */
-    @Test
+    @Test(expectedExceptions = ZipException.class,
+            expectedExceptionsMessageRegExp = INVALID_CEN_SIZE_TOO_LARGE)
     public void shouldRejectTooLargeCenSize() throws IOException {
-        assertRejected(huge, "invalid END header (central directory size too large)");
+        int size = MAX_CEN_SIZE +1;
+
+        Path zip = zipWithCenSize("cen-size-too-large.zip", size, zipBytes);
+
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+        }
     }
 
     /**
      * Validate that an end of central directory record with a
-     * valid CEN size is not rejected because of its CEN size
+     * CEN size within the limit is not rejected because of its CEN size
+     *
+     * Note: Since this is just a small file with a single entry, the
+     * CEN size in the END record will not match the actual CEN
+     * and file size. ZipFile should detect this and reject
+     * as invalid (but not because the size is > limit)
      */
-    @Test
+    @Test(expectedExceptions = ZipException.class,
+            expectedExceptionsMessageRegExp = INVALID_CEN_BAD_SIZE)
     public void shouldRejectInvalidCenSize() throws IOException {
-        // Since the file has just a single entry, the CEN size in the END
-        // record doesn not match the real CEN and file size.
-        // Expect the CEN size should be rejected as invalid
-        assertRejected(big, "invalid END header (bad central directory size)");
-    }
 
-    /**
-     * Assert that opening a file with ZipFile throws with a ZipException
-     * with the expected message
-     */
-    private void assertRejected(Path zip, String expectedMsg) throws IOException {
+        int size = MAX_CEN_SIZE;
+
+        Path zip = zipWithCenSize("cen-size-on-limit.zip", size, zipBytes);
+
         try (ZipFile zf = new ZipFile(zip.toFile())) {
-            fail("Expected ZipFile to throw ZipException");
-        } catch (ZipException e) {
-            var actual = e.getMessage();
-            assertTrue(expectedMsg.equals(actual),
-                    "Expected ZipException message '%s', got '%s'".formatted(expectedMsg, actual));
         }
     }
 
@@ -104,14 +115,8 @@ public class CenSizeTooLarge {
      * The resulting ZIP is technically not valid, but it does allow us
      * to test that the large CEN size is rejected
      */
-    private Path zipWithCenSize(String name, int cenSize) throws IOException {
+    private Path zipWithCenSize(String name, int cenSize, byte[] zipBytes) throws IOException {
         Path z = Path.of(name);
-
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        try (ZipOutputStream zout = new ZipOutputStream(bout)) {
-            zout.putNextEntry(new ZipEntry("duke.txt"));
-        }
-        byte[] zipBytes = bout.toByteArray();
 
         // Change the "Central directory size" field of the
         // "End of central directory" record
@@ -122,5 +127,15 @@ public class CenSizeTooLarge {
 
         Files.write(z, zipBytes);
         return z;
+    }
+
+    // Produce a byte array of a ZIP with a single entry
+    private byte[] templateZip() throws IOException {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try (ZipOutputStream zout = new ZipOutputStream(bout)) {
+            zout.putNextEntry(new ZipEntry("duke.txt"));
+        }
+        byte[] zipBytes = bout.toByteArray();
+        return zipBytes;
     }
 }
