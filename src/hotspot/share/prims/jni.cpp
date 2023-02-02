@@ -3465,7 +3465,7 @@ struct JNINativeInterface_* jni_functions_nocheck() {
 
 static void post_thread_start_event(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  // We hoist the read for the thread id to ensure the thread is assigned an id (lazily assignment)..
+  // We hoist the read for the thread id to ensure the thread is assigned an id (lazy assignment).
   const traceid thread_id = JFR_JVM_THREAD_ID(jt);
   EventThreadStart event;
   if (event.should_commit()) {
