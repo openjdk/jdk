@@ -25,15 +25,14 @@
 
 package javax.swing;
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Rectangle;
-
 import java.io.Serializable;
+
+import javax.swing.border.Border;
+import javax.swing.border.EmptyBorder;
+
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
 
@@ -157,7 +156,10 @@ public class DefaultListCellRenderer extends JLabel
             setText((value == null) ? "" : value.toString());
         }
 
-        setEnabled(list.isEnabled());
+        if (list.getName() == null || !list.getName().equals("ComboBox.list")) {
+            setEnabled(list.isEnabled());
+        }
+
         setFont(list.getFont());
 
         Border border = null;

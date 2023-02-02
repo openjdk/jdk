@@ -39,6 +39,7 @@ import java.beans.PropertyChangeListener;
 
 import javax.swing.ComboBoxEditor;
 import javax.swing.DefaultButtonModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -107,6 +108,8 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
      * Handler for repainting combo when editor component gains/looses focus
      */
     private EditorFocusHandler editorFocusHandler;
+
+    private DlcrEnabledHandler dlcrEnabledHandler;
 
     /**
      * If true, then the cell renderer will be forced to be non-opaque when
@@ -187,6 +190,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
         comboBox.addPropertyChangeListener(this);
         comboBox.addMouseListener(buttonHandler);
         editorFocusHandler = new EditorFocusHandler(comboBox);
+        dlcrEnabledHandler = new DlcrEnabledHandler(comboBox);
         super.installListeners();
     }
 
@@ -219,6 +223,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     @Override
     protected void uninstallListeners() {
         editorFocusHandler.unregister();
+        dlcrEnabledHandler.unregister();
         comboBox.removePropertyChangeListener(this);
         comboBox.removeMouseListener(buttonHandler);
         buttonHandler.pressed = false;
@@ -818,6 +823,38 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
                     if (editorComponent != null){
                         editorComponent.addFocusListener(this);
                     }
+                }
+            }
+        }
+    }
+
+    /**
+     * Handler for updating combobox enabled status when renderer enabled
+     * status changes
+     */
+    private static class DlcrEnabledHandler implements PropertyChangeListener {
+        private JComboBox<?> comboBox;
+
+        private DlcrEnabledHandler(JComboBox<?> comboBox) {
+            this.comboBox = comboBox;
+            comboBox.addPropertyChangeListener("enabled",this);
+        }
+
+        public void unregister() {
+            comboBox.removePropertyChangeListener("enabled", this);
+        }
+
+        /**
+         * Called when the combos enabled status changes
+         *
+         * @param evt A PropertyChangeEvent object describing the event source
+         *            and the property that has changed.
+         */
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (evt.getPropertyName().equals("enabled")) {
+                if (comboBox.getRenderer() instanceof DefaultListCellRenderer) {
+                    ((DefaultListCellRenderer) comboBox.getRenderer())
+                            .setEnabled((boolean) evt.getNewValue());
                 }
             }
         }
