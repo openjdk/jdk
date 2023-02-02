@@ -1976,11 +1976,9 @@ public final class String
      * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
-        if (anotherString == null) {
-            return false;
-        }
         return (this == anotherString) ? true
-                : (anotherString.length() == length())
+                : (anotherString != null)
+                && (anotherString.length() == length())
                 && regionMatches(true, 0, anotherString, 0, length());
     }
 
