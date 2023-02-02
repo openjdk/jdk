@@ -133,6 +133,23 @@ void warning(const char* format, ...) {
 
 #ifndef PRODUCT
 
+typedef __uint128_t u128;
+typedef uint64_t u64;
+typedef uint32_t u32;
+
+void print128(u128 n) {
+  u64 n1 = n >> 64; u64 n0 = (u128)(n << 64 >> 64);
+  printf("\"%016lx%016lx\", ", (u64)(n >> 64), (u64)(n << 64 >> 64));
+}
+
+void print52(u64 hi, u64 mid, u64 lo) {
+  u128 sum = lo + ((u128)mid << 52) + ((u128)hi << 104);
+  // u64 top = hi >> 24; if (top) printf("%lx", top);
+  u64 top = hi >> 24; printf("\"%lx\", ", top);
+  print128(sum);
+  printf("\n");
+}
+
 #define is_token_break(ch) (isspace(ch) || (ch) == ',')
 
 static const char* last_file_name = NULL;

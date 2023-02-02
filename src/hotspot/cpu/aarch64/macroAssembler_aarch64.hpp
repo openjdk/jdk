@@ -242,6 +242,13 @@ class MacroAssembler: public Assembler {
     bfm(Rd, Rn, ((64 - lsb) & 63), (width - 1));
   }
 
+  inline void bfc(Register Rd, unsigned lsb, unsigned width) {
+    bfi(Rd, zr, lsb, width);
+  }
+  inline void bfcw(Register Rd, unsigned lsb, unsigned width) {
+    bfiw(Rd, zr, lsb, width);
+  }
+
   inline void bfxilw(Register Rd, Register Rn, unsigned lsb, unsigned width) {
     bfmw(Rd, Rn, lsb, (lsb + width - 1));
   }
