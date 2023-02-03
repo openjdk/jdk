@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ void JVMFlag::set_product() {
   assert(is_product(), "sanity");
 }
 
-// Get custom message for this locked flag, or NULL if
+// Get custom message for this locked flag, or null if
 // none is available. Returns message type produced.
 JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
   buf[0] = '\0';
@@ -225,9 +225,9 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     } else if (is_ccstr()) {
       // Honor <newline> characters in ccstr: print multiple lines.
       const char* cp = get_ccstr();
-      if (cp != NULL) {
+      if (cp != nullptr) {
         const char* eol;
-        while ((eol = strchr(cp, '\n')) != NULL) {
+        while ((eol = strchr(cp, '\n')) != nullptr) {
           size_t llen = pointer_delta(eol, cp, sizeof(char));
           st->print("%.*s", (int)llen, cp);
           st->cr();
@@ -429,7 +429,7 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   } else if (is_ccstr()) {
     st->print("-XX:%s=", _name);
     const char* cp = get_ccstr();
-    if (cp != NULL) {
+    if (cp != nullptr) {
       // Need to turn embedded '\n's back into separate arguments
       // Not so efficient to print one character at a time,
       // but the choice is to do the transformation to a buffer
@@ -460,7 +460,7 @@ const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
     case JVMFlag::INVALID_FLAG: return "INVALID_FLAG";
     case JVMFlag::ERR_OTHER: return "ERR_OTHER";
     case JVMFlag::SUCCESS: return "SUCCESS";
-    default: ShouldNotReachHere(); return "NULL";
+    default: ShouldNotReachHere(); return "nullptr";
   }
 }
 
@@ -543,7 +543,7 @@ const int EXPERIMENTAL = JVMFlag::KIND_EXPERIMENTAL;
 
 static JVMFlag flagTable[NUM_JVMFlagsEnum + 1] = {
   MATERIALIZE_ALL_FLAGS
-  JVMFlag() // The iteration code wants a flag with a NULL name at the end of the table.
+  JVMFlag() // The iteration code wants a flag with a null name at the end of the table.
 };
 
 // We want flagTable[] to be completely initialized at C++ compilation time, which requires
@@ -572,33 +572,33 @@ const int JVMFlag::type_signatures[] = {
 // Search the flag table for a named flag
 JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, bool return_flag) {
   JVMFlag* flag = JVMFlagLookup::find(name, length);
-  if (flag != NULL) {
+  if (flag != nullptr) {
     // Found a matching entry.
     // Don't report notproduct and develop flags in product builds.
     if (flag->is_constant_in_binary()) {
-      return (return_flag ? flag : NULL);
+      return (return_flag ? flag : nullptr);
     }
     // Report locked flags only if allowed.
     if (!(flag->is_unlocked() || flag->is_unlocker())) {
       if (!allow_locked) {
         // disable use of locked flags, e.g. diagnostic, experimental,
         // etc. until they are explicitly unlocked
-        return NULL;
+        return nullptr;
       }
     }
     return flag;
   }
   // JVMFlag name is not in the flag table
-  return NULL;
+  return nullptr;
 }
 
 JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
   float VMOptionsFuzzyMatchSimilarity = 0.7f;
-  JVMFlag* match = NULL;
+  JVMFlag* match = nullptr;
   float score;
   float max_score = -1;
 
-  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
+  for (JVMFlag* current = &flagTable[0]; current->_name != nullptr; current++) {
     score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);
     if (score > max_score) {
       max_score = score;
@@ -606,18 +606,18 @@ JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked
     }
   }
 
-  if (match == NULL) {
-    return NULL;
+  if (match == nullptr) {
+    return nullptr;
   }
 
   if (!(match->is_unlocked() || match->is_unlocker())) {
     if (!allow_locked) {
-      return NULL;
+      return nullptr;
     }
   }
 
   if (max_score < VMOptionsFuzzyMatchSimilarity) {
-    return NULL;
+    return nullptr;
   }
 
   return match;
@@ -690,7 +690,7 @@ void JVMFlag::assert_valid_flag_enum(JVMFlagsEnum i) {
 }
 
 void JVMFlag::check_all_flag_declarations() {
-  for (JVMFlag* current = &flagTable[0]; current->_name != NULL; current++) {
+  for (JVMFlag* current = &flagTable[0]; current->_name != nullptr; current++) {
     int flags = static_cast<int>(current->_flags);
     // Backwards compatibility. This will be relaxed/removed in JDK-7123237.
     int mask = JVMFlag::KIND_DIAGNOSTIC | JVMFlag::KIND_MANAGEABLE | JVMFlag::KIND_EXPERIMENTAL;
@@ -728,7 +728,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
 
   // Sort
   JVMFlag** array = NEW_C_HEAP_ARRAY_RETURN_NULL(JVMFlag*, length, mtArguments);
-  if (array != NULL) {
+  if (array != nullptr) {
     for (size_t i = 0; i < length; i++) {
       array[i] = &flagTable[i];
     }

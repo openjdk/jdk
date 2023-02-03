@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,8 +99,8 @@ inline interpreterState frame::get_interpreterState() const {
   return zero_interpreterframe()->interpreter_state();
 }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return &(get_interpreterState()->_locals);
+inline intptr_t* frame::interpreter_frame_locals() const {
+  return get_interpreterState()->_locals;
 }
 
 inline intptr_t* frame::interpreter_frame_bcp_addr() const {

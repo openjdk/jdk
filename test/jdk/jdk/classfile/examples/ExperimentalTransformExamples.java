@@ -32,9 +32,9 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 
-import jdk.classfile.*;
-import jdk.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
 /**
  * ExperimentalTransformExamples

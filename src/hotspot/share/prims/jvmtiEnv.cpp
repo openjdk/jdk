@@ -583,7 +583,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
     // ThreadsListHandle that is common to both thread-specific and
     // global code paths.
 
-    JvmtiEventController::set_user_enabled(this, (JavaThread*) NULL, (oop) NULL, event_type, enabled);
+    JvmtiEventController::set_user_enabled(this, NULL, (oop) NULL, event_type, enabled);
   } else {
     // We have a specified event_thread.
     ThreadsListHandle tlh;

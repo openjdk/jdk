@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import jdk.internal.util.ArraysSupport;
 import sun.nio.cs.UTF_32BE;
 import sun.util.calendar.CalendarDate;
 import sun.util.calendar.CalendarSystem;
@@ -1257,11 +1258,7 @@ public class DerValue {
      */
     @Override
     public int hashCode() {
-        int result = tag;
-        for (int i = start; i < end; i++) {
-            result = 31 * result + buffer[i];
-        }
-        return result;
+        return ArraysSupport.vectorizedHashCode(buffer, start, end - start, tag, ArraysSupport.T_BYTE);
     }
 
     /**

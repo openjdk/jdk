@@ -500,9 +500,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
       const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-      if ((toop != NULL && toop->is_interface()) || (tkls != NULL && tkls->is_interface())) {
-        s2.print("  Interface:");
-      } else if (toop) {
+      if (toop) {
         s2.print("  Oop:");
       } else if (tkls) {
         s2.print("  Klass:");
@@ -530,7 +528,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       if (index >= 10) {
         print_prop(short_name, "PA");
       } else {
-        sprintf(buffer, "P%d", index);
+        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
         print_prop(short_name, buffer);
       }
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
@@ -546,7 +544,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, "%d", value);
+          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -560,7 +558,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, JLONG_FORMAT, value);
+          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -623,7 +621,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
     if (_chaitin && _chaitin != (PhaseChaitin *)((intptr_t)0xdeadbeef)) {
       buffer[0] = 0;
-      _chaitin->dump_register(node, buffer);
+      _chaitin->dump_register(node, buffer, sizeof(buffer));
       print_prop("reg", buffer);
       uint lrg_id = 0;
       if (node->_idx < _chaitin->_lrg_map.size()) {

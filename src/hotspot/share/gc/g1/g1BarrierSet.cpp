@@ -107,22 +107,28 @@ void G1BarrierSet::invalidate(MemRegion mr) {
   }
   volatile CardValue* byte = _card_table->byte_for(mr.start());
   CardValue* last_byte = _card_table->byte_for(mr.last());
-  // skip initial young cards
-  for (; byte <= last_byte && *byte == G1CardTable::g1_young_card_val(); byte++);
 
-  if (byte <= last_byte) {
-    OrderAccess::storeload();
-    // Enqueue if necessary.
-    Thread* thr = Thread::current();
-    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
-    G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
-    for (; byte <= last_byte; byte++) {
-      CardValue bv = *byte;
-      if ((bv != G1CardTable::g1_young_card_val()) &&
-          (bv != G1CardTable::dirty_card_val())) {
-        *byte = G1CardTable::dirty_card_val();
-        qset.enqueue(queue, byte);
-      }
+  // skip young gen cards
+  if (*byte == G1CardTable::g1_young_card_val()) {
+    // MemRegion should not span multiple regions for the young gen.
+    DEBUG_ONLY(HeapRegion* containing_hr = G1CollectedHeap::heap()->heap_region_containing(mr.start());)
+    assert(containing_hr->is_young(), "it should be young");
+    assert(containing_hr->is_in(mr.start()), "it should contain start");
+    assert(containing_hr->is_in(mr.last()), "it should also contain last");
+    return;
+  }
+
+  OrderAccess::storeload();
+  // Enqueue if necessary.
+  Thread* thr = Thread::current();
+  G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+  G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(thr);
+  for (; byte <= last_byte; byte++) {
+    CardValue bv = *byte;
+    assert(bv != G1CardTable::g1_young_card_val(), "Invalid card");
+    if (bv != G1CardTable::dirty_card_val()) {
+      *byte = G1CardTable::dirty_card_val();
+      qset.enqueue(queue, byte);
     }
   }
 }

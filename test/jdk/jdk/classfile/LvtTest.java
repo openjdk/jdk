@@ -31,7 +31,7 @@
  */
 import helpers.ClassRecord;
 import helpers.Transforms;
-import jdk.classfile.*;
+import jdk.internal.classfile.*;
 
 import java.io.*;
 import java.lang.constant.ClassDesc;
@@ -43,13 +43,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import jdk.classfile.AccessFlags;
-import jdk.classfile.Attributes;
-import jdk.classfile.attribute.SourceFileAttribute;
-import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.constantpool.Utf8Entry;
-import jdk.classfile.instruction.LocalVariable;
-import jdk.classfile.instruction.LocalVariableType;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.instruction.LocalVariable;
+import jdk.internal.classfile.instruction.LocalVariableType;
 import java.lang.reflect.AccessFlag;
 import org.junit.jupiter.api.Test;
 
@@ -62,9 +62,9 @@ import static helpers.TestUtil.ExpectedLvRecord;
 import static helpers.TestUtil.ExpectedLvtRecord;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import static jdk.classfile.Opcode.*;
-import static jdk.classfile.Opcode.INVOKEVIRTUAL;
-import static jdk.classfile.TypeKind.VoidType;
+import static jdk.internal.classfile.Opcode.*;
+import static jdk.internal.classfile.Opcode.INVOKEVIRTUAL;
+import static jdk.internal.classfile.TypeKind.VoidType;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LvtTest {

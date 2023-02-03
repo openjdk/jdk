@@ -426,9 +426,8 @@ static JNINativeMethod CONT_methods[] = {
 };
 
 void CONT_RegisterNativeMethods(JNIEnv *env, jclass cls) {
-    Thread* thread = Thread::current();
-    assert(thread->is_Java_thread(), "");
-    ThreadToNativeFromVM trans((JavaThread*)thread);
+    JavaThread* thread = JavaThread::current();
+    ThreadToNativeFromVM trans(thread);
     int status = env->RegisterNatives(cls, CONT_methods, sizeof(CONT_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK, "register jdk.internal.vm.Continuation natives");
     guarantee(!env->ExceptionOccurred(), "register jdk.internal.vm.Continuation natives");

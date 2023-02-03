@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,14 +122,14 @@ class ChangeSwitchPad : public ChangeItem {
 Relocator::Relocator(const methodHandle& m, RelocatorListener* listener) {
   set_method(m);
   set_code_length(method()->code_size());
-  set_code_array(NULL);
+  set_code_array(nullptr);
   // Allocate code array and copy bytecodes
   if (!expand_code_array(0)) {
     // Should have at least MAX_METHOD_LENGTH available or the verifier
     // would have failed.
     ShouldNotReachHere();
   }
-  set_compressed_line_number_table(NULL);
+  set_compressed_line_number_table(nullptr);
   set_compressed_line_number_table_size(0);
   _listener = listener;
 }
@@ -173,7 +173,7 @@ methodHandle Relocator::insert_space_at(int bci, int size, u_char inst_buffer[],
 
 
 bool Relocator::handle_code_changes() {
-  assert(_changes != NULL, "changes vector must be initialized");
+  assert(_changes != nullptr, "changes vector must be initialized");
 
   while (!_changes->is_empty()) {
     // Inv: everything is aligned.
@@ -501,7 +501,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
           ClassLoaderData* loader_data = method()->method_holder()->class_loader_data();
           Array<u1>* new_data = insert_hole_at(loader_data, frame_offset + 1, 2, data);
-          if (new_data == NULL) {
+          if (new_data == nullptr) {
             return; // out-of-memory?
           }
           // Deallocate old data
@@ -517,7 +517,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
             same_frame_extended::create_at(frame_addr, new_offset_delta);
           } else {
             same_locals_1_stack_item_extended::create_at(
-              frame_addr, new_offset_delta, NULL);
+              frame_addr, new_offset_delta, nullptr);
             // the verification_info_type should already be at the right spot
           }
         }
@@ -539,7 +539,7 @@ void Relocator::adjust_stack_map_table(int bci, int delta) {
 
       // Full frame has stack values too
       full_frame* ff = frame->as_full_frame();
-      if (ff != NULL) {
+      if (ff != nullptr) {
         address eol = (address)types;
         number_of_types = ff->stack_slots(eol);
         types = ff->stack(eol);
@@ -574,7 +574,7 @@ bool Relocator::expand_code_array(int delta) {
   if (!new_code_array) return false;
 
   // Expanding current array
-  if (code_array() != NULL) {
+  if (code_array() != nullptr) {
     memcpy(new_code_array, code_array(), code_length());
   } else {
     // Initial copy. Copy directly from Method*

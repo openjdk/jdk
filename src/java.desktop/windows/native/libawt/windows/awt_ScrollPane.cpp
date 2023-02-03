@@ -209,8 +209,8 @@ void AwtScrollPane::RecalcSizes(int parentWidth, int parentHeight,
     }
 
     /* Determine border width without scrollbars. */
-    int horzBorder = ::GetSystemMetrics(SM_CXEDGE);;
-    int vertBorder = ::GetSystemMetrics(SM_CYEDGE);;
+    int horzBorder = ::GetSystemMetrics(SM_CXEDGE);
+    int vertBorder = ::GetSystemMetrics(SM_CYEDGE);
 
     parentWidth -= (horzBorder * 2);
     parentHeight -= (vertBorder * 2);

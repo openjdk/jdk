@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
+class KlassToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
@@ -75,16 +76,16 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
   static void check_allowed_klass(InstanceKlass* ik);
  public:
   KlassSubGraphInfo(Klass* k, bool is_full_module_graph) :
-    _k(k),  _subgraph_object_klasses(NULL),
-    _subgraph_entry_fields(NULL),
+    _k(k),  _subgraph_object_klasses(nullptr),
+    _subgraph_entry_fields(nullptr),
     _is_full_module_graph(is_full_module_graph),
     _has_non_early_klasses(false) {}
 
   ~KlassSubGraphInfo() {
-    if (_subgraph_object_klasses != NULL) {
+    if (_subgraph_object_klasses != nullptr) {
       delete _subgraph_object_klasses;
     }
-    if (_subgraph_entry_fields != NULL) {
+    if (_subgraph_entry_fields != nullptr) {
       delete _subgraph_entry_fields;
     }
   };
@@ -100,7 +101,7 @@ class KlassSubGraphInfo: public CHeapObj<mtClass> {
                                 bool is_closed_archive);
   void add_subgraph_object_klass(Klass *orig_k);
   int num_subgraph_object_klasses() {
-    return _subgraph_object_klasses == NULL ? 0 :
+    return _subgraph_object_klasses == nullptr ? 0 :
            _subgraph_object_klasses->length();
   }
   bool is_full_module_graph() const { return _is_full_module_graph; }
@@ -124,7 +125,7 @@ class ArchivedKlassSubGraphInfoRecord {
   Array<Klass*>* _subgraph_object_klasses;
  public:
   ArchivedKlassSubGraphInfoRecord() :
-    _k(NULL), _entry_field_records(NULL), _subgraph_object_klasses(NULL) {}
+    _k(nullptr), _entry_field_records(nullptr), _subgraph_object_klasses(nullptr) {}
   void init(KlassSubGraphInfo* info);
   Klass* klass() const { return _k; }
   Array<int>* entry_field_records() const { return _entry_field_records; }
@@ -156,6 +157,11 @@ public:
   }
 
   static bool is_subgraph_root_class(InstanceKlass* ik);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
@@ -247,6 +253,7 @@ private:
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
   static void verify_reachable_objects_from(oop obj, bool is_archived) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
+  static void check_default_subgraph_classes();
 
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
@@ -269,17 +276,26 @@ private:
 
   static SeenObjectsTable *_seen_objects_table;
 
+  // The "default subgraph" is the root of all archived objects that do not belong to any
+  // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
+  //    - interned strings
+  //    - Klass::java_mirror()
+  //    - ConstantPool::resolved_references()
+  static KlassSubGraphInfo* _default_subgraph_info;
+
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
+  static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
+  static KlassToOopHandleTable* _scratch_java_mirror_table;
 
   static void init_seen_objects_table() {
-    assert(_seen_objects_table == NULL, "must be");
+    assert(_seen_objects_table == nullptr, "must be");
     _seen_objects_table = new (mtClass)SeenObjectsTable();
   }
   static void delete_seen_objects_table() {
-    assert(_seen_objects_table != NULL, "must be");
+    assert(_seen_objects_table != nullptr, "must be");
     delete _seen_objects_table;
-    _seen_objects_table = NULL;
+    _seen_objects_table = nullptr;
   }
 
   // Statistics (for one round of start_recording_subgraph ... done_recording_subgraph)
@@ -301,7 +317,6 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
 
-  static void check_module_oop(oop orig_module_obj);
   static void copy_roots();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -332,34 +347,35 @@ private:
       _original_object_table =
         new (mtClass)OriginalObjectTable();
     } else {
-      _original_object_table = NULL;
+      _original_object_table = nullptr;
     }
   }
   static void destroy_archived_object_cache() {
     delete _archived_object_cache;
-    _archived_object_cache = NULL;
-    if (_original_object_table != NULL) {
+    _archived_object_cache = nullptr;
+    if (_original_object_table != nullptr) {
       delete _original_object_table;
-      _original_object_table = NULL;
+      _original_object_table = nullptr;
     }
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
   }
   static oop get_original_object(oop archived_object) {
-    assert(_original_object_table != NULL, "sanity");
+    assert(_original_object_table != nullptr, "sanity");
     oop* r = _original_object_table->get(archived_object);
-    if (r == NULL) {
-      return NULL;
+    if (r == nullptr) {
+      return nullptr;
     } else {
       return *r;
     }
   }
 
+  static bool is_too_large_to_archive(oop o);
   static oop find_archived_heap_object(oop obj);
   static oop archive_object(oop obj);
 
-  static void archive_klass_objects();
+  static void archive_java_mirrors();
 
   static void archive_objects(GrowableArray<MemRegion>* closed_regions,
                               GrowableArray<MemRegion>* open_regions);
@@ -374,6 +390,10 @@ private:
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
   static ResourceBitMap calculate_ptrmap(MemRegion region); // marks all the native pointers
   static void add_to_dumped_interned_strings(oop string);
+
+  // Scratch objects for archiving Klass::java_mirror()
+  static void set_scratch_java_mirror(Klass* k, oop mirror);
+  static void remove_scratch_objects(Klass* k);
 
   // We use the HeapShared::roots() array to make sure that objects stored in the
   // archived heap regions are not prematurely collected. These roots include:
@@ -404,6 +424,7 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void run_full_gc_in_vm_thread() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_heap_region(int idx) {
@@ -425,7 +446,7 @@ private:
 
   // Returns the address of a heap object when it's mapped at the
   // runtime requested address. See comments in archiveBuilder.hpp.
-  static address to_requested_address(address dumptime_addr) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static address to_requested_address(address dumptime_addr) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static oop to_requested_address(oop dumptime_oop) {
     return cast_to_oop(to_requested_address(cast_from_oop<address>(dumptime_oop)));
   }

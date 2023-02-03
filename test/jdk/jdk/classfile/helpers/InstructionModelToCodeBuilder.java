@@ -28,9 +28,9 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.classfile.CodeBuilder;
-import jdk.classfile.CodeElement;
-import jdk.classfile.instruction.*;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.instruction.*;
 
 public class InstructionModelToCodeBuilder {
 

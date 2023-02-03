@@ -24,9 +24,13 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include <iostream>
-#include "unittest.hpp"
 #include "utilities/ostream.hpp"
+
+#include "utilities/vmassert_uninstall.hpp"
+#include <iostream>
+#include "utilities/vmassert_reinstall.hpp"
+
+#include "unittest.hpp"
 
 class ShenandoahNumberSeqTest: public ::testing::Test {
  protected:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,8 @@ public class TestRelativeModuleLinks extends JavadocTester {
 
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
-        TestRelativeModuleLinks tester = new TestRelativeModuleLinks();
-        tester.runTests(m -> new Object[] { Paths.get(m.getName()) });
+        var tester = new TestRelativeModuleLinks();
+        tester.runTests();
     }
 
     public TestRelativeModuleLinks() {

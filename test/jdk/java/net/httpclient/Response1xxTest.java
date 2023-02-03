@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 import javax.net.ssl.SSLContext;
-
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
@@ -49,14 +50,9 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8292044
  * @summary Tests behaviour of HttpClient when server responds with 102 or 103 status codes
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
  * @run testng/othervm -Djdk.internal.httpclient.debug=true
  * *                   -Djdk.httpclient.HttpClient.log=headers,requests,responses,errors Response1xxTest
  */

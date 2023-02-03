@@ -31,11 +31,11 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-import static jdk.classfile.Classfile.ACC_STATIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

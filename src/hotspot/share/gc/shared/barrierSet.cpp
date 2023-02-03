@@ -59,7 +59,7 @@ static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_
   } else {
     // The GC needs nmethod entry barriers to deal with continuations
     // and code cache unloading
-    return NOT_ARM32(new BarrierSetNMethod()) ARM32_ONLY(nullptr);
+    return new BarrierSetNMethod();
   }
 }
 
@@ -88,7 +88,7 @@ BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
 void BarrierSet::on_thread_attach(Thread* thread) {
   BarrierSetNMethod* bs_nm = barrier_set_nmethod();
   if (bs_nm != nullptr) {
-    thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
+    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
   }
 }
 

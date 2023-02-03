@@ -28,7 +28,7 @@
  * @summary Testing Classfile Util.
  * @run junit UtilTest
  */
-import jdk.classfile.impl.Util;
+import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
