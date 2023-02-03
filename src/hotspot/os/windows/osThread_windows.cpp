@@ -28,7 +28,7 @@
 
 void OSThread::pd_initialize() {
   set_thread_handle(nullptr);
-  set_thread_id(nullptr);
+  set_thread_id(0);
   set_interrupt_event(nullptr);
 }
 
