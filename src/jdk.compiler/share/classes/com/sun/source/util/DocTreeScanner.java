@@ -293,7 +293,6 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return null;
     }
 
-
     /**
      * {@inheritDoc}
      *

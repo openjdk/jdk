@@ -106,6 +106,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link EscapeTree}
          * representing some escaped documentation text.
+         *
+         * @since 21
          */
         ESCAPE,
 

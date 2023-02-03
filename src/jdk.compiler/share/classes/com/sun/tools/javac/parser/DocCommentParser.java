@@ -228,14 +228,18 @@ public class DocCommentParser {
                     break;
 
                 case '@':
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
                     if (newline) {
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
                             addPendingText(trees, bp - 1);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
-                            nextChar();
                             newline = false;
+                            nextChar();
                             textStart = bp;
                             break;
                         } else {
@@ -246,8 +250,8 @@ public class DocCommentParser {
                         addPendingText(trees, bp - 1);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
-                        nextChar();
                         newline = false;
+                        nextChar();
                         textStart = bp;
                         break;
                     }
@@ -316,6 +320,8 @@ public class DocCommentParser {
         newline = false;
         nextChar();
         if (ch == '@') {
+            // check for context-sensitive escape-sequence
+            //   {@@
             if (peekChar() == '@') {
                 if (textStart == -1) {
                     textStart = bp - 1;
@@ -659,14 +665,18 @@ public class DocCommentParser {
                     break;
 
                 case '@':
+                    // check for context-sensitive escape sequences:
+                    //   newline whitespace @@
+                    //   newline whitespace @*
+                    //   *@/
                     if (newline) {
                         char peek = peekChar();
                         if (peek == '@' || peek == '*') {
                             addPendingText(trees, bp - 1);
                             nextChar();
                             trees.add(m.at(bp - 1).newEscapeTree(ch));
-                            nextChar();
                             newline = false;
+                            nextChar();
                             textStart = bp;
                             break;
                         }
@@ -674,8 +684,8 @@ public class DocCommentParser {
                         addPendingText(trees, bp - 1);
                         nextChar();
                         trees.add(m.at(bp - 1).newEscapeTree('/'));
-                        nextChar();
                         newline = false;
+                        nextChar();
                         textStart = bp;
                         break;
                     }

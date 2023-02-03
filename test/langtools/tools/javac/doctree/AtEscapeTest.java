@@ -97,4 +97,52 @@ DocComment[DOC_COMMENT, pos:5
 ]
 */
 
+    /**
+     * abc.
+     * not an escaped tag @@tag;
+     * xyz.
+     */
+    void not_escaped_tag() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc.]
+  body: 1
+    Text[TEXT, pos:7, not_an_escaped_tag_@@tag;|_xyz.]
+  block tags: empty
+]
+*/
+
+    /**
+     * abc.
+     * not an escaped asterisk @*;
+     * xyz.
+     */
+    void not_escaped_asterisk() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc.]
+  body: 1
+    Text[TEXT, pos:7, not_an_escaped_a...sterisk_@*;|_xyz.]
+  block tags: empty
+]
+*/
+
+    /**
+     * abc.
+     * not an escaped solidus @/.
+     * xyz.
+     */
+    void not_escaped_solidus() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc.]
+  body: 1
+    Text[TEXT, pos:7, not_an_escaped_s...olidus_@/.|_xyz.]
+  block tags: empty
+]
+*/
+
 }
