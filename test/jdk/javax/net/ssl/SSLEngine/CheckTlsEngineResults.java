@@ -26,7 +26,7 @@
  * @bug 4948079
  * @summary Verify return values from SSLEngine wrap/unwrap (TLSv1.2) operations
  *
- * @run main CheckStatus
+ * @run main CheckTlsEngineResults
  *
  * @author Brad Wetmore
  */
@@ -41,7 +41,7 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
-public class CheckStatus {
+public class CheckTlsEngineResults {
 
     private final SSLContext SSL_CONTEXT;
     private SSLEngine clientEngine;    // client
@@ -631,7 +631,7 @@ public class CheckStatus {
     }
 
     public static void main(String args[]) throws Exception {
-        CheckStatus cs = new CheckStatus();
+        CheckTlsEngineResults cs = new CheckTlsEngineResults();
         cs.test();
         System.out.println("Test Passed.");
     }
@@ -642,7 +642,7 @@ public class CheckStatus {
      * **********************************************************
      */
 
-    public CheckStatus() throws Exception {
+    public CheckTlsEngineResults() throws Exception {
         SSL_CONTEXT = getSSLContext(keyFilename, trustFilename);
     }
 
