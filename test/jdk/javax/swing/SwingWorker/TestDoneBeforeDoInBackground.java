@@ -95,8 +95,8 @@ public class TestDoneBeforeDoInBackground {
                             worker.getState() != SwingWorker.StateValue.DONE) {
                         throw new RuntimeException(
                             "listener called after doInBackground is finised" +
-			   " but before State changed to DONE");
-		    }
+                            " but before State changed to DONE");
+                    }
                 }
             });
         worker.execute();
