@@ -186,23 +186,6 @@ public class Utils {
     }
 
     /**
-     * Search for the given method in the given class.
-     *
-     * @param te     Class to search into.
-     * @param method Method to be searched.
-     *
-     * @return Method found, null otherwise.
-     */
-    public ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
-        for (ExecutableElement m : getMethods(te)) {
-            if (executableMembersEqual(method, m)) {
-                return m;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Test whether a class is a subclass of another class.
      *
      * @param t1 the candidate subclass
@@ -211,17 +194,6 @@ public class Utils {
      */
     public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
         return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
-    }
-
-    /**
-     * @param e1 the first method to compare.
-     * @param e2 the second method to compare.
-     * @return true if member1 overrides/hides or is overridden/hidden by member2.
-     */
-    private boolean executableMembersEqual(ExecutableElement e1, ExecutableElement e2) {
-        return elementUtils.overrides(e1, e2, getEnclosingTypeElement(e1)) ||
-                elementUtils.overrides(e2, e1, getEnclosingTypeElement(e2)) ||
-                e1.equals(e2);
     }
 
     /**

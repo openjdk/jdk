@@ -1047,12 +1047,40 @@ public class VisibleMemberTable {
             TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             for (TypeMirror interfaceType : intfacs) {
-                ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
+                ExecutableElement found = findMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null && !methods.contains(found)) {
                     methods.add(found);
                     interfaces.put(found, interfaceType);
                 }
             }
+        }
+
+        /**
+         * Search for the given method in the given class.
+         *
+         * @param te     Class to search into.
+         * @param method Method to be searched.
+         *
+         * @return Method found, null otherwise.
+         */
+        private ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
+            for (ExecutableElement m : utils.getMethods(te)) {
+                if (executableMembersEqual(method, m)) {
+                    return m;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * @param e1 the first method to compare.
+         * @param e2 the second method to compare.
+         * @return true if member1 overrides/hides or is overridden/hidden by member2.
+         */
+        private boolean executableMembersEqual(ExecutableElement e1, ExecutableElement e2) {
+            return utils.elementUtils.overrides(e1, e2, utils.getEnclosingTypeElement(e1)) ||
+                    utils.elementUtils.overrides(e2, e1, utils.getEnclosingTypeElement(e2)) ||
+                    e1.equals(e2);
         }
 
         /**
