@@ -4343,7 +4343,7 @@ jint os::init_2(void) {
                                                                  "GetThreadDescription"));
 #endif
   }
-  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == null ? " not" : "");
+  log_info(os, thread)("The SetThreadDescription API is%s available.", _SetThreadDescription == nullptr ? " not" : "");
 
 
   return JNI_OK;
