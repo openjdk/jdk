@@ -5219,15 +5219,10 @@ public class Attr extends JCTree.Visitor {
 
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null) {
-            Env<AttrContext> errEnv = env.dup(env.tree);
-            ResultInfo prevReturnResult = errEnv.info.returnResult;
-            try {
-                errEnv.info.returnResult = unknownExprInfo;
-                for (JCTree err : tree.errs)
-                    attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
-            } finally {
-                errEnv.info.returnResult = prevReturnResult;
-            }
+            Env<AttrContext> errEnv = env.dup(env.tree, env.info.dup());
+            errEnv.info.returnResult = unknownExprInfo;
+            for (JCTree err : tree.errs)
+                attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
         }
         result = tree.type = syms.errType;
     }
