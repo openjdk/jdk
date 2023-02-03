@@ -52,29 +52,9 @@ public class Uppercase {
     public static class ProviderImpl extends Provider {
         public ProviderImpl() {
             super("ProviderImpl", "1.0", "ProviderImpl");
+            // It does not matter if we really provider an implementation
             put("MessageDigest." + ALG, "Uppercase$MessageDigestImpl");
             put("Alg.Alias.MessageDigest.OID." + OID, ALG);
-        }
-    }
-    public static class MessageDigestImpl extends MessageDigestSpi {
-        @Override
-        protected void engineUpdate(byte input) {
-
-        }
-
-        @Override
-        protected void engineUpdate(byte[] input, int offset, int len) {
-
-        }
-
-        @Override
-        protected byte[] engineDigest() {
-            return new byte[0];
-        }
-
-        @Override
-        protected void engineReset() {
-
         }
     }
 }
