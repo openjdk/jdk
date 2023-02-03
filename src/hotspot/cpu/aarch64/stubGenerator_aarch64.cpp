@@ -7279,13 +7279,13 @@ typedef uint32_t u32;
 
       // First propagate carries through u2:u1:u0
       __ extr(rscratch1, u0._hi, u0._lo, 52);
-      __ bfc(u0._lo, 52, 64-52);
-      __ bfc(u0._hi, 0, 52);
+      DEBUG_ONLY(__ bfc(u0._lo, 52, 64-52));
+      DEBUG_ONLY(__ bfc(u0._hi, 0, 52));
       __ adds(u1._lo, u1._lo, rscratch1);
       __ adc(u1._hi, u1._hi, zr);
       __ extr(rscratch1, u1._hi, u1._lo, 52);
-      __ bfc(u1._lo, 52, 64-52);
-      __ bfc(u1._hi, 0, 52);
+      DEBUG_ONLY(__ bfc(u1._lo, 52, 64-52));
+      DEBUG_ONLY(__ bfc(u1._hi, 0, 52));
       __ adds(u2._lo, u2._lo, rscratch1);
       __ adc(u2._hi, u2._hi, zr);
 
@@ -7296,11 +7296,11 @@ typedef uint32_t u32;
       __ ubfx(rscratch1, rscratch1, 0, 52);
       __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
       __ add(u0._lo, u0._lo, rscratch1);
-      __ bfc(u2._lo, 26, 64-26);
-      __ bfc(u2._hi, 0, 14);
+      DEBUG_ONLY(__ bfc(u2._lo, 26, 64-26));
+      DEBUG_ONLY(__ bfc(u2._hi, 0, 14));
 
       __ ubfx(rscratch1, u2._hi, 14, 50);
-      __ bfc(u2._hi, 14, 50);
+      DEBUG_ONLY(__ bfc(u2._hi, 14, 50));
       __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
       __ add(u1._lo, u1._lo, rscratch1);
 
