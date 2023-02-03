@@ -699,6 +699,11 @@ public class IRNode {
         beforeMatchingNameRegex(MUL_VL, "MulVL");
     }
 
+    public static final String MUL_VI = PREFIX + "MUL_VI" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_VI, "MulVI");
+    }
+
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
     static {
         superWordNodes(MUL_REDUCTION_VD, "MulReductionVD");
