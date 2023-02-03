@@ -662,8 +662,7 @@ void SuperWord::find_adjacent_refs() {
         }
       }
     } else {
-      if (same_velt_type(mem_ref, best_align_to_mem_ref) &&
-          _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type())) {
+      if (_phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type())) {
         // Can't allow vectorization of unaligned memory accesses with the
         // same type since it could be overlapped accesses to the same array.
         create_pack = false;
@@ -681,8 +680,7 @@ void SuperWord::find_adjacent_refs() {
               // Skip when we are looking at same memory operation.
               continue;
             }
-            if (same_velt_type(mr, mem_ref) &&
-                _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(mr->adr_type()) &&
+            if (_phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(mr->adr_type()) &&
                 memory_alignment(mr, iv_adjustment) != 0)
               create_pack = false;
           }
