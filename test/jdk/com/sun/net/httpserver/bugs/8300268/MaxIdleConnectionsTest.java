@@ -62,7 +62,7 @@ public class MaxIdleConnectionsTest {
     @BeforeAll
     void before() throws Exception {
         maxIdleConnections = Integer.getInteger("sun.net.httpserver.maxIdleConnections");
-        totalConnections = maxIdleConnections+1;
+        totalConnections = maxIdleConnections + 1;
         reqFinishedProcessing = new CountDownLatch(totalConnections);
         server = startServer(reqFinishedProcessing);
     }
@@ -81,10 +81,9 @@ public class MaxIdleConnectionsTest {
 
         final List<Future<Void>> responses = new ArrayList<>();
         try (final ExecutorService requestIssuer = Executors.newFixedThreadPool(totalConnections)) {
-            // issue requests
             for (int i = 1; i <= totalConnections; i++) {
                 final URL requestURL = new URL("http://" + host + ":" + port + "/MaxIdleConnectionTest/" + i);
-                final Future<Void> result = requestIssuer.submit((Callable<Void>) () -> {
+                final Future<Void> result = requestIssuer.submit(() -> {
                     System.out.println("Issuing request " + requestURL);
                     final URLConnection conn = requestURL.openConnection();
                     try (final InputStream is = conn.getInputStream()) {
@@ -94,7 +93,7 @@ public class MaxIdleConnectionsTest {
                 });
                 responses.add(result);
             }
-            // wait for all these issues requests to reach each of the handlers
+            // wait for all the requests to reach each of the handlers
             System.out.println("Waiting for all " + totalConnections + " requests to reach" +
                     " the server side request handler");
             reqFinishedProcessing.await();
@@ -109,7 +108,7 @@ public class MaxIdleConnectionsTest {
         // assert that the expected number of idle connections has been reached
         // meaning the extra connection was served but then closed
         int idleConnectionCount = HttpServerAccess.getIdleConnectionCount(server);
-        System.out.println("count "+idleConnectionCount);
+        System.out.println("count " + idleConnectionCount);
         assertEquals(maxIdleConnections, idleConnectionCount);
     }
 

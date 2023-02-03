@@ -64,7 +64,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static sun.net.httpserver.Utils.isValidName;
