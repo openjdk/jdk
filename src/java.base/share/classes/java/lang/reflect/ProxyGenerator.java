@@ -25,9 +25,9 @@
 
 package java.lang.reflect;
 
-import jdk.classfile.*;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.attribute.ExceptionsAttribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.attribute.ExceptionsAttribute;
 import jdk.internal.misc.VM;
 import sun.security.action.GetBooleanAction;
 
@@ -46,7 +46,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static jdk.classfile.Classfile.*;
+import static jdk.internal.classfile.Classfile.*;
 
 /**
  * ProxyGenerator contains the code to generate a dynamic proxy class
