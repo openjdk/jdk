@@ -986,7 +986,7 @@ static void _flush_log() {
 static void _fatal() {
   Thread* thread = Thread::current_or_null_safe();
   if (thread != nullptr && thread->is_Java_thread()) {
-    JavaThread* jthread = (JavaThread*) thread;
+    JavaThread* jthread = JavaThread::cast(thread);
     JVMCIRuntime* runtime = jthread->libjvmci_runtime();
     if (runtime != nullptr) {
       int javaVM_id = runtime->get_shared_library_javavm_id();

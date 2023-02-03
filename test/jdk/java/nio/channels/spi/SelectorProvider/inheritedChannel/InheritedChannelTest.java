@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4673940 4930794 8211842
+ * @bug 4673940 4930794 8211842 6914801
  * @summary Unit tests for inetd feature
  * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
@@ -35,6 +35,7 @@
  *        jdk.test.lib.process.*
  *        UnixSocketTest StateTest StateTestService EchoTest EchoService
  *        UnixDomainChannelTest CloseTest Launcher Util
+ *        CheckIPv6Test CheckIPv6Service
  * @run testng/othervm/native InheritedChannelTest
  * @key intermittent
  */
@@ -79,6 +80,7 @@ public class InheritedChannelTest {
             { "UnixSocketTest", List.of(UnixSocketTest.class.getName())},
             { "StateTest", List.of(StateTest.class.getName(), "-Dtest.classes="+TEST_CLASSES)},
             { "EchoTest",  List.of(EchoTest.class.getName())  },
+            { "CheckIPv6Test",  List.of(CheckIPv6Test.class.getName())  },
             { "CloseTest", List.of(CloseTest.class.getName()) },
 
             // run StateTest with a SecurityManager set

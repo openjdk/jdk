@@ -478,7 +478,7 @@ class PhaseChaitin : public PhaseRegAlloc {
 
   Block **_blks;                // Array of blocks sorted by frequency for coalescing
 
-  float _high_frequency_lrg;    // Frequency at which LRG will be spilled for debug info
+  double _high_frequency_lrg;   // Frequency at which LRG will be spilled for debug info
 
 #ifndef PRODUCT
   bool _trace_spilling;
@@ -495,7 +495,7 @@ public:
   // Do all the real work of allocate
   void Register_Allocate();
 
-  float high_frequency_lrg() const { return _high_frequency_lrg; }
+  double high_frequency_lrg() const { return _high_frequency_lrg; }
 
   // Used when scheduling info generated, not in general register allocation
   bool _scheduling_info_generated;
@@ -803,7 +803,7 @@ private:
 
 public:
   void dump_frame() const;
-  char *dump_register(const Node* n, char* buf) const;
+  char *dump_register(const Node* n, char* buf, size_t buf_size) const;
 private:
   static void print_chaitin_statistics();
 #endif // not PRODUCT

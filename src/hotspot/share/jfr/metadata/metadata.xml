@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -577,7 +577,7 @@
   <Event name="Compilation" category="Java Virtual Machine, Compiler" label="Compilation"
          description="Results of method compilation attempts"
          thread="true">
-    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="int" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
     <Field type="ushort" name="compileLevel" label="Compilation Level" />
@@ -591,7 +591,7 @@
          description="Describes various phases of the compilation process like inlining or string optimization related phases"
          thread="true">
     <Field type="CompilerPhaseType" name="phase" label="Compile Phase" />
-    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="int" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="ushort" name="phaseLevel" label="Phase Level" />
   </Event>
 
@@ -599,7 +599,7 @@
          description="In case a JIT compilation failed, a compilation failure is triggered, reporting the reason"
          thread="true" startTime="false">
     <Field type="string" name="failureMessage" label="Failure Message" />
-    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="int" name="compileId" label="Compilation Identifier" relation="CompileId" />
   </Event>
 
   <Type name="CalleeMethod">
@@ -611,7 +611,7 @@
   <Event name="CompilerInlining" category="Java Virtual Machine, Compiler, Optimization" label="Method Inlining"
          description="Describes the result of a method inlining attempt"
          thread="true" startTime="false">
-    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="int" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="Method" name="caller" label="Caller Method" />
     <Field type="CalleeMethod" name="callee" struct="true" label="Callee Method" />
     <Field type="boolean" name="succeeded" label="Succeeded" />
@@ -637,7 +637,7 @@
   <Event name="Deoptimization" category="Java Virtual Machine, Compiler" label="Deoptimization"
          description="Describes the detection of an uncommon situation in a compiled method which may lead to deoptimization of the method"
          thread="true" stackTrace="true" startTime="false">
-    <Field type="uint" name="compileId" label="Compilation Identifier" relation="CompileId" />
+    <Field type="int" name="compileId" label="Compilation Identifier" relation="CompileId" />
     <Field type="CompilerType" name="compiler" label="Compiler" />
     <Field type="Method" name="method" label="Method" />
     <Field type="int" name="lineNumber" label="Line Number" />
@@ -789,7 +789,9 @@
     <Field type="string" name="commandLine" label="Command Line" />
   </Event>
 
-  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information" period="endChunk">
+  <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on"
+         period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
     <Field type="uint" name="sockets" label="Sockets" />
@@ -797,14 +799,18 @@
     <Field type="uint" name="hwThreads" label="Hardware Threads" />
   </Event>
 
-  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter" period="endChunk">
+  <Event name="CPUTimeStampCounter" category="Operating System, Processor" label="CPU Time Stamp Counter"
+         description="Information about the CPU time stamp mechanism / (RD)TSC"
+         period="endChunk">
     <Field type="boolean" name="fastTimeEnabled" label="Fast Time" />
     <Field type="boolean" name="fastTimeAutoEnabled" label="Trusted Platform" />
     <Field type="long" contentType="hertz" name="osFrequency" label="OS Frequency" />
     <Field type="long" contentType="hertz" name="fastTimeFrequency" label="Fast Time Frequency" />
   </Event>
 
-  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load" description="OS CPU Load" period="everyChunk">
+  <Event name="CPULoad" category="Operating System, Processor" label="CPU Load"
+         description="Information about the recent CPU usage of the JVM process"
+         period="everyChunk">
     <Field type="float" contentType="percentage" name="jvmUser" label="JVM User" />
     <Field type="float" contentType="percentage" name="jvmSystem" label="JVM System" />
     <Field type="float" contentType="percentage" name="machineTotal" label="Machine Total" />
@@ -1144,11 +1150,14 @@
     <Field type="ulong" contentType="bytes" name="size" label="Size Written" />
   </Event>
 
-  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" stackTrace="true" thread="true">
-    <Field type="string" name="destination" label="Destination" />
+  <Event name="HeapDump" category="Java Virtual Machine, Diagnostics" label="Heap Dump" description="Information about a successfully written Java heap dump"
+    stackTrace="true" thread="true">
+    <Field type="string" name="destination" label="Destination Path of the Dump" />
     <Field type="long" name="size" label="Size" />
     <Field type="boolean" name="gcBeforeDump" label="GC Before Dump" />
-    <Field type="boolean" name="onOutOfMemoryError" label="On Out of Memory Error" />
+    <Field type="boolean" name="onOutOfMemoryError" label="Heap Dump on Out of Memory Error" />
+    <Field type="boolean" name="overwrite" label="Overwrite" description="Heap dump overwrites previous file location if it exists" />
+    <Field type="int" name="compression" label="Compression Level" description="Compression level of the dump, if larger than 0 we use gzip compression with this level" />
   </Event>
 
   <Event name="GCLocker" category="Java Virtual Machine, GC, Detailed" label="GC Locker" startTime="true" thread="true" stackTrace="true">

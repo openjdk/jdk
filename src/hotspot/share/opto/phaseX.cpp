@@ -1683,6 +1683,13 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
         }
       }
     }
+    if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+      assert(use->outcnt() <= 1, "OpaqueZeroTripGuard can't be shared");
+      if (use->outcnt() == 1) {
+        Node* cmp = use->unique_out();
+        _worklist.push(cmp);
+      }
+    }
   }
 }
 
@@ -1901,6 +1908,7 @@ void PhaseCCP::push_more_uses(Unique_Node_List& worklist, Node* parent, const No
   push_loadp(worklist, use);
   push_and(worklist, parent, use);
   push_cast_ii(worklist, parent, use);
+  push_opaque_zero_trip_guard(worklist, use);
 }
 
 
@@ -2018,6 +2026,12 @@ void PhaseCCP::push_cast_ii(Unique_Node_List& worklist, const Node* parent, cons
         push_if_not_bottom_type(worklist, cast_ii);
       }
     }
+  }
+}
+
+void PhaseCCP::push_opaque_zero_trip_guard(Unique_Node_List& worklist, const Node* use) const {
+  if (use->Opcode() == Op_OpaqueZeroTripGuard) {
+    push_if_not_bottom_type(worklist, use->unique_out());
   }
 }
 

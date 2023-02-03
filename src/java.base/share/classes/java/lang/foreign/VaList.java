@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.foreign.abi.aarch64.linux.LinuxAArch64VaList;
 import jdk.internal.foreign.abi.aarch64.macos.MacOsAArch64VaList;
+import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64VaList;
 import jdk.internal.foreign.abi.x64.sysv.SysVVaList;
 import jdk.internal.foreign.abi.x64.windows.WinVaList;
 import jdk.internal.javac.PreviewFeature;
@@ -104,7 +105,7 @@ import jdk.internal.reflect.Reflection;
  * @since 19
  */
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, SharedUtils.EmptyVaList {
+public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList, MacOsAArch64VaList, LinuxRISCV64VaList, SharedUtils.EmptyVaList {
 
     /**
      * Reads the next value as an {@code int} and advances this variable argument list's position. The behavior of this
@@ -247,9 +248,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @throws WrongThreadException          if this method is called from a thread {@code T},
      *                                       such that {@code scope.isAccessibleBy(T) == false}.
      * @throws UnsupportedOperationException if the underlying native platform is not supported.
-     * @throws IllegalCallerException if access to this method occurs from a module {@code M} and the command line option
-     * {@code --enable-native-access} is specified, but does not mention the module name {@code M}, or
-     * {@code ALL-UNNAMED} in case {@code M} is an unnamed module.
+     * @throws IllegalCallerException If the caller is in a module that does not have native access enabled.
      */
     @CallerSensitive
     static VaList ofAddress(long address, SegmentScope scope) {
@@ -301,7 +300,7 @@ public sealed interface VaList permits WinVaList, SysVVaList, LinuxAArch64VaList
      * @since 19
      */
     @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
-    sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder {
+    sealed interface Builder permits WinVaList.Builder, SysVVaList.Builder, LinuxAArch64VaList.Builder, MacOsAArch64VaList.Builder, LinuxRISCV64VaList.Builder {
 
         /**
          * Writes an {@code int} value to the variable argument list being constructed.

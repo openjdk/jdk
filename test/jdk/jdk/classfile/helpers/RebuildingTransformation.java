@@ -28,13 +28,13 @@ import java.lang.constant.ClassDesc;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
-import jdk.classfile.*;
-import jdk.classfile.attribute.*;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.instruction.*;
-import jdk.classfile.jdktypes.ModuleDesc;
-import jdk.classfile.jdktypes.PackageDesc;
-import jdk.classfile.components.CodeStackTracker;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.*;
+import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.components.CodeStackTracker;
 
 class RebuildingTransformation {
 

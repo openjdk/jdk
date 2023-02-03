@@ -24,13 +24,13 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.ClassfileElement;
-import jdk.classfile.CodeModel;
-import jdk.classfile.CompoundElement;
-import jdk.classfile.MethodModel;
-import jdk.classfile.instruction.LoadInstruction;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassfileElement;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.CompoundElement;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.instruction.LoadInstruction;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;

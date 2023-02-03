@@ -3,7 +3,7 @@
  * @summary Testing Classfile ClassEntry lists methods.
  * @run junit ClassEntryTest
  */
-import jdk.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ClassEntry;
 import org.junit.jupiter.api.Test;
 
 import java.lang.constant.ClassDesc;

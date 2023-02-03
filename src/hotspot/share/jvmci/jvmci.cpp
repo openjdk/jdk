@@ -108,7 +108,7 @@ void JVMCI::initialize_compiler(TRAPS) {
   }
   JVMCIRuntime* runtime;
   if (UseJVMCINativeLibrary) {
-      runtime = JVMCI::compiler_runtime((JavaThread*) THREAD);
+      runtime = JVMCI::compiler_runtime(THREAD);
   } else {
       runtime = JVMCI::java_runtime();
   }

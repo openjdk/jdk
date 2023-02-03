@@ -38,14 +38,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.classfile.*;
-import jdk.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import org.junit.jupiter.api.Test;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
-import jdk.classfile.impl.DirectClassBuilder;
+import jdk.internal.classfile.impl.DirectClassBuilder;
 
 import static org.junit.jupiter.api.Assertions.*;
 

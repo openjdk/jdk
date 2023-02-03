@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,6 +692,12 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   set_annotations(NULL);
 
   SystemDictionaryShared::handle_class_unloading(this);
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (DumpSharedSpaces) {
+    HeapShared::remove_scratch_objects(this);
+  }
+#endif
 }
 
 bool InstanceKlass::is_record() const {

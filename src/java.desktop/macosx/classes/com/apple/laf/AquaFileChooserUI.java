@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,6 +591,11 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     protected JButton getApproveButton(final JFileChooser fc) {
         return fApproveButton;
+    }
+
+    @Override
+    public JButton getDefaultButton(JFileChooser fc) {
+        return getApproveButton(fc);
     }
 
     public int getApproveButtonMnemonic(final JFileChooser fc) {
@@ -1303,7 +1308,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             while (f.getParent() != null) {
                 path.add(f);
                 f = getFileChooser().getFileSystemView().createFileObject(f.getParent());
-            };
+            }
 
             // Add root file (the desktop) to the model
             final File[] roots = getFileChooser().getFileSystemView().getRoots();

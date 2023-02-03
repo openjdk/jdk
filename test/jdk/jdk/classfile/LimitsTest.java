@@ -30,7 +30,7 @@
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
 class LimitsTest {

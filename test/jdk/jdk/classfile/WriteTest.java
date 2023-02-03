@@ -32,20 +32,20 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import helpers.TestConstants;
-import jdk.classfile.AccessFlags;
+import jdk.internal.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.Classfile;
-import jdk.classfile.TypeKind;
-import jdk.classfile.Label;
-import jdk.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.Label;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
 import org.junit.jupiter.api.Test;
 
 import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.classfile.Opcode.*;
-import static jdk.classfile.TypeKind.IntType;
-import static jdk.classfile.TypeKind.ReferenceType;
-import static jdk.classfile.TypeKind.VoidType;
+import static jdk.internal.classfile.Opcode.*;
+import static jdk.internal.classfile.TypeKind.IntType;
+import static jdk.internal.classfile.TypeKind.ReferenceType;
+import static jdk.internal.classfile.TypeKind.VoidType;
 
 class WriteTest {
 
