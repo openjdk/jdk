@@ -7207,20 +7207,51 @@ typedef uint32_t u32;
     __ adc(sum._hi, sum._hi, rscratch2);
   }
 
-  void poly1305_multiply(RegPair U[], Register S[], Register R[],
+  void poly1305_multiply(RegPair u[], Register s[], Register r[],
                          RegSetIterator<Register> scratch) {
       // Compute (R2 << 26) * 5.
       Register RR2 = *++scratch;
-      __ lsl(RR2, R[2], 26);
+      __ lsl(RR2, r[2], 26);
       __ add(RR2, RR2, RR2, __ LSL, 2);
       // Compute (S2 << 26) * 5.
       Register RS2 = *++scratch;
-      __ lsl(RS2, S[2], 26);
+      __ lsl(RS2, s[2], 26);
       __ add(RS2, RS2, RS2, __ LSL, 2);
 
-      wide_mul(U[0], S[0], R[0]); wide_madd(U[0], RS2, R[1]);  wide_madd(U[0], S[1], RR2);
-      wide_mul(U[1], S[0], R[1]); wide_madd(U[1], S[1], R[0]); wide_madd(U[1], RS2, R[2]);
-      wide_mul(U[2], S[0], R[2]); wide_madd(U[2], S[1], R[1]); wide_madd(U[2], S[2], R[0]);
+      wide_mul(u[0], s[0], r[0]); wide_madd(u[0], RS2, r[1]);  wide_madd(u[0], s[1], RR2);
+      wide_mul(u[1], s[0], r[1]); wide_madd(u[1], s[1], r[0]); wide_madd(u[1], RS2, r[2]);
+      wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
+  }
+
+  void poly1305_reduce(RegPair u[]) {
+      // Partial reduction mod 2**130 - 5
+
+      // First propagate carries through u2:u1:u0
+      __ extr(rscratch1, u[0]._hi, u[0]._lo, 52);
+      __ bfc(u[0]._lo, 52, 64-52);
+      DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
+      __ adds(u[1]._lo, u[1]._lo, rscratch1);
+      __ adc(u[1]._hi, u[1]._hi, zr);
+      __ extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+      __ bfc(u[1]._lo, 52, 64-52);
+      DEBUG_ONLY(__ bfc(u[1]._hi, 0, 52));
+      __ adds(u[2]._lo, u[2]._lo, rscratch1);
+      __ adc(u[2]._hi, u[2]._hi, zr);
+
+      // Then multiply the high part of u2 by 5 and add it back to u1:u0
+      DEBUG_ONLY(__ nop());
+
+      __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+      __ ubfx(rscratch1, rscratch1, 0, 52);
+      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      __ add(u[0]._lo, u[0]._lo, rscratch1);
+      __ bfc(u[2]._lo, 26, 64-26);
+      DEBUG_ONLY(__ bfc(u[2]._hi, 0, 14));
+
+      __ ubfx(rscratch1, u[2]._hi, 14, 50);
+      DEBUG_ONLY(__ bfc(u[2]._hi, 14, 50));
+      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      __ add(u[1]._lo, u[1]._lo, rscratch1);
   }
 
   address generate_poly1305_processBlocks1() {
@@ -7304,34 +7335,36 @@ typedef uint32_t u32;
       // // Recycle registers
       // regs = (regs.remaining() + RR2 + RS2).begin();
 
-      // Partial reduction mod 2**130 - 5
+      poly1305_reduce(U);
 
-      // First propagate carries through u2:u1:u0
-      __ extr(rscratch1, u0._hi, u0._lo, 52);
-      __ bfc(u0._lo, 52, 64-52);
-      DEBUG_ONLY(__ bfc(u0._hi, 0, 52));
-      __ adds(u1._lo, u1._lo, rscratch1);
-      __ adc(u1._hi, u1._hi, zr);
-      __ extr(rscratch1, u1._hi, u1._lo, 52);
-      __ bfc(u1._lo, 52, 64-52);
-      DEBUG_ONLY(__ bfc(u1._hi, 0, 52));
-      __ adds(u2._lo, u2._lo, rscratch1);
-      __ adc(u2._hi, u2._hi, zr);
+      // // Partial reduction mod 2**130 - 5
 
-      // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      DEBUG_ONLY(__ nop());
+      // // First propagate carries through u2:u1:u0
+      // __ extr(rscratch1, u0._hi, u0._lo, 52);
+      // __ bfc(u0._lo, 52, 64-52);
+      // DEBUG_ONLY(__ bfc(u0._hi, 0, 52));
+      // __ adds(u1._lo, u1._lo, rscratch1);
+      // __ adc(u1._hi, u1._hi, zr);
+      // __ extr(rscratch1, u1._hi, u1._lo, 52);
+      // __ bfc(u1._lo, 52, 64-52);
+      // DEBUG_ONLY(__ bfc(u1._hi, 0, 52));
+      // __ adds(u2._lo, u2._lo, rscratch1);
+      // __ adc(u2._hi, u2._hi, zr);
 
-      __ extr(rscratch1, u2._hi, u2._lo, 26);
-      __ ubfx(rscratch1, rscratch1, 0, 52);
-      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      __ add(u0._lo, u0._lo, rscratch1);
-      __ bfc(u2._lo, 26, 64-26);
-      DEBUG_ONLY(__ bfc(u2._hi, 0, 14));
+      // // Then multiply the high part of u2 by 5 and add it back to u1:u0
+      // DEBUG_ONLY(__ nop());
 
-      __ ubfx(rscratch1, u2._hi, 14, 50);
-      DEBUG_ONLY(__ bfc(u2._hi, 14, 50));
-      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      __ add(u1._lo, u1._lo, rscratch1);
+      // __ extr(rscratch1, u2._hi, u2._lo, 26);
+      // __ ubfx(rscratch1, rscratch1, 0, 52);
+      // __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      // __ add(u0._lo, u0._lo, rscratch1);
+      // __ bfc(u2._lo, 26, 64-26);
+      // DEBUG_ONLY(__ bfc(u2._hi, 0, 14));
+
+      // __ ubfx(rscratch1, u2._hi, 14, 50);
+      // DEBUG_ONLY(__ bfc(u2._hi, 14, 50));
+      // __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      // __ add(u1._lo, u1._lo, rscratch1);
 
       // Sum now in U2:U1:U0.
       // Dead: U0HI, U1HI.
