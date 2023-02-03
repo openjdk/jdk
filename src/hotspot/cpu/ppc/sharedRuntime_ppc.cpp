@@ -1983,10 +1983,18 @@ static void gen_continuation_yield(MacroAssembler* masm,
   __ cmpdi(CCR0, R3_RET, 0);
   __ bne(CCR0, L_pinned);
 
+  // yield succeeded
+
   // Pop frames of continuation including this stub's frame
   __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
   // The frame pushed by gen_continuation_enter is on top now again
   continuation_enter_cleanup(masm);
+
+  // Pop frame and return
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ blr();
 
   __ bind(L_pinned); // pinned -- return to caller
 
