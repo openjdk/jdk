@@ -432,7 +432,7 @@ NSValue *javaIntArrayToNSRangeValue(JNIEnv* env, jintArray array) {
         // Note: Java will not be on the stack here so a java exception can't happen and no need to call ExceptionCheck.
         NSLog(@"%s failed calling GetIntArrayElements", __FUNCTION__);
         return nil;
-    };
+    }
     NSValue *value = [NSValue valueWithRange:NSMakeRange(values[0], values[1] - values[0])];
     (*env)->ReleaseIntArrayElements(env, array, values, 0);
     return value;

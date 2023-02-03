@@ -169,3 +169,7 @@ vmTestbase/nsk/stress/strace/strace002.java 8288912 macosx-x64,windows-x64
 vmTestbase/nsk/stress/strace/strace003.java 8297824 macosx-x64,windows-x64
 vmTestbase/nsk/stress/strace/strace004.java 8297824 macosx-x64,windows-x64
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
+
+
+Lilliput temporary:
+compiler/c2/irTests/TestVectorizationNotRun.java 8301785 generic-all

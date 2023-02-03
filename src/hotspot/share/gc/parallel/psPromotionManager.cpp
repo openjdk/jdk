@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,11 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 
-PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = NULL;
-PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_depth = NULL;
-PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = NULL;
-PSOldGen*                      PSPromotionManager::_old_gen = NULL;
-MutableSpace*                  PSPromotionManager::_young_space = NULL;
+PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = nullptr;
+PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_depth = nullptr;
+PreservedMarksSet*             PSPromotionManager::_preserved_marks_set = nullptr;
+PSOldGen*                      PSPromotionManager::_old_gen = nullptr;
+MutableSpace*                  PSPromotionManager::_young_space = nullptr;
 
 void PSPromotionManager::initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -59,7 +59,7 @@ void PSPromotionManager::initialize() {
 
   // To prevent false sharing, we pad the PSPromotionManagers
   // and make sure that the first instance starts at a cache line.
-  assert(_manager_array == NULL, "Attempt to initialize twice");
+  assert(_manager_array == nullptr, "Attempt to initialize twice");
   _manager_array = PaddedArray<PSPromotionManager, mtGC>::create_unfreeable(promotion_manager_num);
 
   _stack_array_depth = new PSScannerTasksQueueSet(ParallelGCThreads);
@@ -71,7 +71,7 @@ void PSPromotionManager::initialize() {
   // The VMThread gets its own PSPromotionManager, which is not available
   // for work stealing.
 
-  assert(_preserved_marks_set == NULL, "Attempt to initialize twice");
+  assert(_preserved_marks_set == nullptr, "Attempt to initialize twice");
   _preserved_marks_set = new PreservedMarksSet(true /* in_c_heap */);
   _preserved_marks_set->init(promotion_manager_num);
   for (uint i = 0; i < promotion_manager_num; i += 1) {
@@ -90,12 +90,12 @@ bool PSPromotionManager::should_scavenge(narrowOop* p, bool check_to_space) {
 
 PSPromotionManager* PSPromotionManager::gc_thread_promotion_manager(uint index) {
   assert(index < ParallelGCThreads, "index out of range");
-  assert(_manager_array != NULL, "Sanity");
+  assert(_manager_array != nullptr, "Sanity");
   return &_manager_array[index];
 }
 
 PSPromotionManager* PSPromotionManager::vm_thread_promotion_manager() {
-  assert(_manager_array != NULL, "Sanity");
+  assert(_manager_array != nullptr, "Sanity");
   return &_manager_array[0];
 }
 
@@ -193,7 +193,7 @@ PSPromotionManager::PSPromotionManager() {
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = 3 * _array_chunk_size / 2;
 
-  _preserved_marks = NULL;
+  _preserved_marks = nullptr;
 
   reset();
 }
@@ -218,7 +218,7 @@ void PSPromotionManager::reset() {
 }
 
 void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_marks) {
-  assert(_preserved_marks == NULL, "do not set it twice");
+  assert(_preserved_marks == nullptr, "do not set it twice");
   _preserved_marks = preserved_marks;
 }
 
@@ -227,7 +227,8 @@ void PSPromotionManager::restore_preserved_marks() {
 }
 
 void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
-  totally_drain = totally_drain || (_target_stack_size == 0);
+  const uint threshold = totally_drain ? 0
+                                       : _target_stack_size;
 
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
@@ -236,19 +237,15 @@ void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
     // Drain overflow stack first, so other threads can steal from
     // claimed stack while we work.
     while (tq->pop_overflow(task)) {
-      process_popped_location_depth(task);
+      if (!tq->try_push_to_taskqueue(task)) {
+        process_popped_location_depth(task);
+      }
     }
 
-    if (totally_drain) {
-      while (tq->pop_local(task)) {
-        process_popped_location_depth(task);
-      }
-    } else {
-      while (tq->size() > _target_stack_size && tq->pop_local(task)) {
-        process_popped_location_depth(task);
-      }
+    while (tq->pop_local(task, threshold)) {
+      process_popped_location_depth(task);
     }
-  } while ((totally_drain && !tq->taskqueue_empty()) || !tq->overflow_empty());
+  } while (!tq->overflow_empty());
 
   assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
   assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
@@ -330,7 +327,7 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markWord obj_mark) {
   // this started.  If it is the same (i.e., no forwarding
   // pointer has been installed), then this thread owns
   // it.
-  if (obj->forward_to_self_atomic(obj_mark) == NULL) {
+  if (obj->forward_to_self_atomic(obj_mark) == nullptr) {
     // We won any races, we "own" this object.
     assert(obj == obj->forwardee(), "Sanity");
 

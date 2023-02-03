@@ -3173,7 +3173,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
         __ encode_heap_oop(rscratch2, obj);
         obj = rscratch2;
       }
-      assert_different_registers(obj, addr.base(), tmp, rscratch1, dst);
+      assert_different_registers(obj, addr.base(), tmp, rscratch1);
+      assert_different_registers(dst, addr.base(), tmp, rscratch1);
       __ lea(tmp, addr);
       (_masm->*xchg)(dst, obj, tmp);
       if (is_oop && UseCompressedOops) {

@@ -43,7 +43,7 @@ public class CompressedClassSpaceSize {
     static final long max_class_space_size = 2013265920;
 
     // Below this size class space will be silently enlarged to a multiple of this size
-    static final long min_class_space_size = 4194304;
+    static final long min_class_space_size = 16777216;
 
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb;

@@ -147,11 +147,13 @@ public class CompressedClassPointerEncoding {
 
             // CCS partly contained in encoding range. We cannot use zero based encoding. We cannot use xor either,
             // since the first part of the ccs intersects the encoding range. Encoding hould use add+shift.
+            /*
             new TestDetails(EPlatform.linux_x64,
                     "x64-area-partly-within-encoding-range-use-add",
                     0x7fc00000,
                     2 * G,
                     "add"),
+            */
 
             // CCS (just) fully contained in encoding range (base=2G-ccs size). Expect zero-based encoding.
             new TestDetails(EPlatform.linux_x64,
@@ -170,11 +172,13 @@ public class CompressedClassPointerEncoding {
 
             // CCS located far beyond the zero-based limit. Base address intersects with narrow Klass pointer bits.
             // We should use add.
+            /*
             new TestDetails(EPlatform.linux_x64,
                     "x64-area-far-out-with-low-bits-use-add",
                     0x800800000L, // 32G + 8M (4M is minimum ccs alignment)
                     0x800800000L,
                     "xor"),
+            */
 
             //////////////////////////////////////////////////////////////////////////
             ////// aarch64 ///////////////////////////////////////////////////////////

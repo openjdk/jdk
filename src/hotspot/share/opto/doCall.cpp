@@ -597,7 +597,7 @@ void Parse::do_call() {
 
   if (receiver_constraint != NULL) {
     Node* receiver_node = stack(sp() - nargs);
-    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint));
+    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = NULL;
     Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
     if (bad_type_ctrl != NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -50,7 +50,7 @@ void print_scaled_words_and_percentage(outputStream* st, size_t word_size, size_
 }
 
 static const char* display_unit_for_scale(size_t scale) {
-  const char* s = NULL;
+  const char* s = nullptr;
   switch(scale) {
     case 1: s = "bytes"; break;
     case BytesPerWord: s = "words"; break;

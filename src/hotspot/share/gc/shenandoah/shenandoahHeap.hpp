@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -144,29 +145,29 @@ public:
 public:
   static ShenandoahHeap* heap();
 
-  const char* name()          const { return "Shenandoah"; }
-  ShenandoahHeap::Name kind() const { return CollectedHeap::Shenandoah; }
+  const char* name()          const override { return "Shenandoah"; }
+  ShenandoahHeap::Name kind() const override { return CollectedHeap::Shenandoah; }
 
   ShenandoahHeap(ShenandoahCollectorPolicy* policy);
-  jint initialize();
-  void post_initialize();
+  jint initialize() override;
+  void post_initialize() override;
   void initialize_mode();
   void initialize_heuristics();
 
-  void initialize_serviceability();
+  void initialize_serviceability() override;
 
-  void print_on(outputStream* st)              const;
-  void print_extended_on(outputStream *st)     const;
-  void print_tracing_info()                    const;
+  void print_on(outputStream* st)              const override;
+  void print_extended_on(outputStream *st)     const override;
+  void print_tracing_info()                    const override;
   void print_heap_regions_on(outputStream* st) const;
 
-  void stop();
+  void stop() override;
 
-  void prepare_for_verify();
-  void verify(VerifyOption vo);
+  void prepare_for_verify() override;
+  void verify(VerifyOption vo) override;
 
 // WhiteBox testing support.
-  bool supports_concurrent_gc_breakpoints() const {
+  bool supports_concurrent_gc_breakpoints() const override {
     return true;
   }
 
@@ -195,11 +196,11 @@ public:
   void reset_bytes_allocated_since_gc_start();
 
   size_t min_capacity()      const;
-  size_t max_capacity()      const;
+  size_t max_capacity()      const override;
   size_t soft_max_capacity() const;
   size_t initial_capacity()  const;
-  size_t capacity()          const;
-  size_t used()              const;
+  size_t capacity()          const override;
+  size_t used()              const override;
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
@@ -216,9 +217,9 @@ public:
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkerThreads* workers() const;
-  WorkerThreads* safepoint_workers();
+  WorkerThreads* safepoint_workers() override;
 
-  void gc_threads_do(ThreadClosure* tcl) const;
+  void gc_threads_do(ThreadClosure* tcl) const override;
 
 // ---------- Heap regions handling machinery
 //
@@ -421,14 +422,14 @@ private:
   // For exporting to SA
   int                          _log_min_obj_alignment_in_bytes;
 public:
-  ShenandoahMonitoringSupport* monitoring_support() { return _monitoring_support;    }
-  GCMemoryManager* cycle_memory_manager()           { return &_cycle_memory_manager; }
-  GCMemoryManager* stw_memory_manager()             { return &_stw_memory_manager;   }
-  SoftRefPolicy* soft_ref_policy()                  { return &_soft_ref_policy;      }
+  ShenandoahMonitoringSupport* monitoring_support()          { return _monitoring_support;    }
+  GCMemoryManager* cycle_memory_manager()                    { return &_cycle_memory_manager; }
+  GCMemoryManager* stw_memory_manager()                      { return &_stw_memory_manager;   }
+  SoftRefPolicy* soft_ref_policy()                  override { return &_soft_ref_policy;      }
 
-  GrowableArray<GCMemoryManager*> memory_managers();
-  GrowableArray<MemoryPool*> memory_pools();
-  MemoryUsage memory_usage();
+  GrowableArray<GCMemoryManager*> memory_managers() override;
+  GrowableArray<MemoryPool*> memory_pools() override;
+  MemoryUsage memory_usage() override;
   GCTracer* tracer();
   ConcurrentGCTimer* gc_timer() const;
 
@@ -469,53 +470,50 @@ private:
 // and can be stubbed out.
 //
 public:
-  AdaptiveSizePolicy* size_policy() shenandoah_not_implemented_return(NULL);
-  bool is_maximal_no_gc() const shenandoah_not_implemented_return(false);
+  bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
 
-  bool is_in(const void* p) const;
+  bool is_in(const void* p) const override;
 
-  bool requires_barriers(stackChunkOop obj) const;
+  bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  void collect(GCCause::Cause cause);
-  void do_full_collection(bool clear_all_soft_refs);
+  void collect(GCCause::Cause cause) override;
+  void do_full_collection(bool clear_all_soft_refs) override;
 
   // Used for parsing heap during error printing
   HeapWord* block_start(const void* addr) const;
   bool block_is_obj(const HeapWord* addr) const;
-  bool print_location(outputStream* st, void* addr) const;
+  bool print_location(outputStream* st, void* addr) const override;
 
   // Used for native heap walkers: heap dumpers, mostly
-  void object_iterate(ObjectClosure* cl);
+  void object_iterate(ObjectClosure* cl) override;
   // Parallel heap iteration support
-  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint workers);
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint workers) override;
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
-  void keep_alive(oop obj);
+  void keep_alive(oop obj) override;
 
 // ---------- Safepoint interface hooks
 //
 public:
-  void safepoint_synchronize_begin();
-  void safepoint_synchronize_end();
+  void safepoint_synchronize_begin() override;
+  void safepoint_synchronize_end() override;
 
 // ---------- Code roots handling hooks
 //
 public:
-  void register_nmethod(nmethod* nm);
-  void unregister_nmethod(nmethod* nm);
-  void verify_nmethod(nmethod* nm) {}
+  void register_nmethod(nmethod* nm) override;
+  void unregister_nmethod(nmethod* nm) override;
+  void verify_nmethod(nmethod* nm) override {}
 
 // ---------- Pinning hooks
 //
 public:
   // Shenandoah supports per-object (per-region) pinning
-  bool supports_object_pinning() const { return true; }
-
-  oop pin_object(JavaThread* thread, oop obj);
-  void unpin_object(JavaThread* thread, oop obj);
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
@@ -523,7 +521,7 @@ public:
 // ---------- Concurrent Stack Processing support
 //
 public:
-  bool uses_stack_watermark_barrier() const { return true; }
+  bool uses_stack_watermark_barrier() const override { return true; }
 
 // ---------- Allocation support
 //
@@ -535,20 +533,20 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
-  HeapWord* mem_allocate(size_t size, bool* what);
+  HeapWord* mem_allocate(size_t size, bool* what) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
-                                               Metaspace::MetadataType mdtype);
+                                               Metaspace::MetadataType mdtype) override;
 
   void notify_mutator_alloc_words(size_t words, bool waste);
 
-  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size);
-  size_t tlab_capacity(Thread *thr) const;
-  size_t unsafe_max_tlab_alloc(Thread *thread) const;
-  size_t max_tlab_size() const;
-  size_t tlab_used(Thread* ignored) const;
+  HeapWord* allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) override;
+  size_t tlab_capacity(Thread *thr) const override;
+  size_t unsafe_max_tlab_alloc(Thread *thread) const override;
+  size_t max_tlab_size() const override;
+  size_t tlab_used(Thread* ignored) const override;
 
-  void ensure_parsability(bool retire_labs);
+  void ensure_parsability(bool retire_labs) override;
 
   void labs_make_parsable();
   void tlabs_retire(bool resize);

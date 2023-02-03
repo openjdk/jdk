@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -125,17 +125,17 @@ static const char* env_list[] = {
 
 // A simple parser for -XX:OnError, usage:
 //  ptr = OnError;
-//  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != NULL)
+//  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr) != nullptr)
 //     ... ...
 static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
-  if (ptr == NULL || *ptr == NULL) return NULL;
+  if (ptr == nullptr || *ptr == nullptr) return nullptr;
 
   const char* cmd = *ptr;
 
   // skip leading blanks or ';'
   while (*cmd == ' ' || *cmd == ';') cmd++;
 
-  if (*cmd == '\0') return NULL;
+  if (*cmd == '\0') return nullptr;
 
   const char * cmdend = cmd;
   while (*cmdend != '\0' && *cmdend != ';') cmdend++;
@@ -147,11 +147,11 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
 }
 
 static void print_bug_submit_message(outputStream *out, Thread *thread) {
-  if (out == NULL) return;
+  if (out == nullptr) return;
   const char *url = Arguments::java_vendor_url_bug();
-  if (url == NULL || *url == '\0')
+  if (url == nullptr || *url == '\0')
     url = JDK_Version::runtime_vendor_vm_bug_url();
-  if (url != NULL && *url != '\0') {
+  if (url != nullptr && *url != '\0') {
     out->print_raw_cr("# If you would like to submit a bug report, please visit:");
     out->print_raw   ("#   ");
     out->print_raw_cr(url);
@@ -183,7 +183,7 @@ char* VMError::error_string(char* buf, int buflen) {
                  "%s (0x%x) at pc=" PTR_FORMAT ", pid=%d, tid=" UINTX_FORMAT,
                  signame, _id, _pc,
                  os::current_process_id(), os::current_thread_id());
-  } else if (_filename != NULL && _lineno > 0) {
+  } else if (_filename != nullptr && _lineno > 0) {
     // skip directory names
     int n = jio_snprintf(buf, buflen,
                          "Internal Error at %s:%d, pid=%d, tid=" UINTX_FORMAT,
@@ -272,7 +272,7 @@ static bool add_if_absent(address value, address* list, int list_capacity) {
  * been printed. If the code unit is an InterpreterCodelet or StubCodeDesc, it is
  * only printed if `is_crash_pc` is true.
  *
- * @param printed array of code units that have already been printed (delimited by NULL entry)
+ * @param printed array of code units that have already been printed (delimited by nullptr entry)
  * @param printed_capacity the capacity of `printed`
  * @return true if the code unit was printed, false otherwise
  */
@@ -427,13 +427,13 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
    // VM version
    st->print_cr("#");
    JDK_Version::current().to_string(buf, buflen);
-   const char* runtime_name = JDK_Version::runtime_name() != NULL ?
+   const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
                                 JDK_Version::runtime_name() : "";
-   const char* runtime_version = JDK_Version::runtime_version() != NULL ?
+   const char* runtime_version = JDK_Version::runtime_version() != nullptr ?
                                    JDK_Version::runtime_version() : "";
-   const char* vendor_version = JDK_Version::runtime_vendor_version() != NULL ?
+   const char* vendor_version = JDK_Version::runtime_vendor_version() != nullptr ?
                                   JDK_Version::runtime_vendor_version() : "";
-   const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != NULL ?
+   const char* jdk_debug_level = VM_Version::printable_jdk_debug_level() != nullptr ?
                                    VM_Version::printable_jdk_debug_level() : "";
 
    st->print_cr("# JRE version: %s%s%s (%s) (%sbuild %s)", runtime_name,
@@ -672,7 +672,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print("%s", buf);
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
-      if (_siginfo != NULL && os::signal_sent_by_kill(_siginfo)) {
+      if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
         st->print(" (sent by kill)");
       }
     } else {
@@ -681,7 +681,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       } else {
         st->print("Out of Memory Error");
       }
-      if (_filename != NULL && _lineno > 0) {
+      if (_filename != nullptr && _lineno > 0) {
 #ifdef PRODUCT
         // In product mode chop off pathname
         const char *file = get_filename_only();
@@ -839,7 +839,7 @@ void VMError::report(outputStream* st, bool _verbose) {
       _verbose && _thread != nullptr && (_thread->is_Named_thread()))
     // printing Java thread stack trace if it is involved in GC crash
     Thread* thread = ((NamedThread *)_thread)->processed_thread();
-    if (thread != NULL && thread->is_Java_thread()) {
+    if (thread != nullptr && thread->is_Java_thread()) {
       JavaThread* jt = JavaThread::cast(thread);
       st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
       print_stack_trace(st, jt, buf, sizeof(buf), true);
@@ -1007,7 +1007,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing heap information", _verbose)
     GCLogPrecious::print_on_error(st);
 
-    if (Universe::heap() != NULL) {
+    if (Universe::heap() != nullptr) {
       Universe::heap()->print_on_error(st);
       st->cr();
     }
@@ -1300,7 +1300,7 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
   int fd = -1;
 
   // If possible, use specified pattern to construct log file name
-  if (pattern != NULL) {
+  if (pattern != nullptr) {
     fd = expand_and_open(pattern, overwrite_existing, buf, buflen, 0);
   }
 
@@ -1308,7 +1308,7 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
   // so use the default name in the current directory
   if (fd == -1) {
     const char* cwd = os::get_current_directory(buf, buflen);
-    if (cwd != NULL) {
+    if (cwd != nullptr) {
       size_t pos = strlen(cwd);
       int fsep_len = jio_snprintf(&buf[pos], buflen-pos, "%s", os::file_separator());
       pos += fsep_len;
@@ -1321,7 +1321,7 @@ int VMError::prepare_log_file(const char* pattern, const char* default_pattern, 
    // try temp directory if it exists.
    if (fd == -1) {
      const char* tmpdir = os::get_temp_directory();
-     if (tmpdir != NULL && strlen(tmpdir) > 0) {
+     if (tmpdir != nullptr && strlen(tmpdir) > 0) {
        int pos = jio_snprintf(buf, buflen, "%s%s", tmpdir, os::file_separator());
        if (pos > 0) {
          fd = expand_and_open(default_pattern, overwrite_existing, buf, buflen, pos);
@@ -1337,7 +1337,7 @@ void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void*
 {
   va_list detail_args;
   va_start(detail_args, detail_fmt);
-  report_and_die(sig, NULL, detail_fmt, detail_args, thread, pc, siginfo, context, NULL, 0, 0);
+  report_and_die(sig, nullptr, detail_fmt, detail_args, thread, pc, siginfo, context, nullptr, 0, 0);
   va_end(detail_args);
 }
 
@@ -1349,12 +1349,12 @@ void VMError::report_and_die(Thread* thread, unsigned int sig, address pc, void*
 void VMError::report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
                              const char* detail_fmt, va_list detail_args)
 {
-  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, thread, NULL, NULL, context, filename, lineno, 0);
+  report_and_die(INTERNAL_ERROR, message, detail_fmt, detail_args, thread, nullptr, nullptr, context, filename, lineno, 0);
 }
 
 void VMError::report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, va_list detail_args) {
-  report_and_die(vm_err_type, NULL, detail_fmt, detail_args, thread, NULL, NULL, NULL, filename, lineno, size);
+  report_and_die(vm_err_type, nullptr, detail_fmt, detail_args, thread, nullptr, nullptr, nullptr, filename, lineno, size);
 }
 
 void VMError::report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
@@ -1515,10 +1515,10 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
         } else {
           if (should_report_bug(id)) {
             st->print(", Internal Error (%s:%d)",
-              filename == NULL ? "??" : filename, lineno);
+              filename == nullptr ? "??" : filename, lineno);
           } else {
             st->print(", Out of Memory Error (%s:%d)",
-              filename == NULL ? "??" : filename, lineno);
+              filename == nullptr ? "??" : filename, lineno);
           }
         }
         st->print_cr("]");
@@ -1610,12 +1610,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   if (DumpReplayDataOnError && _thread && _thread->is_Compiler_thread() && !skip_replay) {
     skip_replay = true;
     ciEnv* env = ciEnv::current();
-    if (env != NULL) {
+    if (env != nullptr) {
       const bool overwrite = false; // We do not overwrite an existing replay file.
       int fd = prepare_log_file(ReplayDataFile, "replay_pid%p.log", overwrite, buffer, sizeof(buffer));
       if (fd != -1) {
         FILE* replay_data_file = os::fdopen(fd, "w");
-        if (replay_data_file != NULL) {
+        if (replay_data_file != nullptr) {
           fileStream replay_data_stream(replay_data_file, /*need_close=*/true);
           env->dump_replay_data_unsafe(&replay_data_stream);
           out.print_raw("#\n# Compiler replay data is saved as:\n# ");
@@ -1630,7 +1630,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   }
 
 #if INCLUDE_JVMCI
-  if (JVMCI::fatal_log_filename() != NULL) {
+  if (JVMCI::fatal_log_filename() != nullptr) {
     out.print_raw("#\n# The JVMCI shared library error report file is saved as:\n# ");
     out.print_raw_cr(JVMCI::fatal_log_filename());
   }
@@ -1658,7 +1658,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
     char* cmd;
     const char* ptr = OnError;
-    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
+    while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != nullptr){
       out.print_raw   ("#   Executing ");
 #if defined(LINUX) || defined(_ALLBSD_SOURCE)
       out.print_raw   ("/bin/sh -c ");
@@ -1676,7 +1676,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     }
 
     // done with OnError
-    OnError = NULL;
+    OnError = nullptr;
   }
 
   if (WINDOWS_ONLY(!UseOSErrorReporting) NOT_WINDOWS(true)) {
@@ -1719,7 +1719,7 @@ void VM_ReportJavaOutOfMemory::doit() {
 
   char* cmd;
   const char* ptr = OnOutOfMemoryError;
-  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != NULL){
+  while ((cmd = next_OnError_command(buffer, sizeof(buffer), &ptr)) != nullptr){
     tty->print("#   Executing ");
 #if defined(LINUX)
     tty->print  ("/bin/sh -c ");
@@ -1761,8 +1761,8 @@ bool VMError::check_timeout() {
   // Do not check for timeouts if we still have a message box to show to the
   // user or if there are OnError handlers to be run.
   if (ShowMessageBoxOnError
-      || (OnError != NULL && OnError[0] != '\0')
-      || Arguments::abort_hook() != NULL) {
+      || (OnError != nullptr && OnError[0] != '\0')
+      || Arguments::abort_hook() != nullptr) {
     return false;
   }
 
@@ -1804,7 +1804,7 @@ typedef void (*voidfun_t)();
 
 // Crash with an authentic sigfpe
 volatile int sigfpe_int = 0;
-static void crash_with_sigfpe() {
+static void ALWAYSINLINE crash_with_sigfpe() {
 
   // generate a native synchronous SIGFPE where possible;
   sigfpe_int = sigfpe_int/sigfpe_int;
@@ -1820,7 +1820,7 @@ static void crash_with_sigfpe() {
 } // end: crash_with_sigfpe
 
 // crash with sigsegv at non-null address.
-static void crash_with_segfault() {
+static void ALWAYSINLINE crash_with_segfault() {
 
   int* crash_addr = reinterpret_cast<int*>(VMError::segfault_address);
   *crash_addr = 1;

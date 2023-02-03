@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -227,6 +227,43 @@ juint StubRoutines::x86::_shuf_table_crc32_avx512[] =
     0x03020100UL, 0x07060504UL, 0x0b0a0908UL, 0x000e0d0cUL
 };
 #endif // _LP64
+
+jint StubRoutines::x86::_arrays_hashcode_powers_of_31[] =
+{
+     2111290369,
+    -2010103841,
+      350799937,
+       11316127,
+      693101697,
+     -254736545,
+      961614017,
+       31019807,
+    -2077209343,
+      -67006753,
+     1244764481,
+    -2038056289,
+      211350913,
+     -408824225,
+     -844471871,
+     -997072353,
+     1353309697,
+     -510534177,
+     1507551809,
+     -505558625,
+     -293403007,
+      129082719,
+    -1796951359,
+     -196513505,
+    -1807454463,
+     1742810335,
+      887503681,
+       28629151,
+         923521,
+          29791,
+            961,
+             31,
+              1,
+};
 
 #define D 32
 #define P 0x82F63B78 // Reflection of Castagnoli (0x11EDC6F41)

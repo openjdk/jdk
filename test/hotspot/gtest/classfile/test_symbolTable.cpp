@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,4 +117,11 @@ TEST_VM(SymbolTable, test_symbol_refcount_parallel) {
   TestThreadGroup<decltype(symbolThread)> ttg(symbolThread, symTestThreadCount);
   ttg.doit();
   ttg.join();
+}
+
+TEST_VM_FATAL_ERROR_MSG(SymbolTable, test_symbol_underflow, ".*refcount has gone to zero.*") {
+  Symbol* my_symbol = SymbolTable::new_symbol("my_symbol2023");
+  EXPECT_TRUE(my_symbol->refcount() == 1) << "Symbol refcount just created is 1";
+  my_symbol->decrement_refcount();
+  my_symbol->increment_refcount();  // Should crash even in PRODUCT mode
 }

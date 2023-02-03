@@ -477,7 +477,7 @@ public abstract class Spring {
         /*pp*/ boolean isCyclic(SpringLayout l) {
             return l.isCyclic(s1) || l.isCyclic(s2);
         }
-    };
+    }
 
      private static class SumSpring extends CompoundSpring {
          public SumSpring(Spring s1, Spring s2) {
