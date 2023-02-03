@@ -32,9 +32,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
-import jdk.classfile.Classfile;
-import jdk.classfile.ClassTransform;
-import jdk.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.instruction.BranchInstruction;
 
 /**
  * An implementation of {@link jdk.jshell.spi.ExecutionControl} which executes
