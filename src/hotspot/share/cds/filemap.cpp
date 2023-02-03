@@ -2663,13 +2663,13 @@ int FileMapHeader::compute_crc() {
 // This function should only be called during run time with UseSharedSpaces enabled.
 bool FileMapHeader::validate() {
   if (_obj_alignment != ObjectAlignmentInBytes) {
-    FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
+    FileMapInfo::fail_continue_nowarn("The shared archive file's ObjectAlignmentInBytes of %d"
                   " does not equal the current ObjectAlignmentInBytes of %d.",
                   _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
   if (_compact_strings != CompactStrings) {
-    FileMapInfo::fail_continue("The shared archive file's CompactStrings setting (%s)"
+    FileMapInfo::fail_continue_nowarn("The shared archive file's CompactStrings setting (%s)"
                   " does not equal the current CompactStrings setting (%s).",
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
