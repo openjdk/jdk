@@ -73,8 +73,6 @@ int main(int argc, char *argv[]){
    int result;
    pthread_attr_t attr;
    pthread_attr_init(&attr);
-   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-   pthread_attr_setguardsize(&attr, 0);
    pthread_attr_setstacksize(&attr, adjusted_stack_size);
    result = pthread_create(&id, &attr, run, (void *)argv);
    if (result != 0) {
