@@ -78,7 +78,7 @@ DCHolder::~DCHolder(){
     if (m_hMemoryDC) {
         ::DeleteDC(m_hMemoryDC);
     }
-};
+}
 
 
 HBITMAP DCHolder::CreateJavaContextBitmap(

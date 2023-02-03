@@ -163,6 +163,10 @@ AwtDataTransferer::GetPaletteBytes(HGDIOBJ hGdiObj, DWORD dwGdiObjType,
 
     LOGPALETTE* pLogPalette =
         (LOGPALETTE*)env->GetPrimitiveArrayCritical(paletteBytes, NULL);
+    if (pLogPalette == NULL) {
+        env->DeleteLocalRef(paletteBytes);
+        return NULL;
+    }
     PALETTEENTRY* pPalEntries = (PALETTEENTRY*)pLogPalette->palPalEntry;
 
     pLogPalette->palVersion = 0x300;

@@ -23,57 +23,74 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8286779
  * @summary Test limited/default_local.policy containing inconsistent entries
- * @run main/manual InconsistentEntries
+ * @library /test/lib
+ * @run testng/othervm InconsistentEntries
  */
+
+import org.testng.Assert;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import javax.crypto.*;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.Security;
 
 public class InconsistentEntries {
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("***********************************************************");
-        System.out.println("// This is a manual test to test a custom \"default_local.policy\" containing inconsistent entries");
-        System.out.println("// under a new subfolder \"$JAVA_HOME/conf/security/policy\" directory.");
-        System.out.println("// This test fails when the policy directory \"testlimited\" or the policy \"default_local.policy");
-        System.out.println("// does not exist or is empty.");
-        System.out.println("// - Create a new subfolder \"testlimited\" under \"$JAVA_HOME/conf/security/policy\"");
-        System.out.println("// - Place the custom \"default_local.policy\" under \"testlimited\" directory");
-        System.out.println("// - default_local.policy contains:");
-        System.out.println("//   grant {");
-        System.out.println("//       permission javax.crypto.CryptoAllPermission;");
-        System.out.println("//       permission javax.crypto.CryptoPermission \"DES\", 64;");
-        System.out.println("//   };");
-        System.out.println("***********************************************************");
+    private static final String JDK_HOME = System.getProperty("test.jdk");
+    private static final String TEST_SRC = System.getProperty("test.src");
+    private static final Path POLICY_DIR = Paths.get(JDK_HOME, "conf", "security",
+            "policy", "testlimited");
+    private static final Path POLICY_FILE = Paths.get(TEST_SRC, "default_local.policy");
 
+    Path targetFile = null;
+
+    @BeforeTest
+    public void setUp() throws IOException {
+        if (!POLICY_DIR.toFile().exists()) {
+            Files.createDirectory(POLICY_DIR);
+        }
+
+        targetFile = POLICY_DIR.resolve(POLICY_FILE.getFileName());
+        Files.copy(POLICY_FILE, targetFile, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @AfterTest
+    public void cleanUp() throws IOException {
+        Files.delete(targetFile);
+    }
+
+    @Test
+    public void test() throws Exception {
         String JAVA_HOME = System.getProperty("java.home");
         String FS = System.getProperty("file.separator");
         Path testlimited = Path.of(JAVA_HOME + FS + "conf" + FS + "security" +
                 FS + "policy" + FS + "testlimited");
         if (!Files.exists(testlimited)) {
-            throw new RuntimeException("custom policy subdirectory: testlimited does not exist");
+            throw new RuntimeException(
+                    "custom policy subdirectory: testlimited does not exist");
         }
 
         File testpolicy = new File(JAVA_HOME + FS + "conf" + FS + "security" +
                 FS + "policy" + FS + "testlimited" + FS + "default_local.policy");
         if (testpolicy.length() == 0) {
-            throw new RuntimeException("policy: default_local.policy does not exist or is empty");
+            throw new RuntimeException(
+                    "policy: default_local.policy does not exist or is empty");
         }
 
         Security.setProperty("crypto.policy", "testlimited");
 
-        try {
-            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
-            throw new RuntimeException("Should fail due to inconsistent entries in policy file");
-        } catch (ExceptionInInitializerError e) {
-            e.printStackTrace();
-            System.out.println("Test completed successfully");
-        }
+        Assert.assertThrows(ExceptionInInitializerError.class,
+                () -> Cipher.getMaxAllowedKeyLength("AES"));
     }
 }

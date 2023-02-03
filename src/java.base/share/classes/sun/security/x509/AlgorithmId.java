@@ -100,6 +100,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @param oid the identifier for the algorithm.
      * @param algparams the associated algorithm parameters, can be null.
+     * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public AlgorithmId(ObjectIdentifier oid, AlgorithmParameters algparams) {
         algid = oid;
@@ -108,9 +110,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
             try {
                 encodedParams = algParams.getEncoded();
             } catch (IOException ioe) {
-                // Ignore this at the moment. This exception can occur
-                // if AlgorithmParameters was not initialized yet. Will
-                // try to re-getEncoded() again later.
+                throw new IllegalStateException(
+                        "AlgorithmParameters not initialized or cannot be decoded",
+                        ioe);
             }
         }
     }
@@ -148,32 +150,16 @@ public class AlgorithmId implements Serializable, DerEncoder {
     }
 
     /**
-     * Marshal a DER-encoded "AlgorithmID" sequence on the DER stream.
-     */
-    public final void encode(DerOutputStream out) throws IOException {
-        derEncode(out);
-    }
-
-    /**
      * DER encode this object onto an output stream.
      * Implements the <code>DerEncoder</code> interface.
      *
-     * @param out
-     * the output stream on which to write the DER encoding.
-     *
-     * @exception IOException on encoding error.
+     * @param out the output stream on which to write the DER encoding.
      */
     @Override
-    public void derEncode (DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         DerOutputStream bytes = new DerOutputStream();
 
         bytes.putOID(algid);
-
-        // Re-getEncoded() from algParams if it was not initialized
-        if (algParams != null && encodedParams == null) {
-            encodedParams = algParams.getEncoded();
-            // If still not initialized. Let the IOE be thrown.
-        }
 
         if (encodedParams == null) {
             // Changes backed out for compatibility with Solaris
@@ -231,7 +217,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                 bytes.putNull();
             }
         } else {
-            bytes.write(encodedParams);
+            bytes.writeBytes(encodedParams);
         }
         out.write(DerValue.tag_Sequence, bytes);
     }
@@ -240,9 +226,9 @@ public class AlgorithmId implements Serializable, DerEncoder {
     /**
      * Returns the DER-encoded X.509 AlgorithmId as a byte array.
      */
-    public final byte[] encode() throws IOException {
+    public final byte[] encode() {
         DerOutputStream out = new DerOutputStream();
-        derEncode(out);
+        encode(out);
         return out.toByteArray();
     }
 
@@ -495,6 +481,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
      *
      * @param algparams the associated algorithm parameters.
      * @exception NoSuchAlgorithmException on error.
+     * @exception IllegalStateException if algparams is not initialized
+     *                                  or cannot be encoded
      */
     public static AlgorithmId get(AlgorithmParameters algparams)
             throws NoSuchAlgorithmException {

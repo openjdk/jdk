@@ -25,6 +25,9 @@
 #
 # If this properties file fails to load, the JDK implementation will throw
 # an unspecified error when initializing the java.security.Security class.
+# Properties in this file are typically parsed only once. If any of the
+# properties are modified, applications should be restarted to ensure the
+# changes are properly reflected.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
@@ -746,7 +749,8 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, secp224r1
 jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
-    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL
+    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+    ECDH
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,12 @@ class Handle {
   oop* _handle;
 
  protected:
-  oop     obj() const                            { return _handle == NULL ? (oop)NULL : *_handle; }
-  oop     non_null_obj() const                   { assert(_handle != NULL, "resolving NULL handle"); return *_handle; }
+  oop     obj() const                            { return _handle == nullptr ? (oop)nullptr : *_handle; }
+  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving nullptr handle"); return *_handle; }
 
  public:
   // Constructors
-  Handle()                                       { _handle = NULL; }
+  Handle()                                       { _handle = nullptr; }
   inline Handle(Thread* thread, oop obj);
 
   // General access
@@ -85,8 +85,8 @@ class Handle {
   bool operator != (const Handle& h) const       { return obj() != h.obj(); }
 
   // Null checks
-  bool    is_null() const                        { return _handle == NULL; }
-  bool    not_null() const                       { return _handle != NULL; }
+  bool    is_null() const                        { return _handle == nullptr; }
+  bool    not_null() const                       { return _handle != nullptr; }
 
   // Debugging
   void    print()                                { obj()->print(); }
@@ -99,7 +99,7 @@ class Handle {
   // Raw handle access. Allows easy duplication of Handles. This can be very unsafe
   // since duplicates is only valid as long as original handle is alive.
   oop* raw_value() const                         { return _handle; }
-  static oop raw_resolve(oop *handle)            { return handle == NULL ? (oop)NULL : *handle; }
+  static oop raw_resolve(oop *handle)            { return handle == nullptr ? (oop)nullptr : *handle; }
 
   inline void replace(oop obj);
 };
@@ -144,11 +144,11 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
     Thread*   _thread;                           \
    protected:                                    \
     type*        obj() const                     { return _value; } \
-    type*        non_null_obj() const            { assert(_value != NULL, "resolving NULL _value"); return _value; } \
+    type*        non_null_obj() const            { assert(_value != nullptr, "resolving nullptr _value"); return _value; } \
                                                  \
    public:                                       \
     /* Constructors */                           \
-    name##Handle () : _value(NULL), _thread(NULL) {}   \
+    name##Handle () : _value(nullptr), _thread(nullptr) {}   \
     name##Handle (Thread* thread, type* obj);    \
                                                  \
     name##Handle (const name##Handle &h);        \
@@ -166,8 +166,8 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
     bool    operator == (const name##Handle& h) const  { return obj() == h.obj(); } \
                                                  \
     /* Null checks */                            \
-    bool    is_null() const                      { return _value == NULL; } \
-    bool    not_null() const                     { return _value != NULL; } \
+    bool    is_null() const                      { return _value == nullptr; } \
+    bool    not_null() const                     { return _value != nullptr; } \
   };
 
 
@@ -196,7 +196,6 @@ class HandleArea: public Arena {
   // Handle allocation
  private:
   oop* real_allocate_handle(oop obj) {
-    // Ignore UseMallocOnly by allocating only in arena.
     oop* handle = (oop*)internal_amalloc(oopSize);
     *handle = obj;
     return handle;
@@ -212,9 +211,6 @@ class HandleArea: public Arena {
 
   // Garbage collection support
   void oops_do(OopClosure* f);
-
-  // Number of handles in use
-  size_t used() const     { return Arena::used() / oopSize; }
 
   debug_only(bool no_handle_mark_active() { return _no_handle_mark_nesting > 0; })
 };

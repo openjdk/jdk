@@ -30,15 +30,15 @@
  */
 import helpers.InstructionModelToCodeBuilder;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.Classfile;
-import jdk.classfile.attribute.CodeAttribute;
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassModel;
-import jdk.classfile.CodeElement;
-import jdk.classfile.CodeModel;
-import jdk.classfile.Instruction;
-import jdk.classfile.MethodModel;
-import jdk.classfile.instruction.InvokeInstruction;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.instruction.InvokeInstruction;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 

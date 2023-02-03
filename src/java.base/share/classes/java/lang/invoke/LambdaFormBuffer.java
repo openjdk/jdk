@@ -59,7 +59,7 @@ final class LambdaFormBuffer {
 
     private LambdaForm lambdaForm() {
         assert(!inTrans());  // need endEdit call to tidy things up
-        return new LambdaForm(arity, nameArray(), resultIndex());
+        return LambdaForm.create(arity, nameArray(), resultIndex());
     }
 
     Name name(int i) {

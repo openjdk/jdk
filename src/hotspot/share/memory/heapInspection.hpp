@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
  public:
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
     _next(next), _klass(k), _instance_count(0), _instance_words(0), _index(-1),
-    _do_print(false), _subclasses(NULL)
+    _do_print(false), _subclasses(nullptr)
   {}
   ~KlassInfoEntry();
   KlassInfoEntry* next() const   { return _next; }
@@ -97,7 +97,7 @@ class KlassInfoBucket: public CHeapObj<mtInternal> {
   void set_list(KlassInfoEntry* l) { _list = l; }
  public:
   KlassInfoEntry* lookup(Klass* k);
-  void initialize() { _list = NULL; }
+  void initialize() { _list = nullptr; }
   void empty();
   void iterate(KlassInfoClosure* cic);
 };
@@ -123,7 +123,7 @@ class KlassInfoTable: public StackObj {
   ~KlassInfoTable();
   bool record_instance(const oop obj);
   void iterate(KlassInfoClosure* cic);
-  bool allocation_failed() { return _buckets == NULL; }
+  bool allocation_failed() { return _buckets == nullptr; }
   size_t size_of_instances_in_words() const;
   bool merge(KlassInfoTable* table);
   bool merge_entry(const KlassInfoEntry* cie);
@@ -201,10 +201,8 @@ class KlassInfoClosure;
 class HeapInspection : public StackObj {
  public:
   void heap_inspection(outputStream* st, uint parallel_thread_num = 1) NOT_SERVICES_RETURN;
-  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = NULL, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
+  uintx populate_table(KlassInfoTable* cit, BoolObjectClosure* filter = nullptr, uint parallel_thread_num = 1) NOT_SERVICES_RETURN_(0);
   static void find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) NOT_SERVICES_RETURN;
- private:
-  void iterate_over_heap(KlassInfoTable* cit, BoolObjectClosure* filter = NULL);
 };
 
 // Parallel heap inspection task. Parallel inspection can fail due to

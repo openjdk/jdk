@@ -643,11 +643,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength type="long">
 				<decimalFormat>
-					<pattern type="1000000000000" count="one">0 billón</pattern>
 					<pattern type="1000000000000" count="other">0 billones</pattern>
-					<pattern type="10000000000000" count="one">00 billones</pattern>
 					<pattern type="10000000000000" count="other">00 billones</pattern>
-					<pattern type="100000000000000" count="one">000 billones</pattern>
 					<pattern type="100000000000000" count="other">000 billones</pattern>
 				</decimalFormat>
 			</decimalFormatLength>

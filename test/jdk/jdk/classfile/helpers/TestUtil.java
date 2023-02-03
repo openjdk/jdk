@@ -24,10 +24,10 @@
  */
 package helpers;
 
-import jdk.classfile.impl.LabelContext;
-import jdk.classfile.impl.LabelImpl;
-import jdk.classfile.instruction.LocalVariable;
-import jdk.classfile.instruction.LocalVariableType;
+import jdk.internal.classfile.impl.LabelContext;
+import jdk.internal.classfile.impl.LabelImpl;
+import jdk.internal.classfile.instruction.LocalVariable;
+import jdk.internal.classfile.instruction.LocalVariableType;
 
 import java.io.FileOutputStream;
 import java.util.Collection;

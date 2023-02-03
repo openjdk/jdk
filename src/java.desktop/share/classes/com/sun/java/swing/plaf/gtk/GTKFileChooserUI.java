@@ -351,6 +351,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             }
             directoryComboBoxModel.addItem(currentDirectory);
             directoryListModel.directoryChanged();
+            FileSystemView fsv = getFileChooser().getFileSystemView();
+            getChangeToParentDirectoryAction().setEnabled(!fsv.isFileSystemRoot(currentDirectory));
         }
         super.doDirectoryChanged(e);
     }
@@ -382,9 +384,12 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     protected void doMultiSelectionChanged(PropertyChangeEvent e) {
         if (getFileChooser().isMultiSelectionEnabled()) {
             fileList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         } else {
             fileList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             fileList.clearSelection();
+            directoryList.clearSelection();
         }
 
         super.doMultiSelectionChanged(e);
@@ -488,7 +493,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                         if (objects.length == 1
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
-                            && (chooser.getFileSelectionMode() != JFileChooser.DIRECTORIES_ONLY
+                            && (chooser.getFileSelectionMode() == JFileChooser.FILES_ONLY
                                 || !chooser.getFileSystemView().isFileSystem(((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
@@ -562,6 +567,12 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         fc.setLayout(new BorderLayout());
         fc.setAlignmentX(JComponent.CENTER_ALIGNMENT);
+
+        /*
+         * MultiSelection is enabled by default to mimic native filechooser
+         * behavior where multiple files or folders can be selected.
+         */
+        fc.setMultiSelectionEnabled(true);
 
         // Top row of buttons
         JPanel topButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEADING, 0, 0));
@@ -936,6 +947,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         directoryList = new JList<>();
         directoryList.setName("GTKFileChooser.directoryList");
         directoryList.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, foldersLabelText);
+        if (getFileChooser().isMultiSelectionEnabled()) {
+            directoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        } else {
+            directoryList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        }
         align(directoryList);
 
         directoryList.setCellRenderer(new DirectoryCellRenderer());

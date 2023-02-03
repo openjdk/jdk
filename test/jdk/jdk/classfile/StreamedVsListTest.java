@@ -28,27 +28,27 @@
  * @summary Testing Classfile streaming versus model.
  * @run junit StreamedVsListTest
  */
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeElement;
-import jdk.classfile.Instruction;
-import jdk.classfile.MethodModel;
-import jdk.classfile.impl.DirectCodeBuilder;
-import jdk.classfile.instruction.BranchInstruction;
-import jdk.classfile.instruction.ConstantInstruction;
-import jdk.classfile.instruction.FieldInstruction;
-import jdk.classfile.instruction.IncrementInstruction;
-import jdk.classfile.instruction.InvokeDynamicInstruction;
-import jdk.classfile.instruction.InvokeInstruction;
-import jdk.classfile.instruction.LoadInstruction;
-import jdk.classfile.instruction.LookupSwitchInstruction;
-import jdk.classfile.instruction.NewMultiArrayInstruction;
-import jdk.classfile.instruction.NewObjectInstruction;
-import jdk.classfile.instruction.NewPrimitiveArrayInstruction;
-import jdk.classfile.instruction.NewReferenceArrayInstruction;
-import jdk.classfile.instruction.StoreInstruction;
-import jdk.classfile.instruction.TableSwitchInstruction;
-import jdk.classfile.instruction.TypeCheckInstruction;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeElement;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.impl.DirectCodeBuilder;
+import jdk.internal.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.instruction.ConstantInstruction;
+import jdk.internal.classfile.instruction.FieldInstruction;
+import jdk.internal.classfile.instruction.IncrementInstruction;
+import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import jdk.internal.classfile.instruction.InvokeInstruction;
+import jdk.internal.classfile.instruction.LoadInstruction;
+import jdk.internal.classfile.instruction.LookupSwitchInstruction;
+import jdk.internal.classfile.instruction.NewMultiArrayInstruction;
+import jdk.internal.classfile.instruction.NewObjectInstruction;
+import jdk.internal.classfile.instruction.NewPrimitiveArrayInstruction;
+import jdk.internal.classfile.instruction.NewReferenceArrayInstruction;
+import jdk.internal.classfile.instruction.StoreInstruction;
+import jdk.internal.classfile.instruction.TableSwitchInstruction;
+import jdk.internal.classfile.instruction.TypeCheckInstruction;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 

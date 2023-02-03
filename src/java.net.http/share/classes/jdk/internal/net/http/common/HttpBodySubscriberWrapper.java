@@ -35,6 +35,7 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.net.http.ResponseSubscribers.TrustedSubscriber;
 
@@ -62,6 +63,7 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     final BodySubscriber<T> userSubscriber;
     final AtomicBoolean completed = new AtomicBoolean();
     final AtomicBoolean subscribed = new AtomicBoolean();
+    final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
     volatile Throwable withError;
     public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
@@ -100,16 +102,20 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     // subscribed yet.
     private void propagateError(Throwable t) {
         assert t != null;
+        assert completed.get();
         try {
             // if unsubscribed at this point, it will not
             // get subscribed later - so do it now and
             // propagate the error
             // Race condition with onSubscribe: we need to wait until
             // subscription is finished before calling onError;
-            synchronized (this) {
+            subscriptionLock.lock();
+            try {
                 if (subscribed.compareAndSet(false, true)) {
                     userSubscriber.onSubscribe(NOP);
                 }
+            } finally {
+                subscriptionLock.unlock();
             }
         } finally  {
             // if onError throws then there is nothing to do
@@ -126,6 +132,15 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      * actions after a subscription has been cancelled.
      */
     protected void onCancel() { }
+
+    /**
+     * Called right before the userSubscriber::onSubscribe is called.
+     * @apiNote
+     * This method may be used by subclasses to perform cleanup
+     * related actions after a subscription has been succesfully
+     * accepted.
+     */
+    protected void onSubscribed() { }
 
     /**
      * Complete the subscriber, either normally or exceptionally
@@ -160,6 +175,14 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
         }
     }
 
+    /**
+     * {@return true if this subscriber has already completed, either normally
+     * or abnormally}
+     */
+    public boolean completed() {
+        return completed.get();
+    }
+
     @Override
     public CompletionStage<T> getBody() {
         return userSubscriber.getBody();
@@ -169,22 +192,23 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     public void onSubscribe(Flow.Subscription subscription) {
         // race condition with propagateError: we need to wait until
         // subscription is finished before calling onError;
-        synchronized (this) {
+        subscriptionLock.lock();
+        try {
             if (subscribed.compareAndSet(false, true)) {
+                onSubscribed();
                 SubscriptionWrapper wrapped = new SubscriptionWrapper(subscription);
                 userSubscriber.onSubscribe(this.subscription = wrapped);
             } else {
-                // could be already subscribed and completed
-                // if an unexpected error occurred before the actual
-                // subscription - though that's not supposed
-                // happen.
-                assert completed.get();
+                subscription.cancel();
             }
+        } finally {
+            subscriptionLock.unlock();
         }
     }
 
     @Override
     public void onNext(List<ByteBuffer> item) {
+        assert subscribed.get();
         if (completed.get()) {
             SubscriptionWrapper subscription = this.subscription;
             if (subscription != null) {

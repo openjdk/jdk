@@ -138,6 +138,7 @@ public class Utils {
     public final Types typeUtils;
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
+    private final DocFinder docFinder = newDocFinder();
 
     public Utils(BaseConfiguration c) {
         configuration = c;
@@ -1914,6 +1915,9 @@ public class Utils {
 
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
+    // If `e` is a static nested class, this method will return e's simple name
+    // preceded by `.` and an outer type; this is not how JLS defines "simple
+    // name". See "Simple Name", "Qualified Name", "Fully Qualified Name".
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor14<>() {
@@ -1927,7 +1931,7 @@ public class Utils {
                     StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
-                            && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
+                            && (enclosed.getKind().isDeclaredType())) {
                         sb.insert(0, enclosed.getSimpleName() + ".");
                         enclosed = enclosed.getEnclosingElement();
                     }
@@ -2796,4 +2800,16 @@ public class Utils {
         boolean isPreview(Element el);
     }
 
+    public DocFinder docFinder() {
+        return docFinder;
+    }
+
+    private DocFinder newDocFinder() {
+        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+    }
+
+    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
+        var type = configuration.utils.getEnclosingTypeElement(m);
+        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    }
 }

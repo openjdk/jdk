@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
+#include "code/compiledIC.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "frame_ppc.hpp"
@@ -37,6 +38,8 @@
 #include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -324,7 +327,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
         break;
       }
       case RegisterSaver::special_reg: {
-        if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
+        if (reg_num == SR_CTR.encoding()) {
           __ mfctr(R30);
           __ std(R30, offset, R1_SP);
         } else {
@@ -403,7 +406,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
         break;
       }
       case RegisterSaver::special_reg: {
-        if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
+        if (reg_num == SR_CTR.encoding()) {
           if (restore_ctr) { // Nothing to do here if ctr already contains the next address.
             __ ld(R31, offset, R1_SP);
             __ mtctr(R31);
@@ -583,7 +586,7 @@ static int reg2offset(VMReg r) {
 // as framesizes are fixed.
 // VMRegImpl::stack0 refers to the first slot 0(sp).
 // and VMRegImpl::stack0+1 refers to the memory word 4-bytes higher. Register
-// up to RegisterImpl::number_of_registers) are the 64-bit
+// up to Register::number_of_registers) are the 64-bit
 // integer registers.
 
 // Note: the INPUTS in sig_bt are in units of Java argument words, which are
@@ -625,6 +628,9 @@ const VMReg java_farg_reg[13] = {
 
 const int num_java_iarg_registers = sizeof(java_iarg_reg) / sizeof(java_iarg_reg[0]);
 const int num_java_farg_registers = sizeof(java_farg_reg) / sizeof(java_farg_reg[0]);
+
+STATIC_ASSERT(num_java_iarg_registers == Argument::n_int_register_parameters_j);
+STATIC_ASSERT(num_java_farg_registers == Argument::n_float_register_parameters_j);
 
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
@@ -1174,6 +1180,8 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
     }
   }
 
+  __ push_cont_fastpath(); // Set JavaThread::_cont_fastpath to the sp of the oldest interpreted frame we know about
+
   BLOCK_COMMENT("Store method");
   // Store method into thread->callee_target.
   // We might end up in handle_wrong_method if the callee is
@@ -1618,6 +1626,390 @@ static void gen_special_dispatch(MacroAssembler* masm,
                                                  receiver_reg, member_reg, /*for_compiler_entry:*/ true);
 }
 
+//---------------------------- continuation_enter_setup ---------------------------
+//
+// Frame setup.
+//
+// Arguments:
+//   None.
+//
+// Results:
+//   R1_SP: pointer to blank ContinuationEntry in the pushed frame.
+//
+// Kills:
+//   R0, R20
+//
+static OopMap* continuation_enter_setup(MacroAssembler* masm, int& framesize_words) {
+  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
+  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
+
+  const int frame_size_in_bytes = (int)ContinuationEntry::size();
+  assert(is_aligned(frame_size_in_bytes, frame::alignment_in_bytes), "alignment error");
+
+  framesize_words = frame_size_in_bytes / wordSize;
+
+  DEBUG_ONLY(__ block_comment("setup {"));
+  // Save return pc and push entry frame
+  const Register return_pc = R20;
+  __ mflr(return_pc);
+  __ std(return_pc, _abi0(lr), R1_SP);     // SP->lr = return_pc
+  __ push_frame(frame_size_in_bytes , R0); // SP -= frame_size_in_bytes
+
+  OopMap* map = new OopMap((int)frame_size_in_bytes / VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
+
+  __ ld_ptr(R0, JavaThread::cont_entry_offset(), R16_thread);
+  __ st_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
+  __ st_ptr(R0, ContinuationEntry::parent_offset(), R1_SP);
+  DEBUG_ONLY(__ block_comment("} setup"));
+
+  return map;
+}
+
+//---------------------------- fill_continuation_entry ---------------------------
+//
+// Initialize the new ContinuationEntry.
+//
+// Arguments:
+//   R1_SP: pointer to blank Continuation entry
+//   reg_cont_obj: pointer to the continuation
+//   reg_flags: flags
+//
+// Results:
+//   R1_SP: pointer to filled out ContinuationEntry
+//
+// Kills:
+//   R8_ARG6, R9_ARG7, R10_ARG8
+//
+static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj, Register reg_flags) {
+  assert_different_registers(reg_cont_obj, reg_flags);
+  Register zero = R8_ARG6;
+  Register tmp2 = R9_ARG7;
+  Register tmp3 = R10_ARG8;
+
+  DEBUG_ONLY(__ block_comment("fill {"));
+#ifdef ASSERT
+  __ load_const_optimized(tmp2, ContinuationEntry::cookie_value());
+  __ stw(tmp2, in_bytes(ContinuationEntry::cookie_offset()), R1_SP);
+#endif //ASSERT
+
+  __ li(zero, 0);
+  __ st_ptr(reg_cont_obj, ContinuationEntry::cont_offset(), R1_SP);
+  __ stw(reg_flags, in_bytes(ContinuationEntry::flags_offset()), R1_SP);
+  __ st_ptr(zero, ContinuationEntry::chunk_offset(), R1_SP);
+  __ stw(zero, in_bytes(ContinuationEntry::argsize_offset()), R1_SP);
+  __ stw(zero, in_bytes(ContinuationEntry::pin_count_offset()), R1_SP);
+
+  __ ld_ptr(tmp2, JavaThread::cont_fastpath_offset(), R16_thread);
+  __ ld(tmp3, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+  __ st_ptr(tmp2, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ std(tmp3, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
+
+  __ st_ptr(zero, JavaThread::cont_fastpath_offset(), R16_thread);
+  __ std(zero, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+  DEBUG_ONLY(__ block_comment("} fill"));
+}
+
+//---------------------------- continuation_enter_cleanup ---------------------------
+//
+// Copy corresponding attributes from the top ContinuationEntry to the JavaThread
+// before deleting it.
+//
+// Arguments:
+//   R1_SP: pointer to the ContinuationEntry
+//
+// Results:
+//   None.
+//
+// Kills:
+//   R8_ARG6, R9_ARG7, R10_ARG8
+//
+static void continuation_enter_cleanup(MacroAssembler* masm) {
+  Register tmp1 = R8_ARG6;
+  Register tmp2 = R9_ARG7;
+  Register tmp3 = R10_ARG8;
+
+#ifdef ASSERT
+  __ block_comment("clean {");
+  __ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread);
+  __ cmpd(CCR0, R1_SP, tmp1);
+  __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
+#endif
+
+  __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
+  __ ld(tmp2, in_bytes(ContinuationEntry::parent_held_monitor_count_offset()), R1_SP);
+  __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
+  __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
+  __ std(tmp2, in_bytes(JavaThread::held_monitor_count_offset()), R16_thread);
+  __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
+  DEBUG_ONLY(__ block_comment("} clean"));
+}
+
+static void check_continuation_enter_argument(VMReg actual_vmreg,
+                                              Register expected_reg,
+                                              const char* name) {
+  assert(!actual_vmreg->is_stack(), "%s cannot be on stack", name);
+  assert(actual_vmreg->as_Register() == expected_reg,
+         "%s is in unexpected register: %s instead of %s",
+         name, actual_vmreg->as_Register()->name(), expected_reg->name());
+}
+
+static void gen_continuation_enter(MacroAssembler* masm,
+                                   const VMRegPair* regs,
+                                   int& exception_offset,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& framesize_words,
+                                   int& interpreted_entry_offset,
+                                   int& compiled_entry_offset) {
+
+  // enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread)
+  int pos_cont_obj   = 0;
+  int pos_is_cont    = 1;
+  int pos_is_virtual = 2;
+
+  // The platform-specific calling convention may present the arguments in various registers.
+  // To simplify the rest of the code, we expect the arguments to reside at these known
+  // registers, and we additionally check the placement here in case calling convention ever
+  // changes.
+  Register reg_cont_obj   = R3_ARG1;
+  Register reg_is_cont    = R4_ARG2;
+  Register reg_is_virtual = R5_ARG3;
+
+  check_continuation_enter_argument(regs[pos_cont_obj].first(),   reg_cont_obj,   "Continuation object");
+  check_continuation_enter_argument(regs[pos_is_cont].first(),    reg_is_cont,    "isContinue");
+  check_continuation_enter_argument(regs[pos_is_virtual].first(), reg_is_virtual, "isVirtualThread");
+
+  address resolve_static_call = SharedRuntime::get_resolve_static_call_stub();
+
+  address start = __ pc();
+
+  Label L_thaw, L_exit;
+
+  // i2i entry used at interp_only_mode only
+  interpreted_entry_offset = __ pc() - start;
+  {
+#ifdef ASSERT
+    Label is_interp_only;
+    __ lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
+    __ cmpwi(CCR0, R0, 0);
+    __ bne(CCR0, is_interp_only);
+    __ stop("enterSpecial interpreter entry called when not in interp_only_mode");
+    __ bind(is_interp_only);
+#endif
+
+    // Read interpreter arguments into registers (this is an ad-hoc i2c adapter)
+    __ ld(reg_cont_obj,    Interpreter::stackElementSize*3, R15_esp);
+    __ lwz(reg_is_cont,    Interpreter::stackElementSize*2, R15_esp);
+    __ lwz(reg_is_virtual, Interpreter::stackElementSize*1, R15_esp);
+
+    __ push_cont_fastpath();
+
+    OopMap* map = continuation_enter_setup(masm, framesize_words);
+
+    // The frame is complete here, but we only record it for the compiled entry, so the frame would appear unsafe,
+    // but that's okay because at the very worst we'll miss an async sample, but we're in interp_only_mode anyway.
+
+    fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+
+    // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
+    __ cmpwi(CCR0, reg_is_cont, 0);
+    __ bne(CCR0, L_thaw);
+
+    // --- call Continuation.enter(Continuation c, boolean isContinue)
+
+    // Emit compiled static call. The call will be always resolved to the c2i
+    // entry of Continuation.enter(Continuation c, boolean isContinue).
+    // There are special cases in SharedRuntime::resolve_static_call_C() and
+    // SharedRuntime::resolve_sub_helper_internal() to achieve this
+    // See also corresponding call below.
+    address c2i_call_pc = __ pc();
+    int start_offset = __ offset();
+    // Put the entry point as a constant into the constant pool.
+    const address entry_point_toc_addr   = __ address_constant(resolve_static_call, RelocationHolder::none);
+    const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
+    guarantee(entry_point_toc_addr != nullptr, "const section overflow");
+
+    // Emit the trampoline stub which will be related to the branch-and-link below.
+    address stub = __ emit_trampoline_stub(entry_point_toc_offset, start_offset);
+    guarantee(stub != nullptr, "no space for trampoline stub");
+
+    __ relocate(relocInfo::static_call_type);
+    // Note: At this point we do not have the address of the trampoline
+    // stub, and the entry point might be too far away for bl, so __ pc()
+    // serves as dummy and the bl will be patched later.
+    __ bl(__ pc());
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
+
+    __ b(L_exit);
+
+    // static stub for the call above
+    CodeBuffer* cbuf = masm->code_section()->outer();
+    stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, c2i_call_pc);
+    guarantee(stub != nullptr, "no space for static stub");
+  }
+
+  // compiled entry
+  __ align(CodeEntryAlignment);
+  compiled_entry_offset = __ pc() - start;
+
+  OopMap* map = continuation_enter_setup(masm, framesize_words);
+
+  // Frame is now completed as far as size and linkage.
+  frame_complete =__ pc() - start;
+
+  fill_continuation_entry(masm, reg_cont_obj, reg_is_virtual);
+
+  // If isContinue, call to thaw. Otherwise, call Continuation.enter(Continuation c, boolean isContinue)
+  __ cmpwi(CCR0, reg_is_cont, 0);
+  __ bne(CCR0, L_thaw);
+
+  // --- call Continuation.enter(Continuation c, boolean isContinue)
+
+  // Emit compiled static call
+  // The call needs to be resolved. There's a special case for this in
+  // SharedRuntime::find_callee_info_helper() which calls
+  // LinkResolver::resolve_continuation_enter() which resolves the call to
+  // Continuation.enter(Continuation c, boolean isContinue).
+  address call_pc = __ pc();
+  int start_offset = __ offset();
+  // Put the entry point as a constant into the constant pool.
+  const address entry_point_toc_addr   = __ address_constant(resolve_static_call, RelocationHolder::none);
+  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
+  guarantee(entry_point_toc_addr != nullptr, "const section overflow");
+
+  // Emit the trampoline stub which will be related to the branch-and-link below.
+  address stub = __ emit_trampoline_stub(entry_point_toc_offset, start_offset);
+  guarantee(stub != nullptr, "no space for trampoline stub");
+
+  __ relocate(relocInfo::static_call_type);
+  // Note: At this point we do not have the address of the trampoline
+  // stub, and the entry point might be too far away for bl, so __ pc()
+  // serves as dummy and the bl will be patched later.
+  __ bl(__ pc());
+  oop_maps->add_gc_map(__ pc() - start, map);
+  __ post_call_nop();
+
+  __ b(L_exit);
+
+  // --- Thawing path
+
+  __ bind(L_thaw);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(StubRoutines::cont_thaw()));
+  __ mtctr(R0);
+  __ bctrl();
+  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+  ContinuationEntry::_return_pc_offset = __ pc() - start;
+  __ post_call_nop();
+
+  // --- Normal exit (resolve/thawing)
+
+  __ bind(L_exit);
+  continuation_enter_cleanup(masm);
+
+  // Pop frame and return
+  DEBUG_ONLY(__ ld_ptr(R0, 0, R1_SP));
+  __ addi(R1_SP, R1_SP, framesize_words*wordSize);
+  DEBUG_ONLY(__ cmpd(CCR0, R0, R1_SP));
+  __ asm_assert_eq(FILE_AND_LINE ": inconsistent frame size");
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ blr();
+
+  // --- Exception handling path
+
+  exception_offset = __ pc() - start;
+
+  continuation_enter_cleanup(masm);
+  Register ex_pc  = R17_tos;   // nonvolatile register
+  Register ex_oop = R15_esp;   // nonvolatile register
+  __ ld(ex_pc, _abi0(callers_sp), R1_SP); // Load caller's return pc
+  __ ld(ex_pc, _abi0(lr), ex_pc);
+  __ mr(ex_oop, R3_RET);                  // save return value containing the exception oop
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, ex_pc);
+  __ mtlr(R3_RET);                        // the exception handler
+  __ ld(R1_SP, _abi0(callers_sp), R1_SP); // remove enterSpecial frame
+
+  // Continue at exception handler
+  // See OptoRuntime::generate_exception_blob for register arguments
+  __ mr(R3_ARG1, ex_oop); // pass exception oop
+  __ mr(R4_ARG2, ex_pc);  // pass exception pc
+  __ blr();
+
+  // static stub for the call above
+  CodeBuffer* cbuf = masm->code_section()->outer();
+  stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, call_pc);
+  guarantee(stub != nullptr, "no space for static stub");
+}
+
+static void gen_continuation_yield(MacroAssembler* masm,
+                                   const VMRegPair* regs,
+                                   OopMapSet* oop_maps,
+                                   int& frame_complete,
+                                   int& framesize_words,
+                                   int& compiled_entry_offset) {
+  Register tmp = R10_ARG8;
+
+  const int framesize_bytes = (int)align_up((int)frame::abi_reg_args_size, frame::alignment_in_bytes);
+  framesize_words = framesize_bytes / wordSize;
+
+  address start = __ pc();
+  compiled_entry_offset = __ pc() - start;
+
+  // Save return pc and push entry frame
+  __ mflr(tmp);
+  __ std(tmp, _abi0(lr), R1_SP);       // SP->lr = return_pc
+  __ push_frame(framesize_bytes , R0); // SP -= frame_size_in_bytes
+
+  DEBUG_ONLY(__ block_comment("Frame Complete"));
+  frame_complete = __ pc() - start;
+  address last_java_pc = __ pc();
+
+  // This nop must be exactly at the PC we push into the frame info.
+  // We use this nop for fast CodeBlob lookup, associate the OopMap
+  // with it right away.
+  __ post_call_nop();
+  OopMap* map = new OopMap(framesize_bytes / VMRegImpl::stack_slot_size, 1);
+  oop_maps->add_gc_map(last_java_pc - start, map);
+
+  __ calculate_address_from_global_toc(tmp, last_java_pc); // will be relocated
+  __ set_last_Java_frame(R1_SP, tmp);
+  __ call_VM_leaf(Continuation::freeze_entry(), R16_thread, R1_SP);
+  __ reset_last_Java_frame();
+
+  Label L_pinned;
+
+  __ cmpdi(CCR0, R3_RET, 0);
+  __ bne(CCR0, L_pinned);
+
+  // Pop frames of continuation including this stub's frame
+  __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
+  // The frame pushed by gen_continuation_enter is on top now again
+  continuation_enter_cleanup(masm);
+
+  __ bind(L_pinned); // pinned -- return to caller
+
+  // handle pending exception thrown by freeze
+  Label ok;
+  __ ld(tmp, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
+  __ cmpdi(CCR0, tmp, 0);
+  __ beq(CCR0, ok);
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ load_const_optimized(tmp, StubRoutines::forward_exception_entry(), R0);
+  __ mtctr(tmp);
+  __ bctr();
+  __ bind(ok);
+
+  // Pop frame and return
+  __ pop_frame();
+  __ ld(R0, _abi0(lr), R1_SP); // Return pc
+  __ mtlr(R0);
+  __ blr();
+}
+
 // ---------------------------------------------------------------------------
 // Generate a native wrapper for a given method. The method takes arguments
 // in the Java compiled code convention, marshals them to the native
@@ -1640,6 +2032,65 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
                                                 BasicType *in_sig_bt,
                                                 VMRegPair *in_regs,
                                                 BasicType ret_type) {
+  if (method->is_continuation_native_intrinsic()) {
+    int exception_offset = -1;
+    OopMapSet* oop_maps = new OopMapSet();
+    int frame_complete = -1;
+    int stack_slots = -1;
+    int interpreted_entry_offset = -1;
+    int vep_offset = -1;
+    if (method->is_continuation_enter_intrinsic()) {
+      gen_continuation_enter(masm,
+                             in_regs,
+                             exception_offset,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             interpreted_entry_offset,
+                             vep_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      gen_continuation_yield(masm,
+                             in_regs,
+                             oop_maps,
+                             frame_complete,
+                             stack_slots,
+                             vep_offset);
+    } else {
+      guarantee(false, "Unknown Continuation native intrinsic");
+    }
+
+#ifdef ASSERT
+    if (method->is_continuation_enter_intrinsic()) {
+      assert(interpreted_entry_offset != -1, "Must be set");
+      assert(exception_offset != -1,         "Must be set");
+    } else {
+      assert(interpreted_entry_offset == -1, "Must be unset");
+      assert(exception_offset == -1,         "Must be unset");
+    }
+    assert(frame_complete != -1,    "Must be set");
+    assert(stack_slots != -1,       "Must be set");
+    assert(vep_offset != -1,        "Must be set");
+#endif
+
+    __ flush();
+    nmethod* nm = nmethod::new_native_nmethod(method,
+                                              compile_id,
+                                              masm->code(),
+                                              vep_offset,
+                                              frame_complete,
+                                              stack_slots,
+                                              in_ByteSize(-1),
+                                              in_ByteSize(-1),
+                                              oop_maps,
+                                              exception_offset);
+    if (method->is_continuation_enter_intrinsic()) {
+      ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
+    } else if (method->is_continuation_yield_intrinsic()) {
+      _cont_doYield_stub = nm;
+    }
+    return nm;
+  }
+
   if (method->is_method_handle_intrinsic()) {
     vmIntrinsics::ID iid = method->intrinsic_id();
     intptr_t start = (intptr_t)__ pc();
@@ -1889,12 +2340,12 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   //   out is the index of the outgoing C arguments
 
 #ifdef ASSERT
-  bool reg_destroyed[RegisterImpl::number_of_registers];
-  bool freg_destroyed[FloatRegisterImpl::number_of_registers];
-  for (int r = 0 ; r < RegisterImpl::number_of_registers ; r++) {
+  bool reg_destroyed[Register::number_of_registers];
+  bool freg_destroyed[FloatRegister::number_of_registers];
+  for (int r = 0 ; r < Register::number_of_registers ; r++) {
     reg_destroyed[r] = false;
   }
-  for (int f = 0 ; f < FloatRegisterImpl::number_of_registers ; f++) {
+  for (int f = 0 ; f < FloatRegister::number_of_registers ; f++) {
     freg_destroyed[f] = false;
   }
 #endif // ASSERT
@@ -2351,7 +2802,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 // This function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization.
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) {
-  return align_up((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::alignment_in_bytes);
+  return align_up((callee_locals - callee_parameters) * Interpreter::stackElementWords, frame::frame_alignment_in_words);
 }
 
 uint SharedRuntime::in_preserve_stack_slots() {

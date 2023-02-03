@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,9 +155,8 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
         // This unappealing hack is not required but makes the
         // representation of EventHandlers much more concise.
         java.lang.reflect.InvocationHandler ih = java.lang.reflect.Proxy.getInvocationHandler(p);
-        if (ih instanceof EventHandler) {
-            EventHandler eh = (EventHandler)ih;
-            Vector<Object> args = new Vector<>();
+        if (ih instanceof EventHandler eh) {
+            ArrayList<Object> args = new ArrayList<>();
             args.add(type.getInterfaces()[0]);
             args.add(eh.getTarget());
             args.add(eh.getAction());
@@ -165,7 +164,9 @@ static final class ProxyPersistenceDelegate extends PersistenceDelegate {
                 args.add(eh.getEventPropertyName());
             }
             if (eh.getListenerMethodName() != null) {
-                args.setSize(4);
+                if (args.size() == 3) {
+                    args.add(null);
+                }
                 args.add(eh.getListenerMethodName());
             }
             return new Expression(oldInstance,

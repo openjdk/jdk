@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class StubCodeDesc: public CHeapObj<mtCode> {
 
   void set_begin(address begin) {
     assert(begin >= _begin, "begin may not decrease");
-    assert(_end == NULL || begin <= _end, "begin & end not properly ordered");
+    assert(_end == nullptr || begin <= _end, "begin & end not properly ordered");
     _begin = begin;
   }
 
@@ -68,12 +68,11 @@ class StubCodeDesc: public CHeapObj<mtCode> {
   static StubCodeDesc* first() { return _list; }
   static StubCodeDesc* next(StubCodeDesc* desc)  { return desc->_next; }
 
-  static StubCodeDesc* desc_for(address pc);     // returns the code descriptor for the code containing pc or NULL
-  static const char*   name_for(address pc);     // returns the name of the code containing pc or NULL
+  static StubCodeDesc* desc_for(address pc);     // returns the code descriptor for the code containing pc or null
 
-  StubCodeDesc(const char* group, const char* name, address begin, address end = NULL) {
+  StubCodeDesc(const char* group, const char* name, address begin, address end = nullptr) {
     assert(!_frozen, "no modifications allowed");
-    assert(name != NULL, "no name specified");
+    assert(name != nullptr, "no name specified");
     _next           = _list;
     _group          = group;
     _name           = name;

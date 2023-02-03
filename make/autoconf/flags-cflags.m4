@@ -128,7 +128,12 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
       )
     fi
 
-    CFLAGS_DEBUG_SYMBOLS="-g"
+    # -gdwarf-4 and -gdwarf-aranges were introduced in clang 5.0
+    GDWARF_FLAGS="-gdwarf-4 -gdwarf-aranges"
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${GDWARF_FLAGS}],
+        IF_FALSE: [GDWARF_FLAGS=""])
+
+    CFLAGS_DEBUG_SYMBOLS="-g ${GDWARF_FLAGS}"
     ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g1"
@@ -500,13 +505,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     # no-strict-aliasing everywhere!)
     TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing"
 
-    if test "x$ENABLE_CONFORMING_COMPILATION" = xtrue; then
-      # -Werror=pedantic is not equivalent to -pedantic-errors on gcc, if code that
-      # conforms is desired both have to be set
-      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -pedantic-errors -Werror=pedantic"
-      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -pedantic-errors -Werror=pedantic"
-    fi
-
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     # Restrict the debug information created by Clang to avoid
     # too big object files and speed the build up a little bit
@@ -530,24 +528,15 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
 
-    if test "x$ENABLE_CONFORMING_COMPILATION" = xtrue; then
-      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -pedantic-errors"
-      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -pedantic-errors"
-    fi
-
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     # Suggested additions: -qsrcmsg to get improved error reporting
     # set -qtbtable=full for a better traceback table/better stacks in hs_err when xlc16 is used
     TOOLCHAIN_CFLAGS_JDK="-qtbtable=full -qchars=signed -qfullpath -qsaveopt -qstackprotect"  # add on both CFLAGS
-    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced \
+    TOOLCHAIN_CFLAGS_JVM="-qtbtable=full -qtune=balanced -fno-exceptions \
         -qalias=noansi -qstrict -qtls=default -qnortti -qnoeh -qignerrno -qstackprotect"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     TOOLCHAIN_CFLAGS_JVM="-nologo -MD -Zc:preprocessor -Zc:strictStrings -MP"
     TOOLCHAIN_CFLAGS_JDK="-nologo -MD -Zc:preprocessor -Zc:strictStrings -Zc:wchar_t-"
-    if test "x$ENABLE_CONFORMING_COMPILATION" = xtrue; then
-      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -permissive-"
-      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -permissive-"
-    fi
   fi
 
   # CFLAGS C language level for JDK sources (hotspot only uses C++)

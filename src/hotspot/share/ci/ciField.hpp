@@ -36,7 +36,7 @@
 // This class represents the result of a field lookup in the VM.
 // The lookup may not succeed, in which case the information in
 // the ciField will be incomplete.
-class ciField : public ResourceObj {
+class ciField : public ArenaObj {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
   friend class ciInstanceKlass;

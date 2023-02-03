@@ -39,7 +39,6 @@ import java.util.Optional;
 
 import static java.lang.constant.ConstantDescs.BSM_EXPLICIT_CAST;
 import static java.lang.constant.ConstantDescs.CD_char;
-import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
 
 /**
@@ -9375,7 +9374,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointAt(char[] a, int index, int limit) {
-        if (index >= limit || limit < 0 || limit > a.length) {
+        if (index >= limit || index < 0 || limit > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointAtImpl(a, index, limit);
@@ -9478,7 +9477,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * @since  1.5
      */
     public static int codePointBefore(char[] a, int index, int start) {
-        if (index <= start || start < 0 || start >= a.length) {
+        if (index <= start || start < 0 || index > a.length) {
             throw new IndexOutOfBoundsException();
         }
         return codePointBeforeImpl(a, index, start);

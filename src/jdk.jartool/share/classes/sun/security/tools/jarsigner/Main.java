@@ -2400,7 +2400,7 @@ public class Main {
                 NetscapeCertTypeExtension extn =
                         new NetscapeCertTypeExtension(encoded);
 
-                Boolean val = extn.get(NetscapeCertTypeExtension.OBJECT_SIGNING);
+                boolean val = extn.get(NetscapeCertTypeExtension.OBJECT_SIGNING);
                 if (!val) {
                     if (bad != null) {
                         bad[2] = true;

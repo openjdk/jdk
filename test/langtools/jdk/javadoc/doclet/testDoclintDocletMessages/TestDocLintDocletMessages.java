@@ -47,7 +47,7 @@ import java.util.List;
 public class TestDocLintDocletMessages extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestDocLintDocletMessages tester = new TestDocLintDocletMessages();
+        var tester = new TestDocLintDocletMessages();
         tester.runTests();
     }
 

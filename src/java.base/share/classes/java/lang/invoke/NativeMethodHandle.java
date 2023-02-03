@@ -52,24 +52,32 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
      */
     public static MethodHandle make(NativeEntryPoint nep) {
         MethodType type = nep.type();
-        if (!allTypesPrimitive(type))
-            throw new IllegalArgumentException("Type must only contain primitives: " + type);
+        if (hasIllegalType(type))
+            throw new IllegalArgumentException("Illegal type(s) found: " + type);
 
 
         LambdaForm lform = preparedLambdaForm(type);
         return new NativeMethodHandle(type, lform, nep);
     }
 
-    private static boolean allTypesPrimitive(MethodType type) {
-        if (!type.returnType().isPrimitive())
-            return false;
+    private static boolean hasIllegalType(MethodType type) {
+        if (isIllegalType(type.returnType()))
+            return true;
 
-        for (Class<?> pType : type.parameterArray()) {
-            if (!pType.isPrimitive())
-                return false;
+        for (Class<?> pType : type.ptypes()) {
+            if (isIllegalType(pType))
+                return true;
         }
 
-        return true;
+        return false;
+    }
+
+    private static boolean isIllegalType(Class<?> pType) {
+        return !(pType == long.class
+              || pType == int.class
+              || pType == float.class
+              || pType == double.class
+              || pType == void.class);
     }
 
     private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
@@ -109,7 +117,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
         outArgs[outArgs.length - 1] = names[GET_NEP];
         names[LINKER_CALL] = new LambdaForm.Name(linker, outArgs);
 
-        LambdaForm lform = new LambdaForm(ARG_LIMIT, names, LAST_RESULT);
+        LambdaForm lform = LambdaForm.create(ARG_LIMIT, names, LAST_RESULT);
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
         return lform;

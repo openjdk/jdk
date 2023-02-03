@@ -178,6 +178,10 @@
                 <attr name="originalFile" stringvalue="Actions/Window/org-netbeans-modules-options-OptionsWindowAction.instance"/>
                 <attr name="position" intvalue="1"/>
             </file>
+            <file name="SeparatorOptions.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator"/>
+                <attr name="position" intvalue="50"/>
+            </file>
         </folder>
 
         <folder name="Window">

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8266670 8291734
+ * @bug 8266670 8291734 8296743
  * @summary Test expected AccessFlag's on classes.
  */
 
@@ -98,23 +98,14 @@ public final class ClassAccessFlagTest {
             void.class // same access flag rules
         };
 
-        var mustBePresent = Set.of(AccessFlag.PUBLIC, AccessFlag.FINAL);
-        var mustBeAbsent = Set.of(AccessFlag.PRIVATE,
-                                  AccessFlag.PROTECTED,
-                                  AccessFlag.INTERFACE);
+        var expected = Set.of(AccessFlag.PUBLIC,
+                              AccessFlag.FINAL,
+                              AccessFlag.ABSTRACT);
 
         for(var primClass : primitives) {
-            // PUBLIC must be present, PROTECTED and PRIVATE must be
-            // absent.
-            // FINAL must be present, INTERFACE must be absent.
             var accessFlags = primClass.accessFlags();
-            if (!accessFlags.containsAll(mustBePresent)) {
-                throw new RuntimeException("Missing mandatory flags on " +
-                                           primClass);
-            }
-
-            if (containsAny(accessFlags, mustBeAbsent)) {
-                throw new RuntimeException("Unexpected flags present on " +
+            if (!accessFlags.equals(expected)) {
+                throw new RuntimeException("Unexpected flags on " +
                                            primClass);
             }
         }

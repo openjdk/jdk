@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,7 +270,7 @@ class methodHandle;
   do_intrinsic(_identityHashCode,         java_lang_System,       identityHashCode_name, object_int_signature,   F_SN)  \
    do_name(     identityHashCode_name,                           "identityHashCode")                                    \
   do_intrinsic(_currentTimeMillis,        java_lang_System,       currentTimeMillis_name, void_long_signature,   F_SN)  \
-                                                                                                                       \
+                                                                                                                        \
    do_name(     currentTimeMillis_name,                          "currentTimeMillis")                                   \
   do_intrinsic(_nanoTime,                 java_lang_System,       nanoTime_name,          void_long_signature,   F_SN)  \
    do_name(     nanoTime_name,                                   "nanoTime")                                            \
@@ -286,12 +286,15 @@ class methodHandle;
   do_intrinsic(_currentThread,            java_lang_Thread,       currentThread_name, currentThread_signature,   F_SN)  \
    do_name(     currentThread_name,                              "currentThread")                                       \
    do_signature(currentThread_signature,                         "()Ljava/lang/Thread;")                                \
-  do_intrinsic(_extentLocalCache,          java_lang_Thread,       extentLocalCache_name, extentLocalCache_signature, F_SN) \
-   do_name(     extentLocalCache_name,                            "extentLocalCache")                                     \
-   do_signature(extentLocalCache_signature,                       "()[Ljava/lang/Object;")                               \
-  do_intrinsic(_setExtentLocalCache,       java_lang_Thread,       setExtentLocalCache_name, setExtentLocalCache_signature, F_SN) \
-   do_name(     setExtentLocalCache_name,                         "setExtentLocalCache")                                  \
-   do_signature(setExtentLocalCache_signature,                    "([Ljava/lang/Object;)V")                              \
+  do_intrinsic(_scopedValueCache,         java_lang_Thread,       scopedValueCache_name, scopedValueCache_signature, F_SN) \
+   do_name(     scopedValueCache_name,                           "scopedValueCache")                                    \
+   do_signature(scopedValueCache_signature,                      "()[Ljava/lang/Object;")                               \
+  do_intrinsic(_setScopedValueCache,      java_lang_Thread,       setScopedValueCache_name, setScopedValueCache_signature, F_SN) \
+   do_name(     setScopedValueCache_name,                        "setScopedValueCache")                                 \
+   do_signature(setScopedValueCache_signature,                   "([Ljava/lang/Object;)V")                              \
+  do_intrinsic(_findScopedValueBindings,  java_lang_Thread,       findScopedValueBindings_name, void_object_signature, F_SN) \
+   do_name(     findScopedValueBindings_name,                    "findScopedValueBindings")                             \
+                                                                                                                        \
   do_intrinsic(_setCurrentThread,         java_lang_Thread,       setCurrentThread_name, thread_void_signature,   F_RN) \
    do_name(     setCurrentThread_name,                           "setCurrentThread")                                    \
                                                                                                                         \
@@ -331,6 +334,9 @@ class methodHandle;
    do_name(     onSpinWait_name,                                  "onSpinWait")                                         \
    do_alias(    onSpinWait_signature,                             void_method_signature)                                \
                                                                                                                         \
+  do_intrinsic(_ensureMaterializedForStackWalk, java_lang_Thread, ensureMaterializedForStackWalk_name, object_void_signature, F_SN)  \
+   do_name(     ensureMaterializedForStackWalk_name,              "ensureMaterializedForStackWalk")                     \
+                                                                                                                        \
   do_intrinsic(_copyOf,                   java_util_Arrays,       copyOf_name, copyOf_signature,                 F_S)   \
    do_name(     copyOf_name,                                     "copyOf")                                              \
    do_signature(copyOf_signature,             "([Ljava/lang/Object;ILjava/lang/Class;)[Ljava/lang/Object;")             \
@@ -343,6 +349,10 @@ class methodHandle;
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
    do_signature(equalsB_signature,                               "([B[B)Z")                                             \
+                                                                                                                        \
+  do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
+   do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
+   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \
@@ -519,13 +529,24 @@ class methodHandle;
   do_class(java_util_Base64_Decoder, "java/util/Base64$Decoder")                                                        \
   do_intrinsic(_base64_decodeBlock, java_util_Base64_Decoder, decodeBlock_name, decodeBlock_signature, F_R)             \
    do_name(decodeBlock_name, "decodeBlock")                                                                             \
-   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                   \
+   do_signature(decodeBlock_signature, "([BII[BIZZ)I")                                                                  \
                                                                                                                         \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \
    do_name(processBlocks_name, "processBlocks")                                                                         \
    do_signature(ghash_processBlocks_signature, "([BII[J[J)V")                                                           \
+                                                                                                                        \
+  /* support for com.sun.crypto.provider.Poly1305 */                                                                    \
+  do_class(com_sun_crypto_provider_Poly1305, "com/sun/crypto/provider/Poly1305")                                        \
+  do_intrinsic(_poly1305_processBlocks, com_sun_crypto_provider_Poly1305, processMultipleBlocks_name, ghash_processBlocks_signature, F_R) \
+   do_name(processMultipleBlocks_name, "processMultipleBlocks")                                                         \
+                                                                                                                        \
+  /* support for com.sun.crypto.provider.ChaCha20Cipher */                                                              \
+  do_class(com_sun_crypto_provider_chacha20cipher,      "com/sun/crypto/provider/ChaCha20Cipher")                       \
+  do_intrinsic(_chacha20Block, com_sun_crypto_provider_chacha20cipher, chacha20Block_name, chacha20Block_signature, F_S) \
+   do_name(chacha20Block_name,                                 "implChaCha20Block")                                         \
+   do_signature(chacha20Block_signature, "([I[B)I")                                                                    \
                                                                                                                         \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
