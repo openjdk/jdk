@@ -39,10 +39,10 @@ import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassModel;
-import jdk.classfile.CodeModel;
-import jdk.classfile.Instruction;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
 
 
 /**

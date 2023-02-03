@@ -28,12 +28,12 @@ package com.sun.tools.javap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.classfile.Attributes;
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.Classfile;
 
-import jdk.classfile.Instruction;
-import jdk.classfile.attribute.CodeAttribute;
-import jdk.classfile.attribute.StackMapTableAttribute;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.StackMapTableAttribute;
 
 /**
  * Annotate instructions with stack map.

@@ -36,19 +36,19 @@ import java.lang.constant.ClassDesc;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import jdk.classfile.AccessFlags;
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassModel;
-import jdk.classfile.ClassSignature;
-import jdk.classfile.Classfile;
-import static jdk.classfile.Classfile.*;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.FieldModel;
-import jdk.classfile.MethodModel;
-import jdk.classfile.MethodSignature;
-import jdk.classfile.Signature;
-import jdk.classfile.attribute.CodeAttribute;
-import jdk.classfile.attribute.SignatureAttribute;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassSignature;
+import jdk.internal.classfile.Classfile;
+import static jdk.internal.classfile.Classfile.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.FieldModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.MethodSignature;
+import jdk.internal.classfile.Signature;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.SignatureAttribute;
 
 /*
  *  The main javap class to write the contents of a class file as text.

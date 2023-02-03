@@ -29,13 +29,13 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
-import jdk.classfile.*;
+import jdk.internal.classfile.*;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.jdktypes.*;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.attribute.*;
-import static jdk.classfile.Classfile.*;
-import static jdk.classfile.attribute.StackMapTableAttribute.*;
+import jdk.internal.classfile.jdktypes.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.attribute.*;
+import static jdk.internal.classfile.Classfile.*;
+import static jdk.internal.classfile.attribute.StackMapTableAttribute.*;
 
 /*
  *  A writer for writing Attributes as text.

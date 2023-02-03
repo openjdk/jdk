@@ -31,11 +31,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import jdk.classfile.Attributes;
-import jdk.classfile.Instruction;
-import jdk.classfile.MethodModel;
-import jdk.classfile.TypeAnnotation;
-import jdk.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.TypeAnnotation;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 /**
  * Annotate instructions with details about type annotations.

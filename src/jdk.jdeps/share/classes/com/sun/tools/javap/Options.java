@@ -29,7 +29,7 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
-import static jdk.classfile.Classfile.*;
+import static jdk.internal.classfile.Classfile.*;
 
 /*
  *  Provides access to javap's options, set via the command line

@@ -30,13 +30,13 @@ import java.util.List;
 
 import java.util.Locale;
 import java.util.stream.Collectors;
-import jdk.classfile.Classfile;
-import jdk.classfile.Opcode;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.Instruction;
-import jdk.classfile.MethodModel;
-import jdk.classfile.attribute.CodeAttribute;
-import jdk.classfile.instruction.*;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Opcode;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.instruction.*;
 
 /*
  *  Write the contents of a Code attribute.

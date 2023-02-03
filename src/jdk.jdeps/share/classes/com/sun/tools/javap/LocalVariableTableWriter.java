@@ -29,11 +29,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import jdk.classfile.Attributes;
-import jdk.classfile.CodeModel;
-import jdk.classfile.Instruction;
-import jdk.classfile.Signature;
-import jdk.classfile.attribute.LocalVariableInfo;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.Signature;
+import jdk.internal.classfile.attribute.LocalVariableInfo;
 
 /**
  * Annotate instructions with details about local variables.

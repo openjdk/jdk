@@ -67,10 +67,10 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.constantpool.*;
-import static jdk.classfile.Classfile.*;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.constantpool.*;
+import static jdk.internal.classfile.Classfile.*;
 
 /**
  *  "Main" class for javap, normally accessed from the command line
@@ -680,7 +680,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
 
         if (options.showInnerClasses) {
             ClassModel cm = cfInfo.cm;
-            var a = cm.findAttribute(jdk.classfile.Attributes.INNER_CLASSES);
+            var a = cm.findAttribute(jdk.internal.classfile.Attributes.INNER_CLASSES);
             if (a.isPresent()) {
                 var inners = a.get();
 //                try {

@@ -26,13 +26,13 @@
 package com.sun.tools.javap;
 
 import java.util.List;
-import jdk.classfile.Annotation;
-import jdk.classfile.AnnotationElement;
-import jdk.classfile.AnnotationValue;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.Signature;
-import jdk.classfile.TypeAnnotation;
-import jdk.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.Annotation;
+import jdk.internal.classfile.AnnotationElement;
+import jdk.internal.classfile.AnnotationValue;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.Signature;
+import jdk.internal.classfile.TypeAnnotation;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 /**
  *  A writer for writing annotations as text.
