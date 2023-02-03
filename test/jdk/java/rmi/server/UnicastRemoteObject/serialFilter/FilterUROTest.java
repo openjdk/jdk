@@ -38,7 +38,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @run testng/othervm FilterUROTest
+ * @run testng/othervm -Dsun.net.httpserver.idleInterval=50000 FilterUROTest
  * @summary Check that objects are exported with ObjectInputFilters via UnicastRemoteObject
  */
 public class FilterUROTest {
