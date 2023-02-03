@@ -7178,6 +7178,13 @@ typedef uint32_t u32;
   struct RegPair {
     const Register _lo, _hi;
     RegPair(Register r1, Register r2) : _lo(r1), _hi(r2) { }
+    RegPair(const RegPair &pair) : _lo(pair._lo), _hi(pair._hi) { }
+  };
+
+  struct RegTriple {
+    const Register _lo, _mid, _hi;
+    RegTriple(Register r1, Register r2, Register r3)
+      : _lo(r1), _mid(r2), _hi(r3) { }
   };
 
   void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
@@ -7198,6 +7205,22 @@ typedef uint32_t u32;
     wide_mul(RegPair(rscratch1, rscratch2), n, m);
     __ adds(sum._lo, sum._lo, rscratch1);
     __ adc(sum._hi, sum._hi, rscratch2);
+  }
+
+  void poly1305_multiply(RegPair U[], Register S[], Register R[],
+                         RegSetIterator<Register> scratch) {
+      // Compute (R2 << 26) * 5.
+      Register RR2 = *++scratch;
+      __ lsl(RR2, R[2], 26);
+      __ add(RR2, RR2, RR2, __ LSL, 2);
+      // Compute (S2 << 26) * 5.
+      Register RS2 = *++scratch;
+      __ lsl(RS2, S[2], 26);
+      __ add(RS2, RS2, RS2, __ LSL, 2);
+
+      wide_mul(U[0], S[0], R[0]); wide_madd(U[0], RS2, R[1]);  wide_madd(U[0], S[1], RR2);
+      wide_mul(U[1], S[0], R[1]); wide_madd(U[1], S[1], R[0]); wide_madd(U[1], RS2, R[2]);
+      wide_mul(U[2], S[0], R[2]); wide_madd(U[2], S[1], R[1]); wide_madd(U[2], S[2], R[0]);
   }
 
   address generate_poly1305_processBlocks1() {
@@ -7256,24 +7279,30 @@ typedef uint32_t u32;
       RegPair u1(U1, *++regs);
       RegPair u2(U2, *++regs);
 
-      // Compute (R2 << 26) * 5.
-      Register RR2 = *++regs;
-      __ lsl(RR2, R2, 26);
-      __ add(RR2, RR2, RR2, __ LSL, 2);
-      // Compute (S2 << 26) * 5.
-      Register RS2 = *++regs;
-      __ lsl(RS2, S2, 26);
-      __ add(RS2, RS2, RS2, __ LSL, 2);
+      RegPair U[] = {u0, u1, u2};
+      Register S[] = {S0, S1, S2};
+      Register R[] = {R0, R1, R2};
 
-      wide_mul(u0, S0, R0);
-      wide_mul(u1, S0, R1); wide_madd(u1, S1, R0);
-      wide_mul(u2, S0, R2); wide_madd(u2, S1, R1);  wide_madd(u2, S2, R0);
+      poly1305_multiply(U, S, R, regs);
 
-      wide_madd(u0, RS2, R1); wide_madd(u0, S1, RR2);
-      wide_madd(u1, RS2, R2);
+      // // Compute (R2 << 26) * 5.
+      // Register RR2 = *++regs;
+      // __ lsl(RR2, R2, 26);
+      // __ add(RR2, RR2, RR2, __ LSL, 2);
+      // // Compute (S2 << 26) * 5.
+      // Register RS2 = *++regs;
+      // __ lsl(RS2, S2, 26);
+      // __ add(RS2, RS2, RS2, __ LSL, 2);
 
-      // Recycle registers
-      regs = (regs.remaining() + RR2 + RS2).begin();
+      // wide_mul(u0, S0, R0);
+      // wide_mul(u1, S0, R1); wide_madd(u1, S1, R0);
+      // wide_mul(u2, S0, R2); wide_madd(u2, S1, R1);  wide_madd(u2, S2, R0);
+
+      // wide_madd(u0, RS2, R1); wide_madd(u0, S1, RR2);
+      // wide_madd(u1, RS2, R2);
+
+      // // Recycle registers
+      // regs = (regs.remaining() + RR2 + RS2).begin();
 
       // Partial reduction mod 2**130 - 5
 
