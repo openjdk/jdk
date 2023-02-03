@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,9 @@ public final class StrictMath {
      * @return  the base 10 logarithm of  {@code a}.
      * @since 1.5
      */
-    public static native double log10(double a);
+    public static double log10(double a) {
+        return FdLibm.Log10.compute(a);
+    }
 
     /**
      * Returns the correctly rounded positive square root of a
@@ -2122,7 +2124,9 @@ public final class StrictMath {
      * log of {@code x}&nbsp;+&nbsp;1
      * @since 1.5
      */
-    public static native double log1p(double x);
+    public static double log1p(double x) {
+        return FdLibm.Log1p.compute(x);
+    }
 
     /**
      * Returns the first floating-point argument with the sign of the

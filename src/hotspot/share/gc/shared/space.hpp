@@ -239,7 +239,7 @@ class Space: public CHeapObj<mtGC> {
 // 2. That the space is really made up of objects and not just
 //    blocks.
 
-class DirtyCardToOopClosure: public MemRegionClosureRO {
+class DirtyCardToOopClosure: public MemRegionClosure {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
@@ -471,8 +471,6 @@ class ContiguousSpace: public CompactibleSpace {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
   }
-
-  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's

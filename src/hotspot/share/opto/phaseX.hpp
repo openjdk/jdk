@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,6 +605,7 @@ class PhaseCCP : public PhaseIterGVN {
   // Worklist algorithm identifies constants
   void analyze();
 #ifdef ASSERT
+  void verify_type(Node* n, const Type* tnew, const Type* told);
   // For every node n on verify list, check if type(n) == n->Value()
   void verify_analyze(Unique_Node_List& worklist_verify);
 #endif

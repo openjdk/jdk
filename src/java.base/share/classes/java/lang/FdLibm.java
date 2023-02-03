@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ package java.lang;
 class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
+    private static final double TWO54   =  0x1.0p54; // 1.80143985094819840000e+16
 
     private FdLibm() {
         throw new UnsupportedOperationException("No FdLibm instances for you.");
@@ -742,6 +743,245 @@ class FdLibm {
             } else {
                 y = __HI(y, __HI(y) + ((k + 1000) << 20)); /* add k to y's exponent */
                 return y * twom1000;
+            }
+        }
+    }
+
+    /**
+     * Return the base 10 logarithm of x
+     *
+     * Method :
+     *      Let log10_2hi = leading 40 bits of log10(2) and
+     *          log10_2lo = log10(2) - log10_2hi,
+     *          ivln10   = 1/log(10) rounded.
+     *      Then
+     *              n = ilogb(x),
+     *              if(n<0)  n = n+1;
+     *              x = scalbn(x,-n);
+     *              log10(x) := n*log10_2hi + (n*log10_2lo + ivln10*log(x))
+     *
+     * Note 1:
+     *      To guarantee log10(10**n)=n, where 10**n is normal, the rounding
+     *      mode must set to Round-to-Nearest.
+     * Note 2:
+     *      [1/log(10)] rounded to 53 bits has error  .198   ulps;
+     *      log10 is monotonic at all binary break points.
+     *
+     * Special cases:
+     *      log10(x) is NaN with signal if x < 0;
+     *      log10(+INF) is +INF with no signal; log10(0) is -INF with signal;
+     *      log10(NaN) is that NaN with no signal;
+     *      log10(10**N) = N  for N=0,1,...,22.
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following constants.
+     * The decimal values may be used, provided that the compiler will convert
+     * from decimal to binary accurately enough to produce the hexadecimal values
+     * shown.
+     */
+    static class Log10 {
+        private static final double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
+
+        private static final double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
+        private static final double log10_2lo = 0x1.9fef311f12b36p-42; // 3.69423907715893078616e-13;
+
+        private Log10() {
+            throw new UnsupportedOperationException();
+        }
+
+        public static double compute(double x) {
+            double y, z;
+            int i, k;
+
+            int hx = __HI(x); // high word of x
+            int lx = __LO(x); // low word of x
+
+            k=0;
+            if (hx < 0x0010_0000) {                  /* x < 2**-1022  */
+                if (((hx & 0x7fff_ffff) | lx) == 0) {
+                    return -TWO54/0.0;               /* log(+-0)=-inf */
+                }
+                if (hx < 0) {
+                    return (x - x)/0.0;              /* log(-#) = NaN */
+                }
+                k -= 54;
+                x *= TWO54; /* subnormal number, scale up x */
+                hx = __HI(x);
+            }
+
+            if (hx >= 0x7ff0_0000) {
+                return x + x;
+            }
+
+            k += (hx >> 20) - 1023;
+            i  = (k  & 0x8000_0000) >>> 31; // unsigned shift
+            hx = (hx & 0x000f_ffff) | ((0x3ff - i) << 20);
+            y  = (double)(k + i);
+            x = __HI(x, hx); // replace high word of x with hx
+            z  = y * log10_2lo + ivln10 * StrictMath.log(x);
+            return  z + y * log10_2hi;
+        }
+    }
+
+    /**
+     * Returns the natural logarithm of the sum of the argument and 1.
+     *
+     * Method :
+     *   1. Argument Reduction: find k and f such that
+     *                      1+x = 2^k * (1+f),
+     *         where  sqrt(2)/2 < 1+f < sqrt(2) .
+     *
+     *      Note. If k=0, then f=x is exact. However, if k!=0, then f
+     *      may not be representable exactly. In that case, a correction
+     *      term is need. Let u=1+x rounded. Let c = (1+x)-u, then
+     *      log(1+x) - log(u) ~ c/u. Thus, we proceed to compute log(u),
+     *      and add back the correction term c/u.
+     *      (Note: when x > 2**53, one can simply return log(x))
+     *
+     *   2. Approximation of log1p(f).
+     *      Let s = f/(2+f) ; based on log(1+f) = log(1+s) - log(1-s)
+     *               = 2s + 2/3 s**3 + 2/5 s**5 + .....,
+     *               = 2s + s*R
+     *      We use a special Reme algorithm on [0,0.1716] to generate
+     *      a polynomial of degree 14 to approximate R The maximum error
+     *      of this polynomial approximation is bounded by 2**-58.45. In
+     *      other words,
+     *                      2      4      6      8      10      12      14
+     *          R(z) ~ Lp1*s +Lp2*s +Lp3*s +Lp4*s +Lp5*s  +Lp6*s  +Lp7*s
+     *      (the values of Lp1 to Lp7 are listed in the program)
+     *      and
+     *          |      2          14          |     -58.45
+     *          | Lp1*s +...+Lp7*s    -  R(z) | <= 2
+     *          |                             |
+     *      Note that 2s = f - s*f = f - hfsq + s*hfsq, where hfsq = f*f/2.
+     *      In order to guarantee error in log below 1ulp, we compute log
+     *      by
+     *              log1p(f) = f - (hfsq - s*(hfsq+R)).
+     *
+     *      3. Finally, log1p(x) = k*ln2 + log1p(f).
+     *                           = k*ln2_hi+(f-(hfsq-(s*(hfsq+R)+k*ln2_lo)))
+     *         Here ln2 is split into two floating point number:
+     *                      ln2_hi + ln2_lo,
+     *         where n*ln2_hi is always exact for |n| < 2000.
+     *
+     * Special cases:
+     *      log1p(x) is NaN with signal if x < -1 (including -INF) ;
+     *      log1p(+INF) is +INF; log1p(-1) is -INF with signal;
+     *      log1p(NaN) is that NaN with no signal.
+     *
+     * Accuracy:
+     *      according to an error analysis, the error is always less than
+     *      1 ulp (unit in the last place).
+     *
+     * Constants:
+     * The hexadecimal values are the intended ones for the following
+     * constants. The decimal values may be used, provided that the
+     * compiler will convert from decimal to binary accurately enough
+     * to produce the hexadecimal values shown.
+     *
+     * Note: Assuming log() return accurate answer, the following
+     *       algorithm can be used to compute log1p(x) to within a few ULP:
+     *
+     *              u = 1+x;
+     *              if(u==1.0) return x ; else
+     *                         return log(u)*(x/(u-1.0));
+     *
+     *       See HP-15C Advanced Functions Handbook, p.193.
+     */
+    static class Log1p {
+        private static final double ln2_hi = 0x1.62e42feep-1;       // 6.93147180369123816490e-01
+        private static final double ln2_lo = 0x1.a39ef35793c76p-33; // 1.90821492927058770002e-10
+        private static final double Lp1    = 0x1.5555555555593p-1;  // 6.666666666666735130e-01
+        private static final double Lp2    = 0x1.999999997fa04p-2;  // 3.999999999940941908e-01
+        private static final double Lp3    = 0x1.2492494229359p-2;  // 2.857142874366239149e-01
+        private static final double Lp4    = 0x1.c71c51d8e78afp-3;  // 2.222219843214978396e-01
+        private static final double Lp5    = 0x1.7466496cb03dep-3;  // 1.818357216161805012e-01
+        private static final double Lp6    = 0x1.39a09d078c69fp-3;  // 1.531383769920937332e-01
+        private static final double Lp7    = 0x1.2f112df3e5244p-3;  // 1.479819860511658591e-01
+
+        public static double compute(double x) {
+            double hfsq, f=0, c=0, s, z, R, u;
+            int k, hx, hu=0, ax;
+
+            hx = __HI(x);           /* high word of x */
+            ax = hx & 0x7fff_ffff;
+
+            k = 1;
+            if (hx < 0x3FDA_827A) {                  /* x < 0.41422  */
+                if (ax >= 0x3ff0_0000) {             /* x <= -1.0 */
+                    if (x == -1.0) /* log1p(-1)=-inf */
+                        return -INFINITY;
+                    else
+                        return Double.NaN;           /* log1p(x < -1) = NaN */
+                }
+
+                if (ax < 0x3e20_0000) {                /* |x| < 2**-29 */
+                    if (TWO54 + x > 0.0                /* raise inexact */
+                       && ax < 0x3c90_0000)            /* |x| < 2**-54 */
+                        return x;
+                    else
+                        return x - x*x*0.5;
+                }
+
+                if (hx > 0 || hx <= 0xbfd2_bec3) { /* -0.2929 < x < 0.41422 */
+                    k=0;
+                    f=x;
+                    hu=1;
+                }
+            }
+
+            if (hx >= 0x7ff0_0000) {
+                return x + x;
+            }
+
+            if (k != 0) {
+                if (hx < 0x4340_0000) {
+                    u  = 1.0 + x;
+                    hu = __HI(u);           /* high word of u */
+                    k  = (hu >> 20) - 1023;
+                    c  = (k > 0)? 1.0 - (u-x) : x-(u-1.0); /* correction term */
+                    c /= u;
+                } else {
+                    u  = x;
+                    hu = __HI(u);           /* high word of u */
+                    k  = (hu >> 20) - 1023;
+                    c  = 0;
+                }
+                hu &= 0x000f_ffff;
+                if (hu < 0x6_a09e) {
+                    u = __HI(u, hu | 0x3ff0_0000);       /* normalize u */
+                } else {
+                    k += 1;
+                    u = __HI(u, hu | 0x3fe0_0000);       /* normalize u/2 */
+                    hu = (0x0010_0000 - hu) >> 2;
+                }
+                f = u - 1.0;
+            }
+
+            hfsq = 0.5*f*f;
+            if (hu == 0) {     /* |f| < 2**-20 */
+                if (f == 0.0) {
+                    if (k == 0) {
+                        return 0.0;
+                    } else {
+                        c += k * ln2_lo;
+                        return k * ln2_hi + c;
+                    }
+                }
+                R = hfsq * (1.0 - 0.66666666666666666*f);
+                if (k == 0) {
+                    return f - R;
+                } else {
+                    return k * ln2_hi - ((R-(k * ln2_lo+c)) - f);
+                }
+            }
+            s = f/(2.0 + f);
+            z = s * s;
+            R = z * (Lp1 + z * (Lp2 + z * (Lp3 + z * (Lp4 + z * (Lp5 + z * (Lp6 + z*Lp7))))));
+            if (k == 0) {
+                return f - (hfsq - s*(hfsq + R));
+            } else {
+                return k * ln2_hi - ((hfsq - (s*(hfsq + R) + (k * ln2_lo+c))) - f);
             }
         }
     }
