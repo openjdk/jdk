@@ -47,7 +47,7 @@
 
 package sun.security.pkcs11.wrapper;
 
-
+import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
  * class CK_PKCS5_PBKD2_PARAMS provides the parameters to the CKM_PKCS5_PBKD2
@@ -55,13 +55,15 @@ package sun.security.pkcs11.wrapper;
  * <B>PKCS#11 structure:</B>
  * <PRE>
  * typedef struct CK_PKCS5_PBKD2_PARAMS {
- *   CK_PKCS5_PBKD2_SALT_SOURCE_TYPE saltSource;
+ *   CK_PKCS5_PBKDF2_SALT_SOURCE_TYPE saltSource;
  *   CK_VOID_PTR pSaltSourceData;
  *   CK_ULONG ulSaltSourceDataLen;
  *   CK_ULONG iterations;
  *   CK_PKCS5_PBKD2_PSEUDO_RANDOM_FUNCTION_TYPE prf;
  *   CK_VOID_PTR pPrfData;
  *   CK_ULONG ulPrfDataLen;
+ *   CK_UTF8CHAR_PTR pPassword;
+ *   CK_ULONG_PTR ulPasswordLen;
  * } CK_PKCS5_PBKD2_PARAMS;
  * </PRE>
  *
@@ -111,6 +113,24 @@ public class CK_PKCS5_PBKD2_PARAMS {
      * </PRE>
      */
     public byte[] pPrfData;
+
+    /**
+     * <b>PKCS#11:</b>
+     * <pre>
+     *   CK_UTF8CHAR_PTR pPassword
+     *   CK_ULONG_PTR ulPasswordLen;
+     * </pre>
+     */
+    public char[] pPassword;
+
+    public CK_PKCS5_PBKD2_PARAMS(char[] pPassword, byte[] pSalt,
+            long iterations, long prf) {
+        this.pPassword = pPassword;
+        this.pSaltSourceData = pSalt;
+        this.iterations = iterations;
+        this.prf = prf;
+        this.saltSource = CKZ_SALT_SPECIFIED;
+    }
 
     /**
      * Returns the string representation of CK_PKCS5_PBKD2_PARAMS.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.MacSpi;
 
@@ -39,6 +40,7 @@ import sun.nio.ch.DirectBuffer;
 import sun.security.pkcs11.wrapper.*;
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 import static sun.security.pkcs11.wrapper.PKCS11Exception.RV.*;
+import sun.security.util.PBEUtil;
 
 /**
  * MAC implementation class. This class currently supports HMAC using
@@ -65,6 +67,9 @@ final class P11Mac extends MacSpi {
     // algorithm name
     private final String algorithm;
 
+    // PBEKeyInfo if algorithm is PBE, otherwise null
+    private final P11SecretKeyFactory.PBEKeyInfo svcPbeKi;
+
     // mechanism object
     private final CK_MECHANISM ckMechanism;
 
@@ -88,6 +93,7 @@ final class P11Mac extends MacSpi {
         super();
         this.token = token;
         this.algorithm = algorithm;
+        this.svcPbeKi = P11SecretKeyFactory.getPBEKeyInfo(algorithm);
         Long params = null;
         macLength = switch ((int) mechanism) {
             case (int) CKM_MD5_HMAC -> 16;
@@ -192,12 +198,29 @@ final class P11Mac extends MacSpi {
     // see JCE spec
     protected void engineInit(Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException
-                ("Parameters not supported");
-        }
         reset(true);
-        p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        if (svcPbeKi != null) {
+            if (key instanceof P11Key) {
+                params = PBEUtil.checkKeyParams(key, params, algorithm);
+            } else {
+                // The key is a plain password. Use SunPKCS11's PBE
+                // key derivation mechanism to obtain a P11Key.
+                try {
+                    p11Key = P11SecretKeyFactory.derivePBEKey(
+                            token, PBEUtil.getPBAKeySpec(key, params),
+                            svcPbeKi);
+                } catch (InvalidKeySpecException e) {
+                    throw new InvalidKeyException(e);
+                }
+            }
+        }
+        if (svcPbeKi == null || key instanceof P11Key) {
+            if (params != null) {
+                throw new InvalidAlgorithmParameterException
+                    ("Parameters not supported");
+            }
+            p11Key = P11SecretKeyFactory.convertKey(token, key, algorithm);
+        }
         try {
             initialize();
         } catch (PKCS11Exception e) {
