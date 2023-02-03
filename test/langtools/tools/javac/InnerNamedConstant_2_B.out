@@ -1,2 +1,2 @@
-InnerNamedConstant_2.java:26:13: compiler.err.cant.assign.val.to.var: final, z
+InnerNamedConstant_2.java:26:13: compiler.err.cant.assign.val.to.var: static final, z
 1 error
