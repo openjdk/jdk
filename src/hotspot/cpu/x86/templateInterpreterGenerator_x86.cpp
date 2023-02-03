@@ -203,7 +203,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_return_entry_for in interpreter");
   }
 #endif // _LP64
-  // jlink fails HERE
+
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   // and NULL it as marker that esp is now tos until next java call
@@ -221,9 +221,6 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register cache = rbx;
   const Register index = rcx;
   if (UseNewIndyCode && index_size == sizeof(u4)) {
-    __ nop();
-    __ nop();
-    __ nop();
     // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
     __ get_cache_index_at_bcp(index, 1, index_size);
     // Get address of invokedynamic array

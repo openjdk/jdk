@@ -340,8 +340,8 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         if (UseNewIndyCode) {
-          tty->print_cr("Inside abstract interpreter deopt_continue_after_entry for indy");
-          // Do we need to do anything here?
+          int indy_index = method->constants()->decode_invokedynamic_index(index);
+          method->constants()->resolved_indy_info(indy_index)->set_num_parameters(callee_parameters);
         } else {
           method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
         }

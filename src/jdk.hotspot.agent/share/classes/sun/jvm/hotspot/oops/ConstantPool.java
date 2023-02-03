@@ -312,7 +312,6 @@ public class ConstantPool extends Metadata implements ClassConstants {
     if (!uncached && getCache() != null) {
       if (isInvokedynamicIndex(which)) {
         // Invokedynamic index is index into resolved_references
-        //int poolIndex = invokedynamicCPCacheEntryAt(which).getConstantPoolIndex();
         int poolIndex = getCache().getIndyEntryAt(which).getConstantPoolIndex();
         poolIndex = invokeDynamicNameAndTypeRefIndexAt(poolIndex);
         Assert.that(getTagAt(poolIndex).isNameAndType(), "");
