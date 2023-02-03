@@ -1,5 +1,7 @@
 static unsigned char *poo;
 
+static int xctr;
+
 /*
  * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
@@ -7267,8 +7269,6 @@ typedef uint32_t u32;
       wide_mul(u1, S0, R1); wide_madd(u1, S1, R0);
       wide_mul(u2, S0, R2); wide_madd(u2, S1, R1);  wide_madd(u2, S2, R0);
 
-      __ nop();
-
       wide_madd(u0, RS2, R1); wide_madd(u0, S1, RR2);
       wide_madd(u1, RS2, R2);
 
@@ -7290,17 +7290,19 @@ typedef uint32_t u32;
       __ adc(u2._hi, u2._hi, zr);
 
       // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      __ ubfx(rscratch1, u2._lo, 26, 26);
-      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      __ add(u0._lo, u0._lo, rscratch1);
-      __ bfc(u2._lo, 26, 26);
+      __ nop();
 
-      __ extr(rscratch1, u2._hi, u2._lo, 52);
-      __ lsl(rscratch1, rscratch1, 26);
-      __ bfc(u2._lo, 52, 64-52);
-      __ bfc(u2._hi, 0, 52);
+      __ extr(rscratch1, u2._hi, u2._lo, 26);
+      __ ubfx(rscratch1, rscratch1, 0, 52);
       __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
       __ add(u0._lo, u0._lo, rscratch1);
+      __ bfc(u2._lo, 26, 64-26);
+      __ bfc(u2._hi, 0, 14);
+
+      __ ubfx(rscratch1, u2._hi, 14, 50);
+      __ bfc(u2._hi, 14, 50);
+      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+      __ add(u1._lo, u1._lo, rscratch1);
 
       // Sum now in U2:U1:U0.
       // Dead: U0HI, U1HI.
