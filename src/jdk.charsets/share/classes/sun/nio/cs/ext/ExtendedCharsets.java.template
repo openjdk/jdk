@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,8 +29,8 @@
 
 package sun.nio.cs.ext;
 
-import java.nio.charset.Charset;
-import java.nio.charset.spi.CharsetProvider;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * Provider for extended charsets.
@@ -40,6 +40,7 @@ public class ExtendedCharsets extends AbstractCharsetProvider {
 
     static volatile ExtendedCharsets instance = null;
 
+    @SuppressWarnings("removal")
     public ExtendedCharsets() {
 
         super("sun.nio.cs.ext");  // identify provider pkg name.

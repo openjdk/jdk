@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,25 @@ public class SPI {
                         out.println(line);
                     } else {
                         charsets.values()
-                                .stream()
-                                .filter(cs -> cs.pkgName.equals("sun.nio.cs.ext") &&
-                                              !cs.isInternal &&
-                                              (cs.os == null || cs.os.equals(os)))
-                                .forEach( cs -> {
-                            out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
-                            out.printf("                new String[] {%n");
-                            for (String alias : cs.aliases) {
-                                out.printf("                    \"%s\",%n", alias);
-                            }
-                            out.printf("                });%n%n");
+                            .stream()
+                            .filter(cs -> cs.pkgName.equals("sun.nio.cs.ext") &&
+                                          !cs.isInternal &&
+                                          (cs.os == null || cs.os.equals(os)))
+                            .forEach( cs -> {
+                                out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
+                                if (cs.csName.equals("GB18030")) {
+                                    out.printf("                \"2000\".equals(AccessController.doPrivileged((PrivilegedAction<String>)%n" +
+                                               "                    () -> System.getProperty(\"jdk.charsets.GB18030\"))) ?%n" +
+                                               "                    new String[] {\"gb18030-2000\"} :%n" +
+                                               "                    new String[] {\"gb18030-2022\"});%n%n");
+                                } else {
+                                    out.printf("                new String[] {%n");
+                                    for (String alias : cs.aliases) {
+                                        out.printf("                    \"%s\",%n",
+                                                alias);
+                                    }
+                                    out.printf("                });%n%n");
+                                }
                         });
                     }
                 }
