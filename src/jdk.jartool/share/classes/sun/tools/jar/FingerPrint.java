@@ -32,16 +32,16 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Consumer;
-import jdk.classfile.AccessFlags;
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassElement;
-import jdk.classfile.Classfile;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.FieldModel;
-import jdk.classfile.MethodModel;
-import jdk.classfile.attribute.EnclosingMethodAttribute;
-import jdk.classfile.attribute.ExceptionsAttribute;
-import jdk.classfile.attribute.InnerClassesAttribute;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.FieldModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
+import jdk.internal.classfile.attribute.ExceptionsAttribute;
+import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
 /**
  * A FingerPrint is an abstract representation of a JarFile entry that contains

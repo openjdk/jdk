@@ -377,11 +377,11 @@ module java.base {
         java.prefs;
     exports sun.util.resources to
         jdk.localedata;
-    exports jdk.classfile to
+    exports jdk.internal.classfile to
         jdk.jartool;
-    exports jdk.classfile.attribute to
+    exports jdk.internal.classfile.attribute to
         jdk.jartool;
-    exports jdk.classfile.constantpool to
+    exports jdk.internal.classfile.constantpool to
         jdk.jartool;
 
     // the service types defined by the APIs in this module
