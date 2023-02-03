@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 6925932 7006126 8037945 8072495 8140449 8254876
+ * @bug 4313887 6838333 6925932 7006126 8037945 8072495 8140449 8254876 8298478
  * @summary Unit test for java.nio.file.Path path operations
  */
 
@@ -1437,6 +1437,12 @@ public class PathOps {
         int h2 = test("c:\\FOO").path().hashCode();
         if (h1 != h2)
             throw new RuntimeException("PathOps failed");
+
+        // lnog path prefixes
+        test("\\\\?\\C:\\mnt\\file.dat")
+            .string("C:\\mnt\\file.dat");
+        test("\\\\?\\UNC\\server\\share\\dir\\file.dat")
+            .string("\\\\server\\share\\dir\\file.dat");
     }
 
     static void doUnixTests() {

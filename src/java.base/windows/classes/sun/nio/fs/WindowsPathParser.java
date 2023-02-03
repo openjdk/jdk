@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,26 @@ class WindowsPathParser {
     }
 
     /**
+     * Removes the long path "\\?\" or "\\?\UNC" prefix. If the input
+     * has neither of these, the parameter is returned unchanged.
+     */
+    private static String removePrefix(String input) {
+        if (input.startsWith("\\\\?\\UNC")) {
+            return "\\" + input.substring(7);
+        } else if(input.startsWith("\\\\?\\")) {
+            return input.substring(4);
+        }
+        return input;
+    }
+
+    /**
      * Parses the given input as a Windows path.
      *
      * @param   requireToNormalize
      *          Indicates if the path requires to be normalized
      */
     private static Result parse(String input, boolean requireToNormalize) {
+        input = removePrefix(input);
         String root = "";
         WindowsPathType type = null;
 
