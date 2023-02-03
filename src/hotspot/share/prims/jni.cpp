@@ -3465,11 +3465,9 @@ struct JNINativeInterface_* jni_functions_nocheck() {
 
 static void post_thread_start_event(const JavaThread* jt) {
   assert(jt != nullptr, "invariant");
-  // We hoist the read for the thread id to ensure the thread is assigned an id (lazy assignment).
-  const traceid thread_id = JFR_JVM_THREAD_ID(jt);
   EventThreadStart event;
   if (event.should_commit()) {
-    event.set_thread(thread_id);
+    event.set_thread(JFR_JVM_THREAD_ID(jt));
     event.set_parentThread((traceid)0);
 #if INCLUDE_JFR
     if (EventThreadStart::is_stacktrace_enabled()) {
@@ -3838,9 +3836,6 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
 
-  // Please keep this inside the _attaching_via_jni section.
-  post_thread_start_event(thread);
-
   // mark the thread as no longer attaching
   // this uses a fence to push the change through so we don't have
   // to regrab the threads_lock
@@ -3854,6 +3849,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   if (JvmtiExport::should_post_thread_life()) {
     JvmtiExport::post_thread_start(thread);
   }
+
+  post_thread_start_event(thread);
 
   *(JNIEnv**)penv = thread->jni_environment();
 
