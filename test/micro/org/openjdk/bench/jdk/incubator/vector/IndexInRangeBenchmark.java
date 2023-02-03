@@ -34,7 +34,7 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 1, jvmArgsPrepend = {"--add-modules=jdk.incubator.vector"})
 public class IndexInRangeBenchmark {
-    @Param({"1024", "1027"})
+    @Param({"7", "259", "1024"})
     private int size;
 
     private byte[] byteIn;
