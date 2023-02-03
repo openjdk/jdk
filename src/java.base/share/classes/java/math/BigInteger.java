@@ -3503,7 +3503,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (signum == 0)
             return ZERO;
         if (n > 0) {
-            return new BigInteger(shiftLeft(mag, n), signum);
+            return shiftLeftImpl(n);
         } else if (n == 0) {
             return this;
         } else {
@@ -3511,6 +3511,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             // because shiftRightImpl considers its argument unsigned
             return shiftRightImpl(-n);
         }
+    }
+    
+    /**
+     * Returns a BigInteger whose value is {@code (this << n)}. The shift
+     * distance, {@code n}, is considered unsigned.
+     * (Computes <code>floor(this * 2<sup>n</sup>)</code>.)
+     *
+     * @param  n unsigned shift distance, in bits.
+     * @return {@code this << n}
+     */
+    BigInteger shiftLeftImpl(int n) {
+        return new BigInteger(shiftLeft(mag, n), signum);
     }
 
     /**
@@ -3580,7 +3592,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         } else {
             // Possible int overflow in {@code -n} is not a trouble,
             // because shiftLeft considers its argument unsigned
-            return new BigInteger(shiftLeft(mag, -n), signum);
+            return shiftLeftImpl(-n);
         }
     }
 
@@ -3592,7 +3604,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @param  n unsigned shift distance, in bits.
      * @return {@code this >> n}
      */
-    private BigInteger shiftRightImpl(int n) {
+    BigInteger shiftRightImpl(int n) {
         int nInts = n >>> 5;
         int nBits = n & 0x1f;
         int magLen = mag.length;
@@ -4614,7 +4626,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Returns the input array stripped of any leading zero bytes.
      * Since the source is trusted the copying may be skipped.
      */
-    private static int[] trustedStripLeadingZeroInts(int[] val) {
+    static int[] trustedStripLeadingZeroInts(int[] val) {
         int vlen = val.length;
         int keep;
 
