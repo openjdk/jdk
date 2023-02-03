@@ -91,6 +91,7 @@
 #include <shlobj.h>
 
 #include <malloc.h>
+#include <powrprof.h>
 #include <signal.h>
 #include <direct.h>
 #include <errno.h>
@@ -1876,8 +1877,40 @@ void os::win32::print_windows_version(outputStream* st) {
   st->cr();
 }
 
+// Processor Power Information; missing from Windows headers
+typedef struct _PROCESSOR_POWER_INFORMATION {
+    ULONG Number;
+    ULONG MaxMhz;     // max specified clock frequency of the system processor
+    ULONG CurrentMhz; // max specified processor clock frequency mult. by current processor throttle
+    ULONG MhzLimit;   // max specified processor clock frequency mult. by current processor thermal throttle limit
+    ULONG MaxIdleState;
+    ULONG CurrentIdleState;
+} PROCESSOR_POWER_INFORMATION, *PTR_PROCESSOR_POWER_INFORMATION;
+
+// additional lib needed for PowerProf functionality
+#pragma comment(lib, "Powrprof.lib")
+
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  // Nothing to do for now.
+  SYSTEM_INFO si;
+  GetSystemInfo(&si);
+
+  PROCESSOR_POWER_INFORMATION ppi;
+  size_t sz_check = sizeof(ppi) * (size_t)si.dwNumberOfProcessors;
+  NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
+
+  if (status == ERROR_SUCCESS) {
+    PTR_PROCESSOR_POWER_INFORMATION pppi = (PTR_PROCESSOR_POWER_INFORMATION) buf;
+    for (size_t i = 0; i < si.dwNumberOfProcessors; i++) {
+      st->print_cr("ProcessorInformation for processor %d", (int) pppi->Number);
+      st->print_cr("  Max Mhz: %d", (int) pppi->MaxMhz);
+      st->print_cr("  Current Mhz: %d", (int) pppi->CurrentMhz);
+      st->print_cr("  Mhz Limit: %d", (int) pppi->MhzLimit);
+      st->print_cr("  MaxIdleState: %d", (int) pppi->MaxIdleState);
+      st->print_cr("  CurrentIdleState: %d", (int) pppi->CurrentIdleState);
+      if (sz_check > buflen) break;
+      pppi++;
+    }
+  }
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
