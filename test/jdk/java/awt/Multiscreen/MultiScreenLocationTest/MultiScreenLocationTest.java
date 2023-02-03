@@ -92,9 +92,9 @@ public class MultiScreenLocationTest {
             frame.setVisible(true);
             robot.waitForIdle();
             Rectangle bounds = frame.getBounds();
-//            if (!Util.testBoundsColor(bounds, color, 5, 1000, robot)) {
-//                throw new RuntimeException(getErrorText("Robot.getPixelColor", i));
-//            }
+            if (!Util.testBoundsColor(bounds, color, 5, 1000, robot)) {
+                throw new RuntimeException(getErrorText("Robot.getPixelColor", i));
+            }
 
             // check Robot.createScreenCapture()
             BufferedImage image = robot.createScreenCapture(bounds);
