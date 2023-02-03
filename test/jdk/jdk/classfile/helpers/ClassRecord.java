@@ -48,15 +48,15 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.classfile.*;
-import jdk.classfile.attribute.*;
-import jdk.classfile.constantpool.*;
-import jdk.classfile.instruction.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static jdk.classfile.Classfile.*;
-import static jdk.classfile.Attributes.*;
+import static jdk.internal.classfile.Classfile.*;
+import static jdk.internal.classfile.Attributes.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
 
 /**

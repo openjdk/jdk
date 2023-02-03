@@ -25,10 +25,10 @@
 package org.openjdk.bench.jdk.classfile;
 
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.ClassElement;
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.FieldModel;
+import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.FieldModel;
 import jdk.internal.org.objectweb.asm.*;
 import jdk.internal.org.objectweb.asm.tree.*;
 import org.openjdk.jmh.annotations.*;

@@ -24,11 +24,11 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.classfile.AccessFlags;
+import jdk.internal.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.Classfile;
-import jdk.classfile.TypeKind;
-import jdk.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 
@@ -43,9 +43,9 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.CD_PrintStream;
 import static org.openjdk.bench.jdk.classfile.TestConstants.CD_System;
 import static org.openjdk.bench.jdk.classfile.TestConstants.MTD_INT_VOID;
 import static org.openjdk.bench.jdk.classfile.TestConstants.MTD_VOID;
-import static jdk.classfile.Opcode.*;
-import static jdk.classfile.TypeKind.*;
-import static jdk.classfile.TypeKind.IntType;
+import static jdk.internal.classfile.Opcode.*;
+import static jdk.internal.classfile.TypeKind.*;
+import static jdk.internal.classfile.TypeKind.IntType;
 import static jdk.internal.org.objectweb.asm.Opcodes.V12;
 
 /**
@@ -155,8 +155,8 @@ public class Write {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MethodTypeDesc.of(CD_void, CD_String.arrayType()),
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.classfile.Label loopTop = c0.newLabel();
-                                  jdk.classfile.Label loopEnd = c0.newLabel();
+                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
+                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
                                   c0.constantInstruction(ICONST_1, 1)         // 0
@@ -203,8 +203,8 @@ public class Write {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MethodTypeDesc.of(CD_void, CD_String.arrayType()),
                               AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
                               mb -> mb.withCode(c0 -> {
-                                  jdk.classfile.Label loopTop = c0.newLabel();
-                                  jdk.classfile.Label loopEnd = c0.newLabel();
+                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
+                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
                                   c0.constantInstruction(ICONST_1, 1)        // 0

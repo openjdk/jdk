@@ -28,7 +28,7 @@
  * @summary Testing ModuleDesc.
  * @run junit ModuleDescTest
  */
-import jdk.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.jdktypes.ModuleDesc;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;

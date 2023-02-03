@@ -28,8 +28,8 @@
  * @summary Testing Classfile annotation model.
  * @run junit AnnotationModelTest
  */
-import jdk.classfile.Classfile;
-import jdk.classfile.Attributes;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Attributes;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

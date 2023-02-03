@@ -32,16 +32,16 @@ import java.lang.constant.ClassDesc;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.classfile.Annotation;
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassBuilder;
-import jdk.classfile.ClassElement;
-import jdk.classfile.ClassModel;
-import jdk.classfile.ClassTransform;
-import jdk.classfile.Classfile;
-import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.components.ClassPrinter;
+import jdk.internal.classfile.Annotation;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.components.ClassPrinter;
 
 public class AnnotationsExamples {
 

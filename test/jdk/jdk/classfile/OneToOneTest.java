@@ -33,31 +33,31 @@ import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
-import jdk.classfile.AccessFlags;
+import jdk.internal.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.Instruction;
-import jdk.classfile.Label;
-import jdk.classfile.MethodModel;
-import jdk.classfile.TypeKind;
-import jdk.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.Instruction;
+import jdk.internal.classfile.Label;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-import jdk.classfile.instruction.ConstantInstruction;
-import jdk.classfile.instruction.StoreInstruction;
-import jdk.classfile.instruction.BranchInstruction;
-import jdk.classfile.instruction.LoadInstruction;
-import jdk.classfile.instruction.OperatorInstruction;
-import jdk.classfile.instruction.FieldInstruction;
-import jdk.classfile.instruction.InvokeInstruction;
+import jdk.internal.classfile.instruction.ConstantInstruction;
+import jdk.internal.classfile.instruction.StoreInstruction;
+import jdk.internal.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.instruction.LoadInstruction;
+import jdk.internal.classfile.instruction.OperatorInstruction;
+import jdk.internal.classfile.instruction.FieldInstruction;
+import jdk.internal.classfile.instruction.InvokeInstruction;
 
 import static helpers.TestConstants.CD_PrintStream;
 import static helpers.TestConstants.CD_System;
 import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
-import static jdk.classfile.Opcode.*;
+import static jdk.internal.classfile.Opcode.*;
 
 class OneToOneTest {
 

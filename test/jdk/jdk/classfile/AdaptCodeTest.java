@@ -37,13 +37,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.classfile.ClassModel;
-import jdk.classfile.ClassTransform;
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
 import helpers.ByteArrayClassLoader;
 import helpers.TestUtil;
 import helpers.Transforms;
-import jdk.classfile.instruction.ConstantInstruction;
+import jdk.internal.classfile.instruction.ConstantInstruction;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
