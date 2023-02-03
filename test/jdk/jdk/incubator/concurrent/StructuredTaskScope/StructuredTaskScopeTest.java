@@ -614,7 +614,7 @@ public class StructuredTaskScopeTest {
     public void testInterruptJoinUntil1(ThreadFactory factory) throws Exception {
         try (var scope = new StructuredTaskScope(null, factory)) {
             Future<String> future = scope.fork(() -> {
-                Thread.sleep(Duration.ofMillis(1000));
+                Thread.sleep(Duration.ofSeconds(2));
                 return "foo";
             });
 
