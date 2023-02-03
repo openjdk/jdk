@@ -58,10 +58,6 @@ typedef struct CoLocatedEventInfo_ {
  * suspend counts. It also acts as a repository for other
  * per-thread state such as the current method invocation or
  * current step.
- *
- * suspendCount is the number of outstanding suspends
- * from the debugger. suspends from the app itself are
- * not included in this count.
  */
 typedef struct ThreadNode {
     jthread thread;
@@ -74,11 +70,9 @@ typedef struct ThreadNode {
     unsigned int popFrameEvent : 1;
     unsigned int popFrameProceed : 1;
     unsigned int popFrameThread : 1;
-    unsigned int handlingAppResume : 1;
     EventIndex current_ei; /* Used to determine if we are currently handling an event on this thread. */
     jobject pendingStop;   /* Object we are throwing to stop the thread (ThreadReferenceImpl.stop). */
-    jint suspendCount;
-    jint resumeFrameDepth; /* !=0 => This thread is in a call to Thread.resume() */
+    jint suspendCount;     /* Number of outstanding suspends from the debugger. */
     jvmtiEventMode instructionStepMode;
     StepRequest currentStep;
     InvokeRequest currentInvoke;
@@ -112,10 +106,6 @@ static jrawMonitorID popFrameEventLock = NULL;
 static jrawMonitorID popFrameProceedLock = NULL;
 
 static jrawMonitorID threadLock;
-static jlocation resumeLocation;
-static HandlerNode *breakpointHandlerNode;
-static HandlerNode *framePopHandlerNode;
-static HandlerNode *catchHandlerNode;
 
 static jvmtiError threadControl_removeDebugThread(jthread thread);
 
@@ -151,20 +141,6 @@ static DeferredEventModeList deferredEventModes;
 static void dumpThreadList(ThreadList *list);
 static void dumpThread(ThreadNode *node);
 #endif
-
-static jint
-getStackDepth(jthread thread)
-{
-    jint count = 0;
-    jvmtiError error;
-
-    error = JVMTI_FUNC_PTR(gdata->jvmti,GetFrameCount)
-                        (gdata->jvmti, thread, &count);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "getting frame count");
-    }
-    return count;
-}
 
 /* Get the state of the thread direct from JVMTI */
 static jvmtiError
@@ -314,14 +290,14 @@ findRunningThread(jthread thread)
 
 /* Remove a ThreadNode from a ThreadList */
 static void
-removeNode(ThreadList *list, ThreadNode *node)
+removeNode(ThreadNode *node)
 {
     ThreadNode *prev;
     ThreadNode *next;
-
-    JDI_ASSERT(list == node->list);
+    ThreadList *list;
     prev = node->prev;
     next = node->next;
+    list = node->list;
     if ( prev != NULL ) {
         prev->next = next;
     }
@@ -491,7 +467,7 @@ static void
 removeThread(JNIEnv *env, ThreadNode *node)
 {
   JDI_ASSERT(node != NULL);
-  removeNode(node->list, node);
+  removeNode(node);
   clearThread(env, node);
 }
 
@@ -511,9 +487,22 @@ removeResumed(JNIEnv *env, ThreadList *list)
 }
 
 static void
+removeVThreads(JNIEnv *env)
+{
+    ThreadList *list = &runningVThreads;
+    ThreadNode *node = list->first;
+    while (node != NULL) {
+        ThreadNode *temp = node->next;
+        removeNode(node);
+        clearThread(env, node);
+        node = temp;
+    }
+}
+
+static void
 moveNode(ThreadList *source, ThreadList *dest, ThreadNode *node)
 {
-    removeNode(source, node);
+    removeNode(node);
     JDI_ASSERT(findThread(dest, node->thread) == NULL);
     addNode(dest, node);
 }
@@ -671,240 +660,22 @@ releaseLocks(void)
 void
 threadControl_initialize(void)
 {
-    jlocation unused;
-    jvmtiError error;
-
     suspendAllCount = 0;
     runningThreads.first = NULL;
     otherThreads.first = NULL;
     runningVThreads.first = NULL;
     debugThreadCount = 0;
     threadLock = debugMonitorCreate("JDWP Thread Lock");
-    if (gdata->threadClass==NULL) {
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER, "no java.lang.thread class");
-    }
-    if (gdata->threadResume==0) {
-        EXIT_ERROR(AGENT_ERROR_NULL_POINTER, "cannot resume thread");
-    }
-    /* Get the java.lang.Thread.resume() method beginning location */
-    error = methodLocation(gdata->threadResume, &resumeLocation, &unused);
-    if (error != JVMTI_ERROR_NONE) {
-        EXIT_ERROR(error, "getting method location");
-    }
-}
-
-static jthread
-getResumee(jthread resumingThread)
-{
-    jthread resumee = NULL;
-    jvmtiError error;
-    jobject object;
-    FrameNumber fnum = 0;
-
-    error = JVMTI_FUNC_PTR(gdata->jvmti,GetLocalObject)
-                    (gdata->jvmti, resumingThread, fnum, 0, &object);
-    if (error == JVMTI_ERROR_NONE) {
-        resumee = object;
-    }
-    return resumee;
-}
-
-
-static jboolean
-pendingAppResume(jboolean includeSuspended)
-{
-    ThreadList *list;
-    ThreadNode *node;
-
-    list = &runningThreads;
-    node = list->first;
-    while (node != NULL) {
-        if (node->resumeFrameDepth > 0) {
-            if (includeSuspended) {
-                return JNI_TRUE;
-            } else {
-                jvmtiError error;
-                jint       state;
-
-                error = threadState(node->thread, &state);
-                if (error != JVMTI_ERROR_NONE) {
-                    EXIT_ERROR(error, "getting thread state");
-                }
-                /* !node->handlingAppResume && resumeFrameDepth > 0
-                 * means the thread has entered Thread.resume() */
-                if (!(state & JVMTI_THREAD_STATE_SUSPENDED) &&
-                    !node->handlingAppResume) {
-                    return JNI_TRUE;
-                }
-            }
-        }
-        node = node->next;
-        if (node == NULL && list == &runningThreads) {
-            // We need to look at runningVThreads after we are done with runningThreads.
-            list = &runningVThreads;
-            node = list->first;
-        }
-    }
-    return JNI_FALSE;
-}
-
-static void
-notifyAppResumeComplete(void)
-{
-    debugMonitorNotifyAll(threadLock);
-    if (!pendingAppResume(JNI_TRUE)) {
-        if (framePopHandlerNode != NULL) {
-            (void)eventHandler_free(framePopHandlerNode);
-            framePopHandlerNode = NULL;
-        }
-        if (catchHandlerNode != NULL) {
-            (void)eventHandler_free(catchHandlerNode);
-            catchHandlerNode = NULL;
-        }
-    }
-}
-
-/*
- * Event handler for FRAME_POP and EXCEPTION_CATCH when in Thread.resume()
- * so we can detect its completion.
- */
-static void
-handleAppResumeCompletion(JNIEnv *env, EventInfo *evinfo,
-                          HandlerNode *handlerNode,
-                          struct bag *eventBag)
-{
-    ThreadNode *node;
-    jthread     thread;
-
-    thread = evinfo->thread;
-
-    debugMonitorEnter(threadLock);
-
-    node = findRunningThread(thread);
-    if (node != NULL) {
-        if (node->resumeFrameDepth > 0) {
-            jint compareDepth = getStackDepth(thread);
-            if (evinfo->ei == EI_FRAME_POP) {
-                compareDepth--;
-            }
-            if (compareDepth < node->resumeFrameDepth) {
-                node->resumeFrameDepth = 0;
-                notifyAppResumeComplete();
-            }
-        }
-    }
-
-    debugMonitorExit(threadLock);
-}
-
-static void
-blockOnDebuggerSuspend(jthread thread)
-{
-    ThreadNode *node;
-
-    node = findThread(NULL, thread);
-    if (node != NULL) {
-        while (node && node->suspendCount > 0) {
-            debugMonitorWait(threadLock);
-            node = findThread(NULL, thread);
-        }
-    }
-}
-
-/*
- * The caller is expected to hold threadLock and handlerLock.
- * eventHandler_createInternalThreadOnly() can deadlock because of
- * wrong lock ordering if the caller does not hold handlerLock.
- */
-static void
-trackAppResume(jthread thread)
-{
-    jvmtiError  error;
-    FrameNumber fnum;
-    ThreadNode *node;
-
-    fnum = 0;
-    node = findRunningThread(thread);
-    if (node != NULL) {
-        JDI_ASSERT(node->resumeFrameDepth == 0);
-        error = JVMTI_FUNC_PTR(gdata->jvmti,NotifyFramePop)
-                        (gdata->jvmti, thread, fnum);
-        if (error == JVMTI_ERROR_NONE) {
-            jint frameDepth = getStackDepth(thread);
-            if ((frameDepth > 0) && (framePopHandlerNode == NULL)) {
-                framePopHandlerNode = eventHandler_createInternalThreadOnly(
-                                           EI_FRAME_POP,
-                                           handleAppResumeCompletion,
-                                           thread);
-                catchHandlerNode = eventHandler_createInternalThreadOnly(
-                                           EI_EXCEPTION_CATCH,
-                                           handleAppResumeCompletion,
-                                           thread);
-                if ((framePopHandlerNode == NULL) ||
-                    (catchHandlerNode == NULL)) {
-                    (void)eventHandler_free(framePopHandlerNode);
-                    framePopHandlerNode = NULL;
-                    (void)eventHandler_free(catchHandlerNode);
-                    catchHandlerNode = NULL;
-                }
-            }
-            if ((framePopHandlerNode != NULL) &&
-                (catchHandlerNode != NULL) &&
-                (frameDepth > 0)) {
-                node->resumeFrameDepth = frameDepth;
-            }
-        }
-    }
-}
-
-/* Global breakpoint handler for Thread.resume() */
-static void
-handleAppResumeBreakpoint(JNIEnv *env, EventInfo *evinfo,
-                          HandlerNode *handlerNode,
-                          struct bag *eventBag)
-{
-    jthread resumer = evinfo->thread;
-
-    debugMonitorEnter(threadLock);
-
-    /*
-     * Actual handling has to be deferred. We cannot block right here if the
-     * target of the resume call is suspended by the debugger since we are
-     * holding handlerLock which must not be released. See doPendingTasks().
-     */
-    if (resumer != NULL) {
-        ThreadNode* node = findThread(&runningThreads, resumer);
-        if (node != NULL) {
-            node->handlingAppResume = JNI_TRUE;
-        }
-    }
-
-    debugMonitorExit(threadLock);
 }
 
 void
 threadControl_onConnect(void)
 {
-    breakpointHandlerNode = eventHandler_createInternalBreakpoint(
-                 handleAppResumeBreakpoint, NULL,
-                 gdata->threadClass, gdata->threadResume, resumeLocation);
 }
 
 void
 threadControl_onDisconnect(void)
 {
-    if (breakpointHandlerNode != NULL) {
-        (void)eventHandler_free(breakpointHandlerNode);
-        breakpointHandlerNode = NULL;
-    }
-    if (framePopHandlerNode != NULL) {
-        (void)eventHandler_free(framePopHandlerNode);
-        framePopHandlerNode = NULL;
-    }
-    if (catchHandlerNode != NULL) {
-        (void)eventHandler_free(catchHandlerNode);
-        catchHandlerNode = NULL;
-    }
 }
 
 void
@@ -978,14 +749,12 @@ commonSuspendByNode(ThreadNode *node)
     }
 
     /*
-     * If the thread was suspended by another app thread,
-     * do nothing and report no error (we won't resume it later).
+     * JVMTI_ERROR_THREAD_SUSPENDED used to be possible when Thread.suspend()
+     * was still supported, but now we should no longer ever see it.
      */
-     if (error == JVMTI_ERROR_THREAD_SUSPENDED) {
-        error = JVMTI_ERROR_NONE;
-     }
+    JDI_ASSERT(error != JVMTI_ERROR_THREAD_SUSPENDED);
 
-     return error;
+    return error;
 }
 
 /*
@@ -1086,8 +855,9 @@ resumeThreadByNode(ThreadNode *node)
     if (node->suspendCount > 0) {
         node->suspendCount--;
         debugMonitorNotifyAll(threadLock);
-        if ((node->suspendCount == 0) && node->toBeResumed &&
-            !node->suspendOnStart) {
+        if ((node->suspendCount == 0) && node->toBeResumed) {
+            // We should never see both toBeResumed and suspendOnStart set true.
+            JDI_ASSERT(!node->suspendOnStart);
             LOG_MISC(("thread=%p resumed", node->thread));
             error = JVMTI_FUNC_PTR(gdata->jvmti,ResumeThread)
                         (gdata->jvmti, node->thread);
@@ -1127,32 +897,6 @@ static void
 preSuspend(void)
 {
     getLocks();                     /* Avoid debugger deadlocks */
-
-    /*
-     * Delay any suspend while a call to java.lang.Thread.resume is in
-     * progress (not including those in suspended threads). The wait is
-     * timed because the threads suspended through
-     * java.lang.Thread.suspend won't result in a notify even though
-     * it may change the result of pendingAppResume()
-     */
-    while (pendingAppResume(JNI_FALSE)) {
-        /*
-         * This is ugly but we need to release the locks from getLocks
-         * or else the notify will never happen. The locks must be
-         * released and reacquired in the right order. else deadlocks
-         * can happen. It is possible that, during this dance, the
-         * notify will be missed, but since the wait needs to be timed
-         * anyway, it won't be a disaster. Note that this code will
-         * execute only on very rare occasions anyway.
-         */
-        releaseLocks();
-
-        debugMonitorEnter(threadLock);
-        debugMonitorTimedWait(threadLock, 1000);
-        debugMonitorExit(threadLock);
-
-        getLocks();
-    }
 }
 
 static void
@@ -1219,17 +963,10 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
      * event came in during a suspendAll, but the helper hasn't
      * completed the job yet. We decrement the count so the helper
      * won't suspend this thread after we are done with the resumeAll.
-     * Another case to be handled here is when the debugger suspends
-     * the thread while the app has it suspended. In this case,
-     * the toBeResumed flag has been cleared indicating that
-     * the thread should not be resumed when the debugger does a resume.
-     * In this case, we also have to decrement the suspend count.
-     * If we don't then when the app resumes the thread and our Thread.resume
-     * bkpt handler is called, blockOnDebuggerSuspend will not resume
-     * the thread because suspendCount will be 1 meaning that the
-     * debugger has the thread suspended.  See bug 6224859.
      */
-    if (node->suspendCount == 1 && (!node->toBeResumed || node->suspendOnStart)) {
+    if (node->suspendCount == 1 && node->suspendOnStart) {
+        // We should never see both toBeResumed and suspendOnStart set true.
+        JDI_ASSERT(!node->toBeResumed);
         node->suspendCount--;
         // TODO - vthread node cleanup: If this is a vthread, we should delete the node.
         return JVMTI_ERROR_NONE;
@@ -1242,13 +979,13 @@ resumeCopyHelper(JNIEnv *env, ThreadNode *node, void *arg)
 
     /*
      * This is tricky. A suspendCount of 1 and toBeResumed means that
-     * JVM/DI SuspendThread() or JVM/DI SuspendThreadList() was called
-     * on this thread. The check for !suspendOnStart is paranoia that
-     * we inherited from resumeThreadByNode().
+     * JVMTI SuspendThread() or JVMTI SuspendThreadList() was called
+     * on this thread.
      */
-    if (node->suspendCount == 1 && node->toBeResumed && !node->suspendOnStart) {
+    if (node->suspendCount == 1 && node->toBeResumed) {
+        // We should never see both toBeResumed and suspendOnStart set true.
+        JDI_ASSERT(!node->suspendOnStart);
         jthread **listPtr = (jthread **)arg;
-
         **listPtr = node->thread;
         (*listPtr)++;
     }
@@ -1266,13 +1003,13 @@ resumeCountHelper(JNIEnv *env, ThreadNode *node, void *arg)
 
     /*
      * This is tricky. A suspendCount of 1 and toBeResumed means that
-     * JVM/DI SuspendThread() or JVM/DI SuspendThreadList() was called
-     * on this thread. The check for !suspendOnStart is paranoia that
-     * we inherited from resumeThreadByNode().
+     * JVMTI SuspendThread() or JVMTDI SuspendThreadList() was called
+     * on this thread.
      */
-    if (node->suspendCount == 1 && node->toBeResumed && !node->suspendOnStart) {
+    if (node->suspendCount == 1 && node->toBeResumed) {
+        // We should never see both toBeResumed and suspendOnStart set true.
+        JDI_ASSERT(!node->suspendOnStart);
         jint *counter = (jint *)arg;
-
         (*counter)++;
     }
     return JVMTI_ERROR_NONE;
@@ -1374,7 +1111,7 @@ commonResumeList(JNIEnv *env)
         LOG_MISC(("thread=%p resumed as part of list", node->thread));
 
         /*
-         * resumeThreadByNode() assumes that JVM/DI ResumeThread()
+         * resumeThreadByNode() assumes that JVMTI ResumeThread()
          * always works and does all the accounting updates. We do
          * the same here. We also don't clear the error.
          */
@@ -2375,59 +2112,6 @@ threadControl_onEventHandlerEntry(jbyte sessionID, EventInfo *evinfo, jobject cu
 static void
 doPendingTasks(JNIEnv *env, ThreadNode *node)
 {
-    /* Deferred breakpoint handling for Thread.resume() */
-    if (node->handlingAppResume) {
-        jthread resumer = node->thread;
-        jthread resumee = getResumee(resumer);
-
-        if (resumer != NULL) {
-            /*
-             * trackAppResume indirectly acquires handlerLock. For proper lock
-             * ordering handlerLock has to be acquired before threadLock.
-             */
-            debugMonitorExit(threadLock);
-            eventHandler_lock();
-            debugMonitorEnter(threadLock);
-
-            /*
-             * Track the resuming thread by marking it as being within
-             * a resume and by setting up for notification on
-             * a frame pop or exception. We won't allow the debugger
-             * to suspend threads while any thread is within a
-             * call to resume. This (along with the block below)
-             * ensures that when the debugger
-             * suspends a thread it will remain suspended.
-             */
-            trackAppResume(resumer);
-
-            /*
-             * handlerLock is not needed anymore. We must release it before calling
-             * blockOnDebuggerSuspend() because it is required for resumes done by
-             * the debugger. If resumee is currently suspended by the debugger, then
-             * blockOnDebuggerSuspend() will block until a debugger resume is done.
-             * If it blocks while holding the handlerLock, then the resume will deadlock.
-             */
-            eventHandler_unlock();
-        }
-
-        if (resumee != NULL) {
-            /*
-             * Hold up any attempt to resume as long as the debugger
-             * has suspended the resumee.
-             */
-            blockOnDebuggerSuspend(resumee);
-        }
-
-        node->handlingAppResume = JNI_FALSE;
-
-        /*
-         * The blocks exit condition: resumee's suspendCount == 0.
-         *
-         * Debugger suspends are blocked if any thread is executing
-         * Thread.resume(), i.e. !handlingAppResume && frameDepth > 0.
-         */
-    }
-
     /*
      * Take care of any pending interrupts/stops, and clear out
      * info on pending interrupts/stops.
@@ -2472,17 +2156,8 @@ threadControl_onEventHandlerExit(EventIndex ei, jthread thread,
 
         env = getEnv();
         if (ei == EI_THREAD_END) {
-            jboolean inResume = (node->resumeFrameDepth > 0);
             removeThread(env, node);
             node = NULL;   /* has been freed */
-
-            /*
-             * Clean up mechanism used to detect end of
-             * resume.
-             */
-            if (inResume) {
-                notifyAppResumeComplete();
-            }
         } else {
             /* No point in doing this if the thread is about to die.*/
             doPendingTasks(env, node);
@@ -2754,6 +2429,30 @@ threadControl_reset(void)
     debugMonitorNotifyAll(threadLock);
     debugMonitorExit(threadLock);
     eventHandler_unlock();
+
+    /*
+     * Unless we are remembering all vthreads when the debugger is not connected,
+     * we free them all up here.
+     */
+    if (!gdata->rememberVThreadsWhenDisconnected) {
+        /*
+         * First we need to wait for all active callbacks to complete. They were resumed
+         * above by the resetHelper. We can't remove the vthreads until after they complete,
+         * because the vthread ThreadNodes might be referenced as the callbacks unwind.
+         * We do this outside of any locking, because the callbacks may need to acquire locks
+         * in order to complete. It's ok if there are more callbacks after this point because
+         * the only callbacks enabled are the permanent ones, and they never involve vthreads.
+         */
+        eventHandler_waitForActiveCallbacks();
+        /*
+         * Now that event callbacks have exited, we can reacquire the threadLock, which
+         * is needed before before calling removeVThreads().
+         */
+        debugMonitorEnter(threadLock);
+        removeVThreads(env);
+        debugMonitorExit(threadLock);
+    }
+
 }
 
 jvmtiEventMode

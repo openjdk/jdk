@@ -25,6 +25,7 @@ America/Cambridge_Bay MST MDT
 America/Cancun EST
 America/Chicago CST CDT
 America/Chihuahua CST
+America/Ciudad_Juarez MST MDT
 America/Costa_Rica CST CDT
 America/Danmarkshavn GMT
 America/Dawson MST
@@ -71,9 +72,8 @@ America/Nome AKST AKDT
 America/North_Dakota/Beulah CST CDT
 America/North_Dakota/Center CST CDT
 America/North_Dakota/New_Salem CST CDT
-America/Ojinaga CST
+America/Ojinaga CST CDT
 America/Panama EST
-America/Pangnirtung EST EDT
 America/Phoenix MST
 America/Port-au-Prince EST EDT
 America/Puerto_Rico AST

@@ -127,6 +127,8 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     @Override
     protected void encode(ByteBuffer buf, int length, byte highByte,
                           long[] result) {
+        ByteOrder currOrder = buf.order();
+        buf.order(ByteOrder.LITTLE_ENDIAN);
         if (length == 16) {
             long low = buf.getLong();
             long high = buf.getLong();
@@ -134,6 +136,7 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
         } else {
             super.encode(buf, length, highByte, result);
         }
+        buf.order(currOrder);
     }
 
     protected void encode(long high, long low, byte highByte, long[] result) {

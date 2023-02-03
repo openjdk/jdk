@@ -34,9 +34,9 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.Optional;
-import jdk.classfile.*;
-import jdk.classfile.attribute.*;
-import jdk.classfile.components.ClassPrinter;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

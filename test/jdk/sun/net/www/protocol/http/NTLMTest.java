@@ -70,7 +70,7 @@ public class NTLMTest
             uc.getInputStream().readAllBytes();
 
         } catch (ProtocolException e) {
-            /* java.net.ProtocolException: Server redirected too many  times (20) */
+            /* java.net.ProtocolException: Server redirected too many times (20) */
             throw new RuntimeException("Failed: ProtocolException", e);
         } catch (IOException ioe) {
             /* IOException is OK. We are expecting "java.io.IOException: Server

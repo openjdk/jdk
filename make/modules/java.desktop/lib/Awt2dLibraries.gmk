@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -120,11 +120,6 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-ifeq ($(call isTargetOs, linux), true)
-  # FIXME: This is probably not what we want to do, but keep it now for compatibility.
-  LIBAWT_CFLAGS += $(EXPORT_ALL_SYMBOLS)
-endif
-
 # Turn off all warnings for debug_mem.c This is needed because the specific warning
 # about initializing a declared 'extern' cannot be turned off individually. Only
 # applies to debug builds. This limitation in gcc is tracked in
@@ -152,7 +147,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare, \
+    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
     DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
@@ -274,7 +269,7 @@ endif
 ################################################################################
 
 # The fast floor code loses precision.
-LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
+LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR -DCMS_NO_HALF_SUPPORT
 
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
@@ -305,7 +300,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         common/awt/debug \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits stringop-truncation, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -414,7 +409,7 @@ ifeq ($(FREETYPE_TO_USE), system)
   LIBFREETYPE_LIBS := $(FREETYPE_LIBS)
 else
   BUILD_LIBFREETYPE_HEADER_DIRS := $(TOPDIR)/src/$(MODULE)/share/native/libfreetype/include
-  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY $(EXPORT_ALL_SYMBOLS)
+  BUILD_LIBFREETYPE_CFLAGS := -DFT2_BUILD_LIBRARY
 
   # For use by libfontmanager:
   LIBFREETYPE_CFLAGS := -I$(BUILD_LIBFREETYPE_HEADER_DIRS)
@@ -433,6 +428,7 @@ else
           $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
+      DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
   ))
@@ -762,6 +758,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_gcc_splashscreen_gfx_impl.c := implicit-fallthrough maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough sign-compare unused-function, \
       DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
+      DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
@@ -834,6 +831,7 @@ ifeq ($(call isTargetOs, macosx), true)
       DISABLED_WARNINGS_clang_ImageSurfaceData.m := enum-conversion parentheses-equality, \
       DISABLED_WARNINGS_clang_MTLBlitLoops.m := pointer-arith, \
       DISABLED_WARNINGS_clang_MTLPipelineStatesStorage.m := semicolon-before-method-body, \
+      DISABLED_WARNINGS_clang_MTLRenderer.m := gnu-folding-constant, \
       DISABLED_WARNINGS_clang_MTLVertexCache.m := pointer-arith, \
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \

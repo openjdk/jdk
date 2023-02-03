@@ -104,6 +104,8 @@ class Basics {
     long l;
     Object obj;
     Object obj2;
+    Object obj3;
+    Object obj4;
 
     @Test
     @IR(failOn = IRNode.STORE, phase = {CompilePhase.DEFAULT, CompilePhase.PRINT_IDEAL})
@@ -242,6 +244,16 @@ class Basics {
     public void alloc() {
         obj = new Object();
         obj2 = new Object[1];
+    }
+
+    @Test
+    @IR(counts = {IRNode.ALLOC, "2", IRNode.ALLOC_ARRAY, "2"}, // works for all phases
+        phase = {CompilePhase.BEFORE_REMOVEUSELESS, CompilePhase.CCP1, CompilePhase.PRINT_OPTO_ASSEMBLY, CompilePhase.DEFAULT})
+    public void alloc2() {
+        obj = new Object();
+        obj2 = new Object[1];
+        obj3 = new Object();
+        obj4 = new Object[2];
     }
 }
 

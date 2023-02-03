@@ -28,9 +28,9 @@
  * @summary Testing Classfile TempConstantPoolBuilder.
  * @run junit TempConstantPoolBuilderTest
  */
-import jdk.classfile.*;
-import jdk.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.classfile.attribute.SourceFileAttribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import jdk.internal.classfile.attribute.SourceFileAttribute;
 import java.lang.reflect.AccessFlag;
 import org.junit.jupiter.api.Test;
 
@@ -40,8 +40,8 @@ import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
-import static jdk.classfile.Opcode.INVOKESPECIAL;
-import static jdk.classfile.TypeKind.VoidType;
+import static jdk.internal.classfile.Opcode.INVOKESPECIAL;
+import static jdk.internal.classfile.TypeKind.VoidType;
 
 class TempConstantPoolBuilderTest {
 

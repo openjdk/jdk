@@ -103,7 +103,9 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   sd(hdr, Address(disp_hdr, 0));
   // otherwise we don't care about the result and handle locking via runtime call
   bnez(hdr, slow_case, /* is_far */ true);
+  // done
   bind(done);
+  increment(Address(xthread, JavaThread::held_monitor_count_offset()));
   return null_check_offset;
 }
 
@@ -132,7 +134,9 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   } else {
     cmpxchgptr(disp_hdr, hdr, obj, t1, done, &slow_case);
   }
+  // done
   bind(done);
+  decrement(Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // Defines obj, preserves var_size_in_bytes
@@ -145,13 +149,13 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
 }
 
 void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register len, Register tmp1, Register tmp2) {
-  assert_different_registers(obj, klass, len);
+  assert_different_registers(obj, klass, len, tmp1, tmp2);
   // This assumes that all prototype bits fitr in an int32_t
   mv(tmp1, (int32_t)(intptr_t)markWord::prototype().value());
   sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
 
   if (UseCompressedClassPointers) { // Take care not to kill klass
-    encode_klass_not_null(tmp1, klass);
+    encode_klass_not_null(tmp1, klass, tmp2);
     sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));
   } else {
     sd(klass, Address(obj, oopDesc::klass_offset_in_bytes()));
@@ -297,7 +301,8 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache, L
   // explicit NULL check not needed since load from [klass_offset] causes a trap
   // check against inline cache
   assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-  cmp_klass(receiver, iCache, t0, L);
+  assert_different_registers(receiver, iCache, t0, t2);
+  cmp_klass(receiver, iCache, t0, t2 /* call-clobbered t2 as a tmp */, L);
 }
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {

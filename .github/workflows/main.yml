@@ -35,7 +35,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -65,6 +65,7 @@ jobs:
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
+      docs: ${{ steps.include.outputs.docs }}
 
     steps:
         # This function must be inlined in main.yml, or we'd be forced to checkout the repo
@@ -77,19 +78,17 @@ jobs:
           # 'false' otherwise.
           # arg $1: platform name or names to look for
           function check_platform() {
-            if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
-              # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
-              echo 'false'
-              return
-            fi
-
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
             elif [[ $GITHUB_EVENT_NAME == push ]]; then
-              input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
-            else
-              echo 'Internal error in GHA'
-              exit 1
+              if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+                # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
+                >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
+                echo 'false'
+                return
+              else
+                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+              fi
             fi
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
@@ -118,6 +117,7 @@ jobs:
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
           echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
@@ -277,6 +277,23 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-aarch64 == 'true'
+
+  build-docs:
+    name: docs
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      debug-levels: '[ "debug" ]'
+      make-target: 'docs-jdk-bundles'
+      # Make sure we never try to make full docs, since that would require a
+      # build JDK, and we do not need the additional testing of the graphs.
+      extra-conf-options: '--disable-full-docs'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.docs == 'true'
 
   ###
   ### Test jobs

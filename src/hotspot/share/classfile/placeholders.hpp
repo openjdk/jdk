@@ -105,9 +105,11 @@ class PlaceholderEntry {
 
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername) {
-    Symbol::maybe_decrement_refcount(_supername);
-    _supername = supername;
-    Symbol::maybe_increment_refcount(_supername);
+    if (supername != _supername) {
+      Symbol::maybe_decrement_refcount(_supername);
+      _supername = supername;
+      Symbol::maybe_increment_refcount(_supername);
+    }
   }
   void               clear_supername() {
     Symbol::maybe_decrement_refcount(_supername);

@@ -29,11 +29,11 @@
  * @run junit MassAdaptCopyCodeTest
  */
 import helpers.ByteArrayClassLoader;
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeModel;
-import jdk.classfile.CodeTransform;
-import jdk.classfile.MethodModel;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.CodeTransform;
+import jdk.internal.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

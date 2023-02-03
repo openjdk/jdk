@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -67,9 +67,9 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -211,9 +211,7 @@ int ClassLoaderData::ChunkedHandleList::count() const {
 
 inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chunk* c, const juint size) {
   for (juint i = 0; i < size; i++) {
-    if (c->_data[i] != NULL) {
-      f->do_oop(&c->_data[i]);
-    }
+    f->do_oop(&c->_data[i]);
   }
 }
 
@@ -821,9 +819,10 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
     if (_deallocate_list == NULL) {
-      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
+      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }
@@ -972,6 +971,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
     case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_stw_fullgc_mark:            out->print_cr("stw full gc mark"); break;
+    case _claim_stw_fullgc_adjust:          out->print_cr("stw full gc adjust"); break;
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
@@ -1008,6 +1009,23 @@ void ClassLoaderData::print_on(outputStream* out) const {
 
 void ClassLoaderData::print() const { print_on(tty); }
 
+class VerifyHandleOops : public OopClosure {
+  VerifyOopClosure vc;
+ public:
+  virtual void do_oop(oop* p) {
+    if (p != nullptr && *p != nullptr) {
+      oop o = *p;
+      if (!java_lang_Class::is_instance(o)) {
+        // is_instance will assert for an invalid oop.
+        // Walk the resolved_references array and other assorted oops in the
+        // CLD::_handles field.  The mirror oops are followed by other heap roots.
+        o->oop_iterate(&vc);
+      }
+    }
+  }
+  virtual void do_oop(narrowOop* o) { ShouldNotReachHere(); }
+};
+
 void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
@@ -1031,6 +1049,19 @@ void ClassLoaderData::verify() {
   if (_modules != NULL) {
     _modules->verify();
   }
+
+  if (_deallocate_list != nullptr) {
+    for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
+      Metadata* m = _deallocate_list->at(i);
+      if (m->is_klass()) {
+        ((Klass*)m)->verify();
+      }
+    }
+  }
+
+  // Check the oops in the handles area
+  VerifyHandleOops vho;
+  oops_do(&vho, _claim_none, false);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {

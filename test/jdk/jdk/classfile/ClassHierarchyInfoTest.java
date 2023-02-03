@@ -37,12 +37,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
-import jdk.classfile.ClassHierarchyResolver;
+import jdk.internal.classfile.ClassHierarchyResolver;
 
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeModel;
-import jdk.classfile.MethodModel;
-import jdk.classfile.impl.Util;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

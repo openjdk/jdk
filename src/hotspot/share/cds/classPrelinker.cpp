@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ClassPrelinker::ClassesTable* ClassPrelinker::_processed_classes = NULL;
-ClassPrelinker::ClassesTable* ClassPrelinker::_vm_classes = NULL;
+ClassPrelinker::ClassesTable* ClassPrelinker::_processed_classes = nullptr;
+ClassPrelinker::ClassesTable* ClassPrelinker::_vm_classes = nullptr;
 
 bool ClassPrelinker::is_vm_class(InstanceKlass* ik) {
-  return (_vm_classes->get(ik) != NULL);
+  return (_vm_classes->get(ik) != nullptr);
 }
 
 void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
@@ -45,7 +45,7 @@ void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
   _vm_classes->put_if_absent(ik, &created);
   if (created) {
     InstanceKlass* super = ik->java_super();
-    if (super != NULL) {
+    if (super != nullptr) {
       add_one_vm_class(super);
     }
     Array<InstanceKlass*>* ifs = ik->local_interfaces();
@@ -56,20 +56,20 @@ void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
 }
 
 void ClassPrelinker::initialize() {
-  assert(_vm_classes == NULL, "must be");
-  _vm_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
-  _processed_classes = new (ResourceObj::C_HEAP, mtClass)ClassesTable();
+  assert(_vm_classes == nullptr, "must be");
+  _vm_classes = new (mtClass)ClassesTable();
+  _processed_classes = new (mtClass)ClassesTable();
   for (auto id : EnumRange<vmClassID>{}) {
     add_one_vm_class(vmClasses::klass_at(id));
   }
 }
 
 void ClassPrelinker::dispose() {
-  assert(_vm_classes != NULL, "must be");
+  assert(_vm_classes != nullptr, "must be");
   delete _vm_classes;
   delete _processed_classes;
-  _vm_classes = NULL;
-  _processed_classes = NULL;
+  _vm_classes = nullptr;
+  _processed_classes = nullptr;
 }
 
 bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) {
@@ -77,7 +77,7 @@ bool ClassPrelinker::can_archive_resolved_klass(ConstantPool* cp, int cp_index) 
   assert(cp->tag_at(cp_index).is_klass(), "must be resolved");
 
   Klass* resolved_klass = cp->resolved_klass_at(cp_index);
-  assert(resolved_klass != NULL, "must be");
+  assert(resolved_klass != nullptr, "must be");
 
   return can_archive_resolved_klass(cp->pool_holder(), resolved_klass);
 }
@@ -115,8 +115,8 @@ bool ClassPrelinker::can_archive_resolved_klass(InstanceKlass* cp_holder, Klass*
 
 void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
   constantPoolHandle cp(THREAD, ik->constants());
-  if (cp->cache() == NULL || cp->reference_map() == NULL) {
-    // The cache may be NULL if the pool_holder klass fails verification
+  if (cp->cache() == nullptr || cp->reference_map() == nullptr) {
+    // The cache may be null if the pool_holder klass fails verification
     // at dump time due to missing dependencies.
     return;
   }
@@ -146,16 +146,16 @@ Klass* ClassPrelinker::find_loaded_class(JavaThread* THREAD, oop class_loader, S
   Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, name,
                                                             h_loader,
                                                             Handle());
-  if (k != NULL) {
+  if (k != nullptr) {
     return k;
   }
   if (class_loader == SystemDictionary::java_system_loader()) {
     return find_loaded_class(THREAD, SystemDictionary::java_platform_loader(), name);
   } else if (class_loader == SystemDictionary::java_platform_loader()) {
-    return find_loaded_class(THREAD, NULL, name);
+    return find_loaded_class(THREAD, nullptr, name);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 Klass* ClassPrelinker::maybe_resolve_class(constantPoolHandle cp, int cp_index, TRAPS) {
@@ -166,12 +166,12 @@ Klass* ClassPrelinker::maybe_resolve_class(constantPoolHandle cp, int cp_index, 
       !cp_holder->is_shared_app_class()) {
     // Don't trust custom loaders, as they may not be well-behaved
     // when resolving classes.
-    return NULL;
+    return nullptr;
   }
 
   Symbol* name = cp->klass_name_at(cp_index);
   Klass* resolved_klass = find_loaded_class(THREAD, cp_holder->class_loader(), name);
-  if (resolved_klass != NULL && can_archive_resolved_klass(cp_holder, resolved_klass)) {
+  if (resolved_klass != nullptr && can_archive_resolved_klass(cp_holder, resolved_klass)) {
     Klass* k = cp->klass_at(cp_index, CHECK_NULL); // Should fail only with OOM
     assert(k == resolved_klass, "must be");
   }
@@ -193,7 +193,7 @@ void ClassPrelinker::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) 
 
 #ifdef ASSERT
 bool ClassPrelinker::is_in_archivebuilder_buffer(address p) {
-  if (!Thread::current()->is_VM_thread() || ArchiveBuilder::current() == NULL) {
+  if (!Thread::current()->is_VM_thread() || ArchiveBuilder::current() == nullptr) {
     return false;
   } else {
     return ArchiveBuilder::current()->is_in_buffer_space(p);

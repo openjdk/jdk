@@ -55,7 +55,6 @@ class TimeStamp {
   jlong _counter;
  public:
   TimeStamp()  { _counter = 0; }
-  void clear() { _counter = 0; }
   // has the timestamp been updated since being created or cleared?
   bool is_updated() const { return _counter != 0; }
   // update to current elapsed time

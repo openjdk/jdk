@@ -319,30 +319,27 @@ public final class CertAndKeyGen {
 
             X509CertInfo info = new X509CertInfo();
             // Add all mandatory attributes
-            info.set(X509CertInfo.VERSION,
-                     new CertificateVersion(CertificateVersion.V3));
+            info.setVersion(new CertificateVersion(CertificateVersion.V3));
             if (prng == null) {
                 prng = new SecureRandom();
             }
-            info.set(X509CertInfo.SERIAL_NUMBER,
-                    CertificateSerialNumber.newRandom64bit(prng));
-            info.set(X509CertInfo.SUBJECT, myname);
-            info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-            info.set(X509CertInfo.VALIDITY, interval);
+            info.setSerialNumber(CertificateSerialNumber.newRandom64bit(prng));
+            info.setSubject(myname);
+            info.setKey(new CertificateX509Key(publicKey));
+            info.setValidity(interval);
             if (signerFlag) {
                 // use signer's subject name to set the issuer name
-                info.set(X509CertInfo.ISSUER, signerSubjectName);
+                info.setIssuer(signerSubjectName);
             } else {
-                info.set(X509CertInfo.ISSUER, myname);
+                info.setIssuer(myname);
             }
-            if (ext != null) info.set(X509CertInfo.EXTENSIONS, ext);
+            if (ext != null) info.setExtensions(ext);
 
-            cert = new X509CertImpl(info);
             if (signerFlag) {
                 // use signer's private key to sign
-                cert.sign(signerPrivateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, signerPrivateKey, sigAlg);
             } else {
-                cert.sign(privateKey, sigAlg);
+                cert = X509CertImpl.newSigned(info, privateKey, sigAlg);
             }
 
             return cert;

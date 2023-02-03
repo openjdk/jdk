@@ -1028,7 +1028,7 @@ void ShenandoahBarrierSetC2::verify_gc_barriers(Compile* compile, CompilePhase p
                 if (if_ctrl != load_ctrl) {
                   // Skip possible CProj->NeverBranch in infinite loops
                   if ((if_ctrl->is_Proj() && if_ctrl->Opcode() == Op_CProj)
-                      && (if_ctrl->in(0)->is_MultiBranch() && if_ctrl->in(0)->Opcode() == Op_NeverBranch)) {
+                      && if_ctrl->in(0)->is_NeverBranch()) {
                     if_ctrl = if_ctrl->in(0)->in(0);
                   }
                 }

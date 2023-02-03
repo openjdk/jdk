@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -519,7 +519,9 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state,
   assert_cond(runtime_entry != NULL);
   address entry = __ pc();
   __ push(state);
+  __ push_cont_fastpath(xthread);
   __ call_VM(noreg, runtime_entry);
+  __ pop_cont_fastpath(xthread);
   __ membar(MacroAssembler::AnyAny);
   __ dispatch_via(vtos, Interpreter::_normal_table.table_for(vtos));
   return entry;
@@ -744,15 +746,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ sd(xmethod, Address(sp, 7 * wordSize));
   __ sd(ProfileInterpreter ? t0 : zr, Address(sp, 6 * wordSize));
 
+  __ sd(ra, Address(sp, 11 * wordSize));
+  __ sd(fp, Address(sp, 10 * wordSize));
+  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+
   __ ld(xcpool, Address(xmethod, Method::const_offset()));
   __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
   __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
-  __ sd(xlocals, Address(sp, 2 * wordSize));
-
-  __ sd(ra, Address(sp, 11 * wordSize));
-  __ sd(fp, Address(sp, 10 * wordSize));
-  __ la(fp, Address(sp, 12 * wordSize)); // include ra & fp
+  __ sub(t0, xlocals, fp);
+  __ srli(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
+  // Store relativized xlocals, see frame::interpreter_frame_locals().
+  __ sd(t0, Address(sp, 2 * wordSize));
 
   // set sender sp
   // leave last_sp as null
@@ -774,8 +779,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     // Move SP out of the way
     __ mv(sp, t0);
   } else {
-    __ sd(sp, Address(sp, 5 * wordSize));
+    // Make sure there is room for the exception oop pushed in case method throws
+    // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
+    __ sub(t0, sp, 2 * wordSize);
+    __ sd(t0, Address(sp, 5 * wordSize));
     __ sd(zr, Address(sp, 4 * wordSize));
+    __ mv(sp, t0);
   }
 }
 
@@ -1735,18 +1744,35 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 }
 
 void TemplateInterpreterGenerator::count_bytecode() {
-  __ push_reg(t0);
-  __ push_reg(x10);
-  __ mv(x10, (address) &BytecodeCounter::_counter_value);
-  __ mv(t0, 1);
-  __ amoadd_d(zr, x10, t0, Assembler::aqrl);
-  __ pop_reg(x10);
-  __ pop_reg(t0);
+  __ mv(x7, (address) &BytecodeCounter::_counter_value);
+  __ atomic_addw(noreg, 1, x7);
 }
 
-void TemplateInterpreterGenerator::histogram_bytecode(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
+  __ mv(x7, (address) &BytecodeHistogram::_counters[t->bytecode()]);
+  __ atomic_addw(noreg, 1, x7);
+}
 
-void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) { ; }
+void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
+  // Calculate new index for counter:
+  //   _index = (_index >> log2_number_of_codes) |
+  //            (bytecode << log2_number_of_codes);
+  Register index_addr = t1;
+  Register index = t0;
+  __ mv(index_addr, (address) &BytecodePairHistogram::_index);
+  __ lw(index, index_addr);
+  __ mv(x7, ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
+  __ srli(index, index, BytecodePairHistogram::log2_number_of_codes);
+  __ orrw(index, x7, index);
+  __ sw(index, index_addr);
+  // Bump bucket contents:
+  //   _counters[_index] ++;
+  Register counter_addr = t1;
+  __ mv(x7, (address) &BytecodePairHistogram::_counters);
+  __ slli(index, index, LogBytesPerInt);
+  __ add(counter_addr, x7, index);
+  __ atomic_addw(noreg, 1, counter_addr);
+ }
 
 void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.

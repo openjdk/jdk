@@ -184,12 +184,12 @@ public class ReplaceCriticalClasses {
         final boolean expectShared = shared.equals("-shared");
         CDSTestUtils.run(opts).assertNormalExit(out -> {
                 if (expectDisable) {
-                    out.shouldContain("UseSharedSpaces: CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
+                    out.shouldContain("CDS is disabled because early JVMTI ClassFileLoadHook is in use.");
                     System.out.println("CDS disabled as expected");
                 }
                 if (checkSubgraph) {
                     if (expectShared) {
-                        if (!out.getOutput().contains("UseSharedSpaces: Unable to map at required address in java heap")) {
+                        if (!out.getOutput().contains("Unable to map at required address in java heap")) {
                             out.shouldContain(subgraphInit);
                             // If the subgraph is successfully initialized, the specified shared class must not be rewritten.
                             out.shouldNotContain("Rewriting done.");

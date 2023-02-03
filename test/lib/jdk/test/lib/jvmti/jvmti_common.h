@@ -294,7 +294,16 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   }
   check_jvmti_status(jni, err, "get_thread_name: error in JVMTI GetThreadInfo call");
 
-  return thr_info.name == NULL ? (char*)"<Unnamed thread>" : thr_info.name;
+  static const char* UNNAMED_STR = "<Unnamed thread>";
+  static size_t UNNAMED_LEN = strlen(UNNAMED_STR);
+  char* tname = thr_info.name;
+  if (tname == NULL) {
+    err = jvmti->Allocate((jlong)(UNNAMED_LEN + 1), (unsigned char**)&tname);
+    check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI Allocate");
+    strncpy(tname, UNNAMED_STR, UNNAMED_LEN);
+    tname[UNNAMED_LEN] = '\0';
+  }
+  return tname;
 }
 
 static char*

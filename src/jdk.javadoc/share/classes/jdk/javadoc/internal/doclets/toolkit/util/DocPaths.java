@@ -98,7 +98,7 @@ public class DocPaths {
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
     /** The name of the default jQuery javascript file. */
-    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.0.min.js");
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-3.6.1.min.js");
 
     /** The name of the default jQuery UI stylesheet file. */
     public static final DocPath JQUERY_UI_CSS = DocPath.create("jquery-ui.min.css");
@@ -244,12 +244,13 @@ public class DocPaths {
     }
 
     /**
-     * The path for the output directory for module documentation files.
+     * Returns the path for a file within a module documentation output directory.
      * @param mdle the module
-     * @return the path
+     * @param path the path to append to the module path
+     * @return the module documentation path
      */
-    public DocPath moduleDocFiles(ModuleElement mdle) {
-        return createModulePath(mdle, "doc-files");
+    public DocPath modulePath(ModuleElement mdle, String path) {
+        return DocPath.create(mdle.getQualifiedName().toString()).resolve(path);
     }
 
     /**

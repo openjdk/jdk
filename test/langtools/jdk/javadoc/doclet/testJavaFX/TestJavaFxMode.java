@@ -43,9 +43,9 @@ public class TestJavaFxMode extends JavadocTester {
     final ToolBox tb;
 
     public static void main(String... args) throws Exception {
-        TestJavaFxMode tester = new TestJavaFxMode();
+        var tester = new TestJavaFxMode();
         if (tester.sanity()) {
-            tester.runTests(m -> new Object[]{Paths.get(m.getName())});
+            tester.runTests();
         }
     }
 

@@ -170,8 +170,8 @@ static jvmtiError JNICALL GetCarrierThread(const jvmtiEnv* env, ...) {
 // event. The function and the event are registered here.
 //
 void JvmtiExtensions::register_extensions() {
-  _ext_functions = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
-  _ext_events = new (ResourceObj::C_HEAP, mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
+  _ext_functions = new (mtServiceability) GrowableArray<jvmtiExtensionFunctionInfo*>(1, mtServiceability);
+  _ext_events = new (mtServiceability) GrowableArray<jvmtiExtensionEventInfo*>(1, mtServiceability);
 
   // Register our extension functions.
   static jvmtiParamInfo func_params0[] = {

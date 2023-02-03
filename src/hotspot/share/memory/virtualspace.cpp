@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 // ReservedSpace
 
 // Dummy constructor
-ReservedSpace::ReservedSpace() : _base(NULL), _size(0), _noaccess_prefix(0),
+ReservedSpace::ReservedSpace() : _base(nullptr), _size(0), _noaccess_prefix(0),
     _alignment(0), _special(false), _fd_for_heap(-1), _executable(false) {
 }
 
@@ -50,7 +50,7 @@ ReservedSpace::ReservedSpace(size_t size) : _fd_for_heap(-1) {
   // large and normal pages.
   size_t page_size = os::page_size_for_region_unaligned(size, 1);
   size_t alignment = os::vm_allocation_granularity();
-  initialize(size, alignment, page_size, NULL, false);
+  initialize(size, alignment, page_size, nullptr, false);
 }
 
 ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_heap(-1) {
@@ -62,7 +62,7 @@ ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_
     alignment = MAX2(preferred_page_size, alignment);
     size = align_up(size, alignment);
   }
-  initialize(size, alignment, preferred_page_size, NULL, false);
+  initialize(size, alignment, preferred_page_size, nullptr, false);
 }
 
 ReservedSpace::ReservedSpace(size_t size,
@@ -116,11 +116,11 @@ static void unmap_or_release_memory(char* base, size_t size, bool is_file_mapped
 
 // Helper method
 static bool failed_to_reserve_as_requested(char* base, char* requested_address) {
-  if (base == requested_address || requested_address == NULL) {
+  if (base == requested_address || requested_address == nullptr) {
     return false; // did not fail
   }
 
-  if (base != NULL) {
+  if (base != nullptr) {
     // Different reserve address may be acceptable in other cases
     // but for compressed oops heap should be at requested address.
     assert(UseCompressedOops, "currently requested address used only for compressed oops");
@@ -157,7 +157,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
   char* base;
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
-  // important.  If the reservation fails, return NULL.
+  // important.  If the reservation fails, return null.
   if (requested_address != 0) {
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
@@ -190,7 +190,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
                       byte_size_in_exact_unit(alignment), exact_unit_for_byte_size(alignment));
 
   char* base = os::reserve_memory_special(size, alignment, page_size, requested_address, exec);
-  if (base != NULL) {
+  if (base != nullptr) {
     // Check alignment constraints.
     assert(is_aligned(base, alignment),
            "reserve_memory_special() returned an unaligned address, base: " PTR_FORMAT
@@ -201,7 +201,7 @@ static char* reserve_memory_special(char* requested_address, const size_t size,
 }
 
 void ReservedSpace::clear_members() {
-  initialize_members(NULL, 0, 0, 0, false, false);
+  initialize_members(nullptr, 0, 0, 0, false, false);
 }
 
 void ReservedSpace::initialize_members(char* base, size_t size, size_t alignment,
@@ -223,52 +223,50 @@ void ReservedSpace::reserve(size_t size,
   assert(is_aligned(size, alignment), "Size must be aligned to the requested alignment");
 
   // There are basically three different cases that we need to handle below:
-  // - Mapping backed by a file
-  // - Mapping backed by explicit large pages
-  // - Mapping backed by normal pages or transparent huge pages
+  // 1. Mapping backed by a file
+  // 2. Mapping backed by explicit large pages
+  // 3. Mapping backed by normal pages or transparent huge pages
   // The first two have restrictions that requires the whole mapping to be
   // committed up front. To record this the ReservedSpace is marked 'special'.
 
+  // == Case 1 ==
   if (_fd_for_heap != -1) {
     // When there is a backing file directory for this space then whether
     // large pages are allocated is up to the filesystem of the backing file.
     // So UseLargePages is not taken into account for this reservation.
     char* base = reserve_memory(requested_address, size, alignment, _fd_for_heap, executable);
-    if (base != NULL) {
+    if (base != nullptr) {
       initialize_members(base, size, alignment, os::vm_page_size(), true, executable);
     }
     // Always return, not possible to fall back to reservation not using a file.
     return;
-  } else if (use_explicit_large_pages(page_size)) {
+  }
+
+  // == Case 2 ==
+  if (use_explicit_large_pages(page_size)) {
     // System can't commit large pages i.e. use transparent huge pages and
     // the caller requested large pages. To satisfy this request we use
     // explicit large pages and these have to be committed up front to ensure
     // no reservations are lost.
-    size_t used_page_size = page_size;
-    char* base = NULL;
-
     do {
-      base = reserve_memory_special(requested_address, size, alignment, used_page_size, executable);
-      if (base != NULL) {
-        break;
+      char* base = reserve_memory_special(requested_address, size, alignment, page_size, executable);
+      if (base != nullptr) {
+        // Successful reservation using large pages.
+        initialize_members(base, size, alignment, page_size, true, executable);
+        return;
       }
-      used_page_size = os::page_sizes().next_smaller(used_page_size);
-    } while (used_page_size > (size_t) os::vm_page_size());
+      page_size = os::page_sizes().next_smaller(page_size);
+    } while (page_size > (size_t) os::vm_page_size());
 
-    if (base != NULL) {
-      // Successful reservation using large pages.
-      initialize_members(base, size, alignment, used_page_size, true, executable);
-      return;
-    }
     // Failed to reserve explicit large pages, do proper logging.
     log_on_large_pages_failure(requested_address, size);
     // Now fall back to normal reservation.
-    page_size = os::vm_page_size();
+    assert(page_size == (size_t) os::vm_page_size(), "inv");
   }
 
-  // Not a 'special' reservation.
+  // == Case 3 ==
   char* base = reserve_memory(requested_address, size, alignment, -1, executable);
-  if (base != NULL) {
+  if (base != nullptr) {
     // Successful mapping.
     initialize_members(base, size, alignment, page_size, false, executable);
   }
@@ -397,7 +395,7 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
                                          size_t alignment,
                                          size_t page_size,
                                          char* requested_address) {
-  if (_base != NULL) {
+  if (_base != nullptr) {
     // We tried before, but we didn't like the address delivered.
     release();
   }
@@ -438,7 +436,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
   char* attach_point = highest_start;
   while (attach_point >= lowest_start  &&
          attach_point <= highest_start &&  // Avoid wrap around.
-         ((_base == NULL) ||
+         ((_base == nullptr) ||
           (_base < aligned_heap_base_min_address || _base + size > upper_bound))) {
     try_reserve_heap(size, alignment, page_size, attach_point);
     attach_point -= stepsize;
@@ -451,7 +449,7 @@ void ReservedHeapSpace::try_reserve_range(char *highest_start,
 
 // Helper for heap allocation. Returns an array with addresses
 // (OS-specific) which are suited for disjoint base mode. Array is
-// NULL terminated.
+// null terminated.
 static char** get_attach_addresses_for_disjoint_mode() {
   static uint64_t addresses[] = {
      2 * SIZE_32G,
@@ -524,7 +522,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
   }
 
   // Keep heap at HeapBaseMinAddress.
-  if (_base == NULL) {
+  if (_base == nullptr) {
 
     // Try to allocate the heap at addresses that allow efficient oop compression.
     // Different schemes are tried, in order of decreasing optimization potential.
@@ -561,7 +559,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Give it several tries from top of range to bottom.
     if (aligned_heap_base_min_address + size <= zerobased_max &&    // Zerobased theoretical possible.
-        ((_base == NULL) ||                        // No previous try succeeded.
+        ((_base == nullptr) ||                        // No previous try succeeded.
          (_base + size > zerobased_max))) {        // Unscaled delivered an arbitrary address.
 
       // Calc address range within we try to attach (range of possible start addresses).
@@ -586,7 +584,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     char** addresses = get_attach_addresses_for_disjoint_mode();
     int i = 0;
     while (addresses[i] &&                                 // End of array not yet reached.
-           ((_base == NULL) ||                             // No previous try succeeded.
+           ((_base == nullptr) ||                             // No previous try succeeded.
             (_base + size >  (char *)OopEncodingHeapMax && // Not zerobased or unscaled address.
              !CompressedOops::is_disjoint_heap_base_address((address)_base)))) {  // Not disjoint address.
       char* const attach_point = addresses[i];
@@ -596,9 +594,9 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     }
 
     // Last, desperate try without any placement.
-    if (_base == NULL) {
-      log_trace(gc, heap, coops)("Trying to allocate at address NULL heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
-      initialize(size + noaccess_prefix, alignment, page_size, NULL, false);
+    if (_base == nullptr) {
+      log_trace(gc, heap, coops)("Trying to allocate at address nullptr heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
+      initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
     }
   }
 }
@@ -609,7 +607,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
     return;
   }
 
-  if (heap_allocation_directory != NULL) {
+  if (heap_allocation_directory != nullptr) {
     _fd_for_heap = os::create_file_for_heap(heap_allocation_directory);
     if (_fd_for_heap == -1) {
       vm_exit_during_initialization(
@@ -635,7 +633,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
       establish_noaccess_prefix();
     }
   } else {
-    initialize(size, alignment, page_size, NULL, false);
+    initialize(size, alignment, page_size, nullptr, false);
   }
 
   assert(markWord::encode_pointer_as_mark(_base).decode_pointer() == _base,
@@ -643,7 +641,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
   assert(markWord::encode_pointer_as_mark(&_base[size]).decode_pointer() == &_base[size],
          "area must be distinguishable from marks for mark-sweep");
 
-  if (base() != NULL) {
+  if (base() != nullptr) {
     MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
   }
 
@@ -661,23 +659,23 @@ MemRegion ReservedHeapSpace::region() const {
 ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
-  initialize(r_size, rs_align, rs_page_size, /*requested address*/ NULL, /*executable*/ true);
+  initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
   MemTracker::record_virtual_memory_type((address)base(), mtCode);
 }
 
 // VirtualSpace
 
 VirtualSpace::VirtualSpace() {
-  _low_boundary           = NULL;
-  _high_boundary          = NULL;
-  _low                    = NULL;
-  _high                   = NULL;
-  _lower_high             = NULL;
-  _middle_high            = NULL;
-  _upper_high             = NULL;
-  _lower_high_boundary    = NULL;
-  _middle_high_boundary   = NULL;
-  _upper_high_boundary    = NULL;
+  _low_boundary           = nullptr;
+  _high_boundary          = nullptr;
+  _low                    = nullptr;
+  _high                   = nullptr;
+  _lower_high             = nullptr;
+  _middle_high            = nullptr;
+  _upper_high             = nullptr;
+  _lower_high_boundary    = nullptr;
+  _middle_high_boundary   = nullptr;
+  _upper_high_boundary    = nullptr;
   _lower_alignment        = 0;
   _middle_alignment       = 0;
   _upper_alignment        = 0;
@@ -693,7 +691,7 @@ bool VirtualSpace::initialize(ReservedSpace rs, size_t committed_size) {
 
 bool VirtualSpace::initialize_with_granularity(ReservedSpace rs, size_t committed_size, size_t max_commit_granularity) {
   if(!rs.is_reserved()) return false;  // allocation failed.
-  assert(_low_boundary == NULL, "VirtualSpace already initialized");
+  assert(_low_boundary == nullptr, "VirtualSpace already initialized");
   assert(max_commit_granularity > 0, "Granularity must be non-zero.");
 
   _low_boundary  = rs.base();
@@ -747,16 +745,16 @@ VirtualSpace::~VirtualSpace() {
 void VirtualSpace::release() {
   // This does not release memory it reserved.
   // Caller must release via rs.release();
-  _low_boundary           = NULL;
-  _high_boundary          = NULL;
-  _low                    = NULL;
-  _high                   = NULL;
-  _lower_high             = NULL;
-  _middle_high            = NULL;
-  _upper_high             = NULL;
-  _lower_high_boundary    = NULL;
-  _middle_high_boundary   = NULL;
-  _upper_high_boundary    = NULL;
+  _low_boundary           = nullptr;
+  _high_boundary          = nullptr;
+  _low                    = nullptr;
+  _high                   = nullptr;
+  _lower_high             = nullptr;
+  _middle_high            = nullptr;
+  _upper_high             = nullptr;
+  _lower_high_boundary    = nullptr;
+  _middle_high_boundary   = nullptr;
+  _upper_high_boundary    = nullptr;
   _lower_alignment        = 0;
   _middle_alignment       = 0;
   _upper_alignment        = 0;
