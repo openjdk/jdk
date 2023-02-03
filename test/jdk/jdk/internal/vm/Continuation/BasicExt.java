@@ -23,7 +23,7 @@
  */
 
 /**
- * @test id=policy-1-without-gc-with-verification
+ * @test id=COMP_NONE
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -40,11 +40,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 1 0
+ *                     BasicExt COMP_NONE
  */
 
 /**
- * @test id=policy-2-without-gc-with-verification
+ * @test id=COMP_WINDOW_LENGTH_1
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -61,11 +61,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 2 0
+ *                     BasicExt COMP_WINDOW_LENGTH_1
  */
 
 /**
- * @test id=policy-3-without-gc-with-verification
+ * @test id=COMP_WINDOW_LENGTH_2
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -82,11 +82,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 3 0
+ *                     BasicExt COMP_WINDOW_LENGTH_2
  */
 
 /**
- * @test id=policy-4-without-gc-with-verification
+ * @test id=COMP_WINDOW_LENGTH_3
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -103,11 +103,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 4 0
+ *                     BasicExt COMP_WINDOW_LENGTH_3
  */
 
 /**
- * @test id=policy-5-without-gc-with-verification
+ * @test id=COMP_ALL
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -124,11 +124,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 5 0
+ *                     BasicExt COMP_ALL
  */
 
 /**
- * @test id=policy-1-with-gc-without-verification
+ * @test id=COMP_NONE-GC_AFTER_YIELD
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -145,11 +145,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 1 1
+ *                     BasicExt COMP_NONE GC_AFTER_YIELD
  */
 
 /**
- * @test id=policy-2-with-gc-without-verification
+ * @test id=COMP_WINDOW_LENGTH_1-GC_AFTER_YIELD
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -166,11 +166,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 2 1
+ *                     BasicExt COMP_WINDOW_LENGTH_1 GC_AFTER_YIELD
  */
 
 /**
- * @test id=policy-3-with-gc-without-verification
+ * @test id=COMP_WINDOW_LENGTH_2-GC_AFTER_YIELD
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -187,11 +187,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 3 1
+ *                     BasicExt COMP_WINDOW_LENGTH_2 GC_AFTER_YIELD
  */
 
 /**
- * @test id=policy-4-with-gc-without-verification
+ * @test id=COMP_WINDOW_LENGTH_3-GC_AFTER_YIELD
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -208,11 +208,11 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 4 1
+ *                     BasicExt COMP_WINDOW_LENGTH_3 GC_AFTER_YIELD
  */
 
 /**
- * @test id=policy-5-with-gc-without-verification
+ * @test id=COMP_ALL-GC_AFTER_YIELD
  * @summary Collection of basic continuation tests. CompilationPolicy controls which frames in a sequence should be compiled when calling Continuation.yield().
  * @requires vm.continuations
  * @requires vm.flavor == "server" & vm.opt.TieredCompilation != true
@@ -229,7 +229,7 @@
  *                     -XX:CompileCommand=dontinline,*::*dontjit*
  *                     -XX:CompileCommand=exclude,*::*dontjit*
  *                     -XX:CompileCommand=dontinline,java/lang/String*.*
- *                     BasicExt 5 1
+ *                     BasicExt COMP_ALL GC_AFTER_YIELD
  */
 
 import java.lang.reflect.Method;
@@ -251,12 +251,12 @@ import jdk.test.whitebox.WhiteBox;
 public class BasicExt {
     static final ContinuationScope THE_SCOPE = new ContinuationScope() {};
 
-    public static final Pattern COMP_NONE  = Pattern.compile("COMP_NONE");
-    public static final Pattern COMP_ALL   = Pattern.compile("COMP_ALL");
-    public static final Pattern CONT_METHS = Pattern.compile("^(enter|enter0|yield|yield0)$");
+    public static final Pattern PAT_COMP_NONE  = Pattern.compile("COMP_NONE");
+    public static final Pattern PAT_COMP_ALL   = Pattern.compile("COMP_ALL");
+    public static final Pattern PAT_CONT_METHS = Pattern.compile("^(enter|enter0|yield|yield0)$");
 
-    public static int compPolicySelection;
-    public static boolean triggerGCAfterYield;
+    public static CompilationPolicy compPolicySelection;
+    public static GCBehaviour gcBehaviour;
     public static int compLevel;
 
     public static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -272,6 +272,11 @@ public class BasicExt {
         EXPR_STACK_NOT_EMPTY,
     }
 
+    enum GCBehaviour {
+        GC_AFTER_YIELD,
+        NO_GC_AFTER_YIELD,
+    }
+
     public static class HandledException extends Exception { }
     public static class UnhandledException extends Error { }
 
@@ -282,8 +287,8 @@ public class BasicExt {
             // // Run tests with C1 compilations
             // compLevel = CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE;
 
-            compPolicySelection = Integer.parseInt(args[0]);
-            triggerGCAfterYield = Integer.parseInt(args[1]) == 1;
+            compPolicySelection = CompilationPolicy.valueOf(args[0]);
+            gcBehaviour = args.length > 0 ? GCBehaviour.valueOf(args[1]) : GCBehaviour.NO_GC_AFTER_YIELD;
             runTests();
         } catch (Throwable t) {
             throw t;
@@ -293,24 +298,12 @@ public class BasicExt {
     public static void runTests() {
         System.out.println("$$$0 Running test cases with the following settings:");
         System.out.println("compLevel=" + compLevel);
-        System.out.println("callSystemGC=" + triggerGCAfterYield);
+        System.out.println("callSystemGC=" + gcBehaviour);
         System.out.println();
 
         WB.deoptimizeAll();
 
-        boolean all = compPolicySelection == 0;
-        if (compPolicySelection == 1 || all)
-            runTests(new CompilationPolicy(7 /*warmup*/, COMP_NONE, COMP_NONE /*Cont. pattern*/));
-        if (compPolicySelection == 2 || all)
-            runTests(new CompilationPolicy(7 /*warmup*/, 1 /* length comp. window */));
-        if (compPolicySelection == 3 || all)
-            runTests(new CompilationPolicy(7 /*warmup*/, 2 /* length comp. window */));
-        if (compPolicySelection == 4 || all)
-            runTests(new CompilationPolicy(7 /*warmup*/, 3 /* length comp. window */));
-        if (compPolicySelection == 5 || all)
-            runTests(new CompilationPolicy(7 /*warmup*/, COMP_ALL, CONT_METHS /*Cont. pattern*/));
-        if (compPolicySelection >= 6)
-            throw new Error("CompilationPolicy with number " + compPolicySelection + " does not exist");
+        runTests(compPolicySelection);
     }
 
     public static void runTests(CompilationPolicy compPolicy) {
@@ -338,7 +331,12 @@ public class BasicExt {
     // are interpreted. With DEOPT_WINDOW vice versa.
     // The methods that are subject to the CompilationPolicy are set with setMethods().
     // Their order has to correspond to the stack order when calling yield().
-    public static class CompilationPolicy {
+    public static enum CompilationPolicy {
+        COMP_NONE(7 /*warmup*/, PAT_COMP_NONE, PAT_COMP_NONE /*Cont. pattern*/),
+        COMP_WINDOW_LENGTH_1(7 /*warmup*/, 1 /* length comp. window */),
+        COMP_WINDOW_LENGTH_2(7 /*warmup*/, 2 /* length comp. window */),
+        COMP_WINDOW_LENGTH_3(7 /*warmup*/, 3 /* length comp. window */),
+        COMP_ALL(7 /*warmup*/, PAT_COMP_ALL, PAT_CONT_METHS /*Cont. pattern*/);
         public int warmupIterations;
         public Pattern methodPattern;
         public Pattern contMethPattern;
@@ -353,19 +351,19 @@ public class BasicExt {
             NO_COMP_WINDOW, COMP_WINDOW, DEOPT_WINDOW
         }
 
-        public CompilationPolicy(int warmupIterations, Pattern methodPattern,
+        CompilationPolicy(int warmupIterations, Pattern methodPattern,
                                  Pattern contMethPattern) {
             this(warmupIterations, 0, methodPattern, contMethPattern,
                  CompWindowMode.NO_COMP_WINDOW);
         }
 
-        public CompilationPolicy(int warmupIterations, int windowLength,
+        CompilationPolicy(int warmupIterations, int windowLength,
                                  Pattern methodPattern, Pattern contMethPattern) {
             this(warmupIterations, windowLength, methodPattern, contMethPattern,
                  CompWindowMode.COMP_WINDOW);
         }
 
-        public CompilationPolicy(int warmupIterations, int windowLength,
+        CompilationPolicy(int warmupIterations, int windowLength,
                                  Pattern methodPattern, Pattern contMethPattern,
                                  CompWindowMode startMode) {
             this.warmupIterations = warmupIterations;
@@ -376,8 +374,8 @@ public class BasicExt {
             this.compWindowMode = startMode;
         }
 
-        public CompilationPolicy(int warmupIterations, int windowLength) {
-            this(warmupIterations, windowLength, COMP_ALL, CONT_METHS);
+        CompilationPolicy(int warmupIterations, int windowLength) {
+            this(warmupIterations, windowLength, PAT_COMP_ALL, PAT_CONT_METHS);
         }
 
         public int warmupIterations() {
@@ -518,11 +516,11 @@ public class BasicExt {
             this.compPolicy = compPolicy;
             ArrayList<Method> selectedMethods = new ArrayList<Method>();
             Pattern p = compPolicy.methodPattern;
-            if (p != COMP_NONE) {
+            if (p != PAT_COMP_NONE) {
                 Class<? extends TestCaseBase> c = getClass();
                 Method methods[] = c.getDeclaredMethods();
                 for (Method meth : methods) {
-                    if (p == COMP_ALL || p.matcher(meth.getName()).matches()) {
+                    if (p == PAT_COMP_ALL || p.matcher(meth.getName()).matches()) {
                         if (!meth.getName().contains("dontjit")) {
                             selectedMethods.add(meth);
                         }
@@ -531,7 +529,7 @@ public class BasicExt {
             }
 
             p = compPolicy.contMethPattern;
-            if (compPolicy.contMethPattern != COMP_NONE) {
+            if (compPolicy.contMethPattern != PAT_COMP_NONE) {
                 Class<?> c = Continuation.class;
                 Method methods[] = c .getDeclaredMethods();
                 for (Method meth : methods) {
@@ -584,7 +582,7 @@ public class BasicExt {
                 } catch (UnhandledException e) {
                     log_dontjit("Exc: " + e);
                 }
-                if (triggerGCAfterYield) WB.youngGC();
+                if (gcBehaviour == GCBehaviour.GC_AFTER_YIELD) WB.youngGC();
                 checkFrames_dontjit(cont);
             } while (!cont.isDone());
         }
