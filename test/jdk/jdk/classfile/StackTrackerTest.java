@@ -32,9 +32,9 @@ import java.util.List;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.constant.ConstantDescs;
-import jdk.classfile.*;
-import jdk.classfile.components.CodeStackTracker;
-import static jdk.classfile.TypeKind.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.components.CodeStackTracker;
+import static jdk.internal.classfile.TypeKind.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 

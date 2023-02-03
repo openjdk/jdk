@@ -34,14 +34,14 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.classfile.Attribute;
-import jdk.classfile.ClassModel;
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeModel;
-import jdk.classfile.MethodModel;
-import jdk.classfile.Attributes;
-import jdk.classfile.attribute.*;
-import jdk.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.Attribute;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.attribute.*;
+import jdk.internal.classfile.constantpool.Utf8Entry;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

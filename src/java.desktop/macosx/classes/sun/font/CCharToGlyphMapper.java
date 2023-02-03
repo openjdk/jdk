@@ -122,7 +122,7 @@ public class CCharToGlyphMapper extends CharToGlyphMapper {
     public synchronized void charsToGlyphs(int count, int[] unicodes, int[] glyphs) {
         for (int i = 0; i < count; i++) {
             glyphs[i] = charToGlyph(unicodes[i]);
-        };
+        }
     }
 
     // This mapper returns either the glyph code, or if the character can be

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2425,7 +2425,11 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     event.set_gcBeforeDump(_gc_before_heap_dump);
     event.set_size(writer.bytes_written());
     event.set_onOutOfMemoryError(_oome);
+    event.set_overwrite(overwrite);
+    event.set_compression(compression);
     event.commit();
+  } else {
+    log_debug(cds, heap)("Error %s while dumping heap", error());
   }
 
   // print message in interactive case

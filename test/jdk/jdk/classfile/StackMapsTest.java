@@ -30,7 +30,7 @@
  * @run junit StackMapsTest
  */
 
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.Classfile;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -38,7 +38,7 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
-import static jdk.classfile.Classfile.ACC_STATIC;
+import static jdk.internal.classfile.Classfile.ACC_STATIC;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;

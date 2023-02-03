@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,6 +349,10 @@ class methodHandle;
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
   do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
    do_signature(equalsB_signature,                               "([B[B)Z")                                             \
+                                                                                                                        \
+  do_intrinsic(_vectorizedHashCode,       jdk_internal_util_ArraysSupport, vectorizedHashCode_name,  vectorizedHashCode_signature, F_S)   \
+   do_name(     vectorizedHashCode_name,                         "vectorizedHashCode")                                  \
+   do_signature(vectorizedHashCode_signature,                    "(Ljava/lang/Object;IIII)I")                           \
                                                                                                                         \
   do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
    do_name(     compress_name,                                   "compress")                                            \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,13 +146,13 @@ public class SAGetoptTest {
 
         // Bad options test
         String[] optionSet4 = {"-abd", "-c"};
-        badOptionsTest(4, optionSet4, "Argument is expected for 'd'");
+        badOptionsTest(4, optionSet4, "Successor argument without leading - is expected for 'd' but we got '-c'");
 
         String[] optionSet5 = {"-exe", "bla", "--core"};
         badOptionsTest(5, optionSet5, "Invalid option 'x'");
 
         String[] optionSet6 = {"--exe", "--core", "bla_core"};
-        badOptionsTest(6, optionSet6, "Argument is expected for 'exe'");
+        badOptionsTest(6, optionSet6, "Successor argument without leading - is expected for 'exe' but we got '--core'");
 
         String[] optionSet7 = {"--exe"};
         badOptionsTest(7, optionSet7, "Argument is expected for 'exe'");

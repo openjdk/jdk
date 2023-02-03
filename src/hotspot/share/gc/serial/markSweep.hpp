@@ -148,8 +148,6 @@ class MarkSweep : AllStatic {
 
   static void follow_stack();   // Empty marking stack.
 
-  static void follow_klass(Klass* klass);
-
   template <class T> static inline void adjust_pointer(T* p);
 
   // Check mark and maybe push on marking stack

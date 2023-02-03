@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1595,7 +1595,7 @@ int MethodData::profile_arguments_flag() {
 }
 
 bool MethodData::profile_arguments() {
-  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all;
+  return profile_arguments_flag() > no_type_profile && profile_arguments_flag() <= type_profile_all && TypeProfileArgsLimit > 0;
 }
 
 bool MethodData::profile_arguments_jsr292_only() {

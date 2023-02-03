@@ -67,4 +67,17 @@ public class Characters {
     public boolean isWhitespace() {
         return Character.isWhitespace(codePoint);
     }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Warmup(iterations = 5, time = 1)
+    @Measurement(iterations = 5, time = 1)
+    @Fork(3)
+    public static class CodePoints {
+        @Benchmark
+        public void codePointOf() {
+            Character.codePointOf("Latin Capital Letter B with hook");
+        }
+
+    }
 }

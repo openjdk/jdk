@@ -38,13 +38,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import helpers.ClassRecord;
-import jdk.classfile.Attributes;
-import jdk.classfile.ClassModel;
-import jdk.classfile.ClassTransform;
-import jdk.classfile.Classfile;
-import jdk.classfile.attribute.RecordAttribute;
-import jdk.classfile.attribute.RecordComponentInfo;
-import jdk.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassModel;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.attribute.RecordAttribute;
+import jdk.internal.classfile.attribute.RecordComponentInfo;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 

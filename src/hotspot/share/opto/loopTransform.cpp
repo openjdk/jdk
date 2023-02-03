@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,6 +849,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
     switch (n->Opcode()) {
       case Op_StrComp:
       case Op_StrEquals:
+      case Op_VectorizedHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
@@ -1017,6 +1018,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
+      case Op_VectorizedHashCode:
       case Op_CountPositives: {
         // Do not unroll a loop with String intrinsics code.
         // String intrinsics are large and have loops.
@@ -1705,7 +1707,7 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
-  Node *min_opaq = new OpaqueZeroTripGuardNode(C, limit);
+  Node *min_opaq = new OpaqueZeroTripGuardNode(C, limit, b_test);
   Node *min_cmp  = new CmpINode(pre_incr, min_opaq);
   Node *min_bol  = new BoolNode(min_cmp, b_test);
   register_new_node(min_opaq, new_pre_exit);
@@ -1994,7 +1996,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
   // (the previous loop trip-counter exit value) because we will be changing
   // the exit value (via additional unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  Node *zer_opaq = new OpaqueZeroTripGuardNode(C, incr);
+  Node *zer_opaq = new OpaqueZeroTripGuardNode(C, incr, main_end->test_trip());
   Node *zer_cmp = new CmpINode(zer_opaq, limit);
   Node *zer_bol = new BoolNode(zer_cmp, main_end->test_trip());
   register_new_node(zer_opaq, new_main_exit);
@@ -2304,35 +2306,55 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         //
         BoolTest::mask bt = loop_end->test_trip();
         assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-        Node* adj_max = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-        set_ctrl(adj_max, C->root());
-        Node* old_limit = NULL;
-        Node* adj_limit = NULL;
+        Node* underflow_clamp = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
+        set_ctrl(underflow_clamp, C->root());
+        Node* limit_before_underflow = NULL;
+        Node* prev_limit = NULL;
         Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : NULL;
         if (loop_head->unrolled_count() > 1 &&
             limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-            limit->in(CMoveNode::IfTrue) == adj_max &&
+            limit->in(CMoveNode::IfTrue) == underflow_clamp &&
             bol->as_Bool()->_test._test == bt &&
             bol->in(1)->Opcode() == Op_CmpI &&
             bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-          // Loop was unrolled before.
-          // Optimize the limit to avoid nested CMove:
-          // use original limit as old limit.
-          old_limit = bol->in(1)->in(1);
-          // Adjust previous adjusted limit.
-          adj_limit = limit->in(CMoveNode::IfFalse);
-          adj_limit = new SubINode(adj_limit, stride);
+          // Loop was unrolled before, and had an unrolling protection CMoveI.
+          // Use inputs to previous CMoveI for the new one:
+          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
+          limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
         } else {
-          old_limit = limit;
-          adj_limit = new SubINode(limit, stride);
+          // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
+          prev_limit = limit;
+          limit_before_underflow = limit;
         }
-        assert(old_limit != NULL && adj_limit != NULL, "");
-        register_new_node(adj_limit, ctrl); // adjust amount
-        Node* adj_cmp = new CmpINode(old_limit, adj_limit);
-        register_new_node(adj_cmp, ctrl);
-        Node* adj_bool = new BoolNode(adj_cmp, bt);
-        register_new_node(adj_bool, ctrl);
-        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+        //                           prev_limit   stride
+        //                                |         |
+        // limit_before_underflow  new_limit_with_underflow (SubI)
+        //                   |        |           |
+        //                 underflow_cmp          |
+        //                   |                    |
+        //                 underflow_bool [lt/gt] |
+        //                   |                    |
+        //                   +----+  +------------+
+        //                        |  |
+        //                        |  | underflow_clamp (min_jint/max_jint)
+        //                        |  |  |
+        //                       CMoveINode ([min_jint..hi] / [lo..max_jing])
+        //
+        assert(limit_before_underflow != NULL && prev_limit != NULL, "must find them");
+        Node* new_limit_with_underflow = new SubINode(prev_limit, stride);
+        register_new_node(new_limit_with_underflow, ctrl);
+        // We must compare with limit_before_underflow, prev_limit may already have underflowed.
+        Node* underflow_cmp = new CmpINode(limit_before_underflow, new_limit_with_underflow);
+        register_new_node(underflow_cmp, ctrl);
+        Node* underflow_bool = new BoolNode(underflow_cmp, bt);
+        register_new_node(underflow_bool, ctrl);
+        // Prevent type from becoming too pessimistic due to type underflow. The new limit
+        // may be arbitrarily decreased by unrolling, but still in [min_jint..hi] / [lo..max_jint]
+        const TypeInt* limit_before_underflow_t = _igvn.type(limit_before_underflow)->is_int();
+        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : limit_before_underflow_t->_lo,
+                                                      stride_con > 0 ? limit_before_underflow_t->_hi : max_jint,
+                                                      Type::WidenMax);
+        new_limit = new CMoveINode(underflow_bool, new_limit_with_underflow, underflow_clamp, no_underflow_t);
       }
       register_new_node(new_limit, ctrl);
     }
@@ -3587,19 +3609,27 @@ void IdealLoopTree::remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *
 // counter with the value it will have on the last iteration.  This will break
 // the loop.
 bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
-  // Minimum size must be empty loop
-  if (_body.size() > EMPTY_LOOP_SIZE) {
-    return false;
-  }
   if (!_head->is_CountedLoop()) {
     return false;   // Dead loop
   }
-  CountedLoopNode *cl = _head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT)) {
-    return false;   // Malformed loop
+  if (!empty_loop_candidate(phase)) {
+    return false;
   }
-  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
-    return false;   // Infinite loop
+  CountedLoopNode *cl = _head->as_CountedLoop();
+#ifdef ASSERT
+  // Call collect_loop_core_nodes to exercise the assert that checks that it finds the right number of nodes
+  if (empty_loop_with_extra_nodes_candidate(phase)) {
+    Unique_Node_List wq;
+    collect_loop_core_nodes(phase, wq);
+  }
+#endif
+  // Minimum size must be empty loop
+  if (_body.size() > EMPTY_LOOP_SIZE) {
+    // This loop has more nodes than an empty loop but, maybe they are only kept alive by the outer strip mined loop's
+    // safepoint. If they go away once the safepoint is removed, that loop is empty.
+    if (!empty_loop_with_data_nodes(phase)) {
+      return false;
+    }
   }
   if (cl->is_pre_loop()) {
     // If the loop we are removing is a pre-loop then the main and post loop
@@ -3608,11 +3638,11 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
 
 #ifdef ASSERT
-  // Ensure only one phi which is the iv.
+  // Ensure at most one used phi exists, which is the iv.
   Node* iv = NULL;
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     Node* n = cl->fast_out(i);
-    if (n->Opcode() == Op_Phi) {
+    if ((n->Opcode() == Op_Phi) && (n->outcnt() > 0)) {
       assert(iv == NULL, "Too many phis");
       iv = n;
     }
@@ -3684,7 +3714,12 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // counted loop has limit check predicate.
   Node* phi = cl->phi();
   Node* exact_limit = phase->exact_limit(this);
-  Node* final_iv = new SubINode(exact_limit, cl->stride());
+
+  // We need to pin the exact limit to prevent it from floating above the zero trip guard.
+  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
+
+  Node* final_iv = new SubINode(cast_ii, cl->stride());
   phase->register_new_node(final_iv, cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi, final_iv);
 
@@ -3695,6 +3730,137 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
 
   phase->C->set_major_progress();
   return true;
+}
+
+bool IdealLoopTree::empty_loop_candidate(PhaseIdealLoop* phase) const {
+  CountedLoopNode *cl = _head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return false;   // Malformed loop
+  }
+  if (!phase->is_member(this, phase->get_ctrl(cl->loopexit()->in(CountedLoopEndNode::TestValue)))) {
+    return false;   // Infinite loop
+  }
+  return true;
+}
+
+bool IdealLoopTree::empty_loop_with_data_nodes(PhaseIdealLoop* phase) const {
+  CountedLoopNode* cl = _head->as_CountedLoop();
+  if (!cl->is_strip_mined() || !empty_loop_with_extra_nodes_candidate(phase)) {
+    return false;
+  }
+  Unique_Node_List empty_loop_nodes;
+  Unique_Node_List wq;
+
+  // Start from all data nodes in the loop body that are not one of the EMPTY_LOOP_SIZE nodes expected in an empty body
+  enqueue_data_nodes(phase, empty_loop_nodes, wq);
+  // and now follow uses
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* u = n->fast_out(j);
+      if (u->Opcode() == Op_SafePoint) {
+        // found a safepoint. Maybe this loop's safepoint or another loop safepoint.
+        if (!process_safepoint(phase, empty_loop_nodes, wq, u)) {
+          return false;
+        }
+      } else {
+        const Type* u_t = phase->_igvn.type(u);
+        if (u_t == Type::CONTROL || u_t == Type::MEMORY || u_t == Type::ABIO) {
+          // found a side effect
+          return false;
+        }
+        wq.push(u);
+      }
+    }
+  }
+  // Nodes (ignoring the EMPTY_LOOP_SIZE nodes of the "core" of the loop) are kept alive by otherwise empty loops'
+  // safepoints: kill them.
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    phase->_igvn.replace_node(n, phase->C->top());
+  }
+
+#ifdef ASSERT
+  for (uint i = 0; i < _body.size(); ++i) {
+    Node* n = _body.at(i);
+    assert(wq.member(n) || empty_loop_nodes.member(n), "missed a node in the body?");
+  }
+#endif
+
+  return true;
+}
+
+bool IdealLoopTree::process_safepoint(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq,
+                                      Node* sfpt) const {
+  CountedLoopNode* cl = _head->as_CountedLoop();
+  if (cl->outer_safepoint() == sfpt) {
+    // the current loop's safepoint
+    return true;
+  }
+
+  // Some other loop's safepoint. Maybe that loop is empty too.
+  IdealLoopTree* sfpt_loop = phase->get_loop(sfpt);
+  if (!sfpt_loop->_head->is_OuterStripMinedLoop()) {
+    return false;
+  }
+  IdealLoopTree* sfpt_inner_loop = sfpt_loop->_child;
+  CountedLoopNode* sfpt_cl = sfpt_inner_loop->_head->as_CountedLoop();
+  assert(sfpt_cl->is_strip_mined(), "inconsistent");
+
+  if (empty_loop_nodes.member(sfpt_cl)) {
+    // already taken care of
+    return true;
+  }
+
+  if (!sfpt_inner_loop->empty_loop_candidate(phase) || !sfpt_inner_loop->empty_loop_with_extra_nodes_candidate(phase)) {
+    return false;
+  }
+
+  // Enqueue the nodes of that loop for processing too
+  sfpt_inner_loop->enqueue_data_nodes(phase, empty_loop_nodes, wq);
+  return true;
+}
+
+bool IdealLoopTree::empty_loop_with_extra_nodes_candidate(PhaseIdealLoop* phase) const {
+  CountedLoopNode *cl = _head->as_CountedLoop();
+  // No other control flow node in the loop body
+  if (cl->loopexit()->in(0) != cl) {
+    return false;
+  }
+
+  if (phase->is_member(this, phase->get_ctrl(cl->limit()))) {
+    return false;
+  }
+  return true;
+}
+
+void IdealLoopTree::enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes,
+                                       Unique_Node_List& wq) const {
+  collect_loop_core_nodes(phase, empty_loop_nodes);
+  for (uint i = 0; i < _body.size(); ++i) {
+    Node* n = _body.at(i);
+    if (!empty_loop_nodes.member(n)) {
+      wq.push(n);
+    }
+  }
+}
+
+// This collects the node that would be left if this body was empty
+void IdealLoopTree::collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const {
+  uint before = wq.size();
+  wq.push(_head->in(LoopNode::LoopBackControl));
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* n = wq.at(i);
+    for (uint j = 0; j < n->req(); ++j) {
+      Node* in = n->in(j);
+      if (in != NULL) {
+        if (phase->get_loop(phase->ctrl_or_self(in)) == this) {
+          wq.push(in);
+        }
+      }
+    }
+  }
+  assert(wq.size() - before == EMPTY_LOOP_SIZE, "expect the EMPTY_LOOP_SIZE nodes of this body if empty");
 }
 
 //------------------------------do_one_iteration_loop--------------------------
@@ -4242,6 +4408,19 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);
 
+  // If the store is on the backedge, it is not executed in the last
+  // iteration, and we must subtract 1 from the len.
+  Node* backedge = head->loopexit()->proj_out(1);
+  if (store->in(0) == backedge) {
+    len = new SubINode(len, _igvn.intcon(1));
+    _igvn.register_new_node_with_optimizer(len);
+#ifndef PRODUCT
+    if (TraceOptimizeFill) {
+      tty->print_cr("ArrayFill store on backedge, subtract 1 from len.");
+    }
+#endif
+  }
+
   BasicType t = store->as_Mem()->memory_type();
   bool aligned = false;
   if (offset != NULL && head->init_trip()->is_Con()) {
@@ -4343,6 +4522,13 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* n = lpt->_body.at(i);
     _igvn.replace_node(n, C->top());
   }
+
+#ifndef PRODUCT
+  if (TraceOptimizeFill) {
+    tty->print("ArrayFill call   ");
+    call->dump();
+  }
+#endif
 
   return true;
 }

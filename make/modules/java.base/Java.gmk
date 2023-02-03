@@ -25,7 +25,9 @@
 
 DOCLINT += -Xdoclint:all/protected \
     '-Xdoclint/package:java.*,javax.*'
-JAVAC_FLAGS += -XDstringConcat=inline
+JAVAC_FLAGS += -XDstringConcat=inline \
+    --enable-preview
+DISABLED_WARNINGS_java += preview
 COPY += .icu .dat .spp .nrm content-types.properties \
     hijrah-config-Hijrah-umalqura_islamic-umalqura.properties
 CLEAN += intrinsic.properties
@@ -33,9 +35,9 @@ CLEAN += intrinsic.properties
 EXCLUDE_FILES += \
   $(TOPDIR)/src/java.base/share/classes/jdk/internal/module/ModuleLoaderMap.java
 
-EXCLUDES += java/lang/doc-files
-EXCLUDES += jdk/classfile/snippet-files
-EXCLUDES += jdk/classfile/components/snippet-files
+EXCLUDES += java/lang/doc-files \
+    jdk/internal/classfile/snippet-files \
+    jdk/internal/classfile/components/snippet-files
 
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product

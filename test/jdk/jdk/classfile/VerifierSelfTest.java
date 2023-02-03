@@ -35,9 +35,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeModel;
-import jdk.classfile.MethodModel;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.MethodModel;
 import org.junit.jupiter.api.Test;
 
 class VerifierSelfTest {

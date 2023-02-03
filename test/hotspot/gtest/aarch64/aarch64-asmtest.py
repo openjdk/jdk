@@ -350,6 +350,67 @@ class OneRegOp(Instruction):
         return (super(OneRegOp, self).astr()
                 + '%s' % self.reg.astr(self.asmRegPrefix))
 
+class SystemRegOp(Instruction):
+    def __init__(self, args):
+        name, self.system_reg = args
+        Instruction.__init__(self, name)
+        if self.system_reg == 'fpsr':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0100
+            self.op2 = 0b001
+        elif self.system_reg == 'dczid_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b111
+        elif self.system_reg == 'ctr_el0':
+            self.op1 = 0b011
+            self.CRn = 0b0000
+            self.CRm = 0b0000
+            self.op2 = 0b001
+        elif self.system_reg == 'nzcv':
+            self.op1 = 0b011
+            self.CRn = 0b0100
+            self.CRm = 0b0010
+            self.op2 = 0b000
+
+    def generate(self):
+        self.reg = [GeneralRegister().generate()]
+        return self
+
+class SystemOneRegOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(SystemOneRegOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(SystemOneRegOp, self).astr()
+                + '%s' % self.system_reg
+                + ', %s' % self.reg[0].astr(prefix))
+
+class OneRegSystemOp(SystemRegOp):
+
+    def cstr(self):
+        return (super(OneRegSystemOp, self).cstr()
+                + '%s' % self.op1
+                + ', %s' % self.CRn
+                + ', %s' % self.CRm
+                + ', %s' % self.op2
+                + ', %s);' % self.reg[0])
+
+    def astr(self):
+        prefix = self.asmRegPrefix
+        return (super(OneRegSystemOp, self).astr()
+                + '%s' % self.reg[0].astr(prefix)
+                + ', %s' % self.system_reg)
+
 class PostfixExceptionOneRegOp(OneRegOp):
 
     def __init__(self, op):
@@ -1396,6 +1457,12 @@ generate (OneRegOp, ["br", "blr",
                      "autiza", "autizb", "autdza", "autdzb", "xpacd",
                      "braaz", "brabz", "blraaz", "blrabz"])
 
+for system_reg in ["fpsr", "nzcv"]:
+    generate (SystemOneRegOp, [ ["msr", system_reg] ])
+
+for system_reg in ["fpsr", "nzcv", "dczid_el0", "ctr_el0"]:
+    generate (OneRegSystemOp, [ ["mrs", system_reg] ])
+
 # Ensure the "i" is not stripped off the end of the instruction
 generate (PostfixExceptionOneRegOp, ["xpaci"])
 
@@ -1564,6 +1631,8 @@ generate(ThreeRegNEONOp,
           ["mulv", "mul", "2S"], ["mulv", "mul", "4S"],
           ["fabd", "fabd", "2S"], ["fabd", "fabd", "4S"],
           ["fabd", "fabd", "2D"],
+          ["faddp", "faddp", "2S"], ["faddp", "faddp", "4S"],
+          ["faddp", "faddp", "2D"],
           ["fmul", "fmul", "2S"], ["fmul", "fmul", "4S"],
           ["fmul", "fmul", "2D"],
           ["mlav", "mla", "4H"], ["mlav", "mla", "8H"],
@@ -1770,6 +1839,10 @@ generate(SpecialCases, [["ccmn",   "__ ccmn(zr, zr, 3u, Assembler::LE);",       
                         ["scvtf",    "__ sve_scvtf(z6, __ H, p3, z1, __ H);",              "scvtf\tz6.h, p3/m, z1.h"],
                         ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ S);",               "fcvt\tz5.d, p3/m, z4.s"],
                         ["fcvt",     "__ sve_fcvt(z1, __ S, p3, z0, __ D);",               "fcvt\tz1.s, p3/m, z0.d"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ S, p3, z4, __ H);",               "fcvt\tz5.s, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ S);",               "fcvt\tz1.h, p3/m, z0.s"],
+                        ["fcvt",     "__ sve_fcvt(z5, __ D, p3, z4, __ H);",               "fcvt\tz5.d, p3/m, z4.h"],
+                        ["fcvt",     "__ sve_fcvt(z1, __ H, p3, z0, __ D);",               "fcvt\tz1.h, p3/m, z0.d"],
                         ["fcvtzs",   "__ sve_fcvtzs(z19, __ D, p2, z1, __ D);",            "fcvtzs\tz19.d, p2/m, z1.d"],
                         ["fcvtzs",   "__ sve_fcvtzs(z9, __ S, p1, z8, __ S);",             "fcvtzs\tz9.s, p1/m, z8.s"],
                         ["fcvtzs",   "__ sve_fcvtzs(z1, __ S, p2, z0, __ D);",             "fcvtzs\tz1.s, p2/m, z0.d"],

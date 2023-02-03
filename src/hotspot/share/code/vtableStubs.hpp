@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ class VtableStubs : AllStatic {
 
   static VtableStub* entry_point(address pc);                        // vtable stub entry point for a pc
   static bool        contains(address pc);                           // is pc within any stub?
-  static VtableStub* stub_containing(address pc);                    // stub containing pc or NULL
+  static VtableStub* stub_containing(address pc);                    // stub containing pc or nullptr
   static int         number_of_vtable_stubs() { return _number_of_vtable_stubs; }
   static void        initialize();
   static void        vtable_stub_do(void f(VtableStub*));            // iterates over all vtable stubs
@@ -131,7 +131,7 @@ class VtableStub {
   void* operator new(size_t size, int code_size) throw();
 
   VtableStub(bool is_vtable_stub, int index)
-        : _next(NULL), _index(index), _ame_offset(-1), _npe_offset(-1),
+        : _next(nullptr), _index(index), _ame_offset(-1), _npe_offset(-1),
           _is_vtable_stub(is_vtable_stub) {}
   VtableStub* next() const                       { return _next; }
   int index() const                              { return _index; }

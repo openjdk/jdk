@@ -27,14 +27,14 @@
  * @run junit BuilderTryCatchTest
  */
 
-import jdk.classfile.AccessFlags;
-import jdk.classfile.Classfile;
-import jdk.classfile.CodeBuilder;
-import jdk.classfile.CompoundElement;
-import jdk.classfile.Opcode;
-import jdk.classfile.TypeKind;
-import jdk.classfile.instruction.BranchInstruction;
-import jdk.classfile.instruction.ExceptionCatch;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.CompoundElement;
+import jdk.internal.classfile.Opcode;
+import jdk.internal.classfile.TypeKind;
+import jdk.internal.classfile.instruction.BranchInstruction;
+import jdk.internal.classfile.instruction.ExceptionCatch;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 

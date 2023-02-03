@@ -29,15 +29,15 @@
  * @run junit FilterDeadLabelsTest
  */
 
-import jdk.classfile.Classfile;
+import jdk.internal.classfile.Classfile;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 import java.util.function.Consumer;
-import jdk.classfile.Attributes;
-import jdk.classfile.CodeBuilder;
-import jdk.classfile.Signature;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.CodeBuilder;
+import jdk.internal.classfile.Signature;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
