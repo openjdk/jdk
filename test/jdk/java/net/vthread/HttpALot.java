@@ -35,7 +35,6 @@
  * @run main/othervm/timeout=600
  *     -Dsun.net.httpserver.nodelay=true
  *     -Dsun.net.client.defaultConnectTimeout=5000
- *     -Dsun.net.client.defaultReadTimeout=50000
  *     HttpALot
  */
 
