@@ -420,14 +420,14 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
 
   // Check the header crc
   if (dynamic_header->base_header_crc() != base_info->crc()) {
-    FileMapInfo::fail_continue_nowarn("Dynamic archive cannot be used: static archive header checksum verification failed.");
+    FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive header checksum verification failed.");
     return false;
   }
 
   // Check each space's crc
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     if (dynamic_header->base_region_crc(i) != base_info->region_crc(i)) {
-      FileMapInfo::fail_continue_nowarn("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
+      FileMapInfo::fail_continue("Dynamic archive cannot be used: static archive region #%d checksum verification failed.", i);
       return false;
     }
   }
