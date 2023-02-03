@@ -164,7 +164,7 @@ public class ScaledMetalBorderTest {
     }
 
     private static void runTests(String windowType) throws InterruptedException,
-                                                         InvocationTargetException {
+                                                           InvocationTargetException {
         SwingUtilities.invokeAndWait(() -> {
             switch (windowType) {
                 case "JFrame" -> {
@@ -315,7 +315,7 @@ public class ScaledMetalBorderTest {
         jDialog.getContentPane().setBackground(Color.RED);
         jDialog.setLayout(new GridBagLayout());
         jDialog.getContentPane().add(scale);
-        jDialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        jDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         jDialog.setLocation(150, 150);
         jDialog.setVisible(true);
     }

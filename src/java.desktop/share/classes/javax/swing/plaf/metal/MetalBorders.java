@@ -236,7 +236,7 @@ public class MetalBorders {
     }
 
     @SuppressWarnings("serial")
-    private abstract static sealed class AbstractMetalBorder
+    private abstract static sealed class AbstractMetalWindowBorder
             extends AbstractBorder
             implements UIResource
             permits FrameBorder, DialogBorder, InternalFrameBorderImpl {
@@ -251,9 +251,13 @@ public class MetalBorders {
         public final void paintBorder(Component c, Graphics g,
                                       int x, int y, int w, int h) {
             SwingUtilities3.paintBorder(c, g,
-                    x, y, w, h,
-                    this::paintUnscaledBorder);
+                                        x, y, w, h,
+                                        this::paintUnscaledBorder);
         }
+
+        protected abstract boolean isActive(Component c);
+
+        protected abstract boolean isResizable(Component c);
 
         protected void updateColors(Component c) {
             if (isActive(c)) {
@@ -266,10 +270,6 @@ public class MetalBorders {
                 shadow = MetalLookAndFeel.getControlInfo();
             }
         }
-
-        protected abstract boolean isActive(Component c);
-
-        protected abstract boolean isResizable(Component c);
 
         private void paintUnscaledBorder(Component c, Graphics g,
                                          int width, int height,
@@ -288,15 +288,22 @@ public class MetalBorders {
                 //midpoint at which highlight & shadow lines
                 //are positioned on the border
                 int midPoint = thickness / 2;
-                int stkWidth = clipRound(scaleFactor);
-                int offset = (((scaleFactor - stkWidth) >= 0) && ((stkWidth % 2) != 0)) ? 1 : 0;
-                int loc1 = thickness % 2 == 0 ? midPoint + stkWidth / 2 - stkWidth : midPoint;
-                int loc2 = thickness % 2 == 0 ? midPoint + stkWidth / 2 : midPoint + stkWidth;
+                int strokeWidth = clipRound(scaleFactor);
+                int offset = (((scaleFactor - strokeWidth) >= 0)
+                              && ((strokeWidth % 2) != 0)) ? 1 : 0;
+
+                int loc1 = (thickness % 2 == 0)
+                           ? midPoint + strokeWidth / 2 - strokeWidth
+                           : midPoint;
+                int loc2 = (thickness % 2 == 0)
+                           ? midPoint + strokeWidth / 2
+                           : midPoint + strokeWidth;
+
                 // scaled corner
                 int corner = (int) Math.round(CORNER * scaleFactor);
 
                 if (g instanceof Graphics2D) {
-                    ((Graphics2D) g).setStroke(new BasicStroke((float) stkWidth));
+                    ((Graphics2D) g).setStroke(new BasicStroke((float) strokeWidth));
                 }
 
                 // Draw the Long highlight lines
@@ -327,7 +334,8 @@ public class MetalBorders {
     }
 
     @SuppressWarnings("serial")
-    private static final class InternalFrameBorderImpl extends AbstractMetalBorder {
+    private static final class InternalFrameBorderImpl extends AbstractMetalWindowBorder {
+
         @Override
         protected boolean isActive(Component c) {
             return (c instanceof JInternalFrame
@@ -356,11 +364,13 @@ public class MetalBorders {
             border = new InternalFrameBorderImpl();
         }
 
+        @Override
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int w, int h) {
             border.paintBorder(c, g, x, y, w, h);
         }
 
+        @Override
         public Insets getBorderInsets(Component c, Insets newInsets) {
             newInsets.set(4, 4, 4, 4);
             return newInsets;
@@ -372,7 +382,7 @@ public class MetalBorders {
      * @since 1.4
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    static final class FrameBorder extends AbstractMetalBorder implements UIResource {
+    static final class FrameBorder extends AbstractMetalWindowBorder implements UIResource {
 
         @Override
         protected boolean isActive(Component c) {
@@ -394,7 +404,7 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     static sealed class DialogBorder
-            extends AbstractMetalBorder
+            extends AbstractMetalWindowBorder
             implements UIResource
             permits ErrorDialogBorder, QuestionDialogBorder, WarningDialogBorder {
 
@@ -402,28 +412,23 @@ public class MetalBorders {
             return MetalLookAndFeel.getPrimaryControlDarkShadow();
         }
 
-        protected final Color getActiveHighlight()
-        {
+        protected final Color getActiveHighlight() {
             return MetalLookAndFeel.getPrimaryControlShadow();
         }
 
-        protected final Color getActiveShadow()
-        {
+        protected final Color getActiveShadow() {
             return MetalLookAndFeel.getPrimaryControlInfo();
         }
 
-        protected final Color getInactiveBackground()
-        {
+        protected final Color getInactiveBackground() {
             return MetalLookAndFeel.getControlDarkShadow();
         }
 
-        protected final Color getInactiveHighlight()
-        {
+        protected final Color getInactiveHighlight() {
             return MetalLookAndFeel.getControlShadow();
         }
 
-        protected final Color getInactiveShadow()
-        {
+        protected final Color getInactiveShadow() {
             return MetalLookAndFeel.getControlInfo();
         }
 
