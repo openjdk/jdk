@@ -859,7 +859,9 @@ void HeapShared::serialize_root(SerializeClosure* soc) {
     }
   } else {
     // writing
-    roots_oop = ArchiveHeapWriter::heap_roots_requested_address();
+    if (HeapShared::can_write()) {
+      roots_oop = ArchiveHeapWriter::heap_roots_requested_address();
+    }
     soc->do_oop(&roots_oop); // write to archive
   }
 }

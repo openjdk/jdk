@@ -165,13 +165,12 @@ class ArchiveHeapWriter : AllStatic {
   static void store_oop_in_buffer(oop* buffered_addr, oop requested_obj);
   static void store_oop_in_buffer(narrowOop* buffered_addr, oop requested_obj);
 
-  template <typename T> static oop load_source_field_from_requested_obj(oop requested_obj, size_t field_offset);
-  template <typename T> static void store_requested_field_in_requested_obj(oop requested_obj, size_t field_offset, oop request_field_val);
+  template <typename T> static oop load_source_oop_from_buffer(T* buffered_addr);
+  template <typename T> static void store_requested_oop_in_buffer(T* buffered_addr, oop request_oop);
 
   template <typename T> static T* requested_addr_to_buffered_addr(T* p);
-  template <typename T> static T* requested_field_addr_in_buffer(oop request_p, size_t field_offset);
-  template <typename T> static void relocate_field_in_requested_obj(oop requested_obj, size_t field_offset);
-  template <typename T> static void mark_oop_pointer(oop requested_obj, size_t field_offset);
+  template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer);
+  template <typename T> static void mark_oop_pointer(T* buffered_addr);
   template <typename T> static void relocate_root_at(oop requested_roots, int index);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);

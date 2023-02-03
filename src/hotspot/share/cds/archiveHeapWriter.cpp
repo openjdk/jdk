@@ -404,11 +404,6 @@ void ArchiveHeapWriter::set_requested_address_for_regions(GrowableArray<MemRegio
 
 // Oop relocation
 
-template <typename T> T* ArchiveHeapWriter::requested_field_addr_in_buffer(oop requested_obj, size_t field_offset) {
-  T* request_p = (T*)(cast_from_oop<address>(requested_obj) + field_offset);
-  return requested_addr_to_buffered_addr(request_p);
-}
-
 template <typename T> T* ArchiveHeapWriter::requested_addr_to_buffered_addr(T* p) {
   assert(is_in_requested_regions(cast_to_oop(p)), "must be");
 
@@ -418,17 +413,16 @@ template <typename T> T* ArchiveHeapWriter::requested_addr_to_buffered_addr(T* p
   return offset_to_buffered_address<T*>(offset);
 }
 
-template <typename T> oop ArchiveHeapWriter::load_source_field_from_requested_obj(oop requested_obj, size_t field_offset) {
-  T* buffered_addr = requested_field_addr_in_buffer<T>(requested_obj, field_offset);
+template <typename T> oop ArchiveHeapWriter::load_source_oop_from_buffer(T* buffered_addr) {
   oop o = load_oop_from_buffer(buffered_addr);
   assert(!in_buffer(cast_from_oop<address>(o)), "must point to source oop");
   return o;
 }
 
-template <typename T> void ArchiveHeapWriter::store_requested_field_in_requested_obj(oop requested_obj, size_t field_offset,
-                                                                                     oop request_field_val) {
-  T* buffered_addr = requested_field_addr_in_buffer<T>(requested_obj, field_offset);
-  store_oop_in_buffer(buffered_addr, request_field_val);
+template <typename T> void ArchiveHeapWriter::store_requested_oop_in_buffer(T* buffered_addr,
+                                                                            oop request_oop) {
+  assert(is_in_requested_regions(request_oop), "must be");
+  store_oop_in_buffer(buffered_addr, request_oop);
 }
 
 void ArchiveHeapWriter::store_oop_in_buffer(oop* buffered_addr, oop requested_obj) {
@@ -451,17 +445,17 @@ oop ArchiveHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
   return CompressedOops::decode(*buffered_addr);
 }
 
-template <typename T> void ArchiveHeapWriter::relocate_field_in_requested_obj(oop requested_obj, size_t field_offset) {
-  oop source_referent = load_source_field_from_requested_obj<T>(requested_obj, field_offset);
+template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer) {
+  oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
   if (!CompressedOops::is_null(source_referent)) {
     oop request_referent = source_obj_to_requested_obj(source_referent);
-    store_requested_field_in_requested_obj<T>(requested_obj, field_offset, request_referent);
-    mark_oop_pointer<T>(requested_obj, field_offset);
+    store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+    mark_oop_pointer<T>(field_addr_in_buffer);
   }
 }
 
-template <typename T> void ArchiveHeapWriter::mark_oop_pointer(oop requested_obj, size_t field_offset) {
-  T* request_p = (T*)(cast_from_oop<address>(requested_obj) + field_offset);
+template <typename T> void ArchiveHeapWriter::mark_oop_pointer(T* buffered_addr) {
+  T* request_p = (T*)(buffered_addr_to_requested_addr((address)buffered_addr));
   ResourceBitMap* oopmap;
   address requested_region_bottom;
 
@@ -509,15 +503,16 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
 // Relocate an element in the buffered copy of HeapShared::roots()
 template <typename T> void ArchiveHeapWriter::relocate_root_at(oop requested_roots, int index) {
   size_t offset = (size_t)((objArrayOop)requested_roots)->obj_at_offset<T>(index);
-  relocate_field_in_requested_obj<T>(requested_roots, offset);
+  relocate_field_in_buffer<T>((T*)(buffered_heap_roots_addr() + offset));
 }
 
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
   oop _src_obj;
-  oop _requested_obj;
+  address _buffered_obj;
+
 public:
-  EmbeddedOopRelocator(oop src_obj, oop requested_obj) :
-    _src_obj(src_obj), _requested_obj(requested_obj) {}
+  EmbeddedOopRelocator(oop src_obj, address buffered_obj) :
+    _src_obj(src_obj), _buffered_obj(buffered_obj) {}
 
   void do_oop(narrowOop *p) { EmbeddedOopRelocator::do_oop_work(p); }
   void do_oop(      oop *p) { EmbeddedOopRelocator::do_oop_work(p); }
@@ -525,7 +520,7 @@ public:
 private:
   template <class T> void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    ArchiveHeapWriter::relocate_field_in_requested_obj<T>(_requested_obj, field_offset);
+    ArchiveHeapWriter::relocate_field_in_buffer<T>((T*)(_buffered_obj + field_offset));
   }
 };
 
@@ -545,7 +540,9 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
   auto iterator = [&] (oop src_obj, HeapShared::CachedOopInfo& info) {
     oop requested_obj = requested_obj_from_buffer_offset(info.buffer_offset());
     update_header_for_requested_obj(requested_obj, src_obj, src_obj->klass());
-    EmbeddedOopRelocator relocator(src_obj, requested_obj);
+
+    address buffered_obj = offset_to_buffered_address<address>(info.buffer_offset());
+    EmbeddedOopRelocator relocator(src_obj, buffered_obj);
 
     src_obj->oop_iterate(&relocator);
   };
