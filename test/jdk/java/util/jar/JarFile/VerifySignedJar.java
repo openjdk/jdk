@@ -66,7 +66,7 @@ public class VerifySignedJar {
                 // Reading entry to trigger verification
                 jf.getInputStream(e).transferTo(OutputStream.nullOutputStream());
                 // Check that all regular files are signed by duke
-                if(!e.getName().startsWith("META-INF/")) {
+                if (!e.getName().startsWith("META-INF/")) {
                     checkSignedBy(e, "cn=duke");
                 }
             }
