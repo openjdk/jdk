@@ -42,7 +42,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.UIManager.LookAndFeelInfo;
 
 public class DisabledComboBoxFontTest {
     private static final String instructionsText = "Pass if you can see two " +
@@ -113,17 +112,10 @@ public class DisabledComboBoxFontTest {
 
     public static void main(String[] args) throws Exception {
 
-        hasNimbus = false;
-
-        for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-            if ("Nimbus".equals(info.getName())) {
-                System.out.println("LF: " + info.getClassName());
-                UIManager.setLookAndFeel(info.getClassName());
-                hasNimbus = true;
-            }
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
         }
-
-        if (!hasNimbus) {
+        catch (Exception e) {
             System.err.println("Nimbus L&F not found");
             return;
         }
