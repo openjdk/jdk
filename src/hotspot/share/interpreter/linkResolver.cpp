@@ -1763,17 +1763,11 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 }
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
-  int pool_index;
-  if (UseNewIndyCode) {
-    indy_index = pool->decode_invokedynamic_index(indy_index);
-    pool_index = pool->resolved_indy_info(indy_index)->cpool_index();
-  } else {
-    ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(indy_index);
-    pool_index = cpce->constant_pool_index();
-  }
+  int index = pool->decode_invokedynamic_index(indy_index);
+  int pool_index = pool->resolved_indy_info(index)->cpool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
-  BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
+  BootstrapInfo bootstrap_specifier(pool, pool_index, index);
 
   // Check if CallSite has been bound already or failed already, and short circuit:
   {
@@ -1840,13 +1834,8 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(result, CHECK);
       if (is_done) return;
     }
-    if (UseNewIndyCode) {
-      assert(bootstrap_specifier.pool()->resolved_indy_info(bootstrap_specifier.indy_index())->resolution_failed(),
-            "Resolution should have failed");
-    } else {
-      assert(bootstrap_specifier.invokedynamic_cp_cache_entry()->indy_resolution_failed(),
-            "Resolution failure flag wasn't set");
-    }
+    assert(bootstrap_specifier.pool()->resolved_indy_info(bootstrap_specifier.indy_index())->resolution_failed(),
+          "Resolution should have failed");
   }
 
   bootstrap_specifier.resolve_newly_linked_invokedynamic(result, CHECK);

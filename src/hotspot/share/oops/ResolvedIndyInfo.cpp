@@ -38,19 +38,13 @@ bool ResolvedIndyInfo::check_no_old_or_obsolete_entry() {
 }
 
 void ResolvedIndyInfo::remove_unshareable_info() {
-    //STATIC_ASSERT(sizeof(*this) % sizeof(this));
     u2 saved_resolved_references_index = _resolved_references_index;
     u2 saved_cpool_index = _cpool_index;
     memset(this, 0, sizeof(*this));
     _resolved_references_index = saved_resolved_references_index;
     _cpool_index = saved_cpool_index;
-        /*_number_of_parameters = 0;
-        _return_type = 0;
-        _has_appendix = false;
-        _method = nullptr;*/
 }
 
-// ResolvedInvokeDynamicInfo
 void ResolvedIndyInfo::print_on(outputStream* st) const {
     st->print_cr("Resolved InvokeDynamic Info:");
     if (_method != nullptr) {
@@ -63,8 +57,5 @@ void ResolvedIndyInfo::print_on(outputStream* st) const {
     st->print_cr(" - Num Parameters: %d", num_parameters());
     st->print_cr(" - Return type: %s", type2name(as_BasicType((TosState)return_type())));
     st->print_cr(" - Has Appendix: %d", has_appendix());
+    st->print_cr(" - Resolution Failed %d", resolution_failed());
 }
-
-/*void ResolvedIndyInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-    it->push(&_method);
-}*/

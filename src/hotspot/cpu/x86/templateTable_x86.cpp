@@ -3617,6 +3617,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 
 //-----------------------------------------------------------------------------
 // Calls
+
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register method,  // linked method (or i-klass)
                                    Register index,   // itable index, MethodType, etc.
@@ -3646,7 +3647,6 @@ void TemplateTable::prepare_invoke(int byte_no,
   __ save_bcp();
 
   load_invoke_cp_cache_entry(byte_no, method, index, flags, is_invokevirtual, false, is_invokedynamic);
-
 
   // maybe push appendix to arguments (just before return address)
   if (is_invokedynamic || is_invokehandle) {
@@ -3975,11 +3975,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   const Register rbx_method   = rbx;
   const Register rax_callsite = rax;
 
-  if (UseNewIndyCode) {
-    load_invokedynamic_entry(rbx_method);
-  } else {
-    prepare_invoke(byte_no, rbx_method, rax_callsite);
-  }
+  load_invokedynamic_entry(rbx_method);
   // rax: CallSite object (from cpool->resolved_references[f1])
   // rbx: MH.linkToCallSite method (from f2)
 
@@ -3991,6 +3987,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   __ profile_arguments_type(rdx, rbx_method, rbcp, false);
 
   __ verify_oop(rax_callsite);
+
   __ jump_from_interpreted(rbx_method, rdx);
 }
 

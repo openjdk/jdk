@@ -635,7 +635,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
 
 bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
-  if (UseNewIndyCode && is_invokedynamic) {
+  if (is_invokedynamic) {
     int indy_index = decode_cpcache_index(which, true);
     return cpool->cache()->resolved_indy_info(indy_index)->has_appendix();
   } else {
@@ -647,7 +647,7 @@ bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, in
 
 oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
-  if (UseNewIndyCode && is_invokedynamic) {
+  if (is_invokedynamic) {
     int indy_index = decode_cpcache_index(which, true);
     return cpool->resolved_reference_from_indy(indy_index);
   } else {
@@ -661,7 +661,7 @@ oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int whi
 bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cpool, int which, bool is_invokedynamic) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
-  if (UseNewIndyCode && is_invokedynamic) {
+  if (is_invokedynamic) {
     return cpool->cache()->resolved_indy_info(cache_index)->has_local_signature();
   } else {
     ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);

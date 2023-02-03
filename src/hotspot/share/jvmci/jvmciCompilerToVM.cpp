@@ -1462,12 +1462,7 @@ C2V_VMENTRY(void, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
   LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokedynamic, CHECK);
-  if (UseNewIndyCode) {
-    cp->cache()->set_dynamic_call(callInfo, cp->decode_invokedynamic_index(index));
-  } else {
-    ConstantPoolCacheEntry* cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-    cp_cache_entry->set_dynamic_call(cp, callInfo);
-  }
+  cp->cache()->set_dynamic_call(callInfo, cp->decode_invokedynamic_index(index));
 C2V_END
 
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -1516,7 +1511,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
 
     return Bytecodes::_invokevirtual;
   }
-  if (UseNewIndyCode && cp->is_invokedynamic_index(index)) {
+  if (cp->is_invokedynamic_index(index)) {
     if (cp->resolved_indy_info(cp->decode_cpcache_index(index))->is_resolved()) {
       return Bytecodes::_invokedynamic;
     }

@@ -55,11 +55,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  if (UseNewIndyCode) {
-    assert(indy_index == -1 || pool->resolved_indy_info(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
-  } else {
-    assert(indy_index == -1 || pool->invokedynamic_bootstrap_ref_index_at(indy_index) == bss_index, "invalid bootstrap specifier index");
-  }
+  assert(indy_index == -1 || pool->resolved_indy_info(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
 }
 
 // If there is evidence this call site was already linked, set the
@@ -67,37 +63,20 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 // Return true if either action is taken, else false.
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
-  if (UseNewIndyCode) {
-    // Check if method is not null
-    if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
-      methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());
-      //Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
-      Handle appendix ( THREAD,  _pool->resolved_reference_from_indy(_indy_index));
-      result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
-      Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
-      return true;
-    } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
-      int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
-      ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
-      return true;
-    } else {
-      return false;
-    }
+  // Check if method is not null
+  if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
+    methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());
+    //Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
+    Handle appendix ( THREAD,  _pool->resolved_reference_from_indy(_indy_index));
+    result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
+    Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
+    return true;
+  } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
+    int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
+    ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
+    return true;
   } else {
-    ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-    if (!cpce->is_f1_null()) {
-      methodHandle method(     THREAD, cpce->f1_as_method());
-      Handle       appendix(   THREAD, cpce->appendix_if_resolved(_pool));
-      result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
-      Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
-      return true;
-    } else if (cpce->indy_resolution_failed()) {
-      int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-      ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false);
-      return true;
-    } else {
-      return false;
-    }
+    return false;
   }
 }
 
@@ -232,22 +211,12 @@ void BootstrapInfo::resolve_args(TRAPS) {
 bool BootstrapInfo::save_and_throw_indy_exc(TRAPS) {
   assert(HAS_PENDING_EXCEPTION, "");
   assert(_indy_index != -1, "");
-  if (UseNewIndyCode) {
-    int encoded_index = ResolutionErrorTable::encode_cpcache_index(ConstantPool::encode_invokedynamic_index(_indy_index));
-    bool recorded_res_status = _pool->cache()->save_and_throw_indy_exc(_pool, _bss_index,
-                                                           _indy_index,
-                                                           pool()->tag_at(_bss_index),
-                                                           CHECK_false);
-    return recorded_res_status;
-  } else {
-    ConstantPoolCacheEntry* cpce = invokedynamic_cp_cache_entry();
-    int encoded_index = ResolutionErrorTable::encode_cpcache_index(_indy_index);
-    bool recorded_res_status = cpce->save_and_throw_indy_exc(_pool, _bss_index,
-                                                            encoded_index,
-                                                            pool()->tag_at(_bss_index),
-                                                            CHECK_false);
-    return recorded_res_status;
-  }
+  assert(_indy_index >= 0, "Indy index must be decoded by now");
+  bool recorded_res_status = _pool->cache()->save_and_throw_indy_exc(_pool, _bss_index,
+                                                          _indy_index,
+                                                          pool()->tag_at(_bss_index),
+                                                          CHECK_false);
+  return recorded_res_status;
 }
 
 void BootstrapInfo::resolve_newly_linked_invokedynamic(CallInfo& result, TRAPS) {
@@ -260,12 +229,8 @@ void BootstrapInfo::print_msg_on(outputStream* st, const char* msg) {
   char what[20];
   st = st ? st : tty;
 
-  if (_indy_index != -1) {
-    if (UseNewIndyCode) {
-      os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
-    } else {
-      os::snprintf_checked(what, sizeof(what), "indy#%d", decode_indy_index());
-    }
+  if (_indy_index > -1) {
+    os::snprintf_checked(what, sizeof(what), "indy#%d", _indy_index);
   }
   else
     os::snprintf_checked(what, sizeof(what), "condy");

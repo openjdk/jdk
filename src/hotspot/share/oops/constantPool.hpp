@@ -274,11 +274,7 @@ class ConstantPool : public Metadata {
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
   int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    if (UseNewIndyCode) {
-      return cache()->resolved_indy_info(decode_invokedynamic_index(indy_index))->cpool_index();
-    } else {
-      return invokedynamic_cp_cache_entry_at(indy_index)->constant_pool_index();
-    }
+    return cache()->resolved_indy_info(decode_invokedynamic_index(indy_index))->cpool_index();
   }
 
   // Assembly code support

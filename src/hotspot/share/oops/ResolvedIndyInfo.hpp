@@ -60,32 +60,24 @@ public:
         _return_type(0),
         _flags(0) {}
 
+    // Bit shift to get flags
+    // Note: Only one flag exists at the moment but more could be added
     enum {
         has_appendix_shift        = 1,
-        is_vfinal_shift           = 2,
-        is_final_shift            = 3,
-        has_local_signature_shift = 4
     };
 
     // Getters
-    Method* method() const               { return _method;                    }
+    Method* method()               const { return _method;                    }
     u2 resolved_references_index() const { return _resolved_references_index; }
-    u2 cpool_index() const               { return _cpool_index;               }
-    u2 num_parameters() const            { return _number_of_parameters;      }
-    u1 return_type() const               { return _return_type;               }
-    bool is_resolved() const             { return _method != nullptr;         }
-
-    bool has_appendix() const            { return (_flags & (1 << has_appendix_shift))        != 0; }
-    bool resolution_failed()             { return (_flags & 1)                                != 0; }
-    bool is_vfinal() const               { return false;                                            }
-    bool is_final() const                { return false;                                            }
-    bool has_local_signature() const     { return true;                                             }
-
-    /*bool has_appendix() const            { return _has_appendix;              }
-    bool has_local_signature() const     { return true;                       } // might not be guaranteed to be true
-    bool is_vfinal() const               { return true;                       } // ask Lois, what does this mean??
-    bool is_final() const                { return true;                       }*/
-    //bool resolution_failed()             { return _resolution_failed;         }
+    u2 cpool_index()               const { return _cpool_index;               }
+    u2 num_parameters()            const { return _number_of_parameters;      }
+    u1 return_type()               const { return _return_type;               }
+    bool is_resolved()             const { return _method != nullptr;         }
+    bool has_appendix()            const { return (_flags & (1 << has_appendix_shift))        != 0; }
+    bool resolution_failed()       const { return (_flags & 1)                                != 0; }
+    bool is_vfinal()               const { return false;                                            }
+    bool is_final()                const { return false;                                            }
+    bool has_local_signature()     const { return true;                                             }
 
     // Printing
     void print_on(outputStream* st) const;
@@ -104,7 +96,7 @@ public:
          "size must not change: parameter_size=%d, value=%d", _number_of_parameters, value);
     }
 
-    // Fill remaining fields
+    // Populate structure with resolution information
     void fill_in(Method* m, u2 num_params, u1 return_type, bool has_appendix) {
         set_num_parameters(num_params);
         _return_type = return_type;
@@ -127,8 +119,7 @@ public:
     void adjust_method_entry(Method* new_method) { _method = new_method; }
     bool check_no_old_or_obsolete_entry();
 
-    // void metaspace_pointers_do(MetaspaceClosure* it);
-
+    // CDS
     void remove_unshareable_info();
 
     // Offsets

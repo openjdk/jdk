@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,9 +89,6 @@ public class ConstantPoolCache extends Metadata {
     Address addr = resolvedIndyArray.getValue(getAddress());
     ResolvedIndyArray array = new ResolvedIndyArray(addr);
     return array.getAt(i);
-
-    /*Address array = resolvedIndyArray.getValue(getAddress());
-    return new ResolvedIndyInfo(array, i);*/
   }
 
   public int getIntAt(int entry, int fld) {

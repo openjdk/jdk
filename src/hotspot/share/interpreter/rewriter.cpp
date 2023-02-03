@@ -270,22 +270,18 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     int cache_index = add_invokedynamic_cp_cache_entry(cp_index);
     int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
-    // Replace the trailing four bytes with a CPC index for the dynamic
-    // call site.  Unlike other CPC entries, there is one per bytecode,
-    // not just one per distinct CP entry.  In other words, the
-    // CPC-to-CP relation is many-to-one for invokedynamic entries.
+    // Replace the trailing four bytes with an index to the array of
+    // indy resolution information in the CPC. There is one entry for
+    // each bytecode, even if they make the same call. In other words,
+    // the CPC-to-CP relation is many-to-one for invokedynamic entries.
     // This means we must use a larger index size than u2 to address
     // all these entries.  That is the main reason invokedynamic
     // must have a five-byte instruction format.  (Of course, other JVM
     // implementations can use the bytes for other purposes.)
     // Note: We use native_u4 format exclusively for 4-byte indexes.
-    if (UseNewIndyCode) {
-      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
-      int i = ConstantPool::encode_invokedynamic_index(_invokedynamic_index);
-      _invokedynamic_index++;
-    } else {
-      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index));
-    }
+    Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
+    _invokedynamic_index++;
+
     // add the bcp in case we need to patch this bytecode if we also find a
     // invokespecial/InterfaceMethodref in the bytecode stream
     _patch_invokedynamic_bcps->push(p);
@@ -294,31 +290,17 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _stuff_to_collect_during_rewriting.push(ConstantPoolCache::InvokeDynamicInfo((u2)resolved_index, (u2)cp_index));
   } else {
-    if (UseNewIndyCode) {
-      // Should do nothing since we are not patching this bytecode
-      int cache_index = ConstantPool::decode_invokedynamic_index(
-                          Bytes::get_native_u4(p));
-      // We will reverse the bytecode rewriting _after_ adjusting them.
-      // Adjust the cache index by offset to the invokedynamic entries in the
-      // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-      int cp_index = _stuff_to_collect_during_rewriting.at(cache_index)._cp_index;
-      assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
-      // zero out 4 bytes
-      Bytes::put_Java_u4(p, 0);
-      Bytes::put_Java_u2(p, cp_index);
-    } else {
-      int cache_index = ConstantPool::decode_invokedynamic_index(
-                          Bytes::get_native_u4(p));
-      // We will reverse the bytecode rewriting _after_ adjusting them.
-      // Adjust the cache index by offset to the invokedynamic entries in the
-      // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-      int adjustment = cp_cache_delta() + _first_iteration_cp_cache_limit;
-      int cp_index = invokedynamic_cp_cache_entry_pool_index(cache_index - adjustment);
-      assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
-      // zero out 4 bytes
-      Bytes::put_Java_u4(p, 0);
-      Bytes::put_Java_u2(p, cp_index);
-    }
+    // Should do nothing since we are not patching this bytecode
+    int cache_index = ConstantPool::decode_invokedynamic_index(
+                        Bytes::get_native_u4(p));
+    // We will reverse the bytecode rewriting _after_ adjusting them.
+    // Adjust the cache index by offset to the invokedynamic entries in the
+    // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
+    int cp_index = _stuff_to_collect_during_rewriting.at(cache_index)._cp_index;
+    assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
+    // zero out 4 bytes
+    Bytes::put_Java_u4(p, 0);
+    Bytes::put_Java_u2(p, cp_index);
   }
 }
 
@@ -590,12 +572,6 @@ void Rewriter::rewrite_bytecodes(TRAPS) {
                 "and cannot be loaded");
       return;
      }
-  }
-
-  // May have to fix invokedynamic bytecodes if invokestatic/InterfaceMethodref
-  // entries had to be added.
-  if (!UseNewIndyCode) {
-    patch_invokedynamic_bytecodes();
   }
 }
 

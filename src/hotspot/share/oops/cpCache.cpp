@@ -365,11 +365,10 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
     return;
   }
 
-  ConstantPoolCache* cpCache = cpool->cache();
-
   if (indy_resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
+    ConstantPoolCache* cpCache = cpool->cache();
     int index = -1;
     for (int i = 0; i < cpCache->length(); i++) {
       if (cpCache->entry_at(i) == this) {
@@ -645,8 +644,7 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
                is_forced_virtual(), is_final(), is_vfinal(),
                indy_resolution_failed(), parameter_size());
-    if ((bytecode_1() == Bytecodes::_invokehandle ||
-       bytecode_1() == Bytecodes::_invokedynamic)) {
+    if ((bytecode_1() == Bytecodes::_invokehandle)) {
       constantPoolHandle cph(Thread::current(), cache->constant_pool());
       Method* m = method_if_resolved(cph);
       oop appendix = appendix_if_resolved(cph);
@@ -680,16 +678,9 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
                                      TRAPS) {
 
-  int len = 0;
-  if (UseNewIndyCode) {
-    len = index_map.length();
-  } else {
-    len = index_map.length() + invokedynamic_index_map.length();
-  }
-  // const int length = index_map.length() + invokedynamic_index_map.length();
-  //const int length = index_map.length();
-  const int length = len;
+  const int length = index_map.length();
   int size = ConstantPoolCache::size(length);
+
   // Initialize resolvedinvokedynamicinfo array with available data
   Array<ResolvedIndyInfo>* array;
   if (invokedynamic_info.length()) {
@@ -714,20 +705,6 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
     int original_index = inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
-  }
-
-  // Append invokedynamic entries at the end
-  if (UseNewIndyCode) {
-    // Do nothing
-  } else {
-    int invokedynamic_offset = inverse_index_map.length();
-    for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
-      int offset = i + invokedynamic_offset;
-      ConstantPoolCacheEntry* e = entry_at(offset);
-      int original_index = invokedynamic_inverse_index_map.at(i);
-      e->initialize_entry(original_index);
-      assert(entry_at(offset) == e, "sanity");
-    }
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
@@ -817,7 +794,7 @@ void ConstantPoolCache::set_archived_references(int root_index) {
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
-  if (UseNewIndyCode && _resolved_indy_info != nullptr) {
+  if (_resolved_indy_info != nullptr) {
     for (int j = 0; j < _resolved_indy_info->length(); j++) {
       Method* old_method = resolved_indy_info(j)->method();
       if (old_method == nullptr || !old_method->is_old()) {
@@ -847,7 +824,7 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
-  if (UseNewIndyCode && _resolved_indy_info) {
+  if (_resolved_indy_info) {
     for (int i = 0; i < _resolved_indy_info->length(); i++) {
       Method* m = resolved_indy_info(i)->method();
       if (m != nullptr && !resolved_indy_info(i)->check_no_old_or_obsolete_entry()) {
@@ -857,7 +834,6 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
         return false;
       }
     }
-    //return true;
   }
 
   for (int i = 1; i < length(); i++) {
@@ -923,10 +899,9 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
   assert(index >= 0, "Indy index must be positive at this point");
 
-  if (UseNewIndyCode) {
-    if (resolved_indy_info(index)->method() != nullptr)
-      return constant_pool()->resolved_reference_from_indy(index);
-  }
+  if (resolved_indy_info(index)->method() != nullptr)
+    return constant_pool()->resolved_reference_from_indy(index);
+
 
   // Come back to this
   /*if (indy_resolution_failed()) {
@@ -988,11 +963,9 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
   // out of the ConstantPoolCacheEntry.
 
-  if (UseNewIndyCode && resolved_indy_info()) {
+  if (resolved_indy_info() != nullptr) {
     assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-    //tty->print_cr("Indy index is %d", index);
-    //resolved_indy_info(index)->print_on(tty);
   }
 
   // The interpreter assembly code does not check byte_2,

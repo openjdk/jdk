@@ -451,7 +451,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register cache = r1;
   const Register index = r2;
 
-  if (UseNewIndyCode && index_size == sizeof(u4)) {
+  if (index_size == sizeof(u4)) {
     // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
     __ get_cache_index_at_bcp(index, 1, sizeof(u4));
     // Get address of invokedynamic array

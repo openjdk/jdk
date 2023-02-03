@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-//package sun.jvm.hotspot.utilities;
 package sun.jvm.hotspot.oops;
 
 import sun.jvm.hotspot.debugger.Address;
@@ -60,7 +59,6 @@ public class ResolvedIndyArray extends GenericArray {
   }
 
   public ResolvedIndyInfo getAt(int index) {
-    //return (ResolvedIndyInfo) VMObject.instantiateWrapperFor(getAddressAt(i));
     if (index < 0 || index >= length()) throw new ArrayIndexOutOfBoundsException(index + " " + length());
 
     Type elemType = getElemType();
@@ -68,7 +66,6 @@ public class ResolvedIndyArray extends GenericArray {
     Address data = getAddress().addOffsetTo(dataFieldOffset);
     long elemSize = elemType.getSize();
 
-    //return data.getAddressAt(index * elemSize);
     return new ResolvedIndyInfo(data.addOffsetTo(index* elemSize));
   }
 

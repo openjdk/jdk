@@ -339,12 +339,8 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       // (NOT needed for the old calling convention)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        if (UseNewIndyCode) {
-          int indy_index = method->constants()->decode_invokedynamic_index(index);
-          method->constants()->resolved_indy_info(indy_index)->set_num_parameters(callee_parameters);
-        } else {
-          method->constants()->invokedynamic_cp_cache_entry_at(index)->set_parameter_size(callee_parameters);
-        }
+        int indy_index = method->constants()->decode_invokedynamic_index(index);
+        method->constants()->resolved_indy_info(indy_index)->set_num_parameters(callee_parameters);
       }
       break;
     }

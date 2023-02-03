@@ -3523,11 +3523,7 @@ void TemplateTable::invokedynamic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
 
-  if (UseNewIndyCode) {
-    load_invokedynamic_entry(rmethod);
-  } else {
-    prepare_invoke(byte_no, rmethod, r0);
-  }
+  load_invokedynamic_entry(rmethod);
 
   // r0: CallSite object (from cpool->resolved_references[])
   // rmethod: MH.linkToCallSite method (from f2)

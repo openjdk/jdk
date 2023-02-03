@@ -1062,14 +1062,8 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       }
       case Bytecodes::_invokedynamic: {
-        if (UseNewIndyCode) {
-          int indy_index = pool->decode_invokedynamic_index(index);
-          appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
-        } else {
-          ConstantPoolCacheEntry* cpce = pool->invokedynamic_cp_cache_entry_at(index);
-          cpce->set_dynamic_call(pool, info);
-          appendix = Handle(current, cpce->appendix_if_resolved(pool)); // just in case somebody already resolved the entry
-        }
+        int indy_index = pool->decode_invokedynamic_index(index);
+        appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

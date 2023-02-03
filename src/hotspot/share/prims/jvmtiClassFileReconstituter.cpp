@@ -1038,25 +1038,17 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
         int cpci = Bytes::get_native_u2(bcp+1);
         bool is_invokedynamic = (code == Bytecodes::_invokedynamic);
         ConstantPoolCacheEntry* entry;
-        int i;
+        int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
-          if (UseNewIndyCode) {
-            i = mh->constants()->resolved_indy_info(mh->constants()->decode_invokedynamic_index(cpci))->cpool_index();
-          } else {
-            entry = mh->constants()->invokedynamic_cp_cache_entry_at(cpci);
-          }
+          pool_index = mh->constants()->resolved_indy_info(mh->constants()->decode_invokedynamic_index(cpci))->cpool_index();
         } else {
         // cache cannot be pre-fetched since some classes won't have it yet
           entry = mh->constants()->cache()->entry_at(cpci);
-          i = entry->constant_pool_index();
+          pool_index = entry->constant_pool_index();
         }
-        if (!UseNewIndyCode) {
-          //int i = entry->constant_pool_index();
-          i = entry->constant_pool_index();
-        }
-        assert(i < mh->constants()->length(), "sanity check");
-        Bytes::put_Java_u2((address)(p+1), (u2)i);     // java byte ordering
+        assert(pool_index < mh->constants()->length(), "sanity check");
+        Bytes::put_Java_u2((address)(p+1), (u2)pool_index);     // java byte ordering
         if (is_invokedynamic)  *(p+3) = *(p+4) = 0;
         break;
       }

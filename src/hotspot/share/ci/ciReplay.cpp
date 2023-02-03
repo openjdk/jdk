@@ -410,38 +410,24 @@ class CompileReplay : public StackObj {
       CallInfo callInfo;
       Bytecodes::Code bc = bytecode.invoke_code();
       LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, bc, CHECK_NULL);
-      if (bytecode.is_invokedynamic()) {
-        if (UseNewIndyCode) {
-          int indy_index = cp->decode_invokedynamic_index(index);
-          cp->cache()->set_dynamic_call(callInfo, indy_index);
 
-          // Cleanup please
-          char* dyno_ref = parse_string();
-          if (strcmp(dyno_ref, "<appendix>") == 0) {
-            obj = cp->resolved_reference_from_indy(indy_index);
-          } else if (strcmp(dyno_ref, "<adapter>") == 0) {
-            if (!parse_terminator()) {
-              report_error("no dynamic invoke found");
-              return NULL;
-            }
-            Method* adapter = cp->resolved_indy_info(indy_index)->method();
-            if (adapter == NULL) {
-              report_error("no adapter found");
-              return NULL;
-            }
-            return adapter->method_holder();
-          } else if (strcmp(dyno_ref, "<bsm>") == 0) {
-            int pool_index = cp->resolved_indy_info(indy_index)->cpool_index();
-            BootstrapInfo bootstrap_specifier(cp, pool_index, indy_index);
-            obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
-          } else {
-            report_error("unrecognized token");
-            return NULL;
-          }
-        } else {
-          cp_cache_entry = cp->invokedynamic_cp_cache_entry_at(index);
-          cp_cache_entry->set_dynamic_call(cp, callInfo);
-        }
+      /*
+      ResolvedIndyEntry and ConstantPoolCacheEntry must currently coexist.
+      To address this, the variables below contain the values that *might*
+      be used to avoid multiple blocks of similar code. When CPCE is obsoleted
+      these can be removed
+      */
+      oop appendix = nullptr;
+      Method* adapter_method = nullptr;
+      int pool_index = 0;
+
+      if (bytecode.is_invokedynamic()) {
+        index = cp->decode_invokedynamic_index(index);
+        cp->cache()->set_dynamic_call(callInfo, index);
+
+        appendix = cp->resolved_reference_from_indy(index);
+        adapter_method = cp->resolved_indy_info(index)->method();
+        pool_index = cp->resolved_indy_info(index)->cpool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
         Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
@@ -450,34 +436,34 @@ class CompileReplay : public StackObj {
 #endif
         cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
         cp_cache_entry->set_method_handle(cp, callInfo);
+
+        appendix = cp_cache_entry->appendix_if_resolved(cp);
+        adapter_method = cp_cache_entry->f1_as_method();
+        pool_index = cp_cache_entry->constant_pool_index();
       } else {
         report_error("no dynamic invoke found");
         return nullptr;
       }
-      // Temporary solution, please clean up!!
-      if (!bytecode.is_invokedynamic() || !UseNewIndyCode) {
-        char* dyno_ref = parse_string();
-        if (strcmp(dyno_ref, "<appendix>") == 0) {
-          obj = cp_cache_entry->appendix_if_resolved(cp);
-        } else if (strcmp(dyno_ref, "<adapter>") == 0) {
-          if (!parse_terminator()) {
-            report_error("no dynamic invoke found");
-            return NULL;
-          }
-          Method* adapter = cp_cache_entry->f1_as_method();
-          if (adapter == NULL) {
-            report_error("no adapter found");
-            return NULL;
-          }
-          return adapter->method_holder();
-        } else if (strcmp(dyno_ref, "<bsm>") == 0) {
-          int pool_index = cp_cache_entry->constant_pool_index();
-          BootstrapInfo bootstrap_specifier(cp, pool_index, index);
-          obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
-        } else {
-          report_error("unrecognized token");
+      char* dyno_ref = parse_string();
+      if (strcmp(dyno_ref, "<appendix>") == 0) {
+        obj = appendix;
+      } else if (strcmp(dyno_ref, "<adapter>") == 0) {
+        if (!parse_terminator()) {
+          report_error("no dynamic invoke found");
           return NULL;
         }
+        Method* adapter = adapter_method;
+        if (adapter == nullptr) {
+          report_error("no adapter found");
+          return nullptr;
+        }
+        return adapter->method_holder();
+      } else if (strcmp(dyno_ref, "<bsm>") == 0) {
+        BootstrapInfo bootstrap_specifier(cp, pool_index, index);
+        obj = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), CHECK_NULL);
+      } else {
+        report_error("unrecognized token");
+        return nullptr;
       }
     } else {
       // constant pool ref (MethodHandle)
