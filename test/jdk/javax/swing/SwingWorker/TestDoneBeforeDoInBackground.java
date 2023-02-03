@@ -27,9 +27,12 @@
  *           before the 'doInBackground' is finished
  * @run main TestDoneBeforeDoInBackground
  */
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 import javax.swing.SwingWorker;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestDoneBeforeDoInBackground {
 
@@ -39,8 +42,7 @@ public class TestDoneBeforeDoInBackground {
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
 
     public static void main(String[] args) throws InterruptedException {
-        SwingWorker<String, String> worker =
-            new SwingWorker<String, String>() {
+        SwingWorker<String, String> worker = new SwingWorker<>() {
             @Override
             protected String doInBackground() throws Exception {
                 try {
@@ -72,6 +74,31 @@ public class TestDoneBeforeDoInBackground {
             }
         };
 
+        worker.addPropertyChangeListener(
+            new PropertyChangeListener() {
+                public void propertyChange(PropertyChangeEvent evt) {
+                    System.out.println("doInBackground " + doInBackground +
+                                       " state " + worker.getState());
+                    // Before doInBackground method is invoked,
+                    // SwingWorker notifies PropertyChangeListeners about the
+                    // property change to StateValue.STARTED
+                    if (doInBackground &&
+                         worker.getState() == SwingWorker.StateValue.STARTED) {
+                        throw new RuntimeException(
+                               "PropertyChangeListeners called with " +
+                               "state STARTED after doInBackground is invoked");
+                    }
+                    // After the doInBackground method is finished
+                    // SwingWorker} notifies PropertyChangeListeners
+                    // property change to StateValue.DONE
+                    if (doInBackground &&
+                            worker.getState() != SwingWorker.StateValue.DONE) {
+                        throw new RuntimeException(
+                            "listener called after doInBackground is finised" +
+			   " but before State changed to DONE");
+		    }
+                }
+            });
         worker.execute();
         Thread.sleep(WAIT_TIME * 3);
 
