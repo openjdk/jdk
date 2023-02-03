@@ -32,13 +32,13 @@ import java.lang.module.ModuleDescriptor;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Set;
-import jdk.classfile.Classfile;
-import jdk.classfile.jdktypes.ModuleDesc;
-import jdk.classfile.jdktypes.PackageDesc;
-import jdk.classfile.attribute.ModuleAttribute;
-import jdk.classfile.attribute.ModuleMainClassAttribute;
-import jdk.classfile.attribute.ModuleResolutionAttribute;
-import jdk.classfile.attribute.ModuleTargetAttribute;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.attribute.ModuleAttribute;
+import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
+import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
+import jdk.internal.classfile.attribute.ModuleTargetAttribute;
 
 /**
  * Utility class to write a ModuleDescriptor as a module-info.class.

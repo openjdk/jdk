@@ -33,17 +33,17 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import jdk.classfile.Classfile;
-import jdk.classfile.ClassTransform;
-import jdk.classfile.attribute.ModuleAttribute;
-import jdk.classfile.attribute.ModuleHashInfo;
-import jdk.classfile.attribute.ModuleHashesAttribute;
-import jdk.classfile.attribute.ModuleMainClassAttribute;
-import jdk.classfile.attribute.ModulePackagesAttribute;
-import jdk.classfile.attribute.ModuleResolutionAttribute;
-import jdk.classfile.attribute.ModuleTargetAttribute;
-import jdk.classfile.jdktypes.ModuleDesc;
-import jdk.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.attribute.ModuleAttribute;
+import jdk.internal.classfile.attribute.ModuleHashInfo;
+import jdk.internal.classfile.attribute.ModuleHashesAttribute;
+import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
+import jdk.internal.classfile.attribute.ModulePackagesAttribute;
+import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
+import jdk.internal.classfile.attribute.ModuleTargetAttribute;
+import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.jdktypes.PackageDesc;
 
 
 /**
