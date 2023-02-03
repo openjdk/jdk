@@ -172,7 +172,7 @@ address ArchiveHeapWriter::buffered_addr_to_requested_addr(address buffered_addr
 }
 
 oop ArchiveHeapWriter::heap_roots_requested_address() {
-  return cast_to_oop(_requested_open_region_bottom + _heap_roots_bottom);
+  return requested_obj_from_buffer_offset(_heap_roots_bottom);
 }
 
 address ArchiveHeapWriter::heap_region_requested_bottom(int heap_region_idx) {
@@ -426,7 +426,7 @@ template <typename T> oop ArchiveHeapWriter::load_source_field_from_requested_ob
 }
 
 template <typename T> void ArchiveHeapWriter::store_requested_field_in_requested_obj(oop requested_obj, size_t field_offset,
-                                                                                   oop request_field_val) {
+                                                                                     oop request_field_val) {
   T* buffered_addr = requested_field_addr_in_buffer<T>(requested_obj, field_offset);
   store_oop_in_buffer(buffered_addr, request_field_val);
 }
@@ -551,6 +551,8 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
   };
   HeapShared::archived_object_cache()->iterate_all(iterator);
 
+  // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
+  // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
   oop requested_roots = requested_obj_from_buffer_offset(_heap_roots_bottom);
   update_header_for_requested_obj(requested_roots, nullptr, Universe::objectArrayKlassObj());
   int length = roots != nullptr ? roots->length() : 0;
