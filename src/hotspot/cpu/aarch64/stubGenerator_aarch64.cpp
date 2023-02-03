@@ -7234,10 +7234,10 @@ typedef uint32_t u32;
     // Sn is to be the sum of Un and the next block of data
     const Register S0 = *++regs, S1 = *++regs, S2 = *++regs;
 
-      poo = __ pc();
+    poo = __ pc();
 
-    __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
-    __ br(Assembler::LT, DONE); {
+    __ subsw(length, length, BLOCK_LENGTH);
+    __ br(~ Assembler::GE, DONE); {
       __ bind(LOOP);
 
       __ ldp(rscratch1, rscratch2, __ post(input_start, 2 * wordSize));
@@ -7290,7 +7290,7 @@ typedef uint32_t u32;
       __ adc(u2._hi, u2._hi, zr);
 
       // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      __ nop();
+      DEBUG_ONLY(__ nop());
 
       __ extr(rscratch1, u2._hi, u2._lo, 26);
       __ ubfx(rscratch1, rscratch1, 0, 52);
@@ -7308,9 +7308,8 @@ typedef uint32_t u32;
       // Dead: U0HI, U1HI.
       regs = (regs.remaining() + u0._hi + u1._hi).begin();
 
-      __ sub(length, length, checked_cast<uint8_t>(BLOCK_LENGTH));
-      __ cmp(length, checked_cast<uint8_t>(BLOCK_LENGTH));
-      __ br(~ Assembler::LT, LOOP);
+      __ subsw(length, length, BLOCK_LENGTH);
+      __ br(Assembler::GE, LOOP);
     }
 
     // Fully reduce modulo 2^130 - 5
