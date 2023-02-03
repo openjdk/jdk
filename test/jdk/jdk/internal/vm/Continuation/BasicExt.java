@@ -286,7 +286,7 @@ public class BasicExt {
             triggerGCAfterYield = Integer.parseInt(args[1]) == 1;
             runTests();
         } catch (Throwable t) {
-            t.printStackTrace();
+            throw t;
         }
     }
 
