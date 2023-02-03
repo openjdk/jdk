@@ -66,13 +66,12 @@ bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TR
   // Check if method is not null
   if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
     methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());
-    //Handle appendix(    THREAD, _pool->resolved_references()->obj_at(_pool->cache()->resolved_invokedynamic_info_element(_indy_index)->resolved_references_index()));
     Handle appendix ( THREAD,  _pool->resolved_reference_from_indy(_indy_index));
     result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
   } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
-    int encoded_index = _pool->resolved_indy_info(_indy_index)->cpool_index();
+    int encoded_index = ResolutionErrorTable::encode_cpcache_index(ConstantPool::encode_invokedynamic_index(_indy_index));
     ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;
   } else {

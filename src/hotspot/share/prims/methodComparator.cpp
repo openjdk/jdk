@@ -103,14 +103,19 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
     break;
   }
   case Bytecodes::_invokedynamic: {
-    int indy_index_old = old_cp->decode_invokedynamic_index(s_old->get_index_u4());
-    int indy_index_new = new_cp->decode_invokedynamic_index(s_new->get_index_u4());
+    // Encoded indy index, should be negative
+    int index_old = s_old->get_index_u4();
+    int index_new = s_new->get_index_u4();
+
+    int indy_index_old = old_cp->decode_invokedynamic_index(index_old);
+    int indy_index_new = new_cp->decode_invokedynamic_index(index_new);
 
     // Check if the names of classes, field/method names and signatures at these indexes
     // are the same. Indices which are really into constantpool cache (rather than constant
     // pool itself) are accepted by the constantpool query routines below.
-    if ((old_cp->name_ref_at(indy_index_old) != new_cp->name_ref_at(indy_index_new)) ||
-          (old_cp->signature_ref_at(indy_index_old) != new_cp->signature_ref_at(indy_index_new)))
+    // Currently needs encoded indy_index
+    if ((old_cp->name_ref_at(index_old) != new_cp->name_ref_at(index_new)) ||
+          (old_cp->signature_ref_at(index_old) != new_cp->signature_ref_at(index_new)))
         return false;
 
     int cpi_old = old_cp->cache()->resolved_indy_info(indy_index_old)->cpool_index();

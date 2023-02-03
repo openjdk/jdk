@@ -889,7 +889,9 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
 
-  SystemDictionary::add_resolution_error(cpool, cpool_index, error, message);
+  int encoded_index = ResolutionErrorTable::encode_cpcache_index(
+                          ConstantPool::encode_invokedynamic_index(index));
+  SystemDictionary::add_resolution_error(cpool, encoded_index, error, message);
   resolved_indy_info(index)->set_resolution_failed();
   return true;
 }
@@ -899,42 +901,25 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
   assert(index >= 0, "Indy index must be positive at this point");
 
-  if (resolved_indy_info(index)->method() != nullptr)
+  if (resolved_indy_info(index)->method() != nullptr) {
     return constant_pool()->resolved_reference_from_indy(index);
+  }
 
-
-  // Come back to this
-  /*if (indy_resolution_failed()) {
+  if (resolved_indy_info(index)->resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
-    //ConstantPoolCache* cpCache = cpool->cache();
-    int index = -1;
-    for (int i = 0; i < cpCache->length(); i++) {
-      if (cpCache->entry_at(i) == this) {
-        index = i;
-        break;
-      }
-    }
-    guarantee(index >= 0, "Didn't find cpCache entry!");
+    guarantee(index >= 0, "Invalid indy index");
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(
                           ConstantPool::encode_invokedynamic_index(index));
     JavaThread* THREAD = JavaThread::current(); // For exception macros.
-    ConstantPool::throw_resolution_error(cpool, encoded_index, THREAD);
-    return;
-  }*/
+    constantPoolHandle cp(THREAD, constant_pool());
+    ConstantPool::throw_resolution_error(cp, encoded_index, THREAD);
+    return nullptr;
+  }
 
   Method* adapter            = call_info.resolved_method();
   const Handle appendix      = call_info.resolved_appendix();
   const bool has_appendix    = appendix.not_null();
-
-  // Write the flags.
-  // MHs and indy are always sig-poly and have a local signature.
-  // I don't think I need this...
-  /*set_method_flags(as_TosState(adapter->result_type()),
-                   ((has_appendix    ? 1 : 0) << has_appendix_shift        ) |
-                   (                   1      << has_local_signature_shift ) |
-                   (                   1      << is_final_shift            ),
-                   adapter->size_of_parameters());*/
 
   LogStream* log_stream = NULL;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
@@ -958,20 +943,11 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     resolved_references->obj_at_put(appendix_index, appendix());
   }
 
-  // You may be able to compare Array<ResolvedInvokeDynamicInfo>.at(_invokedynamic_index) with the info
-  // that's set in the constant pool cache here.
-  // Long term, the invokedynamic bytecode will point directly to _invokedynamic_index, for now find it
-  // out of the ConstantPoolCacheEntry.
-
+  // Populate entry with resolved information
   if (resolved_indy_info() != nullptr) {
     assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
     resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
   }
-
-  // The interpreter assembly code does not check byte_2,
-  // but it is used by is_resolved, method_if_resolved, etc.
-  /*set_bytecode_1(invoke_code);*/
-  //NOT_PRODUCT(verify(tty));
 
   if (log_stream != NULL) {
     resolved_indy_info(index)->print_on(log_stream);
