@@ -1088,7 +1088,7 @@ class FdLibm {
         private static final double ln2_hi      =  0x1.62e42feep-1;       //  6.93147180369123816490e-01
         private static final double ln2_lo      =  0x1.a39ef35793c76p-33; //  1.90821492927058770002e-10
         private static final double invln2      =  0x1.71547652b82fep0;   //  1.44269504088896338700e+00
-        /* scaled coefficients related to expm1 */
+        // scaled coefficients related to expm1
         private static final double Q1          = -0x1.11111111110f4p-5;  // -3.33333333333331316428e-02
         private static final double Q2          =  0x1.a01a019fe5585p-10; //  1.58730158725481460165e-03
         private static final double Q3          = -0x1.4ce199eaadbb7p-14; // -7.93650757867487942473e-05
@@ -1100,40 +1100,40 @@ class FdLibm {
             int k, xsb;
             /*unsigned*/ int hx;
 
-            hx  = __HI(x);  /* high word of x */
-            xsb = hx & 0x8000_0000;            /* sign bit of x */
+            hx  = __HI(x);  // high word of x
+            xsb = hx & 0x8000_0000;          // sign bit of x
             y = Math.abs(x);
-            hx &= 0x7fff_ffff;               /* high word of |x| */
+            hx &= 0x7fff_ffff;               // high word of |x|
 
-            /* filter out huge and non-finite argument */
-            if (hx >= 0x4043_687A) {                  /* if |x| >= 56*ln2 */
-                if (hx >= 0x4086_2E42) {              /* if |x| >= 709.78... */
+            // filter out huge and non-finite argument
+            if (hx >= 0x4043_687A) {                  // if |x| >= 56*ln2
+                if (hx >= 0x4086_2E42) {              // if |x| >= 709.78...
                     if (hx >= 0x7ff_00000) {
                         if (((hx & 0xf_ffff) | __LO(x)) != 0) {
-                            return x + x;     /* NaN */
+                            return x + x;     // NaN
                         } else {
-                            return (xsb == 0)? x : -1.0; /* exp(+-inf)={inf,-1} */
+                            return (xsb == 0)? x : -1.0; // exp(+-inf)={inf,-1}
                         }
                     }
                     if (x > o_threshold) {
-                        return huge*huge; /* overflow */
+                        return huge*huge; // overflow
                     }
                 }
-                if (xsb != 0) { /* x < -56*ln2, return -1.0 with inexact */
-                    if (x + tiny < 0.0) {         /* raise inexact */
-                        return tiny - one;        /* return -1 */
+                if (xsb != 0) { // x < -56*ln2, return -1.0 with inexact
+                    if (x + tiny < 0.0) {         // raise inexact
+                        return tiny - one;        // return -1
                     }
                 }
             }
 
-            /* argument reduction */
-            if (hx > 0x3fd6_2e42) {           /* if  |x| > 0.5 ln2 */
-                if (hx < 0x3FF0_A2B2) {       /* and |x| < 1.5 ln2 */
+            // argument reduction
+            if (hx > 0x3fd6_2e42) {         // if  |x| > 0.5 ln2
+                if (hx < 0x3FF0_A2B2) {     // and |x| < 1.5 ln2
                     if (xsb == 0) {
                         hi = x - ln2_hi;
-                        lo =  ln2_lo;
-                        k =  1;}
-                    else {
+                        lo = ln2_lo;
+                        k =  1;
+                    } else {
                         hi = x + ln2_hi;
                         lo = -ln2_lo;
                         k = -1;
@@ -1141,26 +1141,26 @@ class FdLibm {
                 } else {
                     k  = (int)(invln2*x + ((xsb == 0) ? 0.5 : -0.5));
                     t  = k;
-                    hi = x - t*ln2_hi;      /* t*ln2_hi is exact here */
+                    hi = x - t*ln2_hi;      // t*ln2_hi is exact here
                     lo = t*ln2_lo;
                 }
                 x  = hi - lo;
                 c  = (hi - x) - lo;
-            } else if (hx < 0x3c90_0000) {      /* when |x|<2**-54, return x */
-                t = huge + x; /* return x with inexact flags when x != 0 */
+            } else if (hx < 0x3c90_0000) {  // when |x| < 2**-54, return x
+                t = huge + x; // return x with inexact flags when x != 0
                 return x - (t - (huge + x));
             } else {
                 k = 0;
             }
 
-            /* x is now in primary range */
+            // x is now in primary range
             hfx = 0.5*x;
             hxs = x*hfx;
             r1 = one + hxs*(Q1 + hxs*(Q2 + hxs*(Q3 + hxs*(Q4 + hxs*Q5))));
             t  = 3.0 - r1*hfx;
             e  = hxs *((r1 - t)/(6.0 - x*t));
             if (k == 0) {
-                return x - (x*e - hxs);          /* c is 0 */
+                return x - (x*e - hxs);          // c is 0
             } else {
                 e  = (x*(e - c) - c);
                 e -= hxs;
@@ -1168,27 +1168,27 @@ class FdLibm {
                     return 0.5*(x - e) - 0.5;
                 }
                 if (k == 1) {
-                    if(x < -0.25) {
+                    if (x < -0.25) {
                         return -2.0*(e - (x + 0.5));
                     } else {
-                        return  one + 2.0*(x - e);
+                        return one + 2.0*(x - e);
                     }
                 }
-                if (k <= -2 || k > 56) {   /* suffice to return exp(x) - 1 */
+                if (k <= -2 || k > 56) {   // suffice to return exp(x) - 1
                     y = one - (e - x);
-                    y = __HI(y, __HI(y) + (k << 20));     /* add k to y's exponent */
+                    y = __HI(y, __HI(y) + (k << 20));     // add k to y's exponent
                     return y - one;
                 }
                 t = one;
                 if (k < 20) {
-                    t = __HI(t, 0x3ff0_0000 - (0x2_00000 >> k));  /* t=1-2^-k */
+                    t = __HI(t, 0x3ff0_0000 - (0x2_00000 >> k));  // t = 1-2^-k
                     y = t - ( e - x);
-                    y = __HI(y, __HI(y) + (k << 20));     /* add k to y's exponent */
+                    y = __HI(y, __HI(y) + (k << 20));     // add k to y's exponent
                 } else {
-                    t = __HI(t, ((0x3ff - k) << 20));     /* 2^-k */
+                    t = __HI(t, ((0x3ff - k) << 20));     // 2^-k
                     y = x - (e + t);
                     y += one;
-                    y = __HI(y, __HI(y) + (k << 20));     /* add k to y's exponent */
+                    y = __HI(y, __HI(y) + (k << 20));     // add k to y's exponent
                 }
             }
             return y;

@@ -77,41 +77,41 @@ public class Expm1Tests {
         failures += testRange(x, Math.ulp(x), 1000);
 
         // ... and just below subnormal threshold ...
-         x =  Math.nextDown(Double.MIN_NORMAL);
-         failures += testRange(x, -Math.ulp(x), 1000);
+        x = Math.nextDown(Double.MIN_NORMAL);
+        failures += testRange(x, -Math.ulp(x), 1000);
 
         // ... and near 1.0 ...
-         failures += testRangeMidpoint(1.0, Math.ulp(x), 2000);
-         // (Note: probes every-other value less than 1.0 due to
-         // change in the size of an ulp at 1.0.
+        failures += testRangeMidpoint(1.0, Math.ulp(x), 2000);
+        // (Note: probes every-other value less than 1.0 due to
+        // change in the size of an ulp at 1.0.
 
-         // Probe near decision points in the FDLIBM algorithm.
-         double LN2 = StrictMath.log(2.0);
-         double[] decisionPoints = {
-               7.09782712893383973096e+02, // overflow threshold
-               56.0 * LN2,
-              -56.0 * LN2,
-               0.5 * LN2,
-              -0.5 * LN2,
-               1.5 * LN2,
-              -1.5 * LN2,
-               0x1.0p-54,
-              -0x1.0p-54,
-         };
+        // Probe near decision points in the FDLIBM algorithm.
+        double LN2 = StrictMath.log(2.0);
+        double[] decisionPoints = {
+             7.09782712893383973096e+02, // overflow threshold
+             56.0 * LN2,
+            -56.0 * LN2,
+             0.5 * LN2,
+            -0.5 * LN2,
+             1.5 * LN2,
+            -1.5 * LN2,
+             0x1.0p-54,
+            -0x1.0p-54,
+        };
 
-         for (double testPoint : decisionPoints) {
-             failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
-         }
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000);
+        }
 
-         x = Tests.createRandomDouble(random);
+        x = Tests.createRandomDouble(random);
 
-         // Make the increment twice the ulp value in case the random
-         // value is near an exponent threshold. Don't worry about test
-         // elements overflowing to infinity if the starting value is
-         // near Double.MAX_VALUE.
-         failures += testRange(x, 2.0 * Math.ulp(x), 1000);
+        // Make the increment twice the ulp value in case the random
+        // value is near an exponent threshold. Don't worry about test
+        // elements overflowing to infinity if the starting value is
+        // near Double.MAX_VALUE.
+        failures += testRange(x, 2.0 * Math.ulp(x), 1000);
 
-         return failures;
+        return failures;
     }
 
     private static int testRange(double start, double increment, int count) {
