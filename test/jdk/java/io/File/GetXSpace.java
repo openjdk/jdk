@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,37 @@ public class GetXSpace {
         out.println(sb);
     }
 
+    private static String getCallerTotalSpace(String name) throws IOException {
+        String root = name.substring(0, name.indexOf(':') + 1) + "\\";
+        String cmd = "fsutil volume diskFree " + root;
+        Process p = Runtime.getRuntime().exec(cmd);
+        try (BufferedReader in = p.inputReader()) {
+            String line;
+            while ((line = in.readLine()) != null) {
+                //
+                // The line of the diskFree output which contains the total
+                // number of bytes may be formatted as one of the following:
+                //
+                // Total # of bytes             : 161051996160
+                // Total # of bytes             : 161051996160 (149.99GB)
+                // Total bytes                     : 322,122,547,200 (300.0 GB)
+                //
+                if (line.startsWith("Total # of bytes") ||
+                    line.startsWith("Total bytes")) {
+                    int colon = line.indexOf(':');
+                    int paren = line.indexOf('(', colon);
+                    String s = paren == -1
+                        ? line.substring(colon + 1)
+                        : line.substring(colon + 1, paren);
+                    s = s.trim();
+                    s = s.replace(",", "");
+                    return s;
+                }
+            }
+            throw new RuntimeException("Total number of bytes not found");
+        }
+    }
+
     private static ArrayList<Space> space(String f) throws IOException {
         ArrayList<Space> al = new ArrayList<>();
 
@@ -177,7 +208,13 @@ public class GetXSpace {
                         // cygwin's df lists windows path as FileSystem (1st group)
                         name = Platform.isWindows() ? m.group(1) : m.group(5);
                     }
-                    al.add(new Space(name, m.group(2), m.group(3), m.group(4)));
+                    // cygwin's df provides the actual total disk space not
+                    // accounting for quotas, so use the total size from
+                    // diskFree which does account for quotas
+                    String callerTotalSpace = Platform.isWindows()
+                        ? getCallerTotalSpace(name)
+                        : m.group(2);
+                    al.add(new Space(name, callerTotalSpace, m.group(3), m.group(4)));
                 }
                 j = m.end();
             } else {
@@ -263,17 +300,16 @@ public class GetXSpace {
                 ts - s.total() != 512) {
                 if (Platform.isWindows()) {
                     //
-                    // In Cygwin, 'df' has been observed to account for quotas
-                    // when reporting the total disk size, but the total size
-                    // reported by GetDiskFreeSpaceExW() has been observed not
-                    // to account for the quota in which case the latter value
-                    // should be larger.
+                    // In Cygwin, 'df' reports the actual total disk size, but
+                    // the total size reported by GetDiskFreeSpaceExW accounts
+                    // for user quotas, thus the latter value should not exceed
+                    // the former.
                     //
-                    if (s.total() > ts) {
-                        fail(s.name() + " total space", s.total(), ">", ts);
+                    if (ts > s.total()) {
+                        fail(s.name() + " total space", ts, ">", s.total());
                     }
                 } else {
-                    fail(s.name() + " total space", s.total(), "!=", ts);
+                    fail(s.name() + " total space", ts, "!=", s.total());
                 }
             }
         } else {
@@ -289,13 +325,13 @@ public class GetXSpace {
         }
 
         if (fs > s.total()) {
-            fail(s.name(), s.total(), ">", fs);
+            fail(s.name() + " free space", fs, ">", s.total());
         } else {
             pass();
         }
 
         if (us > s.total()) {
-            fail(s.name(), s.total(), ">", us);
+            fail(s.name() + " usable space", us, ">", s.total());
         } else {
             pass();
         }
@@ -352,14 +388,14 @@ public class GetXSpace {
         public void checkPermission(Permission p) {
             if (p.implies(new RuntimePermission("setSecurityManager"))
                 || p.implies(new RuntimePermission("getProtectionDomain")))
-              return;
+                return;
             super.checkPermission(p);
         }
 
         public void checkPermission(Permission p, Object context) {
             if (p.implies(new RuntimePermission("setSecurityManager"))
                 || p.implies(new RuntimePermission("getProtectionDomain")))
-              return;
+                return;
             super.checkPermission(p, context);
         }
     }
@@ -401,7 +437,7 @@ public class GetXSpace {
 
         if (fail != 0) {
             err.format("%d tests: %d failure(s); first: %s%n",
-                fail + pass, fail, first);
+                       fail + pass, fail, first);
         } else {
             out.format("all %d tests passed%n", fail + pass);
         }
@@ -449,7 +485,7 @@ public class GetXSpace {
 
         if (fail != 0) {
             err.format("%d tests: %d failure(s); first: %s%n",
-                fail + pass, fail, first);
+                       fail + pass, fail, first);
         } else {
             out.format("all %d tests passed%n", fail + pass);
         }
