@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class invokemethod013t {
         isInvoked = true;
         while(!doExit) {
             l--; l++;
-            Thread.currentThread().sleep(400);
+            Thread.currentThread().sleep(0);
         }
         invokemethod013t.log.display("dummyMeth: exiting");
         isInvoked = false;
