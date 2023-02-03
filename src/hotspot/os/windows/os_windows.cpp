@@ -1779,7 +1779,7 @@ void os::win32::print_windows_version(outputStream* st) {
     return;
   }
 
-  if (!GetFileVersionInfo(kernel32_path, nullptr, version_size, version_info)) {
+  if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
     os::free(version_info);
     st->print_cr("Call to GetFileVersionInfo failed");
     return;
