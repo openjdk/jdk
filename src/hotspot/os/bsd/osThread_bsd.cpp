@@ -30,7 +30,6 @@
 #include <signal.h>
 
 void OSThread::pd_initialize() {
-  assert(this != nullptr, "check");
 #ifdef __APPLE__
   _thread_id        = 0;
 #else
