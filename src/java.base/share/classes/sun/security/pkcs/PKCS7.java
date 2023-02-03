@@ -437,18 +437,6 @@ public class PKCS7 {
     }
 
     /**
-     * Encodes the signed data to an output stream.
-     *
-     * @param out the output stream to write the encoded data to.
-     * @exception IOException on encoding errors.
-     */
-    public void encodeSignedData(OutputStream out) throws IOException {
-        DerOutputStream derout = new DerOutputStream();
-        encodeSignedData(derout);
-        out.write(derout.toByteArray());
-    }
-
-    /**
      * Encodes the signed data to a DerOutputStream.
      *
      * @param out the DerOutputStream to write the encoded data to.
@@ -684,9 +672,7 @@ public class PKCS7 {
                 try {
                     X509CertInfo tbsCert =
                         new X509CertInfo(cert.getTBSCertificate());
-                    certIssuerName = (Principal)
-                        tbsCert.get(X509CertInfo.ISSUER + "." +
-                                    X509CertInfo.DN_NAME);
+                    certIssuerName = tbsCert.getIssuer();
                 } catch (Exception e) {
                     // error generating X500Name object from the cert's
                     // issuer DN, leave name as is.
@@ -784,9 +770,9 @@ public class PKCS7 {
             // CMSAlgorithmProtection (RFC6211)
             DerOutputStream derAp = new DerOutputStream();
             DerOutputStream derAlgs = new DerOutputStream();
-            digAlgID.derEncode(derAlgs);
+            digAlgID.encode(derAlgs);
             DerOutputStream derSigAlg = new DerOutputStream();
-            sigAlgID.derEncode(derSigAlg);
+            sigAlgID.encode(derSigAlg);
             derAlgs.writeImplicit((byte)0xA1, derSigAlg);
             derAp.write(DerValue.tag_Sequence, derAlgs);
             authAttrs = new PKCS9Attributes(new PKCS9Attribute[]{
@@ -852,7 +838,7 @@ public class PKCS7 {
                 : new ContentInfo(content);
         PKCS7 pkcs7 = new PKCS7(algorithms, contentInfo,
                 signerChain, signerInfos);
-        ByteArrayOutputStream p7out = new ByteArrayOutputStream();
+        DerOutputStream p7out = new DerOutputStream();
         pkcs7.encodeSignedData(p7out);
 
         return p7out.toByteArray();

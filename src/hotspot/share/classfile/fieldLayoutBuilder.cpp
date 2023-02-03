@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "classfile/classFileParser.hpp"
 #include "classfile/fieldLayoutBuilder.hpp"
+#include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
 #include "oops/fieldStreams.inline.hpp"
@@ -84,7 +84,7 @@ void FieldGroup::add_primitive_field(AllFieldStream fs, BasicType type) {
   int size = type2aelembytes(type);
   LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::REGULAR, size, size /* alignment == size for primitive types */, false);
   if (_primitive_fields == NULL) {
-    _primitive_fields = new(ResourceObj::RESOURCE_AREA, mtInternal) GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
+    _primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
   _primitive_fields->append(block);
 }
@@ -93,7 +93,7 @@ void FieldGroup::add_oop_field(AllFieldStream fs) {
   int size = type2aelembytes(T_OBJECT);
   LayoutRawBlock* block = new LayoutRawBlock(fs.index(), LayoutRawBlock::REGULAR, size, size /* alignment == size for oops */, true);
   if (_oop_fields == NULL) {
-    _oop_fields = new(ResourceObj::RESOURCE_AREA, mtInternal) GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
+    _oop_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
   _oop_fields->append(block);
   _oop_count++;

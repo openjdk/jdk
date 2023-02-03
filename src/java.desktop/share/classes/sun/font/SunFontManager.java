@@ -1325,7 +1325,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
          */
         HashMap<String,String> fontToFileMap2 = null;
         HashMap<String,String> fontToFamilyNameMap2 = null;
-        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;;
+        HashMap<String,ArrayList<String>> familyToFontListMap2 = null;
 
         for (String pathFile : getFontFilesFromPath(false)) {
             if (!registryFiles.contains(pathFile)) {

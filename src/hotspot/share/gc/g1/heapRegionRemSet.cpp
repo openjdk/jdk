@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ HeapRegionRemSet::HeapRegionRemSet(HeapRegion* hr,
                                    G1CardSetConfiguration* config) :
   _m(Mutex::service - 1, FormatBuffer<128>("HeapRegionRemSet#%u_lock", hr->hrm_index())),
   _code_roots(),
-  _card_set_mm(config, G1SegmentedArrayFreePool::free_list_pool()),
+  _card_set_mm(config, G1CollectedHeap::heap()->card_set_freelist_pool()),
   _card_set(config, &_card_set_mm),
   _hr(hr),
   _state(Untracked) { }
@@ -83,7 +83,11 @@ void HeapRegionRemSet::clear_locked(bool only_cardset) {
   assert(occupied() == 0, "Should be clear.");
 }
 
-G1SegmentedArrayMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
+void HeapRegionRemSet::reset_table_scanner() {
+  _card_set.reset_table_scanner();
+}
+
+G1MonotonicArenaMemoryStats HeapRegionRemSet::card_set_memory_stats() const {
   return _card_set_mm.memory_stats();
 }
 
@@ -97,19 +101,15 @@ void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
 // When at safepoint the per-hrrs lock must be held during modifications
 // except when doing a full gc.
 // When not at safepoint the CodeCache_lock must be held during modifications.
-// When concurrent readers access the contains() function
-// (during the evacuation phase) no removals are allowed.
 
 void HeapRegionRemSet::add_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
   assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
           "should call add_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
           BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
-  // Optimistic unlocked contains-check
-  if (!_code_roots.contains(nm)) {
-    MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
-    add_code_root_locked(nm);
-  }
+
+  MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
+  add_code_root_locked(nm);
 }
 
 void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
@@ -120,7 +120,10 @@ void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
           "not safely locked. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s, _m.owned_by_self(): %s, Thread::current()->is_VM_thread(): %s",
           BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),
           BOOL_TO_STR(_m.owned_by_self()), BOOL_TO_STR(Thread::current()->is_VM_thread()));
-  _code_roots.add(nm);
+
+  if (!_code_roots.contains(nm)) { // with this test, we can assert that we do not modify the hash table while iterating over it
+    _code_roots.add(nm);
+  }
 }
 
 void HeapRegionRemSet::remove_code_root(nmethod* nm) {

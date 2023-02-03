@@ -74,5 +74,37 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
 
+    /**
+     * @serialField field String#member f3 is a String
+     */
+    String f3;
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: empty
+  body: empty
+  block tags: 1
+    Erroneous[ERRONEOUS, pos:1, prefPos:26
+      code: compiler.err.dc.ref.unexpected.input
+      body: @serialField_fie...ld_String#member_f3_is_a_String
+    ]
+]
+*/
+
+    /**
+     * @serialField field String##fragment f4 is a String
+     */
+    String f4;
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: empty
+  body: empty
+  block tags: 1
+    Erroneous[ERRONEOUS, pos:1, prefPos:26
+      code: compiler.err.dc.ref.unexpected.input
+      body: @serialField_fie...ld_String##fragment_f4_is_a_String
+    ]
+]
+*/
+
 }
 

@@ -32,15 +32,15 @@ import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.classfile.*;
-import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.constantpool.StringEntry;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.constantpool.StringEntry;
 import java.lang.reflect.AccessFlag;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import static helpers.TestConstants.MTD_VOID;
-import static jdk.classfile.Opcode.*;
-import static jdk.classfile.TypeKind.VoidType;
+import static jdk.internal.classfile.Opcode.*;
+import static jdk.internal.classfile.TypeKind.VoidType;
 
 class LDCTest {
     @Test

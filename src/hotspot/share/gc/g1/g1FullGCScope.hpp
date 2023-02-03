@@ -55,7 +55,7 @@ class G1FullGCScope : public StackObj {
   IsGCActiveMark          _active;
   G1FullGCJFRTracerMark   _tracer_mark;
   ClearedAllSoftRefs      _soft_refs;
-  G1MonitoringScope       _monitoring_scope;
+  G1FullGCMonitoringScope _monitoring_scope;
   G1HeapPrinterMark       _heap_printer;
   size_t                  _region_compaction_threshold;
 

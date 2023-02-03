@@ -346,7 +346,7 @@ void JNIJVMCI::initialize_field_id(JNIEnv* env, jfieldID &fieldid, jclass clazz,
       JVMCI_event_2(" jclass for %s = " PTR_FORMAT, current_class_name, p2i(k));            \
       /* SVM guarantees that jclass handles to classes in a native image are also */        \
       /* in the image. Further calling NewGlobalRef on such a handle returns a stable */    \
-      /* values across all JavaVMs executing on the same native image. */                   \
+      /* value across all JavaVMs executing on the same native image. */                    \
       if (current != nullptr) {                                                             \
            fatal("jclass for %s re-initialized: " PTR_FORMAT " -> " PTR_FORMAT,             \
            current_class_name, p2i(current), p2i(k));                                       \

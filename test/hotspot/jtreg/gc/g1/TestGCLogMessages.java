@@ -180,7 +180,6 @@ public class TestGCLogMessages {
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
         new LogMessageWithLevel("Reset Hot Card Cache", Level.DEBUG),
-        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
@@ -278,7 +277,6 @@ public class TestGCLogMessages {
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -291,7 +289,6 @@ public class TestGCLogMessages {
                                                    "-Xmn16M",
                                                    "-Xms32M",
                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 
@@ -368,7 +365,7 @@ public class TestGCLogMessages {
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
             jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
-            WB.g1StartConcMarkCycle();
+            WB.g1StartConcurrentGC();
         }
     }
 

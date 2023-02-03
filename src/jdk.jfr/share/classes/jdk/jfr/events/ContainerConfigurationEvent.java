@@ -75,4 +75,9 @@ public final class ContainerConfigurationEvent extends AbstractJDKEvent {
     @Description("Maximum amount of physical memory and swap space, in bytes, that can be allocated in the container")
     @DataAmount
     public long swapMemoryLimit;
+
+    @Label("Container Host Total Memory")
+    @Description("Total memory of the host running the container")
+    @DataAmount
+    public long hostTotalMemory;
 }

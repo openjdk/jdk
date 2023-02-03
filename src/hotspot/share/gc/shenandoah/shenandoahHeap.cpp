@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -479,7 +480,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _memory_pool(NULL),
   _stw_memory_manager("Shenandoah Pauses", "end of GC pause"),
   _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
-  _gc_timer(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
+  _gc_timer(new ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(_max_workers, 1U))),
@@ -1916,9 +1917,8 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
   ShenandoahCodeRoots::unregister_nmethod(nm);
 }
 
-oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
+void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
   heap_region_containing(o)->record_pin();
-  return o;
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {

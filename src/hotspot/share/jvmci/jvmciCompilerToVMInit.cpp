@@ -232,7 +232,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_uintx_flag(TLABWasteIncrement)                                        \
   do_intx_flag(TypeProfileWidth)                                           \
   do_bool_flag(UseAESIntrinsics)                                           \
-  X86_ONLY(do_intx_flag(UseAVX))                                           \
+  X86_ONLY(do_int_flag(UseAVX))                                           \
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseAdler32Intrinsics)                                       \
   do_bool_flag(UseCompressedClassPointers)                                 \
@@ -252,7 +252,7 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
   do_bool_flag(UseSHA1Intrinsics)                                          \
   do_bool_flag(UseSHA256Intrinsics)                                        \
   do_bool_flag(UseSHA512Intrinsics)                                        \
-  X86_ONLY(do_intx_flag(UseSSE))                                           \
+  X86_ONLY(do_int_flag(UseSSE))                                           \
   COMPILER2_PRESENT(do_bool_flag(UseSquareToLenIntrinsic))                 \
   do_bool_flag(UseTLAB)                                                    \
   do_bool_flag(VerifyOops)                                                 \
@@ -291,7 +291,7 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   ResourceHashtable<jlong, JVMCIObject> longs;
   ResourceHashtable<const char*, JVMCIObject,
-                    256, ResourceObj::RESOURCE_AREA, mtInternal,
+                    256, AnyObj::RESOURCE_AREA, mtInternal,
                     &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 
   jvalue prim;
@@ -308,9 +308,9 @@ jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JVMCIObjectArray vmFields = JVMCIENV->new_VMField_array(len, JVMCI_CHECK_NULL);
   for (int i = 0; i < len ; i++) {
     VMStructEntry vmField = JVMCIVMStructs::localHotSpotVMStructs[i];
-    size_t name_buf_len = strlen(vmField.typeName) + strlen(vmField.fieldName) + 2 /* "::" */;
-    char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_len + 1);
-    sprintf(name_buf, "%s::%s", vmField.typeName, vmField.fieldName);
+    const size_t name_buf_size = strlen(vmField.typeName) + strlen(vmField.fieldName) + 2 + 1 /* "::" */;
+    char* name_buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, name_buf_size);
+    os::snprintf_checked(name_buf, name_buf_size, "%s::%s", vmField.typeName, vmField.fieldName);
     CSTRING_TO_JSTRING(name, name_buf);
     CSTRING_TO_JSTRING(type, vmField.typeString);
     JVMCIObject box;

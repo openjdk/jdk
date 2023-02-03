@@ -316,8 +316,6 @@ public class PolicyParser {
     {
         PrintWriter out = new PrintWriter(new BufferedWriter(policy));
 
-        Enumeration<GrantEntry> enum_ = grantElements();
-
         out.println("/* AUTOMATICALLY GENERATED ON "+
                     (new java.util.Date()) + "*/");
         out.println("/* DO NOT EDIT */");
@@ -333,8 +331,7 @@ public class PolicyParser {
         }
 
         // write "grant" entries
-        while (enum_.hasMoreElements()) {
-            GrantEntry ge = enum_.nextElement();
+        for (GrantEntry ge : grantEntries) {
             ge.write(out);
             out.println();
         }
@@ -938,9 +935,7 @@ public class PolicyParser {
                 }
             }
             out.println(" {");
-            Enumeration<PermissionEntry> enum_ = permissionEntries.elements();
-            while (enum_.hasMoreElements()) {
-                PermissionEntry pe = enum_.nextElement();
+            for (PermissionEntry pe : permissionEntries) {
                 out.write("  ");
                 pe.write(out);
             }

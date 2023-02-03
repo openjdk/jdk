@@ -27,11 +27,10 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.AlgorithmConstraints;
 import java.text.MessageFormat;
 import java.util.*;
 import javax.net.ssl.SSLProtocolException;
-import sun.security.action.GetPropertyAction;
+
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import static sun.security.ssl.SSLExtension.CH_SUPPORTED_GROUPS;
 import static sun.security.ssl.SSLExtension.EE_SUPPORTED_GROUPS;
@@ -63,10 +62,6 @@ final class SupportedGroupsExtension {
      */
     static final class SupportedGroupsSpec implements SSLExtensionSpec {
         final int[] namedGroupsIds;
-
-        private SupportedGroupsSpec(int[] namedGroupsIds) {
-            this.namedGroupsIds = namedGroupsIds;
-        }
 
         private SupportedGroupsSpec(List<NamedGroup> namedGroups) {
             this.namedGroupsIds = new int[namedGroups.size()];
@@ -150,174 +145,6 @@ final class SupportedGroupsExtension {
         }
     }
 
-    static class SupportedGroups {
-        // To switch off the supported_groups extension for DHE cipher suite.
-        static final boolean enableFFDHE =
-                Utilities.getBooleanProperty("jsse.enableFFDHE", true);
-
-        // the supported named groups
-        static final NamedGroup[] supportedNamedGroups;
-
-        static {
-            // The value of the System Property defines a list of enabled named
-            // groups in preference order, separated with comma.  For example:
-            //
-            //      jdk.tls.namedGroups="secp521r1, secp256r1, ffdhe2048"
-            //
-            // If the System Property is not defined or the value is empty, the
-            // default groups and preferences will be used.
-            String property = GetPropertyAction
-                    .privilegedGetProperty("jdk.tls.namedGroups");
-            if (property != null && !property.isEmpty()) {
-                // remove double quote marks from beginning/end of the property
-                if (property.length() > 1 && property.charAt(0) == '"' &&
-                        property.charAt(property.length() - 1) == '"') {
-                    property = property.substring(1, property.length() - 1);
-                }
-            }
-
-            ArrayList<NamedGroup> groupList;
-            if (property != null && !property.isEmpty()) {
-                String[] groups = property.split(",");
-                groupList = new ArrayList<>(groups.length);
-                for (String group : groups) {
-                    group = group.trim();
-                    if (!group.isEmpty()) {
-                        NamedGroup namedGroup = NamedGroup.nameOf(group);
-                        if (namedGroup != null) {
-                            if (namedGroup.isAvailable) {
-                                groupList.add(namedGroup);
-                            }
-                        }   // ignore unknown groups
-                    }
-                }
-
-                if (groupList.isEmpty()) {
-                    throw new IllegalArgumentException(
-                            "System property jdk.tls.namedGroups(" +
-                            property + ") contains no supported named groups");
-                }
-            } else {        // default groups
-                NamedGroup[] groups = new NamedGroup[] {
-
-                        // Primary XDH (RFC 7748) curves
-                        NamedGroup.X25519,
-
-                        // Primary NIST Suite B curves
-                        NamedGroup.SECP256_R1,
-                        NamedGroup.SECP384_R1,
-                        NamedGroup.SECP521_R1,
-
-                        // Secondary XDH curves
-                        NamedGroup.X448,
-
-                        // FFDHE (RFC 7919)
-                        NamedGroup.FFDHE_2048,
-                        NamedGroup.FFDHE_3072,
-                        NamedGroup.FFDHE_4096,
-                        NamedGroup.FFDHE_6144,
-                        NamedGroup.FFDHE_8192,
-                    };
-
-                groupList = new ArrayList<>(groups.length);
-                for (NamedGroup group : groups) {
-                    if (group.isAvailable) {
-                        groupList.add(group);
-                    }
-                }
-
-                if (groupList.isEmpty() &&
-                        SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.warning("No default named groups");
-                }
-            }
-
-            supportedNamedGroups = new NamedGroup[groupList.size()];
-            int i = 0;
-            for (NamedGroup namedGroup : groupList) {
-                supportedNamedGroups[i++] = namedGroup;
-            }
-        }
-
-        // Is there any supported group permitted by the constraints?
-        static boolean isActivatable(
-                AlgorithmConstraints constraints, NamedGroupSpec type) {
-
-            boolean hasFFDHEGroups = false;
-            for (NamedGroup namedGroup : supportedNamedGroups) {
-                if (namedGroup.isAvailable && namedGroup.spec == type) {
-                    if (namedGroup.isPermitted(constraints)) {
-                        return true;
-                    }
-
-                    if (!hasFFDHEGroups &&
-                            (type == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
-                        hasFFDHEGroups = true;
-                    }
-                }
-            }
-
-            // For compatibility, if no FFDHE groups are defined, the non-FFDHE
-            // compatible mode (using DHE cipher suite without FFDHE extension)
-            // is allowed.
-            //
-            // Note that the constraints checking on DHE parameters will be
-            // performed during key exchanging in a handshake.
-            return !hasFFDHEGroups && type == NamedGroupSpec.NAMED_GROUP_FFDHE;
-        }
-
-        // Is the named group permitted by the constraints?
-        static boolean isActivatable(
-                AlgorithmConstraints constraints, NamedGroup namedGroup) {
-            if (!namedGroup.isAvailable || !isSupported(namedGroup)) {
-                return false;
-            }
-
-            return namedGroup.isPermitted(constraints);
-        }
-
-        // Is the named group supported?
-        static boolean isSupported(NamedGroup namedGroup) {
-            for (NamedGroup group : supportedNamedGroups) {
-                if (namedGroup.id == group.id) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        static NamedGroup getPreferredGroup(
-                ProtocolVersion negotiatedProtocol,
-                AlgorithmConstraints constraints, NamedGroupSpec[] types,
-                List<NamedGroup> requestedNamedGroups) {
-            for (NamedGroup namedGroup : requestedNamedGroups) {
-                if ((NamedGroupSpec.arrayContains(types, namedGroup.spec)) &&
-                        namedGroup.isAvailable(negotiatedProtocol) &&
-                        isSupported(namedGroup) &&
-                        namedGroup.isPermitted(constraints)) {
-                    return namedGroup;
-                }
-            }
-
-            return null;
-        }
-
-        static NamedGroup getPreferredGroup(
-                ProtocolVersion negotiatedProtocol,
-                AlgorithmConstraints constraints, NamedGroupSpec[] types) {
-            for (NamedGroup namedGroup : supportedNamedGroups) {
-                if ((NamedGroupSpec.arrayContains(types, namedGroup.spec)) &&
-                        namedGroup.isAvailable(negotiatedProtocol) &&
-                        namedGroup.isPermitted(constraints)) {
-                    return namedGroup;
-                }
-            }
-
-            return null;
-        }
-    }
-
     /**
      * Network data producer of a "supported_groups" extension in
      * the ClientHello handshake message.
@@ -346,9 +173,18 @@ final class SupportedGroupsExtension {
 
             // Produce the extension.
             ArrayList<NamedGroup> namedGroups =
-                new ArrayList<>(SupportedGroups.supportedNamedGroups.length);
-            for (NamedGroup ng : SupportedGroups.supportedNamedGroups) {
-                if ((!SupportedGroups.enableFFDHE) &&
+                    new ArrayList<>(chc.sslConfig.namedGroups.length);
+            for (String name : chc.sslConfig.namedGroups) {
+                NamedGroup ng = NamedGroup.nameOf(name);
+                if (ng == null) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine(
+                                "Ignore unspecified named group: " + name);
+                    }
+                    continue;
+                }
+
+                if ((!SSLConfiguration.enableFFDHE) &&
                     (ng.spec == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
                     continue;
                 }
@@ -495,9 +331,19 @@ final class SupportedGroupsExtension {
             // Contains all groups the server supports, regardless of whether
             // they are currently supported by the client.
             ArrayList<NamedGroup> namedGroups = new ArrayList<>(
-                    SupportedGroups.supportedNamedGroups.length);
-            for (NamedGroup ng : SupportedGroups.supportedNamedGroups) {
-                if ((!SupportedGroups.enableFFDHE) &&
+                    shc.sslConfig.namedGroups.length);
+            for (String name : shc.sslConfig.namedGroups) {
+                NamedGroup ng = NamedGroup.nameOf(name);
+                if (ng == null) {
+                    if (SSLLogger.isOn &&
+                            SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine(
+                                "Ignore unspecified named group: " + name);
+                    }
+                    continue;
+                }
+
+                if ((!SSLConfiguration.enableFFDHE) &&
                     (ng.spec == NamedGroupSpec.NAMED_GROUP_FFDHE)) {
                     continue;
                 }

@@ -78,71 +78,83 @@ class CgroupController: public CHeapObj<mtInternal> {
 
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
+// Parses a subsystem's file, looking for a matching line.
+// If key is null, then the first line will be matched with scan_fmt.
+// If key isn't null, then each line will be matched, looking for something that matches "$key $scan_fmt".
+// The matching value will be assigned to returnval.
+// scan_fmt uses scanf() syntax.
+// Return value: 0 on match, OSCONTAINER_ERROR on error.
 template <typename T> int subsystem_file_line_contents(CgroupController* c,
                                               const char *filename,
-                                              const char *matchline,
+                                              const char *key,
                                               const char *scan_fmt,
                                               T returnval) {
-  FILE *fp = NULL;
-  char *p;
-  char file[MAXPATHLEN+1];
-  char buf[MAXPATHLEN+1];
-  char discard[MAXPATHLEN+1];
+  if (c == nullptr) {
+    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is nullptr");
+    return OSCONTAINER_ERROR;
+  }
+  if (c->subsystem_path() == nullptr) {
+    log_debug(os, container)("subsystem_file_line_contents: subsystem path is nullptr");
+    return OSCONTAINER_ERROR;
+  }
+
+  stringStream file_path;
+  file_path.print_raw(c->subsystem_path());
+  file_path.print_raw(filename);
+
+  if (file_path.size() > (MAXPATHLEN-1)) {
+    log_debug(os, container)("File path too long %s, %s", file_path.base(), filename);
+    return OSCONTAINER_ERROR;
+  }
+  const char* absolute_path = file_path.freeze();
+  log_trace(os, container)("Path to %s is %s", filename, absolute_path);
+
+  FILE* fp = os::fopen(absolute_path, "r");
+  if (fp == nullptr) {
+    log_debug(os, container)("Open of file %s failed, %s", absolute_path, os::strerror(errno));
+    return OSCONTAINER_ERROR;
+  }
+
+  const int buf_len = MAXPATHLEN+1;
+  char buf[buf_len];
+  char* line = fgets(buf, buf_len, fp);
+  if (line == nullptr) {
+    log_debug(os, container)("Empty file %s", absolute_path);
+    fclose(fp);
+    return OSCONTAINER_ERROR;
+  }
+
   bool found_match = false;
-
-  if (c == NULL) {
-    log_debug(os, container)("subsystem_file_line_contents: CgroupController* is NULL");
-    return OSCONTAINER_ERROR;
-  }
-  if (c->subsystem_path() == NULL) {
-    log_debug(os, container)("subsystem_file_line_contents: subsystem path is NULL");
-    return OSCONTAINER_ERROR;
-  }
-
-  strncpy(file, c->subsystem_path(), MAXPATHLEN);
-  file[MAXPATHLEN-1] = '\0';
-  int filelen = strlen(file);
-  if ((filelen + strlen(filename)) > (MAXPATHLEN-1)) {
-    log_debug(os, container)("File path too long %s, %s", file, filename);
-    return OSCONTAINER_ERROR;
-  }
-  strncat(file, filename, MAXPATHLEN-filelen);
-  log_trace(os, container)("Path to %s is %s", filename, file);
-  fp = os::fopen(file, "r");
-  if (fp != NULL) {
-    int err = 0;
-    while ((p = fgets(buf, MAXPATHLEN, fp)) != NULL) {
-      found_match = false;
-      if (matchline == NULL) {
-        // single-line file case
-        int matched = sscanf(p, scan_fmt, returnval);
-        found_match = (matched == 1);
-      } else {
-        // multi-line file case
-        if (strstr(p, matchline) != NULL) {
-          // discard matchline string prefix
-          int matched = sscanf(p, scan_fmt, discard, returnval);
-          found_match = (matched == 2);
-        } else {
-          continue; // substring not found
+  if (key == nullptr) {
+    // File consists of a single line according to caller, with only a value
+    int matched = sscanf(line, scan_fmt, returnval);
+    found_match = matched == 1;
+  } else {
+    // File consists of multiple lines in a "key value"
+    // fashion, we have to find the key.
+    const int key_len = strlen(key);
+    for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
+      char* key_substr = strstr(line, key);
+      char after_key = line[key_len];
+      if (key_substr == line
+          && isspace(after_key) != 0
+          && after_key != '\n') {
+        // Skip key, skip space
+        const char* value_substr = line + key_len + 1;
+        int matched = sscanf(value_substr, scan_fmt, returnval);
+        found_match = matched == 1;
+        if (found_match) {
+          break;
         }
       }
-      if (found_match) {
-        fclose(fp);
-        return 0;
-      } else {
-        err = 1;
-        log_debug(os, container)("Type %s not found in file %s", scan_fmt, file);
-      }
     }
-    if (err == 0) {
-      log_debug(os, container)("Empty file %s", file);
-    }
-  } else {
-    log_debug(os, container)("Open of file %s failed, %s", file, os::strerror(errno));
   }
-  if (fp != NULL)
-    fclose(fp);
+  fclose(fp);
+  if (found_match) {
+    return 0;
+  }
+  log_debug(os, container)("Type %s (key == %s) not found in file %s", scan_fmt,
+                           (key == nullptr ? "null" : key), absolute_path);
   return OSCONTAINER_ERROR;
 }
 PRAGMA_DIAG_POP

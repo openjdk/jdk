@@ -37,14 +37,14 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.classfile.*;
+import jdk.internal.classfile.*;
 import helpers.ByteArrayClassLoader;
-import jdk.classfile.instruction.ConstantInstruction;
-import jdk.classfile.constantpool.ConstantDynamicEntry;
-import jdk.classfile.constantpool.ConstantPoolBuilder;
-import jdk.classfile.constantpool.LoadableConstantEntry;
-import jdk.classfile.constantpool.MemberRefEntry;
-import jdk.classfile.constantpool.MethodHandleEntry;
+import jdk.internal.classfile.instruction.ConstantInstruction;
+import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
+import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import jdk.internal.classfile.constantpool.LoadableConstantEntry;
+import jdk.internal.classfile.constantpool.MemberRefEntry;
+import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.constant.ConstantDescs.CD_String;

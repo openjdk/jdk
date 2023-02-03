@@ -76,20 +76,9 @@ import sun.security.util.ObjectIdentifier;
  *
  * @since       1.4
  */
-public class ExtendedKeyUsageExtension extends Extension
-implements CertAttrSet<String> {
+public class ExtendedKeyUsageExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.ExtendedKeyUsage";
-
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "ExtendedKeyUsage";
-    public static final String USAGES = "usages";
 
     /**
      * Vector of KeyUsages for this object.
@@ -97,7 +86,7 @@ implements CertAttrSet<String> {
     private Vector<ObjectIdentifier> keyUsages;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (keyUsages == null || keyUsages.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -119,8 +108,7 @@ implements CertAttrSet<String> {
      *
      * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers)
      */
-    public ExtendedKeyUsageExtension(Vector<ObjectIdentifier> keyUsages)
-    throws IOException {
+    public ExtendedKeyUsageExtension(Vector<ObjectIdentifier> keyUsages) {
         this(Boolean.FALSE, keyUsages);
     }
 
@@ -129,10 +117,14 @@ implements CertAttrSet<String> {
      * a Vector of KeyUsages with specified criticality.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers)
+     * @param keyUsages the Vector of KeyUsages (ObjectIdentifiers),
+     *                  cannot be null or empty.
      */
-    public ExtendedKeyUsageExtension(Boolean critical, Vector<ObjectIdentifier> keyUsages)
-    throws IOException {
+    public ExtendedKeyUsageExtension(Boolean critical, Vector<ObjectIdentifier> keyUsages) {
+        if (keyUsages == null || keyUsages.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "key usages cannot be null or empty");
+        }
         this.keyUsages = keyUsages;
         this.extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
         this.critical = critical.booleanValue();
@@ -194,10 +186,9 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.ExtendedKeyUsage_Id;
           critical = false;
@@ -207,45 +198,20 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the keyUsages value.
      */
-    @SuppressWarnings("unchecked") // Checked with instanceof
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            if (!(obj instanceof Vector)) {
-                throw new IOException("Attribute value should be of type Vector.");
-            }
-            this.keyUsages = (Vector<ObjectIdentifier>)obj;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public Vector<ObjectIdentifier> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(USAGES)) {
-            //XXXX May want to consider cloning this
-            return keyUsages;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:ExtendedKeyUsageExtension.");
-        }
+    public Vector<ObjectIdentifier> getUsages() {
+        return keyUsages;
     }
 
 
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 
     public List<String> getExtendedKeyUsage() {

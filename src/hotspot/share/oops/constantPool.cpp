@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/classPrelinker.hpp"
@@ -38,6 +37,7 @@
 #include "code/codeCache.hpp"
 #include "interpreter/bootstrapInfo.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
@@ -158,7 +158,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 objArrayOop ConstantPool::resolved_references() const {
-  return (objArrayOop)_cache->resolved_references();
+  return _cache->resolved_references();
 }
 
 // Called from outside constant pool resolution where a resolved_reference array
@@ -167,8 +167,20 @@ objArrayOop ConstantPool::resolved_references_or_null() const {
   if (_cache == NULL) {
     return NULL;
   } else {
-    return (objArrayOop)_cache->resolved_references();
+    return _cache->resolved_references();
   }
+}
+
+oop ConstantPool::resolved_reference_at(int index) const {
+  oop result = resolved_references()->obj_at(index);
+  assert(oopDesc::is_oop_or_null(result), "Must be oop");
+  return result;
+}
+
+// Use a CAS for multithreaded access
+oop ConstantPool::set_resolved_reference_at(int index, oop new_result) {
+  assert(oopDesc::is_oop_or_null(new_result), "Must be oop");
+  return resolved_references()->replace_if_null(index, new_result);
 }
 
 // Create resolved_references array and mapping array for original cp indexes
@@ -255,10 +267,11 @@ void ConstantPool::klass_at_put(int class_index, Klass* k) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-// Archive the resolved references
-void ConstantPool::archive_resolved_references() {
+// Returns the _resolved_reference array after removing unarchivable items from it.
+// Returns nullptr if this class is not supported, or _resolved_reference doesn't exist.
+objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   if (_cache == NULL) {
-    return; // nothing to do
+    return nullptr; // nothing to do
   }
 
   InstanceKlass *ik = pool_holder();
@@ -266,39 +279,30 @@ void ConstantPool::archive_resolved_references() {
         ik->is_shared_app_class())) {
     // Archiving resolved references for classes from non-builtin loaders
     // is not yet supported.
-    return;
+    return nullptr;
   }
 
   objArrayOop rr = resolved_references();
-  Array<u2>* ref_map = reference_map();
-  if (rr != NULL) {
+  if (rr != nullptr) {
+    Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == NULL ? 0 : ref_map->length();
     int rr_len = rr->length();
     for (int i = 0; i < rr_len; i++) {
       oop obj = rr->obj_at(i);
-      rr->obj_at_put(i, NULL);
+      rr->obj_at_put(i, nullptr);
       if (obj != NULL && i < ref_map_len) {
         int index = object_to_cp_index(i);
         if (tag_at(index).is_string()) {
-          oop archived_string = HeapShared::find_archived_heap_object(obj);
-          // Update the reference to point to the archived copy
-          // of this string.
-          // If the string is too large to archive, NULL is
-          // stored into rr. At run time, string_at_impl() will create and intern
-          // the string.
-          rr->obj_at_put(i, archived_string);
+          assert(java_lang_String::is_instance(obj), "must be");
+          typeArrayOop value = java_lang_String::value_no_keepalive(obj);
+          if (!HeapShared::is_too_large_to_archive(value)) {
+            rr->obj_at_put(i, obj);
+          }
         }
       }
     }
-
-    oop archived = HeapShared::archive_object(rr);
-    // If the resolved references array is not archived (too large),
-    // the 'archived' object is NULL. No need to explicitly check
-    // the return value of archive_object() here. At runtime, the
-    // resolved references will be created using the normal process
-    // when there is no archived value.
-    _cache->set_archived_references(archived);
   }
+  return rr;
 }
 
 void ConstantPool::add_dumped_interned_strings() {
@@ -446,7 +450,8 @@ int ConstantPool::cp_to_object_index(int cp_index) {
 }
 
 void ConstantPool::string_at_put(int which, int obj_index, oop str) {
-  resolved_references()->obj_at_put(obj_index, str);
+  oop result = set_resolved_reference_at(obj_index, str);
+  assert(result == nullptr || result == str, "Only set once or to the same string.");
 }
 
 void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Klass* k) {
@@ -936,7 +941,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   assert(index == _no_index_sentinel || index >= 0, "");
 
   if (cache_index >= 0) {
-    result_oop = this_cp->resolved_references()->obj_at(cache_index);
+    result_oop = this_cp->resolved_reference_at(cache_index);
     if (result_oop != NULL) {
       if (result_oop == Universe::the_null_sentinel()) {
         DEBUG_ONLY(int temp_index = (index >= 0 ? index : this_cp->object_to_cp_index(cache_index)));
@@ -1159,9 +1164,8 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // It doesn't matter which racing thread wins, as long as only one
     // result is used by all threads, and all future queries.
     oop new_result = (result_oop == NULL ? Universe::the_null_sentinel() : result_oop);
-    oop old_result = this_cp->resolved_references()
-      ->atomic_compare_exchange_oop(cache_index, new_result, NULL);
-    if (old_result == NULL) {
+    oop old_result = this_cp->set_resolved_reference_at(cache_index, new_result);
+    if (old_result == nullptr) {
       return result_oop;  // was installed
     } else {
       // Return the winning thread's result.  This can be different than
@@ -1222,7 +1226,7 @@ void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& th
 
 oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS) {
   // If the string has already been interned, this entry will be non-null
-  oop str = this_cp->resolved_references()->obj_at(obj_index);
+  oop str = this_cp->resolved_reference_at(obj_index);
   assert(str != Universe::the_null_sentinel(), "");
   if (str != NULL) return str;
   Symbol* sym = this_cp->unresolved_string_at(which);

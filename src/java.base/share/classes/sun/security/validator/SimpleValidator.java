@@ -308,8 +308,7 @@ public final class SimpleValidator extends Validator {
                                                                 .toByteArray();
                 ext = new NetscapeCertTypeExtension(encoded);
             }
-            Boolean val = ext.get(type);
-            return val.booleanValue();
+            return ext.get(type);
         } catch (IOException e) {
             return false;
         }

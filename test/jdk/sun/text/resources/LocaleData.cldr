@@ -7871,3 +7871,7 @@ FormatData/nn/latn.NumberElements/1=\u00a0
 # CalendarData consolidated to root
 CalendarData//firstDayOfWeek=1: AG AS BD BR BS BT BW BZ CA CO DM DO ET GT GU HK HN ID IL IN JM JP KE KH KR LA MH MM MO MT MX MZ NI NP PA PE PH PK PR PT PY SA SG SV TH TT TW UM US VE VI WS YE ZA ZW;2: 001 AD AI AL AM AN AR AT AU AX AZ BA BE BG BM BN BY CH CL CM CN CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP GR HR HU IE IS IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ MY NL NO NZ PL RE RO RS RU SE SI SK SM TJ TM TR UA UY UZ VA VN XK;6: MV;7: AE AF BH DJ DZ EG IQ IR JO KW LY OM QA SD SY
 CalendarData//minimalDaysInFirstWeek=1: 001 GU UM US VI;4: AD AN AT AX BE BG CH CZ DE DK EE ES FI FJ FO FR GB GF GG GI GP GR HU IE IM IS IT JE LI LT LU MC MQ NL NO PL PT RE RU SE SJ SK SM VA
+
+# tzdata2022f
+TimeZoneNames/en/America\/Ojinaga/1=Central Standard Time
+TimeZoneNames/en/America\/Chihuahua/1=Central Standard Time

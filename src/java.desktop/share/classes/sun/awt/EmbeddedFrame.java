@@ -363,7 +363,7 @@ public abstract class EmbeddedFrame extends Frame
 
     protected void setPeer(final ComponentPeer p){
         AWTAccessor.getComponentAccessor().setPeer(EmbeddedFrame.this, p);
-    };
+    }
 
     /**
      * Synthesize native message to activate or deactivate EmbeddedFrame window

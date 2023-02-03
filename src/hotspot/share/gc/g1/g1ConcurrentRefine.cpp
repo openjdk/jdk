@@ -288,8 +288,6 @@ public:
   bool do_heap_region(HeapRegion* r) override {
     size_t rs_length = r->rem_set()->occupied();
     _sampled_rs_length += rs_length;
-    // Update the collection set policy information for this region.
-    _cset->update_young_region_prediction(r, rs_length);
     return false;
   }
 

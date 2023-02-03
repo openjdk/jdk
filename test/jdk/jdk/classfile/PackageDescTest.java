@@ -28,7 +28,7 @@
  * @summary Testing PackageDesc.
  * @run junit PackageDescTest
  */
-import jdk.classfile.jdktypes.PackageDesc;
+import jdk.internal.classfile.jdktypes.PackageDesc;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

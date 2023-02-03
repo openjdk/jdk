@@ -140,6 +140,7 @@ public class XPATHErrorResources_de extends ListResourceBundle
          "ER_EXPECTED_SINGLE_QUOTE";
   public static final String ER_EMPTY_EXPRESSION = "ER_EMPTY_EXPRESSION";
   public static final String ER_EXPECTED_BUT_FOUND = "ER_EXPECTED_BUT_FOUND";
+  public static final String ER_UNION_MUST_BE_NODESET = "ER_UNION_MUST_BE_NODESET";
   public static final String ER_INCORRECT_PROGRAMMER_ASSERTION =
          "ER_INCORRECT_PROGRAMMER_ASSERTION";
   public static final String ER_BOOLEAN_ARG_NO_LONGER_OPTIONAL =
@@ -203,9 +204,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
          "ER_FUNCTION_TOKEN_NOT_FOUND";
   public static final String ER_CANNOT_DEAL_XPATH_TYPE =
          "ER_CANNOT_DEAL_XPATH_TYPE";
-  public static final String ER_NODESET_NOT_MUTABLE = "ER_NODESET_NOT_MUTABLE";
-  public static final String ER_NODESETDTM_NOT_MUTABLE =
-         "ER_NODESETDTM_NOT_MUTABLE";
    /**  Variable not resolvable:   */
   public static final String ER_VAR_NOT_RESOLVABLE = "ER_VAR_NOT_RESOLVABLE";
    /** Null error handler  */
@@ -309,6 +307,8 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
   public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
+  public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
+  public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
   public static final String ER_UNSUPPORTED_RETURN_TYPE = "ER_UNSUPPORTED_RETURN_TYPE";
   public static final String ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL = "ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL";
   public static final String ER_ARG_CANNOT_BE_NULL = "ER_ARG_CANNOT_BE_NULL";
@@ -326,6 +326,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_PROPERTY_UNKNOWN = "ER_PROPERTY_UNKNOWN";
   public static final String ER_GETTING_NULL_PROPERTY = "ER_GETTING_NULL_PROPERTY";
   public static final String ER_GETTING_UNKNOWN_PROPERTY = "ER_GETTING_UNKNOWN_PROPERTY";
+  public static final String ER_XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";
+  public static final String ER_XPATH_OPERATOR_LIMIT = "XPATH_OPERATOR_LIMIT";
+
   //END: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
 
   public static final String WG_LOCALE_NAME_NOT_HANDLED =
@@ -457,6 +460,9 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_EXPECTED_BUT_FOUND,
      "{0} erwartet, aber {1} gefunden"},
 
+  { ER_UNION_MUST_BE_NODESET,
+     "Operanden f\u00FCr eine Vereinigungsmenge m\u00FCssen Knotensets sein."},
+
   { ER_INCORRECT_PROGRAMMER_ASSERTION,
       "Programmierer-Assertion ist falsch. - {0}"},
 
@@ -570,12 +576,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_CANNOT_DEAL_XPATH_TYPE,
        "XPath-Typ {0} kann nicht bearbeitet werden"},
-
-  { ER_NODESET_NOT_MUTABLE,
-       "Dieses NodeSet ist nicht mutierbar"},
-
-  { ER_NODESETDTM_NOT_MUTABLE,
-       "Dieses NodeSetDTM ist nicht mutierbar"},
 
   { ER_VAR_NOT_RESOLVABLE,
         "Variable kann nicht aufgel\u00F6st werden: {0}"},
@@ -777,15 +777,16 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   { ER_RESOLVE_VARIABLE_RETURNS_NULL,
        "resolveVariable f\u00FCr Variable {0} gibt null zur\u00FCck"},
 
+  { ER_NO_XPATH_VARIABLE_RESOLVER,
+       "Es wird versucht, die Variable {0} aufzul\u00F6sen, aber es wurde kein Variablen-Resolver festgelegt."},
+
+  { ER_NO_XPATH_FUNCTION_PROVIDER,
+       "Es wird versucht, eine Erweiterungsfunktion {0} aufzurufen, aber es wurde kein Erweiterungsprovider festgelegt."},
+
   /** Field ER_UNSUPPORTED_RETURN_TYPE                       */
 
   { ER_UNSUPPORTED_RETURN_TYPE,
        "Nicht unterst\u00FCtzter R\u00FCckgabetyp: {0}"},
-
-  /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
-
-  { ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL,
-       "Quelle und/oder R\u00FCckgabetyp d\u00FCrfen nicht null sein"},
 
   /** Field ER_SOURCE_RETURN_TYPE_CANNOT_BE_NULL                       */
 
@@ -859,6 +860,12 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
 
   { ER_GETTING_UNKNOWN_PROPERTY,
        "Es wird versucht, die unbekannte Eigenschaft \"{0}\" abzurufen: {1}#getProperty({0})"},
+
+  { ER_XPATH_GROUP_LIMIT,
+      "JAXP0801001: Im Compiler ist ein XPath-Ausdruck mit {0} Gruppen aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
+
+  { ER_XPATH_OPERATOR_LIMIT,
+      "JAXP0801002: Im Compiler ist ein XPath-Ausdruck mit {0} Operatoren aufgetreten, der den von \"{2}\" festgelegten Grenzwert \"{1}\" \u00FCberschreitet."},
 
   //END:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
 

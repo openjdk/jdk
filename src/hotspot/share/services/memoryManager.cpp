@@ -203,8 +203,8 @@ void GCMemoryManager::add_pool(MemoryPool* pool, bool always_affected_by_gc) {
 
 void GCMemoryManager::initialize_gc_stat_info() {
   assert(MemoryService::num_memory_pools() > 0, "should have one or more memory pools");
-  _last_gc_stat = new(ResourceObj::C_HEAP, mtGC) GCStatInfo(MemoryService::num_memory_pools());
-  _current_gc_stat = new(ResourceObj::C_HEAP, mtGC) GCStatInfo(MemoryService::num_memory_pools());
+  _last_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
+  _current_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
   // tracking concurrent collections we need two objects: one to update, and one to
   // hold the publicly available "last (completed) gc" information.
 }

@@ -328,7 +328,7 @@ public class WindowsIconFactory implements Serializable
             }
             public int getIconWidth() { return 13; }
             public int getIconHeight() { return 13; }
-        };
+        }
 
     @SuppressWarnings("serial") // Same-version serialization only
     private static class CheckBoxIcon implements Icon, Serializable

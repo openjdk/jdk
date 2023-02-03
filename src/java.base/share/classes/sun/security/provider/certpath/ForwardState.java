@@ -187,27 +187,17 @@ class ForwardState implements State {
 
         /* update subjectNamesTraversed only if this is the EE cert or if
            this cert is not self-issued */
-        if (init || !X509CertImpl.isSelfIssued(cert)){
+        if (init || !X509CertImpl.isSelfIssued(cert)) {
             X500Principal subjName = cert.getSubjectX500Principal();
             subjectNamesTraversed.add(X500Name.asX500Name(subjName));
 
-            try {
-                SubjectAlternativeNameExtension subjAltNameExt
+            SubjectAlternativeNameExtension subjAltNameExt
                     = icert.getSubjectAlternativeNameExtension();
-                if (subjAltNameExt != null) {
-                    GeneralNames gNames = subjAltNameExt.get(
-                            SubjectAlternativeNameExtension.SUBJECT_NAME);
-                    for (GeneralName gName : gNames.names()) {
-                        subjectNamesTraversed.add(gName.getName());
-                    }
+            if (subjAltNameExt != null) {
+                GeneralNames gNames = subjAltNameExt.getNames();
+                for (GeneralName gName : gNames.names()) {
+                    subjectNamesTraversed.add(gName.getName());
                 }
-            } catch (IOException e) {
-                if (debug != null) {
-                    debug.println("ForwardState.updateState() unexpected "
-                        + "exception");
-                    e.printStackTrace();
-                }
-                throw new CertPathValidatorException(e);
             }
         }
 

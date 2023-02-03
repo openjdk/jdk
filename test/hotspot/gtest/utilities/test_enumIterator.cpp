@@ -23,8 +23,9 @@
 
 #include "precompiled.hpp"
 #include "utilities/enumIterator.hpp"
-#include <type_traits>
 #include "unittest.hpp"
+
+#include <type_traits>
 
 enum class ExplicitTest : int { value1, value2, value3 };
 ENUMERATOR_RANGE(ExplicitTest, ExplicitTest::value1, ExplicitTest::value3);
