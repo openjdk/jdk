@@ -285,9 +285,6 @@ final class StringUTF16 {
 
     @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
-        if (value == other) {
-            return 0;
-        }
         int len1 = length(value);
         int len2 = length(other);
         return compareValues(value, other, len1, len2);
