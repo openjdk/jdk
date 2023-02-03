@@ -1047,8 +1047,6 @@ public class VisibleMemberTable {
             TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             for (TypeMirror interfaceType : intfacs) {
-                // TODO: this method also finds static methods which are pseudo-inherited;
-                //  this needs to be fixed
                 ExecutableElement found = utils.findMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null && !methods.contains(found)) {
                     methods.add(found);

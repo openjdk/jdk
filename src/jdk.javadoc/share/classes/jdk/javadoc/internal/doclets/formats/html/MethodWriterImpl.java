@@ -301,7 +301,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                                             ExecutableElement method,
                                             Content dl) {
         Utils utils = writer.utils;
-        if (utils.isStatic(method) || writer.options.noComment()) {
+        if (writer.options.noComment()) {
             return;
         }
         Contents contents = writer.contents;
