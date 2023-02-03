@@ -44,7 +44,7 @@ int VM_Version::set_and_get_current_sve_vector_length(int length) {
 static bool cpu_has(const char* optional) {
   uint32_t val;
   size_t len = sizeof(val);
-  if (sysctlbyname(optional, &val, &len, NULL, 0)) {
+  if (sysctlbyname(optional, &val, &len, nullptr, 0)) {
     return false;
   }
   return val;
@@ -97,7 +97,7 @@ void VM_Version::get_os_cpu_info() {
   int cache_line_size;
   int hw_conf_cache_line[] = { CTL_HW, HW_CACHELINE };
   sysctllen = sizeof(cache_line_size);
-  if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, NULL, 0)) {
+  if (sysctl(hw_conf_cache_line, 2, &cache_line_size, &sysctllen, nullptr, 0)) {
     cache_line_size = 16;
   }
   _icache_line_size = 16; // minimal line length CCSIDR_EL1 can hold
@@ -114,7 +114,7 @@ void VM_Version::get_os_cpu_info() {
 
   int family;
   sysctllen = sizeof(family);
-  if (sysctlbyname("hw.cpufamily", &family, &sysctllen, NULL, 0)) {
+  if (sysctlbyname("hw.cpufamily", &family, &sysctllen, nullptr, 0)) {
     family = 0;
   }
 
@@ -123,7 +123,7 @@ void VM_Version::get_os_cpu_info() {
 }
 
 void VM_Version::get_compatible_board(char *buf, int buflen) {
-  assert(buf != NULL, "invalid argument");
+  assert(buf != nullptr, "invalid argument");
   assert(buflen >= 1, "invalid argument");
   *buf = '\0';
 }

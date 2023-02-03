@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,38 @@
 
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
-import java.util.List;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethod;
+import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
+
+import java.util.Map;
 
 /**
- * Class representing a PrintIdeal or PrintOptoAssembly output block read from the hotspot_pid* file.
+ * This class stores all test methods that need to be IR matched as identified by {@link IREncodingParser}.
+ *
+ * @see IREncodingParser
+ * @see HotSpotPidFileParser
+ * @see IRMethod
  */
-record Block(String output, List<String> testClassCompilations) {
-    public String getOutput() {
-        return output;
+public class TestMethods {
+    /**
+     * "Method name" -> TestMethod map created by {@link IREncodingParser} which contains an entry for each method that
+     * needs to be IR matched on.
+     */
+    private final Map<String, TestMethod> testMethods;
+
+    public TestMethods(Map<String, TestMethod> testMethods) {
+        this.testMethods = testMethods;
     }
 
-    public boolean containsTestClassCompilations() {
-        return !testClassCompilations.isEmpty();
+    public Map<String, TestMethod> testMethods() {
+        return testMethods;
     }
 
-    public List<String> getTestClassCompilations() {
-        return testClassCompilations;
+    public boolean isTestMethod(String method) {
+        return testMethods.containsKey(method);
+    }
+
+    public boolean hasTestMethods() {
+        return !testMethods.isEmpty();
     }
 }
