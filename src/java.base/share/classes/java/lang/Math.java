@@ -2192,22 +2192,22 @@ public final class Math {
     }
 
     /**
-     * Clamps the value to fit between min and max. If the value is less 
+     * Clamps the value to fit between min and max. If the value is less
      * than {@code min}, then {@code min} is returned. If the value is greater
      * than {@code max}, then {@code max} is returned. Otherwise, the original
      * value is returned.
      * <p>
      * While the original value of type long may not fit into the int type,
      * the bounds have the int type, so the result always fits the int type.
-     * This allows to use method to safely cast long value to int with 
+     * This allows to use method to safely cast long value to int with
      * saturation.
-     * 
+     *
      * @param value value to clamp
      * @param min minimal allowed value
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if {@code min < max}
-     * 
+     *
      * @since 21
      */
     public static int clamp(long value, int min, int max) {
@@ -2218,7 +2218,7 @@ public final class Math {
     }
 
     /**
-     * Clamps the value to fit between min and max. If the value is less 
+     * Clamps the value to fit between min and max. If the value is less
      * than {@code min}, then {@code min} is returned. If the value is greater
      * than {@code max}, then {@code max} is returned. Otherwise, the original
      * value is returned.
@@ -2228,7 +2228,7 @@ public final class Math {
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if {@code min < max}
-     * 
+     *
      * @since 21
      */
     public static long clamp(long value, long min, long max) {
@@ -2239,22 +2239,22 @@ public final class Math {
     }
 
     /**
-     * Clamps the value to fit between min and max. If the value is less 
+     * Clamps the value to fit between min and max. If the value is less
      * than {@code min}, then {@code min} is returned. If the value is greater
      * than {@code max}, then {@code max} is returned. Otherwise, the original
      * value is returned. If value is NaN, the result is also NaN.
      * <p>
      * Unlike the numerical comparison operators, this method considers
-     * negative zero to be strictly smaller than positive zero. 
+     * negative zero to be strictly smaller than positive zero.
      * E.g., {@code clamp(-0.0, 0.0, 1.0)} returns 0.0.
-     * 
+     *
      * @param value value to clamp
      * @param min minimal allowed value
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if either of {@code min} and {@code max}
-     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0, and 
-     * {@code max} is -0.0. 
+     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0, and
+     * {@code max} is -0.0.
      *
      * @since 21
      */
@@ -2274,21 +2274,21 @@ public final class Math {
     }
 
     /**
-     * Clamps the value to fit between min and max. If the value is less 
+     * Clamps the value to fit between min and max. If the value is less
      * than {@code min}, then {@code min} is returned. If the value is greater
      * than {@code max}, then {@code max} is returned. Otherwise, the original
      * value is returned. If value is NaN, the result is also NaN.
      * <p>
      * Unlike the numerical comparison operators, this method considers
-     * negative zero to be strictly smaller than positive zero. 
-     * E.g., {@code clamp(-0.0f, 0.0f, 1.0f)} returns 0.0f. 
+     * negative zero to be strictly smaller than positive zero.
+     * E.g., {@code clamp(-0.0f, 0.0f, 1.0f)} returns 0.0f.
      *
      * @param value value to clamp
      * @param min minimal allowed value
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if either of {@code min} and {@code max}
-     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0f, and 
+     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0f, and
      * {@code max} is -0.0f.
      *
      * @since 21

@@ -30,12 +30,12 @@
 public class Clamp {
     public static void main(String[] args) {
         int failures = 0;
-        
+
         failures += testIntClamp();
         failures += testLongClamp();
         failures += testDoubleClamp();
         failures += testFloatClamp();
-        
+
         if (failures > 0) {
             System.err.println("Testing clamp incurred " + failures + " failures.");
             throw new RuntimeException();
@@ -57,8 +57,8 @@ public class Clamp {
         failures += checkIntClamp(0, 1, 1, 1);
         failures += checkIntClamp(Long.MAX_VALUE, 1, 1, 1);
         failures += checkIllegalArgumentException("clamp(1, 2, 0)", () -> Math.clamp(1, 2, 0), () -> StrictMath.clamp(1, 2, 0));
-        failures += checkIllegalArgumentException("clamp(1, Integer.MAX_VALUE, Integer.MIN_VALUE)", 
-                () -> Math.clamp(1, Integer.MAX_VALUE, Integer.MIN_VALUE), 
+        failures += checkIllegalArgumentException("clamp(1, Integer.MAX_VALUE, Integer.MIN_VALUE)",
+                () -> Math.clamp(1, Integer.MAX_VALUE, Integer.MIN_VALUE),
                 () -> StrictMath.clamp(1, Integer.MAX_VALUE, Integer.MIN_VALUE));
         return failures;
     }
@@ -76,12 +76,12 @@ public class Clamp {
         failures += checkLongClamp(0, 1, 1, 1);
         failures += checkLongClamp(Long.MAX_VALUE, 1, 1, 1);
         failures += checkIllegalArgumentException("clamp(1, 2, 0)", () -> Math.clamp(1L, 2L, 0L), () -> StrictMath.clamp(1L, 2L, 0L));
-        failures += checkIllegalArgumentException("clamp(1, Long.MAX_VALUE, Long.MIN_VALUE)", 
-                () -> Math.clamp(1, Long.MAX_VALUE, Long.MIN_VALUE), 
+        failures += checkIllegalArgumentException("clamp(1, Long.MAX_VALUE, Long.MIN_VALUE)",
+                () -> Math.clamp(1, Long.MAX_VALUE, Long.MIN_VALUE),
                 () -> StrictMath.clamp(1, Long.MAX_VALUE, Long.MIN_VALUE));
         return failures;
     }
-    
+
     private static int testDoubleClamp() {
         int failures = 0;
         failures += checkDoubleClamp(-0.1, 0.0, 0.5, 0.0);
@@ -93,7 +93,7 @@ public class Clamp {
         failures += checkDoubleClamp(0.5, 0.0, 0.5, 0.5);
         failures += checkDoubleClamp(Math.nextUp(0.5), 0.0, 0.5, 0.5);
         failures += checkDoubleClamp(0.6, 0.0, 0.5, 0.5);
-        
+
         failures += checkDoubleClamp(Double.MAX_VALUE, 0.0, Double.POSITIVE_INFINITY, Double.MAX_VALUE);
         failures += checkDoubleClamp(Double.POSITIVE_INFINITY, 0.0, Double.MAX_VALUE, Double.MAX_VALUE);
         failures += checkDoubleClamp(-Double.MAX_VALUE, Double.NEGATIVE_INFINITY, 0.0, -Double.MAX_VALUE);
@@ -123,7 +123,7 @@ public class Clamp {
                 () -> StrictMath.clamp(0.0, 0.0, -0.0));
         return failures;
     }
-    
+
     private static int testFloatClamp() {
         int failures = 0;
         failures += checkFloatClamp(-0.1f, 0.0f, 0.5f, 0.0f);
@@ -170,22 +170,22 @@ public class Clamp {
         return checkEquals("Math.clamp(" + value + ", " + min + ", " + max + ")", Math.clamp(value, min, max), expected) +
             checkEquals("StrictMath.clamp(" + value + ", " + min + ", " + max + ")", StrictMath.clamp(value, min, max), expected);
     }
-    
+
     private static int checkLongClamp(long value, long min, long max, long expected) {
         return checkEquals("Math.clamp(" + value + ", " + min + ", " + max + ")", Math.clamp(value, min, max), expected) +
             checkEquals("StrictMath.clamp(" + value + ", " + min + ", " + max + ")", StrictMath.clamp(value, min, max), expected);
     }
-    
+
     private static int checkFloatClamp(float value, float min, float max, float expected) {
         return checkEquals("Math.clamp(" + value + ", " + min + ", " + max + ")", Math.clamp(value, min, max), expected) +
             checkEquals("StrictMath.clamp(" + value + ", " + min + ", " + max + ")", StrictMath.clamp(value, min, max), expected);
     }
-    
+
     private static int checkDoubleClamp(double value, double min, double max, double expected) {
         return checkEquals("Math.clamp(" + value + ", " + min + ", " + max + ")", Math.clamp(value, min, max), expected) +
             checkEquals("StrictMath.clamp(" + value + ", " + min + ", " + max + ")", StrictMath.clamp(value, min, max), expected);
     }
-    
+
     private static int checkIllegalArgumentException(String what, Runnable... runnables) {
         int failures = 0;
         for (Runnable runnable : runnables) {
@@ -208,7 +208,7 @@ public class Clamp {
         }
         return 0;
     }
-    
+
     private static int checkEquals(String what, long actual, long expected) {
         if (actual != expected) {
             System.err.println(what + ": expected = " + expected + "; actual = " + actual);
