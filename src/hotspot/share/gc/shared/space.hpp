@@ -239,12 +239,10 @@ class Space: public CHeapObj<mtGC> {
 // 2. That the space is really made up of objects and not just
 //    blocks.
 
-class DirtyCardToOopClosure: public MemRegionClosureRO {
+class DirtyCardToOopClosure: public MemRegionClosure {
 protected:
   OopIterateClosure* _cl;
   Space* _sp;
-  HeapWord* _boundary;          // If non-NULL, process only non-NULL oops
-                                // pointing below boundary.
   HeapWord* _min_done;          // Need a downwards traversal to compensate
                                 // imprecise write barrier; this is the
                                 // lowest location already done (or,
@@ -278,15 +276,9 @@ protected:
   void walk_mem_region_with_cl(MemRegion mr,
                                HeapWord* bottom, HeapWord* top,
                                OopIterateClosure* cl);
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               FilteringClosure* cl);
-
 public:
-  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
-                        HeapWord* boundary) :
-    _cl(cl), _sp(sp), _boundary(boundary),
-    _min_done(NULL) {
+  DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl) :
+    _cl(cl), _sp(sp), _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
   }
 
@@ -433,7 +425,6 @@ class ContiguousSpace: public CompactibleSpace {
   void set_top(HeapWord* value)    { _top = value; }
 
   void set_saved_mark()            { _saved_mark_word = top();    }
-  void reset_saved_mark()          { _saved_mark_word = bottom(); }
 
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
@@ -480,9 +471,6 @@ class ContiguousSpace: public CompactibleSpace {
     assert(compaction_top() >= bottom() && compaction_top() <= end(), "should point inside space");
     set_top(compaction_top());
   }
-
-  DirtyCardToOopClosure* new_dcto_cl(OopIterateClosure* cl,
-                                     HeapWord* boundary);
 
   // Apply "blk->do_oop" to the addresses of all reference fields in objects
   // starting with the _saved_mark_word, which was noted during a generation's

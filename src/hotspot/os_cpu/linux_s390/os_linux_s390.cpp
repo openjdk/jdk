@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -115,7 +115,7 @@ intptr_t* os::Linux::ucontext_get_sp(const ucontext_t * uc) {
 }
 
 intptr_t* os::Linux::ucontext_get_fp(const ucontext_t * uc) {
-  return NULL;
+  return nullptr;
 }
 
 address os::fetch_frame_from_context(const void* ucVoid,
@@ -124,14 +124,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) { *ret_sp = os::Linux::ucontext_get_sp(uc); }
     if (ret_fp) { *ret_fp = os::Linux::ucontext_get_fp(uc); }
   } else {
-    epc = NULL;
-    if (ret_sp) { *ret_sp = (intptr_t *)NULL; }
-    if (ret_fp) { *ret_fp = (intptr_t *)NULL; }
+    epc = nullptr;
+    if (ret_sp) { *ret_sp = (intptr_t *)nullptr; }
+    if (ret_fp) { *ret_fp = (intptr_t *)nullptr; }
   }
 
   return epc;
@@ -160,7 +160,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   // If its not one of our frames, the return pc is saved at gpr14
   // stack slot. The call_stub stores the return_pc to the stack slot
   // of gpr10.
-  if ((Interpreter::code() != NULL && Interpreter::contains(fr->pc())) ||
+  if ((Interpreter::code() != nullptr && Interpreter::contains(fr->pc())) ||
       (CodeCache::contains(fr->pc()) && !StubRoutines::contains(fr->pc()))) {
     return frame(fr->sender_sp(), fr->sender_pc());
   } else {
@@ -181,7 +181,7 @@ frame os::current_frame() {
   // Expected to return the stack pointer of this method.
   // But if inlined, returns the stack pointer of our caller!
   intptr_t* csp = (intptr_t*) *((intptr_t*) os::current_stack_pointer());
-  assert (csp != NULL, "sp should not be NULL");
+  assert (csp != nullptr, "sp should not be null");
   // Pass a dummy pc. This way we don't have to load it from the
   // stack, since we don't know in which slot we can find it.
   frame topframe(csp, (address)0x8);
@@ -190,9 +190,9 @@ frame os::current_frame() {
     return frame();
   } else {
     frame senderFrame = os::get_sender_for_C_frame(&topframe);
-    assert(senderFrame.pc() != NULL, "Sender pc should not be NULL");
+    assert(senderFrame.pc() != nullptr, "Sender pc should not be null");
     // Return sender of sender of current topframe which hopefully
-    // both have pc != NULL.
+    // both have pc != nullptr.
 #ifdef _NMT_NOINLINE_   // Is set in slowdebug builds.
     // Current_stack_pointer is not inlined, we must pop one more frame.
     frame tmp = os::get_sender_for_C_frame(&topframe);
@@ -207,12 +207,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
                                              ucontext_t* uc, JavaThread* thread) {
 
   // Decide if this trap can be handled by a stub.
-  address stub    = NULL;
-  address pc      = NULL;  // Pc as retrieved from PSW. Usually points past failing instruction.
-  address trap_pc = NULL;  // Pc of the instruction causing the trap.
+  address stub    = nullptr;
+  address pc      = nullptr;  // Pc as retrieved from PSW. Usually points past failing instruction.
+  address trap_pc = nullptr;  // Pc of the instruction causing the trap.
 
   //%note os_trap_1
-  if (info != NULL && uc != NULL && thread != NULL) {
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = os::Posix::ucontext_get_pc(uc);
     if (TraceTraps) {
       tty->print_cr("     pc at " INTPTR_FORMAT, p2i(pc));
@@ -266,7 +266,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // SIGTRAP-based implicit null check in compiled code.
       else if ((sig == SIGFPE) &&
                TrapBasedNullChecks &&
-               (trap_pc != NULL) &&
+               (trap_pc != nullptr) &&
                Assembler::is_sigtrap_zero_check(trap_pc)) {
         if (TraceTraps) {
           tty->print_cr("trap: NULL_CHECK at " INTPTR_FORMAT " (SIGFPE)", p2i(trap_pc));
@@ -286,7 +286,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 #ifdef COMPILER2
       // SIGTRAP-based implicit range check in compiled code.
       else if (sig == SIGFPE && TrapBasedRangeChecks &&
-               (trap_pc != NULL) &&
+               (trap_pc != nullptr) &&
                Assembler::is_sigtrap_range_check(trap_pc)) {
         if (TraceTraps) {
           tty->print_cr("trap: RANGE_CHECK at " INTPTR_FORMAT " (SIGFPE)", p2i(trap_pc));
@@ -303,8 +303,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
-        if (nm != NULL && nm->has_unsafe_access()) {
+        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
+        if (nm != nullptr && nm->has_unsafe_access()) {
           // We don't really need a stub here! Just set the pending exception and
           // continue at the next instruction after the faulting read. Returning
           // garbage from this read is ok.
@@ -349,9 +349,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  if (stub != NULL) {
+  if (stub != nullptr) {
     // Save all thread context in case we need to restore it.
-    if (thread != NULL) thread->set_saved_exception_pc(pc);
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
   }
@@ -392,7 +392,7 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -437,7 +437,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -454,7 +454,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 

@@ -48,6 +48,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
+#ifdef AIX
+#include "loadlib_aix.hpp"
+#endif
 #ifdef LINUX
 #include "os_linux.hpp"
 #endif
@@ -747,6 +750,8 @@ void os::dll_unload(void *lib) {
     log_info(os)("Attempt to unload shared library \"%s\" [" INTPTR_FORMAT "] failed, %s",
                   l_path, p2i(lib), error_report);
   }
+  // Update the dll cache
+  AIX_ONLY(LoadedLibraries::reload());
   LINUX_ONLY(os::free(l_pathdup));
 }
 

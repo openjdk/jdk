@@ -1063,7 +1063,6 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
 #define       badAddress        ((address)::badAddressVal)
-#define       badOop            (cast_to_oop(::badOopVal))
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
