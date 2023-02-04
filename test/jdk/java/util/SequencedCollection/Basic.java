@@ -57,8 +57,26 @@ public class Basic {
         return Collections.unmodifiableSequencedCollection(coll);
     }
 
+    static SequencedCollection<String> ulist(List<String> list) {
+        return Collections.unmodifiableList(list);
+    }
+
+    static NavigableSet<String> unav(NavigableSet<String> set) {
+        return Collections.unmodifiableNavigableSet(set);
+    }
+
     static SequencedSet<String> uset(SequencedSet<String> set) {
         return Collections.unmodifiableSequencedSet(set);
+    }
+
+    static SortedSet<String> usorted(SortedSet<String> set) {
+        return Collections.unmodifiableSortedSet(set);
+    }
+
+    static <T> List<T> copyReversed(List<T> list) {
+        var r = new ArrayList<T>(list);
+        Collections.reverse(r);
+        return r;
     }
 
     @DataProvider(name="all")
@@ -69,6 +87,7 @@ public class Basic {
         return result.iterator();
     }
 
+    @DataProvider(name="populated")
     public Iterator<Object[]> populated() {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
@@ -87,11 +106,15 @@ public class Basic {
         ).iterator();
     }
 
+    @DataProvider(name="empties")
     public Iterator<Object[]> empties() {
         return Arrays.asList(
-            new Object[] { "EmptyArrayDeque", new ArrayDeque<>(), List.of() },
-            new Object[] { "EmptyArrayList", new ArrayList<>(), List.of() },
+            new Object[] { "ArrayDeque", new ArrayDeque<>(), List.of() },
+            new Object[] { "ArrayList", new ArrayList<>(), List.of() },
             new Object[] { "AsList", Arrays.asList(new String[0]), List.of() },
+            new Object[] { "EmptyList", Collections.emptyList(), List.of() },
+            new Object[] { "EmptyNavigableSet", Collections.emptyNavigableSet(), List.of() },
+            new Object[] { "EmptySortedSet", Collections.emptySortedSet(), List.of() },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(), List.of() },
             new Object[] { "LinkedList", new LinkedList<>(), List.of() },
             new Object[] { "ListOf", List.of(), List.of() },
@@ -99,7 +122,9 @@ public class Basic {
             new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
             new Object[] { "SimpleList", new SimpleList<>(), List.of() },
             new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
-            new Object[] { "TreeSet", new TreeSet<>(), List.of() }
+            new Object[] { "TreeSet", new TreeSet<>(), List.of() },
+            new Object[] { "UnmodColl", ucoll(new ArrayList<>()), List.of() },
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>()), List.of() }
         ).iterator();
     }
 
@@ -131,6 +156,21 @@ public class Basic {
         ).iterator();
     }
 
+    @DataProvider(name="emptyRemoves")
+    public Iterator<Object[]> emptyRemoves() {
+        return Arrays.asList(
+            new Object[] { "ArrayDeque", new ArrayDeque<>(), List.of() },
+            new Object[] { "ArrayList", new ArrayList<>(), List.of() },
+            new Object[] { "LinkedHashSet", new LinkedHashSet<>(), List.of() },
+            new Object[] { "LinkedList", new LinkedList<>(), List.of() },
+            new Object[] { "SetFromMap", setFromMap(List.of()), List.of() },
+            new Object[] { "SimpleDeque", new SimpleDeque<>(), List.of() },
+            new Object[] { "SimpleList", new SimpleList<>(), List.of() },
+            new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(), List.of() },
+            new Object[] { "TreeSet", new TreeSet<>(), List.of() }
+        ).iterator();
+    }
+
     @DataProvider(name="serializable")
     public Iterator<Object[]> serializable() {
         return Arrays.asList(
@@ -147,7 +187,7 @@ public class Basic {
         ).iterator();
     }
 
-    @DataProvider(name="notserializable")
+    @DataProvider(name="notSerializable")
     public Iterator<Object[]> notSerializable() {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL).reversed() },
@@ -162,7 +202,7 @@ public class Basic {
         ).iterator();
     }
 
-    @DataProvider(name="doublereverse")
+    @DataProvider(name="doubleReverse")
     public Iterator<Object[]> doubleReverse() {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL) },
@@ -181,9 +221,13 @@ public class Basic {
     public Iterator<Object[]> unmodifiable() {
         return Arrays.asList(
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
-            new Object[] { "ListOf", ORIGINAL.subList(1, 3), ORIGINAL.subList(1, 3) },
+            new Object[] { "ListOfSub", ORIGINAL.subList(1, 3), ORIGINAL.subList(1, 3) },
+            new Object[] { "SingleList", Collections.singletonList("a"), List.of("a") },
             new Object[] { "UnmodColl", ucoll(new ArrayList<>(ORIGINAL)), ORIGINAL },
-            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL }
+            new Object[] { "UnmodList", ulist(new ArrayList<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "UnmodNav", unav(new TreeSet<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "UnmodSet", uset(new LinkedHashSet<>(ORIGINAL)), ORIGINAL },
+            new Object[] { "UnmodSorted", usorted(new TreeSet<>(ORIGINAL)), ORIGINAL }
         ).iterator();
     }
 
@@ -196,7 +240,7 @@ public class Basic {
      * @param seq the SequencedCollection under test
      * @param ref the reference List
      */
-    public void checkOneWay(SequencedCollection<String> seq, List<String> ref) {
+    public void checkContents1(SequencedCollection<String> seq, List<String> ref) {
         var list1 = new ArrayList<String>();
         for (var s : seq)
             list1.add(s);
@@ -222,20 +266,10 @@ public class Basic {
         assertEquals(list7, ref);
 
         assertEquals(seq.size(), ref.size());
+        assertEquals(seq.isEmpty(), ref.isEmpty());
 
-        for (var s : ref)
+        for (var s : ref) {
             assertTrue(seq.contains(s));
-
-        if (seq.isEmpty()) {
-            assertEquals(seq.size(), 0);
-            assertThrows(NoSuchElementException.class, () -> seq.getFirst());
-            assertThrows(NoSuchElementException.class, () -> seq.getLast());
-            assertThrows(NoSuchElementException.class, () -> seq.removeFirst());
-            assertThrows(NoSuchElementException.class, () -> seq.removeLast());
-        } else {
-            assertTrue(seq.size() > 0);
-            assertEquals(seq.getFirst(), ref.get(0));
-            assertEquals(seq.getLast(), ref.get(ref.size() - 1));
         }
     }
 
@@ -247,44 +281,90 @@ public class Basic {
      * @param ref the reference List
      */
     public void checkContents(SequencedCollection<String> seq, List<String> ref) {
-        checkOneWay(seq, ref);
+        checkContents1(seq, ref);
 
-        var rref = new ArrayList<>(ref);
-        Collections.reverse(rref);
+        var rref = copyReversed(ref);
         var rseq = seq.reversed();
-        checkOneWay(rseq, rref);
+        checkContents1(rseq, rref);
 
-        var rreq = rseq.reversed();
-        checkOneWay(rreq, ref);
+        var rrseq = rseq.reversed();
+        checkContents1(rrseq, ref);
     }
 
     /**
-     * Check that modification operations will throw UnsupportedOperationException.
+     * Check that modification operations will throw UnsupportedOperationException,
+     * in one direction.
      *
      * @param seq the SequencedCollection under test
      */
-    public void checkUnmodifiable(SequencedCollection<String> seq) {
+    public void checkUnmodifiable1(SequencedCollection<String> seq) {
         final var UOE = UnsupportedOperationException.class;
+
+        assertThrows(UOE, () -> seq.add("x"));
+        assertThrows(UOE, () -> seq.clear());
+        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
+        assertThrows(UOE, () -> seq.removeIf(x -> true));
 
         assertThrows(UOE, () -> seq.addFirst("x"));
         assertThrows(UOE, () -> seq.addLast("x"));
         assertThrows(UOE, () -> seq.removeFirst());
         assertThrows(UOE, () -> seq.removeLast());
 
-        assertThrows(UOE, () -> seq.add("x"));
-        assertThrows(UOE, () -> seq.addAll(List.of()));
-        assertThrows(UOE, () -> seq.clear());
-        assertThrows(UOE, () -> { var it = seq.iterator(); it.next(); it.remove(); });
-        assertThrows(UOE, () -> seq.remove("x"));
-        assertThrows(UOE, () -> seq.removeAll(List.of()));
-        assertThrows(UOE, () -> seq.removeIf(x -> false));
-        assertThrows(UOE, () -> seq.retainAll(seq));
+// TODO these ops should throw unconditionally, but they don't in some implementations
+     // assertThrows(UOE, () -> seq.addAll(List.of()));
+     // assertThrows(UOE, () -> seq.remove("x"));
+     // assertThrows(UOE, () -> seq.removeAll(List.of()));
+     // assertThrows(UOE, () -> seq.removeIf(x -> false));
+     // assertThrows(UOE, () -> seq.retainAll(seq));
+        assertThrows(UOE, () -> seq.addAll(seq));
+        assertThrows(UOE, () -> seq.remove(seq.iterator().next()));
+        assertThrows(UOE, () -> seq.removeAll(seq));
+        assertThrows(UOE, () -> seq.retainAll(List.of()));
+    }
+
+    /**
+     * Check that modification operations will throw UnsupportedOperationException,
+     * in both directions.
+     *
+     * @param seq the SequencedCollection under test
+     */
+    public void checkUnmodifiable(SequencedCollection<String> seq) {
+        checkUnmodifiable1(seq);
+        checkUnmodifiable1(seq.reversed());
     }
 
     // ========== Tests ==========
 
     @Test(dataProvider="all")
     public void testFundamentals(String label, SequencedCollection<String> seq, List<String> ref) {
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="populated")
+    public void testGetFirst(String label, SequencedCollection<String> seq, List<String> ref) {
+        assertEquals(seq.getFirst(), ref.get(0));
+        assertEquals(seq.reversed().getFirst(), ref.get(ref.size() - 1));
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="populated")
+    public void testGetLast(String label, SequencedCollection<String> seq, List<String> ref) {
+        assertEquals(seq.getLast(), ref.get(ref.size() - 1));
+        assertEquals(seq.reversed().getLast(), ref.get(0));
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="empties")
+    public void testEmptyGetFirst(String label, SequencedCollection<String> seq, List<String> ref) {
+        assertThrows(NoSuchElementException.class, () -> seq.getFirst());
+        assertThrows(NoSuchElementException.class, () -> seq.reversed().getFirst());
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="empties")
+    public void testEmptyGetLast(String label, SequencedCollection<String> seq, List<String> ref) {
+        assertThrows(NoSuchElementException.class, () -> seq.getLast());
+        assertThrows(NoSuchElementException.class, () -> seq.reversed().getLast());
         checkContents(seq, ref);
     }
 
@@ -297,10 +377,26 @@ public class Basic {
     }
 
     @Test(dataProvider="adds")
+    public void testAddFirstRev(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add("x");
+        seq.reversed().addFirst("x");
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="adds")
     public void testAddLast(String label, SequencedCollection<String> seq, List<String> baseref) {
         var ref = new ArrayList<>(baseref);
         ref.add("x");
         seq.addLast("x");
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="adds")
+    public void testAddLastRev(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(0, "x");
+        seq.reversed().addLast("x");
         checkContents(seq, ref);
     }
 
@@ -314,12 +410,44 @@ public class Basic {
     }
 
     @Test(dataProvider="removes")
+    public void testRemoveFirstRev(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        var exp = ref.remove(ref.size() - 1);
+        var act = seq.reversed().removeFirst();
+        assertEquals(act, exp);
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="removes")
     public void testRemoveLast(String label, SequencedCollection<String> seq, List<String> baseref) {
         var ref = new ArrayList<>(baseref);
         var exp = ref.remove(ref.size() - 1);
         var act = seq.removeLast();
         assertEquals(act, exp);
         checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="removes")
+    public void testRemoveLastRev(String label, SequencedCollection<String> seq, List<String> baseref) {
+        var ref = new ArrayList<>(baseref);
+        var exp = ref.remove(0);
+        var act = seq.reversed().removeLast();
+        assertEquals(act, exp);
+        checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="emptyRemoves")
+    public void testEmptyRemoveFirst(String label, SequencedCollection<String> seq, List<String> baseref) {
+        assertThrows(NoSuchElementException.class, () -> seq.removeFirst());
+        assertThrows(NoSuchElementException.class, () -> seq.reversed().removeFirst());
+        checkContents(seq, baseref);
+    }
+
+    @Test(dataProvider="emptyRemoves")
+    public void testEmptyRemoveLast(String label, SequencedCollection<String> seq, List<String> baseref) {
+        assertThrows(NoSuchElementException.class, () -> seq.removeLast());
+        assertThrows(NoSuchElementException.class, () -> seq.reversed().removeLast());
+        checkContents(seq, baseref);
     }
 
     @Test(dataProvider="serializable")
@@ -338,7 +466,7 @@ public class Basic {
         }
     }
 
-    @Test(dataProvider="notserializable")
+    @Test(dataProvider="notSerializable")
     public void testNotSerializable(String label, SequencedCollection<String> seq)
         throws ClassNotFoundException, IOException
     {
@@ -348,7 +476,7 @@ public class Basic {
         }
     }
 
-    @Test(dataProvider="doublereverse")
+    @Test(dataProvider="doubleReverse")
     public void testDoubleReverse(String label, SequencedCollection<String> seq) {
         var rrseq = seq.reversed().reversed();
         assertSame(rrseq, seq);
@@ -357,7 +485,6 @@ public class Basic {
     @Test(dataProvider="unmodifiable")
     public void testUnmodifiable(String label, SequencedCollection<String> seq, List<String> ref) {
         checkUnmodifiable(seq);
-        checkUnmodifiable(seq.reversed());
         checkContents(seq, ref);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,18 @@
  * questions.
  */
 
+import java.io.*;
 import java.util.*;
+
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 
 /*
  * @test
@@ -46,6 +47,9 @@ public class BasicMap {
 
     // ========== Data Providers ==========
 
+    static final Class<? extends Throwable> UOE  = UnsupportedOperationException.class;
+    static final Class<? extends Throwable> NSEE = NoSuchElementException.class;
+
     static final List<Map.Entry<String, Integer>> ORIGINAL =
         List.of(Map.entry("a", 1),
                 Map.entry("b", 2),
@@ -53,10 +57,23 @@ public class BasicMap {
                 Map.entry("d", 4),
                 Map.entry("e", 5));
 
-    static Map<String, Integer> load(Map<String, Integer> map, List<Map.Entry<String, Integer>> mappings) {
+    static <M extends SequencedMap<String, Integer>>
+    M load(M map, List<Map.Entry<String, Integer>> mappings) {
         for (var e : mappings)
             map.put(e.getKey(), e.getValue());
         return map;
+    }
+
+    static SequencedMap<String, Integer> umap(SequencedMap<String, Integer> map) {
+        return Collections.unmodifiableSequencedMap(map);
+    }
+
+    static SortedMap<String, Integer> usorted(SortedMap<String, Integer> map) {
+        return Collections.unmodifiableSortedMap(map);
+    }
+
+    static NavigableMap<String, Integer> unav(NavigableMap<String, Integer> map) {
+        return Collections.unmodifiableNavigableMap(map);
     }
 
     @DataProvider(name="all")
@@ -67,7 +84,30 @@ public class BasicMap {
         return result.iterator();
     }
 
+    @DataProvider(name="populated")
     public Iterator<Object[]> populated() {
+        return Arrays.asList(
+            new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "SimpleSortedMap", load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="empties")
+    public Iterator<Object[]> empties() {
+        return Arrays.asList(
+            new Object[] { "EmptyNavigableMap", Collections.emptyNavigableMap(), List.of() },
+            new Object[] { "EmptySortedMap", Collections.emptySortedMap(), List.of() },
+            new Object[] { "LinkedHashMap", new LinkedHashMap<>(), List.of() },
+            new Object[] { "SimpleSortedMap", new SimpleSortedMap<>(), List.of() },
+            new Object[] { "TreeMap", new TreeMap<>(), List.of() },
+            new Object[] { "UnmodMap", umap(new LinkedHashMap<>()), List.of() }
+        ).iterator();
+    }
+
+    @DataProvider(name="polls")
+    public Iterator<Object[]> polls() {
         return Arrays.asList(
             new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
             new Object[] { "SimpleSortedMap", load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
@@ -75,7 +115,8 @@ public class BasicMap {
         ).iterator();
     }
 
-    public Iterator<Object[]> empties() {
+    @DataProvider(name="emptyPolls")
+    public Iterator<Object[]> emptyPolls() {
         return Arrays.asList(
             new Object[] { "LinkedHashMap", new LinkedHashMap<>(), List.of() },
             new Object[] { "SimpleSortedMap", new SimpleSortedMap<>(), List.of() },
@@ -83,192 +124,654 @@ public class BasicMap {
         ).iterator();
     }
 
-//    @DataProvider(name="adds")
-//    public Iterator<Object[]> adds() {
-//        return Arrays.asList(
-//            new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL }
-//        ).iterator();
-//    }
-//
-//    @DataProvider(name="removes")
-//    public Iterator<Object[]> removes() {
-//        return Arrays.asList(
-//            new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "SimpleDeque", new SimpleDeque<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "SimpleList", new SimpleList<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "SimpleSortedSet", new SimpleSortedSet<>(ORIGINAL), ORIGINAL },
-//            new Object[] { "TreeSet", new TreeSet<>(ORIGINAL), ORIGINAL }
-//        ).iterator();
-//    }
+    @DataProvider(name="puts")
+    public Iterator<Object[]> puts() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="putThrows")
+    public Iterator<Object[]> putThrows() {
+        return Arrays.asList(
+            new Object[] { "SimpleSortedMap", load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="serializable")
+    public Iterator<Object[]> serializable() {
+        return Arrays.asList(
+            new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "TreeMap", load(new TreeMap<>(), ORIGINAL), ORIGINAL },
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="notSerializable")
+    public Iterator<Object[]> notSerializable() {
+        return Arrays.asList(
+            new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL).reversed() },
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)).reversed() }
+        ).iterator();
+    }
+
+    @DataProvider(name="doubleReverse")
+    public Iterator<Object[]> doubleReverse() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "LinkedHashMap", load(new LinkedHashMap<>(), ORIGINAL) }
+        ).iterator();
+    }
+
+    @DataProvider(name="unmodifiable")
+    public Iterator<Object[]> unmodifible() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "UnmodNav", unav(load(new TreeMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "UnmodSorted", usorted(load(new TreeMap<>(), ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    // mode bit tests
+
+    boolean reverseMap(int mode)  { return (mode & 1) != 0; }
+    boolean reverseView(int mode) { return (mode & 2) != 0; }
+    boolean callLast(int mode)    { return (mode & 4) != 0; }
+
+    boolean refLast(int mode) { return reverseMap(mode) ^ reverseView(mode) ^ callLast(mode); }
+
+    /**
+     * Generate cases for testing the removeFirst and removeLast methods of map views. For each
+     * different map implementation, generate 8 cases from the three bits of the testing mode
+     * int value:
+     *
+     *  (bit 1) if true, the backing map is reversed
+     *  (bit 2) if true, the view is reversed
+     *  (bit 4) if true, the last element of the view is to be removed, otherwise the first
+     *
+     * The three bits XORed together (by refLast(), above) indicate (if true) the last
+     * or (if false) the first element of the reference entry list is to be removed.
+     *
+     * @return the generated cases
+     */
+    @DataProvider(name="viewRemoves")
+    public Iterator<Object[]> viewRemoves() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 8; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "LinkedHashMap", mode, load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleSortedMap", mode, load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
+                new Object[] { "TreeMap", mode, load(new TreeMap<>(), ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
+
+    @DataProvider(name="emptyViewRemoves")
+    public Iterator<Object[]> emptyViewRemoves() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 8; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "LinkedHashMap", mode, new LinkedHashMap<>(), List.of() },
+                new Object[] { "SimpleSortedMap", mode, new SimpleSortedMap<>(), List.of() },
+                new Object[] { "TreeMap", mode, new TreeMap<>(), List.of() }
+            ));
+        }
+        return cases.iterator();
+    }
+
+    @DataProvider(name="viewAddThrows")
+    public Iterator<Object[]> viewAddThrows() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 8; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "LinkedHashMap", mode, load(new LinkedHashMap<>(), ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleSortedMap", mode, load(new SimpleSortedMap<>(), ORIGINAL), ORIGINAL },
+                new Object[] { "TreeMap", mode, load(new TreeMap<>(), ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
 
     // ========== Assertions ==========
 
-    public void checkEntrySet(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+    /**
+     * Basic checks over the contents of a SequencedMap, compared to a reference List of entries,
+     * in one direction.
+     *
+     * @param map the SequencedMap under test
+     * @param ref the reference list of entries
+     */
+    public void checkContents1(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
         var list1 = new ArrayList<Map.Entry<String, Integer>>();
         map.forEach((k, v) -> list1.add(Map.entry(k, v)));
         assertEquals(list1, ref);
 
-        var list2 = new ArrayList<Map.Entry<String, Integer>>();
-        for (var e : map.entrySet())
-            list2.add(Map.Entry.copyOf(e));
-        assertEquals(list2, ref);
-
-        var list3 = new ArrayList<Map.Entry<String, Integer>>();
-        map.entrySet().forEach(e -> list3.add(Map.Entry.copyOf(e)));
-        assertEquals(list3, ref);
-
-        var list4 = Arrays.asList(map.entrySet().toArray());
-        assertEquals(list4, ref);
-
-        var list5 = Arrays.asList(map.entrySet().toArray(new Map.Entry<?,?>[0]));
-        assertEquals(list5, ref);
-
-        var list6 = Arrays.asList(map.entrySet().toArray(Map.Entry[]::new));
-        assertEquals(list6, ref);
-
-        var list7 = map.entrySet().stream().toList();
-        assertEquals(list7, ref);
-
-        var list8 = map.entrySet().parallelStream().toList();
-        assertEquals(list8, ref);
-
         assertEquals(map.size(), ref.size());
-        assertEquals(map.entrySet().size(), ref.size());
+        assertEquals(map.isEmpty(), ref.isEmpty());
 
         for (var e : ref) {
             assertTrue(map.containsKey(e.getKey()));
+            assertTrue(map.containsValue(e.getValue()));
             assertEquals(map.get(e.getKey()), e.getValue());
         }
-
-        if (map.isEmpty()) {
-            assertEquals(map.size(), 0);
-        } else {
-            assertTrue(map.size() > 0);
-            assertEquals(map.firstEntry(), ref.get(0));
-            assertEquals(map.lastEntry(), ref.get(ref.size() - 1));
-        }
-
-        // keySet
-        // values
-        // individual order-specific methods on SequencedMap
-        // forward and reverse
     }
 
-    public void checkKeySet(SequencedMap<String, Integer> map, List<String> refKeys) {
-        var mapKeys = map.keySet();
-
-        var list1 = new ArrayList<String>();
-        mapKeys.forEach(list1::add);
-        assertEquals(list1, refKeys);
-
-        var list2 = new ArrayList<String>();
-        for (var k : mapKeys)
-            list2.add(k);
-        assertEquals(list2, refKeys);
-
-        var list3 = Arrays.asList(mapKeys.toArray());
-        assertEquals(list3, refKeys);
-
-        var list4 = Arrays.asList(mapKeys.toArray(new String[0]));
-        assertEquals(list4, refKeys);
-
-        var list5 = Arrays.asList(mapKeys.toArray(String[]::new));
-        assertEquals(list5, refKeys);
-
-        var list6 = mapKeys.stream().toList();
-        assertEquals(list6, refKeys);
-
-        var list7 = mapKeys.parallelStream().toList();
-        assertEquals(list7, refKeys);
-
-        assertEquals(mapKeys.size(), refKeys.size());
-
-        for (var k : mapKeys)
-            assertTrue(map.containsKey(k));
-
-        if (map.isEmpty()) {
-            assertEquals(mapKeys.size(), 0);
-        } else {
-            assertTrue(mapKeys.size() > 0);
-            // TODO when covariant override for keySet is added, add checks for map.keySet().reversed()
-            assertEquals(mapKeys.iterator().next(), refKeys.get(0));
-            assertEquals(map.reversed().keySet().iterator().next(), refKeys.get(refKeys.size() - 1));
-        }
-    }
-
-    public void checkValues(SequencedMap<String, Integer> map, List<Integer> refVals) {
-        var mapVals = map.values();
-
-        var list1 = new ArrayList<Integer>();
-        mapVals.forEach(list1::add);
-        assertEquals(list1, refVals);
-
-        var list2 = new ArrayList<Integer>();
-        for (var v : mapVals)
-            list2.add(v);
-        assertEquals(list2, refVals);
-
-        var list3 = Arrays.asList(mapVals.toArray());
-        assertEquals(list3, refVals);
-
-        var list4 = Arrays.asList(mapVals.toArray(new Integer[0]));
-        assertEquals(list4, refVals);
-
-        var list5 = Arrays.asList(mapVals.toArray(Integer[]::new));
-        assertEquals(list5, refVals);
-
-        var list6 = mapVals.stream().toList();
-        assertEquals(list6, refVals);
-
-        var list7 = mapVals.parallelStream().toList();
-        assertEquals(list7, refVals);
-
-        assertEquals(mapVals.size(), refVals.size());
-
-        for (var k : mapVals)
-            assertTrue(map.containsValue(k));
-
-        if (map.isEmpty()) {
-            assertEquals(mapVals.size(), 0);
-        } else {
-            assertTrue(mapVals.size() > 0);
-            // TODO when covariant override for values is added, add checks for map.values().reversed()
-            assertEquals(mapVals.iterator().next(), refVals.get(0));
-            assertEquals(map.reversed().values().iterator().next(), refVals.get(refVals.size() - 1));
-        }
-    }
-
-    public void checkForward(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
-        checkEntrySet(map, ref);
-        checkKeySet(map, ref.stream().map(Map.Entry::getKey).toList());
-        checkValues(map, ref.stream().map(Map.Entry::getValue).toList());
-    }
-
-    public void checkFundamentals(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
-        checkForward(map, ref);
+    public void checkContents(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        checkContents1(map, ref);
 
         var rref = new ArrayList<>(ref);
         Collections.reverse(rref);
         var rmap = map.reversed();
-        checkForward(rmap, rref);
+        checkContents1(rmap, rref);
 
-        var map1 = rmap.reversed();
-        checkForward(map1, ref);
+        var rrmap = rmap.reversed();
+        checkContents1(rrmap, ref);
     }
 
+    /**
+     * Check the entrySet, keySet, or values view of a SequencedMap in one direction. The view
+     * collection is ordered even though the collection type is not sequenced.
+     *
+     * @param <T> the element type of the view
+     * @param mapView the actual map view
+     * @param expElements list of the expected elements
+     */
+    public <T> void checkView1(Collection<T> mapView, List<T> expElements) {
+        var list1 = new ArrayList<T>();
+        for (var k : mapView)
+            list1.add(k);
+        assertEquals(list1, expElements);
+
+        var list2 = new ArrayList<T>();
+        mapView.forEach(list2::add);
+        assertEquals(list2, expElements);
+
+        var list3 = Arrays.asList(mapView.toArray());
+        assertEquals(list3, expElements);
+
+        var list4 = Arrays.asList(mapView.toArray(new Object[0]));
+        assertEquals(list4, expElements);
+
+        var list5 = Arrays.asList(mapView.toArray(Object[]::new));
+        assertEquals(list5, expElements);
+
+        var list6 = mapView.stream().toList();
+        assertEquals(list6, expElements);
+
+        var list7 = mapView.parallelStream().toList();
+        assertEquals(list7, expElements);
+
+        assertEquals(mapView.size(), expElements.size());
+        assertEquals(mapView.isEmpty(), expElements.isEmpty());
+
+        for (var k : expElements) {
+            assertTrue(mapView.contains(k));
+        }
+
+        var it = mapView.iterator();
+        if (expElements.isEmpty()) {
+            assertFalse(it.hasNext());
+        } else {
+            assertTrue(it.hasNext());
+            assertEquals(it.next(), expElements.get(0));
+        }
+    }
+
+    /**
+     * Check the sequenced entrySet, keySet, or values view of a SequencedMap in one direction.
+     *
+     * @param <T> the element type of the view
+     * @param mapView the actual map view
+     * @param expElements list of the expected elements
+     */
+    public <T> void checkSeqView1(SequencedCollection<T> mapView, List<T> expElements) {
+        checkView1(mapView, expElements);
+
+        if (expElements.isEmpty()) {
+            assertThrows(NoSuchElementException.class, () -> mapView.getFirst());
+            assertThrows(NoSuchElementException.class, () -> mapView.getLast());
+        } else {
+            assertEquals(mapView.getFirst(), expElements.get(0));
+            assertEquals(mapView.getLast(), expElements.get(expElements.size() - 1));
+        }
+    }
+
+    /**
+     * Check the keySet and sequencedKeySet views of a map. It's possible to unify this with
+     * the corresponding checks for values and entrySet views, but doing this adds a bunch
+     * of generics and method references that tend to obscure more than they help.
+     *
+     * @param map the SequencedMap under test
+     * @param refEntries expected contents of the map
+     */
+    public void checkKeySet(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> refEntries) {
+        List<String> refKeys = refEntries.stream().map(Map.Entry::getKey).toList();
+        List<String> rrefKeys = new ArrayList<>(refKeys);
+        Collections.reverse(rrefKeys);
+        SequencedMap<String, Integer> rmap = map.reversed();
+
+        checkView1(map.keySet(), refKeys);
+        checkSeqView1(map.sequencedKeySet(), refKeys);
+        checkSeqView1(map.sequencedKeySet().reversed(), rrefKeys);
+
+        checkView1(rmap.keySet(), rrefKeys);
+        checkSeqView1(rmap.sequencedKeySet(), rrefKeys);
+        checkSeqView1(rmap.sequencedKeySet().reversed(), refKeys);
+
+        checkView1(rmap.reversed().keySet(), refKeys);
+        checkSeqView1(rmap.reversed().sequencedKeySet(), refKeys);
+        checkSeqView1(rmap.reversed().sequencedKeySet().reversed(), rrefKeys);
+    }
+
+    /**
+     * Check the values and sequencedValues views of a map.
+     *
+     * @param map the SequencedMap under test
+     * @param refEntries expected contents of the map
+     */
+    public void checkValues(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> refEntries) {
+        List<Integer> refValues = refEntries.stream().map(Map.Entry::getValue).toList();
+        List<Integer> rrefValues = new ArrayList<>(refValues);
+        Collections.reverse(rrefValues);
+        SequencedMap<String, Integer> rmap = map.reversed();
+
+        checkView1(map.values(), refValues);
+        checkSeqView1(map.sequencedValues(), refValues);
+        checkSeqView1(map.sequencedValues().reversed(), rrefValues);
+
+        checkView1(rmap.values(), rrefValues);
+        checkSeqView1(rmap.sequencedValues(), rrefValues);
+        checkSeqView1(rmap.sequencedValues().reversed(), refValues);
+
+        checkView1(rmap.reversed().values(), refValues);
+        checkSeqView1(rmap.reversed().sequencedValues(), refValues);
+        checkSeqView1(rmap.reversed().sequencedValues().reversed(), rrefValues);
+    }
+
+    /**
+     * Check the entrySet and sequencedEntrySet views of a map.
+     *
+     * @param map the SequencedMap under test
+     * @param refEntries expected contents of the map
+     */
+    public void checkEntrySet(SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> refEntries) {
+        List<Map.Entry<String, Integer>> rref = new ArrayList<>(refEntries);
+        Collections.reverse(rref);
+        SequencedMap<String, Integer> rmap = map.reversed();
+
+        checkView1(map.entrySet(), refEntries);
+        checkSeqView1(map.sequencedEntrySet(), refEntries);
+        checkSeqView1(map.sequencedEntrySet().reversed(), rref);
+
+        checkView1(rmap.entrySet(), rref);
+        checkSeqView1(rmap.sequencedEntrySet(), rref);
+        checkSeqView1(rmap.sequencedEntrySet().reversed(), refEntries);
+
+        checkView1(rmap.reversed().entrySet(), refEntries);
+        checkSeqView1(rmap.reversed().sequencedEntrySet(), refEntries);
+        checkSeqView1(rmap.reversed().sequencedEntrySet().reversed(), rref);
+    }
+
+    /**
+     * Test attempted modifications to unmodifiable map views. The only mutating operation
+     * map views can support is removal.
+     *
+     * @param <T> element type of the map view
+     * @param view the map view
+     */
+    public <T> void checkUnmodifiableView(Collection<T> view) {
+        assertThrows(UOE, () -> view.clear());
+        assertThrows(UOE, () -> { var it = view.iterator(); it.next(); it.remove(); });
+        assertThrows(UOE, () -> { var t = view.iterator().next(); view.remove(t); });
+
+// TODO these ops should throw unconditionally, but they don't in some implementations
+     // assertThrows(UOE, () -> view.removeAll(List.of()));
+     // assertThrows(UOE, () -> view.removeIf(x -> false));
+     // assertThrows(UOE, () -> view.retainAll(view));
+        assertThrows(UOE, () -> view.removeAll(view));
+        assertThrows(UOE, () -> view.removeIf(x -> true));
+        assertThrows(UOE, () -> view.retainAll(List.of()));
+    }
+
+    /**
+     * Test removal methods on unmodifiable sequenced map views.
+     *
+     * @param <T> element type of the map view
+     * @param view the map view
+     */
+    public <T> void checkUnmodifiableSeqView(SequencedCollection<T> view) {
+        checkUnmodifiableView(view);
+        assertThrows(UOE, () -> view.removeFirst());
+        assertThrows(UOE, () -> view.removeLast());
+
+        var rview = view.reversed();
+        checkUnmodifiableView(rview);
+        assertThrows(UOE, () -> rview.removeFirst());
+        assertThrows(UOE, () -> rview.removeLast());
+    }
+
+    public void checkUnmodifiable1(SequencedMap<String, Integer> map) {
+        assertThrows(UOE, () -> map.putFirst("x", 999));
+        assertThrows(UOE, () -> map.putLast("x", 999));
+        assertThrows(UOE, () -> { map.pollFirstEntry(); });
+        assertThrows(UOE, () -> { map.pollLastEntry(); });
+
+        checkUnmodifiableView(map.keySet());
+        checkUnmodifiableView(map.values());
+        checkUnmodifiableView(map.entrySet());
+        checkUnmodifiableSeqView(map.sequencedKeySet());
+        checkUnmodifiableSeqView(map.sequencedValues());
+        checkUnmodifiableSeqView(map.sequencedEntrySet());
+    }
+
+    public void checkUnmodifiable(SequencedMap<String, Integer> map) {
+        checkUnmodifiable1(map);
+        checkUnmodifiable1(map.reversed());
+    }
 
     // ========== Tests ==========
 
     @Test(dataProvider="all")
     public void testFundamentals(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        checkContents(map, ref);
         checkEntrySet(map, ref);
-        checkKeySet(map, ref.stream().map(Map.Entry::getKey).toList());
-        checkValues(map, ref.stream().map(Map.Entry::getValue).toList());
+        checkKeySet(map, ref);
+        checkValues(map, ref);
+    }
+
+    @Test(dataProvider="populated")
+    public void testFirstEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertEquals(map.firstEntry(), ref.get(0));
+        assertEquals(map.reversed().firstEntry(), ref.get(ref.size() - 1));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="populated")
+    public void testLastEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertEquals(map.lastEntry(), ref.get(ref.size() - 1));
+        assertEquals(map.reversed().lastEntry(), ref.get(0));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="empties")
+    public void testEmptyFirstEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertNull(map.firstEntry());
+        assertNull(map.reversed().firstEntry());
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="empties")
+    public void testEmptyLastEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertNull(map.lastEntry());
+        assertNull(map.reversed().lastEntry());
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="puts")
+    public void testPutFirst(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(0, Map.entry("x", 99));
+        map.putFirst("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="puts")
+    public void testPutFirstRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        map.reversed().putFirst("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="puts")
+    public void testPutLast(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(Map.entry("x", 99));
+        map.putLast("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="puts")
+    public void testPutLastRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        ref.add(0, Map.entry("x", 99));
+        map.reversed().putLast("x", 99);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="putThrows")
+    public void testPutThrows(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        assertThrows(UOE, () -> map.putFirst("x", 99));
+        assertThrows(UOE, () -> map.putLast("x", 99));
+        assertThrows(UOE, () -> map.reversed().putFirst("x", 99));
+        assertThrows(UOE, () -> map.reversed().putLast("x", 99));
+        checkContents(map, baseref);
+    }
+
+    @Test(dataProvider="polls")
+    public void testPollFirst(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        assertEquals(map.pollFirstEntry(), ref.remove(0));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="polls")
+    public void testPollFirstRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        assertEquals(map.reversed().pollFirstEntry(), ref.remove(ref.size() - 1));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="polls")
+    public void testPollLast(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        assertEquals(map.pollLastEntry(), ref.remove(ref.size() - 1));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="polls")
+    public void testPollLastRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        assertEquals(map.reversed().pollLastEntry(), ref.remove(0));
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="emptyPolls")
+    public void testEmptyPollFirst(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertNull(map.pollFirstEntry());
+        assertNull(map.reversed().pollFirstEntry());
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="emptyPolls")
+    public void testEmptyPollLast(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        assertNull(map.pollLastEntry());
+        assertNull(map.reversed().pollLastEntry());
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="serializable")
+    public void testSerializable(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref)
+        throws ClassNotFoundException, IOException
+    {
+        var baos = new ByteArrayOutputStream();
+        try (var oos = new ObjectOutputStream(baos)) {
+            oos.writeObject(map);
+        }
+
+        try (var bais = new ByteArrayInputStream(baos.toByteArray());
+             var ois = new ObjectInputStream(bais)) {
+            var map2 = (SequencedMap<String, Integer>) ois.readObject();
+            checkContents(map2, ref);
+        }
+    }
+
+    @Test(dataProvider="notSerializable")
+    public void testNotSerializable(String label, SequencedMap<String, Integer> map)
+        throws ClassNotFoundException, IOException
+    {
+        var baos = new ByteArrayOutputStream();
+        try (var oos = new ObjectOutputStream(baos)) {
+            assertThrows(ObjectStreamException.class, () -> oos.writeObject(map));
+        }
+    }
+
+    @Test(dataProvider="doubleReverse")
+    public void testDoubleReverse(String label, SequencedMap<String, Integer> map) {
+        var rrmap = map.reversed().reversed();
+        assertSame(rrmap, map);
+    }
+
+    @Test(dataProvider="unmodifiable")
+    public void testUnmodifiable(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        checkUnmodifiable(map);
+        checkContents(map, ref);
+    }
+
+    /**
+     * Test that a removal from the sequenedKeySet view is properly reflected in the original
+     * backing map. The mode value indicates whether the backing map is reversed, whether the
+     * sequencedKeySet view is reversed, and whether the removeFirst or removeLast is called
+     * on the view. See the viewRemoves() dataProvider for details.
+     *
+     * @param label the implementation label
+     * @param mode reversed and first/last modes
+     * @param map the original map instance
+     * @param baseref reference contents of the original map
+     */
+    @Test(dataProvider="viewRemoves")
+    public void testKeySetRemoves(String label,
+                                  int mode,
+                                  SequencedMap<String, Integer> map,
+                                  List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        var exp = (refLast(mode) ? ref.remove(ref.size() - 1) : ref.remove(0)).getKey();
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var keySet = reverseView(mode) ? tempmap.sequencedKeySet().reversed() : tempmap.sequencedKeySet();
+        var act = callLast(mode) ? keySet.removeLast() : keySet.removeFirst();
+        assertEquals(act, exp);
+        checkContents(map, ref);
+    }
+
+    // As above, but for the sequencedValues view.
+    @Test(dataProvider="viewRemoves")
+    public void testValuesRemoves(String label,
+                                  int mode,
+                                  SequencedMap<String, Integer> map,
+                                  List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        var exp = (refLast(mode) ? ref.remove(ref.size() - 1) : ref.remove(0)).getValue();
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var values = reverseView(mode) ? tempmap.sequencedValues().reversed() : tempmap.sequencedValues();
+        var act = callLast(mode) ? values.removeLast() : values.removeFirst();
+        assertEquals(act, exp);
+        checkContents(map, ref);
+    }
+
+    // As above, but for the sequencedEntrySet view.
+    @Test(dataProvider="viewRemoves")
+    public void testEntrySetRemoves(String label,
+                                    int mode,
+                                    SequencedMap<String, Integer> map,
+                                    List<Map.Entry<String, Integer>> baseref) {
+        var ref = new ArrayList<>(baseref);
+        var exp = refLast(mode) ? ref.remove(ref.size() - 1) : ref.remove(0);
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var entrySet = reverseView(mode) ? tempmap.sequencedEntrySet().reversed() : tempmap.sequencedEntrySet();
+        var act = callLast(mode) ? entrySet.removeLast() : entrySet.removeFirst();
+        assertEquals(act, exp);
+        checkContents(map, ref);
+    }
+
+    // As above, but for the sequencedKeySet of an empty map.
+    @Test(dataProvider="emptyViewRemoves")
+    public void testEmptyKeySetRemoves(String label,
+                                       int mode,
+                                       SequencedMap<String, Integer> map,
+                                       List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var keySet = reverseView(mode) ? tempmap.sequencedKeySet().reversed() : tempmap.sequencedKeySet();
+        if (callLast(mode))
+            assertThrows(NSEE, () -> keySet.removeLast());
+        else
+            assertThrows(NSEE, () -> keySet.removeFirst());
+        checkContents(map, baseref);
+
+    }
+
+    // As above, but for the sequencedValues view.
+    @Test(dataProvider="emptyViewRemoves")
+    public void testEmptyValuesRemoves(String label,
+                                       int mode,
+                                       SequencedMap<String, Integer> map,
+                                       List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var values = reverseView(mode) ? tempmap.sequencedValues().reversed() : tempmap.sequencedValues();
+        if (callLast(mode))
+            assertThrows(NSEE, () -> values.removeLast());
+        else
+            assertThrows(NSEE, () -> values.removeFirst());
+        checkContents(map, baseref);
+    }
+
+    // As above, but for the sequencedEntrySet view.
+    @Test(dataProvider="emptyViewRemoves")
+    public void testEmptyEntrySetRemoves(String label,
+                                         int mode,
+                                         SequencedMap<String, Integer> map,
+                                         List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var entrySet = reverseView(mode) ? tempmap.sequencedEntrySet().reversed() : tempmap.sequencedEntrySet();
+        if (callLast(mode))
+            assertThrows(NSEE, () -> entrySet.removeLast());
+        else
+            assertThrows(NSEE, () -> entrySet.removeFirst());
+        checkContents(map, baseref);
+    }
+
+    // Test that addFirst/addLast on the sequencedKeySetView throw UnsupportedOperationException.
+    @Test(dataProvider="viewAddThrows")
+    public void testKeySetAddThrows(String label,
+                                    int mode,
+                                    SequencedMap<String, Integer> map,
+                                    List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var keySet = reverseView(mode) ? tempmap.sequencedKeySet().reversed() : tempmap.sequencedKeySet();
+        if (callLast(mode))
+            assertThrows(UOE, () -> keySet.addLast("x"));
+        else
+            assertThrows(UOE, () -> keySet.addFirst("x"));
+        checkContents(map, baseref);
+    }
+
+    // As above, but for the sequencedValues view.
+    @Test(dataProvider="viewAddThrows")
+    public void testValuesAddThrows(String label,
+                                    int mode,
+                                    SequencedMap<String, Integer> map,
+                                    List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var values = reverseView(mode) ? tempmap.sequencedValues().reversed() : tempmap.sequencedValues();
+        if (callLast(mode))
+            assertThrows(UOE, () -> values.addLast(99));
+        else
+            assertThrows(UOE, () -> values.addFirst(99));
+        checkContents(map, baseref);
+    }
+
+    // As above, but for the sequencedEntrySet view.
+    @Test(dataProvider="viewAddThrows")
+    public void testEntrySetAddThrows(String label,
+                                      int mode,
+                                      SequencedMap<String, Integer> map,
+                                      List<Map.Entry<String, Integer>> baseref) {
+        var tempmap = reverseMap(mode) ? map.reversed() : map;
+        var entrySet = reverseView(mode) ? tempmap.sequencedEntrySet().reversed() : tempmap.sequencedEntrySet();
+        if (callLast(mode))
+            assertThrows(UOE, () -> entrySet.addLast(Map.entry("x", 99)));
+        else
+            assertThrows(UOE, () -> entrySet.addFirst(Map.entry("x", 99)));
+        checkContents(map, baseref);
     }
 }
