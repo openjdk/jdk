@@ -451,12 +451,22 @@ public class BasicMap {
         assertThrows(UOE, () -> rview.removeLast());
     }
 
+    public void checkUnmodifiableEntry(SequencedMap<String, Integer> map) {
+        assertThrows(UOE, () -> { map.firstEntry().setValue(99); });
+        assertThrows(UOE, () -> { map.lastEntry().setValue(99); });
+        assertThrows(UOE, () -> { map.sequencedEntrySet().getFirst().setValue(99); });
+        assertThrows(UOE, () -> { map.sequencedEntrySet().getLast().setValue(99); });
+        assertThrows(UOE, () -> { map.sequencedEntrySet().reversed().getFirst().setValue(99); });
+        assertThrows(UOE, () -> { map.sequencedEntrySet().reversed().getLast().setValue(99); });
+    }
+
     public void checkUnmodifiable1(SequencedMap<String, Integer> map) {
-        assertThrows(UOE, () -> map.putFirst("x", 999));
-        assertThrows(UOE, () -> map.putLast("x", 999));
+        assertThrows(UOE, () -> map.putFirst("x", 99));
+        assertThrows(UOE, () -> map.putLast("x", 99));
         assertThrows(UOE, () -> { map.pollFirstEntry(); });
         assertThrows(UOE, () -> { map.pollLastEntry(); });
 
+        checkUnmodifiableEntry(map);
         checkUnmodifiableView(map.keySet());
         checkUnmodifiableView(map.values());
         checkUnmodifiableView(map.entrySet());
@@ -484,6 +494,8 @@ public class BasicMap {
     public void testFirstEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
         assertEquals(map.firstEntry(), ref.get(0));
         assertEquals(map.reversed().firstEntry(), ref.get(ref.size() - 1));
+        assertThrows(UOE, () -> { map.firstEntry().setValue(99); });
+        assertThrows(UOE, () -> { map.reversed().firstEntry().setValue(99); });
         checkContents(map, ref);
     }
 
@@ -491,6 +503,8 @@ public class BasicMap {
     public void testLastEntry(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
         assertEquals(map.lastEntry(), ref.get(ref.size() - 1));
         assertEquals(map.reversed().lastEntry(), ref.get(0));
+        assertThrows(UOE, () -> { map.lastEntry().setValue(99); });
+        assertThrows(UOE, () -> { map.reversed().lastEntry().setValue(99); });
         checkContents(map, ref);
     }
 
@@ -552,28 +566,36 @@ public class BasicMap {
     @Test(dataProvider="polls")
     public void testPollFirst(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
         var ref = new ArrayList<>(baseref);
-        assertEquals(map.pollFirstEntry(), ref.remove(0));
+        var act = map.pollFirstEntry();
+        assertEquals(act, ref.remove(0));
+        assertThrows(UOE, () -> { act.setValue(99); });
         checkContents(map, ref);
     }
 
     @Test(dataProvider="polls")
     public void testPollFirstRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
         var ref = new ArrayList<>(baseref);
-        assertEquals(map.reversed().pollFirstEntry(), ref.remove(ref.size() - 1));
+        var act = map.reversed().pollFirstEntry();
+        assertEquals(act, ref.remove(ref.size() - 1));
+        assertThrows(UOE, () -> { act.setValue(99); });
         checkContents(map, ref);
     }
 
     @Test(dataProvider="polls")
     public void testPollLast(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
         var ref = new ArrayList<>(baseref);
-        assertEquals(map.pollLastEntry(), ref.remove(ref.size() - 1));
+        var act = map.pollLastEntry();
+        assertEquals(act, ref.remove(ref.size() - 1));
+        assertThrows(UOE, () -> { act.setValue(99); });
         checkContents(map, ref);
     }
 
     @Test(dataProvider="polls")
     public void testPollLastRev(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> baseref) {
         var ref = new ArrayList<>(baseref);
-        assertEquals(map.reversed().pollLastEntry(), ref.remove(0));
+        var act = map.reversed().pollLastEntry();
+        assertEquals(act, ref.remove(0));
+        assertThrows(UOE, () -> { act.setValue(99); });
         checkContents(map, ref);
     }
 
