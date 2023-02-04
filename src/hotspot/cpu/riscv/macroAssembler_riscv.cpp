@@ -2169,7 +2169,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   }
 }
 
-void  MacroAssembler::decode_heap_oop_not_null(Register r) {
+void MacroAssembler::decode_heap_oop_not_null(Register r) {
   decode_heap_oop_not_null(r, r);
 }
 

@@ -89,8 +89,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     start_pc = __ pc();
 
     // check offset vs vtable length
-    __ lwu(t0, Address(t2, Klass::vtable_length_offset()));
-    __ mvw(t1, vtable_index * vtableEntry::size());
+    __ lw(t0, Address(t2, Klass::vtable_length_offset()));
+    __ mv(t1, vtable_index * vtableEntry::size());
     __ bgt(t0, t1, L);
     __ enter();
     __ mv(x12, vtable_index);
