@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,22 +24,22 @@
 /**
  * @test
  * @summary Test Thread.join(Duration)
- * @run testng JoinWithDuration
+ * @run junit JoinWithDuration
  */
 
 import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class JoinWithDuration {
+class JoinWithDuration {
     /**
      * Test join on unstarted thread.
      */
     @Test
-    public void testJoinOnUnstartedThread() {
+    void testJoinOnUnstartedThread() {
         var thread = new Thread(() -> { });
         assertThrows(IllegalThreadStateException.class,
                 () -> thread.join(Duration.ofNanos(-100)));
@@ -53,7 +53,7 @@ public class JoinWithDuration {
      * Test join on thread that does not terminate while waiting.
      */
     @Test
-    public void testJoinOnRunningThread() throws Exception {
+    void testJoinOnRunningThread() throws Exception {
         var thread = new Thread(LockSupport::park);
         thread.start();
         try {
@@ -76,7 +76,7 @@ public class JoinWithDuration {
      * Test join on thread that terminates while waiting.
      */
     @Test
-    public void testJoinOnTerminatingThread() throws Exception {
+    void testJoinOnTerminatingThread() throws Exception {
         var thread = new Thread(() -> {
             try {
                 Thread.sleep(50);
@@ -90,7 +90,7 @@ public class JoinWithDuration {
      * Test join on terminated thread.
      */
     @Test
-    public void testJoinOnTerminatedThread() throws Exception {
+    void testJoinOnTerminatedThread() throws Exception {
         var thread = new Thread(() -> { });
         thread.start();
         thread.join();
@@ -103,7 +103,7 @@ public class JoinWithDuration {
      * Test invoking join with interrupt status set.
      */
     @Test
-    public void testJoinWithInterruptStatusSet() throws Exception {
+    void testJoinWithInterruptStatusSet() throws Exception {
         var thread = new Thread(LockSupport::park);
         thread.start();
         Thread.currentThread().interrupt();
@@ -122,7 +122,7 @@ public class JoinWithDuration {
      * Test interrupting join.
      */
     @Test
-    public void testInterruptJoin() throws Exception {
+    void testInterruptJoin() throws Exception {
         // schedule current thread to interrupted after 1s
         Thread targetThread = Thread.currentThread();
         Thread wakerThread = new Thread(() -> {
@@ -144,7 +144,9 @@ public class JoinWithDuration {
             // interrupt status should be cleared
             assertFalse(thread.isInterrupted());
         } finally {
-            wakerThread.interrupt();
+            LockSupport.unpark(thread);
+            thread.join();
+            wakerThread.join();
         }
     }
 
@@ -152,7 +154,7 @@ public class JoinWithDuration {
      * Test join on current thread.
      */
     @Test
-    public void testJoinSelf() throws Exception {
+    void testJoinSelf() throws Exception {
         Thread thread = Thread.currentThread();
 
         assertFalse(thread.join(Duration.ofNanos(-100)));
@@ -169,7 +171,7 @@ public class JoinWithDuration {
      * Test join(null).
      */
     @Test
-    public void testJoinNull() throws Exception {
+    void testJoinNull() throws Exception {
         var thread = new Thread(LockSupport::park);
 
         // unstarted

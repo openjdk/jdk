@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @enablePreview
- * @run testng CustomScheduler
+ * @run junit CustomScheduler
  */
 
 import java.lang.reflect.Field;
@@ -39,57 +39,57 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
-import org.testng.SkipException;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.AfterAll;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
-public class CustomScheduler {
+class CustomScheduler {
     private static final Executor DEFAULT_SCHEDULER = defaultScheduler();
-    private static ExecutorService SCHEDULER_1;
-    private static ExecutorService SCHEDULER_2;
+    private static ExecutorService scheduler1;
+    private static ExecutorService scheduler2;
 
-    @BeforeClass
-    public void setup() {
-        SCHEDULER_1 = Executors.newFixedThreadPool(1);
-        SCHEDULER_2 = Executors.newFixedThreadPool(1);
+    @BeforeAll
+    static void setup() {
+        scheduler1 = Executors.newFixedThreadPool(1);
+        scheduler2 = Executors.newFixedThreadPool(1);
     }
 
-    @AfterClass
-    public void shutdown() {
-        SCHEDULER_1.shutdown();
-        SCHEDULER_2.shutdown();
+    @AfterAll
+    static void shutdown() {
+        scheduler1.shutdown();
+        scheduler2.shutdown();
     }
 
     /**
      * Test platform thread creating a virtual thread that uses a custom scheduler.
      */
     @Test
-    public void testCustomScheduler1() throws Exception {
+    void testCustomScheduler1() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(scheduler1).start(() -> {
             ref.set(scheduler(Thread.currentThread()));
         }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+        assertTrue(ref.get() == scheduler1);
     }
 
     /**
      * Test virtual thread creating a virtual thread that uses a custom scheduler.
      */
     @Test
-    public void testCustomScheduler2() throws Exception {
+    void testCustomScheduler2() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
         Thread.ofVirtual().start(() -> {
             try {
-                ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+                ThreadBuilders.virtualThreadBuilder(scheduler1).start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
                 }).join();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+        assertTrue(ref.get() == scheduler1);
     }
 
     /**
@@ -97,9 +97,9 @@ public class CustomScheduler {
      * The scheduler should be inherited.
      */
     @Test
-    public void testCustomScheduler3() throws Exception {
+    void testCustomScheduler3() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(scheduler1).start(() -> {
             try {
                 Thread.ofVirtual().start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
@@ -108,7 +108,7 @@ public class CustomScheduler {
                 e.printStackTrace();
             }
         }).join();
-        assertTrue(ref.get() == SCHEDULER_1);
+        assertTrue(ref.get() == scheduler1);
     }
 
     /**
@@ -116,25 +116,25 @@ public class CustomScheduler {
      * that uses a different custom scheduler.
      */
     @Test
-    public void testCustomScheduler4() throws Exception {
+    void testCustomScheduler4() throws Exception {
         AtomicReference<Executor> ref = new AtomicReference<>();
-        ThreadBuilders.virtualThreadBuilder(SCHEDULER_1).start(() -> {
+        ThreadBuilders.virtualThreadBuilder(scheduler1).start(() -> {
             try {
-                ThreadBuilders.virtualThreadBuilder(SCHEDULER_2).start(() -> {
+                ThreadBuilders.virtualThreadBuilder(scheduler2).start(() -> {
                     ref.set(scheduler(Thread.currentThread()));
                 }).join();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }).join();
-        assertTrue(ref.get() == SCHEDULER_2);
+        assertTrue(ref.get() == scheduler2);
     }
 
     /**
      * Test running task on a virtual thread, should thrown WrongThreadException.
      */
     @Test
-    public void testBadCarrier() {
+    void testBadCarrier() {
         Executor scheduler = (task) -> {
             var exc = new AtomicReference<Throwable>();
             try {
@@ -160,10 +160,9 @@ public class CustomScheduler {
      * carrier thread when the task completes.
      */
     @Test
-    public void testParkWithInterruptSet() {
+    void testParkWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        if (carrier.isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main test is a virtual thread");
         try {
             var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
             Thread vthread = builder.start(() -> {
@@ -182,10 +181,9 @@ public class CustomScheduler {
      * the carrier thread when the task completes.
      */
     @Test
-    public void testTerminateWithInterruptSet() {
+    void testTerminateWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        if (carrier.isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main test is a virtual thread");
         try {
             var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
             Thread vthread = builder.start(() -> {
@@ -202,9 +200,8 @@ public class CustomScheduler {
      * Test running task with the carrier interrupt status set.
      */
     @Test
-    public void testRunWithInterruptSet() throws Exception {
-        if (Thread.currentThread().isVirtual())
-            throw new SkipException("Main test is a virtual thread");
+    void testRunWithInterruptSet() throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual(), "Main test is a virtual thread");
         Executor scheduler = (task) -> {
             Thread.currentThread().interrupt();
             task.run();
