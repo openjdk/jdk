@@ -141,7 +141,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // temporarily disabled.
 #define offset_of(klass,field)                          \
 []() {                                                  \
-  ATTRIBUTE_ALIGNED(16) char space[sizeof (klass)];     \
+  alignas(16) char space[sizeof (klass)];               \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
