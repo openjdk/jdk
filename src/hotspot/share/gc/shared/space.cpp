@@ -150,11 +150,6 @@ void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
   }
 }
 
-DirtyCardToOopClosure*
-ContiguousSpace::new_dcto_cl(OopIterateClosure* cl) {
-  return new DirtyCardToOopClosure(this, cl);
-}
-
 void Space::initialize(MemRegion mr,
                        bool clear_space,
                        bool mangle_space) {

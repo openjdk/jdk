@@ -978,9 +978,9 @@ void Compile::Init(bool aliasing) {
   _immutable_memory = NULL; // filled in at first inquiry
 
 #ifdef ASSERT
-  _type_verify_symmetry = true;
   _phase_optimize_finished = false;
   _exception_backedge = false;
+  _type_verify = NULL;
 #endif
 
   // Globally visible Nodes
