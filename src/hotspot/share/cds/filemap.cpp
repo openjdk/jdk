@@ -1265,7 +1265,7 @@ public:
       return false;
     }
 
-    if (!check_crc()) {
+    if (!check_header_crc()) {
       return false;
     }
 
@@ -1289,7 +1289,7 @@ public:
   }
 
  private:
-  bool check_crc() {
+  bool check_header_crc() const {
     if (VerifySharedSpaces) {
       FileMapHeader* header = (FileMapHeader*)_header;
       int actual_crc = header->compute_crc();
@@ -1592,6 +1592,27 @@ BitMapView FileMapRegion::ptrmap_view() {
   return bitmap_view(false);
 }
 
+bool FileMapRegion::check_region_crc() const {
+  // This function should be called after the region has been properly
+  // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
+  // I.e., this->mapped_base() must be valid.
+  if (!VerifySharedSpaces) {
+    return true;
+  }
+  size_t sz = used();
+  if (sz == 0) {
+    return true;
+  }
+
+  assert(mapped_base() != nullptr, "must be initialized");
+  int crc = ClassLoader::crc32(0, mapped_base(), (jint)sz);
+  if (crc != this->crc()) {
+    FileMapInfo::fail_continue("Checksum verification failed.");
+    return false;
+  }
+  return true;
+}
+
 static const char* region_name(int region_index) {
   static const char* names[] = {
     "rw", "ro", "bm", "ca0", "ca1", "oa0", "oa1"
@@ -1844,7 +1865,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   if (!open_for_read()) {
     return false;
   }
-  char *addr = region_addr(idx);
+  char *addr = r->mapped_base();
   char *base = os::remap_memory(_fd, _full_path, r->file_offset(),
                                 addr, size, false /* !read_only */,
                                 r->allow_exec());
@@ -1918,7 +1939,10 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
     return false;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(base, r->used(), r->crc())) {
+  r->set_mapped_from_file(false);
+  r->set_mapped_base(base);
+
+  if (!r->check_region_crc()) {
     return false;
   }
 
@@ -1956,6 +1980,8 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       log_info(cds)("Failed to read %s shared space into reserved space at " INTPTR_FORMAT,
                     shared_region_name[i], p2i(requested_addr));
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
+    } else {
+      assert(r->mapped_base() != nullptr, "must be initialized");
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1971,10 +1997,10 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_MMAP_FAILURE;
     }
     r->set_mapped_from_file(true);
+    r->set_mapped_base(requested_addr);
   }
-  r->set_mapped_base(requested_addr);
 
-  if (VerifySharedSpaces && !verify_region_checksum(i)) {
+  if (!r->check_region_crc()) {
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -1996,7 +2022,8 @@ char* FileMapInfo::map_bitmap_region() {
     return nullptr;
   }
 
-  if (VerifySharedSpaces && !region_crc_check(bitmap_base, r->used(), r->crc())) {
+  r->set_mapped_base(bitmap_base);
+  if (!r->check_region_crc()) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -2004,7 +2031,6 @@ char* FileMapInfo::map_bitmap_region() {
     return nullptr;
   }
 
-  r->set_mapped_base(bitmap_base);
   r->set_mapped_from_file(true);
   log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                 is_static() ? "static " : "dynamic",
@@ -2422,14 +2448,13 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
       return false;
     }
 
-    if (VerifySharedSpaces && !region_crc_check(addr, regions[i].byte_size(), r->crc())) {
+    r->set_mapped_base(base);
+    if (!r->check_region_crc()) {
       // dealloc the regions from java heap
       dealloc_heap_regions(regions, num_regions);
       log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
       return false;
     }
-
-    r->set_mapped_base(base);
   }
 
   cleanup._aborted = false;
@@ -2516,26 +2541,6 @@ void FileMapInfo::dealloc_heap_regions(MemRegion* regions, int num) {
   }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
-
-bool FileMapInfo::region_crc_check(char* buf, size_t size, int expected_crc) {
-  int crc = ClassLoader::crc32(0, buf, (jint)size);
-  if (crc != expected_crc) {
-    fail_continue("Checksum verification failed.");
-    return false;
-  }
-  return true;
-}
-
-bool FileMapInfo::verify_region_checksum(int i) {
-  assert(VerifySharedSpaces, "sanity");
-  size_t sz = region_at(i)->used();
-
-  if (sz == 0) {
-    return true; // no data
-  } else {
-    return region_crc_check(region_addr(i), sz, region_at(i)->crc());
-  }
-}
 
 void FileMapInfo::unmap_regions(int regions[], int num_regions) {
   for (int r = 0; r < num_regions; r++) {
@@ -2630,12 +2635,6 @@ bool FileMapInfo::initialize() {
   }
 
   return true;
-}
-
-char* FileMapInfo::region_addr(int idx) {
-  assert(UseSharedSpaces, "must be");
-  FileMapRegion* r = region_at(idx);
-  return r->mapped_base();
 }
 
 // The 2 core spaces are RW->RO
