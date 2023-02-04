@@ -2206,7 +2206,7 @@ public final class Math {
      * @param min minimal allowed value
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
-     * @throws IllegalArgumentException if {@code min < max}
+     * @throws IllegalArgumentException if {@code min > max}
      *
      * @since 21
      */
@@ -2227,7 +2227,7 @@ public final class Math {
      * @param min minimal allowed value
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
-     * @throws IllegalArgumentException if {@code min < max}
+     * @throws IllegalArgumentException if {@code min > max}
      *
      * @since 21
      */
@@ -2253,7 +2253,7 @@ public final class Math {
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if either of {@code min} and {@code max}
-     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0, and
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0, and
      * {@code max} is -0.0.
      *
      * @since 21
@@ -2288,7 +2288,7 @@ public final class Math {
      * @param max maximal allowed value
      * @return a clamped value that fits into {@code min..max} interval
      * @throws IllegalArgumentException if either of {@code min} and {@code max}
-     * arguments is NaN, or {@code min < max}, or {@code min} is +0.0f, and
+     * arguments is NaN, or {@code min > max}, or {@code min} is +0.0f, and
      * {@code max} is -0.0f.
      *
      * @since 21
