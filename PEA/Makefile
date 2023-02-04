@@ -1,11 +1,14 @@
 .DEFAULT_GOAL := all
 
-java_path := $(abspath ../build/linux-x86_64-server-fastdebug/images/jdk)
-export JAVA_HOME := ${java_path}
+JAVA_PATH := $(abspath ../build/linux-x86_64-server-fastdebug/images/jdk)
+export JAVA_HOME := ${JAVA_PATH}
 export PATH := ${JAVA_HOME}/bin:$(PATH)
 
+CTW_DIR := ../test/hotspot/jtreg/testlibrary/ctw
+CTW_JAVA_OPTIONS := -XX:+CITime -XX:-TieredCompilation -XX:+UseTLAB -XX:+PrintCompilation -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis
+
 set_jdk:
-	if [ -e ${java_path} ]; then \
+	if [ -e ${JAVA_PATH} ]; then \
 		echo "choose ${JAVA_HOME}"; \
 		java -version; \
 	else \
@@ -15,6 +18,15 @@ set_jdk:
 
 all: set_jdk
 	javac *.java
+	cd ${CTW_DIR}; make
 
 run: set_jdk
 	./auto.sh
+
+run-ctw: set_jdk
+	cd ${CTW_DIR}/dist; \
+	JAVA_OPTIONS="${CTW_JAVA_OPTIONS}" ./ctw.sh modules:java.base
+
+run-ctw-no-inline: set_jdk
+	cd ${CTW_DIR}/dist; \
+	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" ./ctw.sh modules:java.base
