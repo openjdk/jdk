@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +20,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import jdk.test.lib.RandomFactory;
 
 /*
  * @test
- * @bug 4851625
+ * @bug 4851625 8301444
+ * @key randomness
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build HyperbolicTests
+ * @run main HyperbolicTests
  * @summary Tests for StrictMath.{sinh, cosh, tanh}
  */
 
@@ -41,6 +49,243 @@
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
+
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testAgainstTranslitSinh();
+        failures += testAgainstTranslitCosh();
+        failures += testAgainstTranslitTanh();
+
+        failures += testSinh();
+        failures += testCosh();
+        failures += testTanh();
+
+        if (failures > 0) {
+            System.err.println("Testing the hyperbolics incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
+
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.sinh against transliteration port of sinh.
+     */
+    private static int testAgainstTranslitSinh() {
+        int failures = 0;
+        double x;
+
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRangeSinh(x, Math.ulp(x), 1000);
+
+         // ... and just below subnormal threshold ...
+          x =  Math.nextDown(Double.MIN_NORMAL);
+          failures += testRangeSinh(x, -Math.ulp(x), 1000);
+
+         // ... and near 1.0 ...
+          failures += testRangeMidpointSinh(1.0, Math.ulp(x), 2000);
+          // (Note: probes every-other value less than 1.0 due to
+          // change in the size of an ulp at 1.0.
+
+          // Probe near decision points in the FDLIBM algorithm.
+          double[] decisionPoints = {
+               0.0,
+
+               22.0,
+              -22.0,
+
+               0x1.0p-28,
+              -0x1.0p-28,
+
+               // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+               0x1.62e42fefa39efp9,
+              -0x1.62e42fefa39efp9,
+
+               // Largest argument with finite sinh, 710.4758600739439
+               0x1.ffffffffffd3bp1023,
+              -0x1.ffffffffffd3bp1023,
+          };
+
+          for (double testPoint : decisionPoints) {
+              failures += testRangeMidpointSinh(testPoint, Math.ulp(testPoint), 1000);
+          }
+
+          x = Tests.createRandomDouble(random);
+
+          // Make the increment twice the ulp value in case the random
+          // value is near an exponent threshold. Don't worry about test
+          // elements overflowing to infinity if the starting value is
+          // near Double.MAX_VALUE.
+          failures += testRangeSinh(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    /**
+     * Test StrictMath.cosh against transliteration port of cosh.
+     */
+    private static int testAgainstTranslitCosh() {
+        int failures = 0;
+        double x;
+
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRangeCosh(x, Math.ulp(x), 1000);
+
+         // ... and just below subnormal threshold ...
+          x =  Math.nextDown(Double.MIN_NORMAL);
+          failures += testRangeCosh(x, -Math.ulp(x), 1000);
+
+         // ... and near 1.0 ...
+          failures += testRangeMidpointCosh(1.0, Math.ulp(x), 2000);
+          // (Note: probes every-other value less than 1.0 due to
+          // change in the size of an ulp at 1.0.
+
+          // Probe near decision points in the FDLIBM algorithm.
+          double[] decisionPoints = {
+               0.0,
+
+               22.0,
+              -22.0,
+
+               // StrictMath.log(2)/2 ~= 0.34657359027997264
+               0x1.62e42fefa39efp-2,
+              -0x1.62e42fefa39efp-2,
+
+               0x1.0p-28,
+              -0x1.0p-28,
+
+               // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+               0x1.62e42fefa39efp9,
+              -0x1.62e42fefa39efp9,
+
+               // Largest argument with finite cosh, 710.4758600739439
+               0x1.ffffffffffd3bp1023,
+              -0x1.ffffffffffd3bp1023,
+          };
+
+          for (double testPoint : decisionPoints) {
+              failures += testRangeMidpointCosh(testPoint, Math.ulp(testPoint), 1000);
+          }
+
+          x = Tests.createRandomDouble(random);
+
+          // Make the increment twice the ulp value in case the random
+          // value is near an exponent threshold. Don't worry about test
+          // elements overflowing to infinity if the starting value is
+          // near Double.MAX_VALUE.
+          failures += testRangeCosh(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    /**
+     * Test StrictMath.tanh against transliteration port of tanh
+     */
+    private static int testAgainstTranslitTanh() {
+        int failures = 0;
+        double x;
+
+        // Test just above subnormal threshold...
+        x = Double.MIN_NORMAL;
+        failures += testRangeTanh(x, Math.ulp(x), 1000);
+
+         // ... and just below subnormal threshold ...
+          x =  Math.nextDown(Double.MIN_NORMAL);
+          failures += testRangeTanh(x, -Math.ulp(x), 1000);
+
+         // ... and near 1.0 ...
+          failures += testRangeMidpointTanh(1.0, Math.ulp(x), 2000);
+          // (Note: probes every-other value less than 1.0 due to
+          // change in the size of an ulp at 1.0.
+
+          // Probe near decision points in the FDLIBM algorithm.
+          double[] decisionPoints = {
+               0.0,
+
+               0x1.0p-55,
+              -0x1.0p-55,
+
+               1.0,
+              -1.0,
+
+               22.0,
+          };
+
+          for (double testPoint : decisionPoints) {
+              failures += testRangeMidpointTanh(testPoint, Math.ulp(testPoint), 1000);
+          }
+
+          x = Tests.createRandomDouble(random);
+
+          // Make the increment twice the ulp value in case the random
+          // value is near an exponent threshold. Don't worry about test
+          // elements overflowing to infinity if the starting value is
+          // near Double.MAX_VALUE.
+          failures += testRangeTanh(x, 2.0 * Math.ulp(x), 1000);
+
+         return failures;
+    }
+
+    private static int testRangeSinh(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testSinhCase(x, FdlibmTranslit.sinh(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeCosh(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testCoshCase(x, FdlibmTranslit.cosh(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeTanh(double start, double increment, int count) {
+        int failures = 0;
+        double x = start;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testTanhCase(x, FdlibmTranslit.tanh(x));
+        }
+        return failures;
+    }
+
+
+    private static int testRangeMidpointSinh(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testSinhCase(x, FdlibmTranslit.sinh(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeMidpointCosh(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testCoshCase(x, FdlibmTranslit.cosh(x));
+        }
+        return failures;
+    }
+
+    private static int testRangeMidpointTanh(double midpoint, double increment, int count) {
+        int failures = 0;
+        double x = midpoint - increment*(count / 2) ;
+        for (int i = 0; i < count; i++, x += increment) {
+            failures += testTanhCase(x, FdlibmTranslit.tanh(x));
+        }
+        return failures;
+    }
+
 
     static int testSinhCase(double input, double expected) {
         return Tests.test("StrictMath.sinh(double)", input,
@@ -260,20 +505,5 @@ public class HyperbolicTests {
             failures+=testTanhCase(testCase[0], testCase[1]);
 
         return failures;
-    }
-
-
-    public static void main(String [] argv) {
-        int failures = 0;
-
-        failures += testSinh();
-        failures += testCosh();
-        failures += testTanh();
-
-        if (failures > 0) {
-            System.err.println("Testing the hyperbolics incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
-        }
     }
 }
