@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
