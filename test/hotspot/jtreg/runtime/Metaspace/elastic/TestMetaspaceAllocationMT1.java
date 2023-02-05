@@ -175,7 +175,7 @@ public class TestMetaspaceAllocationMT1 {
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
             //  (512K on 64bit, 1M on 32bit)
-            long reserveLimit = (i == 2) ? 1024 * 1024 : 0;
+            long reserveLimit = (i == 2) ? Settings.rootChunkWordSize * 2 : 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);

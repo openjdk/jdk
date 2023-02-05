@@ -493,7 +493,7 @@ TEST_VM(metaspace, virtual_space_node_test_basics) {
 
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
 
-  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 10;
+  const size_t word_size = metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 3;
 
   SizeCounter scomm;
   SizeCounter sres;
@@ -580,13 +580,13 @@ TEST_VM(metaspace, virtual_space_node_test_5) {
 TEST_VM(metaspace, virtual_space_node_test_7) {
   // Test large allocation and freeing.
   {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100);
+    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25,
+        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25);
     test.test_exhaust_node();
   }
   {
-    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100,
-        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 100);
+    VirtualSpaceNodeTest test(metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25,
+        metaspace::chunklevel::MAX_CHUNK_WORD_SIZE * 25);
     test.test_exhaust_node();
   }
 
