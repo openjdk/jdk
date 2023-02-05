@@ -863,7 +863,7 @@ public class Rational extends Number implements Comparable<Rational> {
     }
 
     /**
-     * Returns (floor * denominator + numerator)
+     * Returns {@code (floor * denominator + numerator)}
      */
     private BigInteger wholeNumerator() {
         return floor.multiply(denominator).add(numerator);
@@ -997,9 +997,9 @@ public class Rational extends Number implements Comparable<Rational> {
         if (signum == 0)
             return ZERO;
 
-        // (a + n / m)**2 == a**2 + 2 * a * (n / m) + (n / m)**2
         Rational res = ZERO;
 
+        // (a + n / m)**2 == a**2 + 2 * a * (n / m) + (n / m)**2
         if (floor.signum == 1) {
             res = res.add(new Rational(1, floor.square())); // res += a**2
 
@@ -1025,10 +1025,6 @@ public class Rational extends Number implements Comparable<Rational> {
         }
 
         return res;
-    }
-    
-    private static void reportOverflow() {
-        throw new ArithmeticException("Rational would overflow supported range");
     }
 
     /**
@@ -1124,9 +1120,8 @@ public class Rational extends Number implements Comparable<Rational> {
         if (this.signum == -1)
             throw new ArithmeticException("Attempted square root of negative Rational");
 
-        // radicand is zero or one
         if (this.signum == 0 || this.equals(ONE))
-            return this;
+            return this; // x**2 == x if x == 0 || x == 1
 
         final RoundingMode targetRm = mc.getRoundingMode();
         final int targetPrecision = mc.getPrecision();
@@ -1137,15 +1132,15 @@ public class Rational extends Number implements Comparable<Rational> {
             // simplify the radicand to improve the sqrt algorithm performance
             BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
-            BigInteger[] sqrtNumRem = radicand[0].sqrtAndRemainder();
-            if (sqrtNumRem[1].signum != 0)
+            BigInteger[] sqrtRemNum = radicand[0].sqrtAndRemainder();
+            if (sqrtRemNum[1].signum != 0)
                 throw new ArithmeticException("Computed square root not exact.");
 
-            BigInteger[] sqrtDenRem = radicand[1].sqrtAndRemainder();
-            if (sqrtDenRem[1].signum != 0)
+            BigInteger[] sqrtRemDen = radicand[1].sqrtAndRemainder();
+            if (sqrtRemDen[1].signum != 0)
                 throw new ArithmeticException("Computed square root not exact.");
 
-            Rational result = valueOf(1, sqrtNumRem[0], sqrtDenRem[0]);
+            Rational result = valueOf(1, sqrtRemNum[0], sqrtRemDen[0]);
 
             if (targetPrecision != 0) {
                 // => targetRm == UNNECESSARY, but user-specified number of digits
@@ -1199,7 +1194,6 @@ public class Rational extends Number implements Comparable<Rational> {
             if (expAdjust != 0)
                 working = working.shiftRightImpl(-expAdjust);
         } else {
-            BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
             int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < this * 2^exp < 2
 
             // expAdjust must be even
@@ -1365,20 +1359,20 @@ public class Rational extends Number implements Comparable<Rational> {
             // simplify the radicand to improve the algorithm performance
             BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
-            BigInteger[] rootNumRem = radicand[0].rootAndRemainder(deg);
-            if (rootNumRem[1].signum != 0)
+            BigInteger[] rootRemNum = radicand[0].rootAndRemainder(deg);
+            if (rootRemNum[1].signum != 0)
                 throw new ArithmeticException("Computed " + n + "th root not exact.");
 
-            BigInteger[] rootDenRem = radicand[1].rootAndRemainder(deg);
-            if (rootDenRem[1].signum != 0)
+            BigInteger[] rootRemDen = radicand[1].rootAndRemainder(deg);
+            if (rootRemDen[1].signum != 0)
                 throw new ArithmeticException("Computed " + n + "th root not exact.");
 
             Rational result;
 
             if (n > 0)
-                result = valueOf(signum, rootNumRem[0], rootDenRem[0]);
+                result = valueOf(signum, rootRemNum[0], rootRemDen[0]);
             else // n < 0, invert the result
-                result = valueOf(signum, rootDenRem[0], rootNumRem[0]);
+                result = valueOf(signum, rootRemDen[0], rootRemNum[0]);
 
             if (targetPrecision != 0) {
                 // => targetRm == UNNECESSARY, but user-specified number of digits
@@ -1441,7 +1435,6 @@ public class Rational extends Number implements Comparable<Rational> {
             if (expAdjust != 0)
                 working = working.shiftRightImpl(-expAdjust);
         } else {
-            BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
             int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < abs(this) * 2^exp < 2
 
             int mod = exp % deg;
@@ -1664,12 +1657,12 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code this << n}
      */
     private Rational shiftLeftImpl(int n) {
-        BigInteger resFloor = floor.signum == 0 ? floor : floor.shiftLeftImpl(n); // unsigned argument
+        BigInteger resFloor = unsignedShiftLeft(floor, n);
         BigInteger resNum, resDen;
         
         if (numerator.signum == 1) { // non-zero fractional part
             final int shiftDen = (int) Math.min(n & BigInteger.LONG_MASK, denominator.getLowestSetBit());
-            resNum = numerator.shiftLeftImpl(n - shiftDen); // unsigned argument
+            resNum = unsignedShiftLeft(numerator, n - shiftDen);
             resDen = denominator.shiftRight(shiftDen); // shiftDen is non-negative
             
             if (resNum.compareTo(resDen) >= 0) {
@@ -1686,6 +1679,10 @@ public class Rational extends Number implements Comparable<Rational> {
         }
         
         return new Rational(signum, resFloor, resNum, resDen);
+    }
+    
+    private static BigInteger unsignedShiftLeft(BigInteger val, int n) {
+        return n >= 0 ? val.shiftLeft(n) : val.shiftRight(n); // avoid right shift if (-n) overflows
     }
     
     /**
@@ -1715,7 +1712,7 @@ public class Rational extends Number implements Comparable<Rational> {
      * @return {@code this >> n}
      */
     private Rational shiftRightImpl(int n) {
-        BigInteger resFloor = floor.signum == 0 ? floor : floor.shiftRightImpl(n); // unsigned argument
+        BigInteger resFloor = unsignedShiftRight(floor, n);
         final BigInteger rem = getBits(floor, n);
         BigInteger resNum, resDen;
         
@@ -1723,7 +1720,7 @@ public class Rational extends Number implements Comparable<Rational> {
             final int shiftNum = (int) Math.min(n & BigInteger.LONG_MASK, numerator.getLowestSetBit());
             resNum = numerator.shiftRight(shiftNum); // shiftNum is non-negative
             final int addedZeros = n - shiftNum;
-            resDen = denominator.shiftLeftImpl(addedZeros); // unsigned argument
+            resDen = unsignedShiftLeft(denominator, addedZeros);
             
             if (rem.signum == 1) {
                 // trailingZeros(resDen) == denZeros + addedZeros
@@ -1739,7 +1736,7 @@ public class Rational extends Number implements Comparable<Rational> {
                     // this / 2^n
                     // == (floor >> n) + (resNum * (2^n / (1 << n)) + rem * (resDen / (1 << n))) / ((2^n * resDen) / (1 << n))
                     // == (floor >> n) + (resNum + rem * (resDen >> n)) / resDen
-                    resNum = resNum.add(rem.multiply(resDen.shiftRightImpl(n)));
+                    resNum = resNum.add(rem.multiply(unsignedShiftRight(resDen, n)));
                 } else { // n >= denZeros + addedZeros
                     // this / 2^n
                     // == (floor >> n) + ( resNum * (2^n / (1 << (denZeros + addedZeros))) + rem * (resDen / (1 << (denZeros + addedZeros))) ) / (2^n * resDen / (1 << (denZeros + addedZeros)))
@@ -1757,26 +1754,29 @@ public class Rational extends Number implements Comparable<Rational> {
         } else { // no fractional part
             final int shift = (int) Math.min(n & BigInteger.LONG_MASK, rem.getLowestSetBit());
             resNum = rem.shiftRight(shift); // shift is non-negative
-            resDen = BigInteger.ONE.shiftLeftImpl(n - shift); // unsigned argument
+            resDen = unsignedShiftLeft(BigInteger.ONE, n - shift);
         }
         
         return new Rational(signum, resFloor, resNum, resDen);
     }
     
+    private static BigInteger unsignedShiftRight(BigInteger val, int n) {
+        return n >= 0 ? val.shiftRight(n) : val.shiftLeft(n); // avoid left shift if (-n) overflows
+    }
+    
     /**
      * Returns the rightmost {@code n} bits of {@code val}.
      * {@code val} and {@code n} are considered unsigned.
+     * Assumes {@code n != 0}.
      */
     private static BigInteger getBits(BigInteger val, int n) {
         if ((n & BigInteger.LONG_MASK) >= val.bitLength())
             return val;
         
-        final int start = (val.mag.length - 1) - ((n - 1) >>> 5);
-        int[] mag = Arrays.copyOfRange(val.mag, start, val.mag.length);
-        final long offset = n & (Integer.SIZE - 1);
+        int[] mag = Arrays.copyOfRange(val.mag, val.mag.length - 1 - ((n - 1) >>> 5), val.mag.length);
         
-        if (offset != 0)
-            mag[0] &= (1 << offset) - 1;
+        if ((n & (Integer.SIZE - 1)) != 0)
+            mag[0] &= (1 << n) - 1;
         
         mag = BigInteger.trustedStripLeadingZeroInts(mag);
         return new BigInteger(mag, mag.length == 0 ? 0 : 1);
