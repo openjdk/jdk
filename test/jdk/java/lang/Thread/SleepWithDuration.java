@@ -79,7 +79,7 @@ class SleepWithDuration {
      */
     @Test
     void testInterruptSleep() throws Exception {
-        // schedule current thread to interrupted after 1s
+        // schedule current thread to be interrupted after 1s
         Thread targetThread = Thread.currentThread();
         Thread wakerThread = new Thread(() -> {
             try {

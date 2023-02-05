@@ -33,7 +33,6 @@
 import jdk.internal.misc.ThreadFlock;
 import jdk.incubator.concurrent.ScopedValue;
 import jdk.incubator.concurrent.StructureViolationException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -46,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class WithScopedValue {
 
     private static Stream<ThreadFactory> factories() {
-        return Stream.of(Executors.defaultThreadFactory(), Thread.ofVirtual().factory());
+        return Stream.of(Thread.ofPlatform().factory(), Thread.ofVirtual().factory());
     }
 
     /**
