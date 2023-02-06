@@ -2658,8 +2658,8 @@ address StubGenerator::generate_base64_decodeBlock() {
     Label L_tailProc, L_topLoop, L_enterLoop;
 
     // Check for buffer too small (for algorithm)
-    __ cmpl(length, 44);
-    __ jcc(Assembler::belowEqual, L_tailProc);
+    __ subl(length, 0x2c);
+    __ jcc(Assembler::lessEqual, L_tailProc);
 
     __ cmpl(isMIME, 0);
     __ jcc(Assembler::notEqual, L_tailProc);
@@ -2690,12 +2690,11 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
     __ vpshufb(xmm0, xmm0, xmm13, Assembler::AVX_256bit);
     __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
-    __ subl(length, 0x20);
     __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0);
     __ addptr(source, 0x20);
     __ addptr(dest, 0x18);
-    __ cmpl(length, 0x2c);
-    __ jcc(Assembler::belowEqual, L_tailProc);
+    __ subl(length, 0x20);
+    __ jcc(Assembler::lessEqual, L_tailProc);
 
     __ bind(L_enterLoop);
 
@@ -2712,6 +2711,8 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ jcc(Assembler::equal, L_topLoop);
 
     __ bind(L_tailProc);
+
+    __ addl(length, 0x2c);
 
     __ vzeroupper();
   }
