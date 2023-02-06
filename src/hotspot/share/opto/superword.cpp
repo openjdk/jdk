@@ -533,6 +533,8 @@ bool SuperWord::SLP_extract() {
 
     combine_packs();
 
+    DEBUG_ONLY(verify_packs();)
+
     construct_my_pack_map();
     if (UseVectorCmov) {
       merge_packs_to_cmove();
@@ -1795,6 +1797,30 @@ void SuperWord::combine_packs() {
     }
   }
 
+  if (_do_vector_loop) {
+    // Since we did not enforce exact alignment of the packsets, we only know that there
+    // is no dependence with distance 1, because we have checked independent(s1, s2) for
+    // all adjacent memops. But there could be a dependence of a different distance.
+    // Hence: remove the pack if there is a dependence.
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* p = _packset.at(i);
+      if (p != NULL) {
+        Node* dependence = find_dependence(p);
+        if (dependence != nullptr) {
+#ifndef PRODUCT
+          if (TraceSuperWord) {
+            tty->print_cr("Cannot vectorize despite compile directive Vectorize. Found dependency.");
+            dependence->dump();
+            tty->print_cr("In pack[%d]", i);
+            print_pack(p);
+          }
+#endif
+          _packset.at_put(i, NULL);
+        }
+      }
+    }
+  }
+
   // Compress list.
   for (int i = _packset.length() - 1; i >= 0; i--) {
     Node_List* p1 = _packset.at(i);
@@ -2257,6 +2283,7 @@ void SuperWord::verify_packs() {
           n->dump();
         }
       }
+      tty->print_cr("They are all from pack[%d]", i);
       print_pack(p);
     }
     assert(dependence == nullptr, "all nodes in pack must be mutually independent");

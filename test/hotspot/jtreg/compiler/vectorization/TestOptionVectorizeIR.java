@@ -41,6 +41,7 @@ public class TestOptionVectorizeIR {
     int[] gold3 = new int[RANGE];
     int[] gold4 = new int[RANGE];
     int[] gold5 = new int[RANGE];
+    int[] gold6 = new int[RANGE];
 
     public static void main(String args[]) {
         TestFramework.runWithFlags("-XX:CompileCommand=option,compiler.vectorization.TestOptionVectorizeIR::test*,Vectorize");
@@ -62,6 +63,9 @@ public class TestOptionVectorizeIR {
         // test5
         test1(gold5);
         test5(gold5);
+        // test6
+        test1(gold6);
+        test6(gold6);
     }
 
     @Run(test = "test1")
@@ -106,6 +110,15 @@ public class TestOptionVectorizeIR {
         test1(data);
         test5(data);
         verify("test5", data, gold5);
+    }
+
+    @Run(test = "test6")
+    @Warmup(100)
+    public void runTest6() {
+        int[] data = new int[RANGE];
+        test1(data);
+        test6(data);
+        verify("test6", data, gold6);
     }
 
     @Test
@@ -161,8 +174,19 @@ public class TestOptionVectorizeIR {
            // write forward -> cyclic dependency -> cannot vectorize
            // independent(s1, s2) for adjacent loads cannot detect this
            // Checks with memory_alignment are disabled via compile option
-           // TODO: check why we are getting weird results distance 3 passes, distance 2 fails... what is happening here?
            data[j + 2] = data[j];
+       }
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "= 0"})
+    @IR(counts = {IRNode.STORE_VECTOR, "= 0"})
+    static void test6(int[] data) {
+       for (int j = 0; j < RANGE - 3; j++) {
+           // write forward -> cyclic dependency -> cannot vectorize
+           // independent(s1, s2) for adjacent loads cannot detect this
+           // Checks with memory_alignment are disabled via compile option
+           data[j + 3] = data[j];
        }
     }
 
