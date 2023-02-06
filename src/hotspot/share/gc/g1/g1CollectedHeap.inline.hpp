@@ -63,6 +63,17 @@ inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   return _list.list()->threads() + claim;
 }
 
+inline void G1JavaThreadsListClaimer::apply(ThreadClosure* cl) {
+  JavaThread* const* list;
+  uint count;
+
+  while ((list = claim(count)) != nullptr) {
+    for (uint i = 0; i < count; i++) {
+      cl->do_thread(list[i]);
+    }
+  }
+}
+
 G1GCPhaseTimes* G1CollectedHeap::phase_times() const {
   return _policy->phase_times();
 }

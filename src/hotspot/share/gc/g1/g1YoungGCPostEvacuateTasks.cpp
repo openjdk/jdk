@@ -713,13 +713,14 @@ public:
   ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker) { }
 
   void do_work(uint worker_id) override {
-    JavaThread* const* list;
-    uint count;
-    while ((list = _claimer.claim(count)) != nullptr) {
-      for (uint i = 0; i < count; i++) {
-        list[i]->tlab().resize();
+    class ResizeClosure : public ThreadClosure {
+    public:
+
+      void do_thread(Thread* thread) {
+        static_cast<JavaThread*>(thread)->tlab().resize();
       }
-    }
+    } cl;
+    _claimer.apply(&cl);
   }
 
   double worker_cost() const override {

@@ -128,15 +128,20 @@ class G1JavaThreadsListClaimer : public StackObj {
 
   volatile uint _cur_claim;
 
+  // Attempts to claim _claim_step JavaThreads, returning an array of claimed
+  // JavaThread* with count elements. Returns null (and a zero count) if there
+  // are no more threads to claim.
+  JavaThread* const* claim(uint& count);
+
 public:
   G1JavaThreadsListClaimer(uint claim_step) : _list(), _claim_step(claim_step), _cur_claim(0) {
     assert(claim_step > 0, "must be");
   }
 
-  // Attempts to claim _claim_step JavaThreads, returning an array of claimed
-  // JavaThread* with count elements. Returns null (and a zero count) if there
-  // are no more threads to claim.
-  JavaThread* const* claim(uint& count);
+  // Executes the given closure on the elements of the JavaThread list, chunking the
+  // JavaThread set in claim_step chunks for each caller to reduce parallelization
+  // overhead.
+  void apply(ThreadClosure* cl);
 
   // Total number of JavaThreads that can be claimed.
   uint length() const { return _list.length(); }
