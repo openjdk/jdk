@@ -42,7 +42,7 @@ public non-sealed interface CodeTransform
     /**
      * A code transform that sends all elements to the builder.
      */
-    public static final CodeTransform ACCEPT_ALL = new CodeTransform() {
+    CodeTransform ACCEPT_ALL = new CodeTransform() {
         @Override
         public void accept(CodeBuilder builder, CodeElement element) {
             builder.with(element);
