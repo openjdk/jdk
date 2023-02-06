@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ public class SynthTableUI extends BasicTableUI
 
     private boolean showHorizLines;
     private boolean showVertLines;
+    private boolean showGrid;
 //
 //  The installation/uninstall procedures and support
 //
@@ -182,7 +183,7 @@ public class SynthTableUI extends BasicTableUI
             }
             showHorizLines = table.getShowHorizontalLines();
             showVertLines = table.getShowVerticalLines();
-            boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
+            showGrid = style.getBoolean(context, "Table.showGrid", true);
             if (!showGrid) {
                 table.setShowGrid(false);
             }
@@ -231,11 +232,13 @@ public class SynthTableUI extends BasicTableUI
             table.setTransferHandler(null);
         }
         SynthContext context = getContext(table, ENABLED);
-        if (showHorizLines) {
-            table.setShowHorizontalLines(true);
-        }
-        if (showVertLines) {
-            table.setShowVerticalLines(true);
+        if (!showGrid) {
+            if (showHorizLines) {
+                table.setShowHorizontalLines(true);
+            }
+            if (showVertLines) {
+                table.setShowVerticalLines(true);
+            }
         }
         style.uninstallDefaults(context);
         style = null;
