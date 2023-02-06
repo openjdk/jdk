@@ -77,9 +77,12 @@ class RawNativeInstruction {
   address instruction_address()      const { return addr_at(0); }
   address next_raw_instruction_address() const { return addr_at(instruction_size); }
 
+  static int size() { return instruction_size; }
+
   static RawNativeInstruction* at(address address) {
     return (RawNativeInstruction*)address;
   }
+
   RawNativeInstruction* next_raw() const {
     return at(next_raw_instruction_address());
   }

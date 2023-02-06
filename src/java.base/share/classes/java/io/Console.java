@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.*;
 import java.nio.charset.Charset;
 import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
 import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
@@ -93,7 +94,7 @@ import sun.security.action.GetPropertyAction;
  * @author  Xueming Shen
  * @since   1.6
  */
-public sealed class Console implements Flushable permits ConsoleImpl, ProxyingConsole {
+public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * Package private no-arg constructor.
      */
@@ -380,8 +381,16 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
 
     @SuppressWarnings("removal")
     private static Console instantiateConsole(boolean istty) {
+        Console c;
+
         try {
-            // Try loading providers
+            /*
+             * The JdkConsole provider used for Console instantiation can be specified
+             * with the system property "jdk.console", whose value designates the module
+             * name of the implementation, and which defaults to "java.base". If no
+             * providers are available, or instantiation failed, java.base built-in
+             * Console implementation is used.
+             */
             PrivilegedAction<Console> pa = () -> {
                 var consModName = System.getProperty("jdk.console",
                         JdkConsoleProvider.DEFAULT_PROVIDER_MODULE_NAME);
@@ -392,13 +401,19 @@ public sealed class Console implements Flushable permits ConsoleImpl, ProxyingCo
                         .filter(Objects::nonNull)
                         .findAny()
                         .map(jc -> (Console) new ProxyingConsole(jc))
-                        .orElse(istty ? new ConsoleImpl() : null);
+                        .orElse(null);
             };
-            return AccessController.doPrivileged(pa);
+            c = AccessController.doPrivileged(pa);
         } catch (ServiceConfigurationError ignore) {
-            // default to built-in Console
-            return istty ? new ConsoleImpl() : null;
+            c = null;
         }
+
+        // If not found, default to built-in Console
+        if (istty && c == null) {
+            c = new ProxyingConsole(new JdkConsoleImpl(CHARSET));
+        }
+
+        return c;
     }
 
     private static final Console cons;

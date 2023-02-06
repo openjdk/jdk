@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -621,7 +621,7 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 #error UNSUPPORTED_ARCH
 #endif
 
-  (*env)->ReleaseLongArrayElements(env, array, regs, JNI_COMMIT);
+  (*env)->ReleaseLongArrayElements(env, array, regs, 0);
   return array;
 }
 

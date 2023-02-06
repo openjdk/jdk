@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -221,6 +221,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     case vmIntrinsics::_equalsL:
     case vmIntrinsics::_equalsU:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_vectorizedHashCode:
     case vmIntrinsics::_getCharStringU:
     case vmIntrinsics::_putCharStringU:
     case vmIntrinsics::_compressStringC:
@@ -483,7 +484,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
     if (!UseBASE64Intrinsics) return true;
     break;
   case vmIntrinsics::_poly1305_processBlocks:
-    if (!UsePolyIntrinsics) return true;
+    if (!UsePoly1305Intrinsics) return true;
     break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
@@ -526,6 +527,9 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_equalsL:
   case vmIntrinsics::_equalsU:
     if (!SpecialStringEquals) return true;
+    break;
+  case vmIntrinsics::_vectorizedHashCode:
+    if (!UseVectorizedHashCodeIntrinsic) return true;
     break;
   case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
@@ -616,7 +620,7 @@ void vmIntrinsics::init_vm_intrinsic_name_table() {
 
 const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[as_int(_none)] == NULL) {
+  if (nt[as_int(_none)] == nullptr) {
     init_vm_intrinsic_name_table();
   }
 
@@ -628,7 +632,7 @@ const char* vmIntrinsics::name_at(vmIntrinsics::ID id) {
 
 vmIntrinsics::ID vmIntrinsics::find_id(const char* name) {
   const char** nt = &vm_intrinsic_name_table[0];
-  if (nt[as_int(_none)] == NULL) {
+  if (nt[as_int(_none)] == nullptr) {
     init_vm_intrinsic_name_table();
   }
 
@@ -651,7 +655,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
 
   // not initialized yet, process Control/DisableIntrinsic
   if (vm_intrinsic_control_words[as_int(_none)].is_default()) {
-    for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != NULL; ++iter) {
+    for (ControlIntrinsicIter iter(ControlIntrinsic); *iter != nullptr; ++iter) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
@@ -660,7 +664,7 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
     }
 
     // Order matters, DisableIntrinsic can overwrite ControlIntrinsic
-    for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != NULL; ++iter) {
+    for (ControlIntrinsicIter iter(DisableIntrinsic, true/*disable_all*/); *iter != nullptr; ++iter) {
       vmIntrinsics::ID id = vmIntrinsics::find_id(*iter);
 
       if (id != vmIntrinsics::_none) {
@@ -764,7 +768,7 @@ const char* vmIntrinsics::short_name_as_C_string(vmIntrinsics::ID id, char* buf,
   default:   break;
   }
   const char* kptr = strrchr(kname, JVM_SIGNATURE_SLASH);
-  if (kptr != NULL)  kname = kptr + 1;
+  if (kptr != nullptr)  kname = kptr + 1;
   int len = jio_snprintf(buf, buflen, "%s: %s%s.%s%s",
                          str, fname, kname, mname, sname);
   if (len < buflen)

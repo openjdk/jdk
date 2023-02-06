@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,8 @@
 
 /*
  * @test
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- * @library /test/lib server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm -Djdk.internal.httpclient.debug=true BadHeadersTest
  */
 
@@ -61,6 +56,12 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2TestExchangeImpl;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.BodyOutputStream;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
 import static java.util.List.of;
 import static java.util.Map.entry;
 import static org.testng.Assert.assertTrue;
@@ -302,11 +303,12 @@ public class BadHeadersTest {
 
             if (responseLength < 0) {
                 headerFrames.get(headerFrames.size() -1).setFlag(HeadersFrame.END_STREAM);
-                os.closeInternal();
+                os.markClosed();
             }
 
-            for (Http2Frame f : headerFrames)
-                conn.outputQ.put(f);
+            for (Http2Frame f : headerFrames) {
+                conn.addToOutputQ(f);
+            }
 
             os.goodToGo();
             System.err.println("Sent response headers " + rCode);

@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022 SAP SE and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +33,7 @@ static const char* fields[] = { "Z", "B", "C", "S", "I", "J", "F", "D" };
 #define NUM_FIELDS (sizeof fields / sizeof fields[0])
 static jfieldID fieldIDs[NUM_FIELDS];
 static jlong fieldAccessCount = 0;
-
+static jobject objHandle;
 
 JNIEXPORT jboolean JNICALL Java_FastGetField_initFieldIDs(JNIEnv *env, jobject this, jclass c) {
   for (int i = 0; i < (int)NUM_FIELDS; ++i) {
@@ -63,6 +64,13 @@ JNIEXPORT jboolean JNICALL Java_FastGetField_initWatchers(JNIEnv *env, jobject t
   return JNI_TRUE;
 }
 
+JNIEXPORT void JNICALL Java_FastGetField_registerGlobal(JNIEnv *env, jobject this, jobject obj) {
+  objHandle = (*env)->NewGlobalRef(env, obj);
+}
+
+JNIEXPORT void JNICALL Java_FastGetField_registerWeak(JNIEnv *env, jobject this, jobject obj) {
+  objHandle = (*env)->NewWeakGlobalRef(env, obj);
+}
 
 JNIEXPORT jlong JNICALL Java_FastGetField_accessFields(JNIEnv *env, jobject this, jobject obj) {
   return
@@ -76,6 +84,9 @@ JNIEXPORT jlong JNICALL Java_FastGetField_accessFields(JNIEnv *env, jobject this
       (jlong)((*env)->GetDoubleField(env, obj, fieldIDs[7]));
 }
 
+JNIEXPORT jlong JNICALL Java_FastGetField_accessFieldsViaHandle(JNIEnv *env, jobject this) {
+  return Java_FastGetField_accessFields(env, this, objHandle);
+}
 
 JNIEXPORT jlong JNICALL Java_FastGetField_getFieldAccessCount(JNIEnv *env, jclass c) {
   return fieldAccessCount;

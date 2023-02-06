@@ -53,7 +53,7 @@ public abstract class InputStream implements Closeable {
     // use when skipping.
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
-    private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static final int DEFAULT_BUFFER_SIZE = 16384;
 
     /**
      * Constructor for subclasses to call.

@@ -100,7 +100,6 @@ static ImageInfo sDefaultImageInfo[sun_java2d_OSXOffScreenSurfaceData_TYPE_3BYTE
 
 static jfieldID        rgbID;
 static jfieldID        mapSizeID;
-static jfieldID        CMpDataID;
 static jfieldID        allGrayID;
 
 static jclass jc_OSXOffScreenSurfaceData = NULL;
@@ -1614,7 +1613,6 @@ JNIEXPORT void JNICALL Java_sun_java2d_OSXOffScreenSurfaceData_initIDs(JNIEnv *e
         CHECK_NULL(rgbID = (*env)->GetFieldID(env, icm, "rgb", "[I"));
         CHECK_NULL(allGrayID = (*env)->GetFieldID(env, icm, "allgrayopaque", "Z"));
         CHECK_NULL(mapSizeID = (*env)->GetFieldID(env, icm, "map_size", "I"));
-        CHECK_NULL(CMpDataID = (*env)->GetFieldID(env, icm, "pData", "J"));
     }
 
     gColorspaceRGB = CGColorSpaceCreateWithName(kCGColorSpaceGenericRGB);

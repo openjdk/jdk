@@ -1,6 +1,7 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences. All rights reserved.
+ * Copyright (c) 2022, Institute of Software, Chinese Academy of Sciences.
+ * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +32,7 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
-    _shared_trampoline_requests = new SharedTrampolineRequests(init_size, max_size);
+    _shared_trampoline_requests = new (mtCompiler)SharedTrampolineRequests(init_size, max_size);
   }
 
   bool created;

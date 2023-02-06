@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,11 +189,11 @@ final class StringLatin1 {
     }
 
     public static int hashCode(byte[] value) {
-        int h = 0;
-        for (byte v : value) {
-            h = 31 * h + (v & 0xff);
-        }
-        return h;
+        return switch (value.length) {
+            case 0 -> 0;
+            case 1 -> value[0] & 0xff;
+            default -> ArraysSupport.vectorizedHashCode(value, 0, value.length, 0, ArraysSupport.T_BOOLEAN);
+        };
     }
 
     public static int indexOf(byte[] value, int ch, int fromIndex) {
