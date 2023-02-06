@@ -54,7 +54,6 @@ import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +70,6 @@ import java.util.stream.Stream;
 
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ServicesCatalog;
@@ -2661,20 +2659,6 @@ public final class System {
                                                       ContinuationScope contScope,
                                                       Continuation continuation) {
                 return StackWalker.newInstance(options, null, contScope, continuation);
-            }
-
-            @Override
-            public int mismatchUTF8(String str, byte[] b, int fromIndex, int toIndex) {
-                byte[] encoded = str.isLatin1() ? str.value() : str.getBytes(UTF_8.INSTANCE);
-                if (false) {
-                    // Arrays.mismatch without the range checks (~5% faster micro getEntryHit)
-                    int aLength = encoded.length;
-                    int bLength = toIndex - fromIndex;
-                    int length = Math.min(aLength, bLength);
-                    int i = ArraysSupport.mismatch(encoded, 0, b, fromIndex, length);
-                    return (i < 0 && aLength != bLength) ? length : i;
-                }
-                return Arrays.mismatch(encoded, 0, encoded.length, b, fromIndex, toIndex);
             }
         });
     }

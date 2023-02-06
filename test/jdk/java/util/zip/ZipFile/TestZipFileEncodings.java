@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -113,6 +114,23 @@ public class TestZipFileEncodings {
     @Test(dataProvider = "unicode-charsets")
     public void testUnicodeManyEntries(String charsetName) throws Throwable {
         test(70000, 10, true, Charset.forName(charsetName));
+    }
+
+    @Test
+    public void latin1NotAscii() throws IOException {
+
+        Path zip = Path.of("latin1-not-ascii.zip");
+
+        // latin1, but not ASCII
+        String entryName = "smörgårdsbord";
+
+        try (ZipOutputStream z = new ZipOutputStream(Files.newOutputStream(zip))) {
+            z.putNextEntry(new ZipEntry(entryName));
+        }
+
+        try (ZipFile z = new ZipFile(zip.toFile())) {
+            assertNotNull(z.getEntry(entryName));
+        }
     }
 
     @AfterClass

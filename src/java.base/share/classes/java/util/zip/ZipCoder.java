@@ -267,18 +267,21 @@ class ZipCoder {
             return end > 0 && a[end - 1] == '/';
         }
 
-
         @Override
         Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
-            int mismatch = JLA.mismatchUTF8(str, b, off, off + len);
-            if(mismatch == -1) {
-                return Comparison.EXACT_MATCH;
-            } else if (addSlash && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
-                return Comparison.SLASH_MATCH;
-            } else {
+            try {
+                byte[] encoded = JLA.getBytesNoRepl(str, UTF_8.INSTANCE);
+                int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
+                if (mismatch == -1) {
+                    return Comparison.EXACT_MATCH;
+                } else if (addSlash && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
+                    return Comparison.SLASH_MATCH;
+                } else {
+                    return Comparison.NO_MATCH;
+                }
+            } catch (CharacterCodingException e) {
                 return Comparison.NO_MATCH;
             }
-
         }
     }
 }

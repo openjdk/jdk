@@ -564,17 +564,4 @@ public interface JavaLangAccess {
     StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
                                        ContinuationScope contScope,
                                        Continuation continuation);
-
-    /**
-     * Returns the mismatch of a string and a given byte array range,
-     * as if the string was first encoded in UTF-8
-     *
-     * See {@link Arrays#mismatch(byte[], int, int, byte[], int, int)} for the
-     * semantics of the parameters and return value of this method.
-     *
-     * While a general implementation will need to encode the String,
-     * this can be avoided if the String coder is known to be UTF-8
-     * compatible.
-     */
-    int mismatchUTF8(String str, byte[] array, int fromIndex, int toIndex);
 }
