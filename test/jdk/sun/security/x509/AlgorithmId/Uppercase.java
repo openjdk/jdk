@@ -32,7 +32,6 @@
 import jdk.test.lib.Asserts;
 import sun.security.x509.AlgorithmId;
 
-import java.security.MessageDigestSpi;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Locale;
