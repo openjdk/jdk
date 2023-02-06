@@ -1809,7 +1809,9 @@ void SuperWord::combine_packs() {
         if (dependence != nullptr) {
 #ifndef PRODUCT
           if (TraceSuperWord) {
-            tty->print_cr("Cannot vectorize despite compile directive Vectorize. Found dependency.");
+            tty->cr();
+            tty->print_cr("WARNING: Found dependency.");
+            tty->print_cr("Cannot vectorize despite compile directive Vectorize.");
             dependence->dump();
             tty->print_cr("In pack[%d]", i);
             print_pack(p);
