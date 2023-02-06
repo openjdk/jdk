@@ -122,7 +122,7 @@ public class TestZipFileEncodings {
         Path zip = Path.of("latin1-not-ascii.zip");
 
         // latin1, but not ASCII
-        String entryName = "smörgårdsbord";
+        String entryName = "smörgåsbord";
 
         try (ZipOutputStream z = new ZipOutputStream(Files.newOutputStream(zip))) {
             z.putNextEntry(new ZipEntry(entryName));
