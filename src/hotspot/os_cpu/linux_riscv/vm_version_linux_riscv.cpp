@@ -60,8 +60,7 @@ VM_Version::VM_MODE VM_Version::get_satp_mode() {
 
 void VM_Version::get_os_cpu_info() {
   /**
-   * The following is an example of theoutput
-   * typical of /proc/cpuinfo:
+   * The following is an example of the output typical of /proc/cpuinfo:
    * processor       : 1
    * hard            : 1
    * isa             : rv64imafdc
@@ -72,14 +71,14 @@ void VM_Version::get_os_cpu_info() {
     char buf[512], *p;
     while (fgets(buf, sizeof (buf), f) != nullptr) {
       if ((p = strchr(buf, ':')) != nullptr) {
-        if (strncmp(buf, "mmu", sizeof "mmu" - 1) == 0) {
+        if (!strncmp(buf, "mmu", sizeof "mmu" - 1)) {
           if (_vm_mode[0] != '\0') {
             continue;
           }
           char* vm_mode = os::strdup(p + 2);
           vm_mode[strcspn(vm_mode, "\n")] = '\0';
           _vm_mode = vm_mode;
-        } else if (strncmp(buf, "isa", sizeof "isa" - 1) == 0) {
+        } else if (!strncmp(buf, "isa", sizeof "isa" - 1)) {
           if (_isa[0]!= '\0') {
             continue;
           }
@@ -87,7 +86,7 @@ void VM_Version::get_os_cpu_info() {
           isa[strcspn(isa, "\n")] = '\0';
           _isa = isa;
           get_isa();
-        } else if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
+        } else if (!strncmp(buf, "uarch", sizeof "uarch" - 1)) {
           char* uarch = os::strdup(p + 2);
           uarch[strcspn(uarch, "\n")] = '\0';
           _uarch = uarch;
@@ -105,8 +104,8 @@ void VM_Version::get_isa() {
   char* saved_ptr;
   char* isa_ext = strtok_r(isa_buf, "_", &saved_ptr);
   while (isa_ext != nullptr) {
-    // special case for rv64* string
-    if (strncmp(isa_ext, "rv64", sizeof "rv64" - 1) == 0) {
+    // special case for rv64* substring
+    if (!strncmp(isa_ext, "rv64", sizeof "rv64" - 1)) {
       const char* base_ext = os::strdup(isa_ext + 4); // skip "rv64"
       int i = 0;
       while (base_ext[i] != '\0') {
@@ -127,24 +126,24 @@ void VM_Version::get_isa() {
           _cpu_features.ext_v = true;
         }
       }
-    } else if (strncmp(isa_ext, "zba", sizeof "zba" - 1) == 0) {
-      _cpu_features.ext_zba = true;
-    } else if (strncmp(isa_ext, "zbb", sizeof "zbb" - 1) == 0) {
-      _cpu_features.ext_zbb = true;
-    } else if (strncmp(isa_ext, "zbs", sizeof "zbs" - 1) == 0) {
-      _cpu_features.ext_zbs = true;
-    } else if (strncmp(isa_ext, "zic64b", sizeof "zic64b" - 1) == 0) {
-      _cpu_features.ext_zic64b = true;
-    } else if (strncmp(isa_ext, "zicbom", sizeof "zicbom" - 1) == 0) {
-      _cpu_features.ext_zicbom = true;
-    } else if (strncmp(isa_ext, "zicbop", sizeof "zicbop" - 1) == 0) {
-      _cpu_features.ext_zicbop = true;
-    } else if (strncmp(isa_ext, "zicboz", sizeof "zicboz" - 1) == 0) {
-      _cpu_features.ext_zicboz = true;
-    } else if (strncmp(isa_ext, "zfhmin", sizeof "zfhmin" - 1) == 0) {
-      _cpu_features.ext_zfhmin = true;
-    } else if (strncmp(isa_ext, "zihintpause", sizeof "zhintpause" - 1) == 0) {
+    } else if (!strncmp(isa_ext, "zba",         sizeof "zba" - 1)) {
+      _cpu_features.ext_zba         = true;
+    } else if (!strncmp(isa_ext, "zbb",         sizeof "zbb" - 1)) {
+      _cpu_features.ext_zbb         = true;
+    } else if (!strncmp(isa_ext, "zbs",         sizeof "zbs" - 1)) {
+      _cpu_features.ext_zbs         = true;
+    } else if (!strncmp(isa_ext, "zic64b",      sizeof "zic64b" - 1)) {
+      _cpu_features.ext_zic64b      = true;
+    } else if (!strncmp(isa_ext, "zicbom",      sizeof "zicbom" - 1)) {
+      _cpu_features.ext_zicbom      = true;
+    } else if (!strncmp(isa_ext, "zicbop",      sizeof "zicbop" - 1)) {
+      _cpu_features.ext_zicbop      = true;
+    } else if (!strncmp(isa_ext, "zicboz",      sizeof "zicboz" - 1)) {
+      _cpu_features.ext_zicboz      = true;
+    } else if (!strncmp(isa_ext, "zihintpause", sizeof "zhintpause" - 1)) {
       _cpu_features.ext_zihintpause = true;
+    } else if (!strncmp(isa_ext, "zfhmin",      sizeof "zfhmin" - 1)) {
+      _cpu_features.ext_zfhmin      = true;
     }
 
     // read next isa extension string, if any
