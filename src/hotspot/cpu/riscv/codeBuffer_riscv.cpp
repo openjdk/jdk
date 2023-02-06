@@ -32,7 +32,7 @@ void CodeBuffer::share_trampoline_for(address dest, int caller_offset) {
   if (_shared_trampoline_requests == nullptr) {
     constexpr unsigned init_size = 8;
     constexpr unsigned max_size  = 256;
-    _shared_trampoline_requests = new SharedTrampolineRequests(init_size, max_size);
+    _shared_trampoline_requests = new (mtCompiler)SharedTrampolineRequests(init_size, max_size);
   }
 
   bool created;
