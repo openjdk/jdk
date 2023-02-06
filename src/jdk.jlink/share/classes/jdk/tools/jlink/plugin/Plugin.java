@@ -61,7 +61,9 @@ public interface Plugin {
         COMPRESSOR("COMPRESSOR"),
         VERIFIER("VERIFIER"),
         PROCESSOR("PROCESSOR"),
-        PACKAGER("PACKAGER");
+        PACKAGER("PACKAGER"),
+
+        IMAGE_TRANSFORMER("IMAGE_TRANSFORMER");
 
         private final String name;
 

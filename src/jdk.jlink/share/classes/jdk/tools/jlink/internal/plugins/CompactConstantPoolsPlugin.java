@@ -62,12 +62,12 @@ public final class CompactConstantPoolsPlugin extends AbstractPlugin implements 
 
     @Override
     public Category getType() {
-        return Category.COMPRESSOR;
+        return Category.IMAGE_TRANSFORMER;
     }
 
     @Override
     public boolean hasArguments() {
-        return true;
+        return false;
     }
 
     @Override
