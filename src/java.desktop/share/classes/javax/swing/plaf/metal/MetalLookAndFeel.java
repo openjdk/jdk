@@ -246,18 +246,12 @@ public class MetalLookAndFeel extends BasicLookAndFeel
      * the fully qualified name of the ui class. {@code
      * MetalLookAndFeel} registers an entry for each of the classes in
      * the package {@code javax.swing.plaf.metal} that are named
-     * MetalXXXUI which are used by the current {@code MetalTheme}.
-     * The string {@code XXX} is one of Swing's uiClassIDs. For
+     * MetalXXXUI. The string {@code XXX} is one of Swing's uiClassIDs. For
      * the {@code uiClassIDs} that do not have a class in metal, the
      * corresponding class in {@code javax.swing.plaf.basic} is
-     * used.
-     * For example, metal does not have a class named {@code
+     * used. For example, metal does not have a class named {@code
      * "MetalColorChooserUI"}, as such, {@code
      * javax.swing.plaf.basic.BasicColorChooserUI} is used.
-     * And {@code MetalMenuBarUI} is an example of a UI class
-     * that is registered and used only in one theme : {@code OceanTheme},
-     * and therefore will not be registered by {@code MetalLookAndFeel}
-     * and the other provided themes"
      *
      * @param table the {@code UIDefaults} instance the entries are
      *        added to
@@ -278,6 +272,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
               "FileChooserUI", metalPackageName + "MetalFileChooserUI",
             "InternalFrameUI", metalPackageName + "MetalInternalFrameUI",
                     "LabelUI", metalPackageName + "MetalLabelUI",
+                  "MenuBarUI", metalPackageName + "MetalMenuBarUI",
        "PopupMenuSeparatorUI", metalPackageName + "MetalPopupMenuSeparatorUI",
               "ProgressBarUI", metalPackageName + "MetalProgressBarUI",
               "RadioButtonUI", metalPackageName + "MetalRadioButtonUI",
