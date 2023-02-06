@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.vm.ci.code;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaValue;
@@ -306,7 +307,14 @@ public final class BytecodeFrame extends BytecodePosition {
 
     @Override
     public int hashCode() {
-        return (numLocals + 1) ^ (numStack + 11) ^ (numLocks + 7);
+        return Objects.hash(super.hashCode(),
+                        duringCall,
+                        numLocals,
+                        numLocks,
+                        numStack,
+                        rethrowException,
+                        Arrays.hashCode(slotKinds),
+                        Arrays.hashCode(values));
     }
 
     @Override
@@ -314,21 +322,20 @@ public final class BytecodeFrame extends BytecodePosition {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof BytecodeFrame && super.equals(obj)) {
-            BytecodeFrame that = (BytecodeFrame) obj;
-            // @formatter:off
-            if (this.duringCall == that.duringCall &&
-                this.rethrowException == that.rethrowException &&
-                this.numLocals == that.numLocals &&
-                this.numLocks == that.numLocks &&
-                this.numStack == that.numStack &&
-                Arrays.equals(this.values, that.values)) {
-                return true;
-            }
-            // @formatter:off
-            return true;
+        if (!super.equals(obj)) {
+            return false;
         }
-        return false;
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        BytecodeFrame that = (BytecodeFrame) obj;
+        return duringCall == that.duringCall &&
+                        numLocals == that.numLocals &&
+                        numLocks == that.numLocks &&
+                        numStack == that.numStack &&
+                        rethrowException == that.rethrowException &&
+                        Arrays.equals(slotKinds, that.slotKinds) &&
+                        Arrays.equals(values, that.values);
     }
 
     @Override
