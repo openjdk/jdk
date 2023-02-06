@@ -36,74 +36,8 @@
 #include "runtime/continuation.hpp"
 
 // A self heal must always "upgrade" the address metadata bits in
-// accordance with the metadata bits state machine, which has the
-// valid state transitions as described below (where N is the GC
-// cycle).
-//
-// Note the subtleness of overlapping GC cycles. Specifically that
-// oops are colored Remapped(N) starting at relocation N and ending
-// at marking N + 1.
-//
-//              +--- Mark Start
-//              | +--- Mark End
-//              | | +--- Relocate Start
-//              | | | +--- Relocate End
-//              | | | |
-// Marked       |---N---|--N+1--|--N+2--|----
-// Finalizable  |---N---|--N+1--|--N+2--|----
-// Remapped     ----|---N---|--N+1--|--N+2--|
-//
-// VALID STATE TRANSITIONS
-//
-//   Marked(N)           -> Remapped(N)
-//                       -> Marked(N + 1)
-//                       -> Finalizable(N + 1)
-//
-//   Finalizable(N)      -> Marked(N)
-//                       -> Remapped(N)
-//                       -> Marked(N + 1)
-//                       -> Finalizable(N + 1)
-//
-//   Remapped(N)         -> Marked(N + 1)
-//                       -> Finalizable(N + 1)
-//
-// PHASE VIEW
-//
-// ZPhase::Mark
-//   Load & Mark
-//     Marked(N)         <- Marked(N - 1)
-//                       <- Finalizable(N - 1)
-//                       <- Remapped(N - 1)
-//                       <- Finalizable(N)
-//
-//   Mark(Finalizable)
-//     Finalizable(N)    <- Marked(N - 1)
-//                       <- Finalizable(N - 1)
-//                       <- Remapped(N - 1)
-//
-//   Load(AS_NO_KEEPALIVE)
-//     Remapped(N - 1)   <- Marked(N - 1)
-//                       <- Finalizable(N - 1)
-//
-// ZPhase::MarkComplete (Resurrection blocked)
-//   Load & Load(ON_WEAK/PHANTOM_OOP_REF | AS_NO_KEEPALIVE) & KeepAlive
-//     Marked(N)         <- Marked(N - 1)
-//                       <- Finalizable(N - 1)
-//                       <- Remapped(N - 1)
-//                       <- Finalizable(N)
-//
-//   Load(ON_STRONG_OOP_REF | AS_NO_KEEPALIVE)
-//     Remapped(N - 1)   <- Marked(N - 1)
-//                       <- Finalizable(N - 1)
-//
-// ZPhase::MarkComplete (Resurrection unblocked)
-//   Load
-//     Marked(N)         <- Finalizable(N)
-//
-// ZPhase::Relocate
-//   Load & Load(AS_NO_KEEPALIVE)
-//     Remapped(N)       <- Marked(N)
-//                       <- Finalizable(N)
+// accordance with the metadata bits state machine. The following
+// assert verifies the monotonicity of the transitions.
 
 inline void ZBarrier::assert_transition_monotonicity(zpointer old_ptr, zpointer new_ptr) {
   const bool old_is_load_good = ZPointer::is_load_good(old_ptr);
