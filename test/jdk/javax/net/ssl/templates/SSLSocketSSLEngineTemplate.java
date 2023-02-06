@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import java.net.*;
 import java.security.*;
 import java.nio.*;
 
-public class SSLSocketSSLEngineTemplate {
+public class SSLSocketSSLEngineTemplate extends SSLContextTemplate {
 
     /*
      * Enables logging of the SSL/TLS operations.
@@ -101,7 +101,8 @@ public class SSLSocketSSLEngineTemplate {
      * after gaining some familiarity with this application.
      */
     private static final boolean debug = false;
-    private final SSLContext sslc;
+    private final String protocol;
+
     private SSLEngine serverEngine;     // server-side SSLEngine
     private SSLSocket clientSocket;
 
@@ -121,19 +122,6 @@ public class SSLSocketSSLEngineTemplate {
      */
     private ByteBuffer cTOs;            // "reliable" transport client->server
     private ByteBuffer sTOc;            // "reliable" transport server->client
-
-    /*
-     * The following is to set up the keystores/trust material.
-     */
-    private static final String pathToStores = "../etc";
-    private static final String keyStoreFile = "keystore";
-    private static final String trustStoreFile = "truststore";
-    private static final String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores
-            + "/" + keyStoreFile;
-    private static final String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores
-            + "/" + trustStoreFile;
 
     /*
      * Main entry point for this test.
@@ -169,30 +157,16 @@ public class SSLSocketSSLEngineTemplate {
     /*
      * Create an initialized SSLContext to use for these tests.
      */
-    public SSLSocketSSLEngineTemplate(String protocol) throws Exception {
+    public SSLSocketSSLEngineTemplate(String protocol) {
+        this.protocol = protocol;
+    }
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        KeyStore ts = KeyStore.getInstance("JKS");
+    public ContextParameters getClientContextParameters() {
+        return new ContextParameters(protocol, "PKIX", "NewSunX509");
+    }
 
-        char[] passphrase = "passphrase".toCharArray();
-
-        try (FileInputStream keyFile = new FileInputStream(keyFilename);
-                FileInputStream trustFile = new FileInputStream(trustFilename)) {
-            ks.load(keyFile, passphrase);
-            ts.load(trustFile, passphrase);
-        }
-
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-        kmf.init(ks, passphrase);
-
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-        tmf.init(ts);
-
-        SSLContext sslCtx = SSLContext.getInstance(protocol);
-
-        sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-
-        sslc = sslCtx;
+    public ContextParameters getServerContextParameters() {
+        return new ContextParameters(protocol, "PKIX", "NewSunX509");
     }
 
     /*
@@ -374,7 +348,8 @@ public class SSLSocketSSLEngineTemplate {
             @Override
             public void run() {
                 // client-side socket
-                try (SSLSocket sslSocket = (SSLSocket)sslc.getSocketFactory().
+                try (SSLSocket sslSocket =
+                             (SSLSocket)createClientSSLContext().getSocketFactory().
                             createSocket("localhost", port)) {
                     clientSocket = sslSocket;
 
@@ -424,7 +399,7 @@ public class SSLSocketSSLEngineTemplate {
          * Configure the serverEngine to act as a server in the SSL/TLS
          * handshake.
          */
-        serverEngine = sslc.createSSLEngine();
+        serverEngine = createServerSSLContext().createSSLEngine();
         serverEngine.setUseClientMode(false);
         serverEngine.getNeedClientAuth();
     }

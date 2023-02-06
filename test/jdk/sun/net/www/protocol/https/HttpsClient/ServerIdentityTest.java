@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,12 +108,12 @@ public final class ServerIdentityTest extends SSLSocketTemplate {
     }
 
     @Override
-    protected SSLContext createServerSSLContext() throws Exception {
+    public SSLContext createServerSSLContext() throws Exception {
         return context;
     }
 
     @Override
-    protected SSLContext createClientSSLContext() throws Exception {
+    public SSLContext createClientSSLContext() throws Exception {
         return context;
     }
 

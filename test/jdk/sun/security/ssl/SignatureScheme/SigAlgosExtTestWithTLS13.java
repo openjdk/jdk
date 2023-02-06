@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (C) 2021, 2023 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import javax.net.ssl.SSLSocket;
 public class SigAlgosExtTestWithTLS13 extends SSLSocketTemplate {
 
     @Override
-    protected SSLContext createServerSSLContext() throws Exception {
+    public SSLContext createServerSSLContext() throws Exception {
         return createSSLContext(
                 new Cert[] { Cert.CA_ECDSA_SECP256R1, Cert.CA_ECDSA_SECP384R1 },
                 new Cert[] { Cert.EE_ECDSA_SECP256R1, Cert.EE_ECDSA_SECP384R1 },
@@ -57,7 +57,7 @@ public class SigAlgosExtTestWithTLS13 extends SSLSocketTemplate {
     }
 
     @Override
-    protected SSLContext createClientSSLContext() throws Exception {
+    public SSLContext createClientSSLContext() throws Exception {
         return createSSLContext(
                 new Cert[] { Cert.CA_ECDSA_SECP256R1, Cert.CA_ECDSA_SECP384R1 },
                 new Cert[] { Cert.EE_ECDSA_SECP256R1, Cert.EE_ECDSA_SECP384R1 },

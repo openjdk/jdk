@@ -68,7 +68,7 @@ public class MultipleChooseAlias extends SSLSocketTemplate {
     }
 
     @Override
-    protected ContextParameters getClientContextParameters() {
+    public ContextParameters getClientContextParameters() {
         return new ContextParameters("TLS", "PKIX", "Mine");
     }
 
