@@ -127,7 +127,7 @@ public class InvalidBytesInEntryNameOrComment {
         // Name field starts here
         int noff = off + CEN_HDR;
 
-        // Write invald bytes
+        // Write invalid bytes
         buffer.put(noff, INVALID_UTF8_BYTE_SEQUENCE, 0, INVALID_UTF8_BYTE_SEQUENCE.length);
         return writeFile(name, buffer);
 
@@ -150,12 +150,12 @@ public class InvalidBytesInEntryNameOrComment {
         int off = cenStart(buffer);
         // Need to skip past the length of the name and extra fields
         int nlen = buffer.getShort(off + NLEN);
-        int elen = buffer.getShort(off + NLEN);
+        int elen = buffer.getShort(off + ELEN);
 
         // Comment field starts here
         int coff = off + CEN_HDR + nlen + elen;
 
-        // Write invald bytes
+        // Write invalid bytes
         buffer.put(coff, INVALID_UTF8_BYTE_SEQUENCE, 0, INVALID_UTF8_BYTE_SEQUENCE.length);
         return writeFile(name, buffer);
     }
