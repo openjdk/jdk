@@ -95,7 +95,7 @@ public class JdbLastErrorTest extends JdbTest {
         jdb.command(runCommand);
         // Good lastError should be reported in debuggee output:
         new OutputAnalyzer(getDebuggeeOutput()).shouldMatch("lastError = " + Integer.toString(TestNativeLastError.VALUE));
-	// Exception would be captured in jdb output:
+        // Exception would be captured in jdb output:
         new OutputAnalyzer(jdb.getJdbOutput()).shouldNotMatch("failed, lastError = ");
     }
 }
