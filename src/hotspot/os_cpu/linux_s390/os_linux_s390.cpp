@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,14 @@ frame os::get_sender_for_C_frame(frame* fr) {
         return frame(fr->sender_sp(), fr->sender_pc());
       }
     } else {
-      return frame(fr->sender_sp(), fr->native_sender_pc());
+      intptr_t* sender_sp = fr->sender_sp();
+      address   sender_fp = (address)*sender_sp;
+      ptrdiff_t entry_len = sender_fp - (address)sender_sp;
+      if (entry_len < frame::z_abi_160_size) {
+        return frame(sender_sp, fr->sender_pc());
+      } else {
+        return frame(sender_sp, fr->native_sender_pc());
+      }
     }
   }
 }

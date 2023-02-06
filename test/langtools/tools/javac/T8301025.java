@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,31 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+/*
+ * @test
+ * @bug 8301025
+ * @enablePreview
+ * @compile T8301025.java
+ * @summary ClassCastException in switch with generic record
+ * @modules jdk.compiler
+ */
+public class T8301025 {
+    record TestRecord<T extends String>(T t) {}
 
-#ifndef SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-#define SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP
-
-#include "gc/serial/defNewGeneration.hpp"
-
-#include "gc/shared/cardTableRS.hpp"
-#include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/space.inline.hpp"
-#include "oops/access.inline.hpp"
-#include "utilities/devirtualizer.inline.hpp"
-
-// Methods of protected closure types
-
-template <typename OopClosureType>
-void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
-  // No allocation in eden and from spaces, so no iteration required.
-  assert(eden()->saved_mark_at_top(), "inv");
-  assert(from()->saved_mark_at_top(), "inv");
-
-  to()->oop_since_save_marks_iterate(cl);
-  to()->set_saved_mark();
+    public static void main(String argv[]) {
+        TestRecord r = new TestRecord("a");
+        switch (r) {
+            case TestRecord(String cS)-> {
+                System.out.println("String");
+            }
+            case TestRecord(Object cO)->{
+                System.out.println("Object");
+            }
+        }
+    }
 }
-
-#endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP

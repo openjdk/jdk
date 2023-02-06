@@ -962,7 +962,6 @@ void PSParallelCompact::pre_compact()
   heap->increment_total_collections(true);
 
   CodeCache::on_gc_marking_cycle_start();
-  CodeCache::arm_all_nmethods();
 
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);

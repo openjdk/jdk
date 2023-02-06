@@ -267,7 +267,7 @@ class Address {
   }
 
   bool uses(Register reg) const {
-    return base() == reg;
+    return _mode != literal && base() == reg;
   }
 
   const address target() const {
