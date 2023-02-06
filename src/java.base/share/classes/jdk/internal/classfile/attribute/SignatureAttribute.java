@@ -63,7 +63,7 @@ public sealed interface SignatureAttribute
     }
 
     /**
-     * Parse the siganture as a method signature.
+     * Parse the signature as a method signature.
      * @return the method signature
      */
     default MethodSignature asMethodSignature() {

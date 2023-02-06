@@ -36,7 +36,7 @@
  * jdk.internal.classfile.Classfile#parse(byte[], jdk.internal.classfile.Classfile.Option[])}:
  * <p>
  * {@snippet lang=java :
- * ClassModel cm = ClassModel.of(bytes);
+ * ClassModel cm = Classfile.parse(bytes);
  * }
  * <p>
  * There are several additional overloads of {@code parse} that let you specify
@@ -293,7 +293,7 @@
  * <p>
  * and then transform the classfile:
  * {@snippet lang=java :
- * byte[] newBytes = ClassModel.of(bytes).transform(ct);
+ * byte[] newBytes = Classfile.parse(bytes).transform(ct);
  * }
  * <p>
  * This is much more concise (and less error-prone) than the equivalent
@@ -311,7 +311,7 @@
  * jdk.internal.classfile.CodeTransform#andThen(jdk.internal.classfile.CodeTransform)}:
  * <p>
  * {@snippet lang=java :
- * byte[] newBytes = ClassModel.of(bytes)
+ * byte[] newBytes = Classfile.parse(bytes)
  *                             .transform(ClassTransform.transformingMethods(
  *                                 MethodTransform.transformingCode(
  *                                     fooToBar.andThen(instrumentCalls))));
