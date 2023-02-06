@@ -467,7 +467,7 @@ else
        unused-result
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
-   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
+   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244 4819
 
    LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 
