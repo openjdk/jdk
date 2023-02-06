@@ -1026,7 +1026,6 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
   rebuild_code_roots();
 
   start_new_collection_set();
-  allocate_dummy_regions();
   _allocator->init_mutator_alloc_regions();
 
   // Post collection state updates.
@@ -1864,32 +1863,6 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
-
-#ifndef PRODUCT
-void G1CollectedHeap::allocate_dummy_regions() {
-  // Let's fill up most of the region
-  size_t word_size = HeapRegion::GrainWords - 1024;
-  // And as a result the region we'll allocate will be humongous.
-  guarantee(is_humongous(word_size), "sanity");
-
-  // _filler_array_max_size is set to humongous object threshold
-  // but temporarily change it to use CollectedHeap::fill_with_object().
-  AutoModifyRestore<size_t> temporarily(_filler_array_max_size, word_size);
-
-  for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
-    // Let's use the existing mechanism for the allocation
-    HeapWord* dummy_obj = humongous_obj_allocate(word_size);
-    if (dummy_obj != NULL) {
-      MemRegion mr(dummy_obj, word_size);
-      CollectedHeap::fill_with_object(mr);
-    } else {
-      // If we can't allocate once, we probably cannot allocate
-      // again. Let's get out of the loop.
-      break;
-    }
-  }
-}
-#endif // !PRODUCT
 
 void G1CollectedHeap::increment_old_marking_cycles_started() {
   assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
@@ -2768,7 +2741,6 @@ void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
 
   // Start a new incremental collection set for the mutator phase.
   start_new_collection_set();
-  allocate_dummy_regions();
   _allocator->init_mutator_alloc_regions();
 
   phase_times()->record_prepare_for_mutator_time_ms((Ticks::now() - start).seconds() * 1000.0);

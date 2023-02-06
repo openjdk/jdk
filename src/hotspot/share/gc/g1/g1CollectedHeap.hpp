@@ -300,14 +300,6 @@ private:
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
 
-  // This is a non-product method that is helpful for testing. It is
-  // called at the end of a GC and artificially expands the heap by
-  // allocating a number of dead regions. This way we can induce very
-  // frequent marking cycles and stress the cleanup / concurrent
-  // cleanup code more (as all the regions that will be allocated by
-  // this method will be found dead by the marking cycle).
-  void allocate_dummy_regions() PRODUCT_RETURN;
-
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
   static G1RegionToSpaceMapper* create_aux_memory_mapper(const char* description,
