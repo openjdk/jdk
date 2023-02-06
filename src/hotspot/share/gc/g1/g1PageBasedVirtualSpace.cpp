@@ -36,7 +36,8 @@
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
   _low_boundary(NULL), _high_boundary(NULL), _tail_size(0), _page_size(0),
-  _committed(mtGC), _dirty(mtGC), _special(false), _executable(false) {
+  _committed(mtGC), _dirty(mtGC), _special(false) {
+  assert(!rs.executable(), "precondition");
   initialize_with_page_size(rs, used_size, page_size);
 }
 
@@ -59,7 +60,6 @@ void G1PageBasedVirtualSpace::initialize_with_page_size(ReservedSpace rs, size_t
   _high_boundary = _low_boundary + used_size;
 
   _special = rs.special();
-  _executable = rs.executable();
 
   _page_size = page_size;
 
@@ -79,7 +79,6 @@ G1PageBasedVirtualSpace::~G1PageBasedVirtualSpace() {
   _low_boundary           = NULL;
   _high_boundary          = NULL;
   _special                = false;
-  _executable             = false;
   _page_size              = 0;
   _tail_size              = 0;
 }
@@ -140,14 +139,14 @@ void G1PageBasedVirtualSpace::commit_preferred_pages(size_t start, size_t num_pa
   char* start_addr = page_start(start);
   size_t size = num_pages * _page_size;
 
-  os::commit_memory_or_exit(start_addr, size, _page_size, _executable, "G1 virtual space");
+  os::commit_memory_or_exit(start_addr, size, _page_size, false, "G1 virtual space");
 }
 
 void G1PageBasedVirtualSpace::commit_tail() {
   vmassert(_tail_size > 0, "The size of the tail area must be > 0 when reaching here");
 
   char* const aligned_end_address = align_down(_high_boundary, _page_size);
-  os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), _executable, "G1 virtual space");
+  os::commit_memory_or_exit(aligned_end_address, _tail_size, os::vm_page_size(), false, "G1 virtual space");
 }
 
 void G1PageBasedVirtualSpace::commit_internal(size_t start_page, size_t end_page) {
