@@ -3816,16 +3816,28 @@ public class JavacParser implements Parser {
             defs.append(pd);
         }
 
-        boolean checkForImports = true;
-        boolean firstTypeDecl = true;
+        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
         while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
-                skip(checkForImports, false, false, false);
+                skip(firstTypeDecl, false, false, false);
                 if (token.kind == EOF)
                     break;
             }
-            if (checkForImports && mods == null && token.kind == IMPORT) {
+            // JLS 7.3 doesn't allow extra semi-colons after package or import declarations,
+            // but here we try to provide a more helpful error message if we encounter any.
+            // Do that by slurping in as many semi-colons as possible, and then seeing what
+            // comes after before deciding how best to handle them.
+            ListBuffer<JCTree> semiList = new ListBuffer<>();
+            while (firstTypeDecl && mods == null && token.kind == SEMI) {
+                semiList.append(toP(F.at(token.pos).Skip()));
+                nextToken();
+                if (token.kind == EOF)
+                    break;
+            }
+            if (firstTypeDecl && mods == null && token.kind == IMPORT) {
+                if (!semiList.isEmpty())
+                    reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemiColon);
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
@@ -3837,6 +3849,8 @@ public class JavacParser implements Parser {
                 if (mods != null || token.kind != SEMI)
                     mods = modifiersOpt(mods);
                 if (firstTypeDecl && token.kind == IDENTIFIER) {
+                    if (!semiList.isEmpty())
+                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemiColon);
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
                         kind = ModuleKind.OPEN;
@@ -3853,13 +3867,13 @@ public class JavacParser implements Parser {
                         reportSyntaxError(token.pos, Errors.ExpectedModule);
                     }
                 }
+                defs.appendList(semiList.toList());
                 JCTree def = typeDeclaration(mods, docComment);
                 if (def instanceof JCExpressionStatement statement)
                     def = statement.expr;
                 defs.append(def);
                 mods = null;
                 firstTypeDecl = false;
-                checkForImports = false;
             }
         }
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(defs.toList());
