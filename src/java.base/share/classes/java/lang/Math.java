@@ -2259,6 +2259,10 @@ public final class Math {
      * @since 21
      */
     public static double clamp(double value, double min, double max) {
+        // This unusual condition allows keeping only one branch
+        // on common path when min < max and neither of them is NaN.
+        // If min == max, we should additionally check for +0.0/-0.0 case,
+        // so we're still visiting the if statement.
         if (!(min < max)) {
             if (Double.isNaN(min)) {
                 throw new IllegalArgumentException("min is NaN");
@@ -2269,6 +2273,8 @@ public final class Math {
             if (Double.compare(min, max) > 0) {
                 throw new IllegalArgumentException(min + " > " + max);
             }
+            // Fall-through if min and max are exactly equal (or min = -0.0 and max = +0.0)
+            // and none of them is NaN
         }
         return Math.min(max, Math.max(value, min));
     }
@@ -2294,6 +2300,10 @@ public final class Math {
      * @since 21
      */
     public static float clamp(float value, float min, float max) {
+        // This unusual condition allows keeping only one branch
+        // on common path when min < max and neither of them is NaN.
+        // If min == max, we should additionally check for +0.0/-0.0 case,
+        // so we're still visiting the if statement.
         if (!(min < max)) {
             if (Float.isNaN(min)) {
                 throw new IllegalArgumentException("min is NaN");
@@ -2304,6 +2314,8 @@ public final class Math {
             if (Float.compare(min, max) > 0) {
                 throw new IllegalArgumentException(min + " > " + max);
             }
+            // Fall-through if min and max are exactly equal (or min = -0.0 and max = +0.0)
+            // and none of them is NaN
         }
         return Math.min(max, Math.max(value, min));
     }
