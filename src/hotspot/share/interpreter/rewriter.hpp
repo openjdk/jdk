@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"
+#include "oops/ResolvedIndyEntry.hpp"
 #include "utilities/growableArray.hpp"
 
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
@@ -58,7 +59,9 @@ class Rewriter: public StackObj {
   GrowableArray<address>* _patch_invokedynamic_bcps;
   GrowableArray<int>*     _patch_invokedynamic_refs;
 
-  GrowableArray<ConstantPoolCache::InvokeDynamicInfo> _stuff_to_collect_during_rewriting;
+  // For collecting information about invokedynamic bytecodes before resolution
+  // With this, we can know how many indy calls there are and resolve them later
+  GrowableArray<ResolvedIndyEntry> _initialized_indy_entries;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);

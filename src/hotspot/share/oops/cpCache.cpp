@@ -675,7 +675,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
                                      const intStack& invokedynamic_index_map,
                                      const intStack& invokedynamic_map,
-                                     const GrowableArray<InvokeDynamicInfo> invokedynamic_info,
+                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      TRAPS) {
 
   const int length = index_map.length();
@@ -683,11 +683,10 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
 
   // Initialize resolvedinvokedynamicinfo array with available data
   Array<ResolvedIndyEntry>* array;
-  if (invokedynamic_info.length()) {
-    array = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, invokedynamic_info.length(), CHECK_NULL);
-    for (int i = 0; i < invokedynamic_info.length(); i++) {
-        array->at_put(i, ResolvedIndyEntry(invokedynamic_info.at(i)._resolved_info_index,
-                      invokedynamic_info.at(i)._cp_index));
+  if (indy_entries.length()) {
+    array = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, indy_entries.length(), CHECK_NULL);
+    for (int i = 0; i < indy_entries.length(); i++) {
+      array->at_put(i, indy_entries.at(i));
     }
   } else {
     array = nullptr;

@@ -397,18 +397,6 @@ class ConstantPoolCacheEntry {
 class ConstantPoolCache: public MetaspaceObj {
   friend class VMStructs;
   friend class MetadataFactory;
- public:
- struct InvokeDynamicInfo {
-    u2 _resolved_info_index;
-    u2 _cp_index;
-
-    InvokeDynamicInfo(int resolved_info_index, int cp_index) :
-          _resolved_info_index(resolved_info_index),
-          _cp_index(cp_index) {}
-    InvokeDynamicInfo() :
-          _resolved_info_index(0),
-          _cp_index(0) {}
-  };
 
  private:
   // If you add a new field that points to any metaspace object, you
@@ -454,7 +442,7 @@ class ConstantPoolCache: public MetaspaceObj {
                                      const intStack& cp_cache_map,
                                      const intStack& invokedynamic_cp_cache_map,
                                      const intStack& invokedynamic_references_map,
-                                     const GrowableArray<InvokeDynamicInfo> indy_info,
+                                     const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      TRAPS);
 
   int length() const                      { return _length; }
