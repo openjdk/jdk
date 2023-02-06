@@ -106,8 +106,8 @@ public class HyperbolicTests {
               -0x1.62e42fefa39efp9,
 
                // Largest argument with finite sinh, 710.4758600739439
-               0x1.ffffffffffd3bp1023,
-              -0x1.ffffffffffd3bp1023,
+               0x1.633ce8fb9f87dp9,
+              -0x1.633ce8fb9f87dp9,
           };
 
           for (double testPoint : decisionPoints) {
@@ -164,8 +164,8 @@ public class HyperbolicTests {
               -0x1.62e42fefa39efp9,
 
                // Largest argument with finite cosh, 710.4758600739439
-               0x1.ffffffffffd3bp1023,
-              -0x1.ffffffffffd3bp1023,
+               0x1.633ce8fb9f87dp9,
+              -0x1.633ce8fb9f87dp9,
           };
 
           for (double testPoint : decisionPoints) {
