@@ -55,6 +55,7 @@ import static jdk.test.lib.Platform.isWindows;
  * @build PassFailJFrame jdk.test.lib.Platform
  * @run main/manual IconShowingTest
  */
+
 public class IconShowingTest {
     private static final int EXTRA_OFFSET = 50;
 

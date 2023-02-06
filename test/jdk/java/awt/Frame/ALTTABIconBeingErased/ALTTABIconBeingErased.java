@@ -41,6 +41,7 @@ import javax.swing.SwingUtilities;
  * @build PassFailJFrame
  * @run main/manual ALTTABIconBeingErased
  */
+
 public class ALTTABIconBeingErased {
 
     private static final String INSTRUCTIONS =

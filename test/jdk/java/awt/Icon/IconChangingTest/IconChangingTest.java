@@ -48,6 +48,7 @@ import static jdk.test.lib.Platform.isWindows;
  * @build PassFailJFrame jdk.test.lib.Platform
  * @run main/manual IconChangingTest
  */
+
 public class IconChangingTest {
     private static final int ICON_SIZE = 16;
     private static final int MARGIN = 2;

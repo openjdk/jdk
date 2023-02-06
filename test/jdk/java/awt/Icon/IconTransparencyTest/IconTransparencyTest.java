@@ -57,6 +57,7 @@ import static java.awt.image.BufferedImage.TYPE_INT_ARGB;
  * @build PassFailJFrame
  * @run main/manual IconTransparencyTest
  */
+
 public class IconTransparencyTest {
     private static final String INSTRUCTIONS = """
             The icon of the frame and the resized icon in the label should be transparent.

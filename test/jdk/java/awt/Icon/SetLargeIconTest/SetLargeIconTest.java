@@ -40,7 +40,8 @@ import javax.swing.SwingUtilities;
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual SetLargeIconTest
-*/
+ */
+
 public class SetLargeIconTest {
     private static final String INSTRUCTIONS = """
             Case 1: Press "Pass" button if this frame does not have icon with green color.
