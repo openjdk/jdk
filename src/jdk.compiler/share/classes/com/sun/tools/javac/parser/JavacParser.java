@@ -3857,10 +3857,9 @@ public class JavacParser implements Parser {
                 if (def instanceof JCExpressionStatement statement)
                     def = statement.expr;
                 defs.append(def);
-                if (def instanceof JCClassDecl)
-                    checkForImports = false;
                 mods = null;
                 firstTypeDecl = false;
+                checkForImports = false;
             }
         }
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(defs.toList());

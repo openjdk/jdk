@@ -1,3 +1,4 @@
 AnnotatedPackage1.java:9:14: compiler.err.expected: token.identifier
 AnnotatedPackage1.java:9:17: compiler.err.expected4: class, interface, enum, record
-2 errors
+AnnotatedPackage1.java:11:1: compiler.err.expected4: class, interface, enum, record
+3 errors
