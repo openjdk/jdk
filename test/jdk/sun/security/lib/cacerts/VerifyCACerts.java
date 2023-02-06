@@ -154,6 +154,8 @@ public class VerifyCACerts {
                     "5D:56:49:9B:E4:D2:E0:8B:CF:CA:D0:8A:3E:38:72:3D:50:50:3B:DE:70:69:48:E4:2F:55:60:30:19:E5:28:AE");
             put("letsencryptisrgx1 [jdk]",
                     "96:BC:EC:06:26:49:76:F3:74:60:77:9A:CF:28:C5:A7:CF:E8:A3:C0:AA:E1:1A:8F:FC:EE:05:C0:BD:DF:08:C6");
+            put("letsencryptisrgx2 [jdk]",
+                    "A1:3D:88:1E:11:FE:6D:F1:81:B5:38:41:F9:FA:73:8A:2D:7C:A9:AE:7B:E3:D5:3C:86:6F:72:2B:42:42:B0:13");
             put("luxtrustglobalrootca [jdk]",
                     "A1:B2:DB:EB:64:E7:06:C6:16:9E:3C:41:18:B2:3B:AA:09:01:8A:84:27:66:6D:8B:F0:E2:88:91:EC:05:19:50");
             put("quovadisrootca [jdk]",
