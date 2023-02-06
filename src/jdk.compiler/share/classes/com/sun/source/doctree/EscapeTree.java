@@ -31,7 +31,7 @@ import javax.lang.model.util.Elements;
 /**
  * A tree node for a character represented by an escape sequence.
  *
- * @apiNote This class does not constrain the set of valid escape sequences,
+ * @apiNote This class does not itself constrain the set of valid escape sequences,
  * although the set may be effectively constrained to those defined in the
  * <a href="{@docRoot}/../specs/javadoc/doc-comment-spec.html#escape-sequences">
  * Documentation Comment Specification for the Standard Doclet</a>,
