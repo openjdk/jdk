@@ -33,9 +33,9 @@ import java.util.Objects;
  * <p>
  * For example,
  * {@snippet lang = "java":
- * if (OperatingSystem.Windows.isCurrent()) {
+ * if (OperatingSystem.isWindows()) {
  *     // Windows only code.
- * } else if (OperatingSystem.Linux.isCurrent()) {
+ * } else if (OperatingSystem.isLinux()) {
  *     // Linux only code
  * }
  *
@@ -58,23 +58,29 @@ import java.util.Objects;
  * @since xx
  */
 public enum OperatingSystem {
+
     /**
      * The Linux Operating system.
      */
-    Linux("Linux", "linux"),
+    Linux("Linux", InitPlatform.OS_TARGET_IS_LINUX),
     /**
      * The Mac OS X Operating system.
      */
-    MacOSX("Mac OS X", "macosx"),
+    MacOSX("Mac OS X", InitPlatform.OS_TARGET_IS_MACOS),
     /**
      * The Windows Operating system.
      */
-    Windows("Windows", "windows"),
+    Windows("Windows", InitPlatform.OS_TARGET_IS_WINDOWS),
     /**
      * The AIX Operating system.
      */
-    AIX("AIX", "aix"),
+    AIX("AIX", InitPlatform.OS_TARGET_IS_AIX),
     ;
+
+    /**
+     * Cache the current operating system and architecture.
+     */
+    private static final OperatingSystem currentOS = initOS();
 
     /**
      * Name of the Operating system.
@@ -89,14 +95,42 @@ public enum OperatingSystem {
     private final boolean isCurrent;
 
     /**
-     * Construct a operating system enum for the named operating system.
+     * {@return {@code true} if the operating system is Linux}
+     */
+    public static boolean isLinux() {
+        return InitPlatform.OS_TARGET_IS_LINUX;
+    }
+
+    /**
+     * {@return {@code true} if the operating system is Linux}
+     */
+    public static boolean isMacOS() {
+        return InitPlatform.OS_TARGET_IS_MACOS;
+    }
+
+    /**
+     * {@return {@code true} if the operating system is Linux}
+     */
+    public static boolean isWindows() {
+        return InitPlatform.OS_TARGET_IS_WINDOWS;
+    }
+
+    /**
+     * {@return {@code true} if the operating system is Linux}
+     */
+    public static boolean isAix() {
+        return InitPlatform.OS_TARGET_IS_AIX;
+    }
+
+    /**
+     * Construct an operating system enum for the named operating system.
      *
      * @param name       the name that identifies the operating system
-     * @param configName the OPENJDK_TARGET_OS name from the build via VersionProps.
+     * @param isCurrent  the InitPlatform.OS_TARGET_IS_XXX boolean for the OS
      */
-    OperatingSystem(String name, String configName) {
+    OperatingSystem(String name, boolean isCurrent) {
         this.name = name;
-        isCurrent = InitPlatform.targetOS().equals(configName);
+        this.isCurrent = isCurrent;
     }
 
     /**
@@ -110,7 +144,7 @@ public enum OperatingSystem {
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        return InitPlatform.currentOS;
+        return currentOS;
     }
 
     /**
@@ -189,5 +223,21 @@ public enum OperatingSystem {
             currentVersion = curr;
         }
         return curr;
+    }
+
+    /**
+     * {@return the current operating system}
+     * The current operating system is the first one with isCurrent true.
+     *
+     * @throws InternalError if the current operating system is not found among
+     *                       the declared OperatingSystem enum.
+     */
+    private static OperatingSystem initOS() {
+        for (OperatingSystem p : OperatingSystem.values()) {
+            if (p.isCurrent()) {
+                return p;
+            }
+        }
+        throw new InternalError("No current operating system for: " + StaticProperty.osName());
     }
 }

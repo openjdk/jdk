@@ -38,11 +38,11 @@ import static jdk.internal.misc.OperatingSystem.Windows;
  * @test
  * @summary test platform enum
  * @modules java.base/jdk.internal.misc
- * @run testng RuntimeOsTest
+ * @run testng PlatformTest
  */
 
 @Test
-public class RuntimeOsTest {
+public class PlatformTest {
     /**
      * Test consistency of System property "os.name" with OperatingSystem.current().
      */

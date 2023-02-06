@@ -470,7 +470,7 @@ public final class ProcessBuilder
      */
     public abstract static class Redirect {
         private static final File NULL_FILE = new File(
-                (OperatingSystem.Windows.isCurrent() ? "NUL" : "/dev/null")
+                (OperatingSystem.isWindows() ? "NUL" : "/dev/null")
         );
 
         /**

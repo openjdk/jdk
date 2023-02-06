@@ -22,6 +22,8 @@
  */
 package jdk.internal.misc;
 
+import jdk.internal.util.StaticProperty;
+
 /**
  * System architectures.
  */
@@ -43,6 +45,21 @@ public enum Architecture {
      */
     AARCH64("aarch64", 64),
     ;
+
+    static final Architecture currentArch = initArch();
+
+    /**
+     * {@return the current architecture}
+     * The current architecture is the first (only) of the enum's with isCurrent == true.
+     */
+    private static Architecture initArch() {
+        for (Architecture p : Architecture.values()) {
+            if (p.isCurrent()) {
+                return p;
+            }
+        }
+        throw new InternalError("No current architecture for: " + StaticProperty.osArch());
+    }
 
     /**
      * The name of the architecture.
@@ -67,7 +84,7 @@ public enum Architecture {
      * {@return return the current architecture}
      */
     public static Architecture current() {
-        return InitPlatform.currentArch;
+        return currentArch;
     }
 
     /**

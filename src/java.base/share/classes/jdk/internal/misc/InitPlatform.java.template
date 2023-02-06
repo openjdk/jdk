@@ -29,6 +29,23 @@ import jdk.internal.util.StaticProperty;
  */
 public class InitPlatform {
 
+    static final String LINUX_CNAME = "linux";
+    static final String MACOS_CNAME = "macosx";
+    static final String WINDOWS_CNAME = "windows";
+    static final String AIX_CNAME = "aix";
+
+    // Unique integers named to match the build system naming of the build target.
+    private static final int OS_TARGET_linux   = 1;
+    private static final int OS_TARGET_macosx  = 2;
+    private static final int OS_TARGET_windows = 3;
+    private static final int OS_TARGET_aix     = 4;
+
+    // Precomputed booleans for each Operating System
+    static final boolean OS_TARGET_IS_LINUX   = OS_TARGET_@@OPENJDK_TARGET_OS@@ == OS_TARGET_linux;
+    static final boolean OS_TARGET_IS_MACOS   = OS_TARGET_@@OPENJDK_TARGET_OS@@ == OS_TARGET_macosx;
+    static final boolean OS_TARGET_IS_WINDOWS = OS_TARGET_@@OPENJDK_TARGET_OS@@ == OS_TARGET_windows;
+    static final boolean OS_TARGET_IS_AIX     = OS_TARGET_@@OPENJDK_TARGET_OS@@ == OS_TARGET_aix;
+
     private static final String OPENJDK_TARGET_OS =
         "@@OPENJDK_TARGET_OS@@";
 
@@ -43,40 +60,5 @@ public class InitPlatform {
     // Read by Runtime.Architecture
     static String targetCpu() {
         return OPENJDK_TARGET_CPU;
-    }
-
-    /**
-     * Cache the current operating system and architecture.
-     */
-    static final OperatingSystem currentOS = initOS();
-    static final Architecture currentArch = initArch();
-
-    /**
-     * {@return the current operating system}
-     * The current operating system is the first one with isCurrent true.
-     *
-     * @throws InternalError if the current operating system is not found among
-     *                       the declared OperatingSystem enum.
-     */
-    private static OperatingSystem initOS() {
-        for (OperatingSystem p : OperatingSystem.values()) {
-            if (p.isCurrent()) {
-                return p;
-            }
-        }
-        throw new InternalError("No current operating system for: " + StaticProperty.osName());
-    }
-
-    /**
-     * {@return the current architecture}
-     * The current architecture is the first (only) of the enum's with isCurrent == true.
-     */
-    private static Architecture initArch() {
-        for (Architecture p : Architecture.values()) {
-            if (p.isCurrent()) {
-                return p;
-            }
-        }
-        throw new InternalError("No current architecture for: " + StaticProperty.osArch());
     }
 }
