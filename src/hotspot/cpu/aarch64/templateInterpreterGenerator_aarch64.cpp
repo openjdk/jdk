@@ -457,11 +457,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     // Get address of invokedynamic array
     __ ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
     // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-    __ mov(temp, sizeof(ResolvedIndyInfo)); // use appendix as temp
+    __ mov(temp, sizeof(ResolvedIndyEntry)); // use appendix as temp
     __ mul(index, index, temp);
-    __ add(cache, cache, Array<ResolvedIndyInfo>::base_offset_in_bytes());
+    __ add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
     __ lea(cache, Address(cache, index));
-    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyInfo::num_parameters_offset())));
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
     __ add(esp, esp, cache, Assembler::LSL, 3);
   } else {
     // Pop N words from the stack

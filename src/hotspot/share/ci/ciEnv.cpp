@@ -879,8 +879,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Jump through a patchable call site, which is initially a deopt routine.
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
-    if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_indy_info_length()) {
-      Method* adapter = cpool->resolved_indy_info(cpool->decode_invokedynamic_index(index))->method();
+    if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_indy_entries_length()) {
+      Method* adapter = cpool->resolved_indy_entry_at(cpool->decode_invokedynamic_index(index))->method();
       if (adapter != nullptr) {
         return get_method(adapter);
       }
@@ -1520,7 +1520,7 @@ void ciEnv::record_call_site_method(Thread* thread, Method* adapter) {
 // Process an invokedynamic call site and record any dynamic locations.
 void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, JavaThread* thread) {
   int index = cp->decode_invokedynamic_index(indy_index);
-  ResolvedIndyInfo* indy_info = cp->resolved_indy_info(index);
+  ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
   if (indy_info->method() != nullptr) {
     // process the adapter
     Method* adapter = indy_info->method();

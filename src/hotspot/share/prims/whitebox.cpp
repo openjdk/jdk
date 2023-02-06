@@ -1871,7 +1871,7 @@ WB_ENTRY(jint, WB_getIndyInfoLength(JNIEnv* env, jobject wb, jclass klass))
   if (cp->cache() == NULL) {
       return -1;
   }
-  return cp->resolved_indy_info_length();
+  return cp->resolved_indy_entries_length();
 WB_END
 
 WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint index))
@@ -1880,7 +1880,7 @@ WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint ind
   if (cp->cache() == NULL) {
       return -1;
   }
-  return cp->resolved_indy_info(index)->cpool_index();
+  return cp->resolved_indy_entry_at(index)->cpool_index();
 WB_END
 
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))

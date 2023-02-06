@@ -682,11 +682,11 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   int size = ConstantPoolCache::size(length);
 
   // Initialize resolvedinvokedynamicinfo array with available data
-  Array<ResolvedIndyInfo>* array;
+  Array<ResolvedIndyEntry>* array;
   if (invokedynamic_info.length()) {
-    array = MetadataFactory::new_array<ResolvedIndyInfo>(loader_data, invokedynamic_info.length(), CHECK_NULL);
+    array = MetadataFactory::new_array<ResolvedIndyEntry>(loader_data, invokedynamic_info.length(), CHECK_NULL);
     for (int i = 0; i < invokedynamic_info.length(); i++) {
-        array->at_put(i, ResolvedIndyInfo(invokedynamic_info.at(i)._resolved_info_index,
+        array->at_put(i, ResolvedIndyEntry(invokedynamic_info.at(i)._resolved_info_index,
                       invokedynamic_info.at(i)._cp_index));
     }
   } else {
@@ -743,9 +743,9 @@ void ConstantPoolCache::remove_unshareable_info() {
   }
   _initial_entries = NULL;
 
-  if (_resolved_indy_info != nullptr) {
-    for (int i = 0; i < _resolved_indy_info->length(); i++) {
-      resolved_indy_info(i)->remove_unshareable_info();
+  if (_resolved_indy_entries != nullptr) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      resolved_indy_entry_at(i)->remove_unshareable_info();
     }
   }
 }
@@ -761,8 +761,8 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != NULL) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    if (_resolved_indy_info)
-      MetadataFactory::free_array<ResolvedIndyInfo>(data, _resolved_indy_info);
+    if (_resolved_indy_entries)
+      MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
     _initial_entries = NULL;
   }
 #endif
@@ -794,14 +794,14 @@ void ConstantPoolCache::set_archived_references(int root_index) {
 // If any entry of this ConstantPoolCache points to any of
 // old_methods, replace it with the corresponding new_method.
 void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
-  if (_resolved_indy_info != nullptr) {
-    for (int j = 0; j < _resolved_indy_info->length(); j++) {
-      Method* old_method = resolved_indy_info(j)->method();
+  if (_resolved_indy_entries != nullptr) {
+    for (int j = 0; j < _resolved_indy_entries->length(); j++) {
+      Method* old_method = resolved_indy_entry_at(j)->method();
       if (old_method == nullptr || !old_method->is_old()) {
         continue;
       }
       Method* new_method = old_method->get_new_method();
-      resolved_indy_info(j)->adjust_method_entry(new_method);
+      resolved_indy_entry_at(j)->adjust_method_entry(new_method);
       log_adjust("indy", old_method, new_method, trace_name_printed);
     }
   }
@@ -824,10 +824,10 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
 // the constant pool cache should never contain old or obsolete methods
 bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
-  if (_resolved_indy_info) {
-    for (int i = 0; i < _resolved_indy_info->length(); i++) {
-      Method* m = resolved_indy_info(i)->method();
-      if (m != nullptr && !resolved_indy_info(i)->check_no_old_or_obsolete_entry()) {
+  if (_resolved_indy_entries) {
+    for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+      Method* m = resolved_indy_entry_at(i)->method();
+      if (m != nullptr && !resolved_indy_entry_at(i)->check_no_old_or_obsolete_entry()) {
         log_trace(redefine, class, update, constantpool)
           ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
            constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
@@ -861,10 +861,10 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   log_trace(cds)("Iter(ConstantPoolCache): %p", this);
   it->push(&_constant_pool);
   it->push(&_reference_map);
-  if (_resolved_indy_info != nullptr) {
-    it->push(&_resolved_indy_info, MetaspaceClosure::_writable);
+  if (_resolved_indy_entries != nullptr) {
+    it->push(&_resolved_indy_entries, MetaspaceClosure::_writable);
   }
-  //it->push(&_resolved_indy_info);
+  //it->push(&_resolved_indy_entries);
 }
 
 bool ConstantPoolCache::save_and_throw_indy_exc(
@@ -881,7 +881,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   // exception, before this thread was able to record its failure.  So, clear
   // this thread's exception and return false so caller can use the earlier
   // thread's result.
-  if (resolved_indy_info(index)->is_resolved() || resolved_indy_info(index)->resolution_failed()) {
+  if (resolved_indy_entry_at(index)->is_resolved() || resolved_indy_entry_at(index)->resolution_failed()) {
     CLEAR_PENDING_EXCEPTION;
     return false;
   }
@@ -892,7 +892,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   int encoded_index = ResolutionErrorTable::encode_cpcache_index(
                           ConstantPool::encode_invokedynamic_index(index));
   SystemDictionary::add_resolution_error(cpool, encoded_index, error, message);
-  resolved_indy_info(index)->set_resolution_failed();
+  resolved_indy_entry_at(index)->set_resolution_failed();
   return true;
 }
 
@@ -901,11 +901,11 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
   assert(index >= 0, "Indy index must be positive at this point");
 
-  if (resolved_indy_info(index)->method() != nullptr) {
+  if (resolved_indy_entry_at(index)->method() != nullptr) {
     return constant_pool()->resolved_reference_from_indy(index);
   }
 
-  if (resolved_indy_info(index)->resolution_failed()) {
+  if (resolved_indy_entry_at(index)->resolution_failed()) {
     // Before we got here, another thread got a LinkageError exception during
     // resolution.  Ignore our success and throw their exception.
     guarantee(index >= 0, "Invalid indy index");
@@ -936,7 +936,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   }
 
   if (has_appendix) {
-    const int appendix_index = resolved_indy_info(index)->resolved_references_index();
+    const int appendix_index = resolved_indy_entry_at(index)->resolved_references_index();
     objArrayOop resolved_references = constant_pool()->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
     assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
@@ -944,13 +944,13 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   }
 
   // Populate entry with resolved information
-  if (resolved_indy_info() != nullptr) {
-    assert(resolved_indy_info() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
-    resolved_indy_info(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
+  if (resolved_indy_entries() != nullptr) {
+    assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
+    resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
   }
 
   if (log_stream != NULL) {
-    resolved_indy_info(index)->print_on(log_stream);
+    resolved_indy_entry_at(index)->print_on(log_stream);
   }
   return appendix();
 }

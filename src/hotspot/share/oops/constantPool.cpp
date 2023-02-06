@@ -637,7 +637,7 @@ bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, in
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   if (is_invokedynamic) {
     int indy_index = decode_cpcache_index(which, true);
-    return cpool->cache()->resolved_indy_info(indy_index)->has_appendix();
+    return cpool->cache()->resolved_indy_entry_at(indy_index)->has_appendix();
   } else {
     int cache_index = decode_cpcache_index(which, true);
     ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
@@ -662,7 +662,7 @@ bool ConstantPool::has_local_signature_at_if_loaded(const constantPoolHandle& cp
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   if (is_invokedynamic) {
-    return cpool->cache()->resolved_indy_info(cache_index)->has_local_signature();
+    return cpool->cache()->resolved_indy_entry_at(cache_index)->has_local_signature();
   } else {
     ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
     return e->has_local_signature();

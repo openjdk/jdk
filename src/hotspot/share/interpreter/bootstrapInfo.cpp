@@ -55,7 +55,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  assert(indy_index == -1 || pool->resolved_indy_info(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
+  assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
 }
 
 // If there is evidence this call site was already linked, set the
@@ -64,13 +64,13 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 bool BootstrapInfo::resolve_previously_linked_invokedynamic(CallInfo& result, TRAPS) {
   assert(_indy_index != -1, "");
   // Check if method is not null
-  if ( _pool->resolved_indy_info(_indy_index)->method() != nullptr) {
-    methodHandle method(THREAD, _pool->resolved_indy_info(_indy_index)->method());
+  if ( _pool->resolved_indy_entry_at(_indy_index)->method() != nullptr) {
+    methodHandle method(THREAD, _pool->resolved_indy_entry_at(_indy_index)->method());
     Handle appendix ( THREAD,  _pool->resolved_reference_from_indy(_indy_index));
     result.set_handle(vmClasses::MethodHandle_klass(), method, appendix, THREAD);
     Exceptions::wrap_dynamic_exception(/* is_indy */ true, CHECK_false);
     return true;
-  } else if (_pool->resolved_indy_info(_indy_index)->resolution_failed()) {
+  } else if (_pool->resolved_indy_entry_at(_indy_index)->resolution_failed()) {
     int encoded_index = ResolutionErrorTable::encode_cpcache_index(ConstantPool::encode_invokedynamic_index(_indy_index));
     ConstantPool::throw_resolution_error(_pool, encoded_index, CHECK_false); // Doesn't necessarily need to be resolved yet
     return true;

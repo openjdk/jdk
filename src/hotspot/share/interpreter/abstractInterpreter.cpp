@@ -340,7 +340,7 @@ address AbstractInterpreter::deopt_continue_after_entry(Method* method, address 
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
         int indy_index = method->constants()->decode_invokedynamic_index(index);
-        method->constants()->resolved_indy_info(indy_index)->set_num_parameters(callee_parameters);
+        method->constants()->resolved_indy_entry_at(indy_index)->set_num_parameters(callee_parameters);
       }
       break;
     }

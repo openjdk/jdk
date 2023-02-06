@@ -2248,11 +2248,11 @@ run:
 
       CASE(_invokedynamic): {
         u4 index = cp->constant_pool()->decode_invokedynamic_index(Bytes::get_native_u4(pc+1)); // index is originally negative
-        ResolvedIndyInfo* indy_info = cp->resolved_indy_info(index);
+        ResolvedIndyEntry* indy_info = cp->resolved_indy_entry_at(index);
         if (!indy_info->is_resolved()) {
           CALL_VM(InterpreterRuntime::resolve_from_cache(THREAD, (Bytecodes::Code)opcode),
                   handle_exception);
-          indy_info = cp->resolved_indy_info(index); // get resolved entry
+          indy_info = cp->resolved_indy_entry_at(index); // get resolved entry
         }
         Method* method = indy_info->method();
         if (VerifyOops) method->verify();

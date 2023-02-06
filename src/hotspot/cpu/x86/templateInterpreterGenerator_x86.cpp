@@ -226,9 +226,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     // Get address of invokedynamic array
     __ movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
     __ movptr(cache, Address(cache, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-    __ imull(index, index, sizeof(ResolvedIndyInfo)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-    __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyInfo>::base_offset_in_bytes()));
-    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyInfo::num_parameters_offset())));
+    __ imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    __ lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyEntry>::base_offset_in_bytes()));
+    __ load_unsigned_short(cache, Address(cache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
     __ lea(rsp, Address(rsp, cache, Interpreter::stackElementScale()));
   } else {
     __ get_cache_and_index_at_bcp(cache, index, 1, index_size);

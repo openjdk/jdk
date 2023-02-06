@@ -426,8 +426,8 @@ class CompileReplay : public StackObj {
         cp->cache()->set_dynamic_call(callInfo, index);
 
         appendix = cp->resolved_reference_from_indy(index);
-        adapter_method = cp->resolved_indy_info(index)->method();
-        pool_index = cp->resolved_indy_info(index)->cpool_index();
+        adapter_method = cp->resolved_indy_entry_at(index)->method();
+        pool_index = cp->resolved_indy_entry_at(index)->cpool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
         Klass* holder = cp->klass_ref_at(index, CHECK_NULL);

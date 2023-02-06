@@ -1764,7 +1764,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   int index = pool->decode_invokedynamic_index(indy_index);
-  int pool_index = pool->resolved_indy_info(index)->cpool_index();
+  int pool_index = pool->resolved_indy_entry_at(index)->cpool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
   BootstrapInfo bootstrap_specifier(pool, pool_index, index);
@@ -1834,7 +1834,7 @@ void LinkResolver::resolve_dynamic_call(CallInfo& result,
       bool is_done = bootstrap_specifier.resolve_previously_linked_invokedynamic(result, CHECK);
       if (is_done) return;
     }
-    assert(bootstrap_specifier.pool()->resolved_indy_info(bootstrap_specifier.indy_index())->resolution_failed(),
+    assert(bootstrap_specifier.pool()->resolved_indy_entry_at(bootstrap_specifier.indy_index())->resolution_failed(),
           "Resolution should have failed");
   }
 

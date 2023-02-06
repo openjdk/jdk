@@ -570,8 +570,8 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
-    for (int indy_index = 0; indy_index < cpcache->resolved_indy_info_length(); indy_index++) {
-      int pool_index = cpcache->resolved_indy_info(indy_index)->cpool_index();
+    for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
+      int pool_index = cpcache->resolved_indy_entry_at(indy_index)->cpool_index();
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);

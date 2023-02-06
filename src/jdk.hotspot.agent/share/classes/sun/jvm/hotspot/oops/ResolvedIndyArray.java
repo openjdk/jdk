@@ -45,9 +45,9 @@ public class ResolvedIndyArray extends GenericArray {
   }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    elemType = db.lookupType("ResolvedIndyInfo");
+    elemType = db.lookupType("ResolvedIndyEntry");
 
-    Type type = db.lookupType("Array<ResolvedIndyInfo>");
+    Type type = db.lookupType("Array<ResolvedIndyEntry>");
     dataFieldOffset = type.getAddressField("_data").getOffset();
   }
 
@@ -58,7 +58,7 @@ public class ResolvedIndyArray extends GenericArray {
     super(addr, dataFieldOffset);
   }
 
-  public ResolvedIndyInfo getAt(int index) {
+  public ResolvedIndyEntry getAt(int index) {
     if (index < 0 || index >= length()) throw new ArrayIndexOutOfBoundsException(index + " " + length());
 
     Type elemType = getElemType();
@@ -66,7 +66,7 @@ public class ResolvedIndyArray extends GenericArray {
     Address data = getAddress().addOffsetTo(dataFieldOffset);
     long elemSize = elemType.getSize();
 
-    return new ResolvedIndyInfo(data.addOffsetTo(index* elemSize));
+    return new ResolvedIndyEntry(data.addOffsetTo(index* elemSize));
   }
 
   public Type getElemType() {

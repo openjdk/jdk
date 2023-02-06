@@ -1512,7 +1512,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     return Bytecodes::_invokevirtual;
   }
   if (cp->is_invokedynamic_index(index)) {
-    if (cp->resolved_indy_info(cp->decode_cpcache_index(index))->is_resolved()) {
+    if (cp->resolved_indy_entry_at(cp->decode_cpcache_index(index))->is_resolved()) {
       return Bytecodes::_invokedynamic;
     }
   }
