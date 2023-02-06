@@ -165,7 +165,7 @@ class TypedMethodOptionMatcher : public MethodMatcher {
 
 // A few templated accessors instead of a full template class.
   template<> ccstr TypedMethodOptionMatcher::value<ccstr>() {
-    // 8297539. There is no Template in cast<to>(From) for this case.
+    // There is no Template in cast<to>(From) for this case.
     return (ccstr)(_u_value);
   }
 template<typename T> void TypedMethodOptionMatcher::set_value(T value) {

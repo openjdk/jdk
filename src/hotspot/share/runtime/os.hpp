@@ -29,6 +29,7 @@
 #include "metaprogramming/integralConstant.hpp"
 #include "runtime/osInfo.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalJavaValue.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
 #ifdef __APPLE__

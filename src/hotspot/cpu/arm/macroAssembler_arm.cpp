@@ -677,7 +677,7 @@ void MacroAssembler::mov_float(FloatRegister fd, jfloat c, AsmCondition cond) {
 
   flds(fd, Address(PC), cond);
   b(skip_constant);
-  // 8297539. This matches with Template #5 of cast<To>(From).
+  // This matches with Template #5 of cast<To>(From).
   emit_int32(PrimitiveConversions::cast<jint>(c));
   bind(skip_constant);
 }
@@ -687,7 +687,7 @@ void MacroAssembler::mov_double(FloatRegister fd, jdouble c, AsmCondition cond) 
 
   fldd(fd, Address(PC), cond);
   b(skip_constant);
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   jint *accessor = PrimitiveConversions::cast<jint*>(&c);
   emit_int32(accessor[0]);
   emit_int32(accessor[1]);

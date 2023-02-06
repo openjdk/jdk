@@ -279,7 +279,7 @@ class VFP {
   class float_num : public fpnum {
    public:
     float_num(float v) {
-      // 8297539. This matches with Template #5 of cast<To>(From).
+      // This matches with Template #5 of cast<To>(From).
      _num_bits = PrimitiveConversions::cast<unsigned int>(v);
     }
 
@@ -295,7 +295,7 @@ class VFP {
   class double_num : public fpnum {
    public:
     double_num(double v) {
-      // 8297539. This matches with Template #5 of cast<To>(From).
+      // This matches with Template #5 of cast<To>(From).
       _num_bits = PrimitiveConversions::cast<unsigned long long>(v);
     }
 

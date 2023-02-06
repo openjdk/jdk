@@ -411,7 +411,7 @@ bool Assembler::operand_valid_for_sve_logical_immediate(unsigned elembits, uint6
 }
 
 static uint64_t doubleTo64Bits(jdouble d) {
-    // 8297539. This matches with Template #5  of cast<To>(From).
+    // This matches with Template #5  of cast<To>(From).
     return PrimitiveConversions::cast<uint64_t>(d);
 }
 
@@ -496,7 +496,7 @@ unsigned Assembler::pack(double value) {
 
 static float unpack(unsigned value) {
   unsigned ival = fp_immediate_for_encoding(value, 0);
-  // 8297539. This matches with Template #5 of cast<To>(From).
+  // This matches with Template #5 of cast<To>(From).
   return PrimitiveConversions::cast<float>(ival);
 }
 

@@ -238,7 +238,7 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  // 8297539. These casts match with Template #5 of cast<To>(From).
+  // These casts match with Template #5 of cast<To>(From).
   juint xbits_i = PrimitiveConversions::cast<juint>(x);
   juint ybits_i = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
@@ -255,7 +255,7 @@ JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
-  // 8297539. These casts match with Template #5 of cast<To>(From).
+  // These casts match with Template #5 of cast<To>(From).
   julong xbits_l = PrimitiveConversions::cast<julong>(x);
   julong ybits_l = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
@@ -448,7 +448,7 @@ JRT_END
 
 // Reference implementation at src/java.base/share/classes/java/lang/Float.java:floatToFloat16
 JRT_LEAF(jshort, SharedRuntime::f2hf(jfloat  x))
-  // 8297539. This matches with Template #5 of cast<To>(From).
+  // This matches with Template #5 of cast<To>(From).
   jint doppel = PrimitiveConversions::cast<jint>(x);
   jshort sign_bit = (jshort) ((doppel & 0x80000000) >> 16);
   if (g_isnan(x))
@@ -517,10 +517,10 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
     return (sign * (pow(2,-24)) * hf_significand_bits);
   } else if (hf_exp == 16) {
     if (hf_significand_bits == 0) {
-      // 8297539. This matches with Template #5 of cast<To>(From).
+      // This matches with Template #5 of cast<To>(From).
       return sign * PrimitiveConversions::cast<jfloat>(0x7f800000);
     } else {
-      // 8297539. This matches with Template #5 of cast<To>(From).
+      // This matches with Template #5 of cast<To>(From).
       return PrimitiveConversions::cast<jfloat>((hf_sign_bit << 16) | 0x7f800000 |
                                                (hf_significand_bits << significand_shift));
     }
@@ -530,7 +530,7 @@ JRT_LEAF(jfloat, SharedRuntime::hf2f(jshort x))
   jint float_exp_bits = (hf_exp + 127) << (24 - 1);
 
   // Combine sign, exponent and significand bits
-  // 8297539. This matches with Template #5 of cast<To>(From).
+  // This matches with Template #5 of cast<To>(From).
   return PrimitiveConversions::cast<jfloat>((hf_sign_bit << 16) | float_exp_bits |
                                             (hf_significand_bits << significand_shift));
 JRT_END

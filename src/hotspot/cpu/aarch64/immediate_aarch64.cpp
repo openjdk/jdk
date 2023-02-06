@@ -413,10 +413,10 @@ uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp)
   }
   if (is_dp) {
     double dpval = (double)fpval;
-    // 8297539. This matches with Template #5 of cast<To>(From).
+    // This matches with Template #5 of cast<To>(From).
     return PrimitiveConversions::cast<uint64_t>(dpval);
   }
-  // 8297539. This matches with Template #6 of cast<To>(From).
+  // This matches with Template #6 of cast<To>(From).
   return PrimitiveConversions::cast<uint64_t>(fpval);
 }
 
@@ -429,7 +429,7 @@ uint32_t encoding_for_fp_immediate(float immediate)
   // where n is 16+f and imm1:s, imm4:f, simm3:r
   // return the imm8 result [s:r:f]
   //
-  // 8297539. This matches with Template #5 of cast<To>(From).
+  // This matches with Template #5 of cast<To>(From).
   uint32_t val = PrimitiveConversions::cast<uint32_t>(immediate);
   uint32_t s, r, f, res;
   // sign bit is 31

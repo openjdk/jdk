@@ -710,9 +710,9 @@ JRT_LEAF(void, JVMCIRuntime::log_primitive(JavaThread* thread, jchar typeChar, j
     case 'C': tty->print("%c", (jchar) value); break;
     case 'S': tty->print("%d", (jshort) value); break;
     case 'I': tty->print("%d", (jint) value); break;
-    case 'F': tty->print("%f", PrimitiveConversions::cast<jfloat>(value)); break; // 8297539. This matches with Template #6 of cast<To>(from).
+    case 'F': tty->print("%f", PrimitiveConversions::cast<jfloat>(value)); break; // This matches with Template #6 of cast<To>(from).
     case 'J': tty->print(JLONG_FORMAT, value); break;
-    case 'D': tty->print("%lf", PrimitiveConversions::cast<jdouble>(value)); break;// 8297539. This matches with Template #5 of cast<To>(From).
+    case 'D': tty->print("%lf", PrimitiveConversions::cast<jdouble>(value)); break;// This matches with Template #5 of cast<To>(From).
     default: assert(false, "unknown typeChar"); break;
   }
   if (newline) {

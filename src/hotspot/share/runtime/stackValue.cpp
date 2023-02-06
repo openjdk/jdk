@@ -152,7 +152,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       assert( loc.is_register(), "floats always saved to stack in 1 word" );
       intptr_t value_p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
       jfloat value_jf = (jfloat) *(jdouble*) value_addr;
-      // 8297539. This matches with Template #8 of cast<To>(From).
+      // This matches with Template #8 of cast<To>(From).
       return new StackValue(*PrimitiveConversions::cast<intptr_t*>(&value_jf)); // 64-bit high half is stack junk
     }
     case Location::int_in_long: { // Holds an int in a long register?
@@ -163,7 +163,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       assert( loc.is_register(), "ints always saved to stack in 1 word" );
       intptr_t value_p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
       jint value_ji = (jint) *(jlong*) value_addr;
-      // 8297539. This matches with Template #7 of cast<To>(From).
+      // This matches with Template #7 of cast<To>(From).
       return new StackValue(PrimitiveConversions::cast<intptr_t>(value_ji)); // 64-bit high half is stack junk
     }
 #ifdef _LP64
@@ -186,7 +186,7 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
       // Just copy all other bits straight through
       intptr_t value_p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
       jint value_ji = *(jint*)value_addr;
-      // 8297539. This matches with Template #7 of cast<To>(From).
+      // This matches with Template #7 of cast<To>(From).
       return new StackValue(PrimitiveConversions::cast<intptr_t>(value_ji));
     }
     case Location::invalid: {
@@ -215,13 +215,13 @@ StackValue* StackValue::create_stack_value(ScopeValue* sv, address value_addr, c
     // Constant double in a single stack slot
     intptr_t value_p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
     jdouble value_jd = ((ConstantDoubleValue *)sv)->value();
-    // 8297539. This matches with Template #5 of cast<To>(From).
+    // This matches with Template #5 of cast<To>(From).
     return new StackValue(PrimitiveConversions::cast<intptr_t>(value_jd));
   } else if (sv->is_constant_long()) {
     // Constant long in a single stack slot
     intptr_t value_p = (intptr_t) CONST64(0xDEADDEAFDEADDEAF);
     jlong value_jl = ((ConstantLongValue *)sv)->value();
-    // 8297539. This matches with Template #1 of cast<To>(From).
+    // This matches with Template #1 of cast<To>(From).
     return new StackValue(PrimitiveConversions::cast<intptr_t>(value_jl));
 #endif
   } else if (sv->is_object()) { // Scalar replaced object in compiled frame

@@ -27,20 +27,9 @@
 
 #include "memory/allStatic.hpp"
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/globalDefinitionsForConversions.hpp"
 #include <cstdint>
 #include <type_traits>
-
-// 8297539. Since the globalDefinitions.hpp is not included anymore, the
-// following required types are defined here.
-typedef float jfloat;
-typedef double jdouble;
-// uint is needed by the following include sequence:
-//   g1GCPauseType.hpp
-//     utilities/enumIterator.hpp
-//       metaprogramming/primitiveConversions.hpp (this file)
-// Since globalDefinitions.hpp is not any more included here, the uint definition is explicitly written here instead.
-typedef unsigned int uint;
-
 
 class PrimitiveConversions : public AllStatic {
 
@@ -142,7 +131,7 @@ public:
   }
 
   // integral -> floating point, floating point -> integral where sizes are not the same.
-  // 8297539. To be able to use cast for floating-point narrowing and widening cases.
+  // To be able to use cast for floating-point narrowing and widening cases.
   //
   // Template #6
   template<typename To, typename From,
@@ -156,7 +145,7 @@ public:
   }
 
   // integral <-> integral with different sizes.
-  // 8297539. To be able to use cast for integral narrowing and widening cases.
+  // To be able to use cast for integral narrowing and widening cases.
   //
   // Template #7
   template<typename To, typename From,
@@ -167,7 +156,7 @@ public:
   }
 
   // pointer to integral <-> pointer to floating point
-  // 8297539. To be able to use cast for "int* <-> float*" casts.
+  // To be able to use cast for "int* <-> float*" casts.
   //
   // Template #8
   template<typename To, typename From,

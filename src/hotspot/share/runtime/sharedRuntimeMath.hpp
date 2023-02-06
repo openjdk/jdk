@@ -36,34 +36,34 @@
   #define _Lo 1
 #endif
 static inline int high(double d) {
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   int *di = PrimitiveConversions::cast<int*>(&d);
   return di[_Hi];
 }
 
 static inline int low(double d) {
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   int *di = PrimitiveConversions::cast<int*>(&d);
   return di[_Lo];
 }
 
 static inline void set_high(double* d, int high) {
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   int *di = PrimitiveConversions::cast<int*>(d);
   di[_Hi] = high;
 }
 
 static inline void set_low(double* d, int low) {
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   int *di = PrimitiveConversions::cast<int*>(d);
   di[_Lo] = low;
 }
 
 static double copysignA(double x, double y) {
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   int *di = PrimitiveConversions::cast<int*>(&x);
   di[_Hi] = (di[_Hi] & 0x7fffffff) | (high(y) & 0x80000000);
-  // 8297539. This matches with Template #8 of cast<To>(From).
+  // This matches with Template #8 of cast<To>(From).
   return *PrimitiveConversions::cast<double*>(di);
 }
 
