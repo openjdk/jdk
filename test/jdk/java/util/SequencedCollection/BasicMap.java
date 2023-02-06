@@ -47,8 +47,9 @@ public class BasicMap {
 
     // ========== Data Providers ==========
 
-    static final Class<? extends Throwable> UOE  = UnsupportedOperationException.class;
+    static final Class<? extends Throwable> CCE  = ClassCastException.class;
     static final Class<? extends Throwable> NSEE = NoSuchElementException.class;
+    static final Class<? extends Throwable> UOE  = UnsupportedOperationException.class;
 
     static final List<Map.Entry<String, Integer>> ORIGINAL =
         List.of(Map.entry("a", 1),
@@ -62,6 +63,14 @@ public class BasicMap {
         for (var e : mappings)
             map.put(e.getKey(), e.getValue());
         return map;
+    }
+
+    static NavigableMap<String, Integer> cknav(NavigableMap<String, Integer> map) {
+        return Collections.checkedNavigableMap(map, String.class, Integer.class);
+    }
+
+    static SortedMap<String, Integer> cksorted(SortedMap<String, Integer> map) {
+        return Collections.checkedSortedMap(map, String.class, Integer.class);
     }
 
     static SequencedMap<String, Integer> umap(SequencedMap<String, Integer> map) {
@@ -169,6 +178,14 @@ public class BasicMap {
             new Object[] { "UnmodMap", umap(load(new LinkedHashMap<>(), ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodNav", unav(load(new TreeMap<>(), ORIGINAL)), ORIGINAL },
             new Object[] { "UnmodSorted", usorted(load(new TreeMap<>(), ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="checked")
+    public Iterator<Object[]> checked() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "ChkNav", cknav(load(new TreeMap<>(), ORIGINAL)), ORIGINAL },
+            new Object[] { "ChkSorted", cksorted(load(new TreeMap<>(), ORIGINAL)), ORIGINAL }
         ).iterator();
     }
 
@@ -480,6 +497,20 @@ public class BasicMap {
         checkUnmodifiable1(map.reversed());
     }
 
+    // The putFirst/putLast operations aren't tested here, because the only instances of
+    // checked, sequenced maps are SortedMap and NavigableMap, which don't support them.
+    public void checkChecked(SequencedMap<String, Integer> map) {
+        SequencedMap<Object, Object> objMap = (SequencedMap<Object, Object>)(SequencedMap)map;
+        assertThrows(CCE, () -> { objMap.put(new Object(), 99); });
+        assertThrows(CCE, () -> { objMap.put("x", new Object()); });
+        assertThrows(CCE, () -> { objMap.sequencedEntrySet().getFirst().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.reversed().put(new Object(), 99); });
+        assertThrows(CCE, () -> { objMap.reversed().put("x", new Object()); });
+        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().getFirst().setValue(new Object()); });
+        assertThrows(CCE, () -> { objMap.reversed().sequencedEntrySet().reversed().getFirst().setValue(new Object()); });
+    }
+
     // ========== Tests ==========
 
     @Test(dataProvider="all")
@@ -648,6 +679,12 @@ public class BasicMap {
     @Test(dataProvider="unmodifiable")
     public void testUnmodifiable(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
         checkUnmodifiable(map);
+        checkContents(map, ref);
+    }
+
+    @Test(dataProvider="checked")
+    public void testChecked(String label, SequencedMap<String, Integer> map, List<Map.Entry<String, Integer>> ref) {
+        checkChecked(map);
         checkContents(map, ref);
     }
 

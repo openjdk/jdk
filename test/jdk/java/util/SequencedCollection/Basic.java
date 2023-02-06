@@ -46,6 +46,14 @@ public class Basic {
 
     static final List<String> ORIGINAL = List.of("a", "b", "c", "d", "e", "f", "g");
 
+    static List<String> cklist(List<String> contents) {
+        return Collections.checkedList(contents, String.class);
+    }
+
+    static NavigableSet<String> cknav(NavigableSet<String> set) {
+        return Collections.checkedNavigableSet(set, String.class);
+    }
+
     static SequencedSet<String> setFromMap(List<String> contents) {
         var lhm = new LinkedHashMap<String, Boolean>();
         var ss = Collections.newSequencedSetFromMap(lhm);
@@ -231,6 +239,20 @@ public class Basic {
         ).iterator();
     }
 
+    @DataProvider(name="checkedList")
+    public Iterator<Object[]> checkedList() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "ChkList", cklist(new ArrayList<>(ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
+    @DataProvider(name="checkedNavSet")
+    public Iterator<Object[]> checkedNavSet() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "ChkNav", cknav(new TreeSet<>(ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
     // ========== Assertions ==========
 
     /**
@@ -331,6 +353,22 @@ public class Basic {
     public void checkUnmodifiable(SequencedCollection<String> seq) {
         checkUnmodifiable1(seq);
         checkUnmodifiable1(seq.reversed());
+    }
+
+    static final Class<? extends Throwable> CCE = ClassCastException.class;
+
+    public void checkCheckedList(List<String> list) {
+        List<Object> objList = (List<Object>)(List)list;
+        assertThrows(CCE, () -> { objList.addFirst(new Object()); });
+        assertThrows(CCE, () -> { objList.addLast(new Object()); });
+        assertThrows(CCE, () -> { objList.reversed().addFirst(new Object()); });
+        assertThrows(CCE, () -> { objList.reversed().addLast(new Object()); });
+    }
+
+    public void checkCheckedNavSet(NavigableSet<String> set) {
+        NavigableSet<Object> objSet = (NavigableSet<Object>)(NavigableSet)set;
+        assertThrows(CCE, () -> { objSet.add(new Object()); });
+        assertThrows(CCE, () -> { objSet.reversed().add(new Object()); });
     }
 
     // ========== Tests ==========
@@ -486,5 +524,17 @@ public class Basic {
     public void testUnmodifiable(String label, SequencedCollection<String> seq, List<String> ref) {
         checkUnmodifiable(seq);
         checkContents(seq, ref);
+    }
+
+    @Test(dataProvider="checkedList")
+    public void testCheckedList(String label, List<String> list, List<String> ref) {
+        checkCheckedList(list);
+        checkContents(list, ref);
+    }
+
+    @Test(dataProvider="checkedNavSet")
+    public void testCheckedNavSet(String label, NavigableSet<String> set, List<String> ref) {
+        checkCheckedNavSet(set);
+        checkContents(set, ref);
     }
 }
