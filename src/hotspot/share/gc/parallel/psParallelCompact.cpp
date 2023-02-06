@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ ParallelCompactData::RegionData::dc_completed = 0xcU << dc_shift;
 SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 
 SpanSubjectToDiscoveryClosure PSParallelCompact::_span_based_discoverer;
-ReferenceProcessor* PSParallelCompact::_ref_processor = NULL;
+ReferenceProcessor* PSParallelCompact::_ref_processor = nullptr;
 
 double PSParallelCompact::_dwl_mean;
 double PSParallelCompact::_dwl_std_dev;
@@ -151,15 +151,15 @@ void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
 {
   assert(src_region_idx != 0, "invalid src_region_idx");
   assert(partial_obj_size != 0, "invalid partial_obj_size argument");
-  assert(destination != NULL, "invalid destination argument");
+  assert(destination != nullptr, "invalid destination argument");
 
   _src_region_idx = src_region_idx;
   _partial_obj_size = partial_obj_size;
   _destination = destination;
 
   // These fields may not be updated below, so make sure they're clear.
-  assert(_dest_region_addr == NULL, "should have been cleared");
-  assert(_first_src_addr == NULL, "should have been cleared");
+  assert(_dest_region_addr == nullptr, "should have been cleared");
+  assert(_first_src_addr == nullptr, "should have been cleared");
 
   // Determine the number of destination regions for the partial object.
   HeapWord* const last_word = destination + partial_obj_size - 1;
@@ -192,10 +192,10 @@ void SplitInfo::clear()
 {
   _src_region_idx = 0;
   _partial_obj_size = 0;
-  _destination = NULL;
+  _destination = nullptr;
   _destination_count = 0;
-  _dest_region_addr = NULL;
-  _first_src_addr = NULL;
+  _dest_region_addr = nullptr;
+  _first_src_addr = nullptr;
   assert(!is_valid(), "sanity");
 }
 
@@ -204,10 +204,10 @@ void SplitInfo::verify_clear()
 {
   assert(_src_region_idx == 0, "not clear");
   assert(_partial_obj_size == 0, "not clear");
-  assert(_destination == NULL, "not clear");
+  assert(_destination == nullptr, "not clear");
   assert(_destination_count == 0, "not clear");
-  assert(_dest_region_addr == NULL, "not clear");
-  assert(_first_src_addr == NULL, "not clear");
+  assert(_dest_region_addr == nullptr, "not clear");
+  assert(_first_src_addr == nullptr, "not clear");
 }
 #endif  // #ifdef ASSERT
 
@@ -414,14 +414,14 @@ print_initial_summary_data(ParallelCompactData& summary_data,
 #endif  // #ifndef PRODUCT
 
 ParallelCompactData::ParallelCompactData() :
-  _region_start(NULL),
-  DEBUG_ONLY(_region_end(NULL) COMMA)
-  _region_vspace(NULL),
+  _region_start(nullptr),
+  DEBUG_ONLY(_region_end(nullptr) COMMA)
+  _region_vspace(nullptr),
   _reserved_byte_size(0),
-  _region_data(NULL),
+  _region_data(nullptr),
   _region_count(0),
-  _block_vspace(NULL),
-  _block_data(NULL),
+  _block_vspace(nullptr),
+  _block_data(nullptr),
   _block_count(0) {}
 
 bool ParallelCompactData::initialize(MemRegion covered_region)
@@ -692,7 +692,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
                                     HeapWord* target_beg, HeapWord* target_end,
                                     HeapWord** target_next)
 {
-  HeapWord* const source_next_val = source_next == NULL ? NULL : *source_next;
+  HeapWord* const source_next_val = source_next == nullptr ? nullptr : *source_next;
   log_develop_trace(gc, compaction)(
       "sb=" PTR_FORMAT " se=" PTR_FORMAT " sn=" PTR_FORMAT
       "tb=" PTR_FORMAT " te=" PTR_FORMAT " tn=" PTR_FORMAT,
@@ -713,7 +713,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
       // at which the source space can be 'split' so that part is copied to the
       // target space and the rest is copied elsewhere.
       if (dest_addr + words > target_end) {
-        assert(source_next != NULL, "source_next is NULL when splitting");
+        assert(source_next != nullptr, "source_next is null when splitting");
         *source_next = summarize_split_space(cur_region, split_info, dest_addr,
                                              target_end, target_next);
         return false;
@@ -775,7 +775,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
 }
 
 HeapWord* ParallelCompactData::calc_new_pointer(HeapWord* addr, ParCompactionManager* cm) const {
-  assert(addr != NULL, "Should detect NULL oop earlier");
+  assert(addr != nullptr, "Should detect null oop earlier");
   assert(ParallelScavengeHeap::heap()->is_in(addr), "not in heap");
   assert(PSParallelCompact::mark_bitmap()->is_marked(addr), "not marked");
 
@@ -837,9 +837,8 @@ void ParallelCompactData::verify_clear()
 STWGCTimer          PSParallelCompact::_gc_timer;
 ParallelOldTracer   PSParallelCompact::_gc_tracer;
 elapsedTimer        PSParallelCompact::_accumulated_time;
-unsigned int        PSParallelCompact::_total_invocations = 0;
 unsigned int        PSParallelCompact::_maximum_compaction_gc_num = 0;
-CollectorCounters*  PSParallelCompact::_counters = NULL;
+CollectorCounters*  PSParallelCompact::_counters = nullptr;
 ParMarkBitMap       PSParallelCompact::_mark_bitmap;
 ParallelCompactData PSParallelCompact::_summary_data;
 
@@ -963,10 +962,6 @@ void PSParallelCompact::pre_compact()
   heap->increment_total_collections(true);
 
   CodeCache::on_gc_marking_cycle_start();
-  CodeCache::arm_all_nmethods();
-
-  // We need to track unique mark sweep invocations as well.
-  _total_invocations++;
 
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
@@ -1070,11 +1065,12 @@ PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
     ++full_count;
   }
 
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
   if (maximum_compaction || cp == end_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(cp);
   }
 
@@ -1255,7 +1251,7 @@ PSParallelCompact::first_dead_space_region(const RegionData* beg,
     RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
     HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != NULL, "sanity");
+    assert(dest != nullptr, "sanity");
     assert(dest <= addr, "must move left");
 
     if (middle > left && dest < addr) {
@@ -1285,7 +1281,7 @@ PSParallelCompact::dead_wood_limit_region(const RegionData* beg,
     RegionData* const middle_ptr = sd.region(middle);
     HeapWord* const dest = middle_ptr->destination();
     HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != NULL, "sanity");
+    assert(dest != nullptr, "sanity");
     assert(dest <= addr, "must move left");
 
     const size_t dead_to_left = pointer_delta(addr, dest);
@@ -1310,10 +1306,10 @@ PSParallelCompact::reclaimed_ratio(const RegionData* const cp,
 {
   ParallelCompactData& sd = summary_data();
 
-  assert(cp != NULL, "sanity");
-  assert(bottom != NULL, "sanity");
-  assert(top != NULL, "sanity");
-  assert(new_top != NULL, "sanity");
+  assert(cp != nullptr, "sanity");
+  assert(bottom != nullptr, "sanity");
+  assert(top != nullptr, "sanity");
+  assert(new_top != nullptr, "sanity");
   assert(top >= new_top, "summary data problem?");
   assert(new_top > bottom, "space is empty; should not be here");
   assert(new_top >= cp->destination(), "sanity");
@@ -1369,12 +1365,13 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
   // The gc number is saved whenever a maximum compaction is done, and used to
   // determine when the maximum compaction interval has expired.  This avoids
   // successive max compactions for different reasons.
-  assert(total_invocations() >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations() - _maximum_compaction_gc_num;
+  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
+  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval ||
-    total_invocations() == HeapFirstMaximumCompactionCount;
+    total_invocations == HeapFirstMaximumCompactionCount;
   if (maximum_compaction || full_cp == top_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations();
+    _maximum_compaction_gc_num = total_invocations;
     return sd.region_to_addr(full_cp);
   }
 
@@ -1425,7 +1422,7 @@ void PSParallelCompact::summarize_spaces_quick()
     const MutableSpace* space = _space_info[i].space();
     HeapWord** nta = _space_info[i].new_top_addr();
     bool result = _summary_data.summarize(_space_info[i].split_info(),
-                                          space->bottom(), space->top(), NULL,
+                                          space->bottom(), space->top(), nullptr,
                                           space->bottom(), space->end(), nta);
     assert(result, "space must fit into itself");
     _space_info[i].set_dense_prefix(space->bottom());
@@ -1494,7 +1491,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
     CollectedHeap::fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.add_obj(obj_beg, obj_len);
-    assert(start_array(id) != NULL, "sanity");
+    assert(start_array(id) != nullptr, "sanity");
     start_array(id)->allocate_block(obj_beg);
   }
 }
@@ -1534,7 +1531,7 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
       // Compute the destination of each Region, and thus each object.
       _summary_data.summarize_dense_prefix(space->bottom(), dense_prefix_end);
       _summary_data.summarize(_space_info[id].split_info(),
-                              dense_prefix_end, space->top(), NULL,
+                              dense_prefix_end, space->top(), nullptr,
                               dense_prefix_end, space->end(),
                               _space_info[id].new_top_addr());
     }
@@ -1628,7 +1625,7 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       // All the live data will fit.
       bool done = _summary_data.summarize(_space_info[id].split_info(),
                                           space->bottom(), space->top(),
-                                          NULL,
+                                          nullptr,
                                           *new_top_addr, dst_space_end,
                                           new_top_addr);
       assert(done, "space must fit into old gen");
@@ -1637,14 +1634,14 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       _space_info[id].set_new_top(space->bottom());
     } else if (live > 0) {
       // Attempt to fit part of the source space into the target space.
-      HeapWord* next_src_addr = NULL;
+      HeapWord* next_src_addr = nullptr;
       bool done = _summary_data.summarize(_space_info[id].split_info(),
                                           space->bottom(), space->top(),
                                           &next_src_addr,
                                           *new_top_addr, dst_space_end,
                                           new_top_addr);
       assert(!done, "space should not fit into old gen");
-      assert(next_src_addr != NULL, "sanity");
+      assert(next_src_addr != nullptr, "sanity");
 
       // The source space becomes the new target, so the remainder is compacted
       // within the space itself.
@@ -1656,7 +1653,7 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
                                     SpaceId(id), next_src_addr, space->top());)
       done = _summary_data.summarize(_space_info[id].split_info(),
                                      next_src_addr, space->top(),
-                                     NULL,
+                                     nullptr,
                                      space->bottom(), dst_space_end,
                                      new_top_addr);
       assert(done, "space must fit when compacted into itself");
@@ -1706,7 +1703,7 @@ void PSParallelCompact::invoke(bool maximum_heap_compaction) {
 // be calling invoke() instead.
 bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
-  assert(ref_processor() != NULL, "Sanity");
+  assert(ref_processor() != nullptr, "Sanity");
 
   if (GCLocker::check_active_before_gc()) {
     return false;
@@ -1747,7 +1744,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     ParallelScavengeHeap::heap()->workers().set_active_workers(active_workers);
 
     GCTraceCPUTime tcpu(&_gc_tracer);
-    GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause, true);
+    GCTraceTime(Info, gc) tm("Pause Full", nullptr, gc_cause, true);
 
     heap->pre_full_gc_dump(&_gc_timer);
 
@@ -1939,7 +1936,7 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
   do {
-    oop obj = NULL;
+    oop obj = nullptr;
     ObjArrayTask task;
     if (ParCompactionManager::steal_objarray(worker_id,  task)) {
       cm->follow_array((objArrayOop)task.obj(), task.index());
@@ -1976,7 +1973,7 @@ public:
     }
 
     PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /*parallel */, &closure);
+    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
 
     // Mark from OopStorages
     {
@@ -2224,7 +2221,7 @@ class TaskQueue : StackObj {
   uint _insert_index;
   PSParallelCompact::UpdateDensePrefixTask* _backing_array;
 public:
-  explicit TaskQueue(uint size) : _counter(0), _size(size), _insert_index(0), _backing_array(NULL) {
+  explicit TaskQueue(uint size) : _counter(0), _size(size), _insert_index(0), _backing_array(nullptr) {
     _backing_array = NEW_C_HEAP_ARRAY(PSParallelCompact::UpdateDensePrefixTask, _size, mtGC);
   }
   ~TaskQueue() {
@@ -2603,7 +2600,7 @@ void PSParallelCompact::update_deferred_object(ParCompactionManager* cm, HeapWor
 
   const SpaceInfo* const space_info = _space_info + space_id(addr);
   ObjectStartArray* const start_array = space_info->start_array();
-  if (start_array != NULL) {
+  if (start_array != nullptr) {
     start_array->allocate_block(addr);
   }
 
@@ -3097,7 +3094,7 @@ void MoveAndUpdateClosure::complete_region(ParCompactionManager *cm, HeapWord *d
 
 ParMarkBitMapClosure::IterationStatus
 MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
-  assert(destination() != NULL, "sanity");
+  assert(destination() != nullptr, "sanity");
   assert(bitmap()->obj_size(addr) == words, "bad size");
 
   _source = addr;
@@ -3109,7 +3106,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   }
 
   // The start_array must be updated even if the object is not moving.
-  if (_start_array != NULL) {
+  if (_start_array != nullptr) {
     _start_array->allocate_block(destination());
   }
 
@@ -3120,7 +3117,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
 
   oop moved_oop = cast_to_oop(copy_destination());
   compaction_manager()->update_contents(moved_oop);
-  assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop));
+  assert(oopDesc::is_oop_or_null(moved_oop), "Expected an oop or null at " PTR_FORMAT, p2i(moved_oop));
 
   update_state(words);
   assert(copy_destination() == cast_from_oop<HeapWord*>(moved_oop) + moved_oop->size(), "sanity");

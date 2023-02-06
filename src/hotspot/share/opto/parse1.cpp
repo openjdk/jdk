@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,7 +544,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     return;
   }
 
-  gvn().set_type(root(), root()->bottom_type());
   gvn().transform(top());
 
   // Import the results of the ciTypeFlow.

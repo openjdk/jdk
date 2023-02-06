@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ static OffsetCompactHashtable<
 // --------------------------------------------------------------------------
 
 typedef ConcurrentHashTable<SymbolTableConfig, mtSymbol> SymbolTableHash;
-static SymbolTableHash* _local_table = NULL;
+static SymbolTableHash* _local_table = nullptr;
 
 volatile bool SymbolTable::_has_work = 0;
 volatile bool SymbolTable::_needs_rehashing = false;
@@ -101,7 +101,7 @@ static THREAD_LOCAL bool _lookup_shared_first = false;
 #endif
 
 // Static arena for symbols that are not deallocated
-Arena* SymbolTable::_arena = NULL;
+Arena* SymbolTable::_arena = nullptr;
 
 static uint64_t _alt_hash_seed = 0;
 
@@ -229,11 +229,11 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
   if (c_heap) {
     // refcount starts as 1
     sym = new (len) Symbol((const u1*)name, len, 1);
-    assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
+    assert(sym != nullptr, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   } else if (DumpSharedSpaces) {
     // See comments inside Symbol::operator new(size_t, int)
     sym = new (len) Symbol((const u1*)name, len, PERM_REFCOUNT);
-    assert(sym != NULL, "new should call vm_exit_out_of_memory if failed to allocate symbol during DumpSharedSpaces");
+    assert(sym != nullptr, "new should call vm_exit_out_of_memory if failed to allocate symbol during DumpSharedSpaces");
   } else {
     // Allocate to global arena
     MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
@@ -247,8 +247,8 @@ class SymbolsDo : StackObj {
 public:
   SymbolsDo(SymbolClosure *cl) : _cl(cl) {}
   bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     _cl->do_symbol(value);
     return true;
   };
@@ -286,14 +286,14 @@ void SymbolTable::shared_symbols_do(SymbolClosure *cl) {
 Symbol* SymbolTable::lookup_dynamic(const char* name,
                                     int len, unsigned int hash) {
   Symbol* sym = do_lookup(name, len, hash);
-  assert((sym == NULL) || sym->refcount() != 0, "refcount must not be zero");
+  assert((sym == nullptr) || sym->refcount() != 0, "refcount must not be zero");
   return sym;
 }
 
 #if INCLUDE_CDS
 Symbol* SymbolTable::lookup_shared(const char* name,
                                    int len, unsigned int hash) {
-  Symbol* sym = NULL;
+  Symbol* sym = nullptr;
   if (!_shared_table.empty()) {
     if (_alt_hash) {
       // hash_code parameter may use alternate hashing algorithm but the shared table
@@ -301,7 +301,7 @@ Symbol* SymbolTable::lookup_shared(const char* name,
       hash = hash_shared_symbol(name, len);
     }
     sym = _shared_table.lookup(name, hash, len);
-    if (sym == NULL && DynamicArchive::is_mapped()) {
+    if (sym == nullptr && DynamicArchive::is_mapped()) {
       sym = _dynamic_shared_table.lookup(name, hash, len);
     }
   }
@@ -314,15 +314,15 @@ Symbol* SymbolTable::lookup_common(const char* name,
   Symbol* sym;
   if (_lookup_shared_first) {
     sym = lookup_shared(name, len, hash);
-    if (sym == NULL) {
+    if (sym == nullptr) {
       _lookup_shared_first = false;
       sym = lookup_dynamic(name, len, hash);
     }
   } else {
     sym = lookup_dynamic(name, len, hash);
-    if (sym == NULL) {
+    if (sym == nullptr) {
       sym = lookup_shared(name, len, hash);
-      if (sym != NULL) {
+      if (sym != nullptr) {
         _lookup_shared_first = true;
       }
     }
@@ -333,7 +333,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
-  if (sym == NULL) {
+  if (sym == nullptr) {
     sym = do_add_if_needed(name, len, hash, true);
   }
   assert(sym->refcount() != 0, "lookup should have incremented the count");
@@ -348,7 +348,7 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
   int len = end - begin;
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* found = lookup_common(name, len, hash);
-  if (found == NULL) {
+  if (found == nullptr) {
     found = do_add_if_needed(name, len, hash, true);
   }
   return found;
@@ -366,8 +366,8 @@ public:
     return _hash;
   }
   bool equals(Symbol** value, bool* is_dead) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     Symbol *sym = *value;
     if (sym->equals(_str, _len)) {
       if (sym->try_increment_refcount()) {
@@ -388,10 +388,10 @@ public:
 class SymbolTableGet : public StackObj {
   Symbol* _return;
 public:
-  SymbolTableGet() : _return(NULL) {}
+  SymbolTableGet() : _return(nullptr) {}
   void operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     _return = *value;
   }
   Symbol* get_res_sym() const {
@@ -407,7 +407,7 @@ Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   _local_table->get(thread, lookup, stg, &rehash_warning);
   update_needs_rehash(rehash_warning);
   Symbol* sym = stg.get_res_sym();
-  assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
+  assert((sym == nullptr) || sym->refcount() != 0, "found dead symbol");
   return sym;
 }
 
@@ -460,7 +460,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
-    assert(lookup_shared(name, len, hash) == NULL, "must have checked already");
+    assert(lookup_shared(name, len, hash) == nullptr, "must have checked already");
     Symbol* sym = do_add_if_needed(name, len, hash, c_heap);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
@@ -472,7 +472,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   SymbolTableGet stg;
   bool clean_hint = false;
   bool rehash_warning = false;
-  Symbol* sym = NULL;
+  Symbol* sym = nullptr;
   Thread* current = Thread::current();
 
   do {
@@ -496,7 +496,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
     check_concurrent_work();
   }
 
-  assert((sym == NULL) || sym->refcount() != 0, "found dead symbol");
+  assert((sym == nullptr) || sym->refcount() != 0, "found dead symbol");
   return sym;
 }
 
@@ -504,7 +504,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   unsigned int hash = 0;
   int len = (int)strlen(name);
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
-  if (sym == NULL) {
+  if (sym == nullptr) {
     sym = do_add_if_needed(name, len, hash, false);
   }
   if (!sym->is_permanent()) {
@@ -516,8 +516,8 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
 
 struct SizeFunc : StackObj {
   size_t operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     return (*value)->size() * HeapWordSize;
   };
 };
@@ -546,8 +546,8 @@ void SymbolTable::print_table_statistics(outputStream* st) {
 class VerifySymbols : StackObj {
 public:
   bool operator()(Symbol** value) {
-    guarantee(value != NULL, "expected valid value");
-    guarantee(*value != NULL, "value should point to a symbol");
+    guarantee(value != nullptr, "expected valid value");
+    guarantee(*value != nullptr, "value should point to a symbol");
     Symbol* sym = *value;
     guarantee(sym->equals((const char*)sym->bytes(), sym->utf8_length()),
               "symbol must be internally consistent");
@@ -578,8 +578,8 @@ class DumpSymbol : StackObj {
 public:
   DumpSymbol(Thread* thr, outputStream* st) : _thr(thr), _st(st) {}
   bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     print_symbol(_st, *value);
     return true;
   };
@@ -590,7 +590,7 @@ class DumpSharedSymbol : StackObj {
 public:
   DumpSharedSymbol(outputStream* st) : _st(st) {}
   void do_value(Symbol* value) {
-    assert(value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "value should point to a symbol");
     print_symbol(_st, value);
   };
 };
@@ -696,8 +696,8 @@ struct SymbolTableDoDelete : StackObj {
   size_t _deleted;
   SymbolTableDoDelete() : _deleted(0) {}
   void operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     Symbol *sym = *value;
     assert(sym->refcount() == 0, "refcount");
     _deleted++;
@@ -708,8 +708,8 @@ struct SymbolTableDeleteCheck : StackObj {
   size_t _processed;
   SymbolTableDeleteCheck() : _processed(0) {}
   bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     _processed++;
     Symbol *sym = *value;
     return (sym->refcount() == 0);
@@ -850,8 +850,8 @@ public:
     }
   }
   bool operator()(Symbol** value) {
-    assert(value != NULL, "expected valid value");
-    assert(*value != NULL, "value should point to a symbol");
+    assert(value != nullptr, "expected valid value");
+    assert(*value != nullptr, "value should point to a symbol");
     Symbol* sym = *value;
     size_t size = sym->size();
     size_t len = sym->utf8_length();

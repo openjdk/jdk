@@ -242,14 +242,15 @@ var getJibProfilesCommon = function (input, data) {
     common.main_profile_names = [
         "linux-x64", "linux-x86", "macosx-x64", "macosx-aarch64",
         "windows-x64", "windows-x86", "windows-aarch64",
-        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x"
+        "linux-aarch64", "linux-arm32", "linux-ppc64le", "linux-s390x",
+        "linux-riscv64"
     ];
 
     // These are the base settings for all the main build profiles.
     common.main_profile_base = {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf", "jmh", "jcov"],
         default_make_targets: ["product-bundles", "test-bundles", "static-libs-bundles"],
-        configure_args: concat("--enable-jtreg-failure-handler",
+        configure_args: concat(
             "--with-exclude-translations=es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
             "--disable-manpages",
             "--disable-jvm-feature-shenandoahgc",
@@ -519,6 +520,17 @@ var getJibProfilesProfiles = function (input, common, data) {
                 "--disable-warnings-as-errors"
             ],
         },
+
+        "linux-riscv64": {
+            target_os: "linux",
+            target_cpu: "riscv64",
+            build_cpu: "x64",
+            dependencies: ["devkit", "gtest", "build_devkit"],
+            configure_args: [
+                "--openjdk-target=riscv64-linux-gnu", "--with-freetype=bundled",
+                "--disable-warnings-as-errors"
+            ],
+        },
     };
 
     // Add the base settings to all the main profiles
@@ -714,7 +726,10 @@ var getJibProfilesProfiles = function (input, common, data) {
         },
        "linux-s390x": {
             platform: "linux-s390x",
-        }
+        },
+        "linux-riscv64": {
+            platform: "linux-riscv64",
+        },
     }
     // Generate common artifacts for all main profiles
     Object.keys(artifactData).forEach(function (name) {
@@ -995,6 +1010,20 @@ var getJibProfilesProfiles = function (input, common, data) {
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
+    } else if (input.build_os == "windows") {
+        // On windows, add the devkit debugger to the path in all the run-test profiles
+        // to make them available to the jtreg failure handler.
+        var archDir = "x64";
+        if (input.build_arch == "aarch64") {
+            archDir = "arm64"
+        }
+        windowsRunTestExtra = {
+            environment_path: [
+                input.get("devkit", "install_path") + "/10/Debuggers/" + archDir
+            ]
+        }
+        profiles["run-test"] = concatObjects(profiles["run-test"], windowsRunTestExtra);
+        profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], windowsRunTestExtra);
     }
 
     // The profile run-test-prebuilt defines src.conf as the src bundle. When
@@ -1036,11 +1065,12 @@ var getJibProfilesDependencies = function (input, common) {
     var devkit_platform_revisions = {
         linux_x64: "gcc11.2.0-OL6.4+1.0",
         macosx: "Xcode12.4+1.1",
-        windows_x64: "VS2022-17.1.0+1.0",
+        windows_x64: "VS2022-17.1.0+1.1",
         linux_aarch64: "gcc11.2.0-OL7.6+1.0",
         linux_arm: "gcc8.2.0-Fedora27+1.0",
         linux_ppc64le: "gcc8.2.0-Fedora27+1.0",
-        linux_s390x: "gcc8.2.0-Fedora27+1.0"
+        linux_s390x: "gcc8.2.0-Fedora27+1.0",
+        linux_riscv64: "gcc11.3.0-Fedora_rawhide_68692+1.1"
     };
 
     var devkit_platform = (input.target_cpu == "x86"
@@ -1220,7 +1250,7 @@ var getJibProfilesDependencies = function (input, common) {
         gtest: {
             organization: common.organization,
             ext: "tar.gz",
-            revision: "1.8.1"
+            revision: "1.13.0+1.0"
         },
     };
 

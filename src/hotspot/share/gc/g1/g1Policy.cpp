@@ -103,8 +103,9 @@ void G1Policy::init(G1CollectedHeap* g1h, G1CollectionSet* collection_set) {
   _free_regions_at_end_of_collection = _g1h->num_free_regions();
 
   update_young_length_bounds();
-  // We may immediately start allocating regions and placing them on the
-  // collection set list. Initialize the per-collection set info
+
+  // We immediately start allocating regions placing them in the collection set.
+  // Initialize the collection set info.
   _collection_set->start_incremental_building();
 }
 
@@ -637,8 +638,6 @@ void G1Policy::record_young_collection_start() {
   assert_used_and_recalculate_used_equal(_g1h);
 
   phase_times()->record_cur_collection_start_sec(now.seconds());
-
-  _collection_set->reset_bytes_used_before();
 
   // do that for any other surv rate groups
   _eden_surv_rate_group->stop_adding_regions();

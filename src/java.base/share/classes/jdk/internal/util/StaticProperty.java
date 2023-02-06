@@ -26,7 +26,6 @@
 package jdk.internal.util;
 
 import java.util.Properties;
-import java.nio.charset.Charset;
 
 /**
  * System Property access for internal use only.
@@ -54,7 +53,6 @@ public final class StaticProperty {
     private static final String FILE_ENCODING;
     private static final String JAVA_PROPERTIES_DATE;
     private static final String SUN_JNU_ENCODING;
-    private static final Charset jnuCharset;
     private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
     private static final String OS_NAME;
     private static final String OS_VERSION;
@@ -77,7 +75,6 @@ public final class StaticProperty {
         FILE_ENCODING = getProperty(props, "file.encoding");
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
-        jnuCharset = Charset.forName(SUN_JNU_ENCODING, Charset.defaultCharset());
         JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
         OS_NAME = getProperty(props, "os.name");
         OS_VERSION = getProperty(props, "os.version");
@@ -240,16 +237,6 @@ public final class StaticProperty {
      */
     public static String jnuEncoding() {
         return SUN_JNU_ENCODING;
-    }
-
-    /**
-     * {@return {@code Charset} for {@code sun.jnu.encoding} system property}
-     *
-     * <strong>If {@code sun.jnu.encoding} system property has invalid
-     * encoding name, {@link Charset#defaultCharset()} is returned.</strong>
-     */
-    public static Charset jnuCharset() {
-        return jnuCharset;
     }
 
     /**

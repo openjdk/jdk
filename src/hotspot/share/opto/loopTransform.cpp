@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -849,6 +849,7 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
     switch (n->Opcode()) {
       case Op_StrComp:
       case Op_StrEquals:
+      case Op_VectorizedHashCode:
       case Op_StrIndexOf:
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
@@ -1017,6 +1018,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
       case Op_StrIndexOfChar:
       case Op_EncodeISOArray:
       case Op_AryEq:
+      case Op_VectorizedHashCode:
       case Op_CountPositives: {
         // Do not unroll a loop with String intrinsics code.
         // String intrinsics are large and have loops.
@@ -1040,7 +1042,7 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
     }
 
     // Only attempt slp analysis when user controls do not prohibit it
-    if (!cl->range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
+    if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
       if (future_unroll_cnt >= _local_loop_unroll_factor) {
@@ -1914,7 +1916,7 @@ void PhaseIdealLoop::insert_scalar_rced_post_loop(IdealLoopTree *loop, Node_List
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
   // only process RCE'd main loops
-  if (!cl->is_main_loop() || cl->range_checks_present()) return;
+  if (!cl->is_main_loop() || loop->range_checks_present()) return;
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
@@ -2304,35 +2306,55 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
         //
         BoolTest::mask bt = loop_end->test_trip();
         assert(bt == BoolTest::lt || bt == BoolTest::gt, "canonical test is expected");
-        Node* adj_max = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
-        set_ctrl(adj_max, C->root());
-        Node* old_limit = NULL;
-        Node* adj_limit = NULL;
+        Node* underflow_clamp = _igvn.intcon((stride_con > 0) ? min_jint : max_jint);
+        set_ctrl(underflow_clamp, C->root());
+        Node* limit_before_underflow = NULL;
+        Node* prev_limit = NULL;
         Node* bol = limit->is_CMove() ? limit->in(CMoveNode::Condition) : NULL;
         if (loop_head->unrolled_count() > 1 &&
             limit->is_CMove() && limit->Opcode() == Op_CMoveI &&
-            limit->in(CMoveNode::IfTrue) == adj_max &&
+            limit->in(CMoveNode::IfTrue) == underflow_clamp &&
             bol->as_Bool()->_test._test == bt &&
             bol->in(1)->Opcode() == Op_CmpI &&
             bol->in(1)->in(2) == limit->in(CMoveNode::IfFalse)) {
-          // Loop was unrolled before.
-          // Optimize the limit to avoid nested CMove:
-          // use original limit as old limit.
-          old_limit = bol->in(1)->in(1);
-          // Adjust previous adjusted limit.
-          adj_limit = limit->in(CMoveNode::IfFalse);
-          adj_limit = new SubINode(adj_limit, stride);
+          // Loop was unrolled before, and had an unrolling protection CMoveI.
+          // Use inputs to previous CMoveI for the new one:
+          prev_limit = limit->in(CMoveNode::IfFalse); // unpack previous limit with underflow
+          limit_before_underflow = bol->in(1)->in(1); // CMoveI -> Bool -> CmpI -> limit_before_underflow
         } else {
-          old_limit = limit;
-          adj_limit = new SubINode(limit, stride);
+          // Loop was not unrolled before, or the limit did not underflow in a previous unrolling.
+          prev_limit = limit;
+          limit_before_underflow = limit;
         }
-        assert(old_limit != NULL && adj_limit != NULL, "");
-        register_new_node(adj_limit, ctrl); // adjust amount
-        Node* adj_cmp = new CmpINode(old_limit, adj_limit);
-        register_new_node(adj_cmp, ctrl);
-        Node* adj_bool = new BoolNode(adj_cmp, bt);
-        register_new_node(adj_bool, ctrl);
-        new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+        //                           prev_limit   stride
+        //                                |         |
+        // limit_before_underflow  new_limit_with_underflow (SubI)
+        //                   |        |           |
+        //                 underflow_cmp          |
+        //                   |                    |
+        //                 underflow_bool [lt/gt] |
+        //                   |                    |
+        //                   +----+  +------------+
+        //                        |  |
+        //                        |  | underflow_clamp (min_jint/max_jint)
+        //                        |  |  |
+        //                       CMoveINode ([min_jint..hi] / [lo..max_jing])
+        //
+        assert(limit_before_underflow != NULL && prev_limit != NULL, "must find them");
+        Node* new_limit_with_underflow = new SubINode(prev_limit, stride);
+        register_new_node(new_limit_with_underflow, ctrl);
+        // We must compare with limit_before_underflow, prev_limit may already have underflowed.
+        Node* underflow_cmp = new CmpINode(limit_before_underflow, new_limit_with_underflow);
+        register_new_node(underflow_cmp, ctrl);
+        Node* underflow_bool = new BoolNode(underflow_cmp, bt);
+        register_new_node(underflow_bool, ctrl);
+        // Prevent type from becoming too pessimistic due to type underflow. The new limit
+        // may be arbitrarily decreased by unrolling, but still in [min_jint..hi] / [lo..max_jint]
+        const TypeInt* limit_before_underflow_t = _igvn.type(limit_before_underflow)->is_int();
+        const TypeInt* no_underflow_t = TypeInt::make(stride_con > 0 ? min_jint : limit_before_underflow_t->_lo,
+                                                      stride_con > 0 ? limit_before_underflow_t->_hi : max_jint,
+                                                      Type::WidenMax);
+        new_limit = new CMoveINode(underflow_bool, new_limit_with_underflow, underflow_clamp, no_underflow_t);
       }
       register_new_node(new_limit, ctrl);
     }
@@ -2981,7 +3003,7 @@ Node* PhaseIdealLoop::add_range_check_predicate(IdealLoopTree* loop, CountedLoop
 
 //------------------------------do_range_check---------------------------------
 // Eliminate range-checks and other trip-counter vs loop-invariant tests.
-int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
+void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 #ifndef PRODUCT
   if (PrintOpto && VerifyLoopOptimizations) {
     tty->print("Range Check Elimination ");
@@ -2994,12 +3016,10 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
   assert(RangeCheckElimination, "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  // If we fail before trying to eliminate range checks, set multiversion state
-  int closed_range_checks = 1;
 
   // protect against stride not being a constant
   if (!cl->stride_is_con()) {
-    return closed_range_checks;
+    return;
   }
   // Find the trip counter; we are iteration splitting based on it
   Node *trip_counter = cl->phi();
@@ -3011,7 +3031,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Opaque1 node is optimized away and then another round
   // of loop opts attempted.
   if (cl->is_canonical_loop_entry() == NULL) {
-    return closed_range_checks;
+    return;
   }
 
   // Need to find the main-loop zero-trip guard
@@ -3025,7 +3045,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   Node *p_f = iffm->in(0);
   // pre loop may have been optimized out
   if (p_f->Opcode() != Op_IfFalse) {
-    return closed_range_checks;
+    return;
   }
   CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
   assert(pre_end->loopnode()->is_pre_loop(), "");
@@ -3034,7 +3054,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // optimized away and then another round of loop opts attempted.
   // We can not optimize this particular loop in that case.
   if (pre_opaq1->Opcode() != Op_Opaque1) {
-    return closed_range_checks;
+    return;
   }
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
   Node *pre_limit = pre_opaq->in(1);
@@ -3046,7 +3066,7 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // pre-loop Opaque1 node.
   Node *orig_limit = pre_opaq->original_loop_limit();
   if (orig_limit == NULL || _igvn.type(orig_limit) == Type::TOP) {
-    return closed_range_checks;
+    return;
   }
   // Must know if its a count-up or count-down loop
 
@@ -3059,10 +3079,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   set_ctrl(one,  C->root());
   set_ctrl(mini, C->root());
 
-  // Count number of range checks and reduce by load range limits, if zero,
-  // the loop is in canonical form to multiversion.
-  closed_range_checks = 0;
-
   Node* predicate_proj = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(predicate_proj->is_Proj() && predicate_proj->in(0)->is_If(), "if projection only");
 
@@ -3073,7 +3089,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         iff->Opcode() == Op_RangeCheck) { // Test?
       // Test is an IfNode, has 2 projections.  If BOTH are in the loop
       // we need loop unswitching instead of iteration splitting.
-      closed_range_checks++;
       Node *exit = loop->is_loop_exit(iff);
       if (!exit) continue;
       int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
@@ -3242,9 +3257,6 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           --imax;
         }
       }
-      if (int_limit->Opcode() == Op_LoadRange) {
-        closed_range_checks--;
-      }
     } // End of is IF
   }
   if (predicate_proj != cl->skip_strip_mined()->in(LoopNode::EntryControl)) {
@@ -3294,32 +3306,19 @@ int PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
 
-  return closed_range_checks;
+  return;
 }
 
-//------------------------------has_range_checks-------------------------------
-// Check to see if RCE cleaned the current loop of range-checks.
-void PhaseIdealLoop::has_range_checks(IdealLoopTree *loop) {
-  assert(RangeCheckElimination, "");
-
-  // skip if not a counted loop
-  if (!loop->is_counted()) return;
-
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-
-  // skip this loop if it is already checked
-  if (cl->has_been_range_checked()) return;
-
-  // Now check for existence of range checks
-  for (uint i = 0; i < loop->_body.size(); i++) {
-    Node *iff = loop->_body[i];
+bool IdealLoopTree::compute_has_range_checks() const {
+  assert(_head->is_CountedLoop(), "");
+  for (uint i = 0; i < _body.size(); i++) {
+    Node *iff = _body[i];
     int iff_opc = iff->Opcode();
     if (iff_opc == Op_If || iff_opc == Op_RangeCheck) {
-      cl->mark_has_range_checks();
-      break;
+      return true;
     }
   }
-  cl->set_has_been_range_checked();
+  return false;
 }
 
 //-------------------------multi_version_post_loops----------------------------
@@ -3616,11 +3615,11 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   }
 
 #ifdef ASSERT
-  // Ensure only one phi which is the iv.
+  // Ensure at most one used phi exists, which is the iv.
   Node* iv = NULL;
   for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
     Node* n = cl->fast_out(i);
-    if (n->Opcode() == Op_Phi) {
+    if ((n->Opcode() == Op_Phi) && (n->outcnt() > 0)) {
       assert(iv == NULL, "Too many phis");
       iv = n;
     }
@@ -3692,7 +3691,12 @@ bool IdealLoopTree::do_remove_empty_loop(PhaseIdealLoop *phase) {
   // counted loop has limit check predicate.
   Node* phi = cl->phi();
   Node* exact_limit = phase->exact_limit(this);
-  Node* final_iv = new SubINode(exact_limit, cl->stride());
+
+  // We need to pin the exact limit to prevent it from floating above the zero trip guard.
+  Node* cast_ii = ConstraintCastNode::make(cl->in(LoopNode::EntryControl), exact_limit, phase->_igvn.type(exact_limit), ConstraintCastNode::UnconditionalDependency, T_INT);
+  phase->register_new_node(cast_ii, cl->in(LoopNode::EntryControl));
+
+  Node* final_iv = new SubINode(cast_ii, cl->stride());
   phase->register_new_node(final_iv, cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi, final_iv);
 
@@ -3980,13 +3984,7 @@ bool IdealLoopTree::iteration_split_impl(PhaseIdealLoop *phase, Node_List &old_n
     // with full checks, but the main-loop with no checks.  Remove said checks
     // from the main body.
     if (should_rce) {
-      if (phase->do_range_check(this, old_new) != 0) {
-        cl->mark_has_range_checks();
-      } else {
-        cl->clear_has_range_checks();
-      }
-    } else if (PostLoopMultiversioning) {
-      phase->has_range_checks(this);
+      phase->do_range_check(this, old_new);
     }
 
     if (should_unroll && !should_peel && PostLoopMultiversioning &&

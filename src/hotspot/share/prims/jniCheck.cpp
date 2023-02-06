@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ static struct JNINativeInterface_ * unchecked_jni_NativeInterface;
 extern "C" {                                                             \
   result_type JNICALL header {                                           \
     Thread* cur = Thread::current_or_null();                             \
-    if (cur == NULL || !cur->is_Java_thread()) {                         \
+    if (cur == nullptr || !cur->is_Java_thread()) {                      \
       tty->print_cr("%s", fatal_using_jnienv_in_nonjava);                \
       os::abort(true);                                                   \
     }                                                                    \
@@ -101,7 +101,7 @@ extern "C" {                                                             \
     if (env != xenv) {                                                   \
       NativeReportJNIFatalError(thr, warn_wrong_jnienv);                 \
     }                                                                    \
-    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thr));         \
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thr));               \
     VM_ENTRY_BASE(result_type, header, thr)
 
 
@@ -273,7 +273,7 @@ checkInstanceFieldID(JavaThread* thr, jfieldID fid, jobject obj, int ftype)
   /* validate the object being passed and then get its class */
   ASSERT_OOPS_ALLOWED;
   oop oopObj = jniCheck::validate_object(thr, obj);
-  if (oopObj == NULL) {
+  if (oopObj == nullptr) {
     ReportJNIFatalError(thr, fatal_null_object);
   }
   Klass* k_oop = oopObj->klass();
@@ -303,7 +303,7 @@ checkString(JavaThread* thr, jstring js)
 {
   ASSERT_OOPS_ALLOWED;
   oop s = jniCheck::validate_object(thr, js);
-  if ((s == NULL) || !java_lang_String::is_instance(s))
+  if ((s == nullptr) || !java_lang_String::is_instance(s))
     ReportJNIFatalError(thr, fatal_non_string);
 }
 
@@ -314,7 +314,7 @@ check_is_array(JavaThread* thr, jarray jArray)
   arrayOop aOop;
 
   aOop = (arrayOop)jniCheck::validate_object(thr, jArray);
-  if (aOop == NULL || !aOop->is_array()) {
+  if (aOop == nullptr || !aOop->is_array()) {
     ReportJNIFatalError(thr, fatal_non_array);
   }
   return aOop;
@@ -369,9 +369,9 @@ static void* check_jni_wrap_copy_array(JavaThread* thr, jarray array,
 
 static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
     void* obj, void* carray, size_t* rsz) {
-  if (carray == NULL) {
-    tty->print_cr("%s: elements vector NULL" PTR_FORMAT, fn_name, p2i(obj));
-    NativeReportJNIFatalError(thr, "Elements vector NULL");
+  if (carray == nullptr) {
+    tty->print_cr("%s: elements vector null" PTR_FORMAT, fn_name, p2i(obj));
+    NativeReportJNIFatalError(thr, "Elements vector null");
   }
   GuardedMemory guarded(carray);
   void* orig_result = guarded.get_tag();
@@ -381,13 +381,13 @@ static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
     DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
     NativeReportJNIFatalError(thr, err_msg("%s: failed bounds check", fn_name));
   }
-  if (orig_result == NULL) {
+  if (orig_result == nullptr) {
     tty->print_cr("%s: unrecognized elements. array: " PTR_FORMAT " carray: " PTR_FORMAT,
                   fn_name, p2i(obj), p2i(carray));
     DEBUG_ONLY(guarded.print_on(tty);) // This may crash.
     NativeReportJNIFatalError(thr, err_msg("%s: unrecognized elements", fn_name));
   }
-  if (rsz != NULL) {
+  if (rsz != nullptr) {
     *rsz = guarded.get_user_size();
   }
   return orig_result;
@@ -422,12 +422,12 @@ static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
 }
 
 oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
-  if ((obj != NULL) && (JNIHandles::handle_type(thr, obj) != JNIInvalidRefType)) {
+  if ((obj != nullptr) && (JNIHandles::handle_type(thr, obj) != JNIInvalidRefType)) {
     ASSERT_OOPS_ALLOWED;
     return JNIHandles::resolve_external_guard(obj);
   }
   ReportJNIFatalError(thr, fatal_bad_ref_to_jni);
-  return NULL;
+  return nullptr;
 }
 
 
@@ -435,7 +435,7 @@ Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
   ASSERT_OOPS_ALLOWED;
   // do the fast jmethodID check first
   Method* m = Method::checked_resolve_jmethod_id(method_id);
-  if (m == NULL) {
+  if (m == nullptr) {
     ReportJNIFatalError(thr, fatal_wrong_class_or_method);
   }
   // jmethodIDs are handles in the class loader data,
@@ -448,10 +448,10 @@ Method* jniCheck::validate_jmethod_id(JavaThread* thr, jmethodID method_id) {
 
 
 oop jniCheck::validate_object(JavaThread* thr, jobject obj) {
-  if (obj == NULL) return NULL;
+  if (obj == nullptr) return nullptr;
   ASSERT_OOPS_ALLOWED;
   oop oopObj = jniCheck::validate_handle(thr, obj);
-  if (oopObj == NULL) {
+  if (oopObj == nullptr) {
     ReportJNIFatalError(thr, fatal_bad_ref_to_jni);
   }
   return oopObj;
@@ -461,7 +461,7 @@ oop jniCheck::validate_object(JavaThread* thr, jobject obj) {
 // passed to JNI findClass should not be decorated unless they are
 // array descriptors.
 void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
-  if (name == NULL) return;  // implementation accepts NULL so just return
+  if (name == nullptr) return;  // implementation accepts null so just return
 
   size_t len = strlen(name);
 
@@ -485,7 +485,7 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
 Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primitive) {
   ASSERT_OOPS_ALLOWED;
   oop mirror = jniCheck::validate_handle(thr, clazz);
-  if (mirror == NULL) {
+  if (mirror == nullptr) {
     ReportJNIFatalError(thr, fatal_received_null_class);
   }
 
@@ -495,7 +495,7 @@ Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primit
 
   Klass* k = java_lang_Class::as_Klass(mirror);
   // Make allowances for primitive classes ...
-  if (!(k != NULL || (allow_primitive && java_lang_Class::is_primitive(mirror)))) {
+  if (!(k != nullptr || (allow_primitive && java_lang_Class::is_primitive(mirror)))) {
     ReportJNIFatalError(thr, fatal_class_not_a_class);
   }
   return k;
@@ -503,7 +503,7 @@ Klass* jniCheck::validate_class(JavaThread* thr, jclass clazz, bool allow_primit
 
 void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   ASSERT_OOPS_ALLOWED;
-  assert(klass != NULL, "klass argument must have a value");
+  assert(klass != nullptr, "klass argument must have a value");
 
   if (!klass->is_instance_klass() ||
       !klass->is_subclass_of(vmClasses::Throwable_klass())) {
@@ -516,7 +516,7 @@ void jniCheck::validate_call(JavaThread* thr, jclass clazz, jmethodID method_id,
   Method* m = jniCheck::validate_jmethod_id(thr, method_id);
   InstanceKlass* holder = m->method_holder();
 
-  if (clazz != NULL) {
+  if (clazz != nullptr) {
     Klass* k = jniCheck::validate_class(thr, clazz, false);
     // Check that method is in the class, must be InstanceKlass
     if (!InstanceKlass::cast(k)->is_subtype_of(holder)) {
@@ -524,9 +524,9 @@ void jniCheck::validate_call(JavaThread* thr, jclass clazz, jmethodID method_id,
     }
   }
 
-  if (obj != NULL) {
+  if (obj != nullptr) {
     oop recv = jniCheck::validate_object(thr, obj);
-    assert(recv != NULL, "validate_object checks that");
+    assert(recv != nullptr, "validate_object checks that");
     Klass* rk = recv->klass();
 
     // Check that the object is a subtype of method holder too.
@@ -654,9 +654,9 @@ JNI_ENTRY_CHECKED(jint,
     functionEnter(thr);
     IN_VM(
       oop oopObj = jniCheck::validate_object(thr, obj);
-      if (oopObj == NULL) {
-        // Unchecked Throw tolerates a NULL obj, so just warn
-        ReportJNIWarning(thr, "JNI Throw called with NULL throwable");
+      if (oopObj == nullptr) {
+        // Unchecked Throw tolerates a null obj, so just warn
+        ReportJNIWarning(thr, "JNI Throw called with null throwable");
       } else {
         jniCheck::validate_throwable_klass(thr, oopObj->klass());
       }
@@ -673,7 +673,7 @@ JNI_ENTRY_CHECKED(jint,
     functionEnter(thr);
     IN_VM(
       Klass* k = jniCheck::validate_class(thr, clazz, false);
-      assert(k != NULL, "validate_class shouldn't return NULL Klass*");
+      assert(k != nullptr, "validate_class shouldn't return null Klass*");
       jniCheck::validate_throwable_klass(thr, k);
     )
     jint result = UNCHECKED()->ThrowNew(env, clazz, msg);
@@ -739,7 +739,7 @@ JNI_ENTRY_CHECKED(jobject,
                            jobject lobj))
     functionEnter(thr);
     IN_VM(
-      if (lobj != NULL) {
+      if (lobj != nullptr) {
         jniCheck::validate_handle(thr, lobj);
       }
     )
@@ -785,13 +785,13 @@ JNI_ENTRY_CHECKED(jboolean,
     functionEnterExceptionAllowed(thr);
     IN_VM(
       /* This JNI function can be used to compare weak global references
-       * to NULL objects. If the handles are valid, but contain NULL,
+       * to nullptr objects. If the handles are valid, but contain nullptr,
        * then don't attempt to validate the object.
        */
-      if (obj1 != NULL && jniCheck::validate_handle(thr, obj1) != NULL) {
+      if (obj1 != nullptr && jniCheck::validate_handle(thr, obj1) != nullptr) {
         jniCheck::validate_object(thr, obj1);
       }
-      if (obj2 != NULL && jniCheck::validate_handle(thr, obj2) != NULL) {
+      if (obj2 != nullptr && jniCheck::validate_handle(thr, obj2) != nullptr) {
         jniCheck::validate_object(thr, obj2);
       }
     )
@@ -805,7 +805,7 @@ JNI_ENTRY_CHECKED(jobject,
                           jobject ref))
     functionEnter(thr);
     IN_VM(
-      if (ref != NULL) {
+      if (ref != nullptr) {
         jniCheck::validate_handle(thr, ref);
       }
     )
@@ -932,7 +932,7 @@ JNI_ENTRY_CHECKED(ResultType,  \
     functionEnter(thr); \
     va_list args; \
     IN_VM( \
-      jniCheck::validate_call(thr, NULL, methodID, obj); \
+      jniCheck::validate_call(thr, nullptr, methodID, obj); \
     ) \
     va_start(args,methodID); \
     ResultType result =UNCHECKED()->Call##Result##MethodV(env, obj, methodID, \
@@ -950,7 +950,7 @@ JNI_ENTRY_CHECKED(ResultType,  \
                                     va_list args)) \
     functionEnter(thr); \
     IN_VM(\
-      jniCheck::validate_call(thr, NULL, methodID, obj); \
+      jniCheck::validate_call(thr, nullptr, methodID, obj); \
     ) \
     ResultType result = UNCHECKED()->Call##Result##MethodV(env, obj, methodID,\
                                                            args); \
@@ -966,7 +966,7 @@ JNI_ENTRY_CHECKED(ResultType,  \
                                     const jvalue * args)) \
     functionEnter(thr); \
     IN_VM( \
-      jniCheck::validate_call(thr, NULL, methodID, obj); \
+      jniCheck::validate_call(thr, nullptr, methodID, obj); \
     ) \
     ResultType result = UNCHECKED()->Call##Result##MethodA(env, obj, methodID,\
                                                            args); \
@@ -993,7 +993,7 @@ JNI_ENTRY_CHECKED(void,
     functionEnter(thr);
     va_list args;
     IN_VM(
-      jniCheck::validate_call(thr, NULL, methodID, obj);
+      jniCheck::validate_call(thr, nullptr, methodID, obj);
     )
     va_start(args,methodID);
     UNCHECKED()->CallVoidMethodV(env,obj,methodID,args);
@@ -1009,7 +1009,7 @@ JNI_ENTRY_CHECKED(void,
                               va_list args))
     functionEnter(thr);
     IN_VM(
-      jniCheck::validate_call(thr, NULL, methodID, obj);
+      jniCheck::validate_call(thr, nullptr, methodID, obj);
     )
     UNCHECKED()->CallVoidMethodV(env,obj,methodID,args);
     thr->set_pending_jni_exception_check("CallVoidMethodV");
@@ -1023,7 +1023,7 @@ JNI_ENTRY_CHECKED(void,
                               const jvalue * args))
     functionEnter(thr);
     IN_VM(
-      jniCheck::validate_call(thr, NULL, methodID, obj);
+      jniCheck::validate_call(thr, nullptr, methodID, obj);
     )
     UNCHECKED()->CallVoidMethodA(env,obj,methodID,args);
     thr->set_pending_jni_exception_check("CallVoidMethodA");
@@ -1442,14 +1442,14 @@ JNI_ENTRY_CHECKED(const jchar *,
     IN_VM(
       checkString(thr, str);
     )
-    jchar* new_result = NULL;
+    jchar* new_result = nullptr;
     const jchar *result = UNCHECKED()->GetStringChars(env,str,isCopy);
-    assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
-    if (result != NULL) {
-      size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for NULL termination
+    assert (isCopy == nullptr || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
+    if (result != nullptr) {
+      size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for null termination
       len *= sizeof(jchar);
       new_result = (jchar*) GuardedMemory::wrap_copy(result, len, STRING_TAG);
-      if (new_result == NULL) {
+      if (new_result == nullptr) {
         vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringChars");
       }
       // Avoiding call to UNCHECKED()->ReleaseStringChars() since that will fire unexpected dtrace probes
@@ -1468,7 +1468,7 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       checkString(thr, str);
     )
-    if (chars == NULL) {
+    if (chars == nullptr) {
        // still do the unchecked call to allow dtrace probes
        UNCHECKED()->ReleaseStringChars(env,str,chars);
     }
@@ -1526,13 +1526,13 @@ JNI_ENTRY_CHECKED(const char *,
     IN_VM(
       checkString(thr, str);
     )
-    char* new_result = NULL;
+    char* new_result = nullptr;
     const char *result = UNCHECKED()->GetStringUTFChars(env,str,isCopy);
-    assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
-    if (result != NULL) {
-      size_t len = strlen(result) + 1; // + 1 for NULL termination
+    assert (isCopy == nullptr || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
+    if (result != nullptr) {
+      size_t len = strlen(result) + 1; // + 1 for null termination
       new_result = (char*) GuardedMemory::wrap_copy(result, len, STRING_UTF_TAG);
-      if (new_result == NULL) {
+      if (new_result == nullptr) {
         vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringUTFChars");
       }
       // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
@@ -1551,7 +1551,7 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       checkString(thr, str);
     )
-    if (chars == NULL) {
+    if (chars == nullptr) {
        // still do the unchecked call to allow dtrace probes
        UNCHECKED()->ReleaseStringUTFChars(env,str,chars);
     }
@@ -1657,7 +1657,7 @@ JNI_ENTRY_CHECKED(ElementType *,  \
     ElementType *result = UNCHECKED()->Get##Result##ArrayElements(env, \
                                                                   array, \
                                                                   isCopy); \
-    if (result != NULL) { \
+    if (result != nullptr) { \
       result = (ElementType *) check_jni_wrap_copy_array(thr, array, result); \
     } \
     functionExit(thr); \
@@ -1838,7 +1838,7 @@ JNI_ENTRY_CHECKED(void *,
       check_is_primitive_array(thr, array);
     )
     void *result = UNCHECKED()->GetPrimitiveArrayCritical(env, array, isCopy);
-    if (result != NULL) {
+    if (result != nullptr) {
       result = check_jni_wrap_copy_array(thr, array, result);
     }
     functionExit(thr);
@@ -1894,7 +1894,7 @@ JNI_ENTRY_CHECKED(jweak,
                                jobject obj))
     functionEnter(thr);
     IN_VM(
-      if (obj != NULL) {
+      if (obj != nullptr) {
         jniCheck::validate_handle(thr, obj);
       }
     )
@@ -1998,11 +1998,11 @@ JNI_END
  * Structure containing all checked jni functions
  */
 struct JNINativeInterface_  checked_jni_NativeInterface = {
-    NULL,
-    NULL,
-    NULL,
+    nullptr,
+    nullptr,
+    nullptr,
 
-    NULL,
+    nullptr,
 
     checked_jni_GetVersion,
 
