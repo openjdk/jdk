@@ -178,7 +178,7 @@ public class EndOfCenValidation {
             channel.write(buffer.slice(0, buffer.limit()-ENDHDR));
 
             if (inflateCen) {
-                // Inject edecmpty bytes to make the actual CEN size match the EOC
+                // Inject "empty bytes" to make the actual CEN size match the EOC
                 int injectBytes = cenSize - currentCenSize;
                 channel.position(channel.position() + injectBytes);
             }
