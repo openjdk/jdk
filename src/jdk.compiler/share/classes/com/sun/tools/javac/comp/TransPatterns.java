@@ -740,7 +740,7 @@ public class TransPatterns extends TreeTranslator {
                         List<JCCaseLabel> newLabel;
                         if (hasUnconditional) {
                             newLabel = List.of(make.ConstantCaseLabel(makeNull()),
-                                               make.DefaultCaseLabel());
+                                    make.PatternCaseLabel(binding, newGuard));
                         } else {
                             newLabel = List.of(make.PatternCaseLabel(binding, newGuard));
                         }
