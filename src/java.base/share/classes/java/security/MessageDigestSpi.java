@@ -207,6 +207,10 @@ public abstract class MessageDigestSpi {
         if (this instanceof Cloneable) {
             MessageDigestSpi o = (MessageDigestSpi)super.clone();
             if (o.tempArray != null) {
+                // New byte arrays are allocated when the ByteBuffer argument
+                // to engineUpdate is not backed by a byte array.
+                // Here, the newly allocated byte array must also be cloned
+                // to prevent threads from sharing the same memory.
                 o.tempArray = tempArray.clone();
             }
             return o;
