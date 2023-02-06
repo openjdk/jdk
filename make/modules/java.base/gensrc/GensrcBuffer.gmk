@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ define genBinOps
   $(call fixRw,$1,$4)
   $1_nbytes := $5
   $1_nbytesButOne := $6
-  $1_CMD := $(TOOL_SPP) \
+  $1_CMD := $(TOOL_SPP) -nel \
     -Dtype=$$($1_type) \
     -DType=$$($1_Type) \
     -Dfulltype=$$($1_fulltype) \
@@ -231,7 +231,7 @@ define SetupGenBuffer
 
   $$($1_DST): $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.buffer.dir
 	$(RM) $$($1_OUT).tmp
-	$(TOOL_SPP) -i$$($1_SRC) -o$$($1_OUT).tmp \
+	$(TOOL_SPP) -i$$($1_SRC) -o$$($1_OUT).tmp -nel \
 	    -K$$($1_type) \
 	    -K$$($1_category) \
 	    -K$$($1_streams) \
