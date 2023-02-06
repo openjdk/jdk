@@ -1225,7 +1225,7 @@ class FdLibm {
             ix = jx & 0x7fff_ffff;
 
             // x is INF or NaN
-            if ( ix >= 0x7ff0_0000) {
+            if (ix >= 0x7ff0_0000) {
                 return x + x;
             }
 
@@ -1298,7 +1298,7 @@ class FdLibm {
             ix &= 0x7fff_ffff;
 
             // x is INF or NaN
-            if (ix >= 0x7ff_00000) {
+            if (ix >= 0x7ff0_0000) {
                 return x*x;
             }
 
