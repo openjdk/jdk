@@ -7207,12 +7207,8 @@ typedef uint32_t u32;
     __ adc(sum._hi, sum._hi, rscratch2);
   }
 
-  void poly1305_multiply(RegPair u[], Register s[], Register r[],
+  void poly1305_multiply(RegPair u[], Register s[], Register r[], Register RR2,
                          RegSetIterator<Register> scratch) {
-      // Compute (R2 << 26) * 5.
-      Register RR2 = *++scratch;
-      __ lsl(RR2, r[2], 26);
-      __ add(RR2, RR2, RR2, __ LSL, 2);
       // Compute (S2 << 26) * 5.
       Register RS2 = *++scratch;
       __ lsl(RS2, s[2], 26);
@@ -7239,8 +7235,6 @@ typedef uint32_t u32;
       __ adc(u[2]._hi, u[2]._hi, zr);
 
       // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      DEBUG_ONLY(__ nop());
-
       __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
       __ ubfx(rscratch1, rscratch1, 0, 52);
       __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
@@ -7272,12 +7266,6 @@ typedef uint32_t u32;
     const Register R0 = *++regs, R1 = *++regs, R2 = *++regs;
     pack_26(R0, R1, R2, r_start);
 
-    // // RRn is (Rn >> 26) * 5
-    // const Register RR0 = *++regs, RR1 = *++regs, RR2 = *++regs;
-    // __ lsr(RR0, R0, 26); __ add(RR0, RR0, RR0, Assembler::LSL, 2);
-    // __ lsr(RR1, R1, 26); __ add(RR1, RR1, RR1, Assembler::LSL, 2);
-    // __ lsr(RR2, R2, 26); __ add(RR2, RR2, RR2, Assembler::LSL, 2);
-
     // Un is the current checksum
     const Register U0 = *++regs, U1 = *++regs, U2 = *++regs;
     pack_26(U0, U1, U2, acc_start);
@@ -7288,7 +7276,18 @@ typedef uint32_t u32;
     // Sn is to be the sum of Un and the next block of data
     const Register S0 = *++regs, S1 = *++regs, S2 = *++regs;
 
-    poo = __ pc();
+    RegPair u0(U0, *++regs);
+    RegPair u1(U1, *++regs);
+    RegPair u2(U2, *++regs);
+
+    RegPair U[] = {u0, u1, u2};
+    Register S[] = {S0, S1, S2};
+    Register R[] = {R0, R1, R2};
+
+    // Compute (R2 << 26) * 5.
+    Register RR2 = *++regs;
+    __ lsl(RR2, R2, 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
 
     __ subsw(length, length, BLOCK_LENGTH);
     __ br(~ Assembler::GE, DONE); {
@@ -7306,69 +7305,8 @@ typedef uint32_t u32;
       __ mov(rscratch1, 1 << 24);
       __ add(S2, S2, rscratch1);
 
-      RegPair u0(U0, *++regs);
-      RegPair u1(U1, *++regs);
-      RegPair u2(U2, *++regs);
-
-      RegPair U[] = {u0, u1, u2};
-      Register S[] = {S0, S1, S2};
-      Register R[] = {R0, R1, R2};
-
-      poly1305_multiply(U, S, R, regs);
-
-      // // Compute (R2 << 26) * 5.
-      // Register RR2 = *++regs;
-      // __ lsl(RR2, R2, 26);
-      // __ add(RR2, RR2, RR2, __ LSL, 2);
-      // // Compute (S2 << 26) * 5.
-      // Register RS2 = *++regs;
-      // __ lsl(RS2, S2, 26);
-      // __ add(RS2, RS2, RS2, __ LSL, 2);
-
-      // wide_mul(u0, S0, R0);
-      // wide_mul(u1, S0, R1); wide_madd(u1, S1, R0);
-      // wide_mul(u2, S0, R2); wide_madd(u2, S1, R1);  wide_madd(u2, S2, R0);
-
-      // wide_madd(u0, RS2, R1); wide_madd(u0, S1, RR2);
-      // wide_madd(u1, RS2, R2);
-
-      // // Recycle registers
-      // regs = (regs.remaining() + RR2 + RS2).begin();
-
+      poly1305_multiply(U, S, R, RR2, regs);
       poly1305_reduce(U);
-
-      // // Partial reduction mod 2**130 - 5
-
-      // // First propagate carries through u2:u1:u0
-      // __ extr(rscratch1, u0._hi, u0._lo, 52);
-      // __ bfc(u0._lo, 52, 64-52);
-      // DEBUG_ONLY(__ bfc(u0._hi, 0, 52));
-      // __ adds(u1._lo, u1._lo, rscratch1);
-      // __ adc(u1._hi, u1._hi, zr);
-      // __ extr(rscratch1, u1._hi, u1._lo, 52);
-      // __ bfc(u1._lo, 52, 64-52);
-      // DEBUG_ONLY(__ bfc(u1._hi, 0, 52));
-      // __ adds(u2._lo, u2._lo, rscratch1);
-      // __ adc(u2._hi, u2._hi, zr);
-
-      // // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      // DEBUG_ONLY(__ nop());
-
-      // __ extr(rscratch1, u2._hi, u2._lo, 26);
-      // __ ubfx(rscratch1, rscratch1, 0, 52);
-      // __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      // __ add(u0._lo, u0._lo, rscratch1);
-      // __ bfc(u2._lo, 26, 64-26);
-      // DEBUG_ONLY(__ bfc(u2._hi, 0, 14));
-
-      // __ ubfx(rscratch1, u2._hi, 14, 50);
-      // DEBUG_ONLY(__ bfc(u2._hi, 14, 50));
-      // __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      // __ add(u1._lo, u1._lo, rscratch1);
-
-      // Sum now in U2:U1:U0.
-      // Dead: U0HI, U1HI.
-      regs = (regs.remaining() + u0._hi + u1._hi).begin();
 
       __ subsw(length, length, BLOCK_LENGTH);
       __ br(Assembler::GE, LOOP);
