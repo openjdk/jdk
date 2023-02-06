@@ -171,7 +171,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
   // value.
-  // assert(_pc != null, "no pc?");
+  // assert(_pc != nullptr, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();

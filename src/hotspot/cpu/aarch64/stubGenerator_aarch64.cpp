@@ -2050,13 +2050,13 @@ class StubGenerator: public StubCodeGenerator {
     // (8) dst_pos + length must not exceed length of dst.
     //
 
-    //  if (src == null) return -1;
+    //  if (src == nullptr) return -1;
     __ cbz(src, L_failed);
 
     //  if (src_pos < 0) return -1;
     __ tbnz(src_pos, 31, L_failed);  // i.e. sign bit set
 
-    //  if (dst == null) return -1;
+    //  if (dst == nullptr) return -1;
     __ cbz(dst, L_failed);
 
     //  if (dst_pos < 0) return -1;
@@ -2073,7 +2073,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_klass(scratch_src_klass, src);
 #ifdef ASSERT
-    //  assert(src->klass() != null);
+    //  assert(src->klass() != nullptr);
     {
       BLOCK_COMMENT("assert klasses not null {");
       Label L1, L2;

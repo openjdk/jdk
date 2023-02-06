@@ -1155,7 +1155,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
       add(recv_klass, recv_klass, itentry_off);
   }
 
-  // for (scan = klass->itable(); scan->interface() != null; scan += scan_step) {
+  // for (scan = klass->itable(); scan->interface() != nullptr; scan += scan_step) {
   //   if (scan->interface() == intf) {
   //     result = (klass + scan->offset() + itable_index);
   //   }
@@ -4788,15 +4788,15 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
   br(EQ, SAME);
 
   if (UseSimpleArrayEquals) {
-    Label NEXT_WORD, SHORT, TAIL03, TAIL01, A_MIGHT_BE_nullptr, A_IS_NOT_NULL;
-    // if (a1 == null || a2 == null)
+    Label NEXT_WORD, SHORT, TAIL03, TAIL01, A_MIGHT_BE_NULL, A_IS_NOT_NULL;
+    // if (a1 == nullptr || a2 == nullptr)
     //     return false;
     // a1 & a2 == 0 means (some-pointer is null) or
     // (very-rare-or-even-probably-impossible-pointer-values)
     // so, we can save one branch in most cases
     tst(a1, a2);
     mov(result, false);
-    br(EQ, A_MIGHT_BE_nullptr);
+    br(EQ, A_MIGHT_BE_NULL);
     // if (a1.length != a2.length)
     //      return false;
     bind(A_IS_NOT_NULL);
@@ -4829,7 +4829,7 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     eor(tmp5, tmp3, tmp4);
     cbnz(tmp5, DONE);
     b(SAME);
-    bind(A_MIGHT_BE_nullptr);
+    bind(A_MIGHT_BE_NULL);
     // in case both a1 and a2 are not-null, proceed with loads
     cbz(a1, DONE);
     cbz(a2, DONE);
