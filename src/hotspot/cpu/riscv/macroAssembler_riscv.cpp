@@ -209,6 +209,7 @@ void MacroAssembler::post_call_nop() {
     return;
   }
   relocate(post_call_nop_Relocation::spec(), [&] {
+    InlineSkippedInstructionsCounter skipCounter(this);
     nop();
     li32(zr, 0);
   });
