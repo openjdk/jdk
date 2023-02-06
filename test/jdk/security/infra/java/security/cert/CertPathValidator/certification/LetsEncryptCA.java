@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8189131
+ * @bug 8189131, TODO
  * @summary Interoperability tests with Let's Encrypt CA
  * @build ValidatePathWithParams
  * @run main/othervm -Djava.security.debug=certpath LetsEncryptCA OCSP
@@ -35,13 +35,33 @@
  *
  * Valid TLS Certificates:
  * https://valid-isrgrootx1.letsencrypt.org/
+ * https://valid-isrgrootx2.letsencrypt.org/
  *
  * Revoked TLS Certificates:
  * https://revoked-isrgrootx1.letsencrypt.org/
+ * https://revoked-isrgrootxr.letsencrypt.org/
  *
  * Test artifacts don't have CRLs listed and intermediate cert doesn't have OCSP.
  */
 public class LetsEncryptCA {
+
+    public static void main(String[] args) throws Exception {
+
+        ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
+
+        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
+            pathValidator.enableCRLCheck();
+        } else {
+            // OCSP check by default
+            pathValidator.enableOCSPCheck();
+        }
+
+        new ISRGRootX1().runTest(pathValidator);
+        new ISRGRootX2().runTest(pathValidator);
+    }
+}
+
+class ISRGRootX1 {
 
      // Owner: CN=R3, O=Let's Encrypt, C=US
      // Issuer: CN=ISRG Root X1, O=Internet Security Research Group, C=US
@@ -150,19 +170,106 @@ public class LetsEncryptCA {
             "NEKwCWWylIND6z/9Xw==\n" +
             "-----END CERTIFICATE-----";
 
-    public static void main(String[] args) throws Exception {
+    public void runTest(ValidatePathWithParams pathValidator) throws Exception {
+        // OCSP check by default
+        // intermediate cert R3 doesn't specify OCSP responder
+        ValidatePathWithParams pathValidator = new ValidatePathWithParams(new String[]{INT});
+        pathValidator.enableOCSPCheck();
 
-        if (args.length >= 1 && "CRL".equalsIgnoreCase(args[0])) {
-            ValidatePathWithParams pathValidator = new ValidatePathWithParams(null);
-            pathValidator.enableCRLCheck();
+        // Validate valid
+        pathValidator.validate(new String[]{VALID},
+                ValidatePathWithParams.Status.GOOD, null, System.out);
 
-            // Validate int, EE certs don't have CRLs
-            pathValidator.validate(new String[]{INT},
-                    ValidatePathWithParams.Status.GOOD, null, System.out);
+        // Validate Revoked
+        pathValidator.validate(new String[]{REVOKED},
+                ValidatePathWithParams.Status.REVOKED,
+                "Fri Jun 25 09:18:12 PDT 2021", System.out);
+    }
+}
 
-            return;
-        }
+class ISRGRootX2 {
 
+     // Owner: CN=E1, O=Let's Encrypt, C=US
+     // Issuer: CN=ISRG Root X2, O=Internet Security Research Group, C=US
+     // Serial number: b3bddff8a7845bbce903a04135b34a45
+     // Valid from: Fri Sep 04 00:00:00 GMT 2020 until: Sat Sep 15 16:00:00 GMT 2025
+
+    private static final String INT = "-----BEGIN CERTIFICATE-----\n" +
+            "MIICxjCCAk2gAwIBAgIRALO93/inhFu86QOgQTWzSkUwCgYIKoZIzj0EAwMwTzEL\n" +
+            "MAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2VhcmNo\n" +
+            "IEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDIwHhcNMjAwOTA0MDAwMDAwWhcN\n" +
+            "MjUwOTE1MTYwMDAwWjAyMQswCQYDVQQGEwJVUzEWMBQGA1UEChMNTGV0J3MgRW5j\n" +
+            "cnlwdDELMAkGA1UEAxMCRTEwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAQkXC2iKv0c\n" +
+            "S6Zdl3MnMayyoGli72XoprDwrEuf/xwLcA/TmC9N/A8AmzfwdAVXMpcuBe8qQyWj\n" +
+            "+240JxP2T35p0wKZXuskR5LBJJvmsSGPwSSB/GjMH2m6WPUZIvd0xhajggEIMIIB\n" +
+            "BDAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMB\n" +
+            "MBIGA1UdEwEB/wQIMAYBAf8CAQAwHQYDVR0OBBYEFFrz7Sv8NsI3eblSMOpUb89V\n" +
+            "yy6sMB8GA1UdIwQYMBaAFHxClq7eS0g7+pL4nozPbYupcjeVMDIGCCsGAQUFBwEB\n" +
+            "BCYwJDAiBggrBgEFBQcwAoYWaHR0cDovL3gyLmkubGVuY3Iub3JnLzAnBgNVHR8E\n" +
+            "IDAeMBygGqAYhhZodHRwOi8veDIuYy5sZW5jci5vcmcvMCIGA1UdIAQbMBkwCAYG\n" +
+            "Z4EMAQIBMA0GCysGAQQBgt8TAQEBMAoGCCqGSM49BAMDA2cAMGQCMHt01VITjWH+\n" +
+            "Dbo/AwCd89eYhNlXLr3pD5xcSAQh8suzYHKOl9YST8pE9kLJ03uGqQIwWrGxtO3q\n" +
+            "YJkgsTgDyj2gJrjubi1K9sZmHzOa25JK1fUpE8ZwYii6I4zPPS/Lgul/\n" +
+            "-----END CERTIFICATE-----";
+
+    // Owner: CN=valid-isrgrootx2.letsencrypt.org
+    // Issuer: CN=E1, O=Let's Encrypt, C=US
+    // Serial number: 043209568cac73a998e59451c38532062592
+    // Valid from: Wed Dec 14 15:00:04 GMT 2022 until: Tue Mar 14 15:00:03 2023 GMT 2023
+    private static final String VALID = "-----BEGIN CERTIFICATE-----\n" +
+            "MIID2TCCA2CgAwIBAgISBDIJVoysc6mY5ZRRw4UyBiWSMAoGCCqGSM49BAMDMDIx\n" +
+            "CzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYDVQQDEwJF\n" +
+            "MTAeFw0yMjEyMTQxNTAwMDRaFw0yMzAzMTQxNTAwMDNaMCsxKTAnBgNVBAMTIHZh\n" +
+            "bGlkLWlzcmdyb290eDIubGV0c2VuY3J5cHQub3JnMFkwEwYHKoZIzj0CAQYIKoZI\n" +
+            "zj0DAQcDQgAEpQ/jWiT4wFE2HfhvU80bDq8jb+6oJ265/i/PwpBE8gcYWSLeDNYj\n" +
+            "5pvgZ7bn2+5paWWwv0zeTjAZJYgXZkbgjKOCAlswggJXMA4GA1UdDwEB/wQEAwIH\n" +
+            "gDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYBBQUHAwIwDAYDVR0TAQH/BAIwADAd\n" +
+            "BgNVHQ4EFgQUNSUfoputqDlTzUMAxsCj20JTV1owHwYDVR0jBBgwFoAUWvPtK/w2\n" +
+            "wjd5uVIw6lRvz1XLLqwwVQYIKwYBBQUHAQEESTBHMCEGCCsGAQUFBzABhhVodHRw\n" +
+            "Oi8vZTEuby5sZW5jci5vcmcwIgYIKwYBBQUHMAKGFmh0dHA6Ly9lMS5pLmxlbmNy\n" +
+            "Lm9yZy8wKwYDVR0RBCQwIoIgdmFsaWQtaXNyZ3Jvb3R4Mi5sZXRzZW5jcnlwdC5v\n" +
+            "cmcwTAYDVR0gBEUwQzAIBgZngQwBAgEwNwYLKwYBBAGC3xMBAQEwKDAmBggrBgEF\n" +
+            "BQcCARYaaHR0cDovL2Nwcy5sZXRzZW5jcnlwdC5vcmcwggEEBgorBgEEAdZ5AgQC\n" +
+            "BIH1BIHyAPAAdgC3Pvsk35xNunXyOcW6WPRsXfxCz3qfNcSeHQmBJe20mQAAAYUR\n" +
+            "XUijAAAEAwBHMEUCIAyojH4ZvjaCw9P0APu/CfLa/HdX6PtXyCUGyR2RfnCxAiEA\n" +
+            "nqLcdimOIJBveu0XbGgijfEvYdQCUt1O7usL6t0WEz4AdgB6MoxU2LcttiDqOOBS\n" +
+            "HumEFnAyE4VNO9IrwTpXo1LrUgAAAYURXUqgAAAEAwBHMEUCIQDiafDARb0UCSwd\n" +
+            "S1ke4vLauKePZBvr4MlqIm2NXMrgYgIgF9/mEtQJsOGJ6YTXhpB1vt+EWvouy11d\n" +
+            "Haair5fLerEwCgYIKoZIzj0EAwMDZwAwZAIwI/hh4sH57CUIZ8lTTPG14+9G3rYB\n" +
+            "5c0okACKIWKK5CIwgzvvSxL5v5P/6fdkPOgqAjBGADP/ZDYytoRrrLcqtYQeWoWy\n" +
+            "Sxt5QKP4bDWeAhOCrPY77rRy3optar0B58jaSMw=\n" +
+            "-----END CERTIFICATE-----";
+
+    // Owner: CN=revoked-isrgrootx2.letsencrypt.org
+    // Issuer: CN=E1, O=Let's Encrypt, C=US
+    // Serial number: 03286d84fa714eaac4222705ebc970ac82e0
+    // Valid from: Wed Dec  7 15:00:14 GMT 2022 until: Tue Mar  7 15:00:13 GMT 2023
+    private static final String REVOKED = "-----BEGIN CERTIFICATE-----\n" +
+            "MIIFSTCCBDGgAwIBAgISBPEzMBFjXXbWNWxfH7inJzYXMA0GCSqGSIb3DQEBCwUA\n" +
+            "MIID3jCCA2WgAwIBAgISAyhthPpxTqrEIicF68lwrILgMAoGCCqGSM49BAMDMDIx\n" +
+            "CzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MQswCQYDVQQDEwJF\n" +
+            "MTAeFw0yMjEyMDcxNTAwMTRaFw0yMzAzMDcxNTAwMTNaMC0xKzApBgNVBAMTInJl\n" +
+            "dm9rZWQtaXNyZ3Jvb3R4Mi5sZXRzZW5jcnlwdC5vcmcwWTATBgcqhkjOPQIBBggq\n" +
+            "hkjOPQMBBwNCAARCT9NAZIsyB2/xJCbEyRaMMEXOIqKzzA1dA7T31tT00JyDQlBX\n" +
+            "RwN+LhYBthZhsvK+IBHDmER3A3kKsEUwBGTho4ICXjCCAlowDgYDVR0PAQH/BAQD\n" +
+            "AgeAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAA\n" +
+            "MB0GA1UdDgQWBBQWKgCNNMTKbgEwFkq66irh3rD/0DAfBgNVHSMEGDAWgBRa8+0r\n" +
+            "/DbCN3m5UjDqVG/PVcsurDBVBggrBgEFBQcBAQRJMEcwIQYIKwYBBQUHMAGGFWh0\n" +
+            "dHA6Ly9lMS5vLmxlbmNyLm9yZzAiBggrBgEFBQcwAoYWaHR0cDovL2UxLmkubGVu\n" +
+            "Y3Iub3JnLzAtBgNVHREEJjAkgiJyZXZva2VkLWlzcmdyb290eDIubGV0c2VuY3J5\n" +
+            "cHQub3JnMEwGA1UdIARFMEMwCAYGZ4EMAQIBMDcGCysGAQQBgt8TAQEBMCgwJgYI\n" +
+            "KwYBBQUHAgEWGmh0dHA6Ly9jcHMubGV0c2VuY3J5cHQub3JnMIIBBQYKKwYBBAHW\n" +
+            "eQIEAgSB9gSB8wDxAHYAtz77JN+cTbp18jnFulj0bF38Qs96nzXEnh0JgSXttJkA\n" +
+            "AAGE7VDuewAABAMARzBFAiEAzwS1E983BFGtYmZDUT8YB0B8S/Av+8HgHLWr4EXz\n" +
+            "5BICIE8bhEluUjpsXaRKy/Jg17Ecn5IjnJ5efue8UWPEirU7AHcAejKMVNi3LbYg\n" +
+            "6jjgUh7phBZwMhOFTTvSK8E6V6NS61IAAAGE7VDupAAABAMASDBGAiEAhSYqVOMl\n" +
+            "KH28Xg2jjByZTL6qkN+P4Vw9qGJzgcylTYECIQDTzg5Hva/V/E2GJGc6UvysmS4k\n" +
+            "BbOQ0vYEFaCj8JN7iDAKBggqhkjOPQQDAwNnADBkAjBF/g4C6YLPA1Ubupz1R5/p\n" +
+            "IKqF05Fy+7Yhk8x3FrtFnKC3Q/E+K8Ea/Ry1mzqL8kACMCSlQJPw46mP9H24qSKS\n" +
+            "O+hISc4qbvppKUOJO2Jrev2JqqMFkJ93IIT/Ysvnqy6Sqw==\n" +
+            "-----END CERTIFICATE-----";
+
+    public void runTest(ValidatePathWithParams pathValidator) throws Exception {
         // OCSP check by default
         // intermediate cert R3 doesn't specify OCSP responder
         ValidatePathWithParams pathValidator = new ValidatePathWithParams(new String[]{INT});
