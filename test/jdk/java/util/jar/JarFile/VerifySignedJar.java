@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @library /test/lib
  * @modules java.base/sun.security.x509
  * @modules java.base/sun.security.tools.keytool
  * @bug 4419266 4842702
@@ -47,13 +48,10 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import static jdk.test.lib.Utils.runAndCheckException;
+
+
 public class VerifySignedJar {
-    private static void Unreached (Object o)
-        throws Exception
-    {
-        // Should never get here
-        throw new Exception ("Expected exception was not thrown");
-    }
 
     public static void main(String[] args) throws Exception {
 
@@ -66,24 +64,19 @@ public class VerifySignedJar {
                 // Reading entry to trigger verification
                 jf.getInputStream(e).transferTo(OutputStream.nullOutputStream());
                 // Check that all regular files are signed by duke
-                if(!e.getName().startsWith("META-INF/")) {
+                if (!e.getName().startsWith("META-INF/")) {
                     checkSignedBy(e, "cn=duke");
                 }
             }
 
-            // Read entry by name
-            ZipEntry ze = Objects.requireNonNull(jf.getEntry("getprop.class"));
-            JarEntry je = Objects.requireNonNull(jf.getJarEntry("getprop.class"));
+            // Read ZIP and JAR entries by name
+            Objects.requireNonNull(jf.getEntry("getprop.class"));
+            Objects.requireNonNull(jf.getJarEntry("getprop.class"));
 
-            // Make sure we throw NPE on null objects
-            try { Unreached (jf.getEntry(null)); }
-            catch (NullPointerException e) {}
-
-            try { Unreached (jf.getJarEntry(null)); }
-            catch (NullPointerException e) {}
-
-            try { Unreached (jf.getInputStream(null)); }
-            catch (NullPointerException e) {}
+            // Make sure we throw NPE on null parameters
+            runAndCheckException(() -> jf.getEntry(null), NullPointerException.class);
+            runAndCheckException(() -> jf.getJarEntry(null), NullPointerException.class);
+            runAndCheckException(() -> jf.getInputStream(null), NullPointerException.class);
 
         } catch (SecurityException se) {
             throw new Exception("Got SecurityException when verifying signed " +
