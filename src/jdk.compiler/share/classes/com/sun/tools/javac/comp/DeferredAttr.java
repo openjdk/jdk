@@ -457,21 +457,6 @@ public class DeferredAttr extends JCTree.Visitor {
         }
     }
 
-    boolean hasTypeDeclaration(JCTree tree) {
-        TypeDeclVisitor typeDeclVisitor = new TypeDeclVisitor();
-        typeDeclVisitor.scan(tree);
-        return typeDeclVisitor.result;
-    }
-
-    static class TypeDeclVisitor extends TreeScanner {
-        boolean result = false;
-
-        @Override
-        public void visitClassDef(JCClassDecl that) {
-            result = true;
-        }
-    }
-
     /**
      * Routine that performs speculative type-checking; the input AST node is
      * cloned (to avoid side-effects cause by Attr) and compiler state is
@@ -485,6 +470,22 @@ public class DeferredAttr extends JCTree.Visitor {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
                 null, AttributionMode.SPECULATIVE, !hasTypeDeclaration(tree) ? null : argumentAttr.withLocalCacheContext());
     }
+
+    // where
+        private boolean hasTypeDeclaration(JCTree tree) {
+            TypeDeclVisitor typeDeclVisitor = new TypeDeclVisitor();
+            typeDeclVisitor.scan(tree);
+            return typeDeclVisitor.result;
+        }
+
+        private static class TypeDeclVisitor extends TreeScanner {
+            boolean result = false;
+
+            @Override
+            public void visitClassDef(JCClassDecl that) {
+                result = true;
+            }
+        }
 
     JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo, LocalCacheContext localCache) {
         return attribSpeculative(tree, env, resultInfo, treeCopier,
