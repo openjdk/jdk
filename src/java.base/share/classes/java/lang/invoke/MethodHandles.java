@@ -233,6 +233,12 @@ public class MethodHandles {
      * <p>
      * The resulting {@code Lookup} object has no {@code ORIGINAL} access.
      *
+     * @apiNote The {@code Lookup} object returned by this method is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code targetClass}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code targetClass}'s module.
+     *
      * @param targetClass the target class
      * @param caller the caller lookup object
      * @return a lookup object for the target class, with private access
@@ -851,7 +857,7 @@ public class MethodHandles {
      * <p>
      * {@link MethodHandles#privateLookupIn(Class, Lookup) MethodHandles.privateLookupIn(T.class, lookup)}
      * can be used to teleport a {@code lookup} from class {@code C} to class {@code T}
-     * and create a new {@code Lookup} with <a href="#privacc">private access</a>
+     * and produce a new {@code Lookup} with <a href="#privacc">private access</a>
      * if the lookup class is allowed to do <em>deep reflection</em> on {@code T}.
      * The {@code lookup} must have {@link #MODULE} and {@link #PRIVATE} access
      * to call {@code privateLookupIn}.
@@ -869,6 +875,12 @@ public class MethodHandles {
      * it cannot be used to obtain another private {@code Lookup} by calling
      * {@link MethodHandles#privateLookupIn(Class, Lookup) privateLookupIn}
      * because it has no {@code MODULE} access.
+     * <p>
+     * The {@code Lookup} object returned by {@code privateLookupIn} is allowed to
+     * {@linkplain Lookup#defineClass(byte[]) define classes} in the runtime package
+     * of {@code T}. Extreme caution should be taken when opening a package
+     * to another module as such defined classes have the same full privilege
+     * access as other members in {@code M2}.
      *
      * <h2><a id="module-access-check"></a>Cross-module access checks</h2>
      *

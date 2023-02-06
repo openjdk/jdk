@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
   product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
+  product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
+          "Use Zihintpause instructions")                                        \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZvkb, false, EXPERIMENTAL, "Use Zvkb instructions")           \
   product(bool, UseZvknha, false, EXPERIMENTAL, "Use Zvknha instructions")       \
