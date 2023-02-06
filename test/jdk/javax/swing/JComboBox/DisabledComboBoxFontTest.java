@@ -50,7 +50,6 @@ public class DisabledComboBoxFontTest {
             "status with the button on the right of the frame.";
 
     private static JFrame frame;
-    private static boolean hasNimbus;
 
     public static void createAndShowGUI() throws InterruptedException,
             InvocationTargetException {
@@ -114,8 +113,7 @@ public class DisabledComboBoxFontTest {
 
         try {
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.err.println("Nimbus L&F not found");
             return;
         }
