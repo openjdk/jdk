@@ -91,7 +91,7 @@
 #include <shlobj.h>
 
 #include <malloc.h>
-#include <powrprof.h>
+#include <powerbase.h>
 #include <signal.h>
 #include <direct.h>
 #include <errno.h>
@@ -1885,7 +1885,7 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
     ULONG MhzLimit;   // max specified processor clock frequency mult. by current processor thermal throttle limit
     ULONG MaxIdleState;
     ULONG CurrentIdleState;
-} PROCESSOR_POWER_INFORMATION, *PTR_PROCESSOR_POWER_INFORMATION;
+} PROCESSOR_POWER_INFORMATION;
 
 // additional lib needed for PowerProf functionality
 #pragma comment(lib, "Powrprof.lib")
@@ -1894,12 +1894,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
 
-  PROCESSOR_POWER_INFORMATION ppi;
-  size_t sz_check = sizeof(ppi) * (size_t)si.dwNumberOfProcessors;
+  size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)si.dwNumberOfProcessors;
   NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
 
   if (status == ERROR_SUCCESS) {
-    PTR_PROCESSOR_POWER_INFORMATION pppi = (PTR_PROCESSOR_POWER_INFORMATION) buf;
+    PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
     for (size_t i = 0; i < si.dwNumberOfProcessors; i++) {
       st->print_cr("ProcessorInformation for processor %d", (int) pppi->Number);
       st->print_cr("  Max Mhz: %d", (int) pppi->MaxMhz);
