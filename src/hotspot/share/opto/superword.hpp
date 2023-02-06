@@ -636,8 +636,11 @@ class SWPointer : public ArenaObj {
   int   _offset;             // constant offset (in bytes)
 
   Node* _invar;              // invariant offset (in bytes), NULL if none
-  bool  _negate_invar;       // if true then use: (0 - _invar)
-  Node* _invar_scale;        // multiplier for invariant
+#ifdef ASSERT
+  Node* _debug_invar;
+  bool  _debug_negate_invar;       // if true then use: (0 - _invar)
+  Node* _debug_invar_scale;        // multiplier for invariant
+#endif
 
   Node_Stack* _nstack;       // stack used to record a swpointer trace of variants
   bool        _analyze_only; // Used in loop unrolling only for swpointer trace
@@ -679,17 +682,17 @@ class SWPointer : public ArenaObj {
   MemNode* mem()           { return _mem; }
   int   scale_in_bytes()   { return _scale; }
   Node* invar()            { return _invar; }
-  bool  negate_invar()     { return _negate_invar; }
-  Node* invar_scale()      { return _invar_scale; }
   int   offset_in_bytes()  { return _offset; }
   int   memory_size()      { return _mem->memory_size(); }
   Node_Stack* node_stack() { return _nstack; }
 
   // Comparable?
   bool invar_equals(SWPointer& q) {
-      return (_invar        == q._invar   &&
-              _invar_scale  == q._invar_scale &&
-              _negate_invar == q._negate_invar);
+    assert(_debug_invar == NodeSentinel || q._debug_invar == NodeSentinel ||
+           (_invar == q._invar) == (_debug_invar == q._debug_invar &&
+                                    _debug_invar_scale == q._debug_invar_scale &&
+                                    _debug_negate_invar == q._debug_negate_invar), "");
+    return _invar        == q._invar;
   }
 
   int cmp(SWPointer& q) {
@@ -767,7 +770,7 @@ class SWPointer : public ArenaObj {
     void scaled_iv_6(Node* n, int scale);
     void scaled_iv_7(Node* n);
     void scaled_iv_8(Node* n, SWPointer* tmp);
-    void scaled_iv_9(Node* n, int _scale, int _offset, Node* _invar, bool _negate_invar);
+    void scaled_iv_9(Node* n, int _scale, int _offset, Node* _invar);
     void scaled_iv_10(Node* n);
 
     void offset_plus_k_1(Node* n);
@@ -784,6 +787,12 @@ class SWPointer : public ArenaObj {
 
   } _tracer;//TRacer;
 #endif
+
+  Node* maybe_negate_invar(bool negate, Node* invar);
+
+  void maybe_add_to_invar(Node* new_invar);
+
+  Node* register_if_new(Node* n) const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

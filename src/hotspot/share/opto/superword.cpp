@@ -36,6 +36,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/movenode.hpp"
@@ -211,7 +212,6 @@ int SuperWord::max_vector_size(BasicType bt) {
 //------------------------------early unrolling analysis------------------------------
 void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   bool is_slp = true;
-  ResourceMark rm;
   size_t ignored_size = lpt()->_body.size();
   int *ignored_loop_nodes = NEW_RESOURCE_ARRAY(int, ignored_size);
   Node_Stack nstack((int)ignored_size);
@@ -3889,19 +3889,7 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    Node* invar_scale = align_to_ref_p.invar_scale();
-    if (invar_scale != NULL) {
-      invar = new LShiftINode(invar, invar_scale);
-      _igvn.register_new_node_with_optimizer(invar);
-    }
-    Node* aref = new URShiftINode(invar, log2_elt);
-    _igvn.register_new_node_with_optimizer(aref);
-    _phase->set_ctrl(aref, pre_ctrl);
-    if (align_to_ref_p.negate_invar()) {
-      e = new SubINode(e, aref);
-    } else {
-      e = new AddINode(e, aref);
-    }
+    e = new URShiftINode(invar, log2_elt);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
@@ -4077,9 +4065,11 @@ int SWPointer::Tracer::_depth = 0;
 #endif
 //----------------------------SWPointer------------------------
 SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only) :
-  _mem(mem), _slp(slp),  _base(NULL),  _adr(NULL),
-  _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
-  _invar_scale(NULL),
+  _mem(mem), _slp(slp), _base(NULL), _adr(NULL),
+  _scale(0), _offset(0), _invar(NULL),
+#ifdef ASSERT
+  _debug_invar(NULL), _debug_negate_invar(false), _debug_invar_scale(NULL),
+#endif
   _nstack(nstack), _analyze_only(analyze_only),
   _stack_idx(0)
 #ifndef PRODUCT
@@ -4110,7 +4100,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   NOT_PRODUCT(_tracer.ctor_2(adr);)
 
   int i;
-  for (i = 0; i < 3; i++) {
+  for (i = 0; ; i++) {
     NOT_PRODUCT(_tracer.ctor_3(adr, i);)
 
     if (!scaled_iv_plus_offset(adr->in(AddPNode::Offset))) {
@@ -4146,9 +4136,11 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 SWPointer::SWPointer(SWPointer* p) :
-  _mem(p->_mem), _slp(p->_slp),  _base(NULL),  _adr(NULL),
-  _scale(0), _offset(0), _invar(NULL), _negate_invar(false),
-  _invar_scale(NULL),
+  _mem(p->_mem), _slp(p->_slp), _base(NULL), _adr(NULL),
+  _scale(0), _offset(0), _invar(NULL),
+#ifdef ASSERT
+  _debug_invar(NULL), _debug_negate_invar(false), _debug_invar_scale(NULL),
+#endif
   _nstack(p->_nstack), _analyze_only(p->_analyze_only),
   _stack_idx(p->_stack_idx)
   #ifndef PRODUCT
@@ -4262,7 +4254,7 @@ bool SWPointer::scaled_iv(Node* n) {
       return true;
     }
   } else if (opc == Op_LShiftL && n->in(2)->is_Con()) {
-    if (!has_iv() && _invar == NULL) {
+    if (!has_iv()) {
       // Need to preserve the current _offset value, so
       // create a temporary object for this expression subtree.
       // Hacky, so should re-engineer the address pattern match.
@@ -4274,12 +4266,15 @@ bool SWPointer::scaled_iv(Node* n) {
         int scale = n->in(2)->get_int();
         _scale   = tmp._scale  << scale;
         _offset += tmp._offset << scale;
-        _invar = tmp._invar;
-        if (_invar != NULL) {
-          _negate_invar = tmp._negate_invar;
-          _invar_scale = n->in(2);
+        if (tmp._invar != NULL) {
+          BasicType bt = tmp._invar->bottom_type()->basic_type();
+          assert(bt == T_INT || bt == T_LONG, "");
+          maybe_add_to_invar(register_if_new(LShiftNode::make(tmp._invar, n->in(2), bt)));
+#ifdef ASSERT
+          _debug_invar_scale = n->in(2);
+#endif
         }
-        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar, _negate_invar);)
+        NOT_PRODUCT(_tracer.scaled_iv_9(n, _scale, _offset, _invar);)
         return true;
       }
     }
@@ -4313,41 +4308,34 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     NOT_PRODUCT(_tracer.offset_plus_k_4(n);)
     return false;
   }
-  if (_invar != NULL) { // already has an invariant
-    NOT_PRODUCT(_tracer.offset_plus_k_5(n, _invar);)
-    return false;
-  }
+  assert((_debug_invar == NULL) == (_invar == NULL), "");
 
   if (_analyze_only && is_loop_member(n)) {
     _nstack->push(n, _stack_idx++);
   }
   if (opc == Op_AddI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(maybe_negate_invar(negate, n->in(1)));
       _offset += negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_6(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(maybe_negate_invar(negate, n->in(2)));
+      NOT_PRODUCT(_tracer.offset_plus_k_7(n, _invar, negate, _offset);)
       return true;
     }
   }
   if (opc == Op_SubI) {
     if (n->in(2)->is_Con() && invariant(n->in(1))) {
-      _negate_invar = negate;
-      _invar = n->in(1);
+      maybe_add_to_invar(maybe_negate_invar(negate, n->in(1)));
       _offset += !negate ? -(n->in(2)->get_int()) : n->in(2)->get_int();
-      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, _negate_invar, _offset);)
+      NOT_PRODUCT(_tracer.offset_plus_k_8(n, _invar, negate, _offset);)
       return true;
     } else if (n->in(1)->is_Con() && invariant(n->in(2))) {
       _offset += negate ? -(n->in(1)->get_int()) : n->in(1)->get_int();
-      _negate_invar = !negate;
-      _invar = n->in(2);
-      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(maybe_negate_invar(!negate, n->in(2)));
+      NOT_PRODUCT(_tracer.offset_plus_k_9(n, _invar, !negate, _offset);)
       return true;
     }
   }
@@ -4364,15 +4352,74 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
     // Check if 'n' can really be used as invariant (not in main loop and dominating the pre loop).
     if (invariant(n)) {
-      _negate_invar = negate;
-      _invar = n;
-      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)
+      maybe_add_to_invar(maybe_negate_invar(negate, n));
+      NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, negate, _offset);)
       return true;
     }
   }
 
   NOT_PRODUCT(_tracer.offset_plus_k_11(n);)
   return false;
+}
+
+Node* SWPointer::maybe_negate_invar(bool negate, Node* invar) {
+#ifdef ASSERT
+  _debug_negate_invar = negate;
+#endif
+  if (negate) {
+    BasicType bt = invar->bottom_type()->basic_type();
+    assert(bt == T_INT || bt == T_LONG, "");
+    PhaseIterGVN& igvn = phase()->igvn();
+    Node* zero = igvn.zerocon(bt);
+    phase()->set_ctrl(zero, phase()->C->root());
+    Node* sub = SubNode::make(zero, invar, bt);
+    invar = register_if_new(sub);
+  }
+  return invar;
+}
+
+Node* SWPointer::register_if_new(Node* n) const {
+  PhaseIterGVN& igvn = phase()->igvn();
+  Node* prev = igvn.hash_find_insert(n);
+  if (prev != NULL) {
+    n->destruct(&igvn);
+    n = prev;
+  } else {
+    Node* c = phase()->get_early_ctrl(n);
+    phase()->register_new_node(n, c);
+  }
+  return n;
+}
+
+void SWPointer::maybe_add_to_invar(Node* new_invar) {
+  if (_invar == NULL) {
+    _invar = new_invar;
+#ifdef ASSERT
+    _debug_invar = new_invar;
+#endif
+    return;
+  }
+#ifdef ASSERT
+  _debug_invar = NodeSentinel;
+#endif
+  BasicType new_invar_bt = new_invar->bottom_type()->basic_type();
+  assert(new_invar_bt == T_INT || new_invar_bt == T_LONG, "");
+  BasicType invar_bt = _invar->bottom_type()->basic_type();
+  assert(invar_bt == T_INT || invar_bt == T_LONG, "");
+
+  BasicType bt = (new_invar_bt == T_LONG || invar_bt == T_LONG) ? T_LONG : T_INT;
+  Node* current_invar = _invar;
+  if (invar_bt != bt) {
+    assert(bt == T_LONG && invar_bt == T_INT, "");
+    assert(new_invar_bt == bt, "");
+    current_invar = register_if_new(new ConvI2LNode(current_invar));
+  } else if (new_invar_bt != bt) {
+    assert(bt == T_LONG && new_invar_bt == T_INT, "");
+    assert(invar_bt == bt, "");
+    new_invar = register_if_new(new ConvI2LNode(new_invar));
+  }
+  Node* add = AddNode::make(current_invar, new_invar, bt);
+  _invar = register_if_new(add);
 }
 
 //-----------------has_potential_dependence-----------------
@@ -4411,7 +4458,7 @@ void SWPointer::print() {
              _adr  != NULL ? _adr->_idx  : 0,
              _scale, _offset);
   if (_invar != NULL) {
-    tty->print("  invar: %c[%d] << [%d]", _negate_invar?'-':'+', _invar->_idx, _invar_scale->_idx);
+    tty->print("  invar: [%d]", _invar->_idx);
   }
   tty->cr();
 #endif
@@ -4601,13 +4648,13 @@ void SWPointer::Tracer::scaled_iv_8(Node* n, SWPointer* tmp) {
   }
 }
 
-void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar, bool negate_invar) {
+void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
   if(_slp->is_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
     n->in(1)->_idx, n->in(2)->_idx, scale, offset);
     if (invar != NULL) {
-      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: %c[%d]", (negate_invar?'-':'+'), invar->_idx);
+      print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: scaled invariant: [%d]", invar->_idx);
     }
     inc_depth(); inc_depth();
     print_depth(); n->in(1)->dump();
@@ -4659,7 +4706,7 @@ void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
 
 void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -4668,7 +4715,7 @@ void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
@@ -4677,7 +4724,7 @@ void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d",
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is invariant: ", _invar->_idx); _invar->dump();
@@ -4686,7 +4733,7 @@ void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
   }
@@ -4694,7 +4741,7 @@ void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_inva
 
 void SWPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
   if(_slp->is_trace_alignment()) {
-    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
+    print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print_cr("  \\ %d SWPointer::offset_plus_k: is invariant", n->_idx);
   }
 }
