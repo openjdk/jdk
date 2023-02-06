@@ -574,8 +574,6 @@ public sealed interface TypeAnnotation
     }
 
     /**
-     * type_path.path.
-     *
      * JVMS: Wherever a type is used in a declaration or expression, the type_path structure identifies which part of
      * the type is annotated. An annotation may appear on the type itself, but if the type is a reference type, then
      * there are additional locations where an annotation may appear:
@@ -614,13 +612,13 @@ public sealed interface TypeAnnotation
             }
         }
 
-        public static final TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
-        public static final TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
-        public static final TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
+        TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
+        TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
+        TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
 
 
         /**
-         * THe type path kind items from JVMS Table 4.7.20.2-A.
+         * The type path kind items from JVMS Table 4.7.20.2-A.
          *
          * @return the kind of path element
          */
@@ -638,14 +636,13 @@ public sealed interface TypeAnnotation
          */
         int typeArgumentIndex();
 
-        static TypePathComponent of(int typePathKind, int typeArgumentIndex) {
+        static TypePathComponent of(Kind typePathKind, int typeArgumentIndex) {
 
             return switch (typePathKind) {
-                case 0 -> ARRAY;
-                case 1 -> INNER_TYPE;
-                case 2 -> WILDCARD;
-                case 3 -> new UnboundAttribute.TypePathComponentImpl(Kind.TYPE_ARGUMENT, typeArgumentIndex);
-                default -> throw new IllegalArgumentException("Unknown type annotation path component kind: " + typePathKind);
+                case ARRAY -> ARRAY;
+                case INNER_TYPE -> INNER_TYPE;
+                case WILDCARD -> WILDCARD;
+                case TYPE_ARGUMENT -> new UnboundAttribute.TypePathComponentImpl(Kind.TYPE_ARGUMENT, typeArgumentIndex);
             };
         }
     }
