@@ -78,7 +78,7 @@ int CompiledStaticCall::to_trampoline_stub_size() {
   // Somewhat pessimistically, we count 3 instructions here (although
   // there are only two) because we sometimes emit an alignment nop.
   // Trampoline stubs are always word aligned.
-  return MacroAssembler::trampoline_stub_size();
+  return MacroAssembler::max_trampoline_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.

@@ -3142,7 +3142,7 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
   // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(trampoline_stub_size());
+  address stub = start_a_stub(max_trampoline_stub_size());
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
@@ -3182,7 +3182,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
-int MacroAssembler::trampoline_stub_size() {
+int MacroAssembler::max_trampoline_stub_size() {
   // Max stub size: alignment nop, TrampolineStub.
   return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
 }
