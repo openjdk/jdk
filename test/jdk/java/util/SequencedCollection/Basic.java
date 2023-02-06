@@ -54,6 +54,10 @@ public class Basic {
         return Collections.checkedNavigableSet(set, String.class);
     }
 
+    static SortedSet<String> cksorted(SortedSet<String> set) {
+        return Collections.checkedSortedSet(set, String.class);
+    }
+
     static SequencedSet<String> setFromMap(List<String> contents) {
         var lhm = new LinkedHashMap<String, Boolean>();
         var ss = Collections.newSequencedSetFromMap(lhm);
@@ -253,6 +257,13 @@ public class Basic {
         ).iterator();
     }
 
+    @DataProvider(name="checkedSortedSet")
+    public Iterator<Object[]> checkedSortedSet() {
+        return Arrays.<Object[]>asList(
+            new Object[] { "ChkSorted", cksorted(new TreeSet<>(ORIGINAL)), ORIGINAL }
+        ).iterator();
+    }
+
     // ========== Assertions ==========
 
     /**
@@ -367,6 +378,12 @@ public class Basic {
 
     public void checkCheckedNavSet(NavigableSet<String> set) {
         NavigableSet<Object> objSet = (NavigableSet<Object>)(NavigableSet)set;
+        assertThrows(CCE, () -> { objSet.add(new Object()); });
+        assertThrows(CCE, () -> { objSet.reversed().add(new Object()); });
+    }
+
+    public void checkCheckedSortedSet(SortedSet<String> set) {
+        SortedSet<Object> objSet = (SortedSet<Object>)(SortedSet)set;
         assertThrows(CCE, () -> { objSet.add(new Object()); });
         assertThrows(CCE, () -> { objSet.reversed().add(new Object()); });
     }
@@ -535,6 +552,12 @@ public class Basic {
     @Test(dataProvider="checkedNavSet")
     public void testCheckedNavSet(String label, NavigableSet<String> set, List<String> ref) {
         checkCheckedNavSet(set);
+        checkContents(set, ref);
+    }
+
+    @Test(dataProvider="checkedSortedSet")
+    public void testCheckedSortedSet(String label, SortedSet<String> set, List<String> ref) {
+        checkCheckedSortedSet(set);
         checkContents(set, ref);
     }
 }
