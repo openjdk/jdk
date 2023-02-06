@@ -307,9 +307,10 @@ public class DocCommentParser {
                     }
                 }
             }
+            int prefPos = bp;
             blockContent();
 
-            return erroneous("dc.no.tag.name", p);
+            return erroneous("dc.no.tag.name", p, prefPos);
         } catch (ParseException e) {
             blockContent();
             return erroneous(e.getMessage(), p, e.pos);
@@ -356,7 +357,7 @@ public class DocCommentParser {
         try {
             nextChar();
             if (!isIdentifierStart(ch)) {
-                return erroneous("dc.no.tag.name", p);
+                return erroneous("dc.no.tag.name", p, bp);
             }
             Name name = readTagName();
             TagParser tp = tagParsers.get(name);

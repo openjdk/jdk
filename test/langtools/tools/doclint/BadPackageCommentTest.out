@@ -3,6 +3,6 @@ package p;
 ^
 BadPackageCommentTest.java:12: error: no tag name after '@'
  * @!#
-     ^
+    ^
 1 error
 1 warning

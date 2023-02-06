@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -1550,7 +1551,8 @@ public class HtmlDocletWriter {
         Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
-                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
+                && Objects.equals(utils.containingPackage(currentPageElement),
+                utils.containingPackage(element));
     }
 
     /**

@@ -82,8 +82,6 @@ public class CommentHelper {
     public final DocCommentTree dcTree;
     public final Element element;
 
-    public static final String SPACER = " ";
-
     /**
      * Creates a utility class to encapsulate the contextual information for a doc comment tree.
      *
@@ -100,27 +98,17 @@ public class CommentHelper {
     }
 
     public String getTagName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case AUTHOR:
-            case DEPRECATED:
-            case PARAM:
-            case PROVIDES:
-            case RETURN:
-            case SEE:
-            case SERIAL_DATA:
-            case SERIAL_FIELD:
-            case THROWS:
-            case UNKNOWN_BLOCK_TAG:
-            case USES:
-            case VERSION:
-                return ((BlockTagTree) dtree).getTagName();
-            case UNKNOWN_INLINE_TAG:
-                return ((InlineTagTree) dtree).getTagName();
-            case ERRONEOUS:
-                return "erroneous";
-            default:
-                return dtree.getKind().tagName;
-        }
+        return switch (dtree.getKind()) {
+            case AUTHOR, DEPRECATED, PARAM, PROVIDES, RETURN, SEE, SERIAL_DATA, SERIAL_FIELD,
+                    THROWS, UNKNOWN_BLOCK_TAG, USES, VERSION ->
+                    ((BlockTagTree) dtree).getTagName();
+            case UNKNOWN_INLINE_TAG ->
+                    ((InlineTagTree) dtree).getTagName();
+            case ERRONEOUS ->
+                    "erroneous";
+            default ->
+                    dtree.getKind().tagName;
+        };
     }
 
     public String getParameterName(ParamTree p) {
@@ -169,11 +157,6 @@ public class CommentHelper {
         return getTags(dtree);
     }
 
-    public TypeElement getReferencedClass(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedClass(e);
-    }
-
     public TypeElement getReferencedClass(Element e) {
         Utils utils = configuration.utils;
         if (e == null) {
@@ -184,11 +167,6 @@ public class CommentHelper {
             return utils.getEnclosingTypeElement(e);
         }
         return null;
-    }
-
-    public String getReferencedModuleName(DocTree dtree) {
-        String s = getReferencedSignature(dtree);
-        return getReferencedModuleName(s);
     }
 
     public String getReferencedModuleName(String signature) {
@@ -220,22 +198,12 @@ public class CommentHelper {
         return (n == -1) ? null : signature.substring(n + 1);
     }
 
-    public PackageElement getReferencedPackage(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedPackage(e);
-    }
-
     public PackageElement getReferencedPackage(Element e) {
         if (e != null) {
             Utils utils = configuration.utils;
             return utils.containingPackage(e);
         }
         return null;
-    }
-
-    public ModuleElement getReferencedModule(DocTree dtree) {
-        Element e = getReferencedElement(dtree);
-        return getReferencedModule(e);
     }
 
     public ModuleElement getReferencedModule(Element e) {
@@ -247,10 +215,6 @@ public class CommentHelper {
 
     public List<? extends DocTree> getFirstSentenceTrees(List<? extends DocTree> body) {
         return configuration.docEnv.getDocTrees().getFirstSentence(body);
-    }
-
-    public List<? extends DocTree> getFirstSentenceTrees(DocTree dtree) {
-        return getFirstSentenceTrees(getBody(dtree));
     }
 
     public Element getReferencedElement(DocTree dtree) {
@@ -389,14 +353,11 @@ public class CommentHelper {
     }
 
     public IdentifierTree getName(DocTree dtree) {
-        switch (dtree.getKind()) {
-            case PARAM:
-                return ((ParamTree)dtree).getName();
-            case SERIAL_FIELD:
-                return ((SerialFieldTree)dtree).getName();
-            default:
-                return null;
-            }
+        return switch (dtree.getKind()) {
+            case PARAM -> ((ParamTree) dtree).getName();
+            case SERIAL_FIELD -> ((SerialFieldTree) dtree).getName();
+            default -> null;
+        };
     }
 
     public List<? extends DocTree> getTags(DocTree dtree) {
@@ -559,12 +520,10 @@ public class CommentHelper {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("CommentHelper{" + "path=" + path + ", dcTree=" + dcTree);
-        sb.append(", element=");
-        sb.append(element.getEnclosingElement());
-        sb.append("::");
-        sb.append(element);
-        sb.append('}');
-        return sb.toString();
+        return "CommentHelper{"
+                + "path=" + path
+                + ", dcTree=" + dcTree
+                + ", element=" + element.getEnclosingElement() + "::" + element
+                + '}';
     }
 }

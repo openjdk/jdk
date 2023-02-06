@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,14 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+/*
+ * @test
+ * @bug 8301025
+ * @enablePreview
+ * @compile T8301025.java
+ * @summary ClassCastException in switch with generic record
+ * @modules jdk.compiler
+ */
+public class T8301025 {
+    record TestRecord<T extends String>(T t) {}
 
-#include "native_thread.cpp"
-#include "nsk_tools.cpp"
-#include "jni_tools.cpp"
-#include "jvmti_tools.cpp"
-#include "agent_tools.cpp"
-#include "jvmti_FollowRefObjects.cpp"
-#include "Injector.cpp"
-#include "JVMTITools.cpp"
-#include "agent_common.cpp"
-#include "allthr002.cpp"
+    public static void main(String argv[]) {
+        TestRecord r = new TestRecord("a");
+        switch (r) {
+            case TestRecord(String cS)-> {
+                System.out.println("String");
+            }
+            case TestRecord(Object cO)->{
+                System.out.println("Object");
+            }
+        }
+    }
+}
