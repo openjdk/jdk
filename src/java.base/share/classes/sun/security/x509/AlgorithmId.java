@@ -600,11 +600,11 @@ public class AlgorithmId implements Serializable, DerEncoder {
                         String upperStdAlgName = stdAlgName.toUpperCase(Locale.ENGLISH);
                         // add the name->oid and oid->name mappings if none exists
                         if (KnownOIDs.findMatch(upperStdAlgName) == null) {
-                            // not override earlier entries if it exists
+                            // do not override earlier entries if it exists
                             t.putIfAbsent(upperStdAlgName, ostr);
                         }
                         if (KnownOIDs.findMatch(ostr) == null) {
-                            // not override earlier entries if it exists
+                            // do not override earlier entries if it exists
                             t.putIfAbsent(ostr, stdAlgName);
                         }
                     }
