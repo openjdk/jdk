@@ -1230,7 +1230,7 @@ class FdLibm {
             }
 
             h = 0.5;
-            if ( jx < 0) {
+            if (jx < 0) {
                 h = -h;
             }
             // |x| in [0,22], return sign(x)*0.5*(E+E/(E+1)))

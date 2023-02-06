@@ -83,7 +83,7 @@ public class HyperbolicTests {
         failures += testRangeSinh(x, Math.ulp(x), 1000);
 
          // ... and just below subnormal threshold ...
-          x =  Math.nextDown(Double.MIN_NORMAL);
+          x = Math.nextDown(Double.MIN_NORMAL);
           failures += testRangeSinh(x, -Math.ulp(x), 1000);
 
          // ... and near 1.0 ...
@@ -137,7 +137,7 @@ public class HyperbolicTests {
         failures += testRangeCosh(x, Math.ulp(x), 1000);
 
          // ... and just below subnormal threshold ...
-          x =  Math.nextDown(Double.MIN_NORMAL);
+          x = Math.nextDown(Double.MIN_NORMAL);
           failures += testRangeCosh(x, -Math.ulp(x), 1000);
 
          // ... and near 1.0 ...
@@ -195,7 +195,7 @@ public class HyperbolicTests {
         failures += testRangeTanh(x, Math.ulp(x), 1000);
 
          // ... and just below subnormal threshold ...
-          x =  Math.nextDown(Double.MIN_NORMAL);
+          x = Math.nextDown(Double.MIN_NORMAL);
           failures += testRangeTanh(x, -Math.ulp(x), 1000);
 
          // ... and near 1.0 ...
