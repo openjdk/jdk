@@ -511,6 +511,8 @@ class SuperWord : public ResourceObj {
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
+  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+  Node* find_dependence(Node_List* p);
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
@@ -536,16 +538,13 @@ class SuperWord : public ResourceObj {
   int unpack_cost(int ct);
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_packs();
-  // Given p1.last == p2.first, check if we have a reduction,
-  // or all new nodes in p2 are independent with all from p1.
-  bool can_combine_packs(Node_List* p1, Node_List* p2);
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
   // Merge CMove into new vector-nodes
   void merge_packs_to_cmove();
-  // Verify the consistency between dependence_graph and the PackSet (no cycle in PackSet)
+  // Verify that for every pack, all nodes are mutually independent
   DEBUG_ONLY(void verify_packs();)
   // Adjust the memory graph for the packed operations
   void schedule();

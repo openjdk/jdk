@@ -1329,6 +1329,44 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   return independent_path(shallow, deep);
 }
 
+//------------------------------find_dependence---------------------
+// Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
+// We could query independent(s1, s2) for all pairs, but that results
+// in O(p.size * p.size) graph traversals. We can do it all in one BFS!
+// Start the BFS traversal at all nodes from the pack. Traverse DepPreds
+// recursively, for nodes that have at least depth min_d, which is the
+// smallest depth of all nodes from the pack. Once we have traversed all
+// those nodes, and have not found another node from the pack, we know
+// that all nodes in the pack are independent.
+Node* SuperWord::find_dependence(Node_List* p) {
+  if (p->at(0)->is_reduction()) {
+    return nullptr; // ignore reductions
+  }
+  ResourceMark rm;
+  Unique_Node_List worklist; // traversal queue
+  int min_d = depth(p->at(0));
+  visited_clear();
+  for (uint k = 0; k < p->size(); k++) {
+    Node* n = p->at(k);
+    min_d = MIN2(min_d, depth(n));
+    worklist.push(n); // start traversal at all nodes in p
+    visited_set(n); // mark node
+  }
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+      Node* pred = preds.current();
+      if (in_bb(pred) && depth(pred) >= min_d) {
+        if (visited_test(pred)) { // marked as in p?
+          return pred;
+        }
+        worklist.push(pred);
+      }
+    }
+  }
+  return nullptr;
+}
+
 //--------------------------have_similar_inputs-----------------------
 // For a node pair (s1, s2) which is isomorphic and independent,
 // do s1 and s2 have similar input edges?
@@ -1718,12 +1756,9 @@ void SuperWord::combine_packs() {
         Node_List* p2 = _packset.at(j);
         if (p2 == NULL) continue;
         if (p1->at(p1->size()-1) == p2->at(0)) {
-          if (can_combine_packs(p1, p2)) {
-            for (uint k = 1; k < p2->size(); k++) {
-              p1->push(p2->at(k));
-            }
+          for (uint k = 1; k < p2->size(); k++) {
+            p1->push(p2->at(k));
           }
-          // remove p2, if it was combined or rejected
           _packset.at_put(j, NULL);
           changed = true;
         }
@@ -1772,26 +1807,6 @@ void SuperWord::combine_packs() {
     tty->print_cr("\nAfter combine_packs");
     print_packset();
   }
-}
-
-//----------------------------can_combine_packs---------------------------
-// Given p1.last == p2.first, check if we have a reduction,
-// or all new nodes in p2 are independent with all from p1.
-bool SuperWord::can_combine_packs(Node_List* p1, Node_List* p2) {
-  assert(p1 != nullptr && p2 != nullptr && p1 != p2, "must be two different packs");
-  assert(p1->at(p1->size()-1) == p2->at(0), "must link: p1.last == p2.first");
-  if (p1->at(0)->is_reduction()) {
-    return true; // reduction
-  }
-  // Check that all new nodes in p2 are independent to all nodes in p1
-  for (uint k1 = 0; k1 < p1->size(); k1++) {
-    for (uint k2 = 1; k2 < p2->size(); k2++) {
-      if (!independent(p1->at(k1), p2->at(k2))) {
-        return false; // dependence found
-      }
-    }
-  }
-  return true; // no dependence found
 }
 
 //-----------------------------construct_my_pack_map--------------------------
@@ -2228,115 +2243,23 @@ bool SuperWord::profitable(Node_List* p) {
 }
 
 #ifdef ASSERT
-class Packset_Graph {
- private:
-  int _size;
-  GrowableArray<GrowableArray<int>> _in_edges;
-  GrowableArray<GrowableArray<int>> _out_edges;
- public:
-  Packset_Graph(int size) : _size(size), _in_edges(size), _out_edges(size) {
-    for (int i = 0; i < _size; i++) {
-      _in_edges.push(GrowableArray<int>());
-      _out_edges.push(GrowableArray<int>());
-    }
-  }
-  int size() { return _size; }
-  GrowableArray<int>& in_edges(int idx) { return _in_edges.at(idx); }
-  GrowableArray<int>& out_edges(int idx) { return _out_edges.at(idx); }
-  void print() {
-    tty->print_cr("Packset graph:");
-    for (int i = 0; i < _size; i++) {
-      tty->print("  %d ( ", i);
-      for (int j = 0; j < _in_edges.at(i).length(); j++) {
-        tty->print("%d ", _in_edges.at(i).at(j));
-      }
-      tty->print(") [ ");
-      for (int j = 0; j < _in_edges.at(i).length(); j++) {
-        tty->print("%d ", _in_edges.at(i).at(j));
-      }
-      tty->print_cr("]");
-    }
-  }
-  // Schedule the graph to worklist. Removes all packs from graph
-  // that are scheduled. Returns true iff all packs were scheduled.
-  // Implies: returns false iff we have a cyclic dependency.
-  // Implementation via topological sort.
-  bool schedule() {
-    GrowableArray<int> worklist;
-    // Directly schedule all packs that have no precedence.
-    for (int i = 0; i < size(); i++) {
-      if (in_edges(i).is_empty()) { // no precedence
-        worklist.push(i); // schedule i
-      }
-    }
-    // Continue scheduling by removing the already scheduled nodes from the remaining graph.
-    for (int i = 0; i < worklist.length(); i++) {
-      int p = worklist.at(i);
-      if (TraceSuperWord) {
-        tty->print_cr("verify: schedule pack[%d]", p);
-      }
-      for (int j = 0; j < out_edges(p).length(); j++){
-        int p_use = out_edges(p).at(j);
-        in_edges(p_use).remove(p); // p_use loses p as precedence
-        if (in_edges(p_use).is_empty()) {
-          worklist.push(p_use); // p_use just lost the last precedence (it was p)
-        }
-      }
-    }
-    return worklist.length() == size(); // were all packs scheduled to worklist?
-  }
-};
-
 void SuperWord::verify_packs() {
-  // Build a packset graph.
-  // Have edge (p, p') if any "def" \in p, "use" \in p': "def" \in use->DepPreds
-  // If these edges for a directed cycle, we have a failure and cannot schedule.
-  ResourceMark rm;
-  Packset_Graph graph(_packset.length());
-
-  for (int i_use = 0; i_use < _packset.length(); i_use++) {
-    Node_List* p_use = _packset.at(i_use);
-    for (int i_def = 0; i_def < _packset.length(); i_def++) {
-      Node_List* p_def = _packset.at(i_def);
-      // For every "use" and "def", check if we need edge "def" -> "use"
-      bool need_edge = false;
-      for (uint j_use = 0; j_use < p_use->size(); j_use++) {
-        Node* use = p_use->at(j_use); // for every node in "use" pack
-        for (DepPreds preds(use, _dg); !preds.done(); preds.next()) {
-          Node* pred = preds.current(); // find preds of "use" node
-          if (my_pack(pred) != p_def) {
-            continue; // not in a pack, or wrong pack -> ignore
-          }
-          if (i_use == i_def && use->is_reduction()) {
-            if (TraceSuperWord) {
-              tty->print_cr("verify: reduction pack[%d], %d %s -> %d %s",
-                            i_use, pred->_idx, pred->Name(), use->_idx, use->Name());
-            }
-            continue; // nodes in same pack, reduction -> self cycle allowed -> ignore
-          }
-          need_edge = true;
-          if (TraceSuperWord) {
-            tty->print_cr("verify: edge pack[%d] -> pack[%d], %d %s -> %d %s",
-                          i_def, i_use, pred->_idx, pred->Name(), use->_idx, use->Name());
-          }
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    Node* dependence = find_dependence(p);
+    if (dependence != nullptr) {
+      tty->print_cr("Other nodes in pack have dependence on:");
+      dependence->dump();
+      tty->print_cr("The following nodes are not independent:");
+      for (uint k = 0; k < p->size(); k++) {
+        Node* n = p->at(k);
+        if (!independent(n, dependence)) {
+          n->dump();
         }
       }
-      if (need_edge) {
-        graph.in_edges(i_use).push(i_def);
-        graph.out_edges(i_def).push(i_use);
-      }
+      print_pack(p);
     }
-  }
-
-  if (TraceSuperWord) {
-    graph.print();
-  }
-
-  if (!graph.schedule()) {
-    tty->print_cr("\nCycle detected in SuperWord packset. Printing remaining graph:");
-    graph.print();
-    print_packset();
-    assert(false, "cycle detected in SuperWord packset");
+    assert(dependence == nullptr, "all nodes in pack must be mutually independent");
   }
 }
 #endif
