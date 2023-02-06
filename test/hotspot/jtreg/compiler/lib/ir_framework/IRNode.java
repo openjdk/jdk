@@ -166,6 +166,11 @@ public class IRNode {
         beforeMatchingNameRegex(ADD_VI, "AddVI");
     }
 
+    public static final String ADD_VF = PREFIX + "ADD_VF" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ADD_VF, "AddVF");
+    }
+
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
     static {
         beforeMatchingNameRegex(ADD_REDUCTION_V, "AddReductionV(B|S|I|L|F|D)");
@@ -179,6 +184,11 @@ public class IRNode {
     public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
         superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
+    }
+
+    public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
+    static {
+        superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
