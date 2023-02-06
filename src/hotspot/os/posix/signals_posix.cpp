@@ -1344,7 +1344,7 @@ void install_signal_handlers() {
   kr = task_set_exception_ports(mach_task_self(),
                                 EXC_MASK_BAD_ACCESS | EXC_MASK_ARITHMETIC
                                   AARCH64_ONLY(| EXC_MASK_BAD_INSTRUCTION),
-                                MACH_PORT_nullptr,
+                                MACH_PORT_NULL,
                                 EXCEPTION_STATE_IDENTITY,
                                 MACHINE_THREAD_STATE);
 
