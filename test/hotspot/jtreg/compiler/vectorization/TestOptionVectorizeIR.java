@@ -44,7 +44,6 @@ public class TestOptionVectorizeIR {
 
     public static void main(String args[]) {
         TestFramework.runWithFlags("-XX:CompileCommand=option,compiler.vectorization.TestOptionVectorizeIR::test*,Vectorize");
-        //TestFramework.run(TestOptionVectorizeIR.class);
     }
 
     TestOptionVectorizeIR() {
