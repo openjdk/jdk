@@ -161,7 +161,7 @@ class WindowsPathParser {
             }
         }
 
-        if (type != expectedType) {
+        if (expectedType != null && type != expectedType) {
             if (expectedType == WindowsPathType.ABSOLUTE) { // long path prefix
                 throw new InvalidPathException(input, "Long path prefix can only be used with an absolute path");
             } else if (expectedType == WindowsPathType.UNC) { // long UNC path prefix

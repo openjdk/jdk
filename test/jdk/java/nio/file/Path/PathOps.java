@@ -1463,7 +1463,7 @@ public class PathOps {
             .invalid();
         test("\\\\?\\UNC")                                    // empty
             .invalid();
-        test("\\\\?\\UNC\\")                                    // empty
+        test("\\\\?\\UNC\\")                                  // empty
             .invalid();
     }
 
