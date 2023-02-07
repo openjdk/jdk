@@ -45,6 +45,7 @@ public class Clamp {
     private static int testIntClamp() {
         int failures = 0;
         long[][] tests = {
+                // value, min, max, expected
                 {0, 1, 2, 1},
                 {0, 0, 2, 0},
                 {1, 0, 2, 1},
@@ -59,6 +60,7 @@ public class Clamp {
                 {Long.MAX_VALUE, 1, 1, 1}
         };
         long[][] exceptionTests = {
+                // value, min, max
                 {1, 2, 0},
                 {1, Integer.MAX_VALUE, Integer.MIN_VALUE}
         };
@@ -85,6 +87,7 @@ public class Clamp {
     private static int testLongClamp() {
         int failures = 0;
         long[][] tests = {
+                // value, min, max, expected
                 {0L, 1L, 2L, 1L},
                 {0L, 0L, 2L, 0L},
                 {1L, 0L, 2L, 1L},
@@ -97,6 +100,7 @@ public class Clamp {
                 {Long.MAX_VALUE, 1, 1, 1}
         };
         long[][] exceptionTests = {
+                // value, min, max
                 {1L, 2L, 0L},
                 {1, Long.MAX_VALUE, Long.MIN_VALUE}
         };
