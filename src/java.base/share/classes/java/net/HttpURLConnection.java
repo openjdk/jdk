@@ -599,7 +599,7 @@ public abstract class HttpURLConnection extends URLConnection {
     }
 
     @SuppressWarnings("deprecation")
-    public long getHeaderFieldDate(String name, long Default) {
+    public long getHeaderFieldDate(String name, long defaultValue) {
         String dateString = getHeaderField(name);
         if (dateString != null) {
             if (!dateString.contains("GMT")) {
@@ -610,7 +610,7 @@ public abstract class HttpURLConnection extends URLConnection {
             } catch (Exception e) {
             }
         }
-        return Default;
+        return defaultValue;
     }
 
 

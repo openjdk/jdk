@@ -352,8 +352,8 @@ public class HttpsURLConnectionImpl
         return delegate.getResponseMessage();
     }
 
-    public long getHeaderFieldDate(String name, long Default) {
-        return delegate.getHeaderFieldDate(name, Default);
+    public long getHeaderFieldDate(String name, long defaultValue) {
+        return delegate.getHeaderFieldDate(name, defaultValue);
     }
 
     public Permission getPermission() throws IOException {
@@ -392,12 +392,12 @@ public class HttpsURLConnectionImpl
         return delegate.getLastModified();
     }
 
-    public int getHeaderFieldInt(String name, int Default) {
-        return delegate.getHeaderFieldInt(name, Default);
+    public int getHeaderFieldInt(String name, int defaultValue) {
+        return delegate.getHeaderFieldInt(name, defaultValue);
     }
 
-    public long getHeaderFieldLong(String name, long Default) {
-        return delegate.getHeaderFieldLong(name, Default);
+    public long getHeaderFieldLong(String name, long defaultValue) {
+        return delegate.getHeaderFieldLong(name, defaultValue);
     }
 
     public Object getContent() throws IOException {
