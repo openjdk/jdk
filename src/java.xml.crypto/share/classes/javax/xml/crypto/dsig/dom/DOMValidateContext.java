@@ -57,7 +57,7 @@ import org.w3c.dom.Node;
  * <code>Boolean.TRUE</code> (see the {@link #setProperty setProperty}
  * method). When enabled, validation of XML signatures are subject to
  * stricter checking of algorithms and other constraints as specified by the
- * <code>jdk.xml.dsig.secureValidationPolicy</code> security property. 
+ * <code>jdk.xml.dsig.secureValidationPolicy</code> security property.
  * The mode can be disabled by setting the property to {@code Boolean.FALSE}.
  * The mode can also be enabled or disabled by setting the
  * {@systemProperty org.jcp.xml.dsig.secureValidation} system property to
