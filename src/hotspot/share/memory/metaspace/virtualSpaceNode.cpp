@@ -43,6 +43,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -239,6 +240,10 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
   // handed to arenas.
   ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
+
+  // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
+  // memory.
+  LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
 }
 
 // Create a node of a given size (it will create its own space).
@@ -270,11 +275,15 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(ReservedSpace rs, CommitLimiter*
 VirtualSpaceNode::~VirtualSpaceNode() {
   DEBUG_ONLY(verify_locked();)
 
+  // Unregister memory region related to Metaspace.
+  LSAN_UNREGISTER_ROOT_REGION(_rs.base(), _rs.size());
+
   // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
   // the same address do not unexpectedly fail with use-after-poison.
   ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
 
   UL(debug, ": dies.");
+
   if (_owns_rs) {
     _rs.release();
   }
