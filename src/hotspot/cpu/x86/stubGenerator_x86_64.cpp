@@ -2665,6 +2665,9 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     __ shll(isURL, 3);
 
+    // Algorithm adapted from https://arxiv.org/abs/1704.00605, "Faster Base64
+    // Encoding and Decoding using AVX2 Instructions".  URL modifications added.
+
     // Set up constants
     __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
     __ vpbroadcastq(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
@@ -2684,11 +2687,14 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     __ align32();
     __ bind(L_topLoop);
+    // Add in the offset value (roll) to get 6-bit out values
     __ vpaddb(xmm0, xmm0, xmm2, Assembler::AVX_256bit);
+    // Merge and permute the output bits into appropriate output byte lanes
     __ vpmaddubsw(xmm0, xmm0, xmm7, Assembler::AVX_256bit);
     __ vpmaddwd(xmm0, xmm0, xmm6, Assembler::AVX_256bit);
     __ vpshufb(xmm0, xmm0, xmm13, Assembler::AVX_256bit);
     __ vpermd(xmm0, xmm12, xmm0, Assembler::AVX_256bit);
+    // Store the output bytes
     __ vmovdqu(Address(dest, dp, Address::times_1, 0), xmm0);
     __ addptr(source, 0x20);
     __ addptr(dest, 0x18);
@@ -2697,17 +2703,25 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     __ bind(L_enterLoop);
 
+    // Load in encoded string (32 bytes)
     __ vmovdqu(xmm2, Address(source, start_offset, Address::times_1, 0x0));
+    // Extract the high nibble for indexing into the lut tables.  High 4 bits are don't care.
     __ vpsrld(xmm1, xmm2, 0x4, Assembler::AVX_256bit);
     __ vpand(xmm1, xmm4, xmm1, Assembler::AVX_256bit);
+    // Extract the low nibble. 5F/2F will isolate the low-order 4 bits.  High 4 bits are don't care.
     __ vpand(xmm3, xmm2, xmm4, Assembler::AVX_256bit);
+    // Check for special-case (0x2F or 0x5F (URL))
     __ vpcmpeqb(xmm0, xmm10, xmm2, Assembler::AVX_256bit);
+    // Get the bitset based on the low nibble.  vpshufb uses low-order 4 bits only.
     __ vpshufb(xmm3, xmm11, xmm3, Assembler::AVX_256bit);
+    // Get the bit value of the high nibble
     __ vpshufb(xmm5, xmm9, xmm1, Assembler::AVX_256bit);
+    // If the and of the two is non-zero, we have an invalid input character
     __ vptest(xmm3, xmm5);
-    __ vpaddb(xmm0, xmm0, xmm1, Assembler::AVX_256bit);
+    // Extract the "roll" value - value to add to the input to get 6-bit out value
+    __ vpaddb(xmm0, xmm0, xmm1, Assembler::AVX_256bit); // Handle 2F / 5F
     __ vpshufb(xmm0, xmm8, xmm0, Assembler::AVX_256bit);
-    __ jcc(Assembler::equal, L_topLoop);
+    __ jcc(Assembler::equal, L_topLoop);  // Fall through on error
 
     __ bind(L_tailProc);
 
