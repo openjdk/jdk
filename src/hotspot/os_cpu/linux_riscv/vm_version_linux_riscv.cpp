@@ -98,7 +98,7 @@ void VM_Version::get_os_cpu_info() {
   }
 }
 
-// Here is the form of isa string, multi-letter extensions are separated by '_':
+// Multi-letter extensions are separated by '_' in isa substring, an example:
 // rv64imafdch_zicsr_zifencei_zihintpause_zba_zbb_zbc_zbs_sstc
 void VM_Version::get_isa() {
   char isa_buf[512];
