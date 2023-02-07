@@ -127,6 +127,7 @@ public:
   static inline narrowOop encode(oop v);
 
   // No conversions needed for these overloads
+  static inline oop decode_raw_not_null(oop v);
   static inline oop decode_not_null(oop v);
   static inline oop decode(oop v);
   static inline narrowOop encode_not_null(narrowOop v);
