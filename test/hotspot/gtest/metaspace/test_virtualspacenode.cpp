@@ -33,7 +33,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "sanitizers/address.h"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"

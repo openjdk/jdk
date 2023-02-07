@@ -926,8 +926,7 @@ address MacroAssembler::trampoline_call(Address entry) {
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
   // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(NativeInstruction::instruction_size
-                   + NativeCallTrampolineStub::instruction_size);
+  address stub = start_a_stub(max_trampoline_stub_size());
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
@@ -959,6 +958,11 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
+int MacroAssembler::max_trampoline_stub_size() {
+  // Max stub size: alignment nop, TrampolineStub.
+  return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
+}
+
 void MacroAssembler::emit_static_call_stub() {
   // CompiledDirectStaticCall::set_to_interpreted knows the
   // exact layout of this stub.
@@ -969,6 +973,11 @@ void MacroAssembler::emit_static_call_stub() {
   // Jump to the entry point of the c2i stub.
   movptr(rscratch1, 0);
   br(rscratch1);
+}
+
+int MacroAssembler::static_call_stub_size() {
+  // isb; movk; movz; movz; movk; movz; movz; br
+  return 8 * NativeInstruction::instruction_size;
 }
 
 void MacroAssembler::c2bool(Register x) {
