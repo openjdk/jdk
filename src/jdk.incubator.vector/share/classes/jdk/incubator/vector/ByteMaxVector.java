@@ -658,10 +658,10 @@ final class ByteMaxVector extends ByteVector {
         @Override
         @ForceInline
         /*package-private*/
-        ByteMaxMask indexInRange0(long offset, long limit) {
-            return (ByteMaxMask) VectorSupport.indexInRange(
+        ByteMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (ByteMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 ByteMaxMask.class, byte.class, VLENGTH, offset, limit,
-                (o, l) -> (ByteMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (ByteMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

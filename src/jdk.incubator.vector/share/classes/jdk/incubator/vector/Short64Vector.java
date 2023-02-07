@@ -664,10 +664,10 @@ final class Short64Vector extends ShortVector {
         @Override
         @ForceInline
         /*package-private*/
-        Short64Mask indexInRange0(long offset, long limit) {
-            return (Short64Mask) VectorSupport.indexInRange(
+        Short64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Short64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Short64Mask.class, short.class, VLENGTH, offset, limit,
-                (o, l) -> (Short64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Short64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

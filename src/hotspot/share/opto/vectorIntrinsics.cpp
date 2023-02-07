@@ -3009,10 +3009,10 @@ bool LibraryCallKit::inline_index_vector() {
 // public static
 // <E,
 //  M extends VectorMask<E>>
-// M indexInRange(Class<? extends M> mClass, Class<E> eClass, int length,
-//                long offset, long limit,
-//                IndexInRangeOperation<E, M> defaultImpl)
-bool LibraryCallKit::inline_vector_index_in_range() {
+// M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<E> eClass, int length,
+//                              long offset, long limit,
+//                              IndexPartiallyInUpperRangeOperation<E, M> defaultImpl)
+bool LibraryCallKit::inline_index_partially_in_upper_range() {
   const TypeInstPtr* mask_klass   = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();

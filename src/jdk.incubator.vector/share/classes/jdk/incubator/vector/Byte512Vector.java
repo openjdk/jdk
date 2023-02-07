@@ -784,10 +784,10 @@ final class Byte512Vector extends ByteVector {
         @Override
         @ForceInline
         /*package-private*/
-        Byte512Mask indexInRange0(long offset, long limit) {
-            return (Byte512Mask) VectorSupport.indexInRange(
+        Byte512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Byte512Mask.class, byte.class, VLENGTH, offset, limit,
-                (o, l) -> (Byte512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Byte512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

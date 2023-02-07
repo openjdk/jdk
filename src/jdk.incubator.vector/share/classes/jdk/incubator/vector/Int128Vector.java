@@ -664,10 +664,10 @@ final class Int128Vector extends IntVector {
         @Override
         @ForceInline
         /*package-private*/
-        Int128Mask indexInRange0(long offset, long limit) {
-            return (Int128Mask) VectorSupport.indexInRange(
+        Int128Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int128Mask) VectorSupport.indexPartiallyInUpperRange(
                 Int128Mask.class, int.class, VLENGTH, offset, limit,
-                (o, l) -> (Int128Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Int128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

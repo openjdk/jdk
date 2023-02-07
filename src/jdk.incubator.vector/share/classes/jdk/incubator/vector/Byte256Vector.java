@@ -720,10 +720,10 @@ final class Byte256Vector extends ByteVector {
         @Override
         @ForceInline
         /*package-private*/
-        Byte256Mask indexInRange0(long offset, long limit) {
-            return (Byte256Mask) VectorSupport.indexInRange(
+        Byte256Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte256Mask) VectorSupport.indexPartiallyInUpperRange(
                 Byte256Mask.class, byte.class, VLENGTH, offset, limit,
-                (o, l) -> (Byte256Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Byte256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

@@ -661,10 +661,10 @@ final class Double512Vector extends DoubleVector {
         @Override
         @ForceInline
         /*package-private*/
-        Double512Mask indexInRange0(long offset, long limit) {
-            return (Double512Mask) VectorSupport.indexInRange(
+        Double512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Double512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Double512Mask.class, double.class, VLENGTH, offset, limit,
-                (o, l) -> (Double512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Double512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

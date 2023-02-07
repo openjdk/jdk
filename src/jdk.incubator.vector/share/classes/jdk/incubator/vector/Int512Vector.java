@@ -688,10 +688,10 @@ final class Int512Vector extends IntVector {
         @Override
         @ForceInline
         /*package-private*/
-        Int512Mask indexInRange0(long offset, long limit) {
-            return (Int512Mask) VectorSupport.indexInRange(
+        Int512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Int512Mask.class, int.class, VLENGTH, offset, limit,
-                (o, l) -> (Int512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Int512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

@@ -658,10 +658,10 @@ final class ShortMaxVector extends ShortVector {
         @Override
         @ForceInline
         /*package-private*/
-        ShortMaxMask indexInRange0(long offset, long limit) {
-            return (ShortMaxMask) VectorSupport.indexInRange(
+        ShortMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (ShortMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 ShortMaxMask.class, short.class, VLENGTH, offset, limit,
-                (o, l) -> (ShortMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (ShortMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

@@ -720,10 +720,10 @@ final class Short512Vector extends ShortVector {
         @Override
         @ForceInline
         /*package-private*/
-        Short512Mask indexInRange0(long offset, long limit) {
-            return (Short512Mask) VectorSupport.indexInRange(
+        Short512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Short512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Short512Mask.class, short.class, VLENGTH, offset, limit,
-                (o, l) -> (Short512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Short512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

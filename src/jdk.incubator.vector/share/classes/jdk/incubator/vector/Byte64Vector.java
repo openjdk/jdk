@@ -672,10 +672,10 @@ final class Byte64Vector extends ByteVector {
         @Override
         @ForceInline
         /*package-private*/
-        Byte64Mask indexInRange0(long offset, long limit) {
-            return (Byte64Mask) VectorSupport.indexInRange(
+        Byte64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Byte64Mask.class, byte.class, VLENGTH, offset, limit,
-                (o, l) -> (Byte64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Byte64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

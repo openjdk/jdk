@@ -672,10 +672,10 @@ final class Int256Vector extends IntVector {
         @Override
         @ForceInline
         /*package-private*/
-        Int256Mask indexInRange0(long offset, long limit) {
-            return (Int256Mask) VectorSupport.indexInRange(
+        Int256Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int256Mask) VectorSupport.indexPartiallyInUpperRange(
                 Int256Mask.class, int.class, VLENGTH, offset, limit,
-                (o, l) -> (Int256Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Int256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

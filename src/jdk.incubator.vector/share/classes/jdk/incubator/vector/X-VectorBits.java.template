@@ -931,10 +931,10 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         /*package-private*/
-        $masktype$ indexInRange0(long offset, long limit) {
-            return ($masktype$) VectorSupport.indexInRange(
+        $masktype$ indexPartiallyInUpperRange(long offset, long limit) {
+            return ($masktype$) VectorSupport.indexPartiallyInUpperRange(
                 $masktype$.class, $type$.class, VLENGTH, offset, limit,
-                (o, l) -> ($masktype$) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> ($masktype$) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

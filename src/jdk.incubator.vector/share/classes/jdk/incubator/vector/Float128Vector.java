@@ -653,10 +653,10 @@ final class Float128Vector extends FloatVector {
         @Override
         @ForceInline
         /*package-private*/
-        Float128Mask indexInRange0(long offset, long limit) {
-            return (Float128Mask) VectorSupport.indexInRange(
+        Float128Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Float128Mask) VectorSupport.indexPartiallyInUpperRange(
                 Float128Mask.class, float.class, VLENGTH, offset, limit,
-                (o, l) -> (Float128Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Float128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

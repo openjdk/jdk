@@ -197,7 +197,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     /*package-private*/
     @ForceInline
-    VectorMask<E> indexInRange0Helper(int offset, int limit) {
+    VectorMask<E> indexPartiallyInRange(int offset, int limit) {
         int vlength = length();
         Vector<E> iota = vectorSpecies().zero().addIndex(1);
         VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
@@ -206,7 +206,7 @@ abstract class AbstractMask<E> extends VectorMask<E> {
 
     /*package-private*/
     @ForceInline
-    VectorMask<E> indexInRange0Helper(long offset, long limit) {
+    VectorMask<E> indexPartiallyInRange(long offset, long limit) {
         int vlength = length();
         Vector<E> iota = vectorSpecies().zero().addIndex(1);
         VectorMask<E> badMask = checkIndex0(offset, limit, iota, vlength);
@@ -217,29 +217,28 @@ abstract class AbstractMask<E> extends VectorMask<E> {
     @ForceInline
     public VectorMask<E> indexInRange(int offset, int limit) {
         if (offset < 0) {
-            return this.and(indexInRange0Helper(offset, limit));
+            return this.and(indexPartiallyInRange(offset, limit));
         } else if (offset >= limit) {
             return vectorSpecies().maskAll(false);
         } else if (limit - offset >= length()) {
             return this;
         }
-        return this.and(indexInRange0(offset, limit));
+        return this.and(indexPartiallyInUpperRange(offset, limit));
     }
 
-    @Override
     @ForceInline
     public VectorMask<E> indexInRange(long offset, long limit) {
         if (offset < 0) {
-            return this.and(indexInRange0Helper(offset, limit));
+            return this.and(indexPartiallyInRange(offset, limit));
         } else if (offset >= limit) {
             return vectorSpecies().maskAll(false);
         } else if (limit - offset >= length()) {
             return this;
         }
-        return this.and(indexInRange0(offset, limit));
+        return this.and(indexPartiallyInUpperRange(offset, limit));
     }
 
-    abstract VectorMask<E> indexInRange0(long offset, long limit);
+    abstract VectorMask<E> indexPartiallyInUpperRange(long offset, long limit);
 
     /*package-private*/
     @ForceInline

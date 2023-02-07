@@ -649,10 +649,10 @@ final class Float64Vector extends FloatVector {
         @Override
         @ForceInline
         /*package-private*/
-        Float64Mask indexInRange0(long offset, long limit) {
-            return (Float64Mask) VectorSupport.indexInRange(
+        Float64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Float64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Float64Mask.class, float.class, VLENGTH, offset, limit,
-                (o, l) -> (Float64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Float64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

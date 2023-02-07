@@ -648,10 +648,10 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         /*package-private*/
-        LongMaxMask indexInRange0(long offset, long limit) {
-            return (LongMaxMask) VectorSupport.indexInRange(
+        LongMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (LongMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 LongMaxMask.class, long.class, VLENGTH, offset, limit,
-                (o, l) -> (LongMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (LongMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

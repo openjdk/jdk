@@ -647,10 +647,10 @@ final class Double64Vector extends DoubleVector {
         @Override
         @ForceInline
         /*package-private*/
-        Double64Mask indexInRange0(long offset, long limit) {
-            return (Double64Mask) VectorSupport.indexInRange(
+        Double64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Double64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Double64Mask.class, double.class, VLENGTH, offset, limit,
-                (o, l) -> (Double64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Double64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

@@ -688,10 +688,10 @@ final class Byte128Vector extends ByteVector {
         @Override
         @ForceInline
         /*package-private*/
-        Byte128Mask indexInRange0(long offset, long limit) {
-            return (Byte128Mask) VectorSupport.indexInRange(
+        Byte128Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Byte128Mask) VectorSupport.indexPartiallyInUpperRange(
                 Byte128Mask.class, byte.class, VLENGTH, offset, limit,
-                (o, l) -> (Byte128Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Byte128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

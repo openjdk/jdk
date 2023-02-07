@@ -654,10 +654,10 @@ final class Long256Vector extends LongVector {
         @Override
         @ForceInline
         /*package-private*/
-        Long256Mask indexInRange0(long offset, long limit) {
-            return (Long256Mask) VectorSupport.indexInRange(
+        Long256Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Long256Mask) VectorSupport.indexPartiallyInUpperRange(
                 Long256Mask.class, long.class, VLENGTH, offset, limit,
-                (o, l) -> (Long256Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Long256Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

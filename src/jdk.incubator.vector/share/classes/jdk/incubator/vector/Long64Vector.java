@@ -648,10 +648,10 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         /*package-private*/
-        Long64Mask indexInRange0(long offset, long limit) {
-            return (Long64Mask) VectorSupport.indexInRange(
+        Long64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Long64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Long64Mask.class, long.class, VLENGTH, offset, limit,
-                (o, l) -> (Long64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Long64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

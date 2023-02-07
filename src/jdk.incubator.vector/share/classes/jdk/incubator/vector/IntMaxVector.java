@@ -658,10 +658,10 @@ final class IntMaxVector extends IntVector {
         @Override
         @ForceInline
         /*package-private*/
-        IntMaxMask indexInRange0(long offset, long limit) {
-            return (IntMaxMask) VectorSupport.indexInRange(
+        IntMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (IntMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 IntMaxMask.class, int.class, VLENGTH, offset, limit,
-                (o, l) -> (IntMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (IntMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

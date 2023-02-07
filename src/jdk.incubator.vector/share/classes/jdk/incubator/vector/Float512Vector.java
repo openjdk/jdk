@@ -677,10 +677,10 @@ final class Float512Vector extends FloatVector {
         @Override
         @ForceInline
         /*package-private*/
-        Float512Mask indexInRange0(long offset, long limit) {
-            return (Float512Mask) VectorSupport.indexInRange(
+        Float512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Float512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Float512Mask.class, float.class, VLENGTH, offset, limit,
-                (o, l) -> (Float512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Float512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

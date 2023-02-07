@@ -672,10 +672,10 @@ final class Short128Vector extends ShortVector {
         @Override
         @ForceInline
         /*package-private*/
-        Short128Mask indexInRange0(long offset, long limit) {
-            return (Short128Mask) VectorSupport.indexInRange(
+        Short128Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Short128Mask) VectorSupport.indexPartiallyInUpperRange(
                 Short128Mask.class, short.class, VLENGTH, offset, limit,
-                (o, l) -> (Short128Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Short128Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

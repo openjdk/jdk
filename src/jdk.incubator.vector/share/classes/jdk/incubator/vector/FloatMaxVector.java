@@ -646,10 +646,10 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         /*package-private*/
-        FloatMaxMask indexInRange0(long offset, long limit) {
-            return (FloatMaxMask) VectorSupport.indexInRange(
+        FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 FloatMaxMask.class, float.class, VLENGTH, offset, limit,
-                (o, l) -> (FloatMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (FloatMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

@@ -646,10 +646,10 @@ final class DoubleMaxVector extends DoubleVector {
         @Override
         @ForceInline
         /*package-private*/
-        DoubleMaxMask indexInRange0(long offset, long limit) {
-            return (DoubleMaxMask) VectorSupport.indexInRange(
+        DoubleMaxMask indexPartiallyInUpperRange(long offset, long limit) {
+            return (DoubleMaxMask) VectorSupport.indexPartiallyInUpperRange(
                 DoubleMaxMask.class, double.class, VLENGTH, offset, limit,
-                (o, l) -> (DoubleMaxMask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (DoubleMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

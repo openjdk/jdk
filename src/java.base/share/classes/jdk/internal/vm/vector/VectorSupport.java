@@ -211,8 +211,8 @@ public class VectorSupport {
     }
 
     /* ============================================================================ */
-    public interface IndexInRangeOperation<E,
-                                           M extends VectorMask<E>> {
+    public interface IndexPartiallyInUpperRangeOperation<E,
+                                                         M extends VectorMask<E>> {
         M apply(long offset, long limit);
     }
 
@@ -220,9 +220,9 @@ public class VectorSupport {
     public static
     <E,
      M extends VectorMask<E>>
-    M indexInRange(Class<? extends M> mClass, Class<E> eClass, int length,
-                   long offset, long limit,
-                   IndexInRangeOperation<E, M> defaultImpl) {
+    M indexPartiallyInUpperRange(Class<? extends M> mClass, Class<E> eClass,
+                                 int length, long offset, long limit,
+                                 IndexPartiallyInUpperRangeOperation<E, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(offset, limit);
     }

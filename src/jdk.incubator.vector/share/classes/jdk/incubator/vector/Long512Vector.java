@@ -662,10 +662,10 @@ final class Long512Vector extends LongVector {
         @Override
         @ForceInline
         /*package-private*/
-        Long512Mask indexInRange0(long offset, long limit) {
-            return (Long512Mask) VectorSupport.indexInRange(
+        Long512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Long512Mask) VectorSupport.indexPartiallyInUpperRange(
                 Long512Mask.class, long.class, VLENGTH, offset, limit,
-                (o, l) -> (Long512Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Long512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

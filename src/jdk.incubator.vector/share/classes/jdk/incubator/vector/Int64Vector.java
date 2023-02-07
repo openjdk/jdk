@@ -660,10 +660,10 @@ final class Int64Vector extends IntVector {
         @Override
         @ForceInline
         /*package-private*/
-        Int64Mask indexInRange0(long offset, long limit) {
-            return (Int64Mask) VectorSupport.indexInRange(
+        Int64Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Int64Mask) VectorSupport.indexPartiallyInUpperRange(
                 Int64Mask.class, int.class, VLENGTH, offset, limit,
-                (o, l) -> (Int64Mask) TRUE_MASK.indexInRange0Helper(o, l));
+                (o, l) -> (Int64Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations
