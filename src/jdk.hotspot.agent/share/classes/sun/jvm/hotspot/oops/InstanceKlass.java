@@ -271,21 +271,27 @@ public class InstanceKlass extends Klass {
 
   public static long getHeaderSize() { return headerSize; }
 
+  private Field[] fieldCache;
+
+  private Field getField(int index) {
+    if (fieldCache == null) {
+      fieldCache = Field.getFields(this);
+    }
+    return fieldCache[index];
+  }
+
   public short getFieldAccessFlags(int index) {
-    Field field = new Field(this, index);
-    return (short)field.getAccessFlags();
+    return (short)getField(index).getAccessFlags();
   }
 
   public short getFieldNameIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    Field field = new Field(this, index);
-    return (short)field.getNameIndex();
+    return (short)getField(index).getNameIndex();
   }
 
   public Symbol getFieldName(int index) {
     // Cannot use getFieldNameIndex() because this method is also used for injected fields
-    Field field = new Field(this, index);
-    return field.getName();
+    return getField(index).getName();
   }
 
   public Symbol getSymbolFromIndex(int cpIndex, boolean injected) {
@@ -298,35 +304,29 @@ public class InstanceKlass extends Klass {
 
   public short getFieldSignatureIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    Field field = new Field(this, index);
-    return (short)field.getGenericSignatureIndex();
+    return (short)getField(index).getGenericSignatureIndex();
   }
 
   public Symbol getFieldSignature(int index) {
     // Cannot use getFieldSignatureIndex() because this method is also use for injected fields
-    Field field = new Field(this, index);
-    return field.getSignature();
+    return getField(index).getSignature();
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-    Field field = new Field(this, index);
-    return field.getGenericSignatureIndex();
+    return getField(index).getGenericSignatureIndex();
   }
 
   public Symbol getFieldGenericSignature(int index) {
-    Field field = new Field(this, index);
-    return field.getGenericSignature();
+    return getField(index).getGenericSignature();
   }
 
   public short getFieldInitialValueIndex(int index) {
     if (index >= getJavaFieldsCount()) throw new IndexOutOfBoundsException("not a Java field;");
-    Field field = new Field(this, index);
-    return (short)field.getInitialValueIndex();
+    return (short)getField(index).getInitialValueIndex();
   }
 
   public int getFieldOffset(int index) {
-    Field field = new Field(this, index);
-    return (int)field.getOffset();
+    return (int)getField(index).getOffset();
   }
 
   // Accessors for declared fields
