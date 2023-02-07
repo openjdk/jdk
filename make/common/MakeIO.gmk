@@ -268,5 +268,5 @@ ifeq ($(HAS_FILE_FUNCTION), true)
 else
   # Use printf to get consistent behavior on all platforms.
   AppendFile = \
-      $(shell $(PRINTF) "%s" $(call ShellQuote, $1) >> $2)
+      $(shell $(PRINTF) "%s\n" $(call ShellQuote, $1) >> $2)
 endif
