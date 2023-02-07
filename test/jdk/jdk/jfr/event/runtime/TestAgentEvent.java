@@ -58,11 +58,11 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @run main/othervm -javaagent:JavaAgent.jar=foo=bar
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaStatic
- *      
+ *
  * @run main/othervm -Djdk.attach.allowAttachSelf=true
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testJavaDynamic
- *      
+ *
  * @run main/othervm -agentlib:jdwp=transport=dt_socket,server=y,address=any,onjcmd=y
  *      jdk.jfr.event.runtime.TestAgentEvent
  *      testNativeStatic
