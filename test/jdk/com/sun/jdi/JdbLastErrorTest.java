@@ -65,7 +65,8 @@ class TestNativeLastError {
             int lastError = (int) getLastError.invoke();
             System.out.println("lastError = " + lastError);
             if (lastError != VALUE) {
-                System.err.println("iteration " + i + " gets lastError = " + lastError);
+                System.err.println("iteration " + i + " got lastError = " + lastError
+                                   + " (expected " + VALUE + ")");
                 throw new RuntimeException("failed, lastError = " + lastError);
             }
         }
