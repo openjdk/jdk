@@ -146,6 +146,7 @@ class JVMCICompileState : public ResourceObj {
   void inc_compilation_ticks();
 };
 
+extern JNIEXPORT jobjectArray c2v_getDeclaredFieldsInfo(JNIEnv* env, jobject, jobject, jlong);
 // This class is a top level wrapper around interactions between HotSpot
 // and the JVMCI Java code.  It supports both a HotSpot heap based
 // runtime with HotSpot oop based accessors as well as a shared library
@@ -154,7 +155,7 @@ class JVMCICompileState : public ResourceObj {
 // HotSpot C++ code can can work with either runtime.
 class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
-  friend jobjectArray* c2v_getDeclaredFieldsInfo(JNIEnv* env, jobject, jobject, jlong);
+  friend jobjectArray c2v_getDeclaredFieldsInfo(JNIEnv* env, jobject, jobject, jlong);
 
   // Initializes the _env, _mode and _runtime fields.
   void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal = true);
