@@ -25,6 +25,6 @@
 
 extern "C" {
 
-#include "./asan_default_options.c"
+#include "./lsan_default_options.c"
 
 } // extern "C"
