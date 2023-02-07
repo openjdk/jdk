@@ -1010,7 +1010,7 @@ final class StringUTF16 {
         while (start < end && getChar(value, end - 1) <= ' ') {
             end--;
         }
-        return ((start > 0) || (end < length )) ?
+        return ((start > 0) || (end < length)) ?
             new String(String.copyBytes(value, start << 1, (end - start) << 1), UTF16) :
             null;
     }

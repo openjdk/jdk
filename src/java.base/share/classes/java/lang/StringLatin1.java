@@ -579,16 +579,16 @@ final class StringLatin1 {
     }
 
     public static String trim(byte[] value) {
-        int len = value.length;
-        int st = 0;
-        while ((st < len) && ((value[st] & 0xff) <= ' ')) {
-            st++;
+        int end = value.length;
+        int start = 0;
+        while ((start < end) && ((value[start] & 0xff) <= ' ')) {
+            start++;
         }
-        while ((st < len) && ((value[len - 1] & 0xff) <= ' ')) {
-            len--;
+        while ((start < end) && ((value[end - 1] & 0xff) <= ' ')) {
+            end--;
         }
-        return ((st > 0) || (len < value.length)) ?
-            newString(value, st, len - st) : null;
+        return ((start > 0) || (end < value.length)) ?
+            newString(value, start, end - start) : null;
     }
 
     public static int indexOfNonWhitespace(byte[] value) {
