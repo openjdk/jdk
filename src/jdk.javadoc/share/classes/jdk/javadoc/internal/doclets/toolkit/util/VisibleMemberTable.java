@@ -1047,7 +1047,7 @@ public class VisibleMemberTable {
             TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             for (TypeMirror interfaceType : intfacs) {
-                ExecutableElement found = findMethod(utils.asTypeElement(interfaceType), method);
+                ExecutableElement found = findImplementedMethod(utils.asTypeElement(interfaceType), method);
                 if (found != null && !methods.contains(found)) {
                     methods.add(found);
                     interfaces.put(found, interfaceType);
@@ -1055,18 +1055,10 @@ public class VisibleMemberTable {
             }
         }
 
-        /**
-         * Search for the given method in the given class.
-         *
-         * @param te     Class to search into.
-         * @param method Method to be searched.
-         *
-         * @return Method found, null otherwise.
-         */
-        private ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
-            TypeElement typeElement = (TypeElement) method.getEnclosingElement();
-            for (ExecutableElement m : utils.getMethods(te)) {
-                if (utils.elementUtils.overrides(method, m, typeElement)) {
+        private ExecutableElement findImplementedMethod(TypeElement te, ExecutableElement implementer) {
+            var typeElement = (TypeElement) implementer.getEnclosingElement();
+            for (var m : utils.getMethods(te)) {
+                if (utils.elementUtils.overrides(implementer, m, typeElement)) {
                     return m;
                 }
             }
