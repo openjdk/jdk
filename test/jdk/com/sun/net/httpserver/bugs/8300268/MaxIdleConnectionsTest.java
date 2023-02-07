@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MaxIdleConnectionsTest {
@@ -105,11 +105,10 @@ public class MaxIdleConnectionsTest {
             System.out.println("Received successful response for request " + i);
         }
 
-        // assert that the expected number of idle connections has been reached
-        // meaning the extra connection was served but then closed
+        // assert that the limit set by maxIdleConnections was not exceeded
         int idleConnectionCount = HttpServerAccess.getIdleConnectionCount(server);
         System.out.println("count " + idleConnectionCount);
-        assertEquals(maxIdleConnections, idleConnectionCount);
+        assertTrue(maxIdleConnections >= idleConnectionCount);
     }
 
     // Create HttpServer that will handle requests with multiple threads

@@ -965,17 +965,20 @@ class ServerImpl {
     void markIdle(HttpConnection c) {
         Boolean close = false;
 
-        idleConnectionLock.lock();
-        if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
-            // closing the connection here could block
-            // instead set boolean and close outside of lock
-            close = true;
-        } else {
-            c.idleStartTime = System.currentTimeMillis();
-            c.setState(State.IDLE);
-            idleConnections.add(c);
+        try {
+            idleConnectionLock.lock();
+            if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
+                // closing the connection here could block
+                // instead set boolean and close outside of lock
+                close = true;
+            } else {
+                c.idleStartTime = System.currentTimeMillis();
+                c.setState(State.IDLE);
+                idleConnections.add(c);
+            }
+        } finally {
+            idleConnectionLock.unlock();
         }
-        idleConnectionLock.unlock();
 
         if (close) {
             c.close();
