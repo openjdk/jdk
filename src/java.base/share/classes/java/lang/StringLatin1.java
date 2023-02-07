@@ -579,16 +579,16 @@ final class StringLatin1 {
     }
 
     public static String trim(byte[] value) {
-        int end = value.length;
-        int start = 0;
-        while ((start < end) && ((value[start] & 0xff) <= ' ')) {
-            start++;
+        int len = value.length;
+        int st = 0;
+        while ((st < len) && ((value[st] & 0xff) <= ' ')) {
+            st++;
         }
-        while ((start < end) && ((value[end - 1] & 0xff) <= ' ')) {
-            end--;
+        while ((st < len) && ((value[len - 1] & 0xff) <= ' ')) {
+            len--;
         }
-        return ((start > 0) || (end < value.length)) ?
-            newString(value, start, end - start) : null;
+        return ((st > 0) || (len < value.length)) ?
+            newString(value, st, len - st) : null;
     }
 
     public static int indexOfNonWhitespace(byte[] value) {
@@ -760,7 +760,8 @@ final class StringLatin1 {
         if (len == 0) {
             return "";
         }
-        return new String(String.copyBytes(val, index, len), LATIN1);
+        return new String(Arrays.copyOfRange(val, index, index + len),
+                          LATIN1);
     }
 
     public static void fillNull(byte[] val, int index, int end) {

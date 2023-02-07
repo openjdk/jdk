@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,7 +402,7 @@ public final class String
             return;
         }
         if (COMPACT_STRINGS && (byte)hibyte == 0) {
-            this.value = copyBytes(ascii, offset, count);
+            this.value = Arrays.copyOfRange(ascii, offset, offset + count);
             this.coder = LATIN1;
         } else {
             hibyte <<= 8;
@@ -536,7 +536,7 @@ public final class String
             if (COMPACT_STRINGS) {
                 int dp = StringCoding.countPositives(bytes, offset, length);
                 if (dp == length) {
-                    this.value = copyBytes(bytes, offset, length);
+                    this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                     this.coder = LATIN1;
                     return;
                 }
@@ -593,7 +593,7 @@ public final class String
             }
         } else if (charset == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS) {
-                this.value = copyBytes(bytes, offset, length);
+                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
             } else {
                 this.value = StringLatin1.inflate(bytes, offset, length);
@@ -601,7 +601,7 @@ public final class String
             }
         } else if (charset == US_ASCII.INSTANCE) {
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = copyBytes(bytes, offset, length);
+                this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                 this.coder = LATIN1;
             } else {
                 byte[] dst = new byte[length << 1];
@@ -628,7 +628,7 @@ public final class String
                 // ascii
                 if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
                     if (COMPACT_STRINGS) {
-                        this.value = copyBytes(bytes, offset, length);
+                        this.value = Arrays.copyOfRange(bytes, offset, offset + length);
                         this.coder = LATIN1;
                         return;
                     }
@@ -671,7 +671,7 @@ public final class String
             char[] ca = new char[en];
             if (charset.getClass().getClassLoader0() != null &&
                     System.getSecurityManager() != null) {
-                bytes = copyBytes(bytes, offset, length);
+                bytes = Arrays.copyOfRange(bytes, offset, offset + length);
                 offset = 0;
             }
 
@@ -695,12 +695,6 @@ public final class String
         }
     }
 
-    static byte[] copyBytes(byte[] bytes, int offset, int length) {
-        byte[] dst = new byte[length];
-        System.arraycopy(bytes, offset, dst, 0, length);
-        return dst;
-    }
-
     /*
      * Throws iae, instead of replacing, if malformed or unmappable.
      */
@@ -715,7 +709,7 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                return new String(copyBytes(bytes, offset, length), LATIN1);
+                return new String(Arrays.copyOfRange(bytes, offset, offset + length), LATIN1);
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
@@ -4540,12 +4534,10 @@ public final class String
      */
     String(AbstractStringBuilder asb, Void sig) {
         byte[] val = asb.getValue();
-        // To avoid surprises due to data races we limit length to the smallest
-        // of asb.length() and val.length
-        int length = Math.min(asb.length(), val.length);
+        int length = asb.length();
         if (asb.isLatin1()) {
             this.coder = LATIN1;
-            this.value = copyBytes(val, 0, length);
+            this.value = Arrays.copyOfRange(val, 0, length);
         } else {
             // only try to compress val if some characters were deleted.
             if (COMPACT_STRINGS && asb.maybeLatin1) {
@@ -4557,7 +4549,7 @@ public final class String
                 }
             }
             this.coder = UTF16;
-            this.value = copyBytes(val, 0, length << 1);
+            this.value = Arrays.copyOfRange(val, 0, length << 1);
         }
     }
 

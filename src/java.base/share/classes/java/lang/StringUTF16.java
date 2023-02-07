@@ -1002,16 +1002,16 @@ final class StringUTF16 {
 
     public static String trim(byte[] value) {
         int length = value.length >> 1;
-        int end = length;
-        int start = 0;
-        while (start < end && getChar(value, start) <= ' ') {
-            start++;
+        int len = length;
+        int st = 0;
+        while (st < len && getChar(value, st) <= ' ') {
+            st++;
         }
-        while (start < end && getChar(value, end - 1) <= ' ') {
-            end--;
+        while (st < len && getChar(value, len - 1) <= ' ') {
+            len--;
         }
-        return ((start > 0) || (end < length)) ?
-            new String(String.copyBytes(value, start << 1, (end - start) << 1), UTF16) :
+        return ((st > 0) || (len < length )) ?
+            new String(Arrays.copyOfRange(value, st << 1, len << 1), UTF16) :
             null;
     }
 
