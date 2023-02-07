@@ -193,6 +193,10 @@ class os::Linux {
 
   // none present
 
+  // Calls out to GNU extension malloc_info if available
+  // otherwise does nothing and returns 0.
+  static int malloc_info(FILE* stream);
+
  private:
   static void numa_init();
 

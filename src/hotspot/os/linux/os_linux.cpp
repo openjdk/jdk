@@ -114,6 +114,9 @@
 # include <malloc.h>
 #endif
 
+// Forward (re-)declare malloc_info in order to support Alpine Linux.
+int __attribute__((weak)) malloc_info(int options, FILE *stream);
+
 #ifndef _GNU_SOURCE
   #define _GNU_SOURCE
   #include <sched.h>
@@ -215,6 +218,13 @@ static bool suppress_primordial_thread_resolution = false;
 
 julong os::available_memory() {
   return Linux::available_memory();
+}
+
+int os::Linux::malloc_info(FILE* stream) {
+  if (::malloc_info) {
+    return ::malloc_info(0, stream);
+  }
+  return 0;
 }
 
 julong os::Linux::available_memory() {
