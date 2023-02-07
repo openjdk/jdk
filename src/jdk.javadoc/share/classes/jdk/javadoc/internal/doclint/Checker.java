@@ -349,6 +349,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
         String s = env.trees.getCharacters(tree);

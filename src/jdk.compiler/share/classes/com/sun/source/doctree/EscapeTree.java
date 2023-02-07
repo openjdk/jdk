@@ -51,7 +51,6 @@ public interface EscapeTree extends TextTree {
      * {@inheritDoc}
      *
      * <p>Note: this method returns the escaped character, not the original escape sequence.
-     *
      */
     @Override
     String getBody();
