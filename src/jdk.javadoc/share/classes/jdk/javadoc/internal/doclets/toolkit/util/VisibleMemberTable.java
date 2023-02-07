@@ -1042,8 +1042,7 @@ public class VisibleMemberTable {
 
         public ImplementedMethods(ExecutableElement implementer) {
             var typeElement = (TypeElement) implementer.getEnclosingElement();
-            Set<TypeMirror> allSuperinterfaces = utils.getAllInterfaces(typeElement);
-            for (TypeMirror i : allSuperinterfaces) {
+            for (TypeMirror i : utils.getAllInterfaces(typeElement)) {
                 TypeElement dst = utils.asTypeElement(i); // a type element to look an implemented method in
                 ExecutableElement implemented = findImplementedMethod(dst, implementer);
                 if (implemented == null) {
