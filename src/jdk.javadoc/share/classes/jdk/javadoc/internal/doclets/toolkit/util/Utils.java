@@ -631,13 +631,9 @@ public class Utils {
         return configuration.workArounds.overriddenType(method);
     }
 
-    private  TypeMirror getType(TypeMirror t) {
-        return (isNoType(t)) ? getObjectType() : t;
-    }
-
     public TypeMirror getSuperType(TypeElement te) {
         TypeMirror t = te.getSuperclass();
-        return getType(t);
+        return (isNoType(t)) ? getObjectType() : t;
     }
 
     public ExecutableElement overriddenMethod(ExecutableElement method) {
