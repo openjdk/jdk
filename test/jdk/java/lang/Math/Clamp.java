@@ -230,9 +230,9 @@ public class Clamp {
             float value = test[0];
             float min = test[1];
             float max = test[2];
-            failures += checkIllegalArgumentException("(float) Math.clamp(" + value + ", " + min + ", " + max + ")", 
+            failures += checkIllegalArgumentException("(float) Math.clamp(" + value + ", " + min + ", " + max + ")",
                     () -> Math.clamp(value, min, max));
-            failures += checkIllegalArgumentException("(float) StrictMath.clamp(" + value + ", " + min + ", " + max + ")", 
+            failures += checkIllegalArgumentException("(float) StrictMath.clamp(" + value + ", " + min + ", " + max + ")",
                     () -> StrictMath.clamp(value, min, max));
         }
         return failures;
