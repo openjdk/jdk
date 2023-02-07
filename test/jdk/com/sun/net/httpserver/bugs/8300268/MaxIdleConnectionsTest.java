@@ -108,7 +108,8 @@ public class MaxIdleConnectionsTest {
         // assert that the limit set by maxIdleConnections was not exceeded
         int idleConnectionCount = HttpServerAccess.getIdleConnectionCount(server);
         System.out.println("count " + idleConnectionCount);
-        assertTrue(maxIdleConnections >= idleConnectionCount);
+        assertTrue(maxIdleConnections >= idleConnectionCount,
+                String.format("Too many idle connections: %d, limit: %d", idleConnectionCount, maxIdleConnections));
     }
 
     // Create HttpServer that will handle requests with multiple threads

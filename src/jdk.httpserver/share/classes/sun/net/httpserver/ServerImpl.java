@@ -965,8 +965,8 @@ class ServerImpl {
     void markIdle(HttpConnection c) {
         boolean close = false;
 
+        idleConnectionLock.lock();
         try {
-            idleConnectionLock.lock();
             if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                 // closing the connection here could block
                 // instead set boolean and close outside of lock
