@@ -146,7 +146,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
       ShouldNotReachHere();
   }
   // Clean up tos value in the thread object
-  mvw(t0, (int) ilgl);
+  mv(t0, (int)ilgl);
   sw(t0, tos_addr);
   sw(zr, val_addr);
 }
@@ -260,7 +260,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                Register tmp,
                                                                int bcp_offset,
                                                                size_t index_size) {
-  assert(cache != tmp, "must use different register");
+  assert_different_registers(cache, tmp);
   get_cache_index_at_bcp(tmp, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index
@@ -1497,8 +1497,8 @@ void InterpreterMacroAssembler::profile_switch_case(Register index,
 
     // Build the base (index * per_case_size_in_bytes()) +
     // case_array_offset_in_bytes()
-    mvw(reg2, in_bytes(MultiBranchData::per_case_size()));
-    mvw(t0, in_bytes(MultiBranchData::case_array_offset()));
+    mv(reg2, in_bytes(MultiBranchData::per_case_size()));
+    mv(t0, in_bytes(MultiBranchData::case_array_offset()));
     Assembler::mul(index, index, reg2);
     Assembler::add(index, index, t0);
 

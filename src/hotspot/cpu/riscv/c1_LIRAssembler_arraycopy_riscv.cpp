@@ -150,7 +150,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
     Address klass_lh_addr(tmp, lh_offset);
     jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ lw(t0, klass_lh_addr);
-    __ mvw(t1, objArray_lh);
+    __ mv(t1, objArray_lh);
     __ bne(t0, t1, *stub->entry(), /* is_far */ true);
   }
 
