@@ -180,12 +180,13 @@ public class SSLSocketParametersTest implements Serializable {
             /* server side dummy_ciphersuite */
             case 4 -> {
                 try {
-                    run(new ServerFactory(SSLContext.getDefault(),
-                            new String[]{"dummy_ciphersuite"}, null, false),
-                            true);
+                    new ServerFactory(SSLContext.getDefault(),
+                            new String[]{"dummy_ciphersuite"}, null, false);
                 } catch (NoSuchAlgorithmException exc) {
                     throw new RuntimeException("Could not create SSLContext.", exc);
                 } catch (IllegalArgumentException exc) {
+                    // expecting the exception for unsupported ciphersuite,
+                    // anything else is an error
                     if (!exc.getMessage().toLowerCase().contains("unsupported ciphersuite")) {
                         throw exc;
                     }
@@ -195,10 +196,11 @@ public class SSLSocketParametersTest implements Serializable {
             /* server side dummy_protocol */
             case 5 -> {
                 try {
-                    run(new ServerFactory(null,
-                            new String[]{"dummy_protocol"}, false),
-                            true);
+                    new ServerFactory(null,
+                            new String[]{"dummy_protocol"}, false);
                 } catch (IllegalArgumentException exc) {
+                    // expecting the exception for unsupported protocol,
+                    // anything else is an error
                     if (!exc.getMessage().toLowerCase().contains("unsupported protocol")) {
                         throw exc;
                     }
