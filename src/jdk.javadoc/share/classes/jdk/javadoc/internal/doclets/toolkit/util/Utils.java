@@ -637,9 +637,6 @@ public class Utils {
     }
 
     public ExecutableElement overriddenMethod(ExecutableElement method) {
-        if (isStatic(method)) {
-            return null;
-        }
         final TypeElement origin = getEnclosingTypeElement(method);
         for (TypeMirror t = getSuperType(origin);
              t.getKind() == DECLARED;
