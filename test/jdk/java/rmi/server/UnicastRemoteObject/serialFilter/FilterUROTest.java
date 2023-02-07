@@ -38,6 +38,14 @@ import org.testng.annotations.Test;
 
 /*
  * @test
+ * @bug 8301737
+ * @requires os.arch != "loongarch64"
+ * @run testng/othervm FilterUROTest
+ * @summary Check that objects are exported with ObjectInputFilters via UnicastRemoteObject
+ */
+/*
+ * @test
+ * @requires os.arch == "loongarch64"
  * @run testng/othervm -XX:ReservedCodeCacheSize=512m FilterUROTest
  * @summary Check that objects are exported with ObjectInputFilters via UnicastRemoteObject
  */
