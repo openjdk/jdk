@@ -154,7 +154,7 @@ class JVMCICompileState : public ResourceObj {
 // HotSpot C++ code can can work with either runtime.
 class JVMCIEnv : public ResourceObj {
   friend class JNIAccessMark;
-  friend _jobjectArray* c2v_getDeclaredFieldsInfo(JNIEnv* env, jobject, jobject, jlong);
+  friend jobjectArray* c2v_getDeclaredFieldsInfo(JNIEnv* env, jobject, jobject, jlong);
 
   // Initializes the _env, _mode and _runtime fields.
   void init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal = true);
