@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,7 +470,7 @@ ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_s
 bool ciBytecodeStream::has_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index(), has_index_u4());
+  return ConstantPool::has_appendix_at_if_loaded(cpool, get_method_index());
 }
 
 // ------------------------------------------------------------------
@@ -481,7 +481,7 @@ bool ciBytecodeStream::has_appendix() {
 ciObject* ciBytecodeStream::get_appendix() {
   VM_ENTRY_MARK;
   constantPoolHandle cpool(THREAD, _method->get_Method()->constants());
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index(), has_index_u4());
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cpool, get_method_index());
   return CURRENT_ENV->get_object(appendix_oop);
 }
 
@@ -493,7 +493,7 @@ ciObject* ciBytecodeStream::get_appendix() {
 bool ciBytecodeStream::has_local_signature() {
   GUARDED_VM_ENTRY(
     constantPoolHandle cpool(Thread::current(), _method->get_Method()->constants());
-    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index(), has_index_u4());
+    return ConstantPool::has_local_signature_at_if_loaded(cpool, get_method_index());
   )
 }
 

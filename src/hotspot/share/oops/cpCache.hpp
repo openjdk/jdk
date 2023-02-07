@@ -397,7 +397,6 @@ class ConstantPoolCacheEntry {
 class ConstantPoolCache: public MetaspaceObj {
   friend class VMStructs;
   friend class MetadataFactory;
-
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
@@ -458,10 +457,10 @@ class ConstantPoolCache: public MetaspaceObj {
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
 
-  Array<ResolvedIndyEntry>* resolved_indy_entries()   { return _resolved_indy_entries; }
-  ResolvedIndyEntry* resolved_indy_entry_at(int index) { return _resolved_indy_entries->adr_at(index); }
-  int resolved_indy_entries_length() const           { return _resolved_indy_entries->length();      }
-  void print_resolved_indy_entries(outputStream* st) const {
+  Array<ResolvedIndyEntry>* resolved_indy_entries()          { return _resolved_indy_entries; }
+  ResolvedIndyEntry* resolved_indy_entry_at(int index) const { return _resolved_indy_entries->adr_at(index); }
+  int resolved_indy_entries_length()                   const { return _resolved_indy_entries->length();      }
+  void print_resolved_indy_entries(outputStream* st)   const {
     for (int i = 0; i < _resolved_indy_entries->length(); i++) {
         _resolved_indy_entries->at(i).print_on(st);
     }

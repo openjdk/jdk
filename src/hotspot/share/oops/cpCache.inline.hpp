@@ -93,11 +93,9 @@ inline ConstantPoolCache::ConstantPoolCache(int length,
                                                   _constant_pool(NULL),
                                                   _gc_epoch(0),
                                                   _resolved_indy_entries(invokedynamic_info) {
-
   CDS_JAVA_HEAP_ONLY(_archived_references_index = -1;)
   initialize(inverse_index_map, invokedynamic_inverse_index_map,
              invokedynamic_references_map);
-
   for (int i = 0; i < length; i++) {
     assert(entry_at(i)->is_f1_null(), "Failed to clear?");
   }

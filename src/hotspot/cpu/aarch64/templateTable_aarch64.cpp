@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2379,8 +2379,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   // Get appendix
   __ load_unsigned_short(index, Address(cache, in_bytes(ResolvedIndyEntry::resolved_references_index_offset())));
-  // Push the appendix as a trailing parameter.
-  // This must be done before we get the receiver,
+  // Push the appendix as a trailing parameter
   // since the parameter_size includes it.
   __ push(method);
   __ mov(method, index);

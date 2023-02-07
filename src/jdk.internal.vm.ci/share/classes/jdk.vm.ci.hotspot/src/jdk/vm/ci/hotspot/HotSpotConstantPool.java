@@ -844,7 +844,8 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             if (opcode != Bytecodes.INVOKEDYNAMIC) {
                 throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
             }
-            index = decodeInvokedynamicIndex(rawIndex) + config().constantPoolCpCacheIndexTag;
+            //index = decodeInvokedynamicIndex(rawIndex) + config().constantPoolCpCacheIndexTag;
+            index = decodeInvokedynamicIndex(rawIndex);
         } else {
             if (opcode == Bytecodes.INVOKEDYNAMIC) {
                 throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
@@ -876,8 +877,12 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 break;
             case Bytecodes.INVOKEDYNAMIC: {
                 // invokedynamic instructions point to a constant pool cache entry.
-                index = decodeConstantPoolCacheIndex(cpi) + config().constantPoolCpCacheIndexTag;
-                index = compilerToVM().constantPoolRemapInstructionOperandFromCache(this, index);
+                //index = decodeConstantPoolCacheIndex(cpi) + config().constantPoolCpCacheIndexTag;
+                //index = compilerToVM().constantPoolRemapInstructionOperandFromCache(this, index);
+                index = decodeConstantPoolCacheIndex(cpi);
+                if (isInvokedynamicIndex(cpi)) {
+                    compilerToVM().resolveInvokeDynamicInPool(this, index);
+                }
                 break;
             }
             case Bytecodes.GETSTATIC:
@@ -928,9 +933,9 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
                 break;
             case "InvokeDynamic":
-                if (isInvokedynamicIndex(cpi)) {
+                /*if (isInvokedynamicIndex(cpi)) {
                     compilerToVM().resolveInvokeDynamicInPool(this, cpi);
-                }
+                }*/
                 break;
             default:
                 // nothing

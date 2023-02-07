@@ -638,15 +638,14 @@ void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPo
                  is_forced_virtual(), is_final(), is_vfinal(),
                  indy_resolution_failed(), parameter_size());
     st->print_cr(" - tos: %s\n - local signature: %01x\n"
-          " - has appendix: %01x\n - forced virtual: %01x\n"
-          " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
-          " - num parameters: %02x",
-               type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
-               is_forced_virtual(), is_final(), is_vfinal(),
-               indy_resolution_failed(), parameter_size());
+                 " - has appendix: %01x\n - forced virtual: %01x\n"
+                 " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
+                 " - num parameters: %02x",
+                 type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
     if ((bytecode_1() == Bytecodes::_invokehandle)) {
       constantPoolHandle cph(Thread::current(), cache->constant_pool());
-      Method* m = method_if_resolved(cph);
       oop appendix = appendix_if_resolved(cph);
       if (appendix != nullptr) {
         st->print("  appendix: ");
@@ -863,7 +862,6 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
   if (_resolved_indy_entries != nullptr) {
     it->push(&_resolved_indy_entries, MetaspaceClosure::_writable);
   }
-  //it->push(&_resolved_indy_entries);
 }
 
 bool ConstantPoolCache::save_and_throw_indy_exc(
@@ -960,6 +958,14 @@ void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
   for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
+  for (int i = 0; i < resolved_indy_entries_length(); i++) {
+    ResolvedIndyEntry* indy_entry = resolved_indy_entry_at(i);
+    indy_entry->print_on(st);
+    if (indy_entry->has_appendix()) {
+      st->print("  appendix: ");
+      constant_pool()->resolved_reference_from_indy(i)->print_on(st);
+    }
+  }
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {
