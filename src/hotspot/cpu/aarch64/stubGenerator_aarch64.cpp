@@ -1,7 +1,3 @@
-static unsigned char *poo;
-
-static int xctr;
-
 /*
  * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
@@ -64,6 +60,8 @@ static int xctr;
 #if INCLUDE_ZGC
 #include "gc/z/zThreadLocalData.hpp"
 #endif
+int flippy;
+static address poo;
 
 // Declaration and definition of StubGenerator (no .hpp file).
 // For a more detailed description of the stub routine structure
@@ -7220,32 +7218,38 @@ typedef uint32_t u32;
   }
 
   void poly1305_reduce(RegPair u[]) {
-      // Partial reduction mod 2**130 - 5
+    // Partial reduction mod 2**130 - 5
 
-      // First propagate carries through u2:u1:u0
-      __ extr(rscratch1, u[0]._hi, u[0]._lo, 52);
-      __ bfc(u[0]._lo, 52, 64-52);
-      DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
-      __ adds(u[1]._lo, u[1]._lo, rscratch1);
-      __ adc(u[1]._hi, u[1]._hi, zr);
-      __ extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-      __ bfc(u[1]._lo, 52, 64-52);
-      DEBUG_ONLY(__ bfc(u[1]._hi, 0, 52));
-      __ adds(u[2]._lo, u[2]._lo, rscratch1);
-      __ adc(u[2]._hi, u[2]._hi, zr);
+    DEBUG_ONLY(__ mov(rscratch2, (address)&flippy));
+    DEBUG_ONLY(__ addmw(Address(rscratch2), 1, rscratch1));
 
-      // Then multiply the high part of u2 by 5 and add it back to u1:u0
-      __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
-      __ ubfx(rscratch1, rscratch1, 0, 52);
-      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      __ add(u[0]._lo, u[0]._lo, rscratch1);
-      __ bfc(u[2]._lo, 26, 64-26);
-      DEBUG_ONLY(__ bfc(u[2]._hi, 0, 14));
+    // Add the high part of u1 to u2
+    __ extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+    __ bfc(u[1]._lo, 52, 64-52);
+    DEBUG_ONLY(__ bfc(u[1]._hi, 0, 52));
+    __ adds(u[2]._lo, u[2]._lo, rscratch1);
+    __ adc(u[2]._hi, u[2]._hi, zr);
 
-      __ ubfx(rscratch1, u[2]._hi, 14, 50);
-      DEBUG_ONLY(__ bfc(u[2]._hi, 14, 50));
-      __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-      __ add(u[1]._lo, u[1]._lo, rscratch1);
+    // Then multiply the high part of u2 by 5 and add it back to u1:u0
+    __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+    __ ubfx(rscratch1, rscratch1, 0, 52);
+    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+    __ adds(u[0]._lo, u[0]._lo, rscratch1);
+    __ adc(u[0]._hi, u[0]._hi, zr);
+    __ bfc(u[2]._lo, 26, 64-26);
+    DEBUG_ONLY(__ bfc(u[2]._hi, 0, 14));
+
+    __ ubfx(rscratch1, u[2]._hi, 14, 50);
+    DEBUG_ONLY(__ bfc(u[2]._hi, 14, 50));
+    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
+    __ add(u[1]._lo, u[1]._lo, rscratch1);
+
+    // Propagate carries through u2:u1:u0
+    __ extr(rscratch1, u[0]._hi, u[0]._lo, 52);
+    __ bfc(u[0]._lo, 52, 64-52);
+    DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
+    __ adds(u[1]._lo, u[1]._lo, rscratch1);
+    __ adc(u[1]._hi, u[1]._hi, zr);
   }
 
   address generate_poly1305_processBlocks1() {
@@ -7312,34 +7316,37 @@ typedef uint32_t u32;
       __ br(Assembler::GE, LOOP);
     }
 
+    poo = __ pc();
+
     // Fully reduce modulo 2^130 - 5
-    __ add(U1, U1, U0, __ LSR, 52);
-    __ ubfx(U0, U0, 0, 52);
-    __ add(U2, U2, U1, __ LSR, 52);
-    __ ubfx(U1, U1, 0, 52);
-    __ lsr(rscratch1, U2, 26);
-    __ ubfx(U2, U2, 0, 26);
-    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-    __ add(U0, U0, rscratch1);
+    __ adds(U0, U0, U1, __ LSL, 52);
+    __ lsr(U1, U1, 12);
+    __ lsl(rscratch1, U2, 40);
+    __ adcs(U1, U1, rscratch1);
+    __ lsr(U2, U2, 24);
+    __ adc(U2, U2, zr);
 
-    __ add(U1, U1, U0, __ LSR, 52);
-    __ ubfx(U0, U0, 0, 52);
-    __ add(U2, U2, U1, __ LSR, 52);
-    __ ubfx(U1, U1, 0, 52);
-    __ lsr(rscratch1, U2, 26);
-    __ ubfx(U2, U2, 0, 26);
-    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-    __ add(U0, U0, rscratch1);
+    // Subtract 2^130 - 5
+    // = 0x3_ffffffffffffffff_fffffffffffffffb
+    __ mov(rscratch1, 0xfffffffffffffffb); __ subs(S0, U0, rscratch1);
+    __ mov(rscratch1, 0xffffffffffffffff); __ sbcs(S1, U1, rscratch1);
+    __ mov(rscratch1, 0x3);                __ sbcs(S2, U2, rscratch1);
+    __ csel(U0, S0, U0, __ HS);
+    __ csel(U1, S1, U1, __ HS);
+    __ csel(U2, S2, U2, __ HS);
 
-    __ ubfx(rscratch1, U0, 0, 26);
+    // And store it all back
+    __ ubfiz(rscratch1, U0, 0, 26);
     __ ubfx(rscratch2, U0, 26, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start));
 
-    __ ubfx(rscratch1, U1, 0, 26);
-    __ ubfx(rscratch2, U1, 26, 26);
+    __ ubfx(rscratch1, U0, 52, 12);
+    __ bfi(rscratch1, U1, 12, 14);
+    __ ubfx(rscratch2, U1, 14, 26);
     __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
 
-    __ str(U2, Address(acc_start, 4 * sizeof (jlong)));
+    __ extr(rscratch1, U2, U1, 40);
+    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
 
     __ bind(DONE);
     __ pop(callee_saved, sp);
