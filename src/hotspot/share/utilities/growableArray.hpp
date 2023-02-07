@@ -591,7 +591,7 @@ class GrowableArrayMetadata {
 
   // CHeap allocation
   static uintptr_t bits(MemoryType mt) {
-    assert(MemoryType != mtNone, "Must provide a proper MemoryType");
+    assert(mt != mtNone, "Must provide a proper MemoryType");
     return (uintptr_t(mt) << 1) | 1;
   }
 
