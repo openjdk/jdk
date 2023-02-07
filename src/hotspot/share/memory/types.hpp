@@ -105,7 +105,7 @@ class MemoryTypes final : public AllStatic {
   }
 
   static inline int to_index(MemoryType mt) {
-    assert(is_valid(mt), "invalid memory type (%d)", mt);
+    assert(is_valid(mt), "invalid memory type (%d)", static_cast<int>(mt));
     return static_cast<int>(mt);
   }
 
