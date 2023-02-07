@@ -411,9 +411,8 @@ void Continuations::init() {
   Continuation::init();
 }
 
-// While virtual threads are in Preview, there are some VM mechanisms we disable if continuations aren't used
 bool Continuations::enabled() {
-  return VMContinuations && Arguments::enable_preview();
+  return VMContinuations;
 }
 
 #define CC (char*)  /*cast a literal from (const char*)*/
