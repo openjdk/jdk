@@ -124,7 +124,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Text[TEXT, pos:1, abc.]
   body: 1
-    Text[TEXT, pos:7, not_an_escaped_a...sterisk_@*;|_xyz.]
+    Text[TEXT, pos:7, not_an_escaped_asterisk_@*;|_xyz.]
   block tags: empty
 ]
 */
@@ -140,7 +140,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Text[TEXT, pos:1, abc.]
   body: 1
-    Text[TEXT, pos:7, not_an_escaped_s...olidus_@/.|_xyz.]
+    Text[TEXT, pos:7, not_an_escaped_solidus_@/.|_xyz.]
   block tags: empty
 ]
 */
