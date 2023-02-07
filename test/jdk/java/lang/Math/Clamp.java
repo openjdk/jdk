@@ -147,6 +147,10 @@ public class Clamp {
                 {-0.0, 0.0, 0.0, 0.0},
                 {0.0, 0.0, 0.0, 0.0},
                 {1.0, 0.0, 0.0, 0.0},
+                {-1.0, -0.0, -0.0, -0.0},
+                {-0.0, -0.0, -0.0, -0.0},
+                {0.0, -0.0, -0.0, -0.0},
+                {1.0, -0.0, -0.0, -0.0},
 
                 {Double.NaN, 0.0, 1.0, Double.NaN},
                 {Double.NaN, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY, Double.NaN}
@@ -157,7 +161,8 @@ public class Clamp {
                 {0.0, 0.0, Double.NaN},
                 {0.0, Double.NaN, 0.0},
                 {Double.NaN, 1.0, 0.0},
-                {0.0, 0.0, -0.0}
+                {0.0, 0.0, -0.0},
+                {0.0, 1.0, -1.0}
         };
         for (double[] test : tests) {
             double value = test[0];
@@ -206,6 +211,10 @@ public class Clamp {
                 {-0.0f, 0.0f, 0.0f, 0.0f},
                 {0.0f, 0.0f, 0.0f, 0.0f},
                 {1.0f, 0.0f, 0.0f, 0.0f},
+                {-1.0f, -0.0f, -0.0f, -0.0f},
+                {-0.0f, -0.0f, -0.0f, -0.0f},
+                {0.0f, -0.0f, -0.0f, -0.0f},
+                {1.0f, -0.0f, -0.0f, -0.0f},
 
                 {Float.NaN, 0.0f, 1.0f, Float.NaN},
                 {Float.NaN, Float.NEGATIVE_INFINITY, Float.POSITIVE_INFINITY, Float.NaN}
@@ -216,7 +225,8 @@ public class Clamp {
                 {0.0f, 0.0f, Float.NaN},
                 {0.0f, Float.NaN, 0.0f},
                 {Float.NaN, 1.0f, 0.0f},
-                {0.0f, 0.0f, -0.0f}
+                {0.0f, 0.0f, -0.0f},
+                {0.0f, 1.0f, -1.0f}
         };
         for (float[] test : tests) {
             float value = test[0];
