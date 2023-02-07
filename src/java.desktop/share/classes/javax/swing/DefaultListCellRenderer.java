@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.io.Serializable;
 
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.plaf.synth.SynthListUI;
 
 import sun.swing.DefaultLookup;
 import sun.swing.SwingUtilities2;
@@ -156,7 +157,8 @@ public class DefaultListCellRenderer extends JLabel
             setText((value == null) ? "" : value.toString());
         }
 
-        if (list.getName() == null || !list.getName().equals("ComboBox.list")) {
+        if (list.getName() == null || !list.getName().equals("ComboBox.list")
+                || !(list.getUI() instanceof SynthListUI)) {
             setEnabled(list.isEnabled());
         }
 
