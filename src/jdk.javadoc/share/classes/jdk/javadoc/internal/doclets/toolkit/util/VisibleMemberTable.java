@@ -1038,21 +1038,24 @@ public class VisibleMemberTable {
 
     private class ImplementedMethods {
 
-        private final Map<ExecutableElement, TypeMirror> interfaces = new HashMap<>();
-        private final LinkedHashSet<ExecutableElement> methods = new LinkedHashSet<>();
+        private final Map<ExecutableElement, TypeMirror> interfaces = new LinkedHashMap<>();
 
         public ImplementedMethods(ExecutableElement implementer) {
-            TypeElement typeElement = (TypeElement) implementer.getEnclosingElement();
+            var typeElement = (TypeElement) implementer.getEnclosingElement();
             Set<TypeMirror> allSuperinterfaces = utils.getAllInterfaces(typeElement);
             for (TypeMirror i : allSuperinterfaces) {
-                ExecutableElement implemented = findImplementedMethod(utils.asTypeElement(i), implementer);
+                TypeElement dst = utils.asTypeElement(i); // a type element to look an implemented method in
+                ExecutableElement implemented = findImplementedMethod(dst, implementer);
                 if (implemented == null) {
                     continue;
                 }
-                boolean added = methods.add(implemented);
                 var prev = interfaces.put(implemented, i);
-                assert added; // there cannot be duplicating methods in different type elements
-                assert prev == null; // same assumption
+                // no two type elements declare the same method
+                assert prev == null;
+                // dst can be generic, while i might be parameterized; but they
+                // must the same type element. For example, if dst is Set<T>,
+                // then i is Set<String>
+                assert Objects.equals(((DeclaredType) i).asElement(), dst);
             }
         }
 
@@ -1079,7 +1082,7 @@ public class VisibleMemberTable {
          * @return a collection of implemented methods
          */
         Collection<ExecutableElement> getImplementedMethods() {
-            return methods;
+            return interfaces.keySet();
         }
 
         TypeMirror getMethodHolder(ExecutableElement ee) {
