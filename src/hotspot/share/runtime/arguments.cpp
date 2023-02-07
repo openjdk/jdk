@@ -215,7 +215,7 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
 
 AgentLibrary::AgentLibrary(const char* name, const char* options,
                bool is_absolute_path, void* os_lib,
-               bool instrument_lib) {
+               bool is_dynamic, bool instrument_lib) {
   _name = AllocateHeap(strlen(name)+1, mtArguments);
   strcpy(_name, name);
   if (options == nullptr) {
@@ -230,6 +230,42 @@ AgentLibrary::AgentLibrary(const char* name, const char* options,
   _state = agent_invalid;
   _is_static_lib = false;
   _is_instrument_lib = instrument_lib;
+  _is_dynamic = is_dynamic;
+  _start_seconds = 0;
+  _start_nanos = 0;
+  _duration_ns = 0;
+  _instrument_lib_options = nullptr;
+  _instrument_lib_name = nullptr;
+  if (_is_instrument_lib && _options != nullptr) {
+    const char *p = strchr(options, '=');
+    size_t length = strlen(options);
+    if (p != nullptr) {
+      size_t name_length = p - options;
+      size_t option_length = length - name_length - 1;
+      _instrument_lib_name = AllocateHeap(name_length + 1, mtArguments);
+      snprintf(_instrument_lib_name, name_length + 1, "%s", options);
+      _instrument_lib_options = AllocateHeap(option_length + 1, mtArguments);
+      snprintf(_instrument_lib_options, option_length + 1, "%s", p + 1);
+    } else {
+      _instrument_lib_name = AllocateHeap(length + 1, mtArguments);
+      snprintf(_instrument_lib_name, length + 1, "%s", options);
+    }
+  }
+}
+
+void AgentLibrary::start_timing() {
+  // Ticks not initialized, use os::javaTimeSystemUTC
+  os::javaTimeSystemUTC(_start_seconds, _start_nanos);
+}
+
+void AgentLibrary::end_timing() {
+  assert(_start_seconds != 0, "invariant");
+  jlong end_seconds, end_nanos;
+  os::javaTimeSystemUTC(end_seconds, end_nanos);
+  jlong s = end_seconds - _start_seconds;
+  jlong n = end_nanos - _start_nanos;
+  _duration_ns = 1000000000 * s + n;
+  _start_time_epoch_ms = _start_seconds * 1000 + _start_nanos / 1000000;
 }
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
@@ -323,19 +359,20 @@ bool needs_module_property_warning = false;
 #define ENABLE_NATIVE_ACCESS_LEN 20
 
 void Arguments::add_init_library(const char* name, char* options) {
-  _libraryList.add(new AgentLibrary(name, options, false, nullptr));
+  _libraryList.add(new AgentLibrary(name, options, false, nullptr, false, false));
 }
 
 void Arguments::add_init_agent(const char* name, char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
+  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, false, false));
 }
 
 void Arguments::add_instrument_agent(const char* name, char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
+  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, false, true));
 }
 
 // Late-binding agents not started via arguments
 void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
+  JFR_ONLY(MutexLocker m(JfrAgentList_lock, Mutex::_no_safepoint_check_flag);)
   _agentList.add(agentLib);
 }
 

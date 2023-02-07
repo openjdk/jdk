@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,27 @@ TRACE_REQUEST_FUNC(SystemProcess) {
       processes = processes->next();
       delete tmp;
     }
+  }
+}
+
+TRACE_REQUEST_FUNC(LoadedAgent) {
+  MutexLocker m(JfrAgentList_lock, Mutex::_no_safepoint_check_flag);
+  for (AgentLibrary* a = Arguments::agents(); a != nullptr; a = a->next()) {
+    assert (a->start_time_epoch_ms() != 0, "agent not timed");
+    EventLoadedAgent event;
+    event.set_dynamic(a->is_dynamic());
+    event.set_loadStart(a->start_time_epoch_ms());
+    event.set_loadDuration(a->duration_ns());
+    if (a->is_instrument_lib()) {
+      event.set_java(true);
+      event.set_name(a->instrument_name());
+      event.set_options(a->instrument_options());
+    } else {
+      event.set_java(false);
+      event.set_name(a->name());
+      event.set_options(a->options());
+    }
+    event.commit();
   }
 }
 

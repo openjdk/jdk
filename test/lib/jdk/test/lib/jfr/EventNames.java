@@ -88,6 +88,7 @@ public class EventNames {
     public static final String FinalizerStatistics = PREFIX + "FinalizerStatistics";
     public static final String NativeMemoryUsage = PREFIX + "NativeMemoryUsage";
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
+    public static final String Agent = PREFIX + "LoadedAgent";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";

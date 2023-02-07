@@ -949,7 +949,9 @@ void Threads::create_vm_init_agents() {
 
     if (on_load_entry != nullptr) {
       // Invoke the Agent_OnLoad function
+      agent->start_timing();
       jint err = (*on_load_entry)(&main_vm, agent->options(), nullptr);
+      agent->end_timing();
       if (err != JNI_OK) {
         vm_exit_during_initialization("agent library failed to init", agent->name());
       }
@@ -1003,7 +1005,9 @@ void Threads::create_vm_init_libraries() {
       JavaThread* thread = JavaThread::current();
       ThreadToNativeFromVM ttn(thread);
       HandleMark hm(thread);
+      agent->start_timing();
       jint err = (*on_load_entry)(&main_vm, agent->options(), nullptr);
+      agent->end_timing();
       if (err != JNI_OK) {
         vm_exit_during_initialization("-Xrun library failed to init", agent->name());
       }

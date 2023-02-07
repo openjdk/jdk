@@ -157,6 +157,13 @@ public:
   bool            _is_absolute_path;
   bool            _is_static_lib;
   bool            _is_instrument_lib;
+  char*           _instrument_lib_name;
+  char*           _instrument_lib_options;
+  bool            _is_dynamic;
+  jlong           _start_seconds;
+  jlong           _start_nanos;
+  jlong           _start_time_epoch_ms;
+  jlong           _duration_ns;
   AgentState      _state;
   AgentLibrary*   _next;
 
@@ -170,13 +177,20 @@ public:
   AgentLibrary* next() const                { return _next; }
   bool is_static_lib() const                { return _is_static_lib; }
   bool is_instrument_lib() const            { return _is_instrument_lib; }
+  char* instrument_name() const             { return _instrument_lib_name; }
+  char* instrument_options() const          { return _instrument_lib_options; }
+  bool is_dynamic() const                   { return _is_dynamic; }
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
+  jlong start_time_epoch_ms() const         { return _start_time_epoch_ms; }
+  jlong duration_ns() const                 { return _duration_ns; }
+  void start_timing();
+  void end_timing();
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,
-               void* os_lib, bool instrument_lib=false);
+               void* os_lib, bool dynamic, bool instrument_lib);
 };
 
 // maintain an order of entry list of AgentLibrary

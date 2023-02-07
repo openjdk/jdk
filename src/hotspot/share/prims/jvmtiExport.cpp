@@ -2943,8 +2943,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   // The abs parameter should be "true" or "false"
   bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam,"true")==0);
 
+  bool instrument = strcmp("instrument", agent) == 0;
   // Initially marked as invalid. It will be set to valid if we can find the agent
-  AgentLibrary *agent_lib = new AgentLibrary(agent, options, is_absolute_path, nullptr);
+  AgentLibrary *agent_lib = new AgentLibrary(agent, options, is_absolute_path, nullptr, true, instrument);
 
   // Check for statically linked in agent. If not found then if the path is
   // absolute we attempt to load the library. Otherwise we try to load it
@@ -2994,7 +2995,9 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
         JvmtiThreadEventMark jem(THREAD);
         JvmtiJavaThreadEventTransition jet(THREAD);
 
-        result = (*on_attach_entry)(&main_vm, (char*)options, nullptr);
+        agent_lib->start_timing();
+        result = (*on_attach_entry)(&main_vm, (char*)options, NULL);
+        agent_lib->end_timing();
 
         // Agent_OnAttach may have used JNI
         if (THREAD->is_pending_jni_exception_check()) {

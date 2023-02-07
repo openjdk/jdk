@@ -127,6 +127,7 @@ Mutex*   JfrStacktrace_lock           = nullptr;
 Monitor* JfrMsg_lock                  = nullptr;
 Mutex*   JfrBuffer_lock               = nullptr;
 Monitor* JfrThreadSampler_lock        = nullptr;
+Mutex*   JfrAgentList_lock            = nullptr;
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
@@ -308,6 +309,7 @@ void mutex_init() {
   def(JfrMsg_lock                  , PaddedMonitor, nosafepoint-3);
   def(JfrStacktrace_lock           , PaddedMutex  , stackwatermark-1);
   def(JfrThreadSampler_lock        , PaddedMonitor, nosafepoint);
+  def(JfrAgentList_lock            , PaddedMutex, nosafepoint);
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8
