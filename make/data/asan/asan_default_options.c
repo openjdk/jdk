@@ -50,10 +50,12 @@
 // used. You can override these options by setting the environment variable ASAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
   return
-#ifndef LEAK_SANITIZER
-    "detect_leaks=0,"
-#else
+#ifdef LEAK_SANITIZER
     "leak_check_at_exit=0,"
+#else
+    // ASan bundles LSan, however we only support LSan when it is explicitly requested during
+    // configuration. Thus we disable it to match if it was not requested.
+    "detect_leaks=0,"
 #endif
     "print_suppressions=0,"
     "handle_segv=0,"
