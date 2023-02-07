@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "memory/types.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
