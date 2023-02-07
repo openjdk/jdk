@@ -62,7 +62,7 @@ void VM_Version::get_os_cpu_info() {
   /**
    * The following is an example of the output typical of /proc/cpuinfo:
    * processor       : 1
-   * hard            : 1
+   * hart            : 1
    * isa             : rv64imafdc
    * mmu             : sv39
    * uarch           : sifive,u74-mc
