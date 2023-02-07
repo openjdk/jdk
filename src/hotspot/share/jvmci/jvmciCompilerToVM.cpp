@@ -791,12 +791,13 @@ C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   LinkInfo link_info(cp, index, mh, CHECK_NULL);
   LinkResolver::resolve_field(fd, link_info, Bytecodes::java_code(code), false, CHECK_NULL);
   JVMCIPrimitiveArray info = JVMCIENV->wrap(info_handle);
-  if (info.is_null() || JVMCIENV->get_length(info) != 3) {
-    JVMCI_ERROR_NULL("info must not be null and have a length of 3");
+  if (info.is_null() || JVMCIENV->get_length(info) != 4) {
+    JVMCI_ERROR_NULL("info must not be null and have a length of 4");
   }
   JVMCIENV->put_int_at(info, 0, fd.access_flags().as_int());
   JVMCIENV->put_int_at(info, 1, fd.offset());
   JVMCIENV->put_int_at(info, 2, fd.index());
+  JVMCIENV->put_int_at(info, 3, fd.field_flags().as_uint());
   JVMCIKlassHandle handle(THREAD, fd.field_holder());
   JVMCIObject field_holder = JVMCIENV->get_jvmci_type(handle, JVMCI_CHECK_NULL);
   return JVMCIENV->get_jobject(field_holder);
@@ -1944,6 +1945,25 @@ C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobjectArray(methods);
 C2V_END
 
+C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_0(NullPointerException);
+  }
+  if (!klass->is_instance_klass()) {
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, "not an InstanceKlass");
+  }
+  InstanceKlass* iklass = InstanceKlass::cast(klass);
+  int java_fields, injected_fields;
+  GrowableArray<FieldInfo>* fields = FieldInfoStream::create_FieldInfoArray(iklass->fieldinfo_stream(), &java_fields, &injected_fields);
+  JVMCIObjectArray array = JVMCIENV->new_FieldInfo_array(fields->length(), JVMCIENV);
+  for (int i = 0; i < fields->length(); i++) {
+    JVMCIObject field_info = JVMCIENV->new_FieldInfo(fields->adr_at(i), JVMCI_CHECK_NULL);
+    JVMCIENV->put_object_at(array, i, field_info);
+  }
+  return array.as_jobject();
+C2V_END
+
 static jobject read_field_value(Handle obj, long displacement, jchar type_char, bool is_static, Thread* THREAD, JVMCIEnv* JVMCIENV) {
 
   BasicType basic_type = JVMCIENV->typeCharToBasicType(type_char, JVMCI_CHECK_NULL);
@@ -2795,6 +2815,7 @@ C2V_VMENTRY_0(jlong, getThreadLocalLong, (JNIEnv* env, jobject, jint id))
 #define JAVACONSTANT            "Ljdk/vm/ci/meta/JavaConstant;"
 #define INSPECTED_FRAME_VISITOR "Ljdk/vm/ci/code/stack/InspectedFrameVisitor;"
 #define RESOLVED_METHOD         "Ljdk/vm/ci/meta/ResolvedJavaMethod;"
+#define FIELDINFO               "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl$FieldInfo;"
 #define HS_RESOLVED_TYPE        "Ljdk/vm/ci/hotspot/HotSpotResolvedJavaType;"
 #define HS_INSTALLED_CODE       "Ljdk/vm/ci/hotspot/HotSpotInstalledCode;"
 #define HS_NMETHOD              "Ljdk/vm/ci/hotspot/HotSpotNmethod;"
@@ -2892,6 +2913,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "boxPrimitive",                                 CC "(" OBJECT ")" OBJECTCONSTANT,                                                     FN_PTR(boxPrimitive)},
   {CC "getDeclaredConstructors",                      CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredConstructors)},
   {CC "getDeclaredMethods",                           CC "(" HS_KLASS2 ")[" RESOLVED_METHOD,                                                FN_PTR(getDeclaredMethods)},
+  {CC "getDeclaredFieldsInfo",                        CC "(" HS_KLASS2 ")[" FIELDINFO,                                                      FN_PTR(getDeclaredFieldsInfo)},
   {CC "readStaticFieldValue",                         CC "(" HS_KLASS2 "JC)" JAVACONSTANT,                                                  FN_PTR(readStaticFieldValue)},
   {CC "readFieldValue",                               CC "(" OBJECTCONSTANT HS_KLASS2 "JC)" JAVACONSTANT,                                   FN_PTR(readFieldValue)},
   {CC "isInstance",                                   CC "(" HS_KLASS2 OBJECTCONSTANT ")Z",                                                 FN_PTR(isInstance)},

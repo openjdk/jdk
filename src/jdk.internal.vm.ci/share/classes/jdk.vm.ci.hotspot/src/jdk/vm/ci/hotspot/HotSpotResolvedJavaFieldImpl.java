@@ -56,16 +56,22 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     private final int index;
 
     /**
-     * This value contains all flags as stored in the VM including internal ones.
+     * This value contains all flags from the class file
      */
     private final int modifiers;
 
-    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int index) {
+    /**
+     * This value contains VM internal flags
+     */
+    private final int internalModifiers;
+
+    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, JavaType type, int offset, int modifiers, int internalModifiers, int index) {
         this.holder = holder;
         this.type = type;
-        this.index = index;
         this.offset = offset;
         this.modifiers = modifiers;
+        this.internalModifiers = internalModifiers;
+        this.index = index;
     }
 
     @Override
@@ -96,7 +102,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public boolean isInternal() {
-        return (modifiers & config().jvmAccFieldInternal) != 0;
+        return (internalModifiers & (1 << config().jvmFieldFlagInternalShift)) != 0;
     }
 
     /**
@@ -121,7 +127,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public String getName() {
-        return holder.createFieldInfo(index).getName();
+        return holder.getFieldInfo(index).getName(holder);
     }
 
     @Override
@@ -175,7 +181,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
      */
     @Override
     public boolean isStable() {
-        return (config().jvmAccFieldStable & modifiers) != 0;
+        return (1 << (config().jvmFieldFlagStableShift ) & internalModifiers) != 0;
     }
 
     private boolean hasAnnotations() {
@@ -219,6 +225,6 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public JavaConstant getConstantValue() {
-        return holder.createFieldInfo(index).getConstantValue();
+        return holder.getFieldInfo(index).getConstantValue(holder);
     }
 }

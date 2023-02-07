@@ -104,7 +104,7 @@ public class ResolveFieldInPoolTest {
             cached = "cached ";
         }
         for (int j = 0; j < entry.opcodes.length; j++) {
-            int[] info = new int[3];
+            int[] info = new int[4];
             HotSpotResolvedObjectType fieldToVerify
                     = CompilerToVMHelper.resolveFieldInPool(constantPoolCTVM,
                                                            index,

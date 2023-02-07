@@ -99,7 +99,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
 
     final int instanceKlassInitStateOffset = getFieldOffset("InstanceKlass::_init_state", Integer.class, "InstanceKlass::ClassState");
     final int instanceKlassConstantsOffset = getFieldOffset("InstanceKlass::_constants", Integer.class, "ConstantPool*");
-    final int instanceKlassFieldsOffset = getFieldOffset("InstanceKlass::_fields", Integer.class, "Array<u2>*");
+    final int instanceKlassFieldInfoStreamOffset = getFieldOffset("InstanceKlass::_fieldinfo_stream", Integer.class, "Array<u1>*");
     final int instanceKlassAnnotationsOffset = getFieldOffset("InstanceKlass::_annotations", Integer.class, "Annotations*");
     final int instanceKlassMiscFlagsOffset = getFieldOffset("InstanceKlass::_misc_status._flags", Integer.class, "u2");
     final int klassVtableStartOffset = getFieldValue("CompilerToVM::Data::Klass_vtable_start_offset", Integer.class, "int");
@@ -116,20 +116,9 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int arrayU1DataOffset = getFieldOffset("Array<u1>::_data", Integer.class);
     final int arrayU2DataOffset = getFieldOffset("Array<u2>::_data", Integer.class);
 
-    final int fieldInfoAccessFlagsOffset = getConstant("FieldInfo::access_flags_offset", Integer.class);
-    final int fieldInfoNameIndexOffset = getConstant("FieldInfo::name_index_offset", Integer.class);
-    final int fieldInfoSignatureIndexOffset = getConstant("FieldInfo::signature_index_offset", Integer.class);
-    final int fieldInfoConstantValueIndexOffset = getConstant("FieldInfo::initval_index_offset", Integer.class);
-    final int fieldInfoLowPackedOffset = getConstant("FieldInfo::low_packed_offset", Integer.class);
-    final int fieldInfoHighPackedOffset = getConstant("FieldInfo::high_packed_offset", Integer.class);
-    final int fieldInfoFieldSlots = getConstant("FieldInfo::field_slots", Integer.class);
-
-    final int fieldInfoTagSize = getConstant("FIELDINFO_TAG_SIZE", Integer.class);
-
     final int jvmAccHasFinalizer = getConstant("JVM_ACC_HAS_FINALIZER", Integer.class);
-    final int jvmAccFieldInternal = getConstant("JVM_ACC_FIELD_INTERNAL", Integer.class);
-    final int jvmAccFieldStable = getConstant("JVM_ACC_FIELD_STABLE", Integer.class);
-    final int jvmAccFieldHasGenericSignature = getConstant("JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE", Integer.class);
+    final int jvmFieldFlagInternalShift = getConstant("FieldInfo::FieldFlags::_ff_injected", Integer.class);
+    final int jvmFieldFlagStableShift = getConstant("FieldInfo::FieldFlags::_ff_stable", Integer.class);
     final int jvmAccIsCloneableFast = getConstant("JVM_ACC_IS_CLONEABLE_FAST", Integer.class);
 
     // These modifiers are not public in Modifier so we get them via vmStructs.

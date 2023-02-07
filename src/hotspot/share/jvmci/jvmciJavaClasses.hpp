@@ -76,6 +76,14 @@
     int_field(HotSpotResolvedJavaFieldImpl, offset)                                                           \
     int_field(HotSpotResolvedJavaFieldImpl, modifiers)                                                        \
   end_class                                                                                                   \
+  start_class(FieldInfo, jdk_vm_ci_hotspot_HotSpotResolvedObjectTypeImpl_FieldInfo)                           \
+    int_field(FieldInfo, nameIndex)                                                                           \
+    int_field(FieldInfo, signatureIndex)                                                                      \
+    int_field(FieldInfo, offset)                                                                              \
+    int_field(FieldInfo, accessFlags)                                                                         \
+    int_field(FieldInfo, internalFlags)                                                                       \
+    int_field(FieldInfo, initializerIndex)                                                                    \
+  end_class                                                                                                   \
   start_class(HotSpotResolvedJavaMethodImpl, jdk_vm_ci_hotspot_HotSpotResolvedJavaMethodImpl)                 \
     long_field(HotSpotResolvedJavaMethodImpl, methodHandle)                                                   \
   end_class                                                                                                   \
