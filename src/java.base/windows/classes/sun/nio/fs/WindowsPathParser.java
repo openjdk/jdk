@@ -32,6 +32,13 @@ import java.nio.file.InvalidPathException;
  */
 
 class WindowsPathParser {
+    private static final String LONG_PATH_PREFIX     = "\\\\?\\";
+    private static final String LONG_PATH_UNC_PREFIX = LONG_PATH_PREFIX + "UNC";
+
+    private static final int PREFIX_TYPE_NONE     = 0;
+    private static final int PREFIX_TYPE_LONG     = 1;
+    private static final int PREFIX_TYPE_LONG_UNC = 2;
+
     private WindowsPathParser() { }
 
     /**
@@ -86,26 +93,24 @@ class WindowsPathParser {
     }
 
     /**
-     * Removes the long path "\\?\" or "\\?\UNC" prefix. If the input
-     * has neither of these, the parameter is returned unchanged.
-     */
-    private static String removePrefix(String input) {
-        if (input.startsWith("\\\\?\\UNC")) {
-            return "\\" + input.substring(7);
-        } else if(input.startsWith("\\\\?\\")) {
-            return input.substring(4);
-        }
-        return input;
-    }
-
-    /**
      * Parses the given input as a Windows path.
      *
      * @param   requireToNormalize
      *          Indicates if the path requires to be normalized
      */
     private static Result parse(String input, boolean requireToNormalize) {
-        input = removePrefix(input);
+        // if a prefix is present, note its type and remove it
+        final int prefixType;
+        if (input.startsWith(LONG_PATH_UNC_PREFIX)) {
+            prefixType = PREFIX_TYPE_LONG_UNC;
+            input = "\\" + input.substring(7);
+        } else if (input.startsWith(LONG_PATH_PREFIX)) {
+            prefixType = PREFIX_TYPE_LONG;
+            input = input.substring(4);
+        } else {
+            prefixType = PREFIX_TYPE_NONE;
+        }
+
         String root = "";
         WindowsPathType type = null;
 
@@ -159,6 +164,12 @@ class WindowsPathParser {
             } else {
                 type = WindowsPathType.RELATIVE;
             }
+        }
+
+        if (prefixType == PREFIX_TYPE_LONG && type != WindowsPathType.ABSOLUTE) {
+            throw new InvalidPathException(input, "Long path prefix must precede an absolute path");
+        } else if (prefixType == PREFIX_TYPE_LONG_UNC && type != WindowsPathType.UNC) {
+            throw new InvalidPathException(input, "Long UNC path prefix must precede a UNC path");
         }
 
         if (requireToNormalize) {

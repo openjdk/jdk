@@ -1438,11 +1438,29 @@ public class PathOps {
         if (h1 != h2)
             throw new RuntimeException("PathOps failed");
 
-        // lnog path prefixes
-        test("\\\\?\\C:\\mnt\\file.dat")
+        // long path prefixes
+        test("\\\\?\\C:\\mnt\\file.dat")  // absolute
             .string("C:\\mnt\\file.dat");
-        test("\\\\?\\UNC\\server\\share\\dir\\file.dat")
+        test("\\\\?\\\\\\server\\share\\dir\\file.dat")  // UNC
+            .invalid();
+        test("\\\\?\\file.dat")           // relative
+            .invalid();
+        test("\\\\?\\\\file.dat")         // directory-relative
+            .invalid();
+        test("\\\\?\\C:file.dat")         // drive-relative
+            .invalid();
+        test("\\\\?\\")                   // empty
+            .invalid();
+
+        // long UNC path prefixes
+        test("\\\\?\\UNC\\server\\share\\dir\\file.dat")      // UNC
             .string("\\\\server\\share\\dir\\file.dat");
+        test("\\\\?\\UNC\\server\\share\\C:\\mnt\\file.dat")  // absolute
+            .invalid();
+        test("\\\\?\\UNC\\server\\share\\C:file.dat")         // drive-relative
+            .invalid();
+        test("\\\\?\\UNC")                                    // empty
+            .invalid();
     }
 
     static void doUnixTests() {
