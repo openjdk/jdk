@@ -1064,8 +1064,9 @@ public class VisibleMemberTable {
          * @return Method found, null otherwise.
          */
         private ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
+            TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             for (ExecutableElement m : utils.getMethods(te)) {
-                if (utils.elementUtils.overrides(method, m, utils.getEnclosingTypeElement(method))) {
+                if (utils.elementUtils.overrides(method, m, typeElement)) {
                     return m;
                 }
             }
