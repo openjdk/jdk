@@ -1455,11 +1455,15 @@ public class PathOps {
         // long UNC path prefixes
         test("\\\\?\\UNC\\server\\share\\dir\\file.dat")      // UNC
             .string("\\\\server\\share\\dir\\file.dat");
-        test("\\\\?\\UNC\\server\\share\\C:\\mnt\\file.dat")  // absolute
+        test("\\\\?\\UNC\\server\\share\\C:\\file.dat")       // absolute
+            .invalid();
+        test("\\\\?\\UNC\\file.dat")                          // relative
             .invalid();
         test("\\\\?\\UNC\\server\\share\\C:file.dat")         // drive-relative
             .invalid();
         test("\\\\?\\UNC")                                    // empty
+            .invalid();
+        test("\\\\?\\UNC\\")                                    // empty
             .invalid();
     }
 
