@@ -3824,9 +3824,9 @@ public class JavacParser implements Parser {
                 if (token.kind == EOF)
                     break;
             }
-            // JLS 7.3 doesn't allow extra semi-colons after package or import declarations,
+            // JLS 7.3 doesn't allow extra semicolons after package or import declarations,
             // but here we try to provide a more helpful error message if we encounter any.
-            // Do that by slurping in as many semi-colons as possible, and then seeing what
+            // Do that by slurping in as many semicolons as possible, and then seeing what
             // comes after before deciding how best to handle them.
             ListBuffer<JCTree> semiList = new ListBuffer<>();
             while (firstTypeDecl && mods == null && token.kind == SEMI) {
@@ -3837,7 +3837,7 @@ public class JavacParser implements Parser {
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
                 if (!semiList.isEmpty())
-                    reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemiColon);
+                    reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
@@ -3850,7 +3850,7 @@ public class JavacParser implements Parser {
                     mods = modifiersOpt(mods);
                 if (firstTypeDecl && token.kind == IDENTIFIER) {
                     if (!semiList.isEmpty())
-                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemiColon);
+                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
                         kind = ModuleKind.OPEN;
