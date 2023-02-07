@@ -647,51 +647,9 @@ void SuperWord::find_adjacent_refs() {
 
     // Create initial pack pairs of memory operations for which
     // alignment is set and vectors will be aligned.
-    bool create_pack = true;
-    if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
-      if (vectors_should_be_aligned()) {
-        int vw = vector_width(mem_ref);
-        int vw_best = vector_width(best_align_to_mem_ref);
-        if (vw > vw_best) {
-          // Do not vectorize a memory access with more elements per vector
-          // if unaligned memory access is not allowed because number of
-          // iterations in pre-loop will be not enough to align it.
-          create_pack = false;
-        } else {
-          SWPointer p2(best_align_to_mem_ref, this, NULL, false);
-          if (!align_to_ref_p.invar_equals(p2)) {
-            // Do not vectorize memory accesses with different invariants
-            // if unaligned memory accesses are not allowed.
-            create_pack = false;
-          }
-        }
-      }
-    } else {
-      if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
-        // Can't allow vectorization of unaligned memory accesses with the
-        // same type since it could be overlapped accesses to the same array.
-        create_pack = false;
-      } else {
-        // Allow independent (different type) unaligned memory operations
-        // if HW supports them.
-        if (vectors_should_be_aligned()) {
-          create_pack = false;
-        } else {
-          // Check if packs of the same memory type but
-          // with a different alignment were created before.
-          for (uint i = 0; i < align_to_refs.size(); i++) {
-            MemNode* mr = align_to_refs.at(i)->as_Mem();
-            if (mr == mem_ref) {
-              // Skip when we are looking at same memory operation.
-              continue;
-            }
-            if (same_velt_type(mr, mem_ref) &&
-                memory_alignment(mr, iv_adjustment) != 0)
-              create_pack = false;
-          }
-        }
-      }
-    }
+    bool create_pack = is_mem_ref_alignment_ok(mem_ref, iv_adjustment, align_to_ref_p,
+                                               best_align_to_mem_ref, best_iv_adjustment,
+                                               align_to_refs);
     if (create_pack) {
       for (uint i = 0; i < memops.size(); i++) {
         Node* s1 = memops.at(i);
@@ -798,6 +756,79 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
   }
 }
 #endif
+
+// Check if alignment of mem_ref permissible on hardware, and if it is consistent with
+// the other packs of same velt type.
+bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                        Node_List &align_to_refs) {
+  if (memory_alignment(mem_ref, best_iv_adjustment) == 0 || _do_vector_loop) {
+    if (vectors_should_be_aligned()) {
+      if (!is_mem_ref_alignment_ok_for_hardware(mem_ref, align_to_ref_p, best_align_to_mem_ref)) {
+        return false;
+      }
+    }
+    if (!_do_vector_loop && !same_velt_type(mem_ref, best_align_to_mem_ref)) {
+      // The mem_ref may perfectly align with best_align_to_mem_ref, but
+      // we must check consistency with the other packs we already have.
+      return is_mem_ref_alignment_consistent_with_align_to_refs(mem_ref, iv_adjustment, align_to_refs);
+    }
+  } else {
+    if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+      // Can't allow vectorization of unaligned memory accesses with the
+      // same type since it could be overlapped accesses to the same array.
+      return false;
+    } else {
+      // Allow independent (different type) unaligned memory operations
+      // if HW supports them.
+      if (vectors_should_be_aligned()) {
+        return false;
+      } else {
+        return is_mem_ref_alignment_consistent_with_align_to_refs(mem_ref, iv_adjustment, align_to_refs);
+      }
+    }
+  }
+  return true;
+}
+
+// Check if alignment of mem_ref permissible on hardware.
+bool SuperWord::is_mem_ref_alignment_ok_for_hardware(MemNode* mem_ref, SWPointer &align_to_ref_p,
+                                                     MemNode* best_align_to_mem_ref) {
+  assert(vectors_should_be_aligned(), "only query this if alignment required");
+  int vw = vector_width(mem_ref);
+  int vw_best = vector_width(best_align_to_mem_ref);
+  if (vw > vw_best) {
+    // Do not vectorize a memory access with more elements per vector
+    // if unaligned memory access is not allowed because number of
+    // iterations in pre-loop will be not enough to align it.
+    return false;
+  } else {
+    SWPointer p2(best_align_to_mem_ref, this, NULL, false);
+    if (!align_to_ref_p.invar_equals(p2)) {
+      // Do not vectorize memory accesses with different invariants
+      // if unaligned memory accesses are not allowed.
+      return false;
+    }
+  }
+  return true;
+}
+
+// Check if alignment of mem_ref is consistent with the other packs of same velt type.
+bool SuperWord::is_mem_ref_alignment_consistent_with_align_to_refs(MemNode* mem_ref, int iv_adjustment,
+                                                                   Node_List &align_to_refs) {
+  for (uint i = 0; i < align_to_refs.size(); i++) {
+    MemNode* mr = align_to_refs.at(i)->as_Mem();
+    if (mr == mem_ref) {
+      // Skip when we are looking at same memory operation.
+      continue;
+    }
+    if (same_velt_type(mr, mem_ref) &&
+        memory_alignment(mr, iv_adjustment) != 0) {
+      return false; // misaligned with mr
+    }
+  }
+  return true; // no misalignment found
+}
 
 //------------------------------find_align_to_ref---------------------------
 // Find a memory reference to align the loop induction variable to.
@@ -1526,8 +1557,10 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     int align = alignment(s1);
     Node* t1 = s1->in(j);
     Node* t2 = s2->in(j);
-    if (!in_bb(t1) || !in_bb(t2))
+    if (!in_bb(t1) || !in_bb(t2) || t1->is_Mem() || t2->is_Mem())  {
+      // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
+    }
     align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
@@ -1565,10 +1598,16 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
     num_s1_uses++;
-    if (!in_bb(t1)) continue;
+    if (!in_bb(t1) || t1->is_Mem()) {
+      // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+      continue;
+    }
     for (DUIterator_Fast jmax, j = s2->fast_outs(jmax); j < jmax; j++) {
       Node* t2 = s2->fast_out(j);
-      if (!in_bb(t2)) continue;
+      if (!in_bb(t2) || t2->is_Mem()) {
+        // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
+        continue;
+      }
       if (t2->Opcode() == Op_AddI && t2 == _lp->as_CountedLoop()->incr()) continue; // don't mess with the iv
       if (!opnd_positions_match(s1, t1, s2, t2))
         continue;

@@ -475,6 +475,15 @@ class SuperWord : public ResourceObj {
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
+  // Check if alignment of mem_ref permissible on hardware, and if it is consistent with the other packs of same velt type.
+  bool is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                               MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                               Node_List &align_to_refs);
+  // Check if alignment of mem_ref permissible on hardware.
+  bool is_mem_ref_alignment_ok_for_hardware(MemNode* mem_ref, SWPointer &align_to_ref_p,
+                                            MemNode* best_align_to_mem_ref);
+  // Check if alignment of mem_ref is consistent with the other packs of same velt type.
+  bool is_mem_ref_alignment_consistent_with_align_to_refs(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
