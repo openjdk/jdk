@@ -275,10 +275,10 @@ public class MetalBorders {
                                          int width, int height,
                                          double scaleFactor) {
             updateColors(c);
-            g.setColor(background);
 
             // scaled thickness
             int thickness = (int) Math.ceil(4 * scaleFactor);
+            g.setColor(background);
             // Draw the bulk of the border
             for (int i = 0; i <= thickness; i++) {
                 g.drawRect(i, i, width - (i * 2), height - (i * 2));
@@ -372,8 +372,7 @@ public class MetalBorders {
 
         @Override
         public Insets getBorderInsets(Component c, Insets newInsets) {
-            newInsets.set(4, 4, 4, 4);
-            return newInsets;
+            return border.getBorderInsets(c, newInsets);
         }
     }
 
