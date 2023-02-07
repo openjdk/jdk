@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,8 +138,9 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
       Label* continuation = &dummy_continuation;
       if (!Compile::current()->output()->in_scratch_emit_size()) {
         // Use real labels from actual stub when not emitting code for the purpose of measuring its size
-        C2EntryBarrierStub* stub = Compile::current()->output()->entry_barrier_table()->add_entry_barrier();
-        slow_path = &stub->slow_path();
+        C2EntryBarrierStub* stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
+        Compile::current()->output()->add_stub(stub);
+        slow_path = &stub->entry();
         continuation = &stub->continuation();
       }
       bs->nmethod_entry_barrier(this, slow_path, continuation);
@@ -149,16 +150,6 @@ void C2_MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool 
     bs->nmethod_entry_barrier(this, NULL /* slow_path */, NULL /* continuation */);
 #endif
   }
-}
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
-  jmp(stub->continuation(), false /* maybe_short */);
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 10;
 }
 
 inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vlen_in_bytes) {
@@ -622,7 +613,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     // Locked by current thread if difference with current SP is less than one page.
     subptr(tmpReg, rsp);
     // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
     movptr(Address(boxReg, 0), tmpReg);
   } else {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
@@ -2415,58 +2406,32 @@ void C2_MacroAssembler::evpblend(BasicType typ, XMMRegister dst, KRegister kmask
   }
 }
 
-void C2_MacroAssembler::vectortest(int bt, int vlen, XMMRegister src1, XMMRegister src2,
-                                   XMMRegister vtmp1, XMMRegister vtmp2, KRegister mask) {
-  switch(vlen) {
-    case 4:
-      assert(vtmp1 != xnoreg, "required.");
-      // Broadcast lower 32 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x0);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x0);
-      } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
-      }
-      ptest(vtmp1, vtmp2);
-     break;
-    case 8:
-      assert(vtmp1 != xnoreg, "required.");
-      // Broadcast lower 64 bits to 128 bits before ptest
-      pshufd(vtmp1, src1, 0x4);
-      if (bt == BoolTest::overflow) {
-        assert(vtmp2 != xnoreg, "required.");
-        pshufd(vtmp2, src2, 0x4);
-      } else {
-        assert(vtmp2 == xnoreg, "required.");
-        vtmp2 = src2;
-      }
-      ptest(vtmp1, vtmp2);
-     break;
-    case 16:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-      ptest(src1, src2);
-      break;
-    case 32:
-      assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-      vptest(src1, src2, Assembler::AVX_256bit);
-      break;
-    case 64:
-      {
-        assert((vtmp1 == xnoreg) && (vtmp2 == xnoreg), "required.");
-        evpcmpeqb(mask, src1, src2, Assembler::AVX_512bit);
-        if (bt == BoolTest::ne) {
-          ktestql(mask, mask);
-        } else {
-          assert(bt == BoolTest::overflow, "required");
-          kortestql(mask, mask);
-        }
-      }
-      break;
-    default:
-      assert(false,"Should not reach here.");
-      break;
+void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister src2, XMMRegister vtmp, int vlen_in_bytes) {
+  assert(vlen_in_bytes <= 32, "");
+  int esize = type2aelembytes(bt);
+  if (vlen_in_bytes == 32) {
+    assert(vtmp == xnoreg, "required.");
+    if (esize >= 4) {
+      vtestps(src1, src2, AVX_256bit);
+    } else {
+      vptest(src1, src2, AVX_256bit);
+    }
+    return;
+  }
+  if (vlen_in_bytes < 16) {
+    // Duplicate the lower part to fill the whole register,
+    // Don't need to do so for src2
+    assert(vtmp != xnoreg, "required");
+    int shuffle_imm = (vlen_in_bytes == 4) ? 0x00 : 0x04;
+    pshufd(vtmp, src1, shuffle_imm);
+  } else {
+    assert(vtmp == xnoreg, "required");
+    vtmp = src1;
+  }
+  if (esize >= 4 && VM_Version::supports_avx()) {
+    vtestps(vtmp, src2, AVX_128bit);
+  } else {
+    ptest(vtmp, src2);
   }
 }
 
@@ -2819,8 +2784,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
       // since heaps are aligned and mapped by pages.
       assert(os::vm_page_size() < (int)G, "default page should be small");
       movl(result, str2); // We need only low 32 bits
-      andl(result, (os::vm_page_size()-1));
-      cmpl(result, (os::vm_page_size()-16));
+      andl(result, ((int)os::vm_page_size()-1));
+      cmpl(result, ((int)os::vm_page_size()-16));
       jccb(Assembler::belowEqual, CHECK_STR);
 
       // Move small strings to stack to allow load 16 bytes into vec.
@@ -2849,8 +2814,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
 
     // Check cross page boundary.
     movl(result, str1); // We need only low 32 bits
-    andl(result, (os::vm_page_size()-1));
-    cmpl(result, (os::vm_page_size()-16));
+    andl(result, ((int)os::vm_page_size()-1));
+    cmpl(result, ((int)os::vm_page_size()-16));
     jccb(Assembler::belowEqual, BIG_STRINGS);
 
     subptr(rsp, 16);
@@ -3237,6 +3202,195 @@ void C2_MacroAssembler::stringL_indexof_char(Register str1, Register cnt1, Regis
 
   bind(DONE_LABEL);
 } // stringL_indexof_char
+
+int C2_MacroAssembler::arrays_hashcode_elsize(BasicType eltype) {
+  switch (eltype) {
+  case T_BOOLEAN: return sizeof(jboolean);
+  case T_BYTE:  return sizeof(jbyte);
+  case T_SHORT: return sizeof(jshort);
+  case T_CHAR:  return sizeof(jchar);
+  case T_INT:   return sizeof(jint);
+  default:
+    ShouldNotReachHere();
+    return -1;
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
+  switch (eltype) {
+  // T_BOOLEAN used as surrogate for unsigned byte
+  case T_BOOLEAN: movzbl(dst, src);   break;
+  case T_BYTE:    movsbl(dst, src);   break;
+  case T_SHORT:   movswl(dst, src);   break;
+  case T_CHAR:    movzwl(dst, src);   break;
+  case T_INT:     movl(dst, src);     break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype) {
+  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
+}
+
+void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype) {
+  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
+}
+
+void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype) {
+  const int vlen = Assembler::AVX_256bit;
+  switch (eltype) {
+  case T_BOOLEAN: vector_unsigned_cast(dst, dst, vlen, T_BYTE, T_INT);  break;
+  case T_BYTE:      vector_signed_cast(dst, dst, vlen, T_BYTE, T_INT);  break;
+  case T_SHORT:     vector_signed_cast(dst, dst, vlen, T_SHORT, T_INT); break;
+  case T_CHAR:    vector_unsigned_cast(dst, dst, vlen, T_SHORT, T_INT); break;
+  case T_INT:
+    // do nothing
+    break;
+  default:
+    ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::arrays_hashcode(Register ary1, Register cnt1, Register result,
+                                        Register index, Register tmp2, Register tmp3, XMMRegister vnext,
+                                        XMMRegister vcoef0, XMMRegister vcoef1, XMMRegister vcoef2, XMMRegister vcoef3,
+                                        XMMRegister vresult0, XMMRegister vresult1, XMMRegister vresult2, XMMRegister vresult3,
+                                        XMMRegister vtmp0, XMMRegister vtmp1, XMMRegister vtmp2, XMMRegister vtmp3,
+                                        BasicType eltype) {
+  ShortBranchVerifier sbv(this);
+  assert(UseAVX >= 2, "AVX2 intrinsics are required");
+  assert_different_registers(ary1, cnt1, result, index, tmp2, tmp3);
+  assert_different_registers(vnext, vcoef0, vcoef1, vcoef2, vcoef3, vresult0, vresult1, vresult2, vresult3, vtmp0, vtmp1, vtmp2, vtmp3);
+
+  Label SHORT_UNROLLED_BEGIN, SHORT_UNROLLED_LOOP_BEGIN,
+        SHORT_UNROLLED_LOOP_EXIT,
+        UNROLLED_SCALAR_LOOP_BEGIN, UNROLLED_SCALAR_SKIP, UNROLLED_SCALAR_RESUME,
+        UNROLLED_VECTOR_LOOP_BEGIN,
+        END;
+  switch (eltype) {
+  case T_BOOLEAN: BLOCK_COMMENT("arrays_hashcode(unsigned byte) {"); break;
+  case T_CHAR:    BLOCK_COMMENT("arrays_hashcode(char) {");          break;
+  case T_BYTE:    BLOCK_COMMENT("arrays_hashcode(byte) {");          break;
+  case T_SHORT:   BLOCK_COMMENT("arrays_hashcode(short) {");         break;
+  case T_INT:     BLOCK_COMMENT("arrays_hashcode(int) {");           break;
+  default:        BLOCK_COMMENT("arrays_hashcode {");                break;
+  }
+
+  // For "renaming" for readibility of the code
+  XMMRegister vcoef[] = { vcoef0, vcoef1, vcoef2, vcoef3 },
+              vresult[] = { vresult0, vresult1, vresult2, vresult3 },
+              vtmp[] = { vtmp0, vtmp1, vtmp2, vtmp3 };
+
+  const int elsize = arrays_hashcode_elsize(eltype);
+
+  /*
+    if (cnt1 >= 2) {
+      if (cnt1 >= 32) {
+        UNROLLED VECTOR LOOP
+      }
+      UNROLLED SCALAR LOOP
+    }
+    SINGLE SCALAR
+   */
+
+  cmpl(cnt1, 32);
+  jcc(Assembler::less, SHORT_UNROLLED_BEGIN);
+
+  // cnt1 >= 32 && generate_vectorized_loop
+  xorl(index, index);
+
+  // vresult = IntVector.zero(I256);
+  for (int idx = 0; idx < 4; idx++) {
+    vpxor(vresult[idx], vresult[idx]);
+  }
+  // vnext = IntVector.broadcast(I256, power_of_31_backwards[0]);
+  Register bound = tmp2;
+  Register next = tmp3;
+  lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + (0 * sizeof(jint))));
+  movl(next, Address(tmp2, 0));
+  movdl(vnext, next);
+  vpbroadcastd(vnext, vnext, Assembler::AVX_256bit);
+
+  // index = 0;
+  // bound = cnt1 & ~(32 - 1);
+  movl(bound, cnt1);
+  andl(bound, ~(32 - 1));
+  // for (; index < bound; index += 32) {
+  bind(UNROLLED_VECTOR_LOOP_BEGIN);
+  // result *= next;
+  imull(result, next);
+  // loop fission to upfront the cost of fetching from memory, OOO execution
+  // can then hopefully do a better job of prefetching
+  for (int idx = 0; idx < 4; idx++) {
+    arrays_hashcode_elvload(vtmp[idx], Address(ary1, index, Address::times(elsize), 8 * idx * elsize), eltype);
+  }
+  // vresult = vresult * vnext + ary1[index+8*idx:index+8*idx+7];
+  for (int idx = 0; idx < 4; idx++) {
+    vpmulld(vresult[idx], vresult[idx], vnext, Assembler::AVX_256bit);
+    arrays_hashcode_elvcast(vtmp[idx], eltype);
+    vpaddd(vresult[idx], vresult[idx], vtmp[idx], Assembler::AVX_256bit);
+  }
+  // index += 32;
+  addl(index, 32);
+  // index < bound;
+  cmpl(index, bound);
+  jcc(Assembler::less, UNROLLED_VECTOR_LOOP_BEGIN);
+  // }
+
+  lea(ary1, Address(ary1, bound, Address::times(elsize)));
+  subl(cnt1, bound);
+  // release bound
+
+  // vresult *= IntVector.fromArray(I256, power_of_31_backwards, 1);
+  for (int idx = 0; idx < 4; idx++) {
+    lea(tmp2, ExternalAddress(StubRoutines::x86::arrays_hashcode_powers_of_31() + ((8 * idx + 1) * sizeof(jint))));
+    arrays_hashcode_elvload(vcoef[idx], Address(tmp2, 0), T_INT);
+    vpmulld(vresult[idx], vresult[idx], vcoef[idx], Assembler::AVX_256bit);
+  }
+  // result += vresult.reduceLanes(ADD);
+  for (int idx = 0; idx < 4; idx++) {
+    reduceI(Op_AddReductionVI, 256/(sizeof(jint) * 8), result, result, vresult[idx], vtmp[(idx * 2 + 0) % 4], vtmp[(idx * 2 + 1) % 4]);
+  }
+
+  // } else if (cnt1 < 32) {
+
+  bind(SHORT_UNROLLED_BEGIN);
+  // int i = 1;
+  movl(index, 1);
+  cmpl(index, cnt1);
+  jcc(Assembler::greaterEqual, SHORT_UNROLLED_LOOP_EXIT);
+
+  // for (; i < cnt1 ; i += 2) {
+  bind(SHORT_UNROLLED_LOOP_BEGIN);
+  movl(tmp3, 961);
+  imull(result, tmp3);
+  arrays_hashcode_elload(tmp2, Address(ary1, index, Address::times(elsize), -elsize), eltype);
+  movl(tmp3, tmp2);
+  shll(tmp3, 5);
+  subl(tmp3, tmp2);
+  addl(result, tmp3);
+  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize)), eltype);
+  addl(result, tmp3);
+  addl(index, 2);
+  cmpl(index, cnt1);
+  jccb(Assembler::less, SHORT_UNROLLED_LOOP_BEGIN);
+
+  // }
+  // if (i >= cnt1) {
+  bind(SHORT_UNROLLED_LOOP_EXIT);
+  jccb(Assembler::greater, END);
+  movl(tmp2, result);
+  shll(result, 5);
+  subl(result, tmp2);
+  arrays_hashcode_elload(tmp3, Address(ary1, index, Address::times(elsize), -elsize), eltype);
+  addl(result, tmp3);
+  // }
+  bind(END);
+
+  BLOCK_COMMENT("} // arrays_hashcode");
+
+} // arrays_hashcode
 
 // helper function for string_compare
 void C2_MacroAssembler::load_next_elements(Register elem1, Register elem2, Register str1, Register str2,
@@ -4714,6 +4868,33 @@ void C2_MacroAssembler::vector_unsigned_cast(XMMRegister dst, XMMRegister src, i
     case T_INT:
       assert(to_elem_bt == T_LONG, "");
       vpmovzxdq(dst, src, vlen_enc);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void C2_MacroAssembler::vector_signed_cast(XMMRegister dst, XMMRegister src, int vlen_enc,
+                                           BasicType from_elem_bt, BasicType to_elem_bt) {
+  switch (from_elem_bt) {
+    case T_BYTE:
+      switch (to_elem_bt) {
+        case T_SHORT: vpmovsxbw(dst, src, vlen_enc); break;
+        case T_INT:   vpmovsxbd(dst, src, vlen_enc); break;
+        case T_LONG:  vpmovsxbq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_SHORT:
+      switch (to_elem_bt) {
+        case T_INT:  vpmovsxwd(dst, src, vlen_enc); break;
+        case T_LONG: vpmovsxwq(dst, src, vlen_enc); break;
+        default: ShouldNotReachHere();
+      }
+      break;
+    case T_INT:
+      assert(to_elem_bt == T_LONG, "");
+      vpmovsxdq(dst, src, vlen_enc);
       break;
     default:
       ShouldNotReachHere();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -734,8 +734,11 @@ bool Node::is_dead() const {
   for( uint i = 0; i < _max; i++ )
     if( _in[i] != NULL )
       return false;
-  dump();
   return true;
+}
+
+bool Node::is_not_dead(const Node* n) {
+  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
 }
 
 bool Node::is_reachable_from_root() const {
@@ -1145,9 +1148,9 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '+VerifyIterativeGVN' checks
+// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
 // these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with +VerifyIterativeGVN!
+// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
@@ -1380,6 +1383,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   ResourceMark rm;
   Node_List nstack;
+  VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1387,6 +1391,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (!dead_set.test_set(dead->_idx)) {
+      // If dead has any live uses, those are now still attached. Notify them before we lose them.
+      igvn->add_users_to_worklist(dead);
+    }
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(igvn);
     }
@@ -2277,11 +2285,11 @@ void PrintBFS::print_node_idx(const Node* n) {
   Compile* C = Compile::current();
   char buf[30];
   if (n == nullptr) {
-    sprintf(buf,"_");           // null
+    os::snprintf_checked(buf, sizeof(buf), "_");           // null
   } else if (C->node_arena()->contains(n)) {
-    sprintf(buf, "%d", n->_idx);  // new node
+    os::snprintf_checked(buf, sizeof(buf), "%d", n->_idx);  // new node
   } else {
-    sprintf(buf, "o%d", n->_idx); // old node
+    os::snprintf_checked(buf, sizeof(buf), "o%d", n->_idx); // old node
   }
   tty->print("%6s", buf);
 }
@@ -2289,7 +2297,7 @@ void PrintBFS::print_node_idx(const Node* n) {
 void PrintBFS::print_block_id(const Block* b) {
   Compile* C = Compile::current();
   char buf[30];
-  sprintf(buf, "B%d", b->_pre_order);
+  os::snprintf_checked(buf, sizeof(buf), "B%d", b->_pre_order);
   tty->print("%7s", buf);
 }
 
@@ -2392,17 +2400,6 @@ void Node::dump_bfs(const int max_distance) const {
   dump_bfs(max_distance, nullptr, nullptr);
 }
 
-// log10 rounded down
-uint log10(const uint i) {
-  uint v = 10;
-  uint e = 0;
-  while(v <= i) {
-    v *= 10;
-    e++;
-  }
-  return e;
-}
-
 // -----------------------------dump_idx---------------------------------------
 void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   if (dc != nullptr) {
@@ -2412,9 +2409,9 @@ void Node::dump_idx(bool align, outputStream* st, DumpConfig* dc) const {
   bool is_new = C->node_arena()->contains(this);
   if (align) { // print prefix empty spaces$
     // +1 for leading digit, +1 for "o"
-    uint max_width = log10(C->unique()) + 2;
+    uint max_width = static_cast<uint>(log10(static_cast<double>(C->unique()))) + 2;
     // +1 for leading digit, maybe +1 for "o"
-    uint width = log10(_idx) + 1 + (is_new ? 0 : 1);
+    uint width = static_cast<uint>(log10(static_cast<double>(_idx))) + 1 + (is_new ? 0 : 1);
     while (max_width > width) {
       st->print(" ");
       width++;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ class CodeSection {
   address     _locs_point;      // last relocated position (grows upward)
   bool        _locs_own;        // did I allocate the locs myself?
   bool        _scratch_emit;    // Buffer is used for scratch emit, don't relocate.
+  int         _skipped_instructions_size;
   char        _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
 
@@ -114,6 +115,7 @@ class CodeSection {
     _locs_point    = NULL;
     _locs_own      = false;
     _scratch_emit  = false;
+    _skipped_instructions_size = 0;
     debug_only(_index = (char)-1);
     debug_only(_outer = (CodeBuffer*)badAddress);
   }
@@ -144,6 +146,7 @@ class CodeSection {
     _end        = cs->_end;
     _limit      = cs->_limit;
     _locs_point = cs->_locs_point;
+    _skipped_instructions_size = cs->_skipped_instructions_size;
   }
 
  public:
@@ -202,6 +205,10 @@ class CodeSection {
     assert(pc >= locs_point(), "relocation addr may not decrease");
     assert(allocates2(pc),     "relocation addr must be in this section");
     _locs_point = pc;
+  }
+
+  void register_skipped(int size) {
+    _skipped_instructions_size += size;
   }
 
   // Code emission
@@ -396,7 +403,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   };
 
   typedef LinkedListImpl<int> Offsets;
-  typedef ResizeableResourceHashtable<address, Offsets> SharedTrampolineRequests;
+  typedef ResizeableResourceHashtable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
   enum {
@@ -637,6 +644,8 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;
+
+  int total_skipped_instructions_size() const;
 
   csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
 

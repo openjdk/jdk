@@ -38,7 +38,7 @@ import sun.security.util.*;
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  */
-public class CertificatePolicySet {
+public class CertificatePolicySet implements DerEncoder {
 
     private final Vector<CertificatePolicyId> ids;
 
@@ -82,7 +82,8 @@ public class CertificatePolicySet {
      *
      * @param out the DerOutputStream to encode the data to.
      */
-    public void encode(DerOutputStream out) throws IOException {
+    @Override
+    public void encode(DerOutputStream out) {
         DerOutputStream tmp = new DerOutputStream();
 
         for (int i = 0; i < ids.size(); i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,10 @@
 
 #include "gc/g1/g1CardSet.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CodeCacheRemSet.hpp"
+#include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/bitMap.hpp"
 
@@ -54,9 +55,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
-  // Split the given address into region of that card and the card within that
-  // region.
-  inline void split_card(OopOrNarrowOopStar from, uint& card_region, uint& card_within_region) const;
   void clear_fcc();
 
 public:
@@ -122,6 +120,8 @@ public:
   void clear(bool only_cardset = false);
   void clear_locked(bool only_cardset = false);
 
+  void reset_table_scanner();
+
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;
 
   // The actual # of bytes this hr_remset takes up. Also includes the code
@@ -139,7 +139,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size() + G1CodeRootSet::static_mem_size() + sizeof(G1CardSetFreePool);
+    return G1CardSet::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -167,6 +167,7 @@ public:
   // Returns true if the code roots contains the given
   // nmethod.
   bool code_roots_list_contains(nmethod* nm) {
+    MutexLocker ml(&_m, Mutex::_no_safepoint_check_flag);
     return _code_roots.contains(nm);
   }
 

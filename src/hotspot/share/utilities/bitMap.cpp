@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ static bm_word_t* pseudo_reallocate(const BitMapWithAllocator& derived, bm_word_
   assert(new_size_in_words > 0, "precondition");
 
   bm_word_t* map = derived.allocate(new_size_in_words);
-  if (old_map != NULL) {
+  if (old_map != nullptr) {
     Copy::disjoint_words((HeapWord*)old_map, (HeapWord*) map,
         MIN2(old_size_in_words, new_size_in_words));
   }
@@ -54,7 +54,7 @@ static bm_word_t* pseudo_reallocate(const BitMapWithAllocator& derived, bm_word_
 
 template <class BitMapWithAllocator>
 void GrowableBitMap<BitMapWithAllocator>::initialize(idx_t size_in_bits, bool clear) {
-  assert(map() == NULL, "precondition");
+  assert(map() == nullptr, "precondition");
   assert(size() == 0,   "precondition");
 
   resize(size_in_bits, clear);
@@ -80,7 +80,7 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 
   if (new_size_in_words == 0) {
     derived->free(old_map, old_size_in_words);
-    update(NULL, 0);
+    update(nullptr, 0);
     return;
   }
 
@@ -320,11 +320,11 @@ bool BitMap::par_at_put(idx_t bit, bool value) {
   return value ? par_set_bit(bit) : par_clear_bit(bit);
 }
 
-void BitMap::at_put_range(idx_t start_offset, idx_t end_offset, bool value) {
+void BitMap::at_put_range(idx_t beg_offset, idx_t end_offset, bool value) {
   if (value) {
-    set_range(start_offset, end_offset);
+    set_range(beg_offset, end_offset);
   } else {
-    clear_range(start_offset, end_offset);
+    clear_range(beg_offset, end_offset);
   }
 }
 

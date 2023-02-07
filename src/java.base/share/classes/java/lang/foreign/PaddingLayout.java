@@ -25,76 +25,30 @@
  */
 package java.lang.foreign;
 
-import java.util.Objects;
-import java.util.Optional;
+import jdk.internal.foreign.layout.PaddingLayoutImpl;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A padding layout. A padding layout specifies the size of extra space which is typically not accessed by applications,
  * and is typically used for aligning member layouts around word boundaries.
  *
  * @implSpec
- * This class is immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ *
+ * @since 20
  */
-/* package-private */ final class PaddingLayout extends AbstractLayout implements MemoryLayout {
-
-    PaddingLayout(long size) {
-        this(size, 1, Optional.empty());
-    }
-
-    PaddingLayout(long size, long alignment, Optional<String> name) {
-        super(size, alignment, name);
-    }
-
-    @Override
-    public String toString() {
-        return decorateLayoutString("x" + bitSize());
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-        if (!super.equals(other)) {
-            return false;
-        }
-        if (!(other instanceof PaddingLayout p)) {
-            return false;
-        }
-        return bitSize() == p.bitSize();
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(super.hashCode(), bitSize());
-    }
-
-    @Override
-    PaddingLayout dup(long alignment, Optional<String> name) {
-        return new PaddingLayout(bitSize(), alignment, name);
-    }
-
-    @Override
-    public boolean hasNaturalAlignment() {
-        return true;
-    }
-
-    //hack: the declarations below are to make javadoc happy; we could have used generics in AbstractLayout
-    //but that causes issues with javadoc, see JDK-8224052
+@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public PaddingLayout withName(String name) {
-        return (PaddingLayout)super.withName(name);
-    }
+    PaddingLayout withName(String name);
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public PaddingLayout withBitAlignment(long alignmentBits) {
-        return (PaddingLayout)super.withBitAlignment(alignmentBits);
-    }
+    PaddingLayout withBitAlignment(long bitAlignment);
 }

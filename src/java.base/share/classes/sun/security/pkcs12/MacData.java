@@ -138,7 +138,7 @@ class MacData {
      * @exception IOException if error occurs when constructing its
      * ASN.1 encoding.
      */
-    public byte[] getEncoded() throws NoSuchAlgorithmException, IOException
+    public byte[] getEncoded() throws NoSuchAlgorithmException
     {
         if (this.encoded != null)
             return this.encoded.clone();

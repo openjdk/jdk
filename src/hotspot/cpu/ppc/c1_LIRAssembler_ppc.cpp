@@ -665,6 +665,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
   __ code()->set_insts_mark();
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 
@@ -692,6 +693,7 @@ void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   // serves as dummy and the bl will be patched later.
   __ bl(__ pc());
   add_call_info(code_offset(), op->info());
+  __ post_call_nop();
 }
 
 void LIR_Assembler::explicit_null_check(Register addr, CodeEmitInfo* info) {
@@ -2876,6 +2878,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     __ bctrl();
     assert(info != NULL, "sanity");
     add_call_info_here(info);
+    __ post_call_nop();
     return;
   }
 
@@ -2883,6 +2886,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
   if (info != NULL) {
     add_call_info_here(info);
   }
+  __ post_call_nop();
 }
 
 
@@ -3015,8 +3019,13 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       __ lwarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stwcx_(Rco, Rptr);
     } else {
-      const Register Robj = data->as_register();
-      assert_different_registers(Rptr, Rold, Robj);
+      Register Robj = data->as_register();
+      assert_different_registers(Rptr, Rold, Rtmp);
+      assert_different_registers(Rptr, Robj, Rtmp);
+      if (Robj == Rold) { // May happen with ZGC.
+        __ mr(Rtmp, Robj);
+        Robj = Rtmp;
+      }
       __ ldarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stdcx_(Robj, Rptr);
     }

@@ -565,6 +565,8 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         { { 2, ShenandoahLoad },                  { 4, ShenandoahLoad } },
         Op_StrEquals,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahLoad } },
+        Op_VectorizedHashCode,
+        { { 2, ShenandoahLoad },                  { -1, ShenandoahNone } },
         Op_EncodeISOArray,
         { { 2, ShenandoahLoad },                  { 3, ShenandoahStore } },
         Op_CountPositives,
@@ -757,7 +759,7 @@ Node* ShenandoahBarrierC2Support::no_branches(Node* c, Node* dom, bool allow_one
         return NodeSentinel; // unsupported
       } else if (c->Opcode() == Op_CatchProj) {
         return NodeSentinel; // unsupported
-      } else if (c->Opcode() == Op_CProj && next->Opcode() == Op_NeverBranch) {
+      } else if (c->Opcode() == Op_CProj && next->is_NeverBranch()) {
         return NodeSentinel; // unsupported
       } else {
         assert(next->unique_ctrl_out() == c, "unsupported branch pattern");
@@ -2002,7 +2004,7 @@ Node* ShenandoahIUBarrierNode::Identity(PhaseGVN* phase) {
 static bool has_never_branch(Node* root) {
   for (uint i = 1; i < root->req(); i++) {
     Node* in = root->in(i);
-    if (in != NULL && in->Opcode() == Op_Halt && in->in(0)->is_Proj() && in->in(0)->in(0)->Opcode() == Op_NeverBranch) {
+    if (in != NULL && in->Opcode() == Op_Halt && in->in(0)->is_Proj() && in->in(0)->in(0)->is_NeverBranch()) {
       return true;
     }
   }
@@ -2033,20 +2035,20 @@ void MemoryGraphFixer::collect_memory_nodes() {
           if (in->in(0)->is_Region()) {
             Node* r = in->in(0);
             for (uint j = 1; j < r->req(); j++) {
-              assert(r->in(j)->Opcode() != Op_NeverBranch, "");
+              assert(!r->in(j)->is_NeverBranch(), "");
             }
           } else {
             Node* proj = in->in(0);
             assert(proj->is_Proj(), "");
             Node* in = proj->in(0);
-            assert(in->is_CallStaticJava() || in->Opcode() == Op_NeverBranch || in->Opcode() == Op_Catch || proj->is_IfProj(), "");
+            assert(in->is_CallStaticJava() || in->is_NeverBranch() || in->Opcode() == Op_Catch || proj->is_IfProj(), "");
             if (in->is_CallStaticJava()) {
               mem = in->in(TypeFunc::Memory);
             } else if (in->Opcode() == Op_Catch) {
               Node* call = in->in(0)->in(0);
               assert(call->is_Call(), "");
               mem = call->in(TypeFunc::Memory);
-            } else if (in->Opcode() == Op_NeverBranch) {
+            } else if (in->is_NeverBranch()) {
               mem = collect_memory_for_infinite_loop(in);
             }
           }
@@ -2518,7 +2520,7 @@ void MemoryGraphFixer::fix_mem(Node* ctrl, Node* new_ctrl, Node* mem, Node* mem_
               }
             }
           } else if (!mem_is_valid(m, u) &&
-                     !(u->Opcode() == Op_CProj && u->in(0)->Opcode() == Op_NeverBranch && u->as_Proj()->_con == 1)) {
+                     !(u->Opcode() == Op_CProj && u->in(0)->is_NeverBranch() && u->as_Proj()->_con == 1)) {
             uses.push(u);
           }
         }

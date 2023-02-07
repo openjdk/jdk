@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8292302
  * @summary Test persistence of native last error value under jdb (Windows)
- * @requires (os.family == "windows") & (vm.compMode != "Xcomp") & (vm.compMode != "Xint")
+ * @requires (os.family == "windows") & (vm.compMode != "Xcomp") & (vm.compMode != "Xint") & (vm.gc != "Z")
  * @library /test/lib
  * @enablePreview
  * @run main/othervm JdbLastErrorTest
@@ -54,17 +54,19 @@ class TestNativeLastError {
         System.loadLibrary("Kernel32");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
         MethodHandle getLastError = linker.downcallHandle(
-            lookup.lookup("GetLastError").orElseThrow(),
+            lookup.find("GetLastError").orElseThrow(),
             FunctionDescriptor.of(ValueLayout.JAVA_INT));
         MethodHandle setLastError = linker.downcallHandle(
-            lookup.lookup("SetLastError").orElseThrow(),
+            lookup.find("SetLastError").orElseThrow(),
             FunctionDescriptor.ofVoid(ValueLayout.JAVA_INT));
 
         for (int i = 0; i < 10; i++) {
             setLastError.invoke(VALUE);
             int lastError = (int) getLastError.invoke();
-            System.out.println(lastError);
+            System.out.println("lastError = " + lastError);
             if (lastError != VALUE) {
+                System.err.println("iteration " + i + " got lastError = " + lastError
+                                   + " (expected " + VALUE + ")");
                 throw new RuntimeException("failed, lastError = " + lastError);
             }
         }
@@ -92,7 +94,9 @@ public class JdbLastErrorTest extends JdbTest {
         JdbCommand runCommand = JdbCommand.run();
         runCommand.allowExit();
         jdb.command(runCommand);
-        new OutputAnalyzer(jdb.getJdbOutput()).shouldMatch("The application exited");
+        // Good lastError should be reported in debuggee output:
+        new OutputAnalyzer(getDebuggeeOutput()).shouldMatch("lastError = " + Integer.toString(TestNativeLastError.VALUE));
+        // Exception would be captured in jdb output:
         new OutputAnalyzer(jdb.getJdbOutput()).shouldNotMatch("failed, lastError = ");
     }
 }

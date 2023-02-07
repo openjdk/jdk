@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,14 +245,6 @@ public:
   void do_work(uint worker_id) override { G1CollectedHeap::heap()->reset_hot_card_cache(); }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::PurgeCodeRootsTask : public G1AbstractSubTask {
-public:
-  PurgeCodeRootsTask() : G1AbstractSubTask(G1GCPhaseTimes::PurgeCodeRoots) { }
-
-  double worker_cost() const override { return 1.0; }
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->purge_code_root_memory(); }
-};
-
 #if COMPILER2_OR_JVMCI
 class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
 public:
@@ -465,7 +457,8 @@ public:
 
   void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
     evacuation_info->set_regions_freed(_regions_freed);
-    evacuation_info->increment_collectionset_used_after(_after_used_bytes);
+    evacuation_info->set_collection_set_used_before(_before_used_bytes + _after_used_bytes);
+    evacuation_info->increment_collection_set_used_after(_after_used_bytes);
 
     g1h->decrement_summary_bytes(_before_used_bytes);
     g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->add_failure_used_and_waste(_failure_used_words, _failure_waste_words);
@@ -557,7 +550,7 @@ class FreeCSetClosure : public HeapRegionClosure {
     assert(!r->is_empty(), "Region %u is an empty region in the collection set.", r->hrm_index());
     stats()->account_evacuated_region(r);
 
-    // Free the region and and its remembered set.
+    // Free the region and its remembered set.
     _g1h->free_region(r, nullptr);
     _g1h->hr_printer()->cleanup(r);
   }
@@ -714,7 +707,6 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
   add_serial_task(new ResetHotCardCacheTask());
-  add_serial_task(new PurgeCodeRootsTask());
 #if COMPILER2_OR_JVMCI
   add_serial_task(new UpdateDerivedPointersTask());
 #endif

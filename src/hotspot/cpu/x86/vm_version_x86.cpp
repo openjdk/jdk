@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -956,6 +956,7 @@ void VM_Version::get_processor_features() {
   if (UseAVX < 1) {
     _features &= ~CPU_AVX;
     _features &= ~CPU_VZEROUPPER;
+    _features &= ~CPU_F16C;
   }
 
   if (logical_processors_per_package() == 1) {
@@ -1120,6 +1121,22 @@ void VM_Version::get_processor_features() {
     if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
       warning("GHASH intrinsic requires CLMUL and SSE2 instructions on this CPU");
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+  }
+
+  // ChaCha20 Intrinsics
+  // As long as the system supports AVX as a baseline we can do a
+  // SIMD-enabled block function.  StubGenerator makes the determination
+  // based on the VM capabilities whether to use an AVX2 or AVX512-enabled
+  // version.
+  if (UseAVX >= 1) {
+      if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          UseChaCha20Intrinsics = true;
+      }
+  } else if (UseChaCha20Intrinsics) {
+      if (!FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
+          warning("ChaCha20 intrinsic requires AVX instructions");
+      }
+      FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
   }
 
   // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
@@ -1334,14 +1351,14 @@ void VM_Version::get_processor_features() {
 
 #ifdef _LP64
   if (supports_avx512ifma() && supports_avx512vlbw() && MaxVectorSize >= 64) {
-    if (FLAG_IS_DEFAULT(UsePolyIntrinsics)) {
-      FLAG_SET_DEFAULT(UsePolyIntrinsics, true);
+    if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
+      FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
   } else
 #endif
-  if (UsePolyIntrinsics) {
+  if (UsePoly1305Intrinsics) {
     warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UsePolyIntrinsics, false);
+    FLAG_SET_DEFAULT(UsePoly1305Intrinsics, false);
   }
 
 #ifdef _LP64
@@ -1678,12 +1695,25 @@ void VM_Version::get_processor_features() {
       warning("vectorizedMismatch intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
+  if (UseAVX >= 2) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  } else if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic))
+      warning("vectorizedHashCode intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
+  }
 #else
   if (UseVectorizedMismatchIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
       warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
     }
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+  if (UseVectorizedHashCodeIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+      warning("vectorizedHashCode intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
 #endif // _LP64
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -894,7 +894,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 // Common case 1: we have no handler, so all exceptions merge right into
 // the rethrow case.
 // Case 2: we have some handlers, with loaded exception klasses that have
-// no subklasses.  We do a Deutsch-Shiffman style type-check on the incoming
+// no subklasses.  We do a Deutsch-Schiffman style type-check on the incoming
 // exception oop and branch to the handler directly.
 // Case 3: We have some handlers with subklasses or are not loaded at
 // compile-time.  We have to call the runtime to resolve the exception.
@@ -948,8 +948,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
         Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
-      _gvn.set_type(ex_klass_node, TypeInstKlassPtr::OBJECT);
-
+      ex_klass_node = _gvn.transform(ex_klass_node);
     }
   }
 

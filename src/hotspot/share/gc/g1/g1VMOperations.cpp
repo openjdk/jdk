@@ -123,15 +123,10 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
   VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
   _gc_succeeded(false) {}
 
-bool VM_G1CollectForAllocation::should_try_allocation_before_gc() {
-  // Don't allocate before a preventive GC.
-  return _gc_cause != GCCause::_g1_preventive_collection;
-}
-
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (should_try_allocation_before_gc() && _word_size > 0) {
+  if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
     _result = g1h->attempt_allocation_at_safepoint(_word_size,
                                                    false /* expect_null_cur_alloc_region */);
@@ -172,7 +167,7 @@ void VM_G1PauseConcurrent::doit() {
   GCTraceTimePauseTimer       timer(_message, g1h->concurrent_mark()->gc_timer_cm());
   GCTraceTimeDriver           t(&logger, &timer);
 
-  TraceCollectorStats tcs(g1h->monitoring_support()->conc_collection_counters());
+  G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
   IsGCActiveMark x;
 

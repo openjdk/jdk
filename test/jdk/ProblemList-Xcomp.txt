@@ -28,6 +28,4 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
-java/lang/ref/ReferenceEnqueue.java 8284236 generic-all
 
-java/lang/Float/Binary16Conversion.java 8295351 generic-x64

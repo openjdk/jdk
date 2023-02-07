@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,6 +36,8 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/continuation.hpp"
+#include "runtime/continuationEntry.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -323,6 +325,7 @@ class StubGenerator: public StubCodeGenerator {
 
       // pop frame and restore non-volatiles, LR and CR
       __ mr(R1_SP, r_entryframe_fp);
+      __ pop_cont_fastpath();
       __ mtcr(r_cr);
       __ mtlr(r_lr);
 
@@ -4501,22 +4504,105 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // VM_LITTLE_ENDIAN
 
-  address generate_cont_thaw() {
+  address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
     if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    StubCodeMark mark(this, "StubRoutines", label);
+
+    Register tmp1 = R10_ARG8;
+    Register tmp2 = R9_ARG7;
+    Register tmp3 = R8_ARG6;
+    Register nvtmp = R15_esp;   // nonvolatile tmp register
+    FloatRegister nvftmp = F20; // nonvolatile fp tmp register
+
+    address start = __ pc();
+
+    if (return_barrier) {
+      __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
+      DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
+      __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
+#ifdef ASSERT
+      __ ld_ptr(tmp2, _abi0(callers_sp), R1_SP);
+      __ cmpd(CCR0, tmp1, tmp2);
+      __ asm_assert_eq(FILE_AND_LINE ": callers sp is corrupt");
+#endif
+    }
+#ifdef ASSERT
+    __ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread);
+    __ cmpd(CCR0, R1_SP, tmp1);
+    __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
+#endif
+
+    __ li(R4_ARG2, return_barrier ? 1 : 0);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), R16_thread, R4_ARG2);
+
+#ifdef ASSERT
+    DEBUG_ONLY(__ ld_ptr(tmp1, JavaThread::cont_entry_offset(), R16_thread));
+    DEBUG_ONLY(__ cmpd(CCR0, R1_SP, tmp1));
+    __ asm_assert_eq(FILE_AND_LINE ": incorrect R1_SP");
+#endif
+
+    // R3_RET contains the size of the frames to thaw, 0 if overflow or no more frames
+    Label thaw_success;
+    __ cmpdi(CCR0, R3_RET, 0);
+    __ bne(CCR0, thaw_success);
+    __ load_const_optimized(tmp1, (StubRoutines::throw_StackOverflowError_entry()), R0);
+    __ mtctr(tmp1); __ bctr();
+    __ bind(thaw_success);
+
+    __ addi(R3_RET, R3_RET, frame::abi_reg_args_size); // Large abi required for C++ calls.
+    __ neg(R3_RET, R3_RET);
+    // align down resulting in a smaller negative offset
+    __ clrrdi(R3_RET, R3_RET, exact_log2(frame::alignment_in_bytes));
+    DEBUG_ONLY(__ mr(tmp1, R1_SP);)
+    __ resize_frame(R3_RET, tmp2);  // make room for the thawed frames
+
+    __ li(R4_ARG2, kind);
+    __ call_VM_leaf(Continuation::thaw_entry(), R16_thread, R4_ARG2);
+    __ mr(R1_SP, R3_RET); // R3_RET contains the SP of the thawed top frame
+
+    if (return_barrier) {
+      // we're now in the caller of the frame that returned to the barrier
+      __ mr(R3_RET, nvtmp); __ fmr(F1_RET, nvftmp); // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+    } else {
+      // we're now on the yield frame (which is in an address above us b/c rsp has been pushed down)
+      __ li(R3_RET, 0); // return 0 (success) from doYield
+    }
+
+    if (return_barrier_exception) {
+      Register ex_pc = R17_tos;   // nonvolatile register
+      __ ld(ex_pc, _abi0(lr), R1_SP); // LR
+      __ mr(nvtmp, R3_RET); // save return value containing the exception oop
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), R16_thread, ex_pc);
+      __ mtlr(R3_RET); // the exception handler
+      // See OptoRuntime::generate_exception_blob for register arguments
+      __ mr(R3_ARG1, nvtmp); // exception oop
+      __ mr(R4_ARG2, ex_pc); // exception pc
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ ld(R0, _abi0(lr), R1_SP); // LR
+      __ mtlr(R0);
+    }
+    __ blr();
+
+    return start;
   }
 
+  address generate_cont_thaw() {
+    return generate_cont_thaw("Cont thaw", Continuation::thaw_top);
+  }
+
+  // TODO: will probably need multiple return barriers depending on return type
+
   address generate_cont_returnBarrier() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+    return generate_cont_thaw("Cont thaw return barrier", Continuation::thaw_return_barrier);
   }
 
   address generate_cont_returnBarrier_exception() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
+    return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
   }
 
 #if INCLUDE_JFR
@@ -4525,14 +4611,11 @@ class StubGenerator: public StubCodeGenerator {
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
   RuntimeStub* generate_jfr_write_checkpoint() {
+    CodeBuffer code("jfr_write_checkpoint", 512, 64);
+    MacroAssembler* _masm = new MacroAssembler(&code);
+
     Register tmp1 = R10_ARG8;
     Register tmp2 = R9_ARG7;
-    int insts_size = 512;
-    int locs_size = 64;
-    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
 
     int framesize = frame::abi_reg_args_size / VMRegImpl::stack_slot_size;
     address start = __ pc();
@@ -4545,23 +4628,19 @@ class StubGenerator: public StubCodeGenerator {
     address calls_return_pc = __ last_calls_return_pc();
     __ reset_last_Java_frame();
     // The handle is dereferenced through a load barrier.
-    Label null_jobject;
-    __ cmpdi(CCR0, R3_RET, 0);
-    __ beq(CCR0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, R3_RET /*base*/, (intptr_t)0, R3_RET /*dst*/, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(R3_RET, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
     __ pop_frame();
     __ ld(tmp1, _abi0(lr), R1_SP);
     __ mtlr(tmp1);
     __ blr();
 
+    OopMapSet* oop_maps = new OopMapSet();
     OopMap* map = new OopMap(framesize, 0);
     oop_maps->add_gc_map(calls_return_pc - start, map);
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+      RuntimeStub::new_runtime_stub(code.name(),
+                                    &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;

@@ -33,8 +33,7 @@
 
 // Check NMT header for integrity, as well as expected type and size.
 static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
-  const MallocHeader* hdr = MallocTracker::malloc_header(payload);
-  hdr->assert_block_integrity();
+  const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->flags(), type);
 }
@@ -140,4 +139,17 @@ TEST_VM(NMT, random_reallocs) {
   }
 
   os::free(p);
+}
+
+TEST_VM(NMT, HeaderKeepsIntegrityAfterRevival) {
+  if (!MemTracker::enabled()) {
+    return;
+  }
+  size_t some_size = 16;
+  void* p = os::malloc(some_size, mtTest);
+  ASSERT_NOT_NULL(p) << "Failed to malloc()";
+  MallocHeader* hdr = MallocTracker::malloc_header(p);
+  hdr->mark_block_as_dead();
+  hdr->revive();
+  check_expected_malloc_header(p, mtTest, some_size);
 }

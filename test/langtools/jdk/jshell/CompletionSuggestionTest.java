@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206
+ * @bug 8131025 8141092 8153761 8145263 8131019 8175886 8176184 8176241 8176110 8177466 8197439 8221759 8234896 8240658 8278039 8286206 8296789
  * @summary Test Completion and Documentation
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -790,5 +790,11 @@ public class CompletionSuggestionTest extends KullaTesting {
 
     public void testRecord() {
         assertCompletion("record R() implements Ru|", true, "Runnable");
+    }
+
+    //JDK-8296789
+    public void testParentMembers() {
+        assertEval("var sb=new StringBuilder();");
+        assertCompletionIncludesExcludes("sb.|", true, Set.of("capacity()", "setLength("), Set.of("maybeLatin1"));
     }
 }

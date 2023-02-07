@@ -91,9 +91,12 @@
   #endif
 #endif
 
+<<<<<<< HEAD
 // Compiler-specific primitive types
 // All defs of int (uint16_6 etc) are defined in AIX' /usr/include/stdint.h
 
+=======
+>>>>>>> master
 // checking for nanness
 inline int g_isnan(float  f) { return isnan(f); }
 inline int g_isnan(double f) { return isnan(f); }

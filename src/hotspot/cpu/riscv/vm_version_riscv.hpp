@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,30 @@ private:
   static void c2_initialize();
 #endif // COMPILER2
 
+// VM modes (satp.mode) privileged ISA 1.10
+enum VM_MODE {
+  VM_MBARE = 0,
+  VM_SV39  = 8,
+  VM_SV48  = 9,
+  VM_SV57  = 10,
+  VM_SV64  = 11
+};
+
 protected:
   static const char* _uarch;
+  static const char* _vm_mode;
   static uint32_t _initial_vector_length;
   static void get_os_cpu_info();
   static uint32_t get_current_vector_length();
+  static VM_MODE get_satp_mode();
 
 public:
   // Initialization
   static void initialize();
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+
+  static bool supports_on_spin_wait() { return UseZihintpause; }
 
   enum Feature_Flag {
 #define CPU_FEATURE_FLAGS(decl)               \

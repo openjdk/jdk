@@ -126,11 +126,7 @@ vmTestbase_nsk_monitoring_quick = \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime003/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime004/TestDescription.java \
   vmTestbase/nsk/monitoring/ThreadMXBean/isThreadCpuTimeSupported/thcputime005/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset002/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset003/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset004/TestDescription.java \
-  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset005/TestDescription.java \
+  vmTestbase/nsk/monitoring/ThreadMXBean/resetPeakThreadCount/reset001.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel001/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel002/TestDescription.java \
   vmTestbase/nsk/monitoring/LoggingMXBean/getLoggerLevel/getloggerlevel003/TestDescription.java \
@@ -895,8 +891,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc001/TestDescription.java \
   vmTestbase/nsk/jvmti/ForceGarbageCollection/forcegc002/TestDescription.java \
   vmTestbase/nsk/jvmti/GenerateEvents/genevents001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr001/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetAllThreads/allthr002/TestDescription.java \
   vmTestbase/nsk/jvmti/GetAvailableProcessors/getavailproc001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetArgumentsSize/argsize002/TestDescription.java \

@@ -271,7 +271,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collectionset_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
                                             collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -1020,7 +1020,6 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->record_obj_copy_mem_stats();
 
-  evacuation_info->set_collectionset_used_before(collection_set()->bytes_used_before());
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
 
   _g1h->start_new_collection_set();
@@ -1056,9 +1055,8 @@ void G1YoungCollector::collect() {
   // JFR
   G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
   // JStat/MXBeans
-  G1MonitoringScope ms(monitoring_support(),
-                       false /* full_gc */,
-                       collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
+  G1YoungGCMonitoringScope ms(monitoring_support(),
+                              collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
   // Create the heap printer before internal pause timing to have
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);
