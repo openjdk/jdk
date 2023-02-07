@@ -1881,8 +1881,8 @@ address StubGenerator::generate_base64_encodeBlock()
     __ vmovdqu(Address(dest, dp), xmm0);
     __ addl(dp, 32);
 
-    __ subl(length, 31);
-    __ jcc(Assembler::lessEqual, L_process3);
+    __ cmpl(length, 31);
+    __ jcc(Assembler::belowEqual, L_process3);
 
     __ align32();
     __ BIND(L_32byteLoop);
@@ -1890,6 +1890,7 @@ address StubGenerator::generate_base64_encodeBlock()
     // Get next 32 bytes
     __ vmovdqu(xmm1, Address(source, start_offset, Address::times_1, -4));
 
+    __ subl(length, 24);
     __ addl(start_offset, 24);
 
     // This logic is identical to the above, with only constant
@@ -1913,11 +1914,10 @@ address StubGenerator::generate_base64_encodeBlock()
     __ vmovdqu(Address(dest, dp), xmm0);
     __ addl(dp, 32);
 
-    __ subl(length, 24);
-    __ jcc(Assembler::greater, L_32byteLoop);
+    __ cmpl(length, 31);
+    __ jcc(Assembler::above, L_32byteLoop);
 
     __ BIND(L_process3);
-    __ addl(length, 31);
     __ vzeroupper();
   } else {
     __ BIND(L_process3);
