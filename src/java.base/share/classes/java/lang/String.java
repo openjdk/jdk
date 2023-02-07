@@ -4540,10 +4540,9 @@ public final class String
      */
     String(AbstractStringBuilder asb, Void sig) {
         byte[] val = asb.getValue();
-        int length = asb.length();
-        // To avoid surprises due to data races (which would either truncate or throw an exception)
-        // we should check that length <= val.length up front
-        checkOffset(length, val.length);
+        // To avoid surprises due to data races we limit length to the smallest
+        // of asb.length() and val.length
+        int length = Math.min(asb.length(), val.length);
         if (asb.isLatin1()) {
             this.coder = LATIN1;
             this.value = copyBytes(val, 0, length);
