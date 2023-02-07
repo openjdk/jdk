@@ -7298,7 +7298,9 @@ typedef uint32_t u32;
     RegPair u1(U1, *++regs);
     RegPair u2(U2, *++regs);
 
-    RegPair U[] = {u0, u1, u2};
+    RegPair U00[] = {u0, u1, u2};
+    RegPair U01[] = {RegPair(*++regs, *++regs), RegPair(*++regs, *++regs), RegPair(*++regs, *++regs)};
+
     Register S[] = {S0, S1, S2};
     Register R[] = {R0, R1, R2};
 
@@ -7307,15 +7309,19 @@ typedef uint32_t u32;
     __ lsl(RR2, R2, 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
-    __ subsw(length, length, BLOCK_LENGTH);
+    __ subsw(length, length, BLOCK_LENGTH * 2);
     __ br(~ Assembler::GE, DONE); {
       __ bind(LOOP);
 
-      poly1305_step(S, U, input_start);
-      poly1305_multiply(U, S, R, RR2, regs);
-      poly1305_reduce(U);
+      poly1305_step(S, U00, input_start);
+      poly1305_multiply(U00, S, R, RR2, regs);
+      poly1305_reduce(U00);
 
-      __ subsw(length, length, BLOCK_LENGTH);
+      poly1305_step(S, U01, input_start);
+      poly1305_multiply(U01, S, R, RR2, regs);
+      poly1305_reduce(U01);
+
+      __ subsw(length, length, BLOCK_LENGTH * 2);
       __ br(Assembler::GE, LOOP);
     }
 
