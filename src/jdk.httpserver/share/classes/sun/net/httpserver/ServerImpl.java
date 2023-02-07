@@ -963,7 +963,7 @@ class ServerImpl {
     }
 
     void markIdle(HttpConnection c) {
-        Boolean close = false;
+        boolean close = false;
 
         try {
             idleConnectionLock.lock();
