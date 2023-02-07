@@ -122,23 +122,12 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     public Void visitAttribute(AttributeTree node, Void p) {
         try {
             print(node.getName());
-            String quote;
-            switch (node.getValueKind()) {
-                case EMPTY:
-                    quote = null;
-                    break;
-                case UNQUOTED:
-                    quote = "";
-                    break;
-                case SINGLE:
-                    quote = "'";
-                    break;
-                case DOUBLE:
-                    quote = "\"";
-                    break;
-                default:
-                    throw new AssertionError();
-            }
+            String quote = switch (node.getValueKind()) {
+                case EMPTY -> null;
+                case UNQUOTED -> "";
+                case SINGLE -> "'";
+                case DOUBLE -> "\"";
+            };
             if (quote != null) {
                 print("=" + quote);
                 print(node.getValue());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -359,7 +359,7 @@ class Fingerprinter: public SignatureIterator {
   }
   Fingerprinter(Symbol* signature, bool is_static)
     : SignatureIterator(signature),
-      _method(NULL) {
+      _method(nullptr) {
     compute_fingerprint_and_return_type(is_static);
   }
 };
@@ -575,7 +575,7 @@ class ResolvingSignatureStream : public SignatureStream {
 
   void initialize_load_origin(Klass* load_origin) {
     _load_origin = load_origin;
-    _handles_cached = (load_origin == NULL);
+    _handles_cached = (load_origin == nullptr);
   }
   void need_handles() {
     if (!_handles_cached) {

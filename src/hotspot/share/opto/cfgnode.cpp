@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1271,8 +1271,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 #endif //ASSERT
 
   // Deal with conversion problems found in data loops.
-  ft = phase->saturate(ft, phase->type_or_null(this), _type);
-
+  ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
 }
 
@@ -2785,7 +2784,7 @@ void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
         st->print(", ");
       }
       char buf[128];
-      ra->dump_register(n, buf);
+      ra->dump_register(n, buf, sizeof(buf));
       st->print("%s", buf);
     }
   }

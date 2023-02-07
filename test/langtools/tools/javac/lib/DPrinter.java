@@ -1091,11 +1091,6 @@ public class DPrinter {
             return visitInlineTag(node, null);
         }
 
-        public Void visitMarkdown(MarkdownTree node, Void p) {
-            printLimitedEscapedString("content", node.getContent());
-            return visitTree(node, null);
-        }
-
         public Void visitParam(ParamTree node, Void p) {
             printString("isTypeParameter", String.valueOf(node.isTypeParameter()));
             printString("kind", node.getKind().name());
@@ -1108,6 +1103,11 @@ public class DPrinter {
             printDocTree("serviceType", node.getServiceType());
             printList("description", node.getDescription());
             return visitBlockTag(node, null);
+        }
+
+        public Void visitRawText(RawTextTree node, Void p) {
+            printLimitedEscapedString("content", node.getContent());
+            return visitTree(node, null);
         }
 
         public Void visitReference(ReferenceTree node, Void p) {

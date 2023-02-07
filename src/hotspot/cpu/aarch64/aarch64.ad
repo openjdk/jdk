@@ -14056,6 +14056,31 @@ instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
   %}
 %}
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bits_reverse_I(iRegINoSp dst, iRegIorL2I src)
+%{
+  match(Set dst (ReverseI src));
+  ins_cost(INSN_COST);
+  format %{ "rbitw  $dst, $src" %}
+  ins_encode %{
+    __ rbitw($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
+%{
+  match(Set dst (ReverseL src));
+  ins_cost(INSN_COST);
+  format %{ "rbit  $dst, $src" %}
+  ins_encode %{
+    __ rbit($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
 
 
 // END This section of the file is automatically generated. Do not edit --------------
