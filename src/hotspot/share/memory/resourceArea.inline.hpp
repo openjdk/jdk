@@ -29,7 +29,7 @@
 
 #include "services/memTracker.hpp"
 
-inline char* ResourceArea::allocate_bytes(size_t size, AllocFailType alloc_failmode) {
+inline char* ResourceArea::allocate_bytes(size_t size, AllocationFailureStrategy alloc_failmode) {
 #ifdef ASSERT
   verify_has_resource_mark();
 #endif // ASSERT

@@ -52,7 +52,7 @@ template<
     class STORAGE,
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE,
+    MemoryType MEM_TYPE,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
@@ -333,7 +333,7 @@ template<
     typename K, typename V,
     unsigned SIZE = 256,
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal,
+    MemoryType MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >

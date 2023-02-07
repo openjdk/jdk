@@ -35,7 +35,7 @@ class CommonResourceHashtableTest : public ::testing::Test {
  protected:
   typedef void* K;
   typedef uintx V;
-  const static MEMFLAGS MEM_TYPE = mtInternal;
+  const static MemoryType MEM_TYPE = mtInternal;
 
   static unsigned identity_hash(const K& k) {
     return (unsigned) (uintptr_t) k;

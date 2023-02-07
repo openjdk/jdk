@@ -4040,7 +4040,7 @@ JvmtiEnv::SetSystemProperty(const char* property, const char* value_ptr) {
   for (SystemProperty* p = Arguments::system_properties(); p != nullptr; p = p->next()) {
     if (strcmp(property, p->key()) == 0) {
       if (p->writeable()) {
-        if (p->set_value(value_ptr, AllocFailStrategy::RETURN_NULL)) {
+        if (p->set_value(value_ptr, AllocationFailureStrategy::RETURN_NULL)) {
           return JVMTI_ERROR_NONE;
         } else {
           return JVMTI_ERROR_OUT_OF_MEMORY;

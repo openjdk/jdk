@@ -124,7 +124,7 @@ void JfrCHeapObj::operator delete[](void* p, size_t size) {
 }
 
 char* JfrCHeapObj::realloc_array(char* old, size_t size) {
-  char* const memory = ReallocateHeap(old, size, mtTracing, AllocFailStrategy::RETURN_NULL);
+  char* const memory = ReallocateHeap(old, size, mtTracing, AllocationFailureStrategy::RETURN_NULL);
   hook_memory_allocation(memory, size);
   return memory;
 }
@@ -135,5 +135,5 @@ void JfrCHeapObj::free(void* p, size_t size) {
 }
 
 char* JfrCHeapObj::allocate_array_noinline(size_t elements, size_t element_size) {
-  return AllocateHeap(elements * element_size, mtTracing, CALLER_PC, AllocFailStrategy::RETURN_NULL);
+  return AllocateHeap(elements * element_size, mtTracing, CALLER_PC, AllocationFailureStrategy::RETURN_NULL);
 }

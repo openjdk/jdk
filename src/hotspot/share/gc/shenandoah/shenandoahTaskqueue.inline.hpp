@@ -30,7 +30,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "utilities/stack.inline.hpp"
 
-template <class E, MEMFLAGS F, unsigned int N>
+template <class E, MemoryType F, unsigned int N>
 bool BufferedOverflowTaskQueue<E, F, N>::pop(E &t) {
   if (!_buf_empty) {
     t = _elem;
@@ -45,7 +45,7 @@ bool BufferedOverflowTaskQueue<E, F, N>::pop(E &t) {
   return taskqueue_t::pop_overflow(t);
 }
 
-template <class E, MEMFLAGS F, unsigned int N>
+template <class E, MemoryType F, unsigned int N>
 inline bool BufferedOverflowTaskQueue<E, F, N>::push(E t) {
   if (_buf_empty) {
     _elem = t;
@@ -58,7 +58,7 @@ inline bool BufferedOverflowTaskQueue<E, F, N>::push(E t) {
   return true;
 }
 
-template <class E, MEMFLAGS F, unsigned int N>
+template <class E, MemoryType F, unsigned int N>
 void BufferedOverflowTaskQueue<E, F, N>::clear() {
     _buf_empty = true;
     taskqueue_t::set_empty();

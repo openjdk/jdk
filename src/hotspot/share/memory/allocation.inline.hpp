@@ -55,7 +55,7 @@ size_t MmapArrayAllocator<E>::size_for(size_t length) {
 }
 
 template <class E>
-E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
+E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MemoryType flags) {
   size_t size = size_for(length);
 
   char* addr = os::reserve_memory(size, !ExecMem, flags);
@@ -72,7 +72,7 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
 }
 
 template <class E>
-E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
+E* MmapArrayAllocator<E>::allocate(size_t length, MemoryType flags) {
   size_t size = size_for(length);
 
   char* addr = os::reserve_memory(size, !ExecMem, flags);
@@ -97,12 +97,12 @@ size_t MallocArrayAllocator<E>::size_for(size_t length) {
 }
 
 template <class E>
-E* MallocArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
+E* MallocArrayAllocator<E>::allocate(size_t length, MemoryType flags) {
   return (E*)AllocateHeap(size_for(length), flags);
 }
 
 template <class E>
-E* MallocArrayAllocator<E>::reallocate(E* addr, size_t new_length, MEMFLAGS flags) {
+E* MallocArrayAllocator<E>::reallocate(E* addr, size_t new_length, MemoryType flags) {
   return (E*)ReallocateHeap((char*)addr, size_for(new_length), flags);
 }
 
@@ -117,17 +117,17 @@ bool ArrayAllocator<E>::should_use_malloc(size_t length) {
 }
 
 template <class E>
-E* ArrayAllocator<E>::allocate_malloc(size_t length, MEMFLAGS flags) {
+E* ArrayAllocator<E>::allocate_malloc(size_t length, MemoryType flags) {
   return MallocArrayAllocator<E>::allocate(length, flags);
 }
 
 template <class E>
-E* ArrayAllocator<E>::allocate_mmap(size_t length, MEMFLAGS flags) {
+E* ArrayAllocator<E>::allocate_mmap(size_t length, MemoryType flags) {
   return MmapArrayAllocator<E>::allocate(length, flags);
 }
 
 template <class E>
-E* ArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
+E* ArrayAllocator<E>::allocate(size_t length, MemoryType flags) {
   if (should_use_malloc(length)) {
     return allocate_malloc(length, flags);
   }
@@ -136,12 +136,12 @@ E* ArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
 }
 
 template <class E>
-E* ArrayAllocator<E>::reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags) {
+E* ArrayAllocator<E>::reallocate_malloc(E* addr, size_t new_length, MemoryType flags) {
   return MallocArrayAllocator<E>::reallocate(addr, new_length, flags);
 }
 
 template <class E>
-E* ArrayAllocator<E>::reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags) {
+E* ArrayAllocator<E>::reallocate(E* old_addr, size_t old_length, size_t new_length, MemoryType flags) {
   if (should_use_malloc(old_length) && should_use_malloc(new_length)) {
     return reallocate_malloc(old_addr, new_length, flags);
   }

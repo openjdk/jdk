@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
+template <class T, MemoryType F> class ChunkedList : public CHeapObj<F> {
   template <class U> friend class TestChunkedList;
 
   static const size_t BufferSize = 64;

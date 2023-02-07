@@ -89,7 +89,7 @@ class PaddedEnd : public PaddedEndImpl<T, PADDED_END_SIZE(T, alignment)> {
 
 // Helper class to create an array of PaddedEnd<T> objects. All elements will
 // start at a multiple of alignment and the size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MemoryType flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class PaddedArray {
  public:
   // Creates an aligned padded array.
@@ -100,7 +100,7 @@ class PaddedArray {
 // Helper class to create an array of references to arrays of primitive types
 // Both the array of references and the data arrays are aligned to the given
 // alignment. The allocated memory is zero-filled.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MemoryType flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class Padded2DArray {
  public:
   // Creates an aligned padded 2D array.
@@ -112,7 +112,7 @@ class Padded2DArray {
 
 // Helper class to create an array of T objects. The array as a whole will
 // start at a multiple of alignment and its size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MemoryType flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
 class PaddedPrimitiveArray {
  public:
   static T* create_unfreeable(size_t length);

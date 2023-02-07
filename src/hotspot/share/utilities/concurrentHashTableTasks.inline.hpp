@@ -35,7 +35,7 @@
 // operations, which they are serialized with each other.
 
 // Base class for pause and/or parallel bulk operations.
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 class ConcurrentHashTable<CONFIG, F>::BucketsOperation {
  protected:
   ConcurrentHashTable<CONFIG, F>* _cht;
@@ -146,7 +146,7 @@ public:
 };
 
 // For doing pausable/parallel bulk delete.
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
   public BucketsOperation
 {
@@ -190,7 +190,7 @@ class ConcurrentHashTable<CONFIG, F>::BulkDeleteTask :
   }
 };
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 class ConcurrentHashTable<CONFIG, F>::GrowTask :
   public BucketsOperation
 {
@@ -229,7 +229,7 @@ class ConcurrentHashTable<CONFIG, F>::GrowTask :
   }
 };
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 class ConcurrentHashTable<CONFIG, F>::ScanTask :
   public BucketsOperation
 {

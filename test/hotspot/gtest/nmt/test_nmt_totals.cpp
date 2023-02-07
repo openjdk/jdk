@@ -90,7 +90,7 @@ TEST_VM(NMTNumbers, totals) {
   for (int i = 0; i < NUM_ALLOCS; i ++) {
     // spread over categories
     int category = i % (mt_number_of_types - 1);
-    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MEMFLAGS)category);
+    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemoryType)category);
   }
 
   const totals_t t2 = get_totals();

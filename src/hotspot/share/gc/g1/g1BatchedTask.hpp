@@ -29,7 +29,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 
-template <typename E, MEMFLAGS F>
+template <typename E, MemoryType F>
 class GrowableArrayCHeap;
 
 // G1AbstractSubTask represents a task to be performed either within a

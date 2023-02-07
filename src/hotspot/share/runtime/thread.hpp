@@ -206,7 +206,7 @@ class Thread: public ThreadShadow {
   void  operator delete(void* p);
 
  protected:
-  static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
+  static void* allocate(size_t size, bool throw_excpt, MemoryType flags = mtThread);
 
  private:
   DEBUG_ONLY(bool _suspendible_thread;)

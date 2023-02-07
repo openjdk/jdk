@@ -34,7 +34,7 @@
 
 // Creates an aligned padded array.
 // The memory can't be deleted since the raw memory chunk is not returned.
-template <class T, MEMFLAGS flags, size_t alignment>
+template <class T, MemoryType flags, size_t alignment>
 PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   // Check that the PaddedEnd class works as intended.
   STATIC_ASSERT(is_aligned(sizeof(PaddedEnd<T>), alignment));
@@ -53,7 +53,7 @@ PaddedEnd<T>* PaddedArray<T, flags, alignment>::create_unfreeable(uint length) {
   return aligned_padded_array;
 }
 
-template <class T, MEMFLAGS flags, size_t alignment>
+template <class T, MemoryType flags, size_t alignment>
 T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint columns, size_t* allocation_size) {
   // Calculate and align the size of the first dimension's table.
   size_t table_size = align_up(rows * sizeof(T*), alignment);
@@ -81,13 +81,13 @@ T** Padded2DArray<T, flags, alignment>::create_unfreeable(uint rows, uint column
   return result;
 }
 
-template <class T, MEMFLAGS flags, size_t alignment>
+template <class T, MemoryType flags, size_t alignment>
 T* PaddedPrimitiveArray<T, flags, alignment>::create_unfreeable(size_t length) {
   void* temp;
   return create(length, &temp);
 }
 
-template <class T, MEMFLAGS flags, size_t alignment>
+template <class T, MemoryType flags, size_t alignment>
 T* PaddedPrimitiveArray<T, flags, alignment>::create(size_t length, void** alloc_base) {
   // Allocate a chunk of memory large enough to allow for some alignment.
   void* chunk = AllocateHeap(length * sizeof(T) + alignment, flags);

@@ -93,7 +93,7 @@ class MemTracker : AllStatic {
     return enabled() ? MallocTracker::overhead_per_malloc : 0;
   }
 
-  static inline void* record_malloc(void* mem_base, size_t size, MEMFLAGS flag,
+  static inline void* record_malloc(void* mem_base, size_t size, MemoryType flag,
     const NativeCallStack& stack) {
     assert(mem_base != nullptr, "caller should handle null");
     if (enabled()) {
@@ -117,20 +117,20 @@ class MemTracker : AllStatic {
   }
 
   // Record creation of an arena
-  static inline void record_new_arena(MEMFLAGS flag) {
+  static inline void record_new_arena(MemoryType flag) {
     if (!enabled()) return;
     MallocTracker::record_new_arena(flag);
   }
 
   // Record destruction of an arena
-  static inline void record_arena_free(MEMFLAGS flag) {
+  static inline void record_arena_free(MemoryType flag) {
     if (!enabled()) return;
     MallocTracker::record_arena_free(flag);
   }
 
   // Record arena size change. Arena size is the size of all arena
   // chunks that are backing up the arena.
-  static inline void record_arena_size_change(ssize_t diff, MEMFLAGS flag) {
+  static inline void record_arena_size_change(ssize_t diff, MemoryType flag) {
     if (!enabled()) return;
     MallocTracker::record_arena_size_change(diff, flag);
   }
@@ -139,7 +139,7 @@ class MemTracker : AllStatic {
   //  (we do not do any reservations before that).
 
   static inline void record_virtual_memory_reserve(void* addr, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) {
+    MemoryType flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -149,7 +149,7 @@ class MemTracker : AllStatic {
   }
 
   static inline void record_virtual_memory_reserve_and_commit(void* addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag = mtNone) {
+    const NativeCallStack& stack, MemoryType flag = mtNone) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
@@ -184,7 +184,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
+  static inline void record_virtual_memory_type(void* addr, MemoryType flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {

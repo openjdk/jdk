@@ -79,8 +79,8 @@ public:
   static OopStorage* storage(WeakId id) { return get_storage(id); }
   static OopStorage* storage(Id id) { return get_storage(id); }
 
-  static OopStorage* create_strong(const char* name, MEMFLAGS memflags);
-  static OopStorage* create_weak(const char* name, MEMFLAGS memflags);
+  static OopStorage* create_strong(const char* name, MemoryType mt);
+  static OopStorage* create_weak(const char* name, MemoryType mt);
 
   // Support iteration over the storage objects.
   template<typename StorageId> class Range;

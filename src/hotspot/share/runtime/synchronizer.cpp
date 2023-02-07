@@ -63,7 +63,7 @@
 class ObjectMonitorsHashtable::PtrList :
   public LinkedListImpl<ObjectMonitor*,
                         AnyObj::C_HEAP, mtThread,
-                        AllocFailStrategy::RETURN_NULL> {};
+                        AllocationFailureStrategy::RETURN_NULL> {};
 
 class CleanupObjectMonitorsHashtable: StackObj {
  public:

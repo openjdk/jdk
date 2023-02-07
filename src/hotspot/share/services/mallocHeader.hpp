@@ -92,7 +92,7 @@ class MallocHeader {
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
-  const MEMFLAGS _flags;
+  const MemoryType _flags;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -121,14 +121,14 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
-    const MEMFLAGS flags;
+    const MemoryType flags;
     const uint32_t mst_marker;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MemoryType flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
-  inline MEMFLAGS flags() const { return _flags; }
+  inline MemoryType flags() const { return _flags; }
   inline uint32_t mst_marker() const { return _mst_marker; }
   bool get_stack(NativeCallStack& stack) const;
 

@@ -25,7 +25,7 @@
 #ifndef SHARE_SERVICES_NMTCOMMON_HPP
 #define SHARE_SERVICES_NMTCOMMON_HPP
 
-#include "memory/allocation.hpp" // for MEMFLAGS only
+#include "memory/types.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -74,32 +74,29 @@ const int NMT_TrackingStackDepth = 4;
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
  public:
-  // Check if index is a valid MEMFLAGS enum value (including mtNone)
+  // Check if index is a valid MemoryType enum value (including mtNone)
   static inline bool flag_index_is_valid(int index) {
-    return index >= 0 && index < mt_number_of_types;
+    return MemoryTypes::is_index_valid(index);
   }
 
-  // Check if flag value is a valid MEMFLAGS enum value (including mtNone)
-  static inline bool flag_is_valid(MEMFLAGS flag) {
-    const int index = static_cast<int>(flag);
-    return flag_index_is_valid(index);
+  // Check if flag value is a valid MemoryType enum value (including mtNone)
+  static inline bool flag_is_valid(MemoryType flag) {
+    return MemoryTypes::is_valid(flag);
   }
 
   // Map memory type to index
-  static inline int flag_to_index(MEMFLAGS flag) {
-    assert(flag_is_valid(flag), "Invalid flag (%u)", (unsigned)flag);
-    return static_cast<int>(flag);
+  static inline int flag_to_index(MemoryType flag) {
+    return MemoryTypes::to_index(flag);
   }
 
   // Map memory type to human readable name
-  static const char* flag_to_name(MEMFLAGS flag) {
-    return _strings[flag_to_index(flag)].human_readable;
+  static const char* flag_to_name(MemoryType flag) {
+    return MemoryTypes::name(flag);
   }
 
   // Map an index to memory type
-  static MEMFLAGS index_to_flag(int index) {
-    assert(flag_index_is_valid(index), "Invalid flag index (%d)", index);
-    return static_cast<MEMFLAGS>(index);
+  static MemoryType index_to_flag(int index) {
+    return MemoryTypes::from_index(index);
   }
 
   // Memory size scale
@@ -118,17 +115,12 @@ class NMTUtil : AllStatic {
   // Given a string, return associated flag. mtNone if name is invalid.
   // String can be either the human readable name or the
   // stringified enum (with or without leading "mt". In all cases, case is ignored.
-  static MEMFLAGS string_to_flag(const char* name);
+  static MemoryType string_to_flag(const char* name) {
+    return MemoryTypes::from_string(name);
+  }
 
   // Returns textual representation of a tracking level.
   static const char* tracking_level_to_string(NMT_TrackingLevel level);
-
- private:
-  struct S {
-    const char* enum_s; // e.g. "mtNMT"
-    const char* human_readable; // e.g. "Native Memory Tracking"
-  };
-  static S _strings[mt_number_of_types];
 };
 
 

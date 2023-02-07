@@ -31,7 +31,7 @@
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 
-template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
+template <MemoryType F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
   _seg_size(segment_size),
   _max_size(adjust_max_size(max_size, segment_size)),
@@ -40,7 +40,7 @@ template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_ca
   assert(_max_size % _seg_size == 0, "not a multiple");
 }
 
-template <MEMFLAGS F> size_t StackBase<F>::adjust_max_size(size_t max_size, size_t seg_size)
+template <MemoryType F> size_t StackBase<F>::adjust_max_size(size_t max_size, size_t seg_size)
 {
   assert(seg_size > 0, "cannot be 0");
   assert(max_size >= seg_size || max_size == 0, "max_size too small");
@@ -51,14 +51,14 @@ template <MEMFLAGS F> size_t StackBase<F>::adjust_max_size(size_t max_size, size
   return (max_size + seg_size - 1) / seg_size * seg_size;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 Stack<E, F>::Stack(size_t segment_size, size_t max_cache_size, size_t max_size):
   StackBase<F>(adjust_segment_size(segment_size), max_cache_size, max_size)
 {
   reset(true);
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::push(E item)
 {
   assert(!is_full(), "pushing onto a full stack");
@@ -71,7 +71,7 @@ void Stack<E, F>::push(E item)
   this->_cur_seg_size = index + 1;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E Stack<E, F>::pop()
 {
   assert(!is_empty(), "popping from an empty stack");
@@ -85,7 +85,7 @@ E Stack<E, F>::pop()
   return result;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::clear(bool clear_cache)
 {
   free_segments(_cur_seg);
@@ -93,7 +93,7 @@ void Stack<E, F>::clear(bool clear_cache)
   reset(clear_cache);
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
 {
   const size_t elem_sz = sizeof(E);
@@ -105,44 +105,44 @@ size_t Stack<E, F>::adjust_segment_size(size_t seg_size)
   return seg_size;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 size_t Stack<E, F>::link_offset() const
 {
   return align_up(this->_seg_size * sizeof(E), sizeof(E*));
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 size_t Stack<E, F>::segment_bytes() const
 {
   return link_offset() + sizeof(E*);
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E** Stack<E, F>::link_addr(E* seg) const
 {
   return (E**) ((char*)seg + link_offset());
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E* Stack<E, F>::get_link(E* seg) const
 {
   return *link_addr(seg);
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E* Stack<E, F>::set_link(E* new_seg, E* old_seg)
 {
   *link_addr(new_seg) = old_seg;
   return new_seg;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E* Stack<E, F>::alloc(size_t bytes)
 {
   return (E*) NEW_C_HEAP_ARRAY(char, bytes, F);
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::free(E* addr, size_t bytes)
 {
   FREE_C_HEAP_ARRAY(char, (char*) addr);
@@ -152,7 +152,7 @@ void Stack<E, F>::free(E* addr, size_t bytes)
 // code gets inlined. This is generally good, but when too much code has
 // been inlined, further inlining in the caller might be inhibited. So
 // prevent infrequent slow path segment manipulation from being inlined.
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 NOINLINE void Stack<E, F>::push_segment()
 {
   assert(this->_cur_seg_size == this->_seg_size, "current segment is not full");
@@ -173,7 +173,7 @@ NOINLINE void Stack<E, F>::push_segment()
   DEBUG_ONLY(verify(at_empty_transition);)
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 NOINLINE void Stack<E, F>::pop_segment()
 {
   assert(this->_cur_seg_size == 0, "current segment is not empty");
@@ -194,7 +194,7 @@ NOINLINE void Stack<E, F>::pop_segment()
   DEBUG_ONLY(verify(at_empty_transition);)
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::free_segments(E* seg)
 {
   const size_t bytes = segment_bytes();
@@ -205,7 +205,7 @@ void Stack<E, F>::free_segments(E* seg)
   }
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::reset(bool reset_cache)
 {
   this->_cur_seg_size = this->_seg_size; // So push() will alloc a new segment.
@@ -218,7 +218,7 @@ void Stack<E, F>::reset(bool reset_cache)
 }
 
 #ifdef ASSERT
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::verify(bool at_empty_transition) const
 {
   assert(size() <= this->max_size(), "stack exceeded bounds");
@@ -234,7 +234,7 @@ void Stack<E, F>::verify(bool at_empty_transition) const
   }
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void Stack<E, F>::zap_segment(E* seg, bool zap_link_field) const
 {
   if (!ZapStackSegments) return;
@@ -243,7 +243,7 @@ void Stack<E, F>::zap_segment(E* seg, bool zap_link_field) const
 }
 #endif
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 void StackIterator<E, F>::sync()
 {
   _full_seg_size = _stack._full_seg_size;
@@ -251,7 +251,7 @@ void StackIterator<E, F>::sync()
   _cur_seg = _stack._cur_seg;
 }
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 E* StackIterator<E, F>::next_addr()
 {
   assert(!is_empty(), "no items left");

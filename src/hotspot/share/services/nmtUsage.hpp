@@ -61,8 +61,8 @@ public:
 
   size_t total_reserved() const;
   size_t total_committed() const;
-  size_t reserved(MEMFLAGS flag) const;
-  size_t committed(MEMFLAGS flag) const;
+  size_t reserved(MemoryType flag) const;
+  size_t committed(MemoryType flag) const;
 };
 
 #endif // SHARE_SERVICES_NMTUSAGE_HPP

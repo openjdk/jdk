@@ -153,12 +153,12 @@ class MallocMemorySnapshot : public ResourceObj {
 
 
  public:
-  inline MallocMemory* by_type(MEMFLAGS flags) {
+  inline MallocMemory* by_type(MemoryType flags) {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
   }
 
-  inline const MallocMemory* by_type(MEMFLAGS flags) const {
+  inline const MallocMemory* by_type(MemoryType flags) const {
     int index = NMTUtil::flag_to_index(flags);
     return &_malloc[index];
   }
@@ -215,9 +215,9 @@ class MallocMemorySummary : AllStatic {
 
   static void initialize_limit_handling();
   static void total_limit_reached(size_t size, size_t limit);
-  static void category_limit_reached(size_t size, size_t limit, MEMFLAGS flag);
+  static void category_limit_reached(size_t size, size_t limit, MemoryType flag);
 
-  static void check_limits_after_allocation(MEMFLAGS flag) {
+  static void check_limits_after_allocation(MemoryType flag) {
     // We can only either have a total limit or category specific limits,
     // not both.
     if (_total_limit != 0) {
@@ -240,26 +240,26 @@ class MallocMemorySummary : AllStatic {
  public:
    static void initialize();
 
-   static inline void record_malloc(size_t size, MEMFLAGS flag) {
+   static inline void record_malloc(size_t size, MemoryType flag) {
      as_snapshot()->by_type(flag)->record_malloc(size);
      as_snapshot()->_all_mallocs.allocate(size);
      check_limits_after_allocation(flag);
    }
 
-   static inline void record_free(size_t size, MEMFLAGS flag) {
+   static inline void record_free(size_t size, MemoryType flag) {
      as_snapshot()->by_type(flag)->record_free(size);
      as_snapshot()->_all_mallocs.deallocate(size);
    }
 
-   static inline void record_new_arena(MEMFLAGS flag) {
+   static inline void record_new_arena(MemoryType flag) {
      as_snapshot()->by_type(flag)->record_new_arena();
    }
 
-   static inline void record_arena_free(MEMFLAGS flag) {
+   static inline void record_arena_free(MemoryType flag) {
      as_snapshot()->by_type(flag)->record_arena_free();
    }
 
-   static inline void record_arena_size_change(ssize_t size, MEMFLAGS flag) {
+   static inline void record_arena_size_change(ssize_t size, MemoryType flag) {
      as_snapshot()->by_type(flag)->record_arena_size_change(size);
      check_limits_after_allocation(flag);
    }
@@ -300,7 +300,7 @@ class MallocTracker : AllStatic {
   //
 
   // Record  malloc on specified memory block
-  static void* record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+  static void* record_malloc(void* malloc_base, size_t size, MemoryType flags,
     const NativeCallStack& stack);
 
   // Given a block returned by os::malloc() or os::realloc():
@@ -309,15 +309,15 @@ class MallocTracker : AllStatic {
   // Given the free info from a block, de-account block from NMT.
   static void deaccount(MallocHeader::FreeInfo free_info);
 
-  static inline void record_new_arena(MEMFLAGS flags) {
+  static inline void record_new_arena(MemoryType flags) {
     MallocMemorySummary::record_new_arena(flags);
   }
 
-  static inline void record_arena_free(MEMFLAGS flags) {
+  static inline void record_arena_free(MemoryType flags) {
     MallocMemorySummary::record_arena_free(flags);
   }
 
-  static inline void record_arena_size_change(ssize_t size, MEMFLAGS flags) {
+  static inline void record_arena_size_change(ssize_t size, MemoryType flags) {
     MallocMemorySummary::record_arena_size_change(size, flags);
   }
 

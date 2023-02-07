@@ -35,7 +35,7 @@ struct WithEmbeddedArray {
   // Arena allocated data array
   WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
   // CHeap allocated data array
-  WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
+  WithEmbeddedArray(int initial_max, MemoryType memflags) : _a(initial_max, memflags) {
     assert(memflags != mtNone, "test requirement");
   }
   WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}

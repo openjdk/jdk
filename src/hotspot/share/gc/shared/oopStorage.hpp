@@ -74,7 +74,7 @@ class outputStream;
 
 class OopStorage : public CHeapObjBase {
 public:
-  static OopStorage* create(const char* name, MEMFLAGS memflags);
+  static OopStorage* create(const char* name, MemoryType mt);
   ~OopStorage();
 
   // These count and usage accessors are racy unless at a safepoint.
@@ -90,7 +90,7 @@ public:
   size_t total_memory_usage() const;
 
   // The memory type for allocations.
-  MEMFLAGS memflags() const;
+  MemoryType memory_type() const;
 
   enum EntryStatus {
     INVALID_ENTRY,
@@ -274,13 +274,13 @@ private:
   mutable int _concurrent_iteration_count;
 
   // The memory type for allocations.
-  MEMFLAGS _memflags;
+  MemoryType _memory_type;
 
   // Flag indicating this storage object is a candidate for empty block deletion.
   volatile bool _needs_cleanup;
 
   // Clients construct via "create" factory function.
-  OopStorage(const char* name, MEMFLAGS memflags);
+  OopStorage(const char* name, MemoryType mt);
   NONCOPYABLE(OopStorage);
 
   bool try_add_block();

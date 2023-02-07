@@ -42,13 +42,13 @@ void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* ar
   return arena->Amalloc(byte_size);
 }
 
-void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MEMFLAGS memflags) {
+void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemoryType mt) {
   assert(max >= 0, "integer overflow");
   size_t byte_size = element_size * (size_t) max;
 
   // memory type has to be specified for C heap allocation
-  assert(memflags != mtNone, "memory type not specified for C heap object");
-  return (void*)AllocateHeap(byte_size, memflags);
+  assert(mt != mtNone, "memory type not specified for C heap object");
+  return (void*)AllocateHeap(byte_size, mt);
 }
 
 void GrowableArrayCHeapAllocator::deallocate(void* elements) {

@@ -69,8 +69,8 @@ class PathString : public CHeapObj<mtArguments> {
  public:
   char* value() const { return _value; }
 
-  // return false iff OOM && alloc_failmode == AllocFailStrategy::RETURN_NULL
-  bool set_value(const char *value, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  // return false iff OOM && alloc_failmode == AllocationFailureStrategy::RETURN_NULL
+  bool set_value(const char *value, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   void append_value(const char *value);
 
   PathString(const char* value);

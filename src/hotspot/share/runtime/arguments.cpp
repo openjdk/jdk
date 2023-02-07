@@ -128,10 +128,10 @@ char* Arguments::_ext_dirs = nullptr;
 // True if -Xshare:auto option was specified.
 static bool xshare_auto_cmd_line = false;
 
-bool PathString::set_value(const char *value, AllocFailType alloc_failmode) {
+bool PathString::set_value(const char *value, AllocationFailureStrategy alloc_failmode) {
   char* new_value = AllocateHeap(strlen(value)+1, mtArguments, alloc_failmode);
   if (new_value == nullptr) {
-    assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "must be");
+    assert(alloc_failmode == AllocationFailureStrategy::RETURN_NULL, "must be");
     return false;
   }
   if (_value != nullptr) {
@@ -4288,7 +4288,7 @@ void Arguments::parse_single_category_limit(char* expression, size_t limits[mt_n
     vm_exit_during_initialization("MallocLimit: colon missing", expression);
   }
   *colon = '\0';
-  MEMFLAGS f = NMTUtil::string_to_flag(expression);
+  MemoryType f = NMTUtil::string_to_flag(expression);
   if (f == mtNone) {
     vm_exit_during_initialization("MallocLimit: invalid nmt category", expression);
   }

@@ -45,7 +45,7 @@ class Chunk: CHeapObj<mtChunk> {
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
  public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
+  void* operator new(size_t size, AllocationFailureStrategy alloc_failmode, size_t length) throw();
   void  operator delete(void* p);
   Chunk(size_t length);
 
@@ -92,16 +92,16 @@ protected:
   friend class NoHandleMark;
   friend class VMStructs;
 
-  MEMFLAGS    _flags;           // Memory tracking flags
+  MemoryType    _flags;           // Memory tracking flags
 
   Chunk *_first;                // First chunk
   Chunk *_chunk;                // current chunk
   char *_hwm, *_max;            // High water mark and max in current chunk
   // Get a new Chunk of at least size x
-  void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  void* grow(size_t x, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
-  void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
+  void* internal_amalloc(size_t x, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     if (pointer_delta(_max, _hwm, 1) >= x) {
       char *old = _hwm;
@@ -113,15 +113,15 @@ protected:
   }
 
  public:
-  Arena(MEMFLAGS memflag);
-  Arena(MEMFLAGS memflag, size_t init_size);
+  Arena(MemoryType memflag);
+  Arena(MemoryType memflag, size_t init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
 
   // Fast allocate in the arena.  Common case aligns to the size of jlong which is 64 bits
   // on both 32 and 64 bit platforms. Required for atomic jlong operations on 32 bits.
-  void* Amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+  void* Amalloc(size_t x, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM) {
     x = ARENA_ALIGN(x);  // note for 32 bits this should align _hwm as well.
     // Amalloc guarantees 64-bit alignment and we need to ensure that in case the preceding
     // allocation was AmallocWords. Only needed on 32-bit - on 64-bit Amalloc and AmallocWords are
@@ -133,7 +133,7 @@ protected:
 
   // Allocate in the arena, assuming the size has been aligned to size of pointer, which
   // is 4 bytes on 32 bits, hence the name.
-  void* AmallocWords(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+  void* AmallocWords(size_t x, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM) {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
     return internal_amalloc(x, alloc_failmode);
   }
@@ -156,7 +156,7 @@ protected:
   }
 
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,
-      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+      AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
 
   // Move contents of this arena into an empty arena
   Arena *move_contents(Arena *empty_arena);

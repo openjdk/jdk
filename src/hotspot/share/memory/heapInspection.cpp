@@ -173,7 +173,7 @@ KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _ref = (HeapWord*) Universe::boolArrayKlassObj();
   _buckets =
     (KlassInfoBucket*)  AllocateHeap(sizeof(KlassInfoBucket) * _num_buckets,
-       mtInternal, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
+       mtInternal, CURRENT_PC, AllocationFailureStrategy::RETURN_NULL);
   if (_buckets != nullptr) {
     for (int index = 0; index < _num_buckets; index++) {
       _buckets[index].initialize();

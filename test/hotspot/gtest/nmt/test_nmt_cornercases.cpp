@@ -32,7 +32,7 @@
 #include "unittest.hpp"
 
 // Check NMT header for integrity, as well as expected type and size.
-static void check_expected_malloc_header(const void* payload, MEMFLAGS type, size_t size) {
+static void check_expected_malloc_header(const void* payload, MemoryType type, size_t size) {
   const MallocHeader* hdr = MallocHeader::resolve_checked(payload);
   EXPECT_EQ(hdr->size(), size);
   EXPECT_EQ(hdr->flags(), type);

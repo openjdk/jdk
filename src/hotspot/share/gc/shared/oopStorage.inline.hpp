@@ -60,8 +60,8 @@ class OopStorage::ActiveArray {
 
 public:
   static ActiveArray* create(size_t size,
-                             MEMFLAGS memflags = mtGC,
-                             AllocFailType alloc_fail = AllocFailStrategy::EXIT_OOM);
+                             MemoryType mt = mtGC,
+                             AllocationFailureStrategy alloc_fail = AllocationFailureStrategy::EXIT_OOM);
   static void destroy(ActiveArray* ba);
 
   inline Block* at(size_t i) const;

@@ -34,7 +34,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/debug.hpp"
 
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+template<class E, MemoryType F, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
 {
 public:
@@ -299,7 +299,7 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MEMFLAGS F>
+template <class T, MemoryType F>
 class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
 private:
   shenandoah_padding(0);
@@ -329,7 +329,7 @@ public:
   debug_only(uint get_reserved() const { return (uint)_reserved; })
 };
 
-template <class T, MEMFLAGS F>
+template <class T, MemoryType F>
 T* ParallelClaimableQueueSet<T, F>::claim_next() {
   jint size = (jint)GenericTaskQueueSet<T, F>::size();
 

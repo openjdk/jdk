@@ -96,7 +96,7 @@ void MallocMemorySummary::initialize_limit_handling() {
       size_t catlim = _limits_per_category[i];
       if (catlim > 0) {
         log_info(nmt)("MallocLimit: category \"%s\" limit: " SIZE_FORMAT "%s",
-                      NMTUtil::flag_to_name((MEMFLAGS)i),
+                      NMTUtil::flag_to_name((MemoryType)i),
                       byte_size_in_proper_unit(catlim),
                       proper_unit_for_byte_size(catlim));
       }
@@ -112,7 +112,7 @@ void MallocMemorySummary::total_limit_reached(size_t size, size_t limit) {
   }
 }
 
-void MallocMemorySummary::category_limit_reached(size_t size, size_t limit, MEMFLAGS flag) {
+void MallocMemorySummary::category_limit_reached(size_t size, size_t limit, MemoryType flag) {
   // Assert in both debug and release, but allow error reporting to malloc beyond limits.
   if (!VMError::is_error_reported()) {
     fatal("MallocLimit: category \"%s\" reached limit (size: " SIZE_FORMAT ", limit: " SIZE_FORMAT ") ",
@@ -128,7 +128,7 @@ void MallocMemorySummary::print_limits(outputStream* st) {
     for (int i = 0; i < mt_number_of_types; i ++) {
       if (_limits_per_category[i] > 0) {
         st->print("%s%s:" SIZE_FORMAT, (first ? "MallocLimit: " : ", "),
-                  NMTUtil::flag_to_name((MEMFLAGS)i), _limits_per_category[i]);
+                  NMTUtil::flag_to_name((MemoryType)i), _limits_per_category[i]);
         first = false;
       }
     }
@@ -147,7 +147,7 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 }
 
 // Record a malloc memory allocation
-void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemoryType flags,
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");

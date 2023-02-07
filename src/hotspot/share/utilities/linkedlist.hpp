@@ -138,7 +138,7 @@ template <class E> class LinkedList : public AnyObj {
 // A linked list implementation.
 // The linked list can be allocated in various type of memory: C heap, arena and resource area, etc.
 template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
-  MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
+  MemoryType F = mtNMT, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::RETURN_NULL>
   class LinkedListImpl : public LinkedList<E> {
  protected:
   Arena*                 _arena;
@@ -335,13 +335,13 @@ template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
          return new(_arena) LinkedListNode<E>(e);
        }
        case AnyObj::RESOURCE_AREA:
-         if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+         if (alloc_failmode == AllocationFailureStrategy::RETURN_NULL) {
            return new(std::nothrow) LinkedListNode<E>(e);
          } else {
            return new LinkedListNode<E>(e);
          }
        case AnyObj::C_HEAP: {
-         if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+         if (alloc_failmode == AllocationFailureStrategy::RETURN_NULL) {
            return new(std::nothrow, F) LinkedListNode<E>(e);
          } else {
            return new(F) LinkedListNode<E>(e);
@@ -365,7 +365,7 @@ template <class E, AnyObj::allocation_type T = AnyObj::C_HEAP,
 // function
 template <class E, int (*FUNC)(const E&, const E&),
   AnyObj::allocation_type T = AnyObj::C_HEAP,
-  MEMFLAGS F = mtNMT, AllocFailType alloc_failmode = AllocFailStrategy::RETURN_NULL>
+  MemoryType F = mtNMT, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::RETURN_NULL>
   class SortedLinkedList : public LinkedListImpl<E, T, F, alloc_failmode> {
  public:
   SortedLinkedList() { }

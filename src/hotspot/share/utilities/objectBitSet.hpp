@@ -39,7 +39,7 @@ class MemRegion;
  * allocated on-demand only, in fragments covering 64M heap ranges. Fragments are never deleted
  * during the lifetime of the ObjectBitSet. The underlying memory is allocated from C-Heap.
  */
-template<MEMFLAGS F>
+template<MemoryType F>
 class ObjectBitSet : public CHeapObj<F> {
   const static size_t _bitmap_granularity_shift = 26; // 64M
   const static size_t _bitmap_granularity_size = (size_t)1 << _bitmap_granularity_shift;
@@ -81,7 +81,7 @@ class ObjectBitSet : public CHeapObj<F> {
   }
 };
 
-template<MEMFLAGS F>
+template<MemoryType F>
 class ObjectBitSet<F>::BitMapFragment : public CHeapObj<F> {
   CHeapBitMap _bits;
   BitMapFragment* _next;

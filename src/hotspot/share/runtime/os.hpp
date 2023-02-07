@@ -416,7 +416,7 @@ class os: AllStatic {
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
-  static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
+  static char*  reserve_memory(size_t bytes, bool executable = false, MemoryType flags = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
   static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
@@ -480,7 +480,7 @@ class os: AllStatic {
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false, MEMFLAGS flags = mtNone);
+                           bool allow_exec = false, MemoryType flags = mtNone);
   static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec);
@@ -862,16 +862,16 @@ class os: AllStatic {
   static int get_native_stack(address* stack, int size, int toSkip = 0);
 
   // General allocation (must be MT-safe)
-  static void* malloc  (size_t size, MEMFLAGS flags, const NativeCallStack& stack);
-  static void* malloc  (size_t size, MEMFLAGS flags);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void* realloc (void *memblock, size_t size, MEMFLAGS flag);
+  static void* malloc  (size_t size, MemoryType flags, const NativeCallStack& stack);
+  static void* malloc  (size_t size, MemoryType flags);
+  static void* realloc (void *memblock, size_t size, MemoryType flag, const NativeCallStack& stack);
+  static void* realloc (void *memblock, size_t size, MemoryType flag);
 
   // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
+  static char* strdup(const char *, MemoryType flags = mtInternal);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
-  static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
+  static char* strdup_check_oom(const char*, MemoryType flags = mtInternal);
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);

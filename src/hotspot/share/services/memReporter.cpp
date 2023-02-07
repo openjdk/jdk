@@ -56,7 +56,7 @@ void MemReporterBase::print_total(size_t reserved, size_t committed) const {
     amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
 }
 
-void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {
+void MemReporterBase::print_malloc(const MemoryCounter* c, MemoryType flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
   const char* alloc_type = (flag == mtThreadStack) ? "" : "malloc=";
@@ -166,7 +166,7 @@ void MemSummaryReporter::report() {
 
   // Summary by memory type
   for (int index = 0; index < mt_number_of_types; index ++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    MemoryType flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
     if (flag == mtThreadStack) continue;
     MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
@@ -176,7 +176,7 @@ void MemSummaryReporter::report() {
   }
 }
 
-void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
+void MemSummaryReporter::report_summary_of_type(MemoryType flag,
   MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
@@ -327,7 +327,7 @@ int MemDetailReporter::report_malloc_sites() {
     const NativeCallStack* stack = malloc_site->call_stack();
     stack->print_on(out);
     out->print("%29s", " ");
-    MEMFLAGS flag = malloc_site->flag();
+    MemoryType flag = malloc_site->flag();
     assert(NMTUtil::flag_is_valid(flag) && flag != mtNone,
       "Must have a valid memory type");
     print_malloc(malloc_site->counter(), flag);
@@ -359,7 +359,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
     stack->print_on(out);
     out->print("%28s (", " ");
     print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
-    MEMFLAGS flag = virtual_memory_site->flag();
+    MemoryType flag = virtual_memory_site->flag();
     if (flag != mtNone) {
       out->print(" Type=%s", NMTUtil::flag_to_name(flag));
     }
@@ -449,7 +449,7 @@ void MemSummaryDiffReporter::report_diff() {
 
   // Summary diff by memory type
   for (int index = 0; index < mt_number_of_types; index ++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    MemoryType flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
     if (flag == mtThreadStack) continue;
     diff_summary_of_type(flag,
@@ -463,7 +463,7 @@ void MemSummaryDiffReporter::report_diff() {
 }
 
 void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t current_count,
-    size_t early_amount, size_t early_count, MEMFLAGS flags) const {
+    size_t early_amount, size_t early_count, MemoryType flags) const {
   const char* scale = current_scale();
   outputStream* out = output();
   const char* alloc_type = (flags == mtThread) ? "" : "malloc=";
@@ -521,7 +521,7 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 }
 
 
-void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
+void MemSummaryDiffReporter::diff_summary_of_type(MemoryType flag,
   const MallocMemory* early_malloc, const VirtualMemory* early_vm,
   const MetaspaceCombinedStats& early_ms,
   const MallocMemory* current_malloc, const VirtualMemory* current_vm,
@@ -814,7 +814,7 @@ void MemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
 }
 
 void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_t current_size,
-  size_t current_count, size_t early_size, size_t early_count, MEMFLAGS flags) const {
+  size_t current_count, size_t early_size, size_t early_count, MemoryType flags) const {
   outputStream* out = output();
 
   assert(stack != nullptr, "null stack");
@@ -849,7 +849,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocati
 }
 
 void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
-  size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const  {
+  size_t current_committed, size_t early_reserved, size_t early_committed, MemoryType flag) const  {
   outputStream* out = output();
 
   // no change

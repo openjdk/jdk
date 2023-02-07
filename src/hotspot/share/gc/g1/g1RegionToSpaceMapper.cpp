@@ -40,7 +40,7 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
                                              size_t page_size,
                                              size_t region_granularity,
                                              size_t commit_factor,
-                                             MEMFLAGS type) :
+                                             MemoryType type) :
   _listener(NULL),
   _storage(rs, used_size, page_size),
   _region_granularity(region_granularity),
@@ -73,7 +73,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                       size_t page_size,
                                       size_t alloc_granularity,
                                       size_t commit_factor,
-                                      MEMFLAGS type) :
+                                      MemoryType type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _pages_per_region(alloc_granularity / (page_size * commit_factor)) {
 
@@ -165,7 +165,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
                                        size_t page_size,
                                        size_t alloc_granularity,
                                        size_t commit_factor,
-                                       MEMFLAGS type) :
+                                       MemoryType type) :
     G1RegionToSpaceMapper(rs, actual_size, page_size, alloc_granularity, commit_factor, type),
     _regions_per_page((page_size * commit_factor) / alloc_granularity),
     _lock(Mutex::service-3, "G1Mapper_lock") {
@@ -264,7 +264,7 @@ G1RegionToSpaceMapper* G1RegionToSpaceMapper::create_mapper(ReservedSpace rs,
                                                             size_t page_size,
                                                             size_t region_granularity,
                                                             size_t commit_factor,
-                                                            MEMFLAGS type) {
+                                                            MemoryType type) {
   if (region_granularity >= (page_size * commit_factor)) {
     return new G1RegionsLargerThanCommitSizeMapper(rs, actual_size, page_size, region_granularity, commit_factor, type);
   } else {

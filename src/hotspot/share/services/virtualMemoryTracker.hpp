@@ -70,7 +70,7 @@ class VirtualMemory {
 class VirtualMemoryAllocationSite : public AllocationSite {
   VirtualMemory _c;
  public:
-  VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
+  VirtualMemoryAllocationSite(const NativeCallStack& stack, MemoryType flag) :
     AllocationSite(stack, flag) { }
 
   inline void reserve_memory(size_t sz)  { _c.reserve_memory(sz);  }
@@ -92,12 +92,12 @@ class VirtualMemorySnapshot : public ResourceObj {
   VirtualMemory  _virtual_memory[mt_number_of_types];
 
  public:
-  inline VirtualMemory* by_type(MEMFLAGS flag) {
+  inline VirtualMemory* by_type(MemoryType flag) {
     int index = NMTUtil::flag_to_index(flag);
     return &_virtual_memory[index];
   }
 
-  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
+  inline const VirtualMemory* by_type(MemoryType flag) const {
     int index = NMTUtil::flag_to_index(flag);
     return &_virtual_memory[index];
   }
@@ -129,19 +129,19 @@ class VirtualMemorySummary : AllStatic {
  public:
   static void initialize();
 
-  static inline void record_reserved_memory(size_t size, MEMFLAGS flag) {
+  static inline void record_reserved_memory(size_t size, MemoryType flag) {
     as_snapshot()->by_type(flag)->reserve_memory(size);
   }
 
-  static inline void record_committed_memory(size_t size, MEMFLAGS flag) {
+  static inline void record_committed_memory(size_t size, MemoryType flag) {
     as_snapshot()->by_type(flag)->commit_memory(size);
   }
 
-  static inline void record_uncommitted_memory(size_t size, MEMFLAGS flag) {
+  static inline void record_uncommitted_memory(size_t size, MemoryType flag) {
     as_snapshot()->by_type(flag)->uncommit_memory(size);
   }
 
-  static inline void record_released_memory(size_t size, MEMFLAGS flag) {
+  static inline void record_released_memory(size_t size, MemoryType flag) {
     as_snapshot()->by_type(flag)->release_memory(size);
   }
 
@@ -149,12 +149,12 @@ class VirtualMemorySummary : AllStatic {
   // Virtual memory can be reserved before it is associated with a memory type, and tagged
   // as 'unknown'. Once the memory is tagged, the virtual memory will be moved from 'unknown'
   // type to specified memory type.
-  static inline void move_reserved_memory(MEMFLAGS from, MEMFLAGS to, size_t size) {
+  static inline void move_reserved_memory(MemoryType from, MemoryType to, size_t size) {
     as_snapshot()->by_type(from)->release_memory(size);
     as_snapshot()->by_type(to)->reserve_memory(size);
   }
 
-  static inline void move_committed_memory(MEMFLAGS from, MEMFLAGS to, size_t size) {
+  static inline void move_committed_memory(MemoryType from, MemoryType to, size_t size) {
     as_snapshot()->by_type(from)->uncommit_memory(size);
     as_snapshot()->by_type(to)->commit_memory(size);
   }
@@ -288,11 +288,11 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     _committed_regions;
 
   NativeCallStack  _stack;
-  MEMFLAGS         _flag;
+  MemoryType         _flag;
 
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
-    MEMFLAGS flag = mtNone) :
+    MemoryType flag = mtNone) :
     VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
 
 
@@ -308,8 +308,8 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   inline void  set_call_stack(const NativeCallStack& stack) { _stack = stack; }
   inline const NativeCallStack* call_stack() const          { return &_stack;  }
 
-  void  set_flag(MEMFLAGS flag);
-  inline MEMFLAGS flag() const            { return _flag;  }
+  void  set_flag(MemoryType flag);
+  inline MemoryType flag() const            { return _flag;  }
 
   // uncommitted thread stack bottom, above guard pages if there is any.
   address thread_stack_uncommitted_bottom() const;
@@ -374,13 +374,13 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MemoryType flag = mtNone);
 
   static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   static bool remove_uncommitted_region (address base_addr, size_t size);
   static bool remove_released_region    (address base_addr, size_t size);
   static bool remove_released_region    (ReservedMemoryRegion* rgn);
-  static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+  static void set_reserved_region_type  (address addr, MemoryType flag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call

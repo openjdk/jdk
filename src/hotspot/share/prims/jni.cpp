@@ -674,7 +674,7 @@ JNI_ENTRY(jobject, jni_NewGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWGLOBALREF_ENTRY(env, ref);
 
   Handle ref_handle(thread, JNIHandles::resolve(ref));
-  jobject ret = JNIHandles::make_global(ref_handle, AllocFailStrategy::RETURN_NULL);
+  jobject ret = JNIHandles::make_global(ref_handle, AllocationFailureStrategy::RETURN_NULL);
 
   HOTSPOT_JNI_NEWGLOBALREF_RETURN(ret);
   return ret;
@@ -711,7 +711,7 @@ JNI_ENTRY(jobject, jni_NewLocalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWLOCALREF_ENTRY(env, ref);
 
   jobject ret = JNIHandles::make_local(THREAD, JNIHandles::resolve(ref),
-                                       AllocFailStrategy::RETURN_NULL);
+                                       AllocationFailureStrategy::RETURN_NULL);
 
   HOTSPOT_JNI_NEWLOCALREF_RETURN(ret);
   return ret;
@@ -2232,7 +2232,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
   if (s_value != nullptr) {
     size_t length = java_lang_String::utf8_length(java_string, s_value);
     /* JNI Specification states return null on OOM */
-    result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
+    result = AllocateHeap(length + 1, mtInternal, AllocationFailureStrategy::RETURN_NULL);
     if (result != nullptr) {
       java_lang_String::as_utf8_string(java_string, s_value, result, (int) length + 1);
       if (isCopy != nullptr) {
@@ -2874,7 +2874,7 @@ JNI_END
 JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
   Handle ref_handle(thread, JNIHandles::resolve(ref));
-  jweak ret = JNIHandles::make_weak_global(ref_handle, AllocFailStrategy::RETURN_NULL);
+  jweak ret = JNIHandles::make_weak_global(ref_handle, AllocationFailureStrategy::RETURN_NULL);
   if (ret == nullptr) {
     THROW_OOP_(Universe::out_of_memory_error_c_heap(), nullptr);
   }

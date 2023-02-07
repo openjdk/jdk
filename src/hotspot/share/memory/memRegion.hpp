@@ -94,7 +94,7 @@ public:
   bool is_empty() const { return word_size() == 0; }
 
   // Creates and initializes an array of MemRegions of the given length.
-  static MemRegion* create_array(size_t length, MEMFLAGS flags);
+  static MemRegion* create_array(size_t length, MemoryType flags);
   static void destroy_array(MemRegion* array, size_t length);
 };
 

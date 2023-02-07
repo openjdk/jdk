@@ -112,7 +112,7 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
  */
-MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
+MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MemoryType flags) {
   assert(flags != mtNone, "Should have a real memory type");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
@@ -178,9 +178,9 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
 // Allocates MallocSiteHashtableEntry object. Special call stack
 // (pre-installed allocation site) has to be used to avoid infinite
 // recursion.
-MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key, MEMFLAGS flags) {
+MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key, MemoryType flags) {
   void* p = AllocateHeap(sizeof(MallocSiteHashtableEntry), mtNMT,
-    *hash_entry_allocation_stack(), AllocFailStrategy::RETURN_NULL);
+    *hash_entry_allocation_stack(), AllocationFailureStrategy::RETURN_NULL);
   return ::new (p) MallocSiteHashtableEntry(key, flags);
 }
 

@@ -30,7 +30,7 @@
 template<
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE>
+    MemoryType MEM_TYPE>
 class ResizeableResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
@@ -72,7 +72,7 @@ protected:
 template<
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal,
+    MemoryType MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >

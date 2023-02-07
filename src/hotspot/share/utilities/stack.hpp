@@ -51,11 +51,11 @@
 // implementation in class Stack assumes that alloc() will terminate the process
 // if the allocation fails.
 
-template <class E, MEMFLAGS F> class StackIterator;
+template <class E, MemoryType F> class StackIterator;
 
 // StackBase holds common data/methods that don't depend on the element type,
 // factored out to reduce template code duplication.
-template <MEMFLAGS F> class StackBase
+template <MemoryType F> class StackBase
 {
 public:
   size_t segment_size()   const { return _seg_size; } // Elements per segment.
@@ -85,7 +85,7 @@ protected:
   size_t       _cache_size;     // Number of segments in the cache.
 };
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 class Stack:  public StackBase<F>
 {
 public:
@@ -160,7 +160,7 @@ private:
   E* _cache;      // Segment cache to avoid ping-ponging.
 };
 
-template <class E, MEMFLAGS F>
+template <class E, MemoryType F>
 class StackIterator: public StackObj
 {
 public:

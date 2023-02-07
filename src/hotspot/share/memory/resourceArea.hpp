@@ -50,17 +50,17 @@ class ResourceArea: public Arena {
 #endif // ASSERT
 
 public:
-  ResourceArea(MEMFLAGS flags = mtThread) :
+  ResourceArea(MemoryType flags = mtThread) :
     Arena(flags) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
+  ResourceArea(size_t init_size, MemoryType flags = mtThread) :
     Arena(flags, init_size) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  char* allocate_bytes(size_t size, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  char* allocate_bytes(size_t size, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
 
   // Bias this resource area to specific memory type
   // (by default, ResourceArea is tagged as mtThread, per-thread general purpose storage)
-  void bias_to(MEMFLAGS flags);
+  void bias_to(MemoryType flags);
 
   DEBUG_ONLY(int nesting() const { return _nesting; })
 

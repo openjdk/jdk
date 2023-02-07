@@ -102,7 +102,7 @@ MemRegion MemRegion::minus(const MemRegion mr2) const {
   return MemRegion();
 }
 
-MemRegion* MemRegion::create_array(size_t length, MEMFLAGS flags) {
+MemRegion* MemRegion::create_array(size_t length, MemoryType flags) {
   MemRegion* result = NEW_C_HEAP_ARRAY(MemRegion, length, flags);
   for (size_t i = 0; i < length; i++) {
     ::new (&result[i]) MemRegion();

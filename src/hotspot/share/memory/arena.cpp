@@ -146,7 +146,7 @@ class ChunkPoolCleaner : public PeriodicTask {
 //--------------------------------------------------------------------------------------
 // Chunk implementation
 
-void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, size_t length) throw() {
+void* Chunk::operator new (size_t sizeofChunk, AllocationFailureStrategy alloc_failmode, size_t length) throw() {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -180,7 +180,7 @@ void* Chunk::operator new (size_t sizeofChunk, AllocFailType alloc_failmode, siz
   // Either the pool was empty, or this is a non-standard length. Allocate a new Chunk from C-heap.
   size_t bytes = ARENA_ALIGN(sizeofChunk) + length;
   void* p = os::malloc(bytes, mtChunk, CALLER_PC);
-  if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+  if (p == nullptr && alloc_failmode == AllocationFailureStrategy::EXIT_OOM) {
     vm_exit_out_of_memory(bytes, OOM_MALLOC_ERROR, "Chunk::new");
   }
   // We rely on arena alignment <= malloc alignment.
@@ -232,17 +232,17 @@ void Chunk::start_chunk_pool_cleaner_task() {
 
 //------------------------------Arena------------------------------------------
 
-Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
+Arena::Arena(MemoryType flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
-  _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
+  _first = _chunk = new (AllocationFailureStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
   set_size_in_bytes(init_size);
 }
 
-Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
-  _first = _chunk = new (AllocFailStrategy::EXIT_OOM, Chunk::init_size) Chunk(Chunk::init_size);
+Arena::Arena(MemoryType flag) : _flags(flag), _size_in_bytes(0) {
+  _first = _chunk = new (AllocationFailureStrategy::EXIT_OOM, Chunk::init_size) Chunk(Chunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
@@ -304,7 +304,7 @@ size_t Arena::used() const {
 }
 
 // Grow a new Chunk
-void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
+void* Arena::grow(size_t x, AllocationFailureStrategy alloc_failmode) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
@@ -329,7 +329,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
 
 
 // Reallocate storage in Arena.
-void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
+void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocationFailureStrategy alloc_failmode) {
   if (new_size == 0) {
     Afree(old_ptr, old_size); // like realloc(3)
     return nullptr;

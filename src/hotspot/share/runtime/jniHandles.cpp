@@ -60,7 +60,7 @@ jobject JNIHandles::make_local(oop obj) {
 }
 
 // Used by NewLocalRef which requires null on out-of-memory
-jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocationFailureStrategy alloc_failmode) {
   if (obj == nullptr) {
     return nullptr;                // ignore null handles
   } else {
@@ -71,18 +71,18 @@ jobject JNIHandles::make_local(JavaThread* thread, oop obj, AllocFailType alloc_
   }
 }
 
-static void report_handle_allocation_failure(AllocFailType alloc_failmode,
+static void report_handle_allocation_failure(AllocationFailureStrategy alloc_failmode,
                                              const char* handle_kind) {
-  if (alloc_failmode == AllocFailStrategy::EXIT_OOM) {
+  if (alloc_failmode == AllocationFailureStrategy::EXIT_OOM) {
     // Fake size value, since we don't know the min allocation size here.
     vm_exit_out_of_memory(sizeof(oop), OOM_MALLOC_ERROR,
                           "Cannot create %s JNI handle", handle_kind);
   } else {
-    assert(alloc_failmode == AllocFailStrategy::RETURN_NULL, "invariant");
+    assert(alloc_failmode == AllocationFailureStrategy::RETURN_NULL, "invariant");
   }
 }
 
-jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
+jobject JNIHandles::make_global(Handle obj, AllocationFailureStrategy alloc_failmode) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   assert(!current_thread_in_native(), "must not be in native");
   jobject res = nullptr;
@@ -104,7 +104,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
   return res;
 }
 
-jweak JNIHandles::make_weak_global(Handle obj, AllocFailType alloc_failmode) {
+jweak JNIHandles::make_weak_global(Handle obj, AllocationFailureStrategy alloc_failmode) {
   assert(!Universe::heap()->is_gc_active(), "can't extend the root set during GC");
   assert(!current_thread_in_native(), "must not be in native");
   jweak res = nullptr;
@@ -320,7 +320,7 @@ void JNIHandleBlock::zap() {
 }
 #endif // ASSERT
 
-JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType alloc_failmode)  {
+JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocationFailureStrategy alloc_failmode)  {
   // The VM thread can allocate a handle block in behalf of another thread during a safepoint.
   assert(thread == nullptr || thread == Thread::current() || SafepointSynchronize::is_at_safepoint(),
          "sanity check");
@@ -332,7 +332,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
     thread->set_free_handle_block(block->_next);
   } else {
     // Allocate new block
-    if (alloc_failmode == AllocFailStrategy::RETURN_NULL) {
+    if (alloc_failmode == AllocationFailureStrategy::RETURN_NULL) {
       block = new (std::nothrow) JNIHandleBlock();
       if (block == nullptr) {
         return nullptr;
@@ -421,7 +421,7 @@ void JNIHandleBlock::oops_do(OopClosure* f) {
 }
 
 
-jobject JNIHandleBlock::allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode) {
+jobject JNIHandleBlock::allocate_handle(JavaThread* caller, oop obj, AllocationFailureStrategy alloc_failmode) {
   assert(Universe::heap()->is_in(obj), "sanity check");
   if (_top == 0) {
     // This is the first allocation or the initial block got zapped when

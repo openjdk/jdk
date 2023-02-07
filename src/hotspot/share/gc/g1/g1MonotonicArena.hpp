@@ -120,7 +120,7 @@ class G1MonotonicArena::Segment {
   // to _num_slots (can be larger because we atomically increment this value and
   // check only afterwards if the allocation has been successful).
   uint volatile _next_allocate;
-  const MEMFLAGS _mem_flag;
+  const MemoryType _mem_flag;
 
   char* _bottom;  // Actual data.
   // Do not add class member variables beyond this point
@@ -136,7 +136,7 @@ class G1MonotonicArena::Segment {
 
   NONCOPYABLE(Segment);
 
-  Segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS flag);
+  Segment(uint slot_size, uint num_slots, Segment* next, MemoryType flag);
   ~Segment() = default;
 public:
   Segment* volatile* next_addr() { return &_next; }
@@ -173,7 +173,7 @@ public:
     return header_size() + payload_size(slot_size, num_slots);
   }
 
-  static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS mem_flag);
+  static Segment* create_segment(uint slot_size, uint num_slots, Segment* next, MemoryType mem_flag);
   static void delete_segment(Segment* segment);
 
   // Copies the contents of this segment into the destination.
@@ -222,7 +222,7 @@ public:
 class G1MonotonicArena::AllocOptions {
 
 protected:
-  const MEMFLAGS _mem_flag;
+  const MemoryType _mem_flag;
   const uint _slot_size;
   const uint _initial_num_slots;
   // Defines a limit to the number of slots in the segment
@@ -230,7 +230,7 @@ protected:
   const uint _slot_alignment;
 
 public:
-  AllocOptions(MEMFLAGS mem_flag, uint slot_size, uint initial_num_slots, uint max_num_slots, uint alignment) :
+  AllocOptions(MemoryType mem_flag, uint slot_size, uint initial_num_slots, uint max_num_slots, uint alignment) :
     _mem_flag(mem_flag),
     _slot_size(align_up(slot_size, alignment)),
     _initial_num_slots(initial_num_slots),
@@ -250,7 +250,7 @@ public:
 
   uint slot_alignment() const { return _slot_alignment; }
 
-  MEMFLAGS mem_flag() const {return _mem_flag; }
+  MemoryType mem_flag() const {return _mem_flag; }
 };
 
 #endif //SHARE_GC_G1_MONOTONICARENA_HPP

@@ -590,7 +590,7 @@ bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
 
 // --------------------- heap allocation utilities ---------------------
 
-char *os::strdup(const char *str, MEMFLAGS flags) {
+char *os::strdup(const char *str, MemoryType flags) {
   size_t size = strlen(str);
   char *dup_str = (char *)malloc(size + 1, flags);
   if (dup_str == nullptr) return nullptr;
@@ -598,7 +598,7 @@ char *os::strdup(const char *str, MEMFLAGS flags) {
   return dup_str;
 }
 
-char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
+char* os::strdup_check_oom(const char* str, MemoryType flags) {
   char* p = os::strdup(str, flags);
   if (p == nullptr) {
     vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
@@ -636,11 +636,11 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MEMFLAGS flags) {
+void* os::malloc(size_t size, MemoryType flags) {
   return os::malloc(size, flags, CALLER_PC);
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::malloc(size_t size, MemoryType mt, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -674,7 +674,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mt, stack);
 
   if (DumpSharedSpaces) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -686,11 +686,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   return inner_ptr;
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
+void* os::realloc(void *memblock, size_t size, MemoryType flags) {
   return os::realloc(memblock, size, flags, CALLER_PC);
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::realloc(void *memblock, size_t size, MemoryType mt, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -699,7 +699,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   }
 
   if (memblock == nullptr) {
-    return os::malloc(size, memflags, stack);
+    return os::malloc(size, mt, stack);
   }
 
   DEBUG_ONLY(check_crash_protection());
@@ -744,7 +744,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mt, stack);
 
 #ifdef ASSERT
     size_t old_size = free_info.size;
@@ -1733,7 +1733,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+char* os::reserve_memory(size_t bytes, bool executable, MemoryType flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
@@ -1878,7 +1878,7 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc)
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
-                           bool allow_exec, MEMFLAGS flags) {
+                           bool allow_exec, MemoryType flags) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,12 @@
  *
  */
 
-#ifndef SHARE_SERVICES_ALLOCATIONSITE_HPP
-#define SHARE_SERVICES_ALLOCATIONSITE_HPP
+#ifndef SHARE_MEMORY_ALLOCATION_FAILURE_STRATEGY_HPP
+#define SHARE_MEMORY_ALLOCATION_FAILURE_STRATEGY_HPP
 
-#include "memory/allocation.hpp"
-#include "utilities/nativeCallStack.hpp"
-
-// Allocation site represents a code path that makes a memory
-// allocation
-class AllocationSite {
- private:
-  const NativeCallStack  _call_stack;
-  const MemoryType         _flag;
- public:
-  AllocationSite(const NativeCallStack& stack, MemoryType flag) : _call_stack(stack), _flag(flag) { }
-
-  bool equals(const NativeCallStack& stack) const {
-    return _call_stack.equals(stack);
-  }
-
-  bool equals(const AllocationSite& other) const {
-    return other.equals(_call_stack);
-  }
-
-  const NativeCallStack* call_stack() const {
-    return &_call_stack;
-  }
-
-  MemoryType flag() const { return _flag; }
+enum class AllocationFailureStrategy {
+  EXIT_OOM,
+  RETURN_NULL,
 };
 
-#endif // SHARE_SERVICES_ALLOCATIONSITE_HPP
+#endif // SHARE_MEMORY_ALLOCATION_FAILURE_STRATEGY_HPP

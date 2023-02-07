@@ -103,7 +103,7 @@ void MemJFRReporter::send_type_events() {
   Ticks timestamp = MemJFRCurrentUsage::get_timestamp();
 
   for (int index = 0; index < mt_number_of_types; index ++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    MemoryType flag = NMTUtil::index_to_flag(index);
     if (flag == mtNone) {
       // Skip mtNone since it is not really used.
       continue;

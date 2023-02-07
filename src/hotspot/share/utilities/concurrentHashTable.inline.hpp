@@ -58,7 +58,7 @@ static void* const POISON_PTR = (void*)0xffbadbac;
 #endif
 
 // Node
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::Node*
 ConcurrentHashTable<CONFIG, F>::
   Node::next() const
@@ -67,7 +67,7 @@ ConcurrentHashTable<CONFIG, F>::
 }
 
 // Bucket
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::Node*
 ConcurrentHashTable<CONFIG, F>::
   Bucket::first_raw() const
@@ -75,7 +75,7 @@ ConcurrentHashTable<CONFIG, F>::
   return Atomic::load_acquire(&_first);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   Bucket::release_assign_node_ptr(
     typename ConcurrentHashTable<CONFIG, F>::Node* const volatile * dst,
@@ -87,7 +87,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Atomic::release_store(tmp, clear_set_state(node, *dst));
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::Node*
 ConcurrentHashTable<CONFIG, F>::
   Bucket::first() const
@@ -96,21 +96,21 @@ ConcurrentHashTable<CONFIG, F>::
   return clear_state(Atomic::load_acquire(&_first));
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket::have_redirect() const
 {
   return is_state(first_raw(), STATE_REDIRECT_BIT);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket::is_locked() const
 {
   return is_state(first_raw(), STATE_LOCK_BIT);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   Bucket::lock()
 {
@@ -128,7 +128,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   Bucket::release_assign_last_node_next(
      typename ConcurrentHashTable<CONFIG, F>::Node* node)
@@ -141,7 +141,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   release_assign_node_ptr(ret, node);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket::cas_first(typename ConcurrentHashTable<CONFIG, F>::Node* node,
                     typename ConcurrentHashTable<CONFIG, F>::Node* expect
@@ -156,7 +156,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return false;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket::trylock()
 {
@@ -171,7 +171,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return false;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   Bucket::unlock()
 {
@@ -181,7 +181,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Atomic::release_store(&_first, clear_state(first()));
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   Bucket::redirect()
 {
@@ -190,7 +190,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
 }
 
 // InternalTable
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
   InternalTable::InternalTable(size_t log2_size)
     : _log2_size(log2_size), _size(((size_t)1ul) << _log2_size),
@@ -206,7 +206,7 @@ inline ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
   InternalTable::~InternalTable()
 {
@@ -214,7 +214,7 @@ inline ConcurrentHashTable<CONFIG, F>::
 }
 
 // ScopedCS
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
   ScopedCS::ScopedCS(Thread* thread, ConcurrentHashTable<CONFIG, F>* cht)
     : _thread(thread),
@@ -227,14 +227,14 @@ inline ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
   ScopedCS::~ScopedCS()
 {
   GlobalCounter::critical_section_end(_thread, _cs_context);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC>
 inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
   MultiGetHandle::get(LOOKUP_FUNC& lookup_f, bool* grow_hint)
@@ -243,7 +243,7 @@ inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
 }
 
 // HaveDeletables
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename EVALUATE_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   HaveDeletables<true, EVALUATE_FUNC>::have_deletable(Bucket* bucket,
@@ -271,7 +271,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return false;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <bool b, typename EVALUATE_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   HaveDeletables<b, EVALUATE_FUNC>::have_deletable(Bucket* bucket,
@@ -287,7 +287,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 }
 
 // ConcurrentHashTable
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   write_synchonize_on_visible_epoch(Thread* thread)
 {
@@ -304,7 +304,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   GlobalCounter::write_synchronize();
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   try_resize_lock(Thread* locker)
 {
@@ -323,7 +323,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   lock_resize_lock(Thread* locker)
 {
@@ -348,7 +348,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   _invisible_epoch = 0;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   unlock_resize_lock(Thread* locker)
 {
@@ -358,7 +358,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   _resize_lock->unlock();
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   free_nodes()
 {
@@ -374,7 +374,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::InternalTable*
 ConcurrentHashTable<CONFIG, F>::
   get_table() const
@@ -382,7 +382,7 @@ ConcurrentHashTable<CONFIG, F>::
   return Atomic::load_acquire(&_table);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::InternalTable*
 ConcurrentHashTable<CONFIG, F>::
   get_new_table() const
@@ -390,7 +390,7 @@ ConcurrentHashTable<CONFIG, F>::
   return Atomic::load_acquire(&_new_table);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::InternalTable*
 ConcurrentHashTable<CONFIG, F>::
   set_table_from_new()
@@ -406,7 +406,7 @@ ConcurrentHashTable<CONFIG, F>::
   return old_table;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   internal_grow_range(Thread* thread, size_t start, size_t stop)
 {
@@ -446,7 +446,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC, typename DELETE_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_remove(Thread* thread, LOOKUP_FUNC& lookup_f, DELETE_FUNC& delete_f)
@@ -479,7 +479,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   do_bulk_delete_locked_for(Thread* thread, size_t start_idx, size_t stop_idx,
@@ -534,7 +534,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   GlobalCounter::critical_section_end(thread, cs_context);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   delete_in_bucket(Thread* thread, Bucket* bucket, LOOKUP_FUNC& lookup_f)
@@ -571,7 +571,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::Bucket*
 ConcurrentHashTable<CONFIG, F>::
   get_bucket(uintx hash) const
@@ -585,7 +585,7 @@ ConcurrentHashTable<CONFIG, F>::
   return bucket;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline typename ConcurrentHashTable<CONFIG, F>::Bucket*
 ConcurrentHashTable<CONFIG, F>::
   get_bucket_locked(Thread* thread, const uintx hash)
@@ -616,7 +616,7 @@ ConcurrentHashTable<CONFIG, F>::
 }
 
 // Always called within critical section
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC>
 typename ConcurrentHashTable<CONFIG, F>::Node*
 ConcurrentHashTable<CONFIG, F>::
@@ -642,7 +642,7 @@ ConcurrentHashTable<CONFIG, F>::
   return node;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   unzip_bucket(Thread* thread, InternalTable* old_table,
                InternalTable* new_table, size_t even_index, size_t odd_index)
@@ -700,7 +700,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_shrink_prolog(Thread* thread, size_t log2_size)
 {
@@ -717,7 +717,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   internal_shrink_epilog(Thread* thread)
 {
@@ -736,7 +736,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   delete old_table;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   internal_shrink_range(Thread* thread, size_t start, size_t stop)
 {
@@ -773,7 +773,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_shrink(Thread* thread, size_t log2_size)
 {
@@ -788,7 +788,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   internal_reset(size_t log2_size)
 {
@@ -802,7 +802,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   Atomic::release_store(&_table, table);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_grow_prolog(Thread* thread, size_t log2_size)
 {
@@ -828,7 +828,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   internal_grow_epilog(Thread* thread)
 {
@@ -846,7 +846,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   delete old_table;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_grow(Thread* thread, size_t log2_size)
 {
@@ -862,7 +862,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
 }
 
 // Always called within critical section
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC>
 inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
   internal_get(Thread* thread, LOOKUP_FUNC& lookup_f, bool* grow_hint)
@@ -883,7 +883,7 @@ inline typename CONFIG::Value* ConcurrentHashTable<CONFIG, F>::
   return ret;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   internal_insert_get(Thread* thread, LOOKUP_FUNC& lookup_f, const VALUE& value,
@@ -950,7 +950,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return ret;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   visit_nodes(Bucket* bucket, FUNC& visitor_f)
@@ -966,7 +966,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   do_scan_locked(Thread* thread, FUNC& scan_f)
@@ -983,7 +983,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   } /* ends critical section */
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename EVALUATE_FUNC>
 inline size_t ConcurrentHashTable<CONFIG, F>::
   delete_check_nodes(Bucket* bucket, EVALUATE_FUNC& eval_f,
@@ -1014,7 +1014,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 }
 
 // Constructor
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
 ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bool enable_statistics, void* context)
     : _context(context), _new_table(nullptr), _log2_size_limit(log2size_limit),
@@ -1034,7 +1034,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
   _size_limit_reached = _table->_log2_size == _log2_size_limit;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline ConcurrentHashTable<CONFIG, F>::
   ~ConcurrentHashTable()
 {
@@ -1044,7 +1044,7 @@ inline ConcurrentHashTable<CONFIG, F>::
   delete _stats_rate;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline size_t ConcurrentHashTable<CONFIG, F>::
   get_mem_size(Thread* thread)
 {
@@ -1052,7 +1052,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
   return sizeof(*this) + _table->get_mem_size();
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline size_t ConcurrentHashTable<CONFIG, F>::
   get_size_log2(Thread* thread)
 {
@@ -1060,7 +1060,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
   return _table->_log2_size;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   shrink(Thread* thread, size_t size_limit_log2)
 {
@@ -1069,7 +1069,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return ret;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline void ConcurrentHashTable<CONFIG, F>::
   unsafe_reset(size_t size_log2)
 {
@@ -1077,7 +1077,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   internal_reset(tmp);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   grow(Thread* thread, size_t size_limit_log2)
 {
@@ -1085,7 +1085,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return internal_grow(thread, tmp);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename LOOKUP_FUNC, typename FOUND_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   get(Thread* thread, LOOKUP_FUNC& lookup_f, FOUND_FUNC& found_f, bool* grow_hint)
@@ -1100,7 +1100,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return ret;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   unsafe_insert(const VALUE& value) {
   bool dead_hash = false;
@@ -1120,7 +1120,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename SCAN_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   try_scan(Thread* thread, SCAN_FUNC& scan_f)
@@ -1133,7 +1133,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename SCAN_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   do_scan(Thread* thread, SCAN_FUNC& scan_f)
@@ -1147,7 +1147,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   assert(_resize_lock_owner != thread, "Re-size lock held");
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename SCAN_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   do_safepoint_scan(SCAN_FUNC& scan_f)
@@ -1171,7 +1171,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   do_scan_for_range(scan_f, 0, table->_size, table);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   do_scan_for_range(FUNC& scan_f, size_t start_idx, size_t stop_idx, InternalTable* table)
@@ -1196,7 +1196,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline bool ConcurrentHashTable<CONFIG, F>::
   try_bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f)
@@ -1210,7 +1210,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   return true;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   bulk_delete(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f)
@@ -1222,7 +1222,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   unlock_resize_lock(thread);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename VALUE_SIZE_FUNC>
 inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f)
@@ -1253,7 +1253,7 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   }
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename VALUE_SIZE_FUNC>
 inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   statistics_get(Thread* thread, VALUE_SIZE_FUNC& vs_f, TableStatistics old)
@@ -1268,7 +1268,7 @@ inline TableStatistics ConcurrentHashTable<CONFIG, F>::
   return ts;
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 template <typename VALUE_SIZE_FUNC>
 inline void ConcurrentHashTable<CONFIG, F>::
   statistics_to(Thread* thread, VALUE_SIZE_FUNC& vs_f,
@@ -1285,7 +1285,7 @@ inline void ConcurrentHashTable<CONFIG, F>::
   ts.print(st, table_name);
 }
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemoryType F>
 inline bool ConcurrentHashTable<CONFIG, F>::
   try_move_nodes_to(Thread* thread, ConcurrentHashTable<CONFIG, F>* to_cht)
 {

@@ -143,12 +143,12 @@ class MemBaseline {
     return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
-  MallocMemory* malloc_memory(MEMFLAGS flag) {
+  MallocMemory* malloc_memory(MemoryType flag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     return _malloc_memory_snapshot.by_type(flag);
   }
 
-  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+  VirtualMemory* virtual_memory(MemoryType flag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     return _virtual_memory_snapshot.by_type(flag);
   }

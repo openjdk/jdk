@@ -391,15 +391,15 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   // NMT memory type
-  const MEMFLAGS _flags;
+  const MemoryType _flags;
 
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
+  explicit CHeapBitMap(MemoryType flags) : GrowableBitMap(0, false), _flags(flags) {}
+  CHeapBitMap(idx_t size_in_bits, MemoryType flags, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

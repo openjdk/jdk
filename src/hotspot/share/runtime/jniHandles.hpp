@@ -94,17 +94,17 @@ public:
   // Local handles
   static jobject make_local(oop obj);
   static jobject make_local(JavaThread* thread, oop obj,  // Faster version when current thread is known
-                            AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+                            AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   inline static void destroy_local(jobject handle);
 
   // Global handles
   static jobject make_global(Handle  obj,
-                             AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+                             AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   static void destroy_global(jobject handle);
 
   // Weak global handles
   static jweak make_weak_global(Handle obj,
-                                AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+                                AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   static void destroy_weak_global(jweak handle);
   static bool is_weak_global_cleared(jweak handle); // Test jweak without resolution
 
@@ -167,10 +167,10 @@ class JNIHandleBlock : public CHeapObj<mtInternal> {
 
  public:
   // Handle allocation
-  jobject allocate_handle(JavaThread* caller, oop obj, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  jobject allocate_handle(JavaThread* caller, oop obj, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
 
   // Block allocation and block free list management
-  static JNIHandleBlock* allocate_block(JavaThread* thread = nullptr, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+  static JNIHandleBlock* allocate_block(JavaThread* thread = nullptr, AllocationFailureStrategy alloc_failmode = AllocationFailureStrategy::EXIT_OOM);
   static void release_block(JNIHandleBlock* block, JavaThread* thread = nullptr);
 
   // JNI PushLocalFrame/PopLocalFrame support

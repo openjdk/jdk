@@ -30,7 +30,7 @@
 #include "services/memTracker.hpp"
 #include "utilities/vmError.hpp"
 
-void ResourceArea::bias_to(MEMFLAGS new_flags) {
+void ResourceArea::bias_to(MemoryType new_flags) {
   if (new_flags != _flags) {
     size_t size = size_in_bytes();
     MemTracker::record_arena_size_change(-ssize_t(size), _flags);
@@ -63,14 +63,14 @@ void ResourceArea::verify_has_resource_mark() {
 // The following routines are declared in allocation.hpp and used everywhere:
 
 // Allocation in thread-local resource area
-extern char* resource_allocate_bytes(size_t size, AllocFailType alloc_failmode) {
+extern char* resource_allocate_bytes(size_t size, AllocationFailureStrategy alloc_failmode) {
   return Thread::current()->resource_area()->allocate_bytes(size, alloc_failmode);
 }
-extern char* resource_allocate_bytes(Thread* thread, size_t size, AllocFailType alloc_failmode) {
+extern char* resource_allocate_bytes(Thread* thread, size_t size, AllocationFailureStrategy alloc_failmode) {
   return thread->resource_area()->allocate_bytes(size, alloc_failmode);
 }
 
-extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size, AllocFailType alloc_failmode){
+extern char* resource_reallocate_bytes( char *old, size_t old_size, size_t new_size, AllocationFailureStrategy alloc_failmode){
   return (char*)Thread::current()->resource_area()->Arealloc(old, old_size, new_size, alloc_failmode);
 }
 
