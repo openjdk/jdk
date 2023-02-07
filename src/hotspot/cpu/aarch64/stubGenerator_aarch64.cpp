@@ -7239,6 +7239,7 @@ typedef uint32_t u32;
     __ bfc(u[2]._lo, 26, 64-26);
     DEBUG_ONLY(__ bfc(u[2]._hi, 0, 14));
 
+    // Multiply the highest part of u2 by 5 and add it back to u1
     __ ubfx(rscratch1, u[2]._hi, 14, 50);
     DEBUG_ONLY(__ bfc(u[2]._hi, 14, 50));
     __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
@@ -7250,6 +7251,19 @@ typedef uint32_t u32;
     DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
     __ adds(u[1]._lo, u[1]._lo, rscratch1);
     __ adc(u[1]._hi, u[1]._hi, zr);
+  }
+
+  void poly1305_step(Register s[], RegPair u[], Register input_start) {
+    __ ldp(rscratch1, rscratch2, __ post(input_start, 2 * wordSize));
+    __ ubfx(s[0], rscratch1, 0, 52);
+    __ extr(s[1], rscratch2, rscratch1, 52);
+    __ ubfx(s[1], s[1], 0, 52);
+    __ ubfx(s[2], rscratch2, 40, 24);
+    __ orr(s[2], s[2], 1 << 24);
+
+    __ add(s[0], u[0]._lo, s[0]);
+    __ add(s[1], u[1]._lo, s[1]);
+    __ add(s[2], u[2]._lo, s[2]);
   }
 
   address generate_poly1305_processBlocks1() {
@@ -7297,18 +7311,7 @@ typedef uint32_t u32;
     __ br(~ Assembler::GE, DONE); {
       __ bind(LOOP);
 
-      __ ldp(rscratch1, rscratch2, __ post(input_start, 2 * wordSize));
-      __ ubfx(S0, rscratch1, 0, 52);
-      __ extr(S1, rscratch2, rscratch1, 52);
-      __ ubfx(S1, S1, 0, 52);
-      __ ubfx(S2, rscratch2, 40, 24);
-
-      __ add(S0, U0, S0);
-      __ add(S1, U1, S1);
-      __ add(S2, U2, S2);
-      __ mov(rscratch1, 1 << 24);
-      __ add(S2, S2, rscratch1);
-
+      poly1305_step(S, U, input_start);
       poly1305_multiply(U, S, R, RR2, regs);
       poly1305_reduce(U);
 
