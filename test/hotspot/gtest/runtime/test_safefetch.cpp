@@ -38,8 +38,8 @@
 static const intptr_t patternN = LP64_ONLY(0xABCDABCDABCDABCDULL) NOT_LP64(0xABCDABCD);
 static const int pattern32 = 0xABCDABCD;
 
-static intptr_t* const  bad_addressN = (intptr_t*) VMError::segfault_address;
-static int* const       bad_address32 = (int*) VMError::segfault_address;
+static intptr_t* const bad_addressN = (intptr_t*) NOT_AIX(VMError::segfault_address) AIX_ONLY(-1);
+static int* const    bad_address32 = (int*) NOT_AIX(VMError::segfault_address) AIX_ONLY(-1);
 
 static intptr_t dataN[3] =  { 0, patternN, 0 };
 static int data32[3] = { 0, pattern32, 0 };
