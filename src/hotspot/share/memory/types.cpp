@@ -40,7 +40,7 @@ static const MemoryTypeInfo _memory_type_infos[] = {
 STATIC_ASSERT(MemoryTypes::count() == ARRAY_SIZE(_memory_type_infos));
 
 const char* MemoryTypes::name(MemoryType mt) {
-  assert(is_valid(mt), "invalid memory type (%d)", mt);
+  assert(is_valid(mt), "invalid memory type (%d)", static_cast<int>(mt));
   return _memory_type_infos[static_cast<int>(mt)].human_readable;
 }
 
