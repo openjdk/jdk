@@ -203,6 +203,13 @@ class CodeCache : AllStatic {
   static uint64_t previous_completed_gc_marking_cycle();
   static void on_gc_marking_cycle_start();
   static void on_gc_marking_cycle_finish();
+  // Arm nmethods so that special actions are taken (nmethod_entry_barrier) for
+  // on-stack nmethods. It's used in two places:
+  // 1. Used before the start of concurrent marking so that oops inside
+  //    on-stack nmethods are visited.
+  // 2. Used at the end of (stw/concurrent) marking so that nmethod::_gc_epoch
+  //    is up-to-date, which provides more accurate estimate of
+  //    nmethod::is_cold.
   static void arm_all_nmethods();
 
   static void flush_unlinked_nmethods();
