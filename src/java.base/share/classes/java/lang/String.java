@@ -402,7 +402,7 @@ public final class String
             return;
         }
         if (COMPACT_STRINGS && (byte)hibyte == 0) {
-            this.value = copyOf(ascii, offset, count);
+            this.value = copyBytes(ascii, offset, count);
             this.coder = LATIN1;
         } else {
             hibyte <<= 8;
@@ -536,7 +536,7 @@ public final class String
             if (COMPACT_STRINGS) {
                 int dp = StringCoding.countPositives(bytes, offset, length);
                 if (dp == length) {
-                    this.value = copyOf(bytes, offset, length);
+                    this.value = copyBytes(bytes, offset, length);
                     this.coder = LATIN1;
                     return;
                 }
@@ -593,7 +593,7 @@ public final class String
             }
         } else if (charset == ISO_8859_1.INSTANCE) {
             if (COMPACT_STRINGS) {
-                this.value = copyOf(bytes, offset, length);
+                this.value = copyBytes(bytes, offset, length);
                 this.coder = LATIN1;
             } else {
                 this.value = StringLatin1.inflate(bytes, offset, length);
@@ -601,7 +601,7 @@ public final class String
             }
         } else if (charset == US_ASCII.INSTANCE) {
             if (COMPACT_STRINGS && !StringCoding.hasNegatives(bytes, offset, length)) {
-                this.value = copyOf(bytes, offset, length);
+                this.value = copyBytes(bytes, offset, length);
                 this.coder = LATIN1;
             } else {
                 byte[] dst = new byte[length << 1];
@@ -628,7 +628,7 @@ public final class String
                 // ascii
                 if (ad.isASCIICompatible() && !StringCoding.hasNegatives(bytes, offset, length)) {
                     if (COMPACT_STRINGS) {
-                        this.value = copyOf(bytes, offset, length);
+                        this.value = copyBytes(bytes, offset, length);
                         this.coder = LATIN1;
                         return;
                     }
@@ -671,7 +671,7 @@ public final class String
             char[] ca = new char[en];
             if (charset.getClass().getClassLoader0() != null &&
                     System.getSecurityManager() != null) {
-                bytes = copyOf(bytes, offset, length);
+                bytes = copyBytes(bytes, offset, length);
                 offset = 0;
             }
 
@@ -695,7 +695,7 @@ public final class String
         }
     }
 
-    private static byte[] copyOf(byte[] bytes, int offset, int length) {
+    static byte[] copyBytes(byte[] bytes, int offset, int length) {
         byte[] dst = new byte[length];
         System.arraycopy(bytes, offset, dst, 0, length);
         return dst;
@@ -715,7 +715,7 @@ public final class String
             dp = StringCoding.countPositives(bytes, offset, length);
             int sl = offset + length;
             if (dp == length) {
-                return new String(copyOf(bytes, offset, length), LATIN1);
+                return new String(copyBytes(bytes, offset, length), LATIN1);
             }
             dst = new byte[length];
             System.arraycopy(bytes, offset, dst, 0, dp);
@@ -4546,7 +4546,7 @@ public final class String
         checkOffset(length, val.length);
         if (asb.isLatin1()) {
             this.coder = LATIN1;
-            this.value = copyOf(val, 0, length);
+            this.value = copyBytes(val, 0, length);
         } else {
             // only try to compress val if some characters were deleted.
             if (COMPACT_STRINGS && asb.maybeLatin1) {
@@ -4558,7 +4558,7 @@ public final class String
                 }
             }
             this.coder = UTF16;
-            this.value = copyOf(val, 0, length << 1);
+            this.value = copyBytes(val, 0, length << 1);
         }
     }
 

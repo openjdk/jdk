@@ -760,8 +760,7 @@ final class StringLatin1 {
         if (len == 0) {
             return "";
         }
-        return new String(Arrays.copyOfRange(val, index, index + len),
-                          LATIN1);
+        return new String(String.copyBytes(val, index, len), LATIN1);
     }
 
     public static void fillNull(byte[] val, int index, int end) {

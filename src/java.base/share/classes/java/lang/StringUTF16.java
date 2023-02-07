@@ -1011,7 +1011,7 @@ final class StringUTF16 {
             len--;
         }
         return ((st > 0) || (len < length )) ?
-            new String(Arrays.copyOfRange(value, st << 1, len << 1), UTF16) :
+            new String(String.copyBytes(value, st << 1, len << 1), UTF16) :
             null;
     }
 

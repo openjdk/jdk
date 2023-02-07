@@ -28,47 +28,51 @@ import org.openjdk.jmh.annotations.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
-@Fork(5)
 @State(Scope.Thread)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 10, time = 5)
+@Warmup(iterations = 5, time = 3)
+@Measurement(iterations = 5, time = 3)
+@Fork(3)
 public class StringConstructor {
+
+  @Param({"0", "7", "64"})
+  public int size;
+
   private byte[] array;
 
   @Setup
   public void setup() {
-    array = "".getBytes(StandardCharsets.UTF_8);
+      array = "a".repeat(size).getBytes(StandardCharsets.UTF_8);
   }
 
   @Benchmark
   public String newStringFromArray() {
-    return new String(array);
+      return new String(array);
   }
 
   @Benchmark
   public String newStringFromArrayWithCharset() {
-    return new String(array, StandardCharsets.UTF_8);
+      return new String(array, StandardCharsets.UTF_8);
   }
 
   @Benchmark
   public String newStringFromArrayWithCharsetName() throws Exception {
-    return new String(array, StandardCharsets.UTF_8.name());
+      return new String(array, StandardCharsets.UTF_8.name());
   }
 
   @Benchmark
   public String newStringFromRangedArray() {
-    return new String(array, 0, 0);
+    return new String(array, 0, array.length);
   }
 
   @Benchmark
   public String newStringFromRangedArrayWithCharset() {
-    return new String(array, 0, 0, StandardCharsets.UTF_8);
+      return new String(array, 0, array.length, StandardCharsets.UTF_8);
   }
 
   @Benchmark
   public String newStringFromRangedArrayWithCharsetName() throws Exception {
-    return new String(array, 0, 0, StandardCharsets.UTF_8.name());
+      return new String(array, 0, array.length, StandardCharsets.UTF_8.name());
   }
 }
