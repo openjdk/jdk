@@ -98,9 +98,11 @@ void VM_Version::get_os_cpu_info() {
   }
 }
 
+// Here is the form of isa string, multi-letter extensions are separated by '_':
+// rv64imafdch_zicsr_zifencei_zihintpause_zba_zbb_zbc_zbs_sstc
 void VM_Version::get_isa() {
-  char isa_buf[500];
-  strcpy(isa_buf, _isa);
+  char isa_buf[512];
+  snprintf(isa_buf, sizeof(isa_buf), "%s", _isa);
   char* saved_ptr;
   char* isa_ext = strtok_r(isa_buf, "_", &saved_ptr);
   while (isa_ext != nullptr) {
@@ -110,20 +112,15 @@ void VM_Version::get_isa() {
       int i = 0;
       while (base_ext[i] != '\0') {
         const char ch = base_ext[i++];
-        if (ch == 'i') {
-          _cpu_features.ext_i = true;
-        } else if (ch == 'm') {
-          _cpu_features.ext_m = true;
-        } else if (ch == 'a') {
-          _cpu_features.ext_a = true;
-        } else if (ch == 'f') {
-          _cpu_features.ext_f = true;
-        } else if (ch == 'd') {
-          _cpu_features.ext_d = true;
-        } else if (ch == 'c') {
-          _cpu_features.ext_c = true;
-        } else if (ch == 'v') {
-          _cpu_features.ext_v = true;
+        switch (ch) {
+          case 'i': _cpu_features.ext_i = true; break;
+          case 'm': _cpu_features.ext_m = true; break;
+          case 'a': _cpu_features.ext_a = true; break;
+          case 'f': _cpu_features.ext_f = true; break;
+          case 'd': _cpu_features.ext_d = true; break;
+          case 'c': _cpu_features.ext_c = true; break;
+          case 'v': _cpu_features.ext_v = true; break;
+          default: break;
         }
       }
     } else if (!strncmp(isa_ext, "zba",         sizeof "zba" - 1)) {
