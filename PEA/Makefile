@@ -19,7 +19,6 @@ set_jdk:
 
 all: set_jdk
 	javac *.java
-	cd ${CTW_DIR}; make
 
 run: set_jdk
 	./auto.sh
