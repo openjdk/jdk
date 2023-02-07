@@ -26,6 +26,7 @@
 package java.util;
 
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
@@ -3816,9 +3817,31 @@ public class Arrays {
      * @since 1.6
      */
     public static byte[] copyOfRange(byte[] original, int from, int to) {
-        int newLength = to - from;
-        if (newLength < 0)
+        if (from == 0) {
+            if (original.length == to) {
+                byte[] copy = new byte[original.length];
+                System.arraycopy(original, 0, copy, 0,
+                        original.length);
+                return copy;
+            }
+            byte[] copy = new byte[to];
+            System.arraycopy(original, 0, copy, 0,
+                    copy.length);
+            return copy;
+        }
+        return copyOfRangeGeneric(original, from, to);
+    }
+
+    private static int checkLength(int from, int to) {
+        int len = to - from;
+        if (len < 0) {
             throw new IllegalArgumentException(from + " > " + to);
+        }
+        return len;
+    }
+
+    private static byte[] copyOfRangeGeneric(byte[] original, int from, int to) {
+        int newLength = checkLength(from, to);
         byte[] copy = new byte[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
