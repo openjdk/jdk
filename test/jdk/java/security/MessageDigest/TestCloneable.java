@@ -92,10 +92,12 @@ public class TestCloneable {
         t2.join();
 
         System.out.println(": Shared data check");
+        // Random is producing the same sequence of bytes for each thread,
+        // and thus each MessageDigest should be equal. When the memory is
+        // shared, they inevitably overwrite each other's tempArray and
+        // you get different results.
         if (!Arrays.equals(d1.digest(), d2.digest())) {
             throw new AssertionError("digests differ");
-            // cloned digest shares some memory with original one
-            // and is thus not thread safe
         }
 
         System.out.println("Test Passed");
