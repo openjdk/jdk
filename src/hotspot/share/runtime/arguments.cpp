@@ -3783,40 +3783,66 @@ static void apply_debugger_ergo() {
   }
 }
 
-// Parse entry point called from JNI_CreateJavaVM
+struct PreprocessedArguments final : public CHeapObj<mtArguments> {
+  PreprocessedArguments() : initial_vm_options_args(""),
+                            initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
+                            initial_java_options_args("env_var='_JAVA_OPTIONS'"),
+                            mod_cmd_args("cmd_line_args"),
+                            mod_vm_options_args("vm_options_args"),
+                            mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
+                            mod_java_options_args("env_var='_JAVA_OPTIONS'") {}
 
-jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
-  assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
-  JVMFlag::check_all_flag_declarations();
+  PreprocessedArguments(const PreprocessedArguments&) = delete;
+  PreprocessedArguments(PreprocessedArguments&&) = delete;
+  PreprocessedArguments& operator=(const PreprocessedArguments&) = delete;
+  PreprocessedArguments& operator=(PreprocessedArguments&&) = delete;
 
-  // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
-  const char* hotspotrc = ".hotspotrc";
-  bool settings_file_specified = false;
-  bool needs_hotspotrc_warning = false;
-  ScopedVMInitArgs initial_vm_options_args("");
-  ScopedVMInitArgs initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
-  ScopedVMInitArgs initial_java_options_args("env_var='_JAVA_OPTIONS'");
-
-  // Pointers to current working set of containers
-  JavaVMInitArgs* cur_cmd_args;
-  JavaVMInitArgs* cur_vm_options_args;
-  JavaVMInitArgs* cur_java_options_args;
-  JavaVMInitArgs* cur_java_tool_options_args;
+  ScopedVMInitArgs initial_vm_options_args;
+  ScopedVMInitArgs initial_java_tool_options_args;
+  ScopedVMInitArgs initial_java_options_args;
 
   // Containers for modified/expanded options
-  ScopedVMInitArgs mod_cmd_args("cmd_line_args");
-  ScopedVMInitArgs mod_vm_options_args("vm_options_args");
-  ScopedVMInitArgs mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'");
-  ScopedVMInitArgs mod_java_options_args("env_var='_JAVA_OPTIONS'");
+  ScopedVMInitArgs mod_cmd_args;
+  ScopedVMInitArgs mod_vm_options_args;
+  ScopedVMInitArgs mod_java_tool_options_args;
+  ScopedVMInitArgs mod_java_options_args;
 
+  // Pointers to current working set of containers
+  JavaVMInitArgs* cur_cmd_args = nullptr;
+  JavaVMInitArgs* cur_vm_options_args = nullptr;
+  JavaVMInitArgs* cur_java_options_args = nullptr;
+  JavaVMInitArgs* cur_java_tool_options_args = nullptr;
+
+  bool settings_file_specified = false;
+  bool needs_hotspotrc_warning = false;
+};
+
+// Parse entry point called from JNI_CreateJavaVM
+
+Arguments::Preprocessed::~Preprocessed() {
+  if (_impl != nullptr) {
+    delete static_cast<PreprocessedArguments*>(_impl);
+  }
+}
+
+jint Arguments::preprocess(const JavaVMInitArgs* args, Preprocessed* preproc_args) {
+  assert(verify_special_jvm_flags(false), "deprecated and obsolete flag table inconsistent");
+  JVMFlag::check_all_flag_declarations();
+  assert(preproc_args->_impl == nullptr, "Arguments::Preprocessed used more than once");
+
+  const char* hotspotrc = ".hotspotrc";
+
+  PreprocessedArguments* result = new PreprocessedArguments();
+  // preproc_args will perform any required cleanup.
+  preproc_args->_impl = result;
 
   jint code =
-      parse_java_tool_options_environment_variable(&initial_java_tool_options_args);
+      parse_java_tool_options_environment_variable(&result->initial_java_tool_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = parse_java_options_environment_variable(&initial_java_options_args);
+  code = parse_java_options_environment_variable(&result->initial_java_options_args);
   if (code != JNI_OK) {
     return code;
   }
@@ -3824,82 +3850,91 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   // Parse the options in the /java.base/jdk/internal/vm/options resource, if present
   char *vmoptions = ClassLoader::lookup_vm_options();
   if (vmoptions != nullptr) {
-    code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &initial_vm_options_args);
+    code = parse_options_buffer("vm options resource", vmoptions, strlen(vmoptions), &result->initial_vm_options_args);
     FREE_C_HEAP_ARRAY(char, vmoptions);
     if (code != JNI_OK) {
       return code;
     }
   }
 
-  code = expand_vm_options_as_needed(initial_java_tool_options_args.get(),
-                                     &mod_java_tool_options_args,
-                                     &cur_java_tool_options_args);
+  code = expand_vm_options_as_needed(result->initial_java_tool_options_args.get(),
+                                     &result->mod_java_tool_options_args,
+                                     &result->cur_java_tool_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = expand_vm_options_as_needed(initial_cmd_args,
-                                     &mod_cmd_args,
-                                     &cur_cmd_args);
+  code = expand_vm_options_as_needed(result->initial_cmd_args.get(),
+                                     &result->mod_cmd_args,
+                                     &result->cur_cmd_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = expand_vm_options_as_needed(initial_java_options_args.get(),
-                                     &mod_java_options_args,
-                                     &cur_java_options_args);
+  code = expand_vm_options_as_needed(result->initial_java_options_args.get(),
+                                     &result->mod_java_options_args,
+                                     &result->cur_java_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = expand_vm_options_as_needed(initial_vm_options_args.get(),
-                                     &mod_vm_options_args,
-                                     &cur_vm_options_args);
+  code = expand_vm_options_as_needed(result->initial_vm_options_args.get(),
+                                     &result->mod_vm_options_args,
+                                     &result->cur_vm_options_args);
   if (code != JNI_OK) {
     return code;
   }
 
   const char* flags_file = Arguments::get_jvm_flags_file();
-  settings_file_specified = (flags_file != nullptr);
+  result->settings_file_specified = (flags_file != nullptr);
 
   if (IgnoreUnrecognizedVMOptions) {
-    cur_cmd_args->ignoreUnrecognized = true;
-    cur_java_tool_options_args->ignoreUnrecognized = true;
-    cur_java_options_args->ignoreUnrecognized = true;
+    result->cur_cmd_args->ignoreUnrecognized = true;
+    result->cur_java_tool_options_args->ignoreUnrecognized = true;
+    result->cur_java_options_args->ignoreUnrecognized = true;
   }
 
   // Parse specified settings file
-  if (settings_file_specified) {
+  if (result->settings_file_specified) {
     if (!process_settings_file(flags_file, true,
-                               cur_cmd_args->ignoreUnrecognized)) {
+                               result->cur_cmd_args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
   } else {
 #ifdef ASSERT
     // Parse default .hotspotrc settings file
     if (!process_settings_file(".hotspotrc", false,
-                               cur_cmd_args->ignoreUnrecognized)) {
+                               result->cur_cmd_args->ignoreUnrecognized)) {
       return JNI_EINVAL;
     }
 #else
     struct stat buf;
     if (os::stat(hotspotrc, &buf) == 0) {
-      needs_hotspotrc_warning = true;
+      result->needs_hotspotrc_warning = true;
     }
 #endif
   }
 
   if (PrintVMOptions) {
-    print_options(cur_java_tool_options_args);
-    print_options(cur_cmd_args);
-    print_options(cur_java_options_args);
+    print_options(result->cur_java_tool_options_args);
+    print_options(result->cur_cmd_args);
+    print_options(result->cur_java_options_args);
   }
 
+  return JNI_OK;
+}
+
+jint Arguments::parse(const Preprocessed& preproc_args) {
+  const PreprocessedArguments* args = static_cast<const PreprocessedArguments*>(preproc_args._impl);
+  assert(args != nullptr, "Arguments::parse called before successful Arguments::preprocess");
+
+  const char* hotspotrc = ".hotspotrc";
+
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
-  jint result = parse_vm_init_args(cur_vm_options_args,
-                                   cur_java_tool_options_args,
-                                   cur_java_options_args,
-                                   cur_cmd_args);
+  jint result = parse_vm_init_args(args->cur_vm_options_args,
+                                   args->cur_java_tool_options_args,
+                                   args->cur_java_options_args,
+                                   args->cur_cmd_args);
 
   if (result != JNI_OK) {
     return result;
@@ -3907,13 +3942,13 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
   // Delay warning until here so that we've had a chance to process
   // the -XX:-PrintWarnings flag
-  if (needs_hotspotrc_warning) {
+  if (args->needs_hotspotrc_warning) {
     warning("%s file is present but has been ignored.  "
             "Run with -XX:Flags=%s to load the file.",
             hotspotrc, hotspotrc);
   }
 
-  if (needs_module_property_warning) {
+  if (args->needs_module_property_warning) {
     warning("Ignoring system property options whose names match the '-Djdk.module.*'."
             " names that are reserved for internal use.");
   }

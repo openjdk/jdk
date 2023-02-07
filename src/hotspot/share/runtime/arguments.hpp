@@ -269,6 +269,27 @@ class Arguments : AllStatic {
     ExternalProperty
   };
 
+  // RAII style wrapper representing preprocessed arguments returned from Arguments::preprocess and
+  // accepted by Arguments::parse.
+  class Preprocessed final : public StackObj {
+   private:
+    friend class Arguments;
+
+    void* _impl = nullptr;
+
+   public:
+    Preprocessed() = default;
+
+    ~Preprocessed();
+
+    Preprocessed(const Preprocessed&) = delete;
+    Preprocessed(Preprocessed&&) = delete;
+    Preprocessed& operator=(const Preprocessed&) = delete;
+    Preprocessed& operator=(Preprocessed&&) = delete;
+
+    // Future changes will allow retrieving NativeMemoryTracking and MallocLimit.
+  };
+
  private:
 
   // a pointer to the flags file name if it is specified
@@ -483,8 +504,14 @@ class Arguments : AllStatic {
 
  public:
   static int num_archives(const char* archive_path) NOT_CDS_RETURN_(0);
-  // Parses the arguments, first phase
-  static jint parse(const JavaVMInitArgs* args);
+
+  // Preprocess the arguments, placing the results in `preproc_args` when successful. `args` must
+  // outlive `preproc_args`.
+  static jint preprocess(const JavaVMInitArgs* args, Preprocessed* preproc_args);
+
+  // Parses the already preprocessed arguments.
+  static jint parse(const Preprocessed& args);
+
   // Parse a string for a unsigned integer.  Returns true if value
   // is an unsigned integer greater than or equal to the minimum
   // parameter passed and returns the value in uintx_arg.  Returns
