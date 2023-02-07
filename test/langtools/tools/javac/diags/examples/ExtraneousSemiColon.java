@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.extraneous.semi.colon
+// key: compiler.err.extraneous.semicolon
 
 import java.util.Map;;      // NOTE: extra semi-colon
 import java.util.Set;
