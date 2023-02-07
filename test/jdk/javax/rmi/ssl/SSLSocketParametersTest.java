@@ -182,6 +182,8 @@ public class SSLSocketParametersTest implements Serializable {
                 try {
                     new ServerFactory(SSLContext.getDefault(),
                             new String[]{"dummy_ciphersuite"}, null, false);
+                    throw new RuntimeException(
+                            "The expected exception for unsupported ciphersuite was not thrown.");
                 } catch (NoSuchAlgorithmException exc) {
                     throw new RuntimeException("Could not create SSLContext.", exc);
                 } catch (IllegalArgumentException exc) {
@@ -198,6 +200,8 @@ public class SSLSocketParametersTest implements Serializable {
                 try {
                     new ServerFactory(null,
                             new String[]{"dummy_protocol"}, false);
+                    throw new RuntimeException(
+                            "The expected exception for unsupported protocol was not thrown.");
                 } catch (IllegalArgumentException exc) {
                     // expecting the exception for unsupported protocol,
                     // anything else is an error
