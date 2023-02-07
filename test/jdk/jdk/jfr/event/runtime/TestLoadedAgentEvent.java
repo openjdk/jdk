@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 /**
  * @test
  * @key jfr
- * @summary Tests Agent Loaded event by starting native and Java agents
+ * @summary Tests Loaded Agent event by starting native and Java agents
  * @requires vm.hasJFR
  *
  * @library /test/lib
@@ -56,24 +56,24 @@ import jdk.test.lib.jfr.TestClassLoader;
  *      JavaAgent.jar
  *
  * @run main/othervm -javaagent:JavaAgent.jar=foo=bar
- *      jdk.jfr.event.runtime.TestAgentEvent
+ *      jdk.jfr.event.runtime.TestLoadedAgentEvent
  *      testJavaStatic
  *
  * @run main/othervm -Djdk.attach.allowAttachSelf=true
- *      jdk.jfr.event.runtime.TestAgentEvent
+ *      jdk.jfr.event.runtime.TestLoadedAgentEvent
  *      testJavaDynamic
  *
  * @run main/othervm -agentlib:jdwp=transport=dt_socket,server=y,address=any,onjcmd=y
- *      jdk.jfr.event.runtime.TestAgentEvent
+ *      jdk.jfr.event.runtime.TestLoadedAgentEvent
  *      testNativeStatic
  */
-public final class TestAgentEvent {
+public final class TestLoadedAgentEvent {
     private static final String JAVA_AGENT_JAR = "JavaAgent.jar";
     private final static String EVENT_NAME = "jdk.LoadedAgent";
 
     public static void main(String[] args) throws Throwable {
         String testMethod = args[0];
-        Method m = TestAgentEvent.class.getDeclaredMethod(testMethod, new Class[0]);
+        Method m = TestLoadedAgentEvent.class.getDeclaredMethod(testMethod, new Class[0]);
         if (m == null) {
             throw new Exception("Unknown test method: " + testMethod);
         }
