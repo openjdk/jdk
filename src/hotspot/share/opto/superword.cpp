@@ -533,8 +533,6 @@ bool SuperWord::SLP_extract() {
 
     combine_packs();
 
-    DEBUG_ONLY(verify_packs();)
-
     construct_my_pack_map();
     if (UseVectorCmov) {
       merge_packs_to_cmove();
