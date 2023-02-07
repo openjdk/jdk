@@ -1042,16 +1042,17 @@ public class VisibleMemberTable {
         private final LinkedHashSet<ExecutableElement> methods = new LinkedHashSet<>();
 
         public ImplementedMethods(ExecutableElement method) {
-            // ExecutableElement.getEnclosingElement() returns "the class or
-            // interface defining the executable", which has to be TypeElement
             TypeElement typeElement = (TypeElement) method.getEnclosingElement();
             Set<TypeMirror> intfacs = utils.getAllInterfaces(typeElement);
             for (TypeMirror interfaceType : intfacs) {
                 ExecutableElement found = findImplementedMethod(utils.asTypeElement(interfaceType), method);
-                if (found != null && !methods.contains(found)) {
-                    methods.add(found);
-                    interfaces.put(found, interfaceType);
+                if (found == null) {
+                    continue;
                 }
+                boolean added = methods.add(found);
+                var prev = interfaces.put(found, interfaceType);
+                assert added; // there cannot be duplicating methods in different type elements
+                assert prev == null; // same assumption
             }
         }
 
