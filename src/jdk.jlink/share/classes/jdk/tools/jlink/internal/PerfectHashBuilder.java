@@ -246,7 +246,7 @@ public class PerfectHashBuilder<E> {
                 if (bucket.getSize() != 1) {
                     // Attempt to pack entries until no collisions occur.
                     if (!collidedEntries(bucket, count)) {
-                        // Failed to pack. Meed to grow table.
+                        // Failed to pack. Need to grow table.
                         redo = true;
                         break;
                     }

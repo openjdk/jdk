@@ -203,8 +203,8 @@ public:
 // 'length' less 1 (lower 3 bits of header) of bytes that follow containing the
 // attribute value.  Attribute values present as most significant byte first.
 //
-// Ex. Container offset (ATTRIBUTE_OFFSET) 0x33562 would be represented as 0x22
-// (kind = 4, length = 3), 0x03, 0x35, 0x62.
+// Ex. Container offset (ATTRIBUTE_OFFSET) 0x33562 would be represented as 0x2A
+// (kind = 5, length = 3), 0x03, 0x35, 0x62.
 //
 // An attribute stream is terminated with a header kind of ATTRIBUTE_END (header
 // byte of zero.)
@@ -215,7 +215,7 @@ public:
 //
 // Notes:
 //  - Even though ATTRIBUTE_END is used to mark the end of the attribute stream,
-//      streams will contain zero byte values to represent lesser significant bits.
+//      streams will contain non-zero byte values to represent lesser significant bits.
 //      Thus, detecting a zero byte is not sufficient to detect the end of an attribute
 //      stream.
 //  - ATTRIBUTE_OFFSET represents the number of bytes from the beginning of the region
