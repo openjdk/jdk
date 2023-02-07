@@ -3864,7 +3864,7 @@ jint Arguments::preprocess(const JavaVMInitArgs* args, Preprocessed* preproc_arg
     return code;
   }
 
-  code = expand_vm_options_as_needed(result->initial_cmd_args.get(),
+  code = expand_vm_options_as_needed(args,
                                      &result->mod_cmd_args,
                                      &result->cur_cmd_args);
   if (code != JNI_OK) {
@@ -3948,7 +3948,7 @@ jint Arguments::parse(const Preprocessed& preproc_args) {
             hotspotrc, hotspotrc);
   }
 
-  if (args->needs_module_property_warning) {
+  if (needs_module_property_warning) {
     warning("Ignoring system property options whose names match the '-Djdk.module.*'."
             " names that are reserved for internal use.");
   }
