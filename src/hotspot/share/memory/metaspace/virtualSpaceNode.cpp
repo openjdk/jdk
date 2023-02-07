@@ -42,7 +42,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "sanitizers/address.h"
+#include "sanitizers/address.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"

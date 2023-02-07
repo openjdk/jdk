@@ -63,51 +63,75 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-//
-// DefNewGeneration functions.
+class IsAliveClosure: public BoolObjectClosure {
+  Generation* _young_gen;
+public:
+  IsAliveClosure(Generation* young_gen) : _young_gen(young_gen) {
+    assert(_young_gen->kind() == Generation::DefNew,
+        "Expected the young generation here");
+  }
 
-// Methods of protected closure types.
+  bool do_object_b(oop p) {
+    return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || p->is_forwarded();
+  }
+};
 
-DefNewGeneration::IsAliveClosure::IsAliveClosure(Generation* young_gen) : _young_gen(young_gen) {
-  assert(_young_gen->kind() == Generation::DefNew, "Expected the young generation here");
-}
+class KeepAliveClosure: public OopClosure {
+  ScanWeakRefClosure* _cl;
+  CardTableRS* _rs;
+  HeapWord* _boundary;
 
-bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
-  return cast_from_oop<HeapWord*>(p) >= _young_gen->reserved().end() || p->is_forwarded();
-}
+  template <class T>
+  inline void do_oop_work(T* p) {
+#ifdef ASSERT
+    {
+      // We never expect to see a null reference being processed
+      // as a weak reference.
+      oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+      assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
+    }
+#endif // ASSERT
 
-DefNewGeneration::KeepAliveClosure::
-KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
-  _rs = GenCollectedHeap::heap()->rem_set();
-}
+    Devirtualizer::do_oop(_cl, p);
 
-void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
-void DefNewGeneration::KeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
+    // Optimized for Defnew generation if it's the youngest generation:
+    // we set a younger_gen card if we have an older->youngest
+    // generation pointer.
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
+    if ((cast_from_oop<HeapWord*>(obj) < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
+      _rs->inline_write_ref_field_gc(p);
+    }
+  }
 
+public:
+  KeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
+    _cl(cl) {
+    _rs = GenCollectedHeap::heap()->rem_set();
+    _boundary = g->reserved().end();
+  }
 
-DefNewGeneration::FastKeepAliveClosure::
-FastKeepAliveClosure(DefNewGeneration* g, ScanWeakRefClosure* cl) :
-  DefNewGeneration::KeepAliveClosure(cl) {
-  _boundary = g->reserved().end();
-}
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+};
 
-void DefNewGeneration::FastKeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
-void DefNewGeneration::FastKeepAliveClosure::do_oop(narrowOop* p) { DefNewGeneration::FastKeepAliveClosure::do_oop_work(p); }
+class FastEvacuateFollowersClosure: public VoidClosure {
+  SerialHeap* _heap;
+  DefNewScanClosure* _scan_cur_or_nonheap;
+  DefNewYoungerGenClosure* _scan_older;
+public:
+  FastEvacuateFollowersClosure(SerialHeap* heap,
+                               DefNewScanClosure* cur,
+                               DefNewYoungerGenClosure* older) :
+    _heap(heap), _scan_cur_or_nonheap(cur), _scan_older(older)
+  {}
 
-DefNewGeneration::FastEvacuateFollowersClosure::
-FastEvacuateFollowersClosure(SerialHeap* heap,
-                             DefNewScanClosure* cur,
-                             DefNewYoungerGenClosure* older) :
-  _heap(heap), _scan_cur_or_nonheap(cur), _scan_older(older)
-{
-}
-
-void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
-  do {
-    _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap, _scan_older);
-  } while (!_heap->no_allocs_since_save_marks());
-  guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
-}
+  void do_void() {
+    do {
+      _heap->oop_since_save_marks_iterate(_scan_cur_or_nonheap, _scan_older);
+    } while (!_heap->no_allocs_since_save_marks());
+    guarantee(_heap->young_gen()->promo_failure_scan_is_complete(), "Failed to finish scan");
+  }
+};
 
 void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   NOT_PRODUCT(ResourceMark rm);
@@ -586,7 +610,7 @@ void DefNewGeneration::collect(bool   full,
   // "evacuate followers".
   evacuate_followers.do_void();
 
-  FastKeepAliveClosure keep_alive(this, &scan_weak_ref);
+  KeepAliveClosure keep_alive(this, &scan_weak_ref);
   ReferenceProcessor* rp = ref_processor();
   ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
   SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -737,6 +737,10 @@ bool Node::is_dead() const {
   return true;
 }
 
+bool Node::is_not_dead(const Node* n) {
+  return n == nullptr || !PhaseIterGVN::is_verify_def_use() || !(n->is_dead());
+}
+
 bool Node::is_reachable_from_root() const {
   ResourceMark rm;
   Unique_Node_List wq;
@@ -1144,9 +1148,9 @@ const Type* Node::Value(PhaseGVN* phase) const {
 // 'Idealize' the graph rooted at this Node.
 //
 // In order to be efficient and flexible there are some subtle invariants
-// these Ideal calls need to hold.  Running with '+VerifyIterativeGVN' checks
+// these Ideal calls need to hold.  Running with '-XX:VerifyIterativeGVN=1' checks
 // these invariants, although its too slow to have on by default.  If you are
-// hacking an Ideal call, be sure to test with +VerifyIterativeGVN!
+// hacking an Ideal call, be sure to test with '-XX:VerifyIterativeGVN=1'
 //
 // The Ideal call almost arbitrarily reshape the graph rooted at the 'this'
 // pointer.  If ANY change is made, it must return the root of the reshaped
@@ -1379,6 +1383,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   ResourceMark rm;
   Node_List nstack;
+  VectorSet dead_set; // notify uses only once
 
   Node *top = igvn->C->top();
   nstack.push(dead);
@@ -1386,6 +1391,10 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
 
   while (nstack.size() > 0) {
     dead = nstack.pop();
+    if (!dead_set.test_set(dead->_idx)) {
+      // If dead has any live uses, those are now still attached. Notify them before we lose them.
+      igvn->add_users_to_worklist(dead);
+    }
     if (dead->Opcode() == Op_SafePoint) {
       dead->as_SafePoint()->disconnect_from_root(igvn);
     }

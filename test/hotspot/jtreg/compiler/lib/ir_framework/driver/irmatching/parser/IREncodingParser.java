@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.test.IREncodingPrinter;
@@ -40,25 +41,25 @@ import java.util.regex.Pattern;
  *
  * @see TestMethod
  */
-class IREncodingParser {
+public class IREncodingParser {
 
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END + ")");
 
-    private final Map<String, TestMethod> testMethodMap;
+    private final Map<String, TestMethod> testMethods;
     private final Class<?> testClass;
 
     public IREncodingParser(Class<?> testClass) {
         this.testClass = testClass;
-        this.testMethodMap = new HashMap<>();
+        this.testMethods = new HashMap<>();
     }
 
     /**
      * Parse the IR encoding passed as parameter and return a "test name" -> TestMethod map that contains an entry
      * for each method that needs to be IR matched on.
      */
-    public Map<String, TestMethod> parse(String irEncoding) {
+    public TestMethods parse(String irEncoding) {
         if (TestFramework.VERBOSE || PRINT_IR_ENCODING) {
             System.out.println("Read IR encoding from test VM:");
             System.out.println(irEncoding);
@@ -66,7 +67,7 @@ class IREncodingParser {
         createTestMethodMap(irEncoding, testClass);
         // We could have found format errors in @IR annotations. Report them now with an exception.
         TestFormat.throwIfAnyFailures();
-        return testMethodMap;
+        return new TestMethods(testMethods);
     }
 
     /**
@@ -134,7 +135,7 @@ class IREncodingParser {
                 int[] irRuleIds = irRulesMap.get(m.getName());
                 validateIRRuleIds(m, irAnnos, irRuleIds);
                 if (hasAnyApplicableIRRules(irRuleIds)) {
-                    testMethodMap.put(m.getName(), new TestMethod(m, irRuleIds));
+                    testMethods.put(m.getName(), new TestMethod(m, irAnnos, irRuleIds));
                 }
             }
         }
