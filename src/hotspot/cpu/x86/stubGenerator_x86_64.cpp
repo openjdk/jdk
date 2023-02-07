@@ -2165,6 +2165,9 @@ address StubGenerator::base64_AVX2_decode_tables_addr() {
   __ emit_data64(0x2f2f2f2f2f2f2f2f, relocInfo::none);
   __ emit_data64(0x5f5f5f5f5f5f5f5f, relocInfo::none);  // for URL
 
+  __ emit_data64(0xffffffffffffffff, relocInfo::none);
+  __ emit_data64(0xfcfcfcfcfcfcfcfc, relocInfo::none);  // for URL
+
   // Permute table
   __ emit_data64(0x0000000100000000, relocInfo::none);
   __ emit_data64(0x0000000400000002, relocInfo::none);
@@ -2224,9 +2227,9 @@ address StubGenerator::base64_AVX2_decode_URL_tables_addr() {
   __ emit_data64(0x1b1b1a1b1b131111, relocInfo::none);
 
   // lut_roll URL
-  __ emit_data64(0xb9b9bfbf04111000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf0411e000, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
-  __ emit_data64(0xb9b9bfbf04111000, relocInfo::none);
+  __ emit_data64(0xb9b9bfbf0411e000, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
 
   return start;
@@ -2671,18 +2674,18 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Set up constants
     __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
     __ vpbroadcastq(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
-    __ vmovdqu(xmm10, xmm4);
-    __ vmovdqu(xmm12, Address(r13, 0x10));  // permute
-    __ vmovdqu(xmm9, Address(r13, 0x30));  // lut_hi
-    __ vmovdqu(xmm7, Address(r13, 0x50)); // merge
-    __ vmovdqu(xmm6, Address(r13, 0x70)); // merge mult
-    __ vmovdqu(xmm13, Address(r13, 0x90)); // shuffle
+    __ vpbroadcastq(xmm10, Address(r13, isURL, Address::times_1, 0x10), Assembler::AVX_256bit);  // -1 or -4
+    __ vmovdqu(xmm12, Address(r13, 0x20));  // permute
+    __ vmovdqu(xmm9, Address(r13, 0x40));  // lut_hi
+    __ vmovdqu(xmm7, Address(r13, 0x60)); // merge
+    __ vmovdqu(xmm6, Address(r13, 0x80)); // merge mult
+    __ vmovdqu(xmm13, Address(r13, 0xa0)); // shuffle
 
     __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_URL_tables_addr()));
-    __ shll(isURL, 2);
+    __ shll(isURL, 3);
     __ vmovdqu(xmm11, Address(r13, isURL, Address::times_1, 0x00));  // lut_lo
     __ vmovdqu(xmm8, Address(r13, isURL, Address::times_1, 0x20)); // lut_roll
-    __ shrl(isURL, 5);  // restore isURL
+    __ shrl(isURL, 6);  // restore isURL
     __ jmp(L_enterLoop);
 
     __ align32();
@@ -2711,11 +2714,17 @@ address StubGenerator::generate_base64_decodeBlock() {
     // Extract the low nibble. 5F/2F will isolate the low-order 4 bits.  High 4 bits are don't care.
     __ vpand(xmm3, xmm2, xmm4, Assembler::AVX_256bit);
     // Check for special-case (0x2F or 0x5F (URL))
-    __ vpcmpeqb(xmm0, xmm10, xmm2, Assembler::AVX_256bit);
+    __ vpcmpeqb(xmm0, xmm4, xmm2, Assembler::AVX_256bit);
     // Get the bitset based on the low nibble.  vpshufb uses low-order 4 bits only.
     __ vpshufb(xmm3, xmm11, xmm3, Assembler::AVX_256bit);
     // Get the bit value of the high nibble
     __ vpshufb(xmm5, xmm9, xmm1, Assembler::AVX_256bit);
+    // Make sure 2F / 5F shows as valid
+    __ vpandn(xmm3, xmm0, xmm3, Assembler::AVX_256bit);
+    // Make adjustment for roll index.  For non-URL, this is a no-op,
+    // for URL, this adjusts by -4.  This is to properly index the
+    // roll value for 2F / 5F.
+    __ vpand(xmm0, xmm0, xmm10, Assembler::AVX_256bit);
     // If the and of the two is non-zero, we have an invalid input character
     __ vptest(xmm3, xmm5);
     // Extract the "roll" value - value to add to the input to get 6-bit out value
