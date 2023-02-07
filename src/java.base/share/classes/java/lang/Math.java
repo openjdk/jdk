@@ -2263,7 +2263,7 @@ public final class Math {
         // on common path when min < max and neither of them is NaN.
         // If min == max, we should additionally check for +0.0/-0.0 case,
         // so we're still visiting the if statement.
-        if (!(min < max)) {
+        if (!(min < max)) { // min greater than, equal to, or unordered with respect to max; NaN values are unordered
             if (Double.isNaN(min)) {
                 throw new IllegalArgumentException("min is NaN");
             }
@@ -2304,7 +2304,7 @@ public final class Math {
         // on common path when min < max and neither of them is NaN.
         // If min == max, we should additionally check for +0.0/-0.0 case,
         // so we're still visiting the if statement.
-        if (!(min < max)) {
+        if (!(min < max)) { // min greater than, equal to, or unordered with respect to max; NaN values are unordered
             if (Float.isNaN(min)) {
                 throw new IllegalArgumentException("min is NaN");
             }
