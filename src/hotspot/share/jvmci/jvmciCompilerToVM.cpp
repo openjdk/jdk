@@ -633,9 +633,16 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   if (!(is_condy || is_indy)) {
     JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
   }
+  // Get the indy entry based on CP index
+  int indy_index = -1;
+  for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
+    tty->print_cr("Index: %d", cp->resolved_indy_entry_at(i)->cpool_index());
+    if (cp->resolved_indy_entry_at(i)->cpool_index() == index) {
+      indy_index = i;
+    }
+  }
   // Resolve the bootstrap specifier, its name, type, and static arguments
-  int cpi = cp->resolved_indy_entry_at(index)->cpool_index();
-  BootstrapInfo bootstrap_specifier(cp, cpi, index);
+  BootstrapInfo bootstrap_specifier(cp, index, indy_index);
   Handle bsm = bootstrap_specifier.resolve_bsm(CHECK_NULL);
 
   // call java.lang.invoke.MethodHandle::asFixedArity() -> MethodHandle
