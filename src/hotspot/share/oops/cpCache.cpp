@@ -672,7 +672,6 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
                                      const intStack& index_map,
-                                     const intStack& invokedynamic_index_map,
                                      const intStack& invokedynamic_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      TRAPS) {
@@ -692,11 +691,10 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   }
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-    ConstantPoolCache(length, index_map, invokedynamic_index_map, invokedynamic_map, array);
+    ConstantPoolCache(length, index_map, invokedynamic_map, array);
 }
 
 void ConstantPoolCache::initialize(const intArray& inverse_index_map,
-                                   const intArray& invokedynamic_inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
   for (int i = 0; i < inverse_index_map.length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);

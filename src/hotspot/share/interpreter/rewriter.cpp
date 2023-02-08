@@ -98,7 +98,6 @@ void Rewriter::make_constant_pool_cache(TRAPS) {
   ClassLoaderData* loader_data = _pool->pool_holder()->class_loader_data();
   ConstantPoolCache* cache =
       ConstantPoolCache::allocate(loader_data, _cp_cache_map,
-                                  _invokedynamic_cp_cache_map,
                                   _invokedynamic_references_map, _initialized_indy_entries, CHECK);
 
   // initialize object cache in constant pool
@@ -268,8 +267,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
   assert(p[-1] == Bytecodes::_invokedynamic, "not invokedynamic bytecode");
   if (!reverse) {
     int cp_index = Bytes::get_Java_u2(p);
-    int cache_index = add_invokedynamic_cp_cache_entry(cp_index);
-    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, cache_index);
+    int resolved_index = add_invokedynamic_resolved_references_entry(cp_index, -1); // Indy no longer has a CPCE
     // Replace the trailing four bytes with an index to the array of
     // indy resolution information in the CPC. There is one entry for
     // each bytecode, even if they make the same call. In other words,
@@ -281,11 +279,6 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Note: We use native_u4 format exclusively for 4-byte indexes.
     Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(_invokedynamic_index));
     _invokedynamic_index++;
-
-    // add the bcp in case we need to patch this bytecode if we also find a
-    // invokespecial/InterfaceMethodref in the bytecode stream
-    _patch_invokedynamic_bcps->push(p);
-    _patch_invokedynamic_refs->push(resolved_index);
 
     // Collect invokedynamic information before creating ResolvedInvokeDynamicInfo array
     _initialized_indy_entries.push(ResolvedIndyEntry((u2)resolved_index, (u2)cp_index));
@@ -303,32 +296,6 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     Bytes::put_Java_u2(p, cp_index);
   }
 }
-
-void Rewriter::patch_invokedynamic_bytecodes() {
-  // If the end of the cp_cache is the same as after initializing with the
-  // cpool, nothing needs to be done.  Invokedynamic bytecodes are at the
-  // correct offsets. ie. no invokespecials added
-  int delta = cp_cache_delta();
-  if (delta > 0) {
-    int length = _patch_invokedynamic_bcps->length();
-    assert(length == _patch_invokedynamic_refs->length(),
-           "lengths should match");
-    for (int i = 0; i < length; i++) {
-      address p = _patch_invokedynamic_bcps->at(i);
-      int cache_index = ConstantPool::decode_invokedynamic_index(
-                          Bytes::get_native_u4(p));
-      Bytes::put_native_u4(p, ConstantPool::encode_invokedynamic_index(cache_index + delta));
-
-      // invokedynamic resolved references map also points to cp cache and must
-      // add delta to each.
-      int resolved_index = _patch_invokedynamic_refs->at(i);
-        assert(_invokedynamic_references_map.at(resolved_index) == cache_index,
-             "should be the same index");
-        _invokedynamic_references_map.at_put(resolved_index, cache_index + delta);
-    }
-  }
-}
-
 
 // Rewrite some ldc bytecodes to _fast_aldc
 void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
@@ -597,8 +564,7 @@ Rewriter::Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<
     _resolved_references_map(cpool->length() / 2),
     _invokedynamic_references_map(cpool->length() / 2),
     _method_handle_invokers(cpool->length()),
-    _invokedynamic_index(0),
-    _invokedynamic_cp_cache_map(cpool->length() / 4)
+    _invokedynamic_index(0)
 {
 
   // Rewrite bytecodes - exception here exits.
