@@ -136,7 +136,7 @@ public class TestZipFileEncodings {
     public void sameHashAndLengthSlashLessDirLookup(String charsetName) throws IOException {
 
         // Two directory names with colliding hash codes and same length
-        String one ="entry-65323-name--5113477560869890044\u2f2f/";
+        String one = "entry-65323-name--5113477560869890044\u2f2f/";
         String two = "entry-16430-name--2415648292541425091\u2f2f/";
 
         // Create a ZIP with the two entries
