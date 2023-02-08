@@ -30,7 +30,7 @@
 
 #include <malloc.h>
 
-constexpr const char* malloc_info_unavailable = "Error: malloc_info not available.";
+constexpr const char* malloc_info_unavailable = "Error: malloc_info(3) not available.";
 
 void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
 #ifdef __GLIBC__
@@ -38,7 +38,7 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
   size_t size;
   ALLOW_C_FUNCTION(::open_memstream, FILE* stream = ::open_memstream(&buf, &size);)
   if (stream == nullptr) {
-    _output->print("Error: Could not call malloc_info");
+    _output->print("Error: Could not call malloc_info(3)");
     return;
   }
 
