@@ -55,7 +55,7 @@ void InterpreterMacroAssembler::null_check_throw(Register a, int offset, Registe
   MacroAssembler::null_check_throw(a, offset, temp_reg, exception_entry);
 }
 
-void MacroAssembler::load_klass_check_null_throw(Register dst, Register src, Register temp_reg) {
+void InterpreterMacroAssembler::load_klass_check_null_throw(Register dst, Register src, Register temp_reg) {
   null_check_throw(src, oopDesc::klass_offset_in_bytes(), temp_reg);
   load_klass(dst, src);
 }
