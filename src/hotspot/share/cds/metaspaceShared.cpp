@@ -75,6 +75,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -990,6 +991,8 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
     bool dynamic_mapped = (dynamic_mapinfo != nullptr && dynamic_mapinfo->is_mapped());
     char* cds_base = static_mapinfo->mapped_base();
     char* cds_end =  dynamic_mapped ? dynamic_mapinfo->mapped_end() : static_mapinfo->mapped_end();
+    // Register CDS memory region with LSan.
+    LSAN_REGISTER_ROOT_REGION(cds_base, cds_end - cds_base);
     set_shared_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();

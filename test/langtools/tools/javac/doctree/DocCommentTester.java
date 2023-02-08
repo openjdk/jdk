@@ -804,11 +804,15 @@ public class DocCommentTester {
                 indent += n;
             }
 
+            private static final int BEGIN = 32;
+            private static final String ELLIPSIS = "...";
+            private static final int END = 32;
+
             String compress(String s) {
                 s = s.replace("\n", "|").replace(" ", "_");
-                return (s.length() < 32)
+                return (s.length() < BEGIN + ELLIPSIS.length() + END)
                         ? s
-                        : s.substring(0, 16) + "..." + s.substring(16);
+                        : s.substring(0, BEGIN) + ELLIPSIS + s.substring(s.length() - END);
             }
 
             String quote(String s) {

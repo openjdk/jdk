@@ -36,28 +36,6 @@
 
 // Methods of protected closure types
 
-template <class T>
-inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
-#ifdef ASSERT
-  {
-    // We never expect to see a null reference being processed
-    // as a weak reference.
-    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-    assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
-  }
-#endif // ASSERT
-
-  Devirtualizer::do_oop(_cl, p);
-
-  // Optimized for Defnew generation if it's the youngest generation:
-  // we set a younger_gen card if we have an older->youngest
-  // generation pointer.
-  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  if ((cast_from_oop<HeapWord*>(obj) < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
-    _rs->inline_write_ref_field_gc(p);
-  }
-}
-
 template <typename OopClosureType>
 void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
   // No allocation in eden and from spaces, so no iteration required.
