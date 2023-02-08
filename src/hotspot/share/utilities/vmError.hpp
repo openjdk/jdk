@@ -63,6 +63,7 @@ class VMError : public AllStatic {
   static size_t      _size;
 
   // used by fatal error handler
+  static int         _reentrant_iteration_step;
   static int         _current_step;
   static const char* _current_step_info;
 
