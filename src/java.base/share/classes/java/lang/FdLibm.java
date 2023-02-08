@@ -797,7 +797,9 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Log {
+    static final class Log {
+        private Log() {throw new UnsupportedOperationException();}
+
         private static final double
             ln2_hi = 0x1.62e42feep-1,       // 6.93147180369123816490e-01
             ln2_lo = 0x1.a39ef35793c76p-33, // 1.90821492927058770002e-10
@@ -822,7 +824,7 @@ class FdLibm {
 
             k=0;
             if (hx < 0x0010_0000) {                  // x < 2**-1022
-                if (((hx & 0x7fff_ffff) | lx) ==0) { // log(+-0) = -inf
+                if (((hx & 0x7fff_ffff) | lx) == 0) { // log(+-0) = -inf
                     return -TWO54/zero;
                 }
                 if (hx < 0) {                        // log(-#) = NaN
@@ -833,12 +835,12 @@ class FdLibm {
                 hx = __HI(x);  // high word of x
             }
             if (hx >= 0x7ff0_0000) {
-                return x+x;
+                return x + x;
             }
             k += (hx >> 20) - 1023;
             hx &= 0x000f_ffff;
             i = (hx + 0x9_5f64) & 0x10_0000;
-            x =__HI(x, hx|(i ^ 0x3ff0_0000));  // normalize x or x/2
+            x =__HI(x, hx | (i ^ 0x3ff0_0000));  // normalize x or x/2
             k += (i >> 20);
             f = x - 1.0;
             if ((0x000f_ffff & (2 + hx)) < 3) {// |f| < 2**-20
@@ -871,7 +873,7 @@ class FdLibm {
             if (i > 0) {
                 hfsq = 0.5*f*f;
                 if (k == 0) {
-                    return f-(hfsq-s*(hfsq+R));
+                    return f-(hfsq - s*(hfsq + R));
                 } else {
                     return dk*ln2_hi - ((hfsq - (s*(hfsq + R) + dk*ln2_lo)) - f);
                 }

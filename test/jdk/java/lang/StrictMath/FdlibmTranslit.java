@@ -455,7 +455,7 @@ public class FdlibmTranslit {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Log {
+    private static final class Log {
         private static final  double
             ln2_hi  =  6.93147180369123816490e-01,  /* 3fe62e42 fee00000 */
             ln2_lo  =  1.90821492927058770002e-10,  /* 3dea39ef 35793c76 */
