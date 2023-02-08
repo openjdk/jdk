@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 
 #include "runtime/safefetch.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -63,7 +64,7 @@ bool handle_safefetch(int sig, address ignored1, void* ignored2) {
 }
 
 template <class T>
-static bool _SafeFetchXX_internal(const T *adr, T* result) {
+ATTRIBUTE_NO_SANITIZE_ADDRESS static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
 

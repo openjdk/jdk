@@ -29,6 +29,25 @@
 #include <sanitizer/asan_interface.h>
 #endif
 
+// ATTRIBUTE_NO_SANITIZE_ADDRESS
+//
+// Function attribute which informs the compiler to not instrument memory accesses in the function.
+// Useful if the function is known to do something dangerous, such as reading previous stack frames
+// or reading arbitrary regions of memory when dumping during a crash.
+#ifdef ADDRESS_SANITIZER
+#if defined(TARGET_COMPILER_gcc)
+// GCC-like, including Clang.
+#define ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
+#elif defined(TARGET_COMPILER_visCPP)
+// Microsoft Visual C++
+#define ATTRIBUTE_NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
+#endif
+#endif
+
+#ifndef ATTRIBUTE_NO_SANITIZE_ADDRESS
+#define ATTRIBUTE_NO_SANITIZE_ADDRESS
+#endif
+
 // ASAN_POISON_MEMORY_REGION()/ASAN_UNPOISON_MEMORY_REGION()
 //
 // Poisons/unpoisons the specified memory region. When ASan is available this is the macro of the

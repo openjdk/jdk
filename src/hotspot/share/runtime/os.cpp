@@ -60,6 +60,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/mallocTracker.hpp"
 #include "services/mallocHeader.inline.hpp"
@@ -940,6 +941,16 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
+ATTRIBUTE_NO_SANITIZE_ADDRESS static void print_hex_readable_pointer(outputStream* st, address p,
+                                                                     int unitsize) {
+  switch (unitsize) {
+    case 1: st->print("%02x", *(u1*)p); break;
+    case 2: st->print("%04x", *(u2*)p); break;
+    case 4: st->print("%08x", *(u4*)p); break;
+    case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
+  }
+}
+
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
                         int bytes_per_line, address logical_start) {
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
@@ -958,12 +969,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
     if (is_readable_pointer(p)) {
-      switch (unitsize) {
-        case 1: st->print("%02x", *(u1*)p); break;
-        case 2: st->print("%04x", *(u2*)p); break;
-        case 4: st->print("%08x", *(u4*)p); break;
-        case 8: st->print("%016" FORMAT64_MODIFIER "x", *(u8*)p); break;
-      }
+      print_hex_readable_pointer(st, p, unitsize);
     } else {
       st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
     }
