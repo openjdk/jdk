@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -562,8 +562,8 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 
   beqz(value, done);           // Use NULL as-is.
   // Test for tag.
-  andi(t0, value, JNIHandles::tag_mask);
-  bnez(t0, tagged);
+  andi(tmp1, value, JNIHandles::tag_mask);
+  bnez(tmp1, tagged);
 
   // Resolve local handle
   access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, value, Address(value, 0), tmp1, tmp2);
@@ -571,13 +571,14 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   j(done);
 
   bind(tagged);
-  // Test for jweak tag.
-  andi(t0, value, JNIHandles::TypeTag::weak_global);
-  bnez(t0, weak_tagged);
+  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  andi(tmp1, value, JNIHandles::TypeTag::weak_global);
+  bnez(tmp1, weak_tagged);
 
   // Resolve global handle
   access_load_at(T_OBJECT, IN_NATIVE, value,
                  Address(value, -JNIHandles::TypeTag::global), tmp1, tmp2);
+  verify_oop(value);
   j(done);
 
   bind(weak_tagged);
@@ -597,9 +598,10 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
+    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
-    andi(t0, value, JNIHandles::TypeTag::global); // Test for global tag.
-    bnez(t0, valid_global_tag);
+    andi(tmp1, value, JNIHandles::TypeTag::global); // Test for global tag.
+    bnez(tmp1, valid_global_tag);
     stop("non global jobject using resolve_global_jobject");
     bind(valid_global_tag);
   }
