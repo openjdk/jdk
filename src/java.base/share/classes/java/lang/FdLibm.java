@@ -658,7 +658,9 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Exp {
+    static final class Exp {
+        private Exp() {throw new UnsupportedOperationException();};
+
         private static final double one     = 1.0;
         private static final double[] half = {0.5, -0.5,};
         private static final double huge    = 1.0e+300;
@@ -676,10 +678,6 @@ class FdLibm {
         private static final double P3   =  0x1.1566aaf25de2cp-14; //  6.61375632143793436117e-05
         private static final double P4   = -0x1.bbd41c5d26bf1p-20; // -1.65339022054652515390e-06
         private static final double P5   =  0x1.6376972bea4d0p-25; //  4.13813679705723846039e-08
-
-        private Exp() {
-            throw new UnsupportedOperationException();
-        }
 
         public static double compute(double x) {
             double y;
@@ -1213,7 +1211,7 @@ class FdLibm {
      *      only sinh(0)=0 is exact for finite x.
      */
     static final class Sinh {
-        private Sinh() {throw new AssertionError("no instances");};
+        private Sinh() {throw new UnsupportedOperationException();};
 
         private static final double one = 1.0, shuge = 1.0e307;
 
@@ -1289,7 +1287,7 @@ class FdLibm {
      *      only cosh(0)=1 is exact for finite x.
      */
     static final class Cosh {
-        private Cosh() {throw new AssertionError("no instances");};
+        private Cosh() {throw new UnsupportedOperationException();};
 
         private static final double one = 1.0, half=0.5, huge = 1.0e300;
         static double compute(double x) {
@@ -1365,7 +1363,7 @@ class FdLibm {
      *      only tanh(0)=0 is exact for finite argument.
      */
     static final class Tanh {
-        private Tanh() {throw new AssertionError("no instances");};
+        private Tanh() {throw new UnsupportedOperationException();};
 
         private static final double one=1.0, two=2.0, tiny = 1.0e-300;
         static double compute(double x) {

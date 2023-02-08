@@ -86,6 +86,10 @@ public class FdlibmTranslit {
         return Log1p.compute(x);
     }
 
+    public static double exp(double x) {
+        return Exp.compute(x);
+    }
+
     public static double expm1(double x) {
         return Expm1.compute(x);
     }
@@ -344,7 +348,7 @@ public class FdlibmTranslit {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Exp {
+    private static final class Exp {
         private static final double one     = 1.0;
         private static final double[] halF = {0.5,-0.5,};
         private static final double huge    = 1.0e+300;
@@ -362,7 +366,7 @@ public class FdlibmTranslit {
         private static final double P4   = -1.65339022054652515390e-06;         /* 0xBEBBBD41, 0xC5D26BF1 */
         private static final double P5   =  4.13813679705723846039e-08;         /* 0x3E663769, 0x72BEA4D0 */
 
-        public static double compute(double x) {
+        static double compute(double x) {
             double y,hi=0,lo=0,c,t;
             int k=0,xsb;
             /*unsigned*/ int hx;
@@ -866,7 +870,7 @@ public class FdlibmTranslit {
             }
 
             /* |x| in [22, log(maxdouble)] return 0.5*exp(|x|) */
-            if (ix < 0x40862E42)  return h*StrictMath.exp(Math.abs(x)); // TODO switch to translit
+            if (ix < 0x40862E42) return h*FdlibmTranslit.exp(Math.abs(x));
 
             /* |x| in [log(maxdouble), overflowthresold] */
             // Note: the original FDLIBM sources use
@@ -880,7 +884,7 @@ public class FdlibmTranslit {
             // functionality.
             lx = __LO(x);
             if (ix<0x408633CE || ((ix==0x408633ce)&&(Long.compareUnsigned(lx, 0x8fb9f87d) <= 0 ))) {
-                w = StrictMath.exp(0.5*Math.abs(x)); // TODO switch to translit
+                w = exp(0.5*Math.abs(x));
                 t = h*w;
                 return t*w;
             }
@@ -934,12 +938,12 @@ public class FdlibmTranslit {
 
             /* |x| in [0.5*ln2,22], return (exp(|x|)+1/exp(|x|)/2; */
             if (ix < 0x40360000) {
-                t = StrictMath.exp(Math.abs(x)); // TODO switch to translit
+                t = exp(Math.abs(x));
                 return half*t+half/t;
             }
 
             /* |x| in [22, log(maxdouble)] return half*exp(|x|) */
-            if (ix < 0x40862E42)  return half*StrictMath.exp(Math.abs(x)); // TODO switch to translit
+            if (ix < 0x40862E42) return half*exp(Math.abs(x));
 
             /* |x| in [log(maxdouble), overflowthresold] */
             // See note above in the sinh implementation for how this
@@ -948,7 +952,7 @@ public class FdlibmTranslit {
             lx = __LO(x);
             if (ix<0x408633CE ||
                 ((ix==0x408633ce)&&(Integer.compareUnsigned(lx, 0x8fb9f87d) <= 0))) {
-                w = StrictMath.exp(half*Math.abs(x)); // TODO switch to translit
+                w = exp(half*Math.abs(x));
                 t = half*w;
                 return t*w;
             }
