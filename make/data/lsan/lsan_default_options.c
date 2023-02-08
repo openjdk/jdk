@@ -23,8 +23,8 @@
  * questions.
  */
 
-#ifndef ADDRESS_SANITIZER
-#error "Build misconfigured, preprocessor macro ADDRESS_SANITIZER should be defined"
+#ifndef LEAK_SANITIZER
+#error "Build misconfigured, preprocessor macro LEAK_SANITIZER should be defined"
 #endif
 
 #ifndef __has_attribute
@@ -43,23 +43,25 @@
 #define ATTRIBUTE_USED
 #endif
 
-// Override weak symbol exposed by ASan to override default options. This is called by ASan
-// extremely early during library loading, before main is called. We need to override the default
-// options because LSan is enabled by default and Hotspot is not yet compatible with it.
-// Additionally we need to prevent ASan from handling SIGSEGV, so that Hotspot's crash handler is
-// used. You can override these options by setting the environment variable ASAN_OPTIONS.
-ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
+// Override weak symbol exposed by LSan to override default options. This is called by LSan
+// extremely early during library loading, before main is called.  We need to override the default
+// options because LSan will perform leak checking at program exit. Unfortunately Hotspot does not
+// shutdown cleanly at the moment and some leaks occur, we want to ignore these. Instead we
+// explicitly perform leak checking early during JVM shutdown.
+ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_options() {
   return
-#ifdef LEAK_SANITIZER
-    "leak_check_at_exit=0,"
-#else
-    // ASan bundles LSan, however we only support LSan when it is explicitly requested during
-    // configuration. Thus we disable it to match if it was not requested.
-    "detect_leaks=0,"
-#endif
     "print_suppressions=0,"
-    "handle_segv=0,"
+    "leak_check_at_exit=0,"
     // See https://github.com/google/sanitizers/issues/1322. Hopefully this is resolved
     // at some point and we can remove this option.
     "intercept_tls_get_addr=0";
+}
+
+// Override weak symbol exposed by LSan to override default suppressions. This is called by LSan
+// extremely early during library loading, before main is called.
+ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __lsan_default_suppressions() {
+  return
+    // Remove after JDK-8297688 is resolved.
+    "leak:^JLI_MemAlloc$\n"
+    "leak:^JLI_StringDup$\n";
 }
