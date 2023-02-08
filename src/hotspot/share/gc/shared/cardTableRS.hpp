@@ -48,7 +48,7 @@ class CardTableRS : public CardTable {
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void younger_refs_in_space_iterate(TenuredSpace* sp, HeapWord* gen_boundary, OopIterateClosure* cl);
+  void younger_refs_in_space_iterate(TenuredSpace* sp, OopIterateClosure* cl);
 
   virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
 
@@ -72,7 +72,6 @@ public:
   // region mr in the given space and apply cl to any dirty sub-regions
   // of mr. Clears the dirty cards as they are processed.
   void non_clean_card_iterate(TenuredSpace* sp,
-                              HeapWord* gen_boundary,
                               MemRegion mr,
                               OopIterateClosure* cl,
                               CardTableRS* ct);

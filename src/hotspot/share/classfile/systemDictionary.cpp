@@ -569,8 +569,9 @@ InstanceKlass* SystemDictionary::handle_parallel_loading(JavaThread* current,
                                                          bool* throw_circularity_error) {
   PlaceholderEntry* oldprobe = PlaceholderTable::get_entry(name, loader_data);
   if (oldprobe != nullptr) {
-    // only need check_seen_thread once, not on each loop
-    // 6341374 java/lang/Instrument with -Xcomp
+    // -Xcomp calls load_signature_classes which might result in loading
+    // a class that's already in the process of loading, so we detect CCE here also.
+    // Only need check_seen_thread once, not on each loop
     if (oldprobe->check_seen_thread(current, PlaceholderTable::LOAD_INSTANCE)) {
       log_circularity_error(name, oldprobe);
       *throw_circularity_error = true;
