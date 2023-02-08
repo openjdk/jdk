@@ -51,6 +51,16 @@
 #undef __
 #define __ masm->
 
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if mask is good.
+  // verifies that ZAddressBadMask & obj == 0
+  __ ldr(tmp2, Address(rthread, ZThreadLocalData::address_bad_mask_offset()));
+  __ andr(tmp1, obj, tmp2);
+  __ cbnz(tmp1, error);
+
+  BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
+}
+
 void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    DecoratorSet decorators,
                                    BasicType type,

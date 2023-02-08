@@ -29,6 +29,7 @@
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -49,6 +50,14 @@
 
 #undef __
 #define __ masm->
+
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if metadata bits indicate a bad oop
+  __ testptr(obj, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
+  __ jcc(Assembler::notZero, error);
+
+  BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
+}
 
 static void call_vm(MacroAssembler* masm,
                     address entry_point,

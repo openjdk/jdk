@@ -77,6 +77,8 @@ public:
                                              Register tmp,
                                              Label& slowpath);
 
+  virtual void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
+
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
 #ifdef COMPILER1
