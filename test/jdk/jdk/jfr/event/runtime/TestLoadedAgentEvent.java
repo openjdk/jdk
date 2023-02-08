@@ -69,7 +69,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  */
 public final class TestLoadedAgentEvent {
     private static final String JAVA_AGENT_JAR = "JavaAgent.jar";
-    private final static String EVENT_NAME = "jdk.LoadedAgent";
+    private static final String EVENT_NAME = "jdk.LoadedAgent";
 
     public static void main(String[] args) throws Throwable {
         String testMethod = args[0];
@@ -85,6 +85,7 @@ public final class TestLoadedAgentEvent {
             r.enable(EVENT_NAME);
             r.start();
             List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
             RecordedEvent e = events.get(0);
             System.out.println(e);
             Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
@@ -99,6 +100,7 @@ public final class TestLoadedAgentEvent {
             r.enable(EVENT_NAME);
             r.start();
             List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
             RecordedEvent e = events.get(0);
             System.out.println(e);
             Events.assertField(e, "name").equal("jdwp");
@@ -127,6 +129,7 @@ public final class TestLoadedAgentEvent {
             vm.detach();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
             for (RecordedEvent e : events) {
                 System.out.println(e);
                 Instant loadStart = e.getInstant("loadStart");

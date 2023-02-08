@@ -133,7 +133,7 @@ extern Mutex*   JfrStacktrace_lock;              // used to guard access to the 
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
 extern Monitor* JfrThreadSampler_lock;           // used to suspend/resume JFR thread sampler
-extern Mutex*   JfrAgentList_lock;               // protects list of AgentLibraries
+extern Mutex*   JfrAgentList_lock;               // protects AgentLibraryList
 #endif
 
 #ifndef SUPPORTS_NATIVE_CX8

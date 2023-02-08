@@ -2943,7 +2943,7 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   // The abs parameter should be "true" or "false"
   bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam,"true")==0);
 
-  bool instrument = strcmp("instrument", agent) == 0;
+  bool instrument = agent != nullptr && strcmp("instrument", agent) == 0;
   // Initially marked as invalid. It will be set to valid if we can find the agent
   AgentLibrary *agent_lib = new AgentLibrary(agent, options, is_absolute_path, nullptr, true, instrument);
 
