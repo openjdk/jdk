@@ -162,7 +162,7 @@ class CustomScheduler {
     @Test
     void testParkWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        assumeFalse(carrier.isVirtual(), "Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main thread is a virtual thread");
         try {
             var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
             Thread vthread = builder.start(() -> {
@@ -183,7 +183,7 @@ class CustomScheduler {
     @Test
     void testTerminateWithInterruptSet() {
         Thread carrier = Thread.currentThread();
-        assumeFalse(carrier.isVirtual(), "Main test is a virtual thread");
+        assumeFalse(carrier.isVirtual(), "Main thread is a virtual thread");
         try {
             var builder = ThreadBuilders.virtualThreadBuilder(Runnable::run);
             Thread vthread = builder.start(() -> {
@@ -201,7 +201,7 @@ class CustomScheduler {
      */
     @Test
     void testRunWithInterruptSet() throws Exception {
-        assumeFalse(Thread.currentThread().isVirtual(), "Main test is a virtual thread");
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread is a virtual thread");
         Executor scheduler = (task) -> {
             Thread.currentThread().interrupt();
             task.run();

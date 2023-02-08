@@ -291,7 +291,7 @@ class BuilderTest {
     @Test
     void testPriority3() {
         Thread currentThread = Thread.currentThread();
-        assumeFalse(currentThread.isVirtual(), "Main test is a virtual thread");
+        assumeFalse(currentThread.isVirtual(), "Main thread is a virtual thread");
 
         int maxPriority = currentThread.getThreadGroup().getMaxPriority();
         int priority = Math.min(maxPriority + 1, Thread.MAX_PRIORITY);
