@@ -877,7 +877,7 @@ class ThreadAPI {
         Thread.sleep(100);  // give time for thread to block
         thread.interrupt();
         thread.join();
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -902,7 +902,7 @@ class ThreadAPI {
         awaitParked(thread);
         thread.interrupt();
         thread.join();
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -922,7 +922,7 @@ class ThreadAPI {
         awaitParked(thread);
         thread.interrupt();
         thread.join();
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -1577,7 +1577,7 @@ class ThreadAPI {
         });
         thread.join();
         assertTrue(exception.get() instanceof FooException);
-        assertTrue(thread.getUncaughtExceptionHandler() == null);
+        assertNull(thread.getUncaughtExceptionHandler());
     }
 
     /**
@@ -1601,7 +1601,7 @@ class ThreadAPI {
             Thread.setDefaultUncaughtExceptionHandler(savedHandler);
         }
         assertTrue(exception.get() instanceof FooException);
-        assertTrue(thread.getUncaughtExceptionHandler() == null);
+        assertNull(thread.getUncaughtExceptionHandler());
     }
 
     /**
@@ -1614,7 +1614,7 @@ class ThreadAPI {
             throw new FooException();
         });
         thread.join();
-        assertTrue(thread.getUncaughtExceptionHandler() == null);
+        assertNull(thread.getUncaughtExceptionHandler());
     }
 
     /**
@@ -2028,12 +2028,12 @@ class ThreadAPI {
 
             // get stack trace for the carrier thread
             StackTraceElement[] stackTrace = map.get(carrier);
-            assertTrue(stackTrace != null);
+            assertNotNull(stackTrace);
             assertTrue(contains(stackTrace, "java.util.concurrent.ForkJoinPool"));
             assertFalse(contains(stackTrace, "java.lang.Object.wait"));
 
             // there should be no stack trace for the virtual thread
-            assertTrue(map.get(vthread) == null);
+            assertNull(map.get(vthread));
         }
     }
 
@@ -2057,7 +2057,7 @@ class ThreadAPI {
             LockSupport.unpark(thread);
             thread.join();
         }
-        assertTrue(thread.getThreadGroup() == null);
+        assertNull(thread.getThreadGroup());
     }
 
     /**

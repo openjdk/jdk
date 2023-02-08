@@ -160,7 +160,7 @@ class StructuredTaskScopeTest {
                 return null;
             });
             future2.get();
-            assertTrue(future2.resultNow() == null);
+            assertNull(future2.resultNow());
 
             // random thread cannot fork
             try (var pool = Executors.newCachedThreadPool(factory)) {
@@ -528,7 +528,8 @@ class StructuredTaskScopeTest {
 
             long startMillis = millisTime();
             scope.joinUntil(Instant.now().plusSeconds(30));
-            assertTrue(future.isDone() && future.resultNow() == null);
+            assertTrue(future.isDone());
+            assertNull(future.resultNow());
             expectDuration(startMillis, /*min*/1900, /*max*/20_000);
         }
     }
@@ -733,7 +734,7 @@ class StructuredTaskScopeTest {
                 return null;
             });
             future2.get();
-            assertTrue(future2.resultNow() == null);
+            assertNull(future2.resultNow());
 
             scope2.join();
             scope1.join();

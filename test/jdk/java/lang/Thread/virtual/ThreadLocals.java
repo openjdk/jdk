@@ -44,7 +44,7 @@ class ThreadLocals {
     void testThreadLocal1() throws Exception {
         for (int i = 0; i < 10; i++) {
             VThreadRunner.run(() -> {
-                assertTrue(LOCAL.get() == null);
+                assertNull(LOCAL.get());
                 Object obj = new Object();
                 LOCAL.set(obj);
                 assertTrue(LOCAL.get() == obj);
@@ -58,7 +58,7 @@ class ThreadLocals {
     @Test
     void testThreadLocal2() throws Exception {
         VThreadRunner.run(() -> {
-            assertTrue(LOCAL.get() == null);
+            assertNull(LOCAL.get());
             Object obj = new Object();
             LOCAL.set(obj);
             try { Thread.sleep(100); } catch (InterruptedException e) { }
@@ -88,7 +88,7 @@ class ThreadLocals {
         VThreadRunner.run(VThreadRunner.NO_THREAD_LOCALS, () -> {
             assertThrows(UnsupportedOperationException.class, () -> LOCAL.set(null));
             assertThrows(UnsupportedOperationException.class, () -> LOCAL.set(new Object()));
-            assertTrue(LOCAL.get() == null);
+            assertNull(LOCAL.get());
             LOCAL.remove();  // should not throw
 
             assertThrows(UnsupportedOperationException.class, () -> LOCAL2.set(null));
@@ -98,7 +98,7 @@ class ThreadLocals {
 
             assertThrows(UnsupportedOperationException.class, () -> INHERITED_LOCAL.set(null));
             assertThrows(UnsupportedOperationException.class, () -> INHERITED_LOCAL.set(new Object()));
-            assertTrue(INHERITED_LOCAL.get() == null);
+            assertNull(INHERITED_LOCAL.get());
             INHERITED_LOCAL.remove();  // should not throw
 
             assertThrows(UnsupportedOperationException.class, () -> INHERITED_LOCAL2.set(null));
@@ -113,16 +113,16 @@ class ThreadLocals {
      */
     @Test
     void testInheritedThreadLocal1() throws Exception {
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
         for (int i = 0; i < 10; i++) {
             VThreadRunner.run(() -> {
-                assertTrue(INHERITED_LOCAL.get() == null);
+                assertNull(INHERITED_LOCAL.get());
                 Object obj = new Object();
                 INHERITED_LOCAL.set(obj);
                 assertTrue(INHERITED_LOCAL.get() == obj);
             });
         }
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
     }
 
     /**
@@ -130,7 +130,7 @@ class ThreadLocals {
      */
     @Test
     void testInheritedThreadLocal2() throws Exception {
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
         var obj = new Object();
         INHERITED_LOCAL.set(obj);
         try {
@@ -147,7 +147,7 @@ class ThreadLocals {
      */
     @Test
     void testInheritedThreadLocal3() throws Exception {
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
         VThreadRunner.run(() -> {
             var obj = new Object();
             INHERITED_LOCAL.set(obj);
@@ -157,7 +157,7 @@ class ThreadLocals {
             assertTrue(INHERITED_LOCAL.get() == obj);
 
         });
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
     }
 
     /**
@@ -166,13 +166,13 @@ class ThreadLocals {
      */
     @Test
     void testInheritedThreadLocal4() throws Exception {
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
         var obj = new Object();
         INHERITED_LOCAL.set(obj);
         try {
             int characteristics = VThreadRunner.NO_INHERIT_THREAD_LOCALS;
             VThreadRunner.run(characteristics, () -> {
-                assertTrue(INHERITED_LOCAL.get() == null);
+                assertNull(INHERITED_LOCAL.get());
             });
         } finally {
             INHERITED_LOCAL.remove();
@@ -185,17 +185,17 @@ class ThreadLocals {
      */
     @Test
     void testInheritedThreadLocal5() throws Exception {
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
         VThreadRunner.run(() -> {
             var obj = new Object();
             INHERITED_LOCAL.set(obj);
             int characteristics = VThreadRunner.NO_INHERIT_THREAD_LOCALS;
             VThreadRunner.run(characteristics, () -> {
-                assertTrue(INHERITED_LOCAL.get() == null);
+                assertNull(INHERITED_LOCAL.get());
             });
             assertTrue(INHERITED_LOCAL.get() == obj);
 
         });
-        assertTrue(INHERITED_LOCAL.get() == null);
+        assertNull(INHERITED_LOCAL.get());
     }
 }

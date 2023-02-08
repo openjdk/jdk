@@ -87,9 +87,9 @@ class ThreadFlockTest {
     @Test
     void testName() {
         try (var flock = ThreadFlock.open(null)) {
-            assertTrue(flock.name() == null);
+            assertNull(flock.name());
             flock.close();
-            assertTrue(flock.name() == null);  // after close
+            assertNull(flock.name());  // after close
         }
         try (var flock = ThreadFlock.open("fetcher")) {
             assertEquals("fetcher", flock.name());
@@ -168,7 +168,7 @@ class ThreadFlockTest {
             flock.close();
         }
         assertTrue(flock.threads().count() == 0);
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -372,7 +372,7 @@ class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }
@@ -582,7 +582,7 @@ class ThreadFlockTest {
         }
 
         // thread should not have throw any exception
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -634,7 +634,7 @@ class ThreadFlockTest {
         }
 
         // thread should not have throw any exception
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -791,7 +791,7 @@ class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }
@@ -831,7 +831,7 @@ class ThreadFlockTest {
         }
         assertTrue(flock.isClosed());
         assertTrue(flock.threads().count() == 0);
-        assertTrue(exception.get() == null); // no exception thrown
+        assertNull(exception.get()); // no exception thrown
     }
 
     /**
@@ -908,7 +908,7 @@ class ThreadFlockTest {
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -932,7 +932,7 @@ class ThreadFlockTest {
         } finally {
             assertTrue(Thread.interrupted());  // clear interrupt
         }
-        assertTrue(exception.get() == null);
+        assertNull(exception.get());
     }
 
     /**
@@ -982,7 +982,7 @@ class ThreadFlockTest {
         thread.join();
         Throwable cause = exception.get();
         if (flock.containsThread(thread)) {
-            assertTrue(cause == null);
+            assertNull(cause);
         } else {
             assertTrue(cause instanceof WrongThreadException);
         }

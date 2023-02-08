@@ -176,7 +176,7 @@ class ScopeValueAPI {
     void testOrElse(ThreadFactory factory) throws Exception {
         test(factory, () -> {
             ScopedValue<String> name = ScopedValue.newInstance();
-            assertTrue(name.orElse(null) == null);
+            assertNull(name.orElse(null));
             assertEquals("default", name.orElse("default"));
 
             // run
@@ -307,7 +307,7 @@ class ScopeValueAPI {
             // run
             ScopedValue.where(name, null, () -> {
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertNull(name.get());
 
                 ScopedValue.where(name, "duchess", () -> {
                     assertTrue(name.isBound());
@@ -315,14 +315,14 @@ class ScopeValueAPI {
                 });
 
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertNull(name.get());
             });
             assertFalse(name.isBound());
 
             // call
             ScopedValue.where(name, null, () -> {
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertNull(name.get());
 
                 ScopedValue.where(name, "duchess", () -> {
                     assertTrue(name.isBound());
@@ -331,7 +331,7 @@ class ScopeValueAPI {
                 });
 
                 assertTrue(name.isBound());
-                assertTrue(name.get() == null);
+                assertNull(name.get());
                 return null;
             });
             assertFalse(name.isBound());
@@ -354,7 +354,7 @@ class ScopeValueAPI {
 
                 ScopedValue.where(name, null, () -> {
                     assertTrue(name.isBound());
-                    assertTrue(name.get() == null);
+                    assertNull(name.get());
                 });
 
                 assertTrue(name.isBound());
@@ -369,7 +369,7 @@ class ScopeValueAPI {
 
                 ScopedValue.where(name, null, () -> {
                     assertTrue(name.isBound());
-                    assertTrue(name.get() == null);
+                    assertNull(name.get());
                     return null;
                 });
 

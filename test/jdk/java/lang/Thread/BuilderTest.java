@@ -645,7 +645,7 @@ class BuilderTest {
 
         AtomicBoolean done = new AtomicBoolean();
         Runnable task = () -> {
-            assertTrue(INHERITED_LOCAL.get() == null);
+            assertNull(INHERITED_LOCAL.get());
             done.set(true);
         };
 
