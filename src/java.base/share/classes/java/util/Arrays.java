@@ -3545,6 +3545,13 @@ public class Arrays {
         return copy;
     }
 
+    @ForceInline
+    private static byte[] copyOf(byte[] original) {
+        byte[] copy = new byte[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
+    }
+
     /**
      * Copies the specified array, truncating or padding with zeros (if necessary)
      * so the copy has the specified length.  For all indices that are
@@ -3564,7 +3571,7 @@ public class Arrays {
      */
     public static short[] copyOf(short[] original, int newLength) {
         if (newLength == original.length) {
-            return original.clone();
+            return copyOf(original);
         }
         short[] copy = new short[newLength];
         System.arraycopy(original, 0, copy, 0,
@@ -3591,11 +3598,18 @@ public class Arrays {
      */
     public static int[] copyOf(int[] original, int newLength) {
         if (newLength == original.length) {
-            return original.clone();
+            return copyOf(original);
         }
         int[] copy = new int[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static int[] copyOf(int[] original) {
+        int[] copy = new int[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3618,11 +3632,18 @@ public class Arrays {
      */
     public static long[] copyOf(long[] original, int newLength) {
         if (newLength == original.length) {
-            return original.clone();
+            return copyOf(original);
         }
         long[] copy = new long[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static long[] copyOf(long[] original) {
+        long[] copy = new long[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3645,11 +3666,18 @@ public class Arrays {
      */
     public static char[] copyOf(char[] original, int newLength) {
         if (newLength == original.length) {
-            return original.clone();
+            return copyOf(original);
         }
         char[] copy = new char[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static char[] copyOf(char[] original) {
+        char[] copy = new char[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3672,11 +3700,18 @@ public class Arrays {
      */
     public static float[] copyOf(float[] original, int newLength) {
         if (newLength == original.length) {
-            return original.clone();
+            return copyOf(original);
         }
         float[] copy = new float[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static float[] copyOf(float[] original) {
+        float[] copy = new float[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3707,6 +3742,13 @@ public class Arrays {
         return copy;
     }
 
+    @ForceInline
+    private static double[] copyOf(double[] original) {
+        double[] copy = new double[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
+    }
+
     /**
      * Copies the specified array, truncating or padding with {@code false} (if necessary)
      * so the copy has the specified length.  For all indices that are
@@ -3731,6 +3773,13 @@ public class Arrays {
         boolean[] copy = new boolean[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static boolean[] copyOf(boolean[] original) {
+        boolean[] copy = new boolean[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3815,10 +3864,9 @@ public class Arrays {
         return copy;
     }
 
-
     @ForceInline
     private static void checkLength(int from, int to) {
-        if (to - from < 0) {
+        if (to < from) {
             throw new IllegalArgumentException(from + " > " + to);
         }
     }
@@ -3855,13 +3903,6 @@ public class Arrays {
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
-    }
-
-    @ForceInline
-    private static byte[] copyOf(byte[] original) {
-        byte[] copy = new byte[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
     }
 
     @ForceInline
@@ -3905,7 +3946,14 @@ public class Arrays {
         if (from != 0 || to != original.length)
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
-            return original.clone();
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static short[] copyOf(short[] original) {
+        short[] copy = new short[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
     }
 
     @ForceInline
@@ -3949,7 +3997,7 @@ public class Arrays {
         if (from != 0 || to != original.length)
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
-            return original.clone();
+            return copyOf(original);
     }
 
     @ForceInline
@@ -3993,7 +4041,7 @@ public class Arrays {
         if (from != 0 || to != original.length)
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
-            return original.clone();
+            return copyOf(original);
     }
 
     @ForceInline
@@ -4037,7 +4085,7 @@ public class Arrays {
         if (from != 0 || to != original.length)
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
-            return original.clone();
+            return copyOf(original);
     }
 
     @ForceInline
@@ -4081,9 +4129,8 @@ public class Arrays {
         if (from != 0 || to != original.length)
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
-            return original.clone();
+            return copyOf(original);
     }
-
 
     @ForceInline
     private static float[] copyOfRangeGeneric(float[] original, int from, int to) {
@@ -4130,13 +4177,6 @@ public class Arrays {
     }
 
     @ForceInline
-    private static double[] copyOf(double[] original) {
-        double[] copy = new double[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
-    }
-
-    @ForceInline
     private static double[] copyOfRangeGeneric(double[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
@@ -4178,13 +4218,6 @@ public class Arrays {
             return copyOfRangeGeneric(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
-    }
-
-    @ForceInline
-    private static boolean[] copyOf(boolean[] original) {
-        boolean[] copy = new boolean[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
     }
 
     @ForceInline
