@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,31 +373,33 @@ final class P11KeyPairGenerator extends KeyPairGeneratorSpi {
             case "DH" -> {
                 keyType = CKK_DH;
                 DHParameterSpec dhParams;
-                int privateBits;
+                int privateBits = 0;
                 if (params == null) {
                     try {
                         dhParams = ParameterCache.getDHParameterSpec
                                 (keySize, random);
+                        privateBits = getDefDHPrivateExpSize(dhParams);
                     } catch (GeneralSecurityException e) {
                         throw new ProviderException
                                 ("Could not generate DH parameters", e);
                     }
-                    privateBits = 0;
                 } else {
                     dhParams = (DHParameterSpec) params;
                     privateBits = dhParams.getL();
-                }
-                if (privateBits <= 0) {
-                    // XXX find better defaults
-                    privateBits = (keySize >= 1024) ? 768 : 512;
+                    if (privateBits < 0) {
+                        // invalid; override with JDK defaults (or ignore?)
+                        privateBits = getDefDHPrivateExpSize(dhParams);
+                    }
                 }
                 publicKeyTemplate = new CK_ATTRIBUTE[]{
                         new CK_ATTRIBUTE(CKA_PRIME, dhParams.getP()),
                         new CK_ATTRIBUTE(CKA_BASE, dhParams.getG())
                 };
-                privateKeyTemplate = new CK_ATTRIBUTE[]{
-                        new CK_ATTRIBUTE(CKA_VALUE_BITS, privateBits),
-                };
+                privateKeyTemplate = (privateBits != 0 ?
+                        new CK_ATTRIBUTE[]{
+                            new CK_ATTRIBUTE(CKA_VALUE_BITS, privateBits),
+                        } :
+                        new CK_ATTRIBUTE[]{});
             }
             case "EC" -> {
                 keyType = CKK_EC;
