@@ -631,30 +631,22 @@ public class Utils {
         return configuration.workArounds.overriddenType(method);
     }
 
-    public TypeMirror getSuperType(TypeElement te) {
-        TypeMirror t = te.getSuperclass();
-        return (isNoType(t)) ? getObjectType() : t;
-    }
-
     public ExecutableElement overriddenMethod(ExecutableElement method) {
-        final TypeElement origin = getEnclosingTypeElement(method);
-        for (TypeMirror t = getSuperType(origin);
-             t.getKind() == DECLARED;
-             t = getSuperType(asTypeElement(t))) {
+        var origin = (TypeElement) method.getEnclosingElement();
+        // in this context, consider java.lang.Object to be the superclass of an interface
+        for (TypeMirror t = origin.getKind().isInterface() ? getObjectType() : origin.getSuperclass();
+             t.getKind() != NONE;
+             t = asTypeElement(t).getSuperclass()) {
             TypeElement te = asTypeElement(t);
-            if (te == null) {
-                return null;
-            }
+            assert te != null;
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
             for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
-                ExecutableElement ee = (ExecutableElement)e;
+                var ee = (ExecutableElement) e;
                 if (configuration.workArounds.overrides(method, ee, origin) &&
                         !isSimpleOverride(ee)) {
                     return ee;
                 }
             }
-            if (typeUtils.isSameType(t, getObjectType()))
-                return null;
         }
         return null;
     }
