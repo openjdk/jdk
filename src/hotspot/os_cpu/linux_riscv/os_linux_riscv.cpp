@@ -368,6 +368,21 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
+void os::print_nth_register_info(outputStream *st, int n, const void *context) {
+  if (context == NULL || n < 0 || n >= print_nth_register_info_max_index()) {
+    return;
+  }
+
+  const ucontext_t *uc = (const ucontext_t*)context;
+
+  st->print("%-*.*s=", 8, 8, reg_abi_names[n]);
+  print_location(st, uc->uc_mcontext.__gregs[n]);
+}
+
+int os::print_nth_register_info_max_index() {
+  return 32;
+}
+
 void os::print_register_info(outputStream *st, const void *context) {
   if (context == nullptr) return;
 
