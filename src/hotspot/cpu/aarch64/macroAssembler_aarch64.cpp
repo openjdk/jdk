@@ -4577,9 +4577,9 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // Bang one page at a time because large size can bang beyond yellow and
   // red zones.
   Label loop;
-  mov(rscratch1, os::vm_page_size());
+  mov(rscratch1, (int)os::vm_page_size());
   bind(loop);
-  lea(tmp, Address(tmp, -os::vm_page_size()));
+  lea(tmp, Address(tmp, -(int)os::vm_page_size()));
   subsw(size, size, rscratch1);
   str(size, Address(tmp));
   br(Assembler::GT, loop);
@@ -4590,10 +4590,10 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   // was post-decremented.)  Skip this address by starting at i=1, and
   // touch a few more pages below.  N.B.  It is important to touch all
   // the way down to and including i=StackShadowPages.
-  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / os::vm_page_size()) - 1; i++) {
+  for (int i = 0; i < (int)(StackOverflow::stack_shadow_zone_size() / (int)os::vm_page_size()) - 1; i++) {
     // this could be any sized move but this is can be a debugging crumb
     // so the bigger the better.
-    lea(tmp, Address(tmp, -os::vm_page_size()));
+    lea(tmp, Address(tmp, -(int)os::vm_page_size()));
     str(size, Address(tmp));
   }
 }

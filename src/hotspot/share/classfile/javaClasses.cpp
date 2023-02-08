@@ -4668,7 +4668,7 @@ public:
   UnsafeConstantsFixup() {
     // round up values for all static final fields
     _address_size = sizeof(void*);
-    _page_size = os::vm_page_size();
+    _page_size = (int)os::vm_page_size();
     _big_endian = LITTLE_ENDIAN_ONLY(false) BIG_ENDIAN_ONLY(true);
     _use_unaligned_access = UseUnalignedAccesses;
     _data_cache_line_flush_size = (int)VM_Version::data_cache_line_flush_size();
