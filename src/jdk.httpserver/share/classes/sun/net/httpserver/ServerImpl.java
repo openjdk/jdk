@@ -63,7 +63,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.Executor;
-import java.util.concurrent.locks.ReentrantLock;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static sun.net.httpserver.Utils.isValidName;
@@ -96,7 +95,6 @@ class ServerImpl {
     private final Set<HttpConnection> rspConnections;
     private List<Event> events;
     private final Object lolock = new Object();
-    private final ReentrantLock idleConnectionLock = new ReentrantLock();
     private volatile boolean finished = false;
     private volatile boolean terminating = false;
     private boolean bound = false;
@@ -965,19 +963,16 @@ class ServerImpl {
     void markIdle(HttpConnection c) {
         boolean close = false;
 
-        idleConnectionLock.lock();
-        try {
+        synchronized(idleConnections) {
             if (idleConnections.size() >= MAX_IDLE_CONNECTIONS) {
                 // closing the connection here could block
-                // instead set boolean and close outside of lock
+                // instead set boolean and close outside the synchronized block
                 close = true;
             } else {
                 c.idleStartTime = System.currentTimeMillis();
                 c.setState(State.IDLE);
                 idleConnections.add(c);
             }
-        } finally {
-            idleConnectionLock.unlock();
         }
 
         if (close) {

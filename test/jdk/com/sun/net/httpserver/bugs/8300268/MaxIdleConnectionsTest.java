@@ -33,6 +33,7 @@
  */
 
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.net.URIBuilder;
 import sun.net.httpserver.HttpServerAccess;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -82,7 +83,12 @@ public class MaxIdleConnectionsTest {
         final List<Future<Void>> responses = new ArrayList<>();
         try (final ExecutorService requestIssuer = Executors.newFixedThreadPool(totalConnections)) {
             for (int i = 1; i <= totalConnections; i++) {
-                final URL requestURL = new URL("http://" + host + ":" + port + "/MaxIdleConnectionTest/" + i);
+                URL requestURL = URIBuilder.newBuilder()
+                        .scheme("http")
+                        .loopback()
+                        .port(port)
+                        .path("/MaxIdleConnectionTest/" + i)
+                        .toURL();
                 final Future<Void> result = requestIssuer.submit(() -> {
                     System.out.println("Issuing request " + requestURL);
                     final URLConnection conn = requestURL.openConnection();
@@ -126,8 +132,7 @@ public class MaxIdleConnectionsTest {
         }));
 
         server.createContext("/MaxIdleConnectionTest/", (exchange) -> {
-            System.out.println("Request " + exchange.getRequestURI()
-                    + " received; handler will wait on latch");
+            System.out.println("Request " + exchange.getRequestURI() + " received");
             System.out.println("Sending response for request " + exchange.getRequestURI() + " from " + exchange.getRemoteAddress());
             reqFinishedProcessing.countDown();
             exchange.sendResponseHeaders(200, 0);
