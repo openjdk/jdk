@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,19 +68,19 @@ void* run(void *arg){
 
 int main(int argc, char *argv[]){
 #ifdef AIX
-   size_t adjusted_stack_size = 1024*1024;
-   pthread_t id;
-   int result;
-   pthread_attr_t attr;
-   pthread_attr_init(&attr);
-   pthread_attr_setstacksize(&attr, adjusted_stack_size);
-   result = pthread_create(&id, &attr, run, (void *)argv);
-   if (result != 0) {
-     fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
-     return -1;
-   }
-   pthread_join(id, NULL);
+    size_t adjusted_stack_size = 1024*1024;
+    pthread_t id;
+    int result;
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, adjusted_stack_size);
+    result = pthread_create(&id, &attr, run, (void *)argv);
+    if (result != 0) {
+      fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
+      return -1;
+    }
+    pthread_join(id, NULL);
 #else
-   run(&argv);
+    run(&argv);
 #endif //AIX
 }
