@@ -748,7 +748,7 @@ class FdLibm {
     }
 
     /**
-     * Return the logarithm of x
+     * Return the (natural) logarithm of x
      *
      * Method :
      *   1. Argument Reduction: find k and f such that
@@ -799,18 +799,18 @@ class FdLibm {
      */
     static class Log {
         private static final double
-            ln2_hi  =  6.93147180369123816490e-01,  /* 3fe62e42fee00000 */
-            ln2_lo  =  1.90821492927058770002e-10,  /* 3dea39ef35793c76 */
+            ln2_hi = 0x1.62e42feep-1,       // 6.93147180369123816490e-01
+            ln2_lo = 0x1.a39ef35793c76p-33, // 1.90821492927058770002e-10
 
-            Lg1 = 6.666666666666735130e-01,  /* 3FE5555555555593 */
-            Lg2 = 3.999999999940941908e-01,  /* 3FD999999997FA04 */
-            Lg3 = 2.857142874366239149e-01,  /* 3FD2492494229359 */
-            Lg4 = 2.222219843214978396e-01,  /* 3FCC71C51D8E78AF */
-            Lg5 = 1.818357216161805012e-01,  /* 3FC7466496CB03DE */
-            Lg6 = 1.531383769920937332e-01,  /* 3FC39A09D078C69F */
-            Lg7 = 1.479819860511658591e-01;  /* 3FC2F112DF3E5244 */
+            Lg1    = 0x1.5555555555593p-1,  // 6.666666666666735130e-01
+            Lg2    = 0x1.999999997fa04p-2,  // 3.999999999940941908e-01
+            Lg3    = 0x1.2492494229359p-2,  // 2.857142874366239149e-01
+            Lg4    = 0x1.c71c51d8e78afp-3,  // 2.222219843214978396e-01
+            Lg5    = 0x1.7466496cb03dep-3,  // 1.818357216161805012e-01
+            Lg6    = 0x1.39a09d078c69fp-3,  // 1.531383769920937332e-01
+            Lg7    = 0x1.2f112df3e5244p-3;  // 1.479819860511658591e-01
 
-        private static final double zero   =  0.0;
+        private static final double zero = 0.0;
 
         static double compute(double x) {
             double hfsq, f, s, z, R, w, t1, t2, dk;
