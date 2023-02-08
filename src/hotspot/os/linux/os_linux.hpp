@@ -193,10 +193,6 @@ class os::Linux {
 
   // none present
 
-  // Calls out to GNU extension malloc_info if available
-  // otherwise does nothing and returns 0.
-  static int malloc_info(FILE* stream);
-
  private:
   static void numa_init();
 
@@ -428,6 +424,10 @@ class os::Linux {
     size_t keepcost;
   };
   static void get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped);
+
+  // Calls out to GNU extension malloc_info if available
+  // otherwise does nothing and returns -2.
+  static int malloc_info(FILE* stream);
 #endif // GLIBC
 };
 

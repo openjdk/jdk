@@ -33,10 +33,10 @@ class MallocInfoDcmd : public DCmd {
 public:
   MallocInfoDcmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
-    return "System.malloc_info";
+    return "System.native_heap_info";
   }
   static const char* description() {
-    return "Prints the malloc information if available. Otherwise, prints nothing.";
+    return "Attempts to output information regarding native heap usage through malloc_info(3). If unsuccessful outputs \"Error: \" and a reason.";
   }
   static const char* impact() {
     return "Low";

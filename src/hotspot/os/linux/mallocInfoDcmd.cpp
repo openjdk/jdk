@@ -23,26 +23,39 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/os.inline.hpp"
 #include "mallocInfoDcmd.hpp"
-#include "utilities/debug.hpp"
+#include "os_linux.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 #include <malloc.h>
 
+constexpr const char* malloc_info_unavailable = "Error: malloc_info not available.";
+
 void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
-#ifdef LINUX
+#ifdef __GLIBC__
   char* buf;
   size_t size;
   ALLOW_C_FUNCTION(::open_memstream, FILE* stream = ::open_memstream(&buf, &size);)
-  if (!os::Linux::malloc_info(stream)) {
+  if (stream == nullptr) {
+    _output->print("Error: Could not call malloc_info");
+    return;
+  }
+
+  int err = os::Linux::malloc_info(stream);
+  if (err == 0) {
     ALLOW_C_FUNCTION(::fflush, fflush(stream);)
-    _output->print_raw(buf);
+      _output->print_raw(buf);
+  } else if (err == -1) {
+    _output->print("Error: %s", os::strerror(errno));
+  } else if (err == -2) {
+    _output->print(malloc_info_unavailable);
+  } else {
+    ShouldNotReachHere();
   }
   ALLOW_C_FUNCTION(::fclose, ::fclose(stream);)
   ALLOW_C_FUNCTION(::free, ::free(buf);)
 #else
-    // Nothing.
-#endif // LINUX
+    _output->print(malloc_info_unavailable);
+#endif // __GLIBC__
 }

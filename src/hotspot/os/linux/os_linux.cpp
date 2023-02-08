@@ -114,9 +114,6 @@
 # include <malloc.h>
 #endif
 
-// Forward (re-)declare malloc_info in order to support Alpine Linux.
-int __attribute__((weak)) malloc_info(int options, FILE *stream);
-
 #ifndef _GNU_SOURCE
   #define _GNU_SOURCE
   #include <sched.h>
@@ -203,6 +200,9 @@ struct new_mallinfo {
 };
 typedef struct new_mallinfo (*mallinfo2_func_t)(void);
 static mallinfo2_func_t g_mallinfo2 = nullptr;
+
+typedef int (*malloc_info_func_t)(int options, FILE *stream);
+static malloc_info_func_t g_malloc_info = nullptr;
 #endif // __GLIBC__
 
 static int clock_tics_per_sec = 100;
@@ -218,13 +218,6 @@ static bool suppress_primordial_thread_resolution = false;
 
 julong os::available_memory() {
   return Linux::available_memory();
-}
-
-int os::Linux::malloc_info(FILE* stream) {
-  if (::malloc_info) {
-    return ::malloc_info(0, stream);
-  }
-  return 0;
 }
 
 julong os::Linux::available_memory() {
@@ -4304,6 +4297,7 @@ void os::init(void) {
 #ifdef __GLIBC__
   g_mallinfo = CAST_TO_FN_PTR(mallinfo_func_t, dlsym(RTLD_DEFAULT, "mallinfo"));
   g_mallinfo2 = CAST_TO_FN_PTR(mallinfo2_func_t, dlsym(RTLD_DEFAULT, "mallinfo2"));
+  g_malloc_info = CAST_TO_FN_PTR(malloc_info_func_t, dlsym(RTLD_DEFAULT, "malloc_info"));
 #endif // __GLIBC__
 
   os::Linux::CPUPerfTicks pticks;
@@ -5394,6 +5388,13 @@ void os::Linux::get_mallinfo(glibc_mallinfo* out, bool* might_have_wrapped) {
     // We should have either mallinfo or mallinfo2
     ShouldNotReachHere();
   }
+}
+
+int os::Linux::malloc_info(FILE* stream) {
+  if (g_malloc_info == nullptr) {
+    return -2;
+  }
+  return g_malloc_info(0, stream);
 }
 #endif // __GLIBC__
 
