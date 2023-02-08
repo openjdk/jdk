@@ -36,13 +36,19 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class StringConstructor {
 
-  @Param({"0", "7", "64"})
+  @Param({"7", "64"})
   public int size;
 
+  // Offset to use for ranged newStrings
+  @Param("1")
+  public int offset;
   private byte[] array;
 
   @Setup
   public void setup() {
+      if (offset > size) {
+        offset = size;
+      }
       array = "a".repeat(size).getBytes(StandardCharsets.UTF_8);
   }
 
@@ -63,16 +69,12 @@ public class StringConstructor {
 
   @Benchmark
   public String newStringFromRangedArray() {
-    return new String(array, 0, array.length);
+    return new String(array, offset, array.length - offset);
   }
 
   @Benchmark
   public String newStringFromRangedArrayWithCharset() {
-      return new String(array, 0, array.length, StandardCharsets.UTF_8);
+      return new String(array, offset, array.length - offset, StandardCharsets.UTF_8);
   }
 
-  @Benchmark
-  public String newStringFromRangedArrayWithCharsetName() throws Exception {
-      return new String(array, 0, array.length, StandardCharsets.UTF_8.name());
-  }
 }
