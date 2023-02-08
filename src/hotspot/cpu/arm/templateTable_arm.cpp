@@ -3625,7 +3625,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ bind(notFinal);
 
   // get receiver klass
-  __ load_klass_check_null(recv_klass, recv);
+  __ load_klass_check_null(recv_klass, recv, Rtemp);
 
   // profile this call
   __ profile_virtual_call(R0_tmp, recv_klass);

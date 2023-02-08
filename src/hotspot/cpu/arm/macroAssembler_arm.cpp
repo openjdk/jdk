@@ -1656,8 +1656,8 @@ void MacroAssembler::load_klass(Register dst_klass, Register src_oop, AsmConditi
   ldr(dst_klass, Address(src_oop, oopDesc::klass_offset_in_bytes()), cond);
 }
 
-void MacroAssembler::load_klass_check_null(Register dst_klass, Register src_oop, AsmCondition cond) {
-  null_check(recv, Rtemp, oopDesc::klass_offset_in_bytes());
+void MacroAssembler::load_klass_check_null(Register dst_klass, Register src_oop, Register tmp, AsmCondition cond) {
+  null_check(recv, tmp, oopDesc::klass_offset_in_bytes());
   load_klass(dst_klass, src_oop, cond);
 }
 
