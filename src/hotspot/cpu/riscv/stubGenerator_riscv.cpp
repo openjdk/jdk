@@ -615,27 +615,8 @@ class StubGenerator: public StubCodeGenerator {
     // make sure object is 'reasonable'
     __ beqz(x10, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-    if (UseZGC) {
-      // Check if mask is good.
-      // verifies that ZAddressBadMask & x10 == 0
-      __ ld(c_rarg3, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-      __ andr(c_rarg2, x10, c_rarg3);
-      __ bnez(c_rarg2, error);
-    }
-#endif
-
-    // Check if the oop is in the right area of memory
-    __ mv(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-    __ andr(c_rarg2, x10, c_rarg3);
-    __ mv(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-
-    // Compare c_rarg2 and c_rarg3.
-    __ bne(c_rarg2, c_rarg3, error);
-
-    // make sure klass is 'reasonable', which is not zero.
-    __ load_klass(x10, x10);  // get klass
-    __ beqz(x10, error);      // if klass is NULL it is broken
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->check_oop(_masm, x10, c_rarg2, c_rarg3, error);
 
     // return if everything seems ok
     __ bind(exit);
