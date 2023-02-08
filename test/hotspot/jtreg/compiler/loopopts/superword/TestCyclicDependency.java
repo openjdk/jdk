@@ -27,14 +27,14 @@
  * @bug 8298935
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
+ * @requires vm.compiler2.enabled
+ * @requires vm.cpu.features ~= ".*avx.*" | vm.cpu.features ~= ".*sve.*"
  * @library /test/lib /
  * @run driver TestCyclicDependency
  */
 
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
-
-// TODO: figure out if any of this is hardware dependent!
 
 public class TestCyclicDependency {
     static final int RANGE = 512;

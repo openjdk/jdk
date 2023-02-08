@@ -21,14 +21,15 @@
  * questions.
  */
 
-/**
-* @test
-* @bug 8298935
-* @summary Test forced vectorization, and check IR for vector instructions
-* @requires vm.compiler2.enabled
-* @library /test/lib /
-* @run driver compiler.vectorization.TestOptionVectorizeIR
-*/
+/*
+ * @test
+ * @bug 8298935
+ * @summary Test forced vectorization, and check IR for vector instructions
+ * @requires vm.compiler2.enabled
+ * @requires vm.cpu.features ~= ".*avx.*" | vm.cpu.features ~= ".*sve.*"
+ * @library /test/lib /
+ * @run driver compiler.vectorization.TestOptionVectorizeIR
+ */
 
 package compiler.vectorization;
 import compiler.lib.ir_framework.*;
@@ -197,5 +198,4 @@ public class TestOptionVectorizeIR {
             }
         }
     }
-
 }
