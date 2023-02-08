@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import sun.net.util.IPAddressUtil;
-import sun.net.www.http.HttpClient;
 
 /**
  * A class to represent an HTTP connection to a remote object.
