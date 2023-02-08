@@ -64,9 +64,7 @@ G1VerificationClosure::G1VerificationClosure(G1CollectedHeap* g1h, VerifyOption 
 
 void G1VerificationClosure::print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
-  Klass* k = obj->klass();
-  const char* class_name = k->external_name();
-  out->print_cr("class name %s", class_name);
+  obj->print_name_on(out);
 #else // PRODUCT
   obj->print_on(out);
 #endif // PRODUCT

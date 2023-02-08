@@ -315,4 +315,27 @@ inline void G1VerifyLiveClosure::do_oop_work(T* p) {
   }
 }
 
+inline bool G1VerificationClosure::is_oop_safe(oop obj) {
+  if (!oopDesc::is_oop(obj)) {
+    log_error(gc, verify)(PTR_FORMAT " not an oop", p2i(obj));
+    return false;
+  }
+
+  // Now examine the Klass a little more closely.
+  Klass* klass = obj->klass_raw();
+
+  bool is_metaspace_object = Metaspace::contains(klass);
+  if (!is_metaspace_object) {
+    log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
+                          "not metadata", p2i(klass), p2i(obj));
+    return false;
+  } else if (!klass->is_klass()) {
+    log_error(gc, verify)("klass " PTR_FORMAT " of object " PTR_FORMAT " "
+                          "not a klass", p2i(klass), p2i(obj));
+    return false;
+  }
+
+  return true;
+}
+
 #endif // SHARE_GC_G1_G1OOPCLOSURES_INLINE_HPP

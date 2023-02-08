@@ -248,10 +248,14 @@ public:
     _containing_obj = obj;
   }
 
-  bool has_failures() { return _num_failures != 0; }
-  size_t num_failures() { return _num_failures; }
+  bool has_failures() const { return _num_failures != 0; }
+  size_t num_failures() const { return _num_failures; }
 
   void print_object(outputStream* out, oop obj);
+
+  // Returns whether the given oop is an oop, with some extra checks regarding
+  // the klass of that oop that might be broken.
+  static inline bool is_oop_safe(oop obj);
 };
 
 class G1VerifyLiveClosure : public G1VerificationClosure {
