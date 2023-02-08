@@ -144,6 +144,22 @@ public interface DocTreeVisitor<R,P> {
     R visitErroneous(ErroneousTree node, P p);
 
     /**
+     * Visits an {@code EscapeTree} node.
+     *
+     * @implSpec Visits the provided {@code EscapeTree} node
+     * by calling {@code visitOther(node, p)}.
+     *
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     *
+     * @since 21
+     */
+    default R visitEscape(EscapeTree node, P p)  {
+        return visitOther(node, p);
+    }
+
+    /**
      * Visits a {@code HiddenTree} node.
      *
      * @implSpec Visits the provided {@code HiddenTree} node

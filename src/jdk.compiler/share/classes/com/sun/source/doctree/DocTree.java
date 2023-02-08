@@ -104,6 +104,14 @@ public interface DocTree {
         ERRONEOUS,
 
         /**
+         * Used for instances of {@link EscapeTree}
+         * representing some escaped documentation text.
+         *
+         * @since 21
+         */
+        ESCAPE,
+
+        /**
          * Used for instances of {@link ThrowsTree}
          * representing an {@code @exception} tag.
          */
@@ -258,7 +266,7 @@ public interface DocTree {
 
         /**
          * Used for instances of {@link TextTree}
-         * representing some documentation text.
+         * representing some plain documentation text.
          */
         TEXT,
 

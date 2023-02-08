@@ -173,6 +173,11 @@ public abstract class DCTree implements DocTree {
                 return err.pos + err.body.length();
             }
 
+            case ESCAPE -> {
+                DCEscape esc = (DCEscape) this;
+                return esc.pos + 2;
+            }
+
             case IDENTIFIER -> {
                 DCIdentifier ident = (DCIdentifier) this;
                 return ident.pos + ident.name.length();
@@ -646,7 +651,29 @@ public abstract class DCTree implements DocTree {
             this.prefPos = prefPos;
             return this;
         }
+    }
 
+    public static class DCEscape extends DCTree implements EscapeTree {
+        public final char ch;
+
+        DCEscape(char ch) {
+            this.ch = ch;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.ESCAPE;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitEscape(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public String getBody() {
+            return String.valueOf(ch);
+        }
     }
 
     public static class DCHidden extends DCBlockTag implements HiddenTree {

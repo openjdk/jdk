@@ -239,6 +239,22 @@ public class SimpleDocTreeVisitor<R,P> implements DocTreeVisitor<R, P> {
      *
      * @param node {@inheritDoc}
      * @param p {@inheritDoc}
+     * @return  the result of {@code defaultAction}
+     *
+     * @since 21
+     */
+    @Override
+    public R visitEscape(EscapeTree node, P p) {
+        return defaultAction(node, p);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec This implementation calls {@code defaultAction}.
+     *
+     * @param node {@inheritDoc}
+     * @param p {@inheritDoc}
      * @return the result of {@code defaultAction}
      *
      * @since 9

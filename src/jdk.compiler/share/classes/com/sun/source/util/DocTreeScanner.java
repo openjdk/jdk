@@ -280,6 +280,22 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     /**
      * {@inheritDoc}
      *
+     * @implSpec This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     *
+     * @since 21
+     */
+    @Override
+    public R visitEscape(EscapeTree node, P p) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
      * @implSpec This implementation scans the children in left to right order.
      *
      * @param node  {@inheritDoc}

@@ -280,6 +280,17 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitEscape(EscapeTree node, Void p) {
+        try {
+            out.write("@");
+            print(node.getBody());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitHidden(HiddenTree node, Void p) {
         try {
             printTagName(node);
