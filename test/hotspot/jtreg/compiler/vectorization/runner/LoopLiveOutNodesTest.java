@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @summary Vectorization test on loops with live out nodes
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -40,27 +40,35 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.util.Random;
 
 public class LoopLiveOutNodesTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 3333;
+    private static final int SIZE = 543;
 
     private int[] a;
     private int start;
     private int limit;
+
+    // tmp[] may be modified and thus should not be returned in cases.
+    private int[] tmp;
 
     public LoopLiveOutNodesTest() {
         a = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
             a[i] = -697989 * i;
         }
+        tmp = new int[SIZE];
         Random ran = new Random(31415926);
-        start = 999 + ran.nextInt() % 100;
-        limit = start + 1357;
+        start = ran.nextInt() % 100;
+        limit = start + 235;
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int SimpleIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -71,6 +79,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int indexedByIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -81,6 +91,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedMultiple() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -91,6 +103,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int ivUsedComplexExpr() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -101,6 +115,8 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
     public int[] ivUsedAnotherLoop() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -108,7 +124,7 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
             res[i] = a[i] * 100;
         }
         for (int j = i; j < i + 55; j++) {
-            res[j] = a[j - 500] + 2323;
+            res[j] = a[j] + 2323;
         }
         return res;
     }
@@ -133,5 +149,15 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
         }
         return val;
     }
-}
 
+    @Test
+    public int nestedLoopIndexLiveOut() {
+        int k = 0;
+        for (int i = 0; i < 50; i += 2) {
+            for (int j = 0; j < 10; j++) {
+                tmp[k++] = 5;
+            }
+        }
+        return k;
+    }
+}

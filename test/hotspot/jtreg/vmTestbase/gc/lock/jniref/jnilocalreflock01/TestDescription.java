@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native
- *      -XX:-UseGCOverheadLimit
- *      gc.lock.LockerTest
- *      -gp1 randomString
- *      -lockers jniLocalRef
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/native -Xbootclasspath/a:. -Xlog:gc=debug:gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI gc.lock.LockerTest -lockers jniLocalRef -t 1
  */
 

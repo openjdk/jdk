@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,16 @@ class Symbol : public MetaspaceObj {
   void set_permanent() NOT_CDS_RETURN;
   void make_permanent();
 
+  static void maybe_increment_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->increment_refcount();
+    }
+  }
+  static void maybe_decrement_refcount(Symbol* s) {
+    if (s != NULL) {
+      s->decrement_refcount();
+    }
+  }
   // Function char_at() returns the Symbol's selected u1 byte as a char type.
   //
   // Note that all multi-byte chars have the sign bit set on all their bytes.
@@ -192,6 +202,7 @@ class Symbol : public MetaspaceObj {
     return contains_utf8_at(0, str, len);
   }
   bool equals(const char* str) const { return equals(str, (int) strlen(str)); }
+  bool is_star_match(const char* pattern) const;
 
   // Tests if the symbol starts with the given prefix.
   bool starts_with(const char* prefix, int len) const {
@@ -230,8 +241,8 @@ class Symbol : public MetaspaceObj {
     return code_byte == char_at(position);
   }
 
-  // Tests if the symbol starts with the given prefix.
-  int index_of_at(int i, const char* str, int len) const;
+  // Test if the symbol has the give substring at or after the i-th char.
+  int index_of_at(int i, const char* substr, int substr_len) const;
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
   // note that the ordering is not alfabetical
@@ -264,6 +275,7 @@ class Symbol : public MetaspaceObj {
   // separated by ', ' to the outputStream.  Prints external names as
   //  'double' or 'java.lang.Object[][]'.
   void print_as_signature_external_parameters(outputStream *os);
+  void print_as_field_external_type(outputStream *os);
 
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return SymbolType; }
@@ -285,6 +297,10 @@ class Symbol : public MetaspaceObj {
   static Symbol* vm_symbol_at(vmSymbolID vm_symbol_id) {
     assert(is_valid_id(vm_symbol_id), "must be");
     return _vm_symbols[static_cast<int>(vm_symbol_id)];
+  }
+
+  static unsigned int compute_hash(const Symbol* const& name) {
+    return (unsigned int) name->identity_hash();
   }
 
 #ifndef PRODUCT

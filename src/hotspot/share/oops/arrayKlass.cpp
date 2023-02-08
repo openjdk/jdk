@@ -156,6 +156,7 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push((Klass**)&_lower_dimension);
 }
 
+#if INCLUDE_CDS
 void ArrayKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
   if (_higher_dimension != NULL) {
@@ -182,6 +183,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
+#endif // INCLUDE_CDS
 
 // Printing
 

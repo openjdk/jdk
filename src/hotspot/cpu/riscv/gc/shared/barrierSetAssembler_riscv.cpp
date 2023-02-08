@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,9 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
-  assert_cond(masm != NULL);
-
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
   // RA is live. It must be saved around calls.
 
   bool in_heap = (decorators & IN_HEAP) != 0;
@@ -81,8 +79,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                   Address dst, Register val, Register tmp1, Register tmp2) {
-  assert_cond(masm != NULL);
+                                   Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
@@ -124,10 +121,9 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  assert_cond(masm != NULL);
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andi(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 3);
+  __ andi(obj, obj, ~JNIHandles::tag_mask);
   __ ld(obj, Address(obj, 0));             // *obj
 }
 
@@ -139,7 +135,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
                                         Register tmp2,
                                         Label& slow_case,
                                         bool is_far) {
-  assert_cond(masm != NULL);
   assert_different_registers(obj, tmp2);
   assert_different_registers(obj, var_size_in_bytes);
   Register end = tmp2;
@@ -162,64 +157,10 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   }
 }
 
-// Defines obj, preserves var_size_in_bytes
-void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj,
-                                        Register var_size_in_bytes,
-                                        int con_size_in_bytes,
-                                        Register tmp1,
-                                        Label& slow_case,
-                                        bool is_far) {
-  assert_cond(masm != NULL);
-  assert_different_registers(obj, var_size_in_bytes, tmp1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    __ j(slow_case);
-  } else {
-    Register end = tmp1;
-    Label retry;
-    __ bind(retry);
-
-    // Get the current end of the heap
-    ExternalAddress address_end((address) Universe::heap()->end_addr());
-    {
-      int32_t offset;
-      __ la_patchable(t1, address_end, offset);
-      __ ld(t1, Address(t1, offset));
-    }
-
-    // Get the current top of the heap
-    ExternalAddress address_top((address) Universe::heap()->top_addr());
-    {
-      int32_t offset;
-      __ la_patchable(t0, address_top, offset);
-      __ addi(t0, t0, offset);
-      __ lr_d(obj, t0, Assembler::aqrl);
-    }
-
-    // Adjust it my the size of our new object
-    if (var_size_in_bytes == noreg) {
-      __ la(end, Address(obj, con_size_in_bytes));
-    } else {
-      __ add(end, obj, var_size_in_bytes);
-    }
-
-    // if end < obj then we wrapped around high memory
-    __ bltu(end, obj, slow_case, is_far);
-
-    __ bgtu(end, t1, slow_case, is_far);
-
-    // If heap_top hasn't been changed by some other thread, update it.
-    __ sc_d(t1, end, t0, Assembler::rl);
-    __ bnez(t1, retry);
-
-    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, tmp1);
-  }
-}
-
 void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
                                                Register var_size_in_bytes,
                                                int con_size_in_bytes,
                                                Register tmp1) {
-  assert_cond(masm != NULL);
   assert(tmp1->is_valid(), "need temp reg");
 
   __ ld(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
@@ -231,38 +172,106 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
   __ sd(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
 }
 
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+static volatile uint32_t _patching_epoch = 0;
+
+address BarrierSetAssembler::patching_epoch_addr() {
+  return (address)&_patching_epoch;
+}
+
+void BarrierSetAssembler::increment_patching_epoch() {
+  Atomic::inc(&_patching_epoch);
+}
+
+void BarrierSetAssembler::clear_patching_epoch() {
+  _patching_epoch = 0;
+}
+
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation, Label* guard) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
   if (bs_nm == NULL) {
     return;
   }
 
-  // RISCV atomic operations require that the memory address be naturally aligned.
-  __ align(4);
+  Assembler::IncompressibleRegion ir(masm);  // Fixed length: see entry_barrier_offset()
 
-  Label skip, guard;
-  Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()));
+  Label local_guard;
+  NMethodPatchingType patching_type = nmethod_patching_type();
 
-  __ lwu(t0, guard);
+  if (slow_path == NULL) {
+    guard = &local_guard;
 
-  // Subsequent loads of oops must occur after load of guard value.
-  // BarrierSetNMethod::disarm sets guard with release semantics.
-  __ membar(MacroAssembler::LoadLoad);
-  __ lwu(t1, thread_disarmed_addr);
-  __ beq(t0, t1, skip);
+    // RISCV atomic operations require that the memory address be naturally aligned.
+    __ align(4);
+  }
 
-  int32_t offset = 0;
-  __ movptr_with_offset(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-  __ jalr(ra, t0, offset);
-  __ j(skip);
+  __ lwu(t0, *guard);
 
-  __ bind(guard);
+  switch (patching_type) {
+    case NMethodPatchingType::conc_data_patch:
+      // Subsequent loads of oops must occur after load of guard value.
+      // BarrierSetNMethod::disarm sets guard with release semantics.
+      __ membar(MacroAssembler::LoadLoad); // fall through to stw_instruction_and_data_patch
+    case NMethodPatchingType::stw_instruction_and_data_patch:
+      {
+        // With STW patching, no data or instructions are updated concurrently,
+        // which means there isn't really any need for any fencing for neither
+        // data nor instruction modification happening concurrently. The
+        // instruction patching is synchronized with global icache_flush() by
+        // the write hart on riscv. So here we can do a plain conditional
+        // branch with no fencing.
+        Address thread_disarmed_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
+        __ lwu(t1, thread_disarmed_addr);
+        break;
+      }
+    case NMethodPatchingType::conc_instruction_and_data_patch:
+      {
+        // If we patch code we need both a code patching and a loadload
+        // fence. It's not super cheap, so we use a global epoch mechanism
+        // to hide them in a slow path.
+        // The high level idea of the global epoch mechanism is to detect
+        // when any thread has performed the required fencing, after the
+        // last nmethod was disarmed. This implies that the required
+        // fencing has been performed for all preceding nmethod disarms
+        // as well. Therefore, we do not need any further fencing.
+        __ la(t1, ExternalAddress((address)&_patching_epoch));
+        // Embed an artificial data dependency to order the guard load
+        // before the epoch load.
+        __ srli(ra, t0, 32);
+        __ orr(t1, t1, ra);
+        // Read the global epoch value.
+        __ lwu(t1, t1);
+        // Combine the guard value (low order) with the epoch value (high order).
+        __ slli(t1, t1, 32);
+        __ orr(t0, t0, t1);
+        // Compare the global values with the thread-local values
+        Address thread_disarmed_and_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
+        __ ld(t1, thread_disarmed_and_epoch_addr);
+        break;
+      }
+    default:
+      ShouldNotReachHere();
+  }
 
-  assert(__ offset() % 4 == 0, "bad alignment");
-  __ emit_int32(0); // nmethod guard value. Skipped over in common case.
+  if (slow_path == NULL) {
+    Label skip_barrier;
+    __ beq(t0, t1, skip_barrier);
 
-  __ bind(skip);
+    int32_t offset = 0;
+    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
+    __ jalr(ra, t0, offset);
+    __ j(skip_barrier);
+
+    __ bind(local_guard);
+
+    MacroAssembler::assert_alignment(__ pc());
+    __ emit_int32(0); // nmethod guard value. Skipped over in common case.
+    __ bind(skip_barrier);
+  } else {
+    __ beq(t0, t1, *continuation);
+    __ j(*slow_path);
+    __ bind(*continuation);
+  }
 }
 
 void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
@@ -283,15 +292,14 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?
-  __ push_reg(RegSet::of(x28, x29), sp);
+  __ push_reg(RegSet::of(x28), sp);
 
   __ ld(x28, Address(t0, ClassLoaderData::holder_offset()));
 
-  // Uses x28 & x29, so we must pass new temporaries.
-  __ resolve_weak_handle(x28, x29);
+  __ resolve_weak_handle(x28, t0, t1);
   __ mv(t0, x28);
 
-  __ pop_reg(RegSet::of(x28, x29), sp);
+  __ pop_reg(RegSet::of(x28), sp);
 
   __ bnez(t0, method_live);
 

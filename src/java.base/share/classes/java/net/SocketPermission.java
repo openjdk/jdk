@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -468,7 +468,7 @@ public final class SocketPermission extends Permission
             if (!host.isEmpty()) {
                 // see if we are being initialized with an IP address.
                 char ch = host.charAt(0);
-                if (ch == ':' || Character.digit(ch, 16) != -1) {
+                if (ch == ':' || IPAddressUtil.digit(ch, 16) != -1) {
                     byte ip[] = IPAddressUtil.textToNumericFormatV4(host);
                     if (ip == null) {
                         ip = IPAddressUtil.textToNumericFormatV6(host);

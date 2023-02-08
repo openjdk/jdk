@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_METHOD_HPP
 #define SHARE_OOPS_METHOD_HPP
 
-#include "classfile/vmSymbols.hpp"
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "interpreter/invocationCounter.hpp"
@@ -135,7 +134,10 @@ class Method : public Metadata {
 
   virtual bool is_method() const { return true; }
 
+#if INCLUDE_CDS
+  void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
+#endif
 
   // accessors for instance variables
 
@@ -145,7 +147,6 @@ class Method : public Metadata {
 
   static address make_adapters(const methodHandle& mh, TRAPS);
   address from_compiled_entry() const;
-  address from_compiled_entry_no_trampoline() const;
   address from_interpreted_entry() const;
 
   // access flag
@@ -405,21 +406,13 @@ class Method : public Metadata {
     }
   }
 
-  int nmethod_age() const {
-    if (method_counters() == NULL) {
-      return INT_MAX;
-    } else {
-      return method_counters()->nmethod_age();
-    }
-  }
-
   int invocation_count() const;
   int backedge_count() const;
 
   bool was_executed_more_than(int n);
   bool was_never_executed()                     { return !was_executed_more_than(0);  }
 
-  static void build_interpreter_method_data(const methodHandle& method, TRAPS);
+  static void build_profiling_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Thread* current, Method* m);
 
@@ -432,10 +425,6 @@ class Method : public Metadata {
   // for PrintMethodData in a product build
   int64_t  compiled_invocation_count() const    { return 0; }
 #endif // not PRODUCT
-
-  // Clear (non-shared space) pointers which could not be relevant
-  // if this (shared) method were mapped into another JVM.
-  void remove_unshareable_info();
 
   // nmethod/verified compiler entry
   address verified_code_entry();
@@ -539,9 +528,9 @@ public:
   bool    contains(address bcp) const { return constMethod()->contains(bcp); }
 
   // prints byte codes
-  void print_codes() const            { print_codes_on(tty); }
-  void print_codes_on(outputStream* st) const;
-  void print_codes_on(int from, int to, outputStream* st) const;
+  void print_codes(int flags = 0) const { print_codes_on(tty, flags); }
+  void print_codes_on(outputStream* st, int flags = 0) const;
+  void print_codes_on(int from, int to, outputStream* st, int flags = 0) const;
 
   // method parameters
   bool has_method_parameters() const
@@ -733,12 +722,14 @@ public:
   static methodHandle make_method_handle_intrinsic(vmIntrinsicID iid, // _invokeBasic, _linkToVirtual
                                                    Symbol* signature, //anything at all
                                                    TRAPS);
-
+  // Some special methods don't need to be findable by nmethod iterators and are permanent.
+  bool can_be_allocated_in_NonNMethod_space() const { return is_method_handle_intrinsic(); }
 
   // Continuation
-  bool is_continuation_enter_intrinsic() const { return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial; }
-
-  bool is_special_native_intrinsic() const { return is_method_handle_intrinsic() || is_continuation_enter_intrinsic(); }
+  inline bool is_continuation_enter_intrinsic() const;
+  inline bool is_continuation_yield_intrinsic() const;
+  inline bool is_continuation_native_intrinsic() const;
+  inline bool is_special_native_intrinsic() const;
 
   static Klass* check_non_bcp_klass(Klass* klass);
 
@@ -783,13 +774,13 @@ public:
   // however, can be GC'ed away if the class is unloaded or if the method is
   // made obsolete or deleted -- in these cases, the jmethodID
   // refers to NULL (as is the case for any weak reference).
-  static jmethodID make_jmethod_id(ClassLoaderData* loader_data, Method* mh);
-  static void destroy_jmethod_id(ClassLoaderData* loader_data, jmethodID mid);
+  static jmethodID make_jmethod_id(ClassLoaderData* cld, Method* mh);
+  static void destroy_jmethod_id(ClassLoaderData* cld, jmethodID mid);
 
   // Ensure there is enough capacity in the internal tracking data
   // structures to hold the number of jmethodIDs you plan to generate.
   // This saves substantial time doing allocations.
-  static void ensure_jmethod_ids(ClassLoaderData* loader_data, int capacity);
+  static void ensure_jmethod_ids(ClassLoaderData* cld, int capacity);
 
   // Use resolve_jmethod_id() in situations where the caller is expected
   // to provide a valid jmethodID; the only sanity checks are in asserts;
@@ -973,9 +964,6 @@ public:
 
   // Resolve all classes in signature, return 'true' if successful
   static bool load_signature_classes(const methodHandle& m, TRAPS);
-
-  // Return if true if not all classes references in signature, including return type, has been loaded
-  static bool has_unloaded_classes_in_signature(const methodHandle& m, TRAPS);
 
   // Printing
   void print_short_name(outputStream* st = tty) const; // prints as klassname::methodname; Exposed so field engineers can debug VM

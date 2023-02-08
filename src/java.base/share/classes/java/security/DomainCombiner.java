@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,21 @@ package java.security;
  * The newly constructed context is then passed to the
  * {@code AccessController.doPrivileged(..., context)} method
  * to bind the provided context (and associated {@code DomainCombiner})
- * with the current execution Thread.  Subsequent calls to
+ * with the current execution thread.  Subsequent calls to
  * {@code AccessController.getContext} or
  * {@code AccessController.checkPermission}
  * cause the {@code DomainCombiner.combine} to get invoked.
  *
  * <p> The combine method takes two arguments.  The first argument represents
- * an array of ProtectionDomains from the current execution Thread,
+ * an array of ProtectionDomains from the current execution thread,
  * since the most recent call to {@code AccessController.doPrivileged}.
  * If no call to doPrivileged was made, then the first argument will contain
- * all the ProtectionDomains from the current execution Thread.
+ * all the ProtectionDomains from the current execution thread.
  * The second argument represents an array of inherited ProtectionDomains,
  * which may be {@code null}.  ProtectionDomains may be inherited
- * from a parent Thread, or from a privileged context.  If no call to
+ * from a parent thread, or from a privileged context.  If no call to
  * doPrivileged was made, then the second argument will contain the
- * ProtectionDomains inherited from the parent Thread.  If one or more calls
+ * ProtectionDomains inherited from the parent thread.  If one or more calls
  * to doPrivileged were made, and the most recent call was to
  * doPrivileged(action, context), then the second argument will contain the
  * ProtectionDomains from the privileged context.  If the most recent call
@@ -94,16 +94,16 @@ public interface DomainCombiner {
      * set of Permissions, for example).
      *
      * @param currentDomains the ProtectionDomains associated with the
-     *          current execution Thread, up to the most recent
+     *          current execution thread, up to the most recent
      *          privileged {@code ProtectionDomain}.
      *          The ProtectionDomains are listed in order of execution,
      *          with the most recently executing {@code ProtectionDomain}
      *          residing at the beginning of the array. This parameter may
-     *          be {@code null} if the current execution Thread
+     *          be {@code null} if the current execution thread
      *          has no associated ProtectionDomains.
      *
      * @param assignedDomains an array of inherited ProtectionDomains.
-     *          ProtectionDomains may be inherited from a parent Thread,
+     *          ProtectionDomains may be inherited from a parent thread,
      *          or from a privileged {@code AccessControlContext}.
      *          This parameter may be {@code null}
      *          if there are no inherited ProtectionDomains.

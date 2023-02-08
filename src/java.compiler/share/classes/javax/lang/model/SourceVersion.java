@@ -40,6 +40,7 @@ import java.util.HashSet;
  * model future releases of the language.
  *
  * @since 1.6
+ * @see java.lang.reflect.ClassFileFormatVersion
  */
 public enum SourceVersion {
     /*
@@ -68,6 +69,9 @@ public enum SourceVersion {
      *  18: no changes (pattern matching for switch in second preview)
      *  19: no changes (pattern matching for switch in third preview,
      *      record patterns in preview)
+     *  20: no changes (pattern matching for switch in fourth preview,
+     *      record patterns in second preview)
+     *  21: tbd
      */
 
     /**
@@ -194,7 +198,7 @@ public enum SourceVersion {
      * <cite>The Java Language Specification, Java SE 9 Edition</cite></a>
      * @see <a href="https://jcp.org/en/jsr/detail?id=376">
      * JSR 376: Java&trade; Platform Module System</a>
-     * @see <a href="https://openjdk.java.net/jeps/213">
+     * @see <a href="https://openjdk.org/jeps/213">
      * JEP 213: Milling Project Coin</a>
      */
      RELEASE_9,
@@ -211,7 +215,7 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se10/html/index.html">
      * <cite>The Java Language Specification, Java SE 10 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/286">
+     * @see <a href="https://openjdk.org/jeps/286">
      * JEP 286: Local-Variable Type Inference</a>
      */
     RELEASE_10,
@@ -228,7 +232,7 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se11/html/index.html">
      * <cite>The Java Language Specification, Java SE 11 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/323">
+     * @see <a href="https://openjdk.org/jeps/323">
      * JEP 323: Local-Variable Syntax for Lambda Parameters</a>
      */
     RELEASE_11,
@@ -270,7 +274,7 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se14/html/index.html">
      * <cite>The Java Language Specification, Java SE 14 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/361">
+     * @see <a href="https://openjdk.org/jeps/361">
      * JEP 361: Switch Expressions</a>
      */
     RELEASE_14,
@@ -286,7 +290,7 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se15/html/index.html">
      * <cite>The Java Language Specification, Java SE 15 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/378">
+     * @see <a href="https://openjdk.org/jeps/378">
      * JEP 378: Text Blocks</a>
      */
     RELEASE_15,
@@ -303,9 +307,9 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se16/html/index.html">
      * <cite>The Java Language Specification, Java SE 16 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/394">
+     * @see <a href="https://openjdk.org/jeps/394">
      * JEP 394: Pattern Matching for instanceof</a>
-     * @see <a href="https://openjdk.java.net/jeps/395">
+     * @see <a href="https://openjdk.org/jeps/395">
      * JEP 395: Records</a>
      */
     RELEASE_16,
@@ -322,9 +326,9 @@ public enum SourceVersion {
      * @see <a
      * href="https://docs.oracle.com/javase/specs/jls/se17/html/index.html">
      * <cite>The Java Language Specification, Java SE 17 Edition</cite></a>
-     * @see <a href="https://openjdk.java.net/jeps/306">
+     * @see <a href="https://openjdk.org/jeps/306">
      * JEP 306: Restore Always-Strict Floating-Point Semantics</a>
-     * @see <a href="https://openjdk.java.net/jeps/409">
+     * @see <a href="https://openjdk.org/jeps/409">
      * JEP 409: Sealed Classes</a>
      */
     RELEASE_17,
@@ -350,6 +354,10 @@ public enum SourceVersion {
      * No major changes from the prior release.
      *
      * @since 19
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se19/html/index.html">
+     * <cite>The Java Language Specification, Java SE 19 Edition</cite></a>
      */
     RELEASE_19,
 
@@ -357,9 +365,27 @@ public enum SourceVersion {
      * The version recognized by the Java Platform, Standard Edition
      * 20.
      *
+     * No major changes from the prior release.
+     *
      * @since 20
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se20/html/index.html">
+     * <cite>The Java Language Specification, Java SE 20 Edition</cite></a>
      */
-    RELEASE_20;
+    RELEASE_20,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 21.
+     *
+     * @since 21
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">
+     * <cite>The Java Language Specification, Java SE 21 Edition</cite></a>
+     */
+    RELEASE_21;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -368,7 +394,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_20;
+        return RELEASE_21;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -383,7 +409,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(20, intVersion)):
+            valueOf("RELEASE_" + Math.min(21, intVersion)):
             RELEASE_10;
     }
 
@@ -627,7 +653,8 @@ public enum SourceVersion {
      * {@code "17"}, to the corresponding source version, {@code
      * RELEASE_17}, is:
      *
-     * <pre>{@code SourceVersion.valueOf(Runtime.Version.parse("17"))}</pre>
+     * {@snippet lang="java" :
+     * SourceVersion.valueOf(Runtime.Version.parse("17"))}
      *
      * @param rv runtime version to map to a source version
      * @throws IllegalArgumentException if the feature of version

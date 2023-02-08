@@ -37,8 +37,9 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} TestThreadEndEvent.java LatchedThread.java
- * @run main/othervm --enable-preview jdk.jfr.event.runtime.TestThreadEndEvent
+ * @enablePreview
+ * @compile TestThreadEndEvent.java LatchedThread.java
+ * @run main/othervm jdk.jfr.event.runtime.TestThreadEndEvent
  */
 public class TestThreadEndEvent {
     private final static String EVENT_NAME_THREAD_END = EventNames.ThreadEnd;

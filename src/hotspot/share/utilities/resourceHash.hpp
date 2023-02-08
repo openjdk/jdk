@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,14 @@
 #define SHARE_UTILITIES_RESOURCEHASH_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/numberSeq.hpp"
+#include "utilities/tableStatistics.hpp"
+
+#include <type_traits>
 
 template<typename K, typename V>
-class ResourceHashtableNode : public ResourceObj {
+class ResourceHashtableNode : public AnyObj {
 public:
   unsigned _hash;
   K _key;
@@ -36,22 +41,26 @@ public:
   ResourceHashtableNode* _next;
 
   ResourceHashtableNode(unsigned hash, K const& key, V const& value) :
-    _hash(hash), _key(key), _value(value), _next(NULL) {}
+    _hash(hash), _key(key), _value(value), _next(nullptr) {}
 
   // Create a node with a default-constructed value.
   ResourceHashtableNode(unsigned hash, K const& key) :
-    _hash(hash), _key(key), _value(), _next(NULL) {}
+    _hash(hash), _key(key), _value(), _next(nullptr) {}
 };
 
 template<
     class STORAGE,
     typename K, typename V,
-    ResourceObj::allocation_type ALLOC_TYPE,
+    AnyObj::allocation_type ALLOC_TYPE,
     MEMFLAGS MEM_TYPE,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
+                "Destructor for K is only called with C_HEAP");
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
+                "Destructor for V is only called with C_HEAP");
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
@@ -71,7 +80,7 @@ class ResourceHashtableBase : public STORAGE {
   Node** lookup_node(unsigned hash, K const& key) {
     unsigned index = hash % table_size();
     Node** ptr = bucket_at(index);
-    while (*ptr != NULL) {
+    while (*ptr != nullptr) {
       Node* node = *ptr;
       if (node->_hash == hash && EQUALS(key, node->_key)) {
         break;
@@ -94,12 +103,12 @@ class ResourceHashtableBase : public STORAGE {
   NONCOPYABLE(ResourceHashtableBase);
 
   ~ResourceHashtableBase() {
-    if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
       Node* const* bucket = table();
       const unsigned sz = table_size();
       while (bucket < bucket_at(sz)) {
         Node* node = *bucket;
-        while (node != NULL) {
+        while (node != nullptr) {
           Node* cur = node;
           node = node->_next;
           delete cur;
@@ -114,16 +123,16 @@ class ResourceHashtableBase : public STORAGE {
   int number_of_entries() const { return _number_of_entries; }
 
   bool contains(K const& key) const {
-    return get(key) != NULL;
+    return get(key) != nullptr;
   }
 
   V* get(K const& key) const {
     unsigned hv = HASH(key);
     Node const** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       return const_cast<V*>(&(*ptr)->_value);
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -135,11 +144,15 @@ class ResourceHashtableBase : public STORAGE {
   bool put(K const& key, V const& value) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr != NULL) {
+    if (*ptr != nullptr) {
       (*ptr)->_value = value;
       return false;
     } else {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       _number_of_entries ++;
       return true;
     }
@@ -153,8 +166,12 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key);
+    if (*ptr == nullptr) {
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key);
+      } else {
+        *ptr = new Node(hv, key);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {
@@ -171,8 +188,12 @@ class ResourceHashtableBase : public STORAGE {
   V* put_if_absent(K const& key, V const& value, bool* p_created) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
-    if (*ptr == NULL) {
-      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
+    if (*ptr == nullptr) {
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
+        *ptr = new (MEM_TYPE) Node(hv, key, value);
+      } else {
+        *ptr = new Node(hv, key, value);
+      }
       *p_created = true;
       _number_of_entries ++;
     } else {
@@ -187,9 +208,9 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
 
     Node* node = *ptr;
-    if (node != NULL) {
+    if (node != nullptr) {
       *ptr = node->_next;
-      if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+      if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
       }
       _number_of_entries --;
@@ -213,12 +234,15 @@ class ResourceHashtableBase : public STORAGE {
   void iterate(Function function) const { // lambda enabled API
     Node* const* bucket = table();
     const unsigned sz = table_size();
-    while (bucket < bucket_at(sz)) {
+    int cnt = _number_of_entries;
+
+    while (cnt > 0 && bucket < bucket_at(sz)) {
       Node* node = *bucket;
-      while (node != NULL) {
+      while (node != nullptr) {
         bool cont = function(node->_key, node->_value);
         if (!cont) { return; }
         node = node->_next;
+        --cnt;
       }
       ++bucket;
     }
@@ -242,13 +266,13 @@ class ResourceHashtableBase : public STORAGE {
     const unsigned sz = table_size();
     for (unsigned index = 0; index < sz; index++) {
       Node** ptr = bucket_at(index);
-      while (*ptr != NULL) {
+      while (*ptr != nullptr) {
         Node* node = *ptr;
         // do_entry must clean up the key and value in Node.
         bool clean = iter->do_entry(node->_key, node->_value);
         if (clean) {
           *ptr = node->_next;
-          if (ALLOC_TYPE == ResourceObj::C_HEAP) {
+          if (ALLOC_TYPE == AnyObj::C_HEAP) {
             delete node;
           }
           _number_of_entries --;
@@ -259,15 +283,41 @@ class ResourceHashtableBase : public STORAGE {
     }
   }
 
+  template<typename Function>
+  TableStatistics statistics_calculate(Function size_function) const {
+    NumberSeq summary;
+    size_t literal_bytes = 0;
+    Node* const* bucket = table();
+    const unsigned sz = table_size();
+    while (bucket < bucket_at(sz)) {
+      Node* node = *bucket;
+      int count = 0;
+      while (node != nullptr) {
+        literal_bytes += size_function(node->_key, node->_value);
+        count++;
+        node = node->_next;
+      }
+      summary.add((double)count);
+      ++bucket;
+    }
+    return TableStatistics(summary, literal_bytes, sizeof(Node*), sizeof(Node));
+  }
+
+  // This method calculates the "shallow" size. If you want the recursive size, use statistics_calculate.
+  size_t mem_size() const {
+    return sizeof(*this) +
+      table_size() * sizeof(Node*) +
+      number_of_entries() * sizeof(Node);
+  }
 };
 
 template<unsigned TABLE_SIZE, typename K, typename V>
-class FixedResourceHashtableStorage : public ResourceObj {
+class FixedResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
   Node* _table[TABLE_SIZE];
 protected:
-  FixedResourceHashtableStorage() : _table() {}
+  FixedResourceHashtableStorage() { memset(_table, 0, sizeof(_table)); }
   ~FixedResourceHashtableStorage() = default;
 
   constexpr unsigned table_size() const {
@@ -282,7 +332,7 @@ protected:
 template<
     typename K, typename V,
     unsigned SIZE = 256,
-    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
     MEMFLAGS MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>

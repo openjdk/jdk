@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@ package java.security;
 import java.io.*;
 
 /**
- * <p> SignedObject is a class for the purpose of creating authentic
+ * <p> {@code SignedObject} is a class for the purpose of creating authentic
  * runtime objects whose integrity cannot be compromised without being
  * detected.
  *
- * <p> More specifically, a SignedObject contains another Serializable
+ * <p> More specifically, a {@code SignedObject} contains another Serializable
  * object, the (to-be-)signed object and its signature.
  *
  * <p> The signed object is a "deep copy" (in serialized form) of an
@@ -67,7 +67,7 @@ import java.io.*;
  * re-initialized inside the constructor and the {@code verify}
  * method. Secondly, for verification to succeed, the specified
  * public key must be the public key corresponding to the private key
- * used to generate the SignedObject.
+ * used to generate the {@code SignedObject}.
  *
  * <p> More importantly, for flexibility reasons, the
  * constructor and {@code verify} method allow for
@@ -95,7 +95,7 @@ import java.io.*;
  * specified, the default provider is used.  Each installation can
  * be configured to use a particular provider as default.
  *
- * <p> Potential applications of SignedObject include:
+ * <p> Potential applications of {@code SignedObject} include:
  * <ul>
  * <li> It can be used
  * internally to any Java runtime as an unforgeable authorization
@@ -138,7 +138,7 @@ public final class SignedObject implements Serializable {
     private String thealgorithm;
 
     /**
-     * Constructs a SignedObject from any Serializable object.
+     * Constructs a {@code SignedObject} from any Serializable object.
      * The given object is signed with the given signing key, using the
      * designated signature engine.
      *
@@ -211,7 +211,7 @@ public final class SignedObject implements Serializable {
     }
 
     /**
-     * Verifies that the signature in this SignedObject is the valid
+     * Verifies that the signature in this {@code SignedObject} is the valid
      * signature for the object stored inside, with the given
      * verification key, using the designated verification engine.
      *
@@ -254,8 +254,8 @@ public final class SignedObject implements Serializable {
     }
 
     /**
-     * readObject is called to restore the state of the SignedObject from
-     * a stream.
+     * readObject is called to restore the state of the {@code SignedObject}
+     * from a stream.
      *
      * @param  s the {@code ObjectInputStream} from which data is read
      * @throws IOException if an I/O error occurs

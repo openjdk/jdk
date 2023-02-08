@@ -31,6 +31,7 @@
 #include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
+#include "opto/subnode.hpp"
 #include "runtime/vm_version.hpp"
 
 class Compile;
@@ -335,6 +336,8 @@ public:
 
   static const bool match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt);
 
+  static const bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
   static const TypeVectMask* predicate_reg_type(const Type* elemTy, int length);
 
@@ -522,7 +525,7 @@ public:
 
   void dump_old2new_map();      // machine-independent to machine-dependent
 
-  Node* find_old_node(Node* new_node) {
+  Node* find_old_node(const Node* new_node) {
     return _new2old_map[new_node->_idx];
   }
 #endif // !PRODUCT

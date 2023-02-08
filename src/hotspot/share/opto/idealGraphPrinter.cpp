@@ -149,7 +149,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   } else {
     init_network_stream();
   }
-  _xml = new (ResourceObj::C_HEAP, mtCompiler) xmlStream(_output);
+  _xml = new (mtCompiler) xmlStream(_output);
   if (!append) {
     head(TOP_ELEMENT);
   }
@@ -201,7 +201,7 @@ void IdealGraphPrinter::end_head() {
 void IdealGraphPrinter::print_attr(const char *name, intptr_t val) {
   stringStream stream;
   stream.print(INTX_FORMAT, val);
-  print_attr(name, stream.as_string());
+  print_attr(name, stream.freeze());
 }
 
 void IdealGraphPrinter::print_attr(const char *name, const char *val) {
@@ -225,7 +225,7 @@ void IdealGraphPrinter::text(const char *s) {
 void IdealGraphPrinter::print_prop(const char *name, int val) {
   stringStream stream;
   stream.print("%d", val);
-  print_prop(name, stream.as_string());
+  print_prop(name, stream.freeze());
 }
 
 void IdealGraphPrinter::print_prop(const char *name, const char *val) {
@@ -245,8 +245,8 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
   stringStream shortStr;
   method->print_short_name(&shortStr);
 
-  print_attr(METHOD_NAME_PROPERTY, str.as_string());
-  print_attr(METHOD_SHORT_NAME_PROPERTY, shortStr.as_string());
+  print_attr(METHOD_NAME_PROPERTY, str.freeze());
+  print_attr(METHOD_SHORT_NAME_PROPERTY, shortStr.freeze());
   print_attr(METHOD_BCI_PROPERTY, bci);
 
   end_head();
@@ -305,7 +305,7 @@ void IdealGraphPrinter::begin_method() {
   // Add method name
   stringStream strStream;
   method->print_name(&strStream);
-  print_prop(METHOD_NAME_PROPERTY, strStream.as_string());
+  print_prop(METHOD_NAME_PROPERTY, strStream.freeze());
 
   if (method->flags().is_public()) {
     print_prop(METHOD_IS_PUBLIC_PROPERTY, TRUE_VALUE);
@@ -318,7 +318,7 @@ void IdealGraphPrinter::begin_method() {
   if (C->is_osr_compilation()) {
       stringStream ss;
       ss.print("bci: %d, line: %d", C->entry_bci(), method->line_number_from_bci(C->entry_bci()));
-      print_prop(COMPILATION_OSR_PROPERTY, ss.as_string());
+      print_prop(COMPILATION_OSR_PROPERTY, ss.freeze());
   }
 
   print_prop(COMPILATION_ID_PROPERTY, C->compile_id());
@@ -387,6 +387,12 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
+        if (node == block->head()) {
+          if (block->_idom != NULL) {
+            print_prop("idom", block->_idom->_pre_order);
+          }
+          print_prop("dom_depth", block->_dom_depth);
+        }
         // Print estimated execution frequency, normalized within a [0,1] range.
         buffer[0] = 0;
         stringStream freq(buffer, sizeof(buffer) - 1);
@@ -494,9 +500,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (t != NULL && (t->isa_instptr() || t->isa_instklassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
       const TypeInstKlassPtr *tkls = t->isa_instklassptr();
-      if ((toop != NULL && toop->is_interface()) || (tkls != NULL && tkls->is_interface())) {
-        s2.print("  Interface:");
-      } else if (toop) {
+      if (toop) {
         s2.print("  Oop:");
       } else if (tkls) {
         s2.print("  Klass:");
@@ -524,7 +528,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       if (index >= 10) {
         print_prop(short_name, "PA");
       } else {
-        sprintf(buffer, "P%d", index);
+        os::snprintf_checked(buffer, sizeof(buffer), "P%d", index);
         print_prop(short_name, buffer);
       }
     } else if (strcmp(node->Name(), "IfTrue") == 0) {
@@ -540,7 +544,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, "%d", value);
+          os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -554,7 +558,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, JLONG_FORMAT, value);
+          os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");
@@ -601,7 +605,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         bciStream.print("%d ", caller->bci());
         caller = caller->caller();
       }
-      print_prop("bci", bciStream.as_string());
+      print_prop("bci", bciStream.freeze());
       if (last != NULL && last->has_linenumber_table() && last_bci >= 0) {
         print_prop("line", last->line_number_from_bci(last_bci));
       }
@@ -611,13 +615,13 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     if (node->debug_orig() != NULL) {
       stringStream dorigStream;
       node->dump_orig(&dorigStream, false);
-      print_prop("debug_orig", dorigStream.as_string());
+      print_prop("debug_orig", dorigStream.freeze());
     }
 #endif
 
     if (_chaitin && _chaitin != (PhaseChaitin *)((intptr_t)0xdeadbeef)) {
       buffer[0] = 0;
-      _chaitin->dump_register(node, buffer);
+      _chaitin->dump_register(node, buffer, sizeof(buffer));
       print_prop("reg", buffer);
       uint lrg_id = 0;
       if (node->_idx < _chaitin->_lrg_map.size()) {
@@ -725,10 +729,9 @@ Node* IdealGraphPrinter::get_load_node(const Node* node) {
 
 void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set) {
   VectorSet visited;
-  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
+  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
   nodeStack.push(start);
-  visited.test_set(start->_idx);
-  if (C->cfg() != NULL) {
+  if (C->cfg() != nullptr) {
     // once we have a CFG there are some nodes that aren't really
     // reachable but are in the CFG so add them here.
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
@@ -739,25 +742,23 @@ void IdealGraphPrinter::walk_nodes(Node* start, bool edges, VectorSet* temp_set)
     }
   }
 
-  while(nodeStack.length() > 0) {
+  while (nodeStack.length() > 0) {
+    Node* n = nodeStack.pop();
+    if (visited.test_set(n->_idx)) {
+      continue;
+    }
 
-    Node *n = nodeStack.pop();
     visit_node(n, edges, temp_set);
 
     if (_traverse_outs) {
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
-        Node* p = n->out(i);
-        if (!visited.test_set(p->_idx)) {
-          nodeStack.push(p);
-        }
+        nodeStack.push(n->out(i));
       }
     }
 
-    for ( uint i = 0; i < n->len(); i++ ) {
-      if ( n->in(i) ) {
-        if (!visited.test_set(n->in(i)->_idx)) {
-          nodeStack.push(n->in(i));
-        }
+    for (uint i = 0; i < n->len(); i++) {
+      if (n->in(i) != nullptr) {
+        nodeStack.push(n->in(i));
       }
     }
   }
@@ -845,9 +846,9 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     } else {
       st.print("%s%d", file_name, _file_count);
     }
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(st.as_string(), "w");
+    _output = new (mtCompiler) fileStream(st.as_string(), "w");
   } else {
-    _output = new (ResourceObj::C_HEAP, mtCompiler) fileStream(file_name, append ? "a" : "w");
+    _output = new (mtCompiler) fileStream(file_name, append ? "a" : "w");
   }
   if (use_multiple_files) {
     assert(!append, "append should only be used for debugging with a single file");
@@ -856,7 +857,7 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
 }
 
 void IdealGraphPrinter::init_network_stream() {
-  _network_stream = new (ResourceObj::C_HEAP, mtCompiler) networkStream();
+  _network_stream = new (mtCompiler) networkStream();
   // Try to connect to visualizer
   if (_network_stream->connect(PrintIdealGraphAddress, PrintIdealGraphPort)) {
     char c = 0;

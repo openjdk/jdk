@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ package java.nio;
 
 import java.io.FileDescriptor;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
 import java.lang.ref.Reference;
 import java.util.Objects;
 import jdk.internal.foreign.MemorySessionImpl;
@@ -141,7 +140,14 @@ class Direct$Type$Buffer$RW$$BO$
         } else {
             address = base;
         }
-        cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        try {
+            cleaner = Cleaner.create(this, new Deallocator(base, size, cap));
+        } catch (Throwable t) {
+            // Prevent leak if the Deallocator or Cleaner fail for any reason
+            UNSAFE.freeMemory(base);
+            Bits.unreserveMemory(size, cap);
+            throw t;
+        }
         att = null;
 #else[rw]
         super(cap);
@@ -172,12 +178,29 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     // Invoked only by JNI: NewDirectByteBuffer(void*, long)
+    // The long-valued capacity is restricted to int range.
     //
-    private Direct$Type$Buffer(long addr, int cap) {
-        super(-1, 0, cap, cap, null);
+    private Direct$Type$Buffer(long addr, long cap) {
+        super(-1, 0, checkCapacity(cap), (int)cap, null);
         address = addr;
         cleaner = null;
         att = null;
+    }
+
+    // Throw an IllegalArgumentException if the capacity is not in
+    // the range [0, Integer.MAX_VALUE]
+    //
+    private static int checkCapacity(long capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity < 0: ("
+                + capacity + ")");
+        } else if (capacity > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException
+                ("JNI NewDirectByteBuffer passed capacity > Integer.MAX_VALUE: ("
+                + capacity + ")");
+        }
+        return (int)capacity;
     }
 
 #end[rw]
@@ -313,11 +336,7 @@ class Direct$Type$Buffer$RW$$BO$
             if (session.ownerThread() == null && session.isCloseable()) {
                 throw new UnsupportedOperationException("ByteBuffer derived from closeable shared sessions not supported");
             }
-            try {
-                session.checkValidState();
-            } catch (ScopedAccessError e) {
-                throw new IllegalStateException("This segment is already closed");
-            }
+            session.checkValidState();
         }
         return address;
     }

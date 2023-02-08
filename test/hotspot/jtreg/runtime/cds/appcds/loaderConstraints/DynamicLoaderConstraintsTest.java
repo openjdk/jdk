@@ -31,8 +31,8 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
  * @modules java.base/jdk.internal.misc
  *          jdk.httpserver
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest
  */
 
@@ -47,8 +47,8 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
  * @modules java.base/jdk.internal.misc
  *          jdk.httpserver
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom
  */
 
@@ -64,8 +64,8 @@
  *          /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
  * @modules java.base/jdk.internal.misc
  *          jdk.httpserver
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=180 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicLoaderConstraintsTest custom-zgc
  */
 

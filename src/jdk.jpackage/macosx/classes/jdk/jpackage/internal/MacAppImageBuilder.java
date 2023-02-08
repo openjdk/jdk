@@ -90,6 +90,8 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     private final Path runtimeDir;
     private final Path runtimeRoot;
 
+    private final boolean withPackageFile;
+
     private static List<String> keyChains;
 
     public static final BundlerParamInfo<Boolean>
@@ -243,10 +245,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                      (s, p) -> Arrays.asList(s.split("(,|\\s)+"))
              );
 
-    public MacAppImageBuilder(Path imageOutDir) {
+    public MacAppImageBuilder(Path imageOutDir, boolean withPackageFile) {
         super(imageOutDir);
 
         this.root = imageOutDir;
+        this.withPackageFile = withPackageFile;
         this.contentsDir = root.resolve("Contents");
         this.resourcesDir = appLayout.destktopIntegrationDirectory();
         this.macOSDir = appLayout.launchersDirectory();
@@ -262,9 +265,29 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
     @Override
     public void prepareApplicationFiles(Map<String, ? super Object> params)
             throws IOException {
-        // If predefine app image is provided, then just sign it and return.
-        if (PREDEFINED_APP_IMAGE.fetchFrom(params) != null) {
-            doSigning(params);
+        // If predefined app image is provided, then just sign it and return.
+        Path predefinedAppImage = PREDEFINED_APP_IMAGE.fetchFrom(params);
+        if (predefinedAppImage != null) {
+            // Mark app image as signed, before we signing it.
+            AppImageFile appImageFile =
+                AppImageFile.load(predefinedAppImage);
+            if (!appImageFile.isSigned()) {
+                appImageFile.copyAsSigned().save(predefinedAppImage);
+            } else {
+                appImageFile = null;
+            }
+
+            try {
+                doSigning(params);
+            } catch (Exception ex) {
+                // Restore original app image file if signing failed
+                if (appImageFile != null) {
+                    appImageFile.save(predefinedAppImage);
+                }
+
+                throw ex;
+            }
+
             return;
         }
 
@@ -308,6 +331,11 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
         // Copy class path entries to Java folder
         copyApplication(params);
+
+        if (withPackageFile) {
+            new PackageFile(APP_NAME.fetchFrom(params)).save(
+                    ApplicationLayout.macAppImage().resolveAt(root));
+        }
 
         /*********** Take care of "config" files *******/
 
@@ -373,7 +401,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         ENTITLEMENTS.fetchFrom(params));
             }
             restoreKeychainList(params);
-        } else if (Platform.isArmMac()) {
+        } else if (Platform.isMac()) {
             signAppBundle(params, root, "-", null, null);
         } else {
             // Calling signAppBundle() without signingIdentity will result in

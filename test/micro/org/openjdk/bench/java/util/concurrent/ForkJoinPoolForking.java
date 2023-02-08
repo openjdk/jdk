@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 package org.openjdk.bench.java.util.concurrent;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -43,6 +46,9 @@ import java.util.concurrent.TimeUnit;
  */
 @OutputTimeUnit(TimeUnit.MINUTES)
 @State(Scope.Benchmark)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@Fork(3)
 public class ForkJoinPoolForking {
 
     /**
@@ -56,58 +62,63 @@ public class ForkJoinPoolForking {
      * FJP could be faster than baseline, because the baseline is single-threaded.
      */
 
-    @Param("0")
-    private int workers;
-
     @Param("10000000")
     private int size;
 
-    @Param("10")
-    private int threshold;
+    /** Encapsulate all the state depended on only by actual test. This avoids running baselines for every parameter value. */
+    @State(Scope.Benchmark)
+    public static class TestState {
 
+        @Param("0")
+        private int workers;
+
+        @Param({"1", "2", "3", "4", "5", "6", "7", "8"})
+        private int threshold;
+
+        private ForkJoinPool fjpSync;
+        private ForkJoinPool fjpAsync;
+
+        @Setup
+        public void setup() {
+            if (workers == 0) {
+                workers = Runtime.getRuntime().availableProcessors();
+            }
+            fjpSync = new ForkJoinPool(workers, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, false);
+            fjpAsync = new ForkJoinPool(workers, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
+        }
+
+
+        @TearDown
+        public void teardown() {
+            fjpSync.shutdownNow();
+            fjpAsync.shutdownNow();
+        }
+    }
     private Problem problem;
-    private ForkJoinPool fjpSync;
-    private ForkJoinPool fjpAsync;
 
     @Setup
     public void setup() {
         problem = new Problem(size);
-        if (workers == 0) {
-            workers = Runtime.getRuntime().availableProcessors();
-        }
-        fjpSync = new ForkJoinPool(workers, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, false);
-        fjpAsync = new ForkJoinPool(workers, ForkJoinPool.defaultForkJoinWorkerThreadFactory, null, true);
-    }
-
-    @TearDown
-    public void teardown() {
-        fjpSync.shutdownNow();
-        fjpAsync.shutdownNow();
     }
 
     @Benchmark
-    public long baselineRaw() {
-        return problem.solve();
+    public Long testExplicit_Sync(TestState state) throws ExecutionException, InterruptedException {
+        return state.fjpSync.invoke(new ExplicitTask(problem, 0, problem.size(), state.threshold));
     }
 
     @Benchmark
-    public Long testExplicit_Sync() throws ExecutionException, InterruptedException {
-        return fjpSync.invoke(new ExplicitTask(problem, 0, problem.size(), threshold));
+    public Long testExplicit_Async(TestState state) throws ExecutionException, InterruptedException {
+        return state.fjpAsync.invoke(new ExplicitTask(problem, 0, problem.size(), state.threshold));
     }
 
     @Benchmark
-    public Long testExplicit_Async() throws ExecutionException, InterruptedException {
-        return fjpAsync.invoke(new ExplicitTask(problem, 0, problem.size(), threshold));
+    public Long testStandard_Sync(TestState state) throws ExecutionException, InterruptedException {
+        return state.fjpSync.invoke(new StandardTask(problem, 0, problem.size(), state.threshold));
     }
 
     @Benchmark
-    public Long testStandard_Sync() throws ExecutionException, InterruptedException {
-        return fjpSync.invoke(new StandardTask(problem, 0, problem.size(), threshold));
-    }
-
-    @Benchmark
-    public Long testStandard_Async() throws ExecutionException, InterruptedException {
-        return fjpAsync.invoke(new StandardTask(problem, 0, problem.size(), threshold));
+    public Long testStandard_Async(TestState state) throws ExecutionException, InterruptedException {
+        return state.fjpAsync.invoke(new StandardTask(problem, 0, problem.size(), state.threshold));
     }
 
     private static class ExplicitTask extends RecursiveTask<Long> {
@@ -173,6 +184,4 @@ public class ForkJoinPoolForking {
             return res;
         }
     }
-
-
 }

@@ -254,8 +254,8 @@ HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
     // the memory may have been used up as the threads waited to acquire the lock.
     if (!survivor_is_full()) {
       result = survivor_gc_alloc_region(node_index)->attempt_allocation_locked(min_word_size,
-                                                                              desired_word_size,
-                                                                              actual_word_size);
+                                                                               desired_word_size,
+                                                                               actual_word_size);
       if (result == NULL) {
         set_survivor_full();
       }
@@ -293,27 +293,70 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
   return result;
 }
 
-G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
-  _g1h(G1CollectedHeap::heap()),
-  _allocator(allocator) {
-  for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
-    _direct_allocated[state] = 0;
-    uint length = alloc_buffers_length(state);
-    _alloc_buffers[state] = NEW_C_HEAP_ARRAY(PLAB*, length, mtGC);
-    size_t word_sz = _g1h->desired_plab_sz(state);
-    for (uint node_index = 0; node_index < length; node_index++) {
-      _alloc_buffers[state][node_index] = new PLAB(word_sz);
-    }
+G1PLABAllocator::PLABData::PLABData() :
+  _alloc_buffer(nullptr),
+  _direct_allocated(0),
+  _num_plab_fills(0),
+  _num_direct_allocations(0),
+  _plab_fill_counter(0),
+  _cur_desired_plab_size(0),
+  _num_alloc_buffers(0) { }
+
+G1PLABAllocator::PLABData::~PLABData() {
+  if (_alloc_buffer == nullptr) {
+    return;
+  }
+  for (uint node_index = 0; node_index < _num_alloc_buffers; node_index++) {
+    delete _alloc_buffer[node_index];
+  }
+  FREE_C_HEAP_ARRAY(PLAB*, _alloc_buffer);
+}
+
+void G1PLABAllocator::PLABData::initialize(uint num_alloc_buffers, size_t desired_plab_size, size_t tolerated_refills) {
+  _num_alloc_buffers = num_alloc_buffers;
+  _alloc_buffer = NEW_C_HEAP_ARRAY(PLAB*, _num_alloc_buffers, mtGC);
+
+  for (uint node_index = 0; node_index < _num_alloc_buffers; node_index++) {
+    _alloc_buffer[node_index] = new PLAB(desired_plab_size);
+  }
+
+  _plab_fill_counter = tolerated_refills;
+  _cur_desired_plab_size = desired_plab_size;
+}
+
+void G1PLABAllocator::PLABData::notify_plab_refill(size_t tolerated_refills, size_t next_plab_size) {
+  _num_plab_fills++;
+  if (should_boost()) {
+    _plab_fill_counter = tolerated_refills;
+    _cur_desired_plab_size = next_plab_size;
+  } else {
+    _plab_fill_counter--;
   }
 }
 
-G1PLABAllocator::~G1PLABAllocator() {
+G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
+  _g1h(G1CollectedHeap::heap()),
+  _allocator(allocator) {
+
+  if (ResizePLAB) {
+    // See G1EvacStats::compute_desired_plab_sz for the reasoning why this is the
+    // expected number of refills.
+    double const ExpectedNumberOfRefills = G1LastPLABAverageOccupancy / TargetPLABWastePct;
+    // Add some padding to the threshold to not boost exactly when the targeted refills
+    // were reached.
+    // E.g. due to limitation of PLAB size to non-humongous objects and region boundaries
+    // a thread may experience more refills than expected. Keeping the PLAB waste low
+    // is the main goal, so being a bit conservative is better.
+    double const PadFactor = 1.5;
+    _tolerated_refills = MAX2(ExpectedNumberOfRefills, 1.0) * PadFactor;
+  } else {
+    // Make the tolerated refills a huge number.
+    _tolerated_refills = SIZE_MAX;
+  }
+  // The initial PLAB refill should not count, hence the +1 for the first boost.
+  size_t initial_tolerated_refills = ResizePLAB ? _tolerated_refills + 1 : _tolerated_refills;
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
-    uint length = alloc_buffers_length(state);
-    for (uint node_index = 0; node_index < length; node_index++) {
-      delete _alloc_buffers[state][node_index];
-    }
-    FREE_C_HEAP_ARRAY(PLAB*, _alloc_buffers[state]);
+    _dest_data[state].initialize(alloc_buffers_length(state), _g1h->desired_plab_sz(state), initial_tolerated_refills);
   }
 }
 
@@ -325,16 +368,30 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        size_t word_sz,
                                                        bool* plab_refill_failed,
                                                        uint node_index) {
-  size_t plab_word_size = _g1h->desired_plab_sz(dest);
+  size_t plab_word_size = plab_size(dest.type());
+  size_t next_plab_word_size = plab_word_size;
+
+  PLABData* plab_data = &_dest_data[dest.type()];
+
+  if (plab_data->should_boost()) {
+    next_plab_word_size = _g1h->clamp_plab_size(next_plab_word_size * 2);
+  }
+
   size_t required_in_plab = PLAB::size_required_for_allocation(word_sz);
 
-  // Only get a new PLAB if the allocation fits and it would not waste more than
-  // ParallelGCBufferWastePct in the existing buffer.
-  if ((required_in_plab <= plab_word_size) &&
+  // Only get a new PLAB if the allocation fits into the to-be-allocated PLAB and
+  // it would not waste more than ParallelGCBufferWastePct in the current PLAB.
+  // Boosting the PLAB also increasingly allows more waste to occur.
+  if ((required_in_plab <= next_plab_word_size) &&
     may_throw_away_buffer(required_in_plab, plab_word_size)) {
 
     PLAB* alloc_buf = alloc_buffer(dest, node_index);
+    guarantee(alloc_buf->words_remaining() <= required_in_plab, "must be");
+
     alloc_buf->retire();
+
+    plab_data->notify_plab_refill(_tolerated_refills, next_plab_word_size);
+    plab_word_size = next_plab_word_size;
 
     size_t actual_plab_size = 0;
     HeapWord* buf = _allocator->par_allocate_during_gc(dest,
@@ -344,7 +401,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
                                                        node_index);
 
     assert(buf == NULL || ((actual_plab_size >= required_in_plab) && (actual_plab_size <= plab_word_size)),
-           "Requested at minimum " SIZE_FORMAT ", desired " SIZE_FORMAT " words, but got " SIZE_FORMAT " at " PTR_FORMAT,
+           "Requested at minimum %zu, desired %zu words, but got %zu at " PTR_FORMAT,
            required_in_plab, plab_word_size, actual_plab_size, p2i(buf));
 
     if (buf != NULL) {
@@ -352,7 +409,7 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
 
       HeapWord* const obj = alloc_buf->allocate(word_sz);
       assert(obj != NULL, "PLAB should have been big enough, tried to allocate "
-                          SIZE_FORMAT " requiring " SIZE_FORMAT " PLAB size " SIZE_FORMAT,
+                          "%zu requiring %zu PLAB size %zu",
                           word_sz, required_in_plab, plab_word_size);
       return obj;
     }
@@ -362,7 +419,8 @@ HeapWord* G1PLABAllocator::allocate_direct_or_new_plab(G1HeapRegionAttr dest,
   // Try direct allocation.
   HeapWord* result = _allocator->par_allocate_during_gc(dest, word_sz, node_index);
   if (result != NULL) {
-    _direct_allocated[dest.type()] += word_sz;
+    plab_data->_direct_allocated += word_sz;
+    plab_data->_num_direct_allocations++;
   }
   return result;
 }
@@ -371,7 +429,7 @@ void G1PLABAllocator::undo_allocation(G1HeapRegionAttr dest, HeapWord* obj, size
   alloc_buffer(dest, node_index)->undo_allocation(obj, word_sz);
 }
 
-void G1PLABAllocator::flush_and_retire_stats() {
+void G1PLABAllocator::flush_and_retire_stats(uint num_workers) {
   for (region_type_t state = 0; state < G1HeapRegionAttr::Num; state++) {
     G1EvacStats* stats = _g1h->alloc_buffer_stats(state);
     for (uint node_index = 0; node_index < alloc_buffers_length(state); node_index++) {
@@ -380,9 +438,21 @@ void G1PLABAllocator::flush_and_retire_stats() {
         buf->flush_and_retire_stats(stats);
       }
     }
-    stats->add_direct_allocated(_direct_allocated[state]);
-    _direct_allocated[state] = 0;
+    PLABData* plab_data = &_dest_data[state];
+    stats->add_num_plab_filled(plab_data->_num_plab_fills);
+    stats->add_direct_allocated(plab_data->_direct_allocated);
+    stats->add_num_direct_allocated(plab_data->_num_direct_allocations);
   }
+
+  log_trace(gc, plab)("PLAB boost: Young %zu -> %zu refills %zu (tolerated %zu) Old %zu -> %zu refills %zu (tolerated %zu)",
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Young)->desired_plab_size(num_workers),
+                      plab_size(G1HeapRegionAttr::Young),
+                      _dest_data[G1HeapRegionAttr::Young]._num_plab_fills,
+                      _tolerated_refills,
+                      _g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->desired_plab_size(num_workers),
+                      plab_size(G1HeapRegionAttr::Old),
+                      _dest_data[G1HeapRegionAttr::Old]._num_plab_fills,
+                      _tolerated_refills);
 }
 
 size_t G1PLABAllocator::waste() const {
@@ -396,6 +466,10 @@ size_t G1PLABAllocator::waste() const {
     }
   }
   return result;
+}
+
+size_t G1PLABAllocator::plab_size(G1HeapRegionAttr which) const {
+  return _dest_data[which.type()]._cur_desired_plab_size;
 }
 
 size_t G1PLABAllocator::undo_waste() const {

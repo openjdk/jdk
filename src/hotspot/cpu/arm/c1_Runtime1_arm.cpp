@@ -419,40 +419,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
 
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
-          Label slow_case, slow_case_no_pop;
-
-          // Make sure the class is fully initialized
-          if (id == fast_new_instance_init_check_id) {
-            __ ldrb(result, Address(klass, InstanceKlass::init_state_offset()));
-            __ cmp(result, InstanceKlass::fully_initialized);
-            __ b(slow_case_no_pop, ne);
-          }
-
-          // Free some temporary registers
-          const Register obj_size = R4;
-          const Register tmp1     = R5;
-          const Register tmp2     = LR;
-          const Register obj_end  = Rtemp;
-
-          __ raw_push(R4, R5, LR);
-
-          __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
-          __ eden_allocate(result, obj_end, tmp1, tmp2, obj_size, slow_case);        // initializes result and obj_end
-          __ initialize_object(result, obj_end, klass, noreg /* len */, tmp1, tmp2,
-                               instanceOopDesc::header_size() * HeapWordSize, -1,
-                               /* is_tlab_allocated */ false);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(slow_case);
-          __ raw_pop(R4, R5, LR);
-
-          __ bind(slow_case_no_pop);
-        }
-
         OopMap* map = save_live_registers(sasm);
         int call_offset = __ call_RT(result, noreg, CAST_FROM_FN_PTR(address, new_instance), klass);
         oop_maps = new OopMapSet();
@@ -488,47 +454,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
         const Register length = R2;
-
-        // If TLAB is disabled, see if there is support for inlining contiguous
-        // allocations.
-        // Otherwise, just go to the slow path.
-        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          Label slow_case, slow_case_no_pop;
-
-          __ cmp_32(length, C1_MacroAssembler::max_array_allocation_length);
-          __ b(slow_case_no_pop, hs);
-
-          // Free some temporary registers
-          const Register arr_size = R4;
-          const Register tmp1     = R5;
-          const Register tmp2     = LR;
-          const Register tmp3     = Rtemp;
-          const Register obj_end  = tmp3;
-
-          __ raw_push(R4, R5, LR);
-
-          // Get the allocation size: round_up((length << (layout_helper & 0xff)) + header_size)
-          __ ldr_u32(tmp1, Address(klass, Klass::layout_helper_offset()));
-          __ mov(arr_size, MinObjAlignmentInBytesMask);
-          __ and_32(tmp2, tmp1, (unsigned int)(Klass::_lh_header_size_mask << Klass::_lh_header_size_shift));
-
-          __ add(arr_size, arr_size, AsmOperand(length, lsl, tmp1));
-
-          __ add(arr_size, arr_size, AsmOperand(tmp2, lsr, Klass::_lh_header_size_shift));
-          __ align_reg(arr_size, arr_size, MinObjAlignmentInBytes);
-
-          // eden_allocate destroys tmp2, so reload header_size after allocation
-          // eden_allocate initializes result and obj_end
-          __ eden_allocate(result, obj_end, tmp1, tmp2, arr_size, slow_case);
-          __ ldrb(tmp2, Address(klass, in_bytes(Klass::layout_helper_offset()) +
-                                       Klass::_lh_header_size_shift / BitsPerByte));
-          __ initialize_object(result, obj_end, klass, length, tmp1, tmp2, tmp2, -1, /* is_tlab_allocated */ false);
-          __ raw_pop_and_ret(R4, R5);
-
-          __ bind(slow_case);
-          __ raw_pop(R4, R5, LR);
-          __ bind(slow_case_no_pop);
-        }
 
         OopMap* map = save_live_registers(sasm);
         int call_offset;

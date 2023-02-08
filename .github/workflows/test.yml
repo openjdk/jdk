@@ -127,7 +127,7 @@ jobs:
         run: |
           # On macOS we need to install some dependencies for testing
           brew install make
-          sudo xcode-select --switch /Applications/Xcode_11.3.1.app/Contents/Developer
+          sudo xcode-select --switch /Applications/Xcode_11.7.app/Contents/Developer
           # This will make GNU make available as 'make' and not only as 'gmake'
           echo '/usr/local/opt/make/libexec/gnubin' >> $GITHUB_PATH
         if: runner.os == 'macOS'
@@ -138,9 +138,9 @@ jobs:
           # We need a minimal PATH on Windows
           # Set PATH to "", so just GITHUB_PATH is included
           if [[ '${{ runner.os }}' == 'Windows' ]]; then
-            echo "::set-output name=value::"
+            echo "value=" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=value::$PATH"
+            echo "value=$PATH" >> $GITHUB_OUTPUT
           fi
 
       - name: 'Run tests'
@@ -154,7 +154,7 @@ jobs:
           SYMBOLS_IMAGE_DIR=${{ steps.bundles.outputs.symbols-path }}
           TEST_IMAGE_DIR=${{ steps.bundles.outputs.tests-path }}
           JTREG='JAVA_OPTIONS=-XX:-CreateCoredumpOnCrash;VERBOSE=fail,error,time;KEYWORDS=!headful'
-          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY"
+          && bash ./.github/scripts/gen-test-summary.sh "$GITHUB_STEP_SUMMARY" "$GITHUB_OUTPUT"
         env:
           PATH: ${{ steps.path.outputs.value }}
 
@@ -187,7 +187,7 @@ jobs:
           fi
 
           artifact_name="results-${{ inputs.platform }}-$(echo ${{ matrix.test-name }} | tr '/ ' '__')"
-          echo "::set-output name=artifact-name::$artifact_name"
+          echo "artifact-name=$artifact_name" >> $GITHUB_OUTPUT
         if: always()
 
       - name: 'Upload test results'

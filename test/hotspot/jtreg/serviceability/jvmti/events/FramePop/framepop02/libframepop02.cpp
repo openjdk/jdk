@@ -69,11 +69,15 @@ void print_current_time() {
 }
 
 static
-int isTestThread(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr) {
+bool isTestThread(JNIEnv *jni, jvmtiEnv *jvmti, jthread thr) {
   jvmtiThreadInfo inf;
   const char* TEST_THREAD_NAME_BASE = "Test Thread";
   check_jvmti_status(jni, jvmti->GetThreadInfo(thr, &inf), "Error in GetThreadInfo.");
-  return strncmp(inf.name, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
+
+  bool result = strncmp(inf.name, TEST_THREAD_NAME_BASE, strlen(TEST_THREAD_NAME_BASE)) == 0;
+  jvmti->Deallocate((unsigned char *)inf.name);
+
+  return result;
 }
 
 static
@@ -174,6 +178,10 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
 
   if (watch_events == JNI_FALSE) return;
 
+  if (!isTestThread(jni, jvmti, thr)) {
+    return; // not a tested thread
+  }
+
   RawMonitorLocker rml(jvmti, jni, agent_lock);
 
   if (!callbacksEnabled) {
@@ -183,7 +191,7 @@ void JNICALL MethodEntry(jvmtiEnv *jvmti, JNIEnv *jni,
   check_jvmti_status(jni, jvmti->GetFrameCount(thr, &frameCount), "Error in GetFrameCount");
   check_jvmti_status(jni, jvmti->IsMethodNative(method, &isNative), "Error in IsMethodNative.");
 
-  if (isTestThread(jni, jvmti, thr)) {
+  {
     if (printdump == JNI_TRUE) {
       print_current_time();
       fflush(0);
@@ -220,7 +228,7 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni,
   }
   check_jvmti_status(jni, jvmti->GetFrameCount(thr, &frameCount), "Error in GetFrameCount.");
 
-  if (isTestThread(jni, jvmti, thr)) {
+  {
     if (printdump == JNI_TRUE) {
       print_current_time();
       fflush(0);

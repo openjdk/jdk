@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public final class Histogram extends StatLong {
         super.toString(sb).append(" { ");
 
         for (int i = 0; i < MAX; i++) {
-            if (stats[i].count != 0l) {
+            if (stats[i].count != 0L) {
                 sb.append("\n        ").append(stats[i].toString());
             }
         }

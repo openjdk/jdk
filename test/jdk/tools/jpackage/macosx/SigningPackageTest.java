@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.nio.file.Path;
+import jdk.jpackage.internal.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -75,7 +76,8 @@ public class SigningPackageTest {
 
     private static void verifyAppImageInDMG(JPackageCommand cmd) {
         MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            Path launcherPath = dmgImage.resolve(Path.of("Contents", "MacOS", cmd.name()));
+            Path launcherPath = ApplicationLayout.platformAppImage()
+                    .resolveAt(dmgImage).launchersDirectory().resolve(cmd.name());
             // We will be called with all folders in DMG since JDK-8263155, but
             // we only need to verify app.
             if (dmgImage.endsWith(cmd.name() + ".app")) {

@@ -48,13 +48,13 @@
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),
-  _alloc_failure_waiters_lock(Mutex::safepoint-1, "ShenandoahAllocFailureGC_lock", true),
-  _gc_waiters_lock(Mutex::safepoint-1, "ShenandoahRequestedGC_lock", true),
+  _alloc_failure_waiters_lock(Mutex::safepoint-2, "ShenandoahAllocFailureGC_lock", true),
+  _gc_waiters_lock(Mutex::safepoint-2, "ShenandoahRequestedGC_lock", true),
   _periodic_task(this),
   _requested_gc_cause(GCCause::_no_cause_specified),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _allocs_seen(0) {
-
+  set_name("Shenandoah Control Thread");
   reset_gc_id();
   create_and_start();
   _periodic_task.enroll();
@@ -479,12 +479,14 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
   assert(GCCause::is_user_requested_gc(cause) ||
          GCCause::is_serviceability_requested_gc(cause) ||
          cause == GCCause::_metadata_GC_clear_soft_refs ||
+         cause == GCCause::_codecache_GC_aggressive ||
          cause == GCCause::_codecache_GC_threshold ||
          cause == GCCause::_full_gc_alot ||
+         cause == GCCause::_wb_young_gc ||
          cause == GCCause::_wb_full_gc ||
          cause == GCCause::_wb_breakpoint ||
          cause == GCCause::_scavenge_alot,
-         "only requested GCs here");
+         "only requested GCs here: %s", GCCause::to_string(cause));
 
   if (is_explicit_gc(cause)) {
     if (!DisableExplicitGC) {
@@ -623,16 +625,6 @@ void ShenandoahControlThread::update_gc_id() {
 
 size_t ShenandoahControlThread::get_gc_id() {
   return Atomic::load(&_gc_id);
-}
-
-void ShenandoahControlThread::print() const {
-  print_on(tty);
-}
-
-void ShenandoahControlThread::print_on(outputStream* st) const {
-  st->print("Shenandoah Concurrent Thread");
-  Thread::print_on(st);
-  st->cr();
 }
 
 void ShenandoahControlThread::start() {

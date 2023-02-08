@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
-/**
- * Test for JDK-8211285
+/*
+ * @test
+ * @summary Test for JDK-8211285
+ * @modules jdk.jpackage
+ * @compile --patch-module jdk.jpackage=${test.src} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED DeployParamsTest.java
+ * @run junit/othervm --patch-module jdk.jpackage=${test.classes} --add-reads jdk.jpackage=ALL-UNNAMED --add-exports jdk.jpackage/jdk.jpackage.internal=ALL-UNNAMED jdk.jpackage.internal.DeployParamsTest
  */
 public class DeployParamsTest {
 

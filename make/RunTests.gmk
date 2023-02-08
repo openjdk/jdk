@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -196,11 +196,12 @@ $(eval $(call SetTestOpt,JAVA_OPTIONS,JTREG))
 $(eval $(call SetTestOpt,JOBS,JTREG))
 $(eval $(call SetTestOpt,TIMEOUT_FACTOR,JTREG))
 $(eval $(call SetTestOpt,FAILURE_HANDLER_TIMEOUT,JTREG))
+$(eval $(call SetTestOpt,REPORT,JTREG))
 
 $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN MAX_MEM RUN_PROBLEM_LISTS \
-        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -349,13 +350,24 @@ ExpandJtregPath = \
     )) \
   )
 
+# with test id: dir/Test.java#selection -> Test.java#selection -> .java#selection -> #selection
+#      without: dir/Test.java           -> Test.java           -> .java           -> <<empty string>>
+TestID = \
+    $(subst .sh,,$(subst .html,,$(subst .java,,$(suffix $(notdir $1)))))
+
+# The test id starting with a hash (#testid) will be stripped by all
+# evals in ParseJtregTestSelectionInner and will be reinserted by calling
+# TestID (if it is present).
+ParseJtregTestSelection = \
+    $(call IfAppend, $(call ParseJtregTestSelectionInner, $1), $(call TestID, $1))
+
 # Helper function to determine if a test specification is a Jtreg test
 #
 # It is a Jtreg test if it optionally begins with jtreg:, and then is either
 # an unspecified group name (possibly prefixed by :), or a group in a
 # specified test root, or a path to a test or test directory,
 # either absolute or relative to any of the TEST_BASEDIRS or test roots.
-define ParseJtregTestSelection
+define ParseJtregTestSelectionInner
   $(eval TEST_NAME := $(strip $(patsubst jtreg:%, %, $1))) \
   $(if $(or $(findstring :, $(TEST_NAME)), $(findstring /, $(TEST_NAME))), , \
     $(eval TEST_NAME := :$(TEST_NAME)) \
@@ -419,37 +431,25 @@ ifeq ($(TEST), )
   $(error Cannot continue)
 endif
 
+ParseTestSelection = \
+    $(strip $(or \
+      $(call ParseCustomTestSelection, $1) \
+      $(call ParseGtestTestSelection, $1) \
+      $(call ParseMicroTestSelection, $1) \
+      $(call ParseJtregTestSelection, $1) \
+      $(call ParseSpecialTestSelection, $1) \
+    ))
+
 # Now intelligently convert the test selection given by the user in TEST
 # into a list of fully qualified test descriptors of the tests to run.
-TESTS_TO_RUN :=
-$(foreach test, $(TEST), \
-  $(eval PARSED_TESTS := $(call ParseCustomTestSelection, $(test))) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseGtestTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseMicroTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseJtregTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval PARSED_TESTS += $(call ParseSpecialTestSelection, $(test))) \
-  ) \
-  $(if $(strip $(PARSED_TESTS)), , \
-    $(eval UNKNOWN_TEST := $(test)) \
-  ) \
-  $(eval TESTS_TO_RUN += $(PARSED_TESTS)) \
-)
+TESTS_TO_RUN := $(strip $(foreach test, $(TEST), $(call ParseTestSelection, $(test))))
+UNKNOWN_TEST := $(strip $(foreach test, $(TEST), $(if $(call ParseTestSelection, $(test)), , $(test))))
 
 ifneq ($(UNKNOWN_TEST), )
   $(info Unknown test selection: '$(UNKNOWN_TEST)')
   $(info See doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
-
-TESTS_TO_RUN := $(strip $(TESTS_TO_RUN))
-
 
 # Present the result of our parsing to the user
 $(info Test selection '$(TEST)', will run:)
@@ -746,6 +746,7 @@ define SetupRunJtregTestBody
   JTREG_RUN_PROBLEM_LISTS ?= false
   JTREG_RETRY_COUNT ?= 0
   JTREG_REPEAT_COUNT ?= 0
+  JTREG_REPORT ?= files
 
   ifneq ($$(JTREG_RETRY_COUNT), 0)
     ifneq ($$(JTREG_REPEAT_COUNT), 0)
@@ -771,10 +772,13 @@ define SetupRunJtregTestBody
   # Make sure the tmp dir is normalized as some tests will react badly otherwise
   $1_TEST_TMP_DIR := $$(abspath $$($1_TEST_SUPPORT_DIR)/tmp)
 
+  # test.boot.jdk is used by some test cases that want to execute a previous
+  # version of the JDK.
   $1_JTREG_BASIC_OPTIONS += -$$($1_JTREG_TEST_MODE) \
       -verbose:$$(JTREG_VERBOSE) -retain:$$(JTREG_RETAIN) \
       -concurrency:$$($1_JTREG_JOBS) -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR) \
       -vmoption:-XX:MaxRAMPercentage=$$($1_JTREG_MAX_RAM_PERCENTAGE) \
+      -vmoption:-Dtest.boot.jdk="$$(BOOT_JDK)" \
       -vmoption:-Djava.io.tmpdir="$$($1_TEST_TMP_DIR)"
 
   $1_JTREG_BASIC_OPTIONS += -automatic -ignore:quiet
@@ -786,6 +790,8 @@ define SetupRunJtregTestBody
   # symbol lookup in hserr files
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+  else ifeq ($$(call isTargetOs, linux), true)
+      $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif
 
   $1_JTREG_BASIC_OPTIONS += \
@@ -853,7 +859,8 @@ define SetupRunJtregTestBody
           -dir:$$(JTREG_TOPDIR) \
           -reportDir:$$($1_TEST_RESULTS_DIR) \
           -workDir:$$($1_TEST_SUPPORT_DIR) \
-          -status:$$$${JTREG_STATUS} \
+          -report:$${JTREG_REPORT} \
+          $$$${JTREG_STATUS} \
           $$(JTREG_OPTIONS) \
           $$(JTREG_FAILURE_HANDLER_OPTIONS) \
           $$(JTREG_COV_OPTIONS) \
@@ -1184,13 +1191,11 @@ ifeq ($(TEST_OPTS_JCOV), true)
     JCOV_SOURCE_DIFF := $(JCOV_OUTPUT_DIR)/source_diff
     JCOV_DIFF_COVERAGE_REPORT := $(JCOV_OUTPUT_DIR)/diff_coverage_report
 
-    ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
-      DIFF_COMMAND := $(HG) -R $(TOPDIR) diff -r $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
-    else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+    ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
       DIFF_COMMAND := $(GIT) -C $(TOPDIR) diff $(TEST_OPTS_JCOV_DIFF_CHANGESET) > $(JCOV_SOURCE_DIFF)
     else
-      $(info Error: Must be either hg or git source tree for diff coverage.)
-      $(error Neither hg nor git source tree.)
+      $(info Error: Must be a git source tree for diff coverage.)
+      $(error No git source tree.)
     endif
 
     jcov-gen-diffcoverage: jcov-stop-grabber

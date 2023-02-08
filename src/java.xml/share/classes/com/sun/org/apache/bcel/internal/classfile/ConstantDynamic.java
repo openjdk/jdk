@@ -31,7 +31,7 @@ import com.sun.org.apache.bcel.internal.Const;
  * and represents a reference to a dynamically computed constant.
  *
  * @see     Constant
- * @see  <a href="https://bugs.openjdk.java.net/secure/attachment/74618/constant-dynamic.html">
+ * @see  <a href="https://bugs.openjdk.org/secure/attachment/74618/constant-dynamic.html">
  * Change request for JEP 309</a>
  * @since 6.3
  */

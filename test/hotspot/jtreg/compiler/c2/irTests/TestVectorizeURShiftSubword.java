@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +34,7 @@ import jdk.test.lib.Utils;
  * @bug 8283307
  * @key randomness
  * @summary Auto-vectorization enhancement for unsigned shift right on signed subword types
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires ((os.arch=="amd64" | os.arch=="x86_64") & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3)) | os.arch=="aarch64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestVectorizeURShiftSubword
  */
@@ -64,7 +65,8 @@ public class TestVectorizeURShiftSubword {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:CompileCommand=exclude,*.urshift");
+        TestFramework framework = new TestFramework(TestVectorizeURShiftSubword.class);
+        framework.setDefaultWarmup(1).addFlags("-XX:CompileCommand=exclude,*.urshift").start();
     }
 
     @Test

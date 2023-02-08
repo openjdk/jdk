@@ -38,7 +38,9 @@ import static jdk.jpackage.internal.StandardBundlerParam.SIGN_BUNDLE;
 
 public class MacAppBundler extends AppImageBundler {
      public MacAppBundler() {
-        setAppImageSupplier(MacAppImageBuilder::new);
+        setAppImageSupplier(imageOutDir -> {
+            return new MacAppImageBuilder(imageOutDir, isDependentTask());
+        });
         setParamsValidator(MacAppBundler::doValidate);
     }
 

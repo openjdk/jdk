@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class CompiledICInfo : public StackObj {
   Metadata*    cached_metadata() const         { assert(!_is_icholder, ""); return (Metadata*)_cached_value; }
   CompiledICHolder*    claim_cached_icholder() {
     assert(_is_icholder, "");
-    assert(_cached_value != NULL, "must be non-NULL");
+    assert(_cached_value != nullptr, "must be non-nullptr");
     _release_icholder = false;
     CompiledICHolder* icholder = (CompiledICHolder*)_cached_value;
     icholder->claim();
@@ -126,7 +126,7 @@ class CompiledICInfo : public StackObj {
     _release_icholder = true;
   }
 
-  CompiledICInfo(): _entry(NULL), _cached_value(NULL), _is_icholder(false),
+  CompiledICInfo(): _entry(nullptr), _cached_value(nullptr), _is_icholder(false),
                     _is_optimized(false), _to_interpreter(false), _release_icholder(false) {
   }
   ~CompiledICInfo() {
@@ -186,7 +186,7 @@ class CompiledIC: public ResourceObj {
   void set_ic_destination(ICStub* stub);
   void set_ic_destination(address entry_point) {
     assert(_is_optimized, "use set_ic_destination_and_value instead");
-    internal_set_ic_destination(entry_point, false, NULL, false);
+    internal_set_ic_destination(entry_point, false, nullptr, false);
   }
   // This only for use by ICStubs where the type of the value isn't known
   void set_ic_destination_and_value(address entry_point, void* value) {
@@ -338,13 +338,14 @@ class StaticCallInfo {
 class CompiledStaticCall : public ResourceObj {
  public:
   // Code
-  static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = NULL);
+  static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = nullptr);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();
   static int reloc_to_interp_stub();
 
   // Compute entry point given a method
   static void compute_entry(const methodHandle& m, bool caller_is_nmethod, StaticCallInfo& info);
+  void compute_entry_for_continuation_entry(const methodHandle& m, StaticCallInfo& info);
 
 public:
   // Clean static call (will force resolving on next use)

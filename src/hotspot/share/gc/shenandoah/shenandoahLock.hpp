@@ -92,7 +92,7 @@ public:
 
 class ShenandoahSimpleLock {
 private:
-  os::PlatformMonitor   _lock; // native lock
+  PlatformMonitor   _lock; // native lock
 public:
   ShenandoahSimpleLock();
 

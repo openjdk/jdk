@@ -69,7 +69,7 @@ class JfrTraceIdKlassQueue : public JfrCHeapObj {
  private:
   JfrEpochQueue<JfrEpochQueueKlassPolicy>* _queue;
   JfrBuffer* get_enqueue_buffer(Thread* thread);
-  JfrBuffer* renew_enqueue_buffer(size_t size, Thread* thread);
+  JfrBuffer* renew_enqueue_buffer(Thread* thread, size_t size = 0);
  public:
   JfrTraceIdKlassQueue();
   ~JfrTraceIdKlassQueue();

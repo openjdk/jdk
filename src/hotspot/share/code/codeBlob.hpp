@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,12 @@ class OopMapSet;
 
 // CodeBlob Types
 // Used in the CodeCache to assign CodeBlobs to different CodeHeaps
-struct CodeBlobType {
-  enum {
-    MethodNonProfiled   = 0,    // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
-    MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
-    NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
-    All                 = 3,    // All types (No code cache segmentation)
-    NumTypes            = 4     // Number of CodeBlobTypes
-  };
+enum class CodeBlobType {
+  MethodNonProfiled   = 0,    // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
+  MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
+  NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
+  All                 = 3,    // All types (No code cache segmentation)
+  NumTypes            = 4     // Number of CodeBlobTypes
 };
 
 // CodeBlob - superclass for all entries in the CodeCache.
@@ -90,16 +88,7 @@ class CodeBlob {
 
 protected:
 
-  const CompilerType _type;                      // CompilerType
-  int        _size;                              // total size of CodeBlob in bytes
-  int        _header_size;                       // size of header (depends on subclass)
-  int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
-                                                 // not finished setting up their frame. Beware of pc's in
-                                                 // that range. There is a similar range(s) on returns
-                                                 // which we don't detect.
-  int        _data_offset;                       // offset to where data region begins
-  int        _frame_size;                        // size of stack frame
-
+  // order fields from large to small to minimize padding between fields
   address    _code_begin;
   address    _code_end;
   address    _content_begin;                     // address to where content region begins (this includes consts, insts, stubs)
@@ -109,12 +98,23 @@ protected:
   address    _relocation_end;
 
   ImmutableOopMapSet* _oop_maps;                 // OopMap for this CodeBlob
-  bool                _caller_must_gc_arguments;
-
-  bool                _is_compiled;
 
   const char*         _name;
   S390_ONLY(int       _ctable_offset;)
+
+  int        _size;                              // total size of CodeBlob in bytes
+  int        _header_size;                       // size of header (depends on subclass)
+  int        _frame_complete_offset;             // instruction offsets in [0.._frame_complete_offset) have
+                                                 // not finished setting up their frame. Beware of pc's in
+                                                 // that range. There is a similar range(s) on returns
+                                                 // which we don't detect.
+  int        _data_offset;                       // offset to where data region begins
+  int        _frame_size;                        // size of stack frame in words (NOT slots. On x64 these are 64bit words)
+
+  bool                _caller_must_gc_arguments;
+
+  bool                _is_compiled;
+  const CompilerType  _type;                     // CompilerType
 
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
@@ -165,9 +165,9 @@ public:
   CompilerType compiler_type() const { return _type; }
 
   // Casting
-  nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : NULL; }
+  nmethod* as_nmethod_or_null()                { return is_nmethod() ? (nmethod*) this : nullptr; }
   nmethod* as_nmethod()                        { assert(is_nmethod(), "must be nmethod"); return (nmethod*) this; }
-  CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : NULL; }
+  CompiledMethod* as_compiled_method_or_null() { return is_compiled() ? (CompiledMethod*) this : nullptr; }
   CompiledMethod* as_compiled_method()         { assert(is_compiled(), "must be compiled"); return (CompiledMethod*) this; }
   CodeBlob* as_codeblob_or_null() const        { return (CodeBlob*) this; }
   UpcallStub* as_upcall_stub() const           { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
@@ -211,17 +211,7 @@ public:
                                                           code_contains(addr) && addr >= code_begin() + _frame_complete_offset; }
   int frame_complete_offset() const              { return _frame_complete_offset; }
 
-  // CodeCache support: really only used by the nmethods, but in order to get
-  // asserts and certain bookkeeping to work in the CodeCache they are defined
-  // virtual here.
-  virtual bool is_zombie() const                 { return false; }
-  virtual bool is_locked_by_vm() const           { return false; }
-
-  virtual bool is_unloaded() const               { return false; }
   virtual bool is_not_entrant() const            { return false; }
-
-  // GC support
-  virtual bool is_alive() const                  = 0;
 
   // OopMap for frame
   ImmutableOopMapSet* oop_maps() const           { return _oop_maps; }
@@ -384,9 +374,6 @@ class RuntimeBlob : public CodeBlob {
 
   static void free(RuntimeBlob* blob);
 
-  // GC support
-  virtual bool is_alive() const                  = 0;
-
   void verify();
 
   // OopMap for frame
@@ -435,7 +422,6 @@ class BufferBlob: public RuntimeBlob {
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
-  bool is_alive() const                          { return true; }
 
   void verify();
   void print_on(outputStream* st) const;
@@ -532,7 +518,6 @@ class RuntimeStub: public RuntimeBlob {
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
-  bool is_alive() const                          { return true; }
 
   void verify();
   void print_on(outputStream* st) const;
@@ -566,8 +551,6 @@ class SingletonBlob: public RuntimeBlob {
   {};
 
   address entry_point()                          { return code_begin(); }
-
-  bool is_alive() const                          { return true; }
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f)  { /* nothing to do */ }
@@ -801,7 +784,6 @@ class UpcallStub: public RuntimeBlob {
   // GC/Verification support
   void oops_do(OopClosure* f, const frame& frame);
   virtual void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f) override;
-  virtual bool is_alive() const override { return true; }
   virtual void verify() override;
 
   // Misc.

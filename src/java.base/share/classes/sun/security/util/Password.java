@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A utility class for reading passwords
@@ -51,13 +52,15 @@ public class Password {
         byte[] consoleBytes = null;
 
         try {
-            // Use the new java.io.Console class
-            Console con = null;
-            if (!isEchoOn && in == System.in && ((con = System.console()) != null)) {
+            // Only use Console if `in` is the initial System.in
+            Console con;
+            if (!isEchoOn &&
+                    in == SharedSecrets.getJavaLangAccess().initialSystemIn() &&
+                    ((con = System.console()) != null)) {
                 consoleEntered = con.readPassword();
-                // readPassword returns "" if you just print ENTER,
+                // readPassword returns "" if you just press ENTER with the built-in Console,
                 // to be compatible with old Password class, change to null
-                if (consoleEntered != null && consoleEntered.length == 0) {
+                if (consoleEntered == null || consoleEntered.length == 0) {
                     return null;
                 }
                 consoleBytes = convertToBytes(consoleEntered);
@@ -69,7 +72,6 @@ public class Password {
 
             char[] lineBuffer;
             char[] buf;
-            int i;
 
             buf = lineBuffer = new char[128];
 

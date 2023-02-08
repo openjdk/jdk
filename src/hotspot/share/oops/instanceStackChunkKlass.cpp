@@ -167,7 +167,12 @@ class DescribeStackChunkClosure {
 
 public:
   DescribeStackChunkClosure(stackChunkOop chunk)
-    : _chunk(chunk), _map((JavaThread*)nullptr, true, false, true), _frame_no(0) {
+    : _chunk(chunk),
+      _map(nullptr,
+           RegisterMap::UpdateMap::include,
+           RegisterMap::ProcessFrames::skip,
+           RegisterMap::WalkContinuation::include),
+      _frame_no(0) {
     _map.set_include_argument_oops(false);
   }
 
@@ -211,7 +216,7 @@ public:
   template <ChunkFrames frame_kind, typename RegisterMapT>
   bool do_frame(const StackChunkFrameStream<frame_kind>& fs, const RegisterMapT* map) {
     frame f = fs.to_frame();
-    _st->print_cr("-- frame sp: " INTPTR_FORMAT " interpreted: %d size: %d argsize: %d",
+    _st->print_cr("-- frame sp: " PTR_FORMAT " interpreted: %d size: %d argsize: %d",
                   p2i(fs.sp()), fs.is_interpreted(), f.frame_size(),
                   fs.is_interpreted() ? 0 : f.compiled_frame_stack_argsize());
   #ifdef ASSERT
@@ -234,17 +239,17 @@ void InstanceStackChunkKlass::print_chunk(const stackChunkOop c, bool verbose, o
     return;
   }
 
-  st->print_cr("CHUNK " INTPTR_FORMAT " " INTPTR_FORMAT " - " INTPTR_FORMAT " :: " INTPTR_FORMAT,
-               p2i((oopDesc*)c), p2i(c->start_address()), p2i(c->end_address()), c->identity_hash());
-  st->print_cr("       barriers: %d gc_mode: %d bitmap: %d parent: " INTPTR_FORMAT,
-               c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i((oopDesc*)c->parent()));
+  st->print_cr("CHUNK " PTR_FORMAT " " PTR_FORMAT " - " PTR_FORMAT " :: " INTPTR_FORMAT,
+               p2i(c), p2i(c->start_address()), p2i(c->end_address()), c->identity_hash());
+  st->print_cr("       barriers: %d gc_mode: %d bitmap: %d parent: " PTR_FORMAT,
+               c->requires_barriers(), c->is_gc_mode(), c->has_bitmap(), p2i(c->parent()));
   st->print_cr("       flags mixed: %d", c->has_mixed_frames());
-  st->print_cr("       size: %d argsize: %d max_size: %d sp: %d pc: " INTPTR_FORMAT,
+  st->print_cr("       size: %d argsize: %d max_size: %d sp: %d pc: " PTR_FORMAT,
                c->stack_size(), c->argsize(), c->max_thawing_size(), c->sp(), p2i(c->pc()));
 
   if (verbose) {
     st->cr();
-    st->print_cr("------ chunk frames end: " INTPTR_FORMAT, p2i(c->bottom_address()));
+    st->print_cr("------ chunk frames end: " PTR_FORMAT, p2i(c->bottom_address()));
     PrintStackChunkClosure closure(st);
     c->iterate_stack(&closure);
     st->print_cr("------");

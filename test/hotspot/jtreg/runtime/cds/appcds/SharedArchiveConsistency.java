@@ -28,9 +28,9 @@
  * @summary SharedArchiveConsistency
  * @requires vm.cds
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @compile test-classes/Hello.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency on
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SharedArchiveConsistency auto
  */
@@ -60,7 +60,7 @@ public class SharedArchiveConsistency {
 
     public static int num_regions = shared_region_name.length;
     public static String[] matchMessages = {
-        "UseSharedSpaces: Header checksum verification failed.",
+        "Header checksum verification failed.",
         "The shared archive file has an incorrect header size.",
         "Unable to use shared archive",
         "An error has occurred while processing the shared archive file.",
@@ -270,6 +270,16 @@ public class SharedArchiveConsistency {
         CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetBaseArchiveNameOffset(), 1024);
         baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
         System.out.println("new baseArchiveNameOffset = " + baseArchiveNameOffset);
+        testAndCheck(verifyExecArgs);
+
+        // modify _common_app_classpath_size
+        String wrongCommonAppClasspathOffset = startNewArchive("wrongCommonAppClasspathOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(orgJsaFile, wrongCommonAppClasspathOffset);
+        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        System.out.println("    commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), commonAppClasspathPrefixSize * 2);
+        commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        System.out.println("new commonAppClasspathPrefixSize = " + commonAppClasspathPrefixSize);
         testAndCheck(verifyExecArgs);
     }
 }

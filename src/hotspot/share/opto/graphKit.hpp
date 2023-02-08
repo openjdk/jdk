@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -568,13 +568,15 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false) {
+                        bool unsafe = false,
+                        int barrier_data = 0) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other store_to_memory factory");
     return store_to_memory(ctl, adr, val, bt,
                            C->get_alias_index(adr_type),
                            mo, require_atomic_access,
-                           unaligned, mismatched, unsafe);
+                           unaligned, mismatched, unsafe,
+                           barrier_data);
   }
   // This is the base version which is given alias index
   // Return the new StoreXNode
@@ -584,7 +586,8 @@ class GraphKit : public Phase {
                         bool require_atomic_access = false,
                         bool unaligned = false,
                         bool mismatched = false,
-                        bool unsafe = false);
+                        bool unsafe = false,
+                        int barrier_data = 0);
 
   // Perform decorated accesses
 
@@ -728,25 +731,25 @@ class GraphKit : public Phase {
   // The optional klass is the one causing the trap.
   // The optional reason is debug information written to the compile log.
   // Optional must_throw is the same as with add_safepoint_edges.
-  void uncommon_trap(int trap_request,
+  Node* uncommon_trap(int trap_request,
                      ciKlass* klass = NULL, const char* reason_string = NULL,
                      bool must_throw = false, bool keep_exact_action = false);
 
   // Shorthand, to avoid saying "Deoptimization::" so many times.
-  void uncommon_trap(Deoptimization::DeoptReason reason,
+  Node* uncommon_trap(Deoptimization::DeoptReason reason,
                      Deoptimization::DeoptAction action,
                      ciKlass* klass = NULL, const char* reason_string = NULL,
                      bool must_throw = false, bool keep_exact_action = false) {
-    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, keep_exact_action);
   }
 
   // Bail out to the interpreter and keep exact action (avoid switching to Action_none).
-  void uncommon_trap_exact(Deoptimization::DeoptReason reason,
+  Node* uncommon_trap_exact(Deoptimization::DeoptReason reason,
                            Deoptimization::DeoptAction action,
                            ciKlass* klass = NULL, const char* reason_string = NULL,
                            bool must_throw = false) {
-    uncommon_trap(Deoptimization::make_trap_request(reason, action),
+    return uncommon_trap(Deoptimization::make_trap_request(reason, action),
                   klass, reason_string, must_throw, /*keep_exact_action=*/true);
   }
 

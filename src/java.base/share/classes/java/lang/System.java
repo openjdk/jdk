@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,8 @@ import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
+
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleBootstrap;
@@ -84,6 +86,7 @@ import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
 import jdk.internal.vm.StackableScope;
 import jdk.internal.vm.ThreadContainer;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.annotation.ChangesCurrentThread;
@@ -185,6 +188,9 @@ public final class System {
      * @see     <a href="#stderr.encoding">stderr.encoding</a>
      */
     public static final PrintStream err = null;
+
+    // Holder for the initial value of `in`, set within `initPhase1()`.
+    private static InputStream initialIn;
 
     // indicates if a security manager is possible
     private static final int NEVER = 1;
@@ -1883,24 +1889,24 @@ public final class System {
     }
 
     /**
-     * Terminates the currently running Java Virtual Machine. The
-     * argument serves as a status code; by convention, a nonzero status
-     * code indicates abnormal termination.
+     * Initiates the <a href="Runtime.html#shutdown">shutdown sequence</a> of the
+     * Java Virtual Machine. This method always blocks indefinitely. The argument
+     * serves as a status code; by convention, a nonzero status code indicates
+     * abnormal termination.
      * <p>
-     * This method calls the {@code exit} method in class
-     * {@code Runtime}. This method never returns normally.
+     * This method calls the {@code exit} method in class {@code Runtime}. This
+     * method never returns normally.
      * <p>
-     * The call {@code System.exit(n)} is effectively equivalent to
-     * the call:
+     * The call {@code System.exit(n)} is effectively equivalent to the call:
      * <blockquote><pre>
      * Runtime.getRuntime().exit(n)
      * </pre></blockquote>
      *
-     * @param      status   exit status.
-     * @throws  SecurityException
-     *        if a security manager exists and its {@code checkExit}
-     *        method doesn't allow exit with the specified status.
-     * @see        java.lang.Runtime#exit(int)
+     * @param  status exit status.
+     * @throws SecurityException
+     *         if a security manager exists and its {@code checkExit} method
+     *         doesn't allow exit with the specified status.
+     * @see    java.lang.Runtime#exit(int)
      */
     public static void exit(int status) {
         Runtime.getRuntime().exit(status);
@@ -2171,7 +2177,8 @@ public final class System {
         FileInputStream fdIn = new FileInputStream(FileDescriptor.in);
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
-        setIn0(new BufferedInputStream(fdIn));
+        initialIn = new BufferedInputStream(fdIn);
+        setIn0(initialIn);
         // stdout/err.encoding are set when the VM is associated with the terminal,
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
@@ -2241,6 +2248,12 @@ public final class System {
         // bootstrap circularity issues that could be caused by a custom
         // SecurityManager
         Unsafe.getUnsafe().ensureClassInitialized(StringConcatFactory.class);
+
+        // Emit a warning if java.io.tmpdir is set via the command line
+        // to a directory that doesn't exist
+        if (SystemProps.isBadIoTmpdir()) {
+            System.err.println("WARNING: java.io.tmpdir directory does not exist");
+        }
 
         String smProp = System.getProperty("java.security.manager");
         boolean needWarning = false;
@@ -2429,11 +2442,11 @@ public final class System {
             public Module addEnableNativeAccess(Module m) {
                 return m.implAddEnableNativeAccess();
             }
-            public void addEnableNativeAccessAllUnnamed() {
-                Module.implAddEnableNativeAccessAllUnnamed();
+            public void addEnableNativeAccessToAllUnnamed() {
+                Module.implAddEnableNativeAccessToAllUnnamed();
             }
-            public boolean isEnableNativeAccess(Module m) {
-                return m.implIsEnableNativeAccess();
+            public void ensureNativeAccess(Module m, Class<?> owner, String methodName) {
+                m.ensureNativeAccess(owner, methodName);
             }
             public ServicesCatalog getServicesCatalog(ModuleLayer layer) {
                 return layer.getServicesCatalog();
@@ -2448,10 +2461,15 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
+            public int countPositives(byte[] bytes, int offset, int length) {
+                return StringCoding.countPositives(bytes, offset, length);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
-
+            public char getUTF16Char(byte[] bytes, int index) {
+                return StringUTF16.getChar(bytes, index);
+            }
             public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return String.getBytesNoRepl(s, cs);
             }
@@ -2474,6 +2492,10 @@ public final class System {
 
             public int encodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
                 return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            }
+
+            public InputStream initialSystemIn() {
+                return initialIn;
             }
 
             public void setCause(Throwable t, Throwable cause) {
@@ -2554,28 +2576,45 @@ public final class System {
                 }
             }
 
-            public <T> T getCarrierThreadLocal(ThreadLocal<T> local) {
-                return local.getCarrierThreadLocal();
+            public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
+                return ((ThreadLocal<T>)local).getCarrierThreadLocal();
             }
 
-            public <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value) {
-                local.setCarrierThreadLocal(value);
+            public <T> void setCarrierThreadLocal(CarrierThreadLocal<T> local, T value) {
+                ((ThreadLocal<T>)local).setCarrierThreadLocal(value);
             }
 
-            public Object[] extentLocalCache() {
-                return Thread.extentLocalCache();
+            public void removeCarrierThreadLocal(CarrierThreadLocal<?> local) {
+                ((ThreadLocal<?>)local).removeCarrierThreadLocal();
             }
 
-            public void setExtentLocalCache(Object[] cache) {
-                Thread.setExtentLocalCache(cache);
+            public boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local) {
+                return ((ThreadLocal<?>)local).isCarrierThreadLocalPresent();
             }
 
-            public Object extentLocalBindings() {
-                return Thread.extentLocalBindings();
+            public Object[] scopedValueCache() {
+                return Thread.scopedValueCache();
             }
 
-            public void setExtentLocalBindings(Object bindings) {
-                Thread.setExtentLocalBindings(bindings);
+            public void setScopedValueCache(Object[] cache) {
+                Thread.setScopedValueCache(cache);
+            }
+
+            public Object scopedValueBindings() {
+                return Thread.scopedValueBindings();
+            }
+
+            public Object findScopedValueBindings() {
+                return Thread.findScopedValueBindings();
+            }
+
+            public void setScopedValueBindings(Object bindings) {
+                Thread.setScopedValueBindings(bindings);
+            }
+
+            @ForceInline
+            public void ensureMaterializedForStackWalk(Object value) {
+                Thread.ensureMaterializedForStackWalk(value);
             }
 
             public Continuation getContinuation(Thread thread) {

@@ -24,20 +24,10 @@
 package com.sun.hotspot.igv.controlflow;
 
 import com.sun.hotspot.igv.hierarchicallayout.HierarchicalLayoutManager;
-import com.sun.hotspot.igv.layout.Cluster;
-import com.sun.hotspot.igv.layout.LayoutGraph;
-import com.sun.hotspot.igv.layout.Link;
-import com.sun.hotspot.igv.layout.Port;
-import com.sun.hotspot.igv.layout.Vertex;
+import com.sun.hotspot.igv.layout.*;
 import java.awt.Dimension;
 import java.awt.Point;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import org.netbeans.api.visual.graph.layout.GraphLayout;
 import org.netbeans.api.visual.graph.layout.UniversalGraph;
 import org.netbeans.api.visual.widget.Widget;
@@ -48,13 +38,12 @@ import org.netbeans.api.visual.widget.Widget;
  */
 public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
-    public HierarchicalGraphLayout() {
-    }
+    public HierarchicalGraphLayout() {}
 
     private class LinkWrapper implements Link {
 
-        private VertexWrapper from;
-        private VertexWrapper to;
+        private final VertexWrapper from;
+        private final VertexWrapper to;
 
         public LinkWrapper(VertexWrapper from, VertexWrapper to) {
             this.from = from;
@@ -78,7 +67,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
         }
 
         public List<Point> getControlPoints() {
-            return new ArrayList<Point>();
+            return new ArrayList<>();
         }
 
         public void setControlPoints(List<Point> list) {
@@ -92,9 +81,9 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     private class VertexWrapper implements Vertex {
 
-        private N node;
-        private UniversalGraph<N, E> graph;
-        private Port slot;
+        private final N node;
+        private final UniversalGraph<N, E> graph;
+        private final Port slot;
         private Point position;
 
         public VertexWrapper(N node, UniversalGraph<N, E> graph) {
@@ -122,6 +111,7 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
         public Dimension getSize() {
             Widget w = graph.getScene().findWidget(node);
+            assert w.getBounds() != null;
             return w.getBounds().getSize();
         }
 
@@ -151,9 +141,9 @@ public class HierarchicalGraphLayout<N, E> extends GraphLayout<N, E> {
 
     protected void performGraphLayout(UniversalGraph<N, E> graph) {
 
-        Set<LinkWrapper> links = new LinkedHashSet<LinkWrapper>();
-        Set<VertexWrapper> vertices = new LinkedHashSet<VertexWrapper>();
-        Map<N, VertexWrapper> vertexMap = new HashMap<N, VertexWrapper>();
+        Set<LinkWrapper> links = new LinkedHashSet<>();
+        Set<VertexWrapper> vertices = new LinkedHashSet<>();
+        Map<N, VertexWrapper> vertexMap = new HashMap<>();
 
         for (N node : graph.getNodes()) {
             VertexWrapper v = new VertexWrapper(node, graph);

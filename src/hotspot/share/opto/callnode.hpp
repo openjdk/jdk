@@ -108,7 +108,6 @@ public:
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
   virtual void dump_compact_spec(outputStream *st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -416,6 +415,8 @@ public:
   void pop_monitor ();
   Node *peek_monitor_box() const;
   Node *peek_monitor_obj() const;
+  // Peek Operand Stacks, JVMS 2.6.2
+  Node* peek_operand(uint off = 0) const;
 
   // Access functions for the JVM
   Node *control  () const { return in(TypeFunc::Control  ); }
@@ -498,7 +499,6 @@ public:
 
 #ifndef PRODUCT
   virtual void           dump_spec(outputStream *st) const;
-  virtual void           related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 
@@ -1078,7 +1078,6 @@ public:
   NamedCounter* counter() const { return _counter; }
   virtual void dump_spec(outputStream* st) const;
   virtual void dump_compact_spec(outputStream* st) const;
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
 #endif
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,13 +502,11 @@ public class VM {
     boolType = (CIntegerType) db.lookupType("bool");
 
     minObjAlignmentInBytes = getObjectAlignmentInBytes();
-    if (minObjAlignmentInBytes == 8) {
-      logMinObjAlignmentInBytes = 3;
-    } else if (minObjAlignmentInBytes == 16) {
-      logMinObjAlignmentInBytes = 4;
-    } else {
-      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " not yet supported");
+    if ((minObjAlignmentInBytes & (minObjAlignmentInBytes - 1)) != 0) {
+      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " is not power of two");
     }
+
+    logMinObjAlignmentInBytes = Integer.numberOfTrailingZeros(minObjAlignmentInBytes);
 
     if (isCompressedOopsEnabled()) {
       // Size info for oops within java objects is fixed
@@ -975,7 +973,7 @@ public class VM {
   public int getObjectAlignmentInBytes() {
     if (objectAlignmentInBytes == 0) {
         Flag flag = getCommandLineFlag("ObjectAlignmentInBytes");
-        objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getIntx();
+        objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getInt();
     }
     return objectAlignmentInBytes;
   }
@@ -1009,7 +1007,7 @@ public class VM {
         flagsMap.put(flags[i].getName(), flags[i]);
       }
     }
-    return (Flag) flagsMap.get(name);
+    return flagsMap.get(name);
   }
 
   private static final String cmdFlagTypes[] = {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
 #include "ci/ciMethodData.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -155,7 +155,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   }
 
   // Do the range check
-  if (GenerateRangeChecks && need_range_check) {
+  if (need_range_check) {
     Node* tst;
     if (sizetype->_hi <= 0) {
       // The greatest array bound is negative, so we can conclude that we're
@@ -1410,7 +1410,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
         branch_block->next_path_num();
       }
     } else {                    // Path is live.
-      adjust_map_after_if(btest, c, prob, branch_block, next_block);
+      adjust_map_after_if(btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1428,8 +1428,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
       next_block->next_path_num();
     }
   } else  {                     // Path is live.
-    adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob,
-                        next_block, branch_block);
+    adjust_map_after_if(BoolTest(btest).negate(), c, 1.0-prob, next_block);
   }
 }
 
@@ -1523,7 +1522,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
         branch_block->next_path_num();
       }
     } else {
-      adjust_map_after_if(taken_btest, c, prob, branch_block, next_block);
+      adjust_map_after_if(taken_btest, c, prob, branch_block);
       if (!stopped()) {
         merge(target_bci);
       }
@@ -1540,8 +1539,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
       next_block->next_path_num();
     }
   } else {
-    adjust_map_after_if(untaken_btest, c, untaken_prob,
-                        next_block, branch_block);
+    adjust_map_after_if(untaken_btest, c, untaken_prob, next_block);
   }
 }
 
@@ -1571,8 +1569,7 @@ void Parse::maybe_add_predicate_after_if(Block* path) {
 // branch, seeing how it constrains a tested value, and then
 // deciding if it's worth our while to encode this constraint
 // as graph nodes in the current abstract interpretation map.
-void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                                Block* path, Block* other_path) {
+void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path) {
   if (!c->is_Cmp()) {
     maybe_add_predicate_after_if(path);
     return;
@@ -1586,10 +1583,14 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
   if (path_is_suitable_for_uncommon_trap(prob)) {
     repush_if_args();
-    uncommon_trap(Deoptimization::Reason_unstable_if,
+    Node* call = uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
                   NULL,
                   (is_fallthrough ? "taken always" : "taken never"));
+
+    if (call != nullptr) {
+      C->record_unstable_if_trap(new UnstableIfTrap(call->as_CallStaticJava(), path));
+    }
     return;
   }
 
@@ -1820,6 +1821,7 @@ void Parse::do_one_bytecode() {
   if (TraceOptoParse) {
     tty->print(" @");
     dump_bci(bci());
+    tty->print(" %s", Bytecodes::name(bc()));
     tty->cr();
   }
 #endif

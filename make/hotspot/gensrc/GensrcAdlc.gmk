@@ -59,6 +59,11 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   # Add file macro mappings
   ADLC_CFLAGS += $(FILE_MACRO_CFLAGS)
 
+  ifeq ($(UBSAN_ENABLED), true)
+    ADLC_CFLAGS += $(UBSAN_CFLAGS)
+    ADLC_LDFLAGS += $(UBSAN_LDFLAGS)
+  endif
+
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
       NAME := adlc, \
       TYPE := EXECUTABLE, \
@@ -142,8 +147,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   ifeq ($(HOTSPOT_TARGET_CPU_ARCH), aarch64)
     AD_SRC_FILES += $(call uniq, $(wildcard $(foreach d, $(AD_SRC_ROOTS), \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_neon.ad \
-        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_sve.ad \
+        $d/cpu/$(HOTSPOT_TARGET_CPU_ARCH)/$(HOTSPOT_TARGET_CPU_ARCH)_vector.ad \
     )))
   endif
 

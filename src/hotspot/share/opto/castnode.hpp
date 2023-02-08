@@ -43,6 +43,7 @@ public:
   const DependencyType _dependency;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
+  const Type* widen_type(const PhaseGVN* phase, const Type* res, BasicType bt) const;
 
   public:
   ConstraintCastNode(Node *n, const Type *t, DependencyType dependency)
@@ -59,13 +60,15 @@ public:
   bool carry_dependency() const { return _dependency != RegularDependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast(int opcode, Node* c, Node *n, const Type *t, DependencyType dependency);
-  static Node* make(Node* c, Node *n, const Type *t, BasicType bt);
+  static Node* make(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
 
   static Node* make_cast_for_type(Node* c, Node* in, const Type* type, DependencyType dependency);
+
+  Node* optimize_integer_cast(PhaseGVN* phase, BasicType bt);
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -118,6 +121,7 @@ public:
     init_class_id(Class_CastLL);
   }
 
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegL; }
@@ -175,7 +179,6 @@ class CheckCastPPNode: public ConstraintCastNode {
     init_req(0, c);
   }
 
-  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/z/zPhysicalMemoryBacking_linux.hpp"
 #include "gc/z/zSyscall_linux.hpp"
 #include "logging/log.hpp"
+#include "os_linux.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
@@ -103,14 +104,14 @@
 static const char* z_preferred_tmpfs_mountpoints[] = {
   "/dev/shm",
   "/run/shm",
-  NULL
+  nullptr
 };
 
 // Preferred hugetlbfs mount points, ordered by priority
 static const char* z_preferred_hugetlbfs_mountpoints[] = {
   "/dev/hugepages",
   "/hugepages",
-  NULL
+  nullptr
 };
 
 static int z_fallocate_hugetlbfs_attempts = 3;
@@ -150,7 +151,7 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
   _block_size = buf.f_bsize;
   _available = buf.f_bavail * _block_size;
 
-  log_info_p(gc, init)("Heap Backing Filesystem: %s (0x" UINT64_FORMAT_X ")",
+  log_info_p(gc, init)("Heap Backing Filesystem: %s (" UINT64_FORMAT_X ")",
                        is_tmpfs() ? ZFILESYSTEM_TMPFS : is_hugetlbfs() ? ZFILESYSTEM_HUGETLBFS : "other", _filesystem);
 
   // Make sure the filesystem type matches requested large page type
@@ -228,7 +229,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
 
   // Find mountpoint
   ZMountPoint mountpoint(filesystem, preferred_mountpoints);
-  if (mountpoint.get() == NULL) {
+  if (mountpoint.get() == nullptr) {
     log_error_p(gc)("Use -XX:AllocateHeapAt to specify the path to a %s filesystem", filesystem);
     return -1;
   }
@@ -281,7 +282,7 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
 }
 
 int ZPhysicalMemoryBacking::create_fd(const char* name) const {
-  if (AllocateHeapAt == NULL) {
+  if (AllocateHeapAt == nullptr) {
     // If the path is not explicitly specified, then we first try to create a memfd file
     // instead of looking for a tmpfd/hugetlbfs mount point. Note that memfd_create() might
     // not be supported at all (requires kernel >= 3.17), or it might not support large
@@ -330,7 +331,7 @@ void ZPhysicalMemoryBacking::warn_available_space(size_t max_capacity) const {
 void ZPhysicalMemoryBacking::warn_max_map_count(size_t max_capacity) const {
   const char* const filename = ZFILENAME_PROC_MAX_MAP_COUNT;
   FILE* const file = os::fopen(filename, "r");
-  if (file == NULL) {
+  if (file == nullptr) {
     // Failed to open file, skip check
     log_debug_p(gc, init)("Failed to open %s", filename);
     return;

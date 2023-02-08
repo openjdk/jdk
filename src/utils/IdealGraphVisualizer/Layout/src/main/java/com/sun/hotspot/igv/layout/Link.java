@@ -32,17 +32,17 @@ import java.util.List;
  */
 public interface Link {
 
-    public Port getFrom();
+    Port getFrom();
 
-    public Cluster getFromCluster();
+    Cluster getFromCluster();
 
-    public Port getTo();
+    Port getTo();
 
-    public Cluster getToCluster();
+    Cluster getToCluster();
 
-    public boolean isVIP();
+    boolean isVIP();
 
-    public List<Point> getControlPoints();
+    List<Point> getControlPoints();
 
-    public void setControlPoints(List<Point> list);
+    void setControlPoints(List<Point> list);
 }

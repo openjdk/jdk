@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +82,7 @@ public final class SSLSocketFactoryImpl extends SSLSocketFactory {
      * @param port number of the server's port
      */
     @Override
-    public Socket createSocket(String host, int port)
-    throws IOException, UnknownHostException
-    {
+    public Socket createSocket(String host, int port) throws IOException {
         return new SSLSocketImpl(context, host, port);
     }
 

@@ -86,7 +86,7 @@ the methods in the CustomControlsContext interface.
 
 Here are some resources for learning about and using the Java2D(TM)
 
-OpenJDK group page: http://openjdk.java.net/groups/2d/
+OpenJDK group page: https://openjdk.org/groups/2d/
 
 Learning Java 2D: http://www.oracle.com/technetwork/articles/java/java2dpart1-137217.html
 

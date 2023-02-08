@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,8 @@
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-
-#include CPU_HEADER(vmStructs)
-#include OS_HEADER(vmStructs)
-#include OS_CPU_HEADER(vmStructs)
-
 #ifdef COMPILER2
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
@@ -142,6 +136,10 @@
 #include "opto/subnode.hpp"
 #include "opto/vectornode.hpp"
 #endif // COMPILER2
+
+#include CPU_HEADER(vmStructs)
+#include OS_HEADER(vmStructs)
+#include OS_CPU_HEADER(vmStructs)
 
 // Note: the cross-product of (c1, c2, product, nonproduct, ...),
 // (nonstatic, static), and (unchecked, checked) has not been taken.
@@ -237,7 +235,6 @@
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
-  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   InstanceKlass::ClassState)             \
   nonstatic_field(InstanceKlass,               _init_thread,                                  Thread*)                               \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
@@ -288,7 +285,6 @@
   nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
   nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
-  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
   COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
@@ -383,12 +379,6 @@
                                                                                                                                      \
      static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
      static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
-                                                                                                                                     \
-  /******/                                                                                                                           \
-  /* os */                                                                                                                           \
-  /******/                                                                                                                           \
-                                                                                                                                     \
-     static_field(os,                          _polling_page,                                 address)                               \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \
@@ -489,7 +479,7 @@
   /*******************/                                                                                                              \
                                                                                                                                      \
   nonstatic_field(GrowableArrayBase,           _len,                                          int)                                   \
-  nonstatic_field(GrowableArrayBase,           _max,                                          int)                                   \
+  nonstatic_field(GrowableArrayBase,           _capacity,                                     int)                                   \
   nonstatic_field(GrowableArray<int>,          _data,                                         int*)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
@@ -545,8 +535,10 @@
      static_field(StubRoutines,                _counterMode_AESCrypt,                         address)                               \
      static_field(StubRoutines,                _galoisCounterMode_AESCrypt,                   address)                               \
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
+     static_field(StubRoutines,                _chacha20Block,                                address)                               \
      static_field(StubRoutines,                _base64_encodeBlock,                           address)                               \
      static_field(StubRoutines,                _base64_decodeBlock,                           address)                               \
+     static_field(StubRoutines,                _poly1305_processBlocks,                       address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
      static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
@@ -662,10 +654,8 @@
   nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
   nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
-  volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
-  volatile_nonstatic_field(nmethod,            _stack_traversal_mark,                         int64_t)                               \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
-  nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
+  nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
@@ -714,7 +704,7 @@
   nonstatic_field(JavaThread,                  _threadObj,                                    OopHandle)                             \
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _jvmti_vthread,                                OopHandle)                             \
-  nonstatic_field(JavaThread,                  _extentLocalCache,                              OopHandle)                             \
+  nonstatic_field(JavaThread,                  _scopedValueCache,                              OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _vm_result_2,                                  Metadata*)                             \
@@ -818,7 +808,7 @@
                                                                                                                                      \
   nonstatic_field(ciMethod,                    _interpreter_invocation_count,                 int)                                   \
   nonstatic_field(ciMethod,                    _interpreter_throwout_count,                   int)                                   \
-  nonstatic_field(ciMethod,                    _instructions_size,                            int)                                   \
+  nonstatic_field(ciMethod,                    _inline_instructions_size,                     int)                                   \
                                                                                                                                      \
   nonstatic_field(ciMethodData,                _data_size,                                    int)                                   \
   nonstatic_field(ciMethodData,                _state,                                        u_char)                                \
@@ -1051,7 +1041,7 @@
                                                                                                                                      \
   CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
   CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
-  CDS_ONLY(nonstatic_field(FileMapHeader,      _space[0],                 CDSFileMapRegion))                                         \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _regions[0],               CDSFileMapRegion))                                         \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _cloned_vtables_offset,    size_t))                                                   \
   CDS_ONLY(nonstatic_field(FileMapHeader,      _mapped_base_address,      char*))                                                    \
   CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _mapped_base,              char*))                                                    \
@@ -1070,12 +1060,11 @@
   nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
-  nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
+  nonstatic_field(CompileTask,                 _compile_id,                                   int)                                   \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
   nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
   nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
   nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
@@ -1318,7 +1307,6 @@
         declare_type(ServiceThread, JavaThread)                           \
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
-        declare_type(CodeCacheSweeperThread, JavaThread)                  \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
@@ -1571,11 +1559,10 @@
   declare_c2_type(MemBarVolatileNode, MemBarNode)                         \
   declare_c2_type(MemBarCPUOrderNode, MemBarNode)                         \
   declare_c2_type(OnSpinWaitNode, MemBarNode)                             \
-  declare_c2_type(BlackholeNode, MemBarNode)                              \
+  declare_c2_type(BlackholeNode, MultiNode)                               \
   declare_c2_type(InitializeNode, MemBarNode)                             \
   declare_c2_type(ThreadLocalNode, Node)                                  \
   declare_c2_type(Opaque1Node, Node)                                      \
-  declare_c2_type(Opaque2Node, Node)                                      \
   declare_c2_type(PartialSubtypeCheckNode, Node)                          \
   declare_c2_type(MoveI2FNode, Node)                                      \
   declare_c2_type(MoveL2DNode, Node)                                      \
@@ -1653,11 +1640,8 @@
   declare_c2_type(StoreNNode, StoreNode)                                  \
   declare_c2_type(StoreNKlassNode, StoreNode)                             \
   declare_c2_type(StoreCMNode, StoreNode)                                 \
-  declare_c2_type(LoadPLockedNode, LoadPNode)                             \
   declare_c2_type(SCMemProjNode, ProjNode)                                \
   declare_c2_type(LoadStoreNode, Node)                                    \
-  declare_c2_type(StorePConditionalNode, LoadStoreNode)                   \
-  declare_c2_type(StoreLConditionalNode, LoadStoreNode)                   \
   declare_c2_type(CompareAndSwapNode, LoadStoreConditionalNode)           \
   declare_c2_type(CompareAndSwapBNode, CompareAndSwapNode)                \
   declare_c2_type(CompareAndSwapSNode, CompareAndSwapNode)                \
@@ -1708,11 +1692,13 @@
   declare_c2_type(CmpNode, SubNode)                                       \
   declare_c2_type(CmpINode, CmpNode)                                      \
   declare_c2_type(CmpUNode, CmpNode)                                      \
+  declare_c2_type(CmpU3Node, CmpUNode)                                    \
   declare_c2_type(CmpPNode, CmpNode)                                      \
   declare_c2_type(CmpNNode, CmpNode)                                      \
   declare_c2_type(CmpLNode, CmpNode)                                      \
   declare_c2_type(CmpULNode, CmpNode)                                     \
   declare_c2_type(CmpL3Node, CmpLNode)                                    \
+  declare_c2_type(CmpUL3Node, CmpULNode)                                  \
   declare_c2_type(CmpFNode, CmpNode)                                      \
   declare_c2_type(CmpF3Node, CmpFNode)                                    \
   declare_c2_type(CmpDNode, CmpNode)                                      \
@@ -1849,6 +1835,8 @@
   declare_c2_type(SignumFNode, Node)                                      \
   declare_c2_type(IsInfiniteFNode, Node)                                  \
   declare_c2_type(IsInfiniteDNode, Node)                                  \
+  declare_c2_type(IsFiniteFNode, Node)                                    \
+  declare_c2_type(IsFiniteDNode, Node)                                    \
   declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
   declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
   declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
@@ -1881,7 +1869,7 @@
   declare_c2_type(XorVMaskNode, VectorNode)                               \
   declare_c2_type(VectorBoxNode, Node)                                    \
   declare_c2_type(VectorBoxAllocateNode, CallStaticJavaNode)              \
-  declare_c2_type(VectorTestNode, Node)                                   \
+  declare_c2_type(VectorTestNode, CmpNode)                                \
                                                                           \
   /*********************/                                                 \
   /* Adapter Blob Entries */                                              \
@@ -1972,6 +1960,8 @@
   declare_integer_type(AccessFlags)  /* FIXME: wrong type (not integer) */\
   declare_toplevel_type(address)      /* FIXME: should this be an integer type? */\
   declare_integer_type(BasicType)   /* FIXME: wrong type (not integer) */ \
+                                                                          \
+  declare_integer_type(CompLevel)                                         \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo))                       \
   JVMTI_ONLY(declare_toplevel_type(BreakpointInfo*))                      \
   declare_toplevel_type(CodeBlob*)                                        \
@@ -2102,7 +2092,6 @@
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
   declare_constant(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE)                      \
-  declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
   declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
   declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
@@ -2285,22 +2274,6 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
-                                                                          \
-  /***************************************/                               \
-  /* InstanceKlass enums for _misc_flags */                               \
-  /***************************************/                               \
-                                                                          \
-  declare_constant(InstanceKlass::_misc_rewritten)                        \
-  declare_constant(InstanceKlass::_misc_has_nonstatic_fields)             \
-  declare_constant(InstanceKlass::_misc_should_verify_class)              \
-  declare_constant(InstanceKlass::_misc_is_contended)                     \
-  declare_constant(InstanceKlass::_misc_has_nonstatic_concrete_methods)   \
-  declare_constant(InstanceKlass::_misc_declares_nonstatic_concrete_methods)\
-  declare_constant(InstanceKlass::_misc_has_been_redefined)               \
-  declare_constant(InstanceKlass::_misc_is_scratch_class)                 \
-  declare_constant(InstanceKlass::_misc_is_shared_boot_class)             \
-  declare_constant(InstanceKlass::_misc_is_shared_platform_class)         \
-  declare_constant(InstanceKlass::_misc_is_shared_app_class)              \
                                                                           \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
@@ -2551,9 +2524,8 @@
   /* Calling convention constants */                                      \
   /********************************/                                      \
                                                                           \
-  declare_constant(RegisterImpl::number_of_registers)                     \
   declare_constant(ConcreteRegisterImpl::number_of_registers)             \
-  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                \
+  declare_preprocessor_constant("REG_COUNT", REG_COUNT)                   \
   declare_c2_preprocessor_constant("SAVED_ON_ENTRY_REG_COUNT", SAVED_ON_ENTRY_REG_COUNT) \
   declare_c2_preprocessor_constant("C_SAVED_ON_ENTRY_REG_COUNT", C_SAVED_ON_ENTRY_REG_COUNT) \
                                                                           \
@@ -3098,7 +3070,7 @@ void VMStructs::init() {
 static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool isRecurse) {
   {
     VMTypeEntry* types = origtypes;
-    while (types->typeName != NULL) {
+    while (types->typeName != nullptr) {
       if (strcmp(typeName, types->typeName) == 0) {
         // Found it
         return 1;
@@ -3119,13 +3091,13 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
     FREE_C_HEAP_ARRAY(char, s);
   }
-  const char* start = NULL;
+  const char* start = nullptr;
   if (strstr(typeName, "GrowableArray<") == typeName) {
     start = typeName + strlen("GrowableArray<");
   } else if (strstr(typeName, "Array<") == typeName) {
     start = typeName + strlen("Array<");
   }
-  if (start != NULL) {
+  if (start != nullptr) {
     const char * end = strrchr(typeName, '>');
     int len = end - start + 1;
     char * s = NEW_C_HEAP_ARRAY(char, len, mtInternal);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6994008
+ * @bug 6994008 8289401
  * @summary basic test for RSA/ECB/NoPadding cipher
  * @author Valerie Peng
  * @library /test/lib ..
@@ -38,6 +38,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.Random;
 import javax.crypto.Cipher;
 
@@ -71,6 +72,9 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c1.doFinal(plainText);
         recoveredText = c2.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
+            System.out.println("*** E/D Test:");
+            System.out.println("\tplainText = " + HexFormat.of().formatHex(plainText));
+            System.out.println("\trecoveredText = " + HexFormat.of().formatHex(recoveredText));
             throw new RuntimeException("E/D Test against SunJCE Failed!");
         }
 
@@ -79,6 +83,9 @@ public class TestRawRSACipher extends PKCS11Test {
         cipherText = c2.doFinal(plainText);
         recoveredText = c1.doFinal(cipherText);
         if (!Arrays.equals(plainText, recoveredText)) {
+            System.out.println("*** D/E Test:");
+            System.out.println("\tplainText = " + HexFormat.of().formatHex(plainText));
+            System.out.println("\trecoveredText = " + HexFormat.of().formatHex(recoveredText));
             throw new RuntimeException("D/E Test against SunJCE Failed!");
         }
 

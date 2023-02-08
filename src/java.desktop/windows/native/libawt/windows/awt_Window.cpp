@@ -738,7 +738,7 @@ LRESULT CALLBACK AwtWindow::WarningWindowProc(HWND hwnd, UINT uMsg, WPARAM wPara
 
         case WM_MOUSEACTIVATE:
             {
-                // Retrive the owner of the warning window.
+                // Retrieve the owner of the warning window.
                 HWND javaWindow = ::GetParent(hwnd);
                 if (javaWindow) {
                     // If the window is blocked by a modal dialog, substitute
@@ -1388,7 +1388,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
      */
     RECT outside;
     RECT inside;
-    int extraBottomInsets = 0;
 
     // extra padded border for captioned windows
     int extraPaddedBorderInsets = ::GetSystemMetrics(SM_CXPADDEDBORDER);
@@ -1400,12 +1399,13 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     if (outside.right - outside.left > 0 && outside.bottom - outside.top > 0) {
         ::MapWindowPoints(GetHWnd(), 0, (LPPOINT)&inside, 2);
         m_insets.top = inside.top - outside.top;
-        m_insets.bottom = outside.bottom - inside.bottom + extraBottomInsets;
+        m_insets.bottom = outside.bottom - inside.bottom;
         m_insets.left = inside.left - outside.left;
         m_insets.right = outside.right - inside.right;
     } else {
         m_insets.top = -1;
     }
+
     if (m_insets.left < 0 || m_insets.top < 0 ||
         m_insets.right < 0 || m_insets.bottom < 0)
     {
@@ -1413,18 +1413,11 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
         jobject target = GetTarget(env);
         if (IsUndecorated() == FALSE) {
             /* Get outer frame sizes. */
-            LONG style = GetStyle();
-            if (style & WS_THICKFRAME) {
-                m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXSIZEFRAME) + extraPaddedBorderInsets;
-                m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYSIZEFRAME) + extraPaddedBorderInsets;
-            } else {
-                m_insets.left = m_insets.right =
-                    ::GetSystemMetrics(SM_CXDLGFRAME) + extraPaddedBorderInsets;
-                m_insets.top = m_insets.bottom =
-                    ::GetSystemMetrics(SM_CYDLGFRAME) + extraPaddedBorderInsets;
-            }
+            // System metrics are same for resizable & non-resizable frame.
+            m_insets.left = m_insets.right =
+                ::GetSystemMetrics(SM_CXFRAME) + extraPaddedBorderInsets;
+            m_insets.top = m_insets.bottom =
+                ::GetSystemMetrics(SM_CYFRAME) + extraPaddedBorderInsets;
             /* Add in title. */
             m_insets.top += ::GetSystemMetrics(SM_CYCAPTION);
         }
@@ -1432,7 +1425,7 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             /* fix for 4418125: Undecorated frames are off by one */
             /* undo the -1 set above */
             /* Additional fix for 5059656 */
-                /* Also, 5089312: Window insets should be 0. */
+            /* Also, 5089312: Window insets should be 0. */
             ::memset(&m_insets, 0, sizeof(m_insets));
         }
 
@@ -1445,7 +1438,6 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             env->DeleteLocalRef(target);
             return FALSE;
         }
-        m_insets.bottom += extraBottomInsets;
         env->DeleteLocalRef(target);
     }
 
@@ -2005,7 +1997,7 @@ LRESULT AwtWindow::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
             mr = WmGetIcon(wParam, retValue);
             break;
         case WM_SYSCOMMAND:
-            //Fixed 6355340: Contents of frame are not layed out properly on maximize
+            //Fixed 6355340: Contents of frame are not laid out properly on maximize
             if ((wParam & 0xFFF0) == SC_SIZE) {
                 AwtWindow::sm_resizing = TRUE;
                 mr = WmSysCommand(wParam, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
@@ -2748,7 +2740,7 @@ BOOL AwtWindow::UpdateOwnedIconCallback(HWND hWndOwned, LPARAM lParam)
 
 void AwtWindow::DoUpdateIcon()
 {
-    //Does nothing for windows, is overriden for frames and dialogs
+    //Does nothing for windows, is overridden for frames and dialogs
 }
 
 void AwtWindow::RedrawWindow()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,6 @@ class CallInfo;
 
 class ConstantPoolCacheEntry {
   friend class VMStructs;
-  friend class constantPoolCacheKlass;
   friend class ConstantPool;
   friend class InterpreterRuntime;
 
@@ -292,8 +291,8 @@ class ConstantPoolCacheEntry {
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
-  Method*      method_if_resolved(const constantPoolHandle& cpool);
-  oop        appendix_if_resolved(const constantPoolHandle& cpool);
+  Method*      method_if_resolved(const constantPoolHandle& cpool) const;
+  oop        appendix_if_resolved(const constantPoolHandle& cpool) const;
 
   void set_parameter_size(int value);
 
@@ -379,16 +378,13 @@ class ConstantPoolCacheEntry {
 #endif // INCLUDE_JVMTI
 
   // Debugging & Printing
-  void print (outputStream* st, int index) const;
+  void print (outputStream* st, int index, const ConstantPoolCache* cache) const;
   void verify(outputStream* st) const;
 
   static void verify_tos_state_shift() {
     // When shifting flags as a 32-bit int, make sure we don't need an extra mask for tos_state:
     assert((((u4)-1 >> tos_state_shift) & ~tos_state_mask) == 0, "no need for tos_state mask");
   }
-
-  void verify_just_initialized(bool f2_used);
-  void reinitialize(bool f2_used);
 };
 
 
@@ -404,6 +400,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPoolCache::metaspace_pointers_do().
   int             _length;
+
+  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
+  // time when caching java heap object is supported.
+  CDS_JAVA_HEAP_ONLY(int _archived_references_index;) // Gap on LP64
+
   ConstantPool*   _constant_pool;          // the corresponding constant pool
 
   // The following fields need to be modified at runtime, so they cannot be
@@ -416,9 +417,7 @@ class ConstantPoolCache: public MetaspaceObj {
   // RedefineClasses support
   uint64_t             _gc_epoch;
 
-  // The narrowOop pointer to the archived resolved_references. Set at CDS dump
-  // time when caching java heap object is supported.
-  CDS_JAVA_HEAP_ONLY(int _archived_references_index;)
+  CDS_ONLY(Array<ConstantPoolCacheEntry>* _initial_entries;)
 
   // Sizing
   debug_only(friend class ClassVerifier;)
@@ -444,10 +443,10 @@ class ConstantPoolCache: public MetaspaceObj {
   MetaspaceObj::Type type() const         { return ConstantPoolCacheType; }
 
   oop  archived_references() NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  void set_archived_references(oop o) NOT_CDS_JAVA_HEAP_RETURN;
+  void set_archived_references(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   void clear_archived_references() NOT_CDS_JAVA_HEAP_RETURN;
 
-  inline oop resolved_references();
+  inline objArrayOop resolved_references();
   void set_resolved_references(OopHandle s) { _resolved_references = s; }
   Array<u2>* reference_map() const        { return _reference_map; }
   void set_reference_map(Array<u2>* o)    { _reference_map = o; }
@@ -455,9 +454,11 @@ class ConstantPoolCache: public MetaspaceObj {
   // Assembly code support
   static int resolved_references_offset_in_bytes() { return offset_of(ConstantPoolCache, _resolved_references); }
 
-  // CDS support
+#if INCLUDE_CDS
   void remove_unshareable_info();
-  void verify_just_initialized();
+  void save_for_archive(TRAPS);
+#endif
+
  private:
   void walk_entries_for_initialization(bool check_only);
   void set_length(int length)                    { _length = length; }
@@ -472,7 +473,6 @@ class ConstantPoolCache: public MetaspaceObj {
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
   ConstantPoolCacheEntry* base() const           { return (ConstantPoolCacheEntry*)((address)this + in_bytes(base_offset())); }
 
-  friend class constantPoolCacheKlass;
   friend class ConstantPoolCacheEntry;
 
  public:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,18 +66,6 @@ public class InstanceKlass extends Klass {
   private static int CLASS_STATE_FULLY_INITIALIZED;
   private static int CLASS_STATE_INITIALIZATION_ERROR;
 
-  // _misc_flags constants
-  private static int MISC_REWRITTEN;
-  private static int MISC_HAS_NONSTATIC_FIELDS;
-  private static int MISC_SHOULD_VERIFY_CLASS;
-  private static int MISC_IS_CONTENDED;
-  private static int MISC_HAS_NONSTATIC_CONCRETE_METHODS;
-  private static int MISC_DECLARES_NONSTATIC_CONCRETE_METHODS;
-  private static int MISC_HAS_BEEN_REDEFINED;
-  private static int MISC_IS_SCRATCH_CLASS;
-  private static int MISC_IS_SHARED_BOOT_CLASS;
-  private static int MISC_IS_SHARED_PLATFORM_CLASS;
-  private static int MISC_IS_SHARED_APP_CLASS;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -102,7 +90,6 @@ public class InstanceKlass extends Klass {
     if (VM.getVM().isJvmtiSupported()) {
       breakpoints        = type.getAddressField("_breakpoints");
     }
-    miscFlags            = new CIntField(type.getCIntegerField("_misc_flags"), 0);
     headerSize           = type.getSize();
 
     // read field offset constants
@@ -124,18 +111,6 @@ public class InstanceKlass extends Klass {
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
     CLASS_STATE_INITIALIZATION_ERROR = db.lookupIntConstant("InstanceKlass::initialization_error").intValue();
-
-    MISC_REWRITTEN                    = db.lookupIntConstant("InstanceKlass::_misc_rewritten").intValue();
-    MISC_HAS_NONSTATIC_FIELDS         = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_fields").intValue();
-    MISC_SHOULD_VERIFY_CLASS          = db.lookupIntConstant("InstanceKlass::_misc_should_verify_class").intValue();
-    MISC_IS_CONTENDED                 = db.lookupIntConstant("InstanceKlass::_misc_is_contended").intValue();
-    MISC_HAS_NONSTATIC_CONCRETE_METHODS      = db.lookupIntConstant("InstanceKlass::_misc_has_nonstatic_concrete_methods").intValue();
-    MISC_DECLARES_NONSTATIC_CONCRETE_METHODS = db.lookupIntConstant("InstanceKlass::_misc_declares_nonstatic_concrete_methods").intValue();
-    MISC_HAS_BEEN_REDEFINED           = db.lookupIntConstant("InstanceKlass::_misc_has_been_redefined").intValue();
-    MISC_IS_SCRATCH_CLASS             = db.lookupIntConstant("InstanceKlass::_misc_is_scratch_class").intValue();
-    MISC_IS_SHARED_BOOT_CLASS         = db.lookupIntConstant("InstanceKlass::_misc_is_shared_boot_class").intValue();
-    MISC_IS_SHARED_PLATFORM_CLASS     = db.lookupIntConstant("InstanceKlass::_misc_is_shared_platform_class").intValue();
-    MISC_IS_SHARED_APP_CLASS          = db.lookupIntConstant("InstanceKlass::_misc_is_shared_app_class").intValue();
   }
 
   public InstanceKlass(Address addr) {
@@ -180,7 +155,6 @@ public class InstanceKlass extends Klass {
   private static CIntField initState;
   private static CIntField itableLen;
   private static AddressField breakpoints;
-  private static CIntField miscFlags;
 
   // type safe enum for ClassState from instanceKlass.hpp
   public static class ClassState {
@@ -286,10 +260,6 @@ public class InstanceKlass extends Klass {
       size += wordLength;
     }
     return alignSize(size);
-  }
-
-  private int getMiscFlags() {
-    return (int) miscFlags.getValue(this);
   }
 
   public static long getHeaderSize() { return headerSize; }
@@ -473,7 +443,7 @@ public class InstanceKlass extends Klass {
     long access = getAccessFlags();
     // But check if it happens to be member class.
     U2Array innerClassList = getInnerClasses();
-    int length = (innerClassList == null)? 0 : (int) innerClassList.length();
+    int length = (innerClassList == null)? 0 : innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
           Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -522,7 +492,7 @@ public class InstanceKlass extends Klass {
 
   private boolean isInInnerClasses(Symbol sym, boolean includeLocals) {
     U2Array innerClassList = getInnerClasses();
-    int length = ( innerClassList == null)? 0 : (int) innerClassList.length();
+    int length = ( innerClassList == null)? 0 : innerClassList.length();
     if (length > 0) {
        if (Assert.ASSERTS_ENABLED) {
          Assert.that(length % InnerClassAttributeOffset.innerClassNextOffset == 0 ||
@@ -882,22 +852,22 @@ public class InstanceKlass extends Klass {
       return null;
     }
     Address addr = getAddress().getAddressAt(breakpoints.getOffset());
-    return (BreakpointInfo) VMObjectFactory.newObject(BreakpointInfo.class, addr);
+    return VMObjectFactory.newObject(BreakpointInfo.class, addr);
   }
 
   public IntArray  getMethodOrdering() {
     Address addr = getAddress().getAddressAt(methodOrdering.getOffset());
-    return (IntArray) VMObjectFactory.newObject(IntArray.class, addr);
+    return VMObjectFactory.newObject(IntArray.class, addr);
   }
 
   public U2Array getFields() {
     Address addr = getAddress().getAddressAt(fields.getOffset());
-    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+    return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
   public U2Array getInnerClasses() {
     Address addr = getAddress().getAddressAt(innerClasses.getOffset());
-    return (U2Array) VMObjectFactory.newObject(U2Array.class, addr);
+    return VMObjectFactory.newObject(U2Array.class, addr);
   }
 
 
@@ -992,7 +962,7 @@ public class InstanceKlass extends Klass {
   }
 
   private static int linearSearch(MethodArray methods, String name, String signature) {
-    int len = (int) methods.length();
+    int len = methods.length();
     for (int index = 0; index < len; index++) {
       Method m = methods.at(index);
       if (m.getSignature().equals(signature) && m.getName().equals(name)) {
@@ -1014,7 +984,7 @@ public class InstanceKlass extends Klass {
         sub = sub.getNextSiblingKlass();
     }
 
-    final int length = (int) cp.getLength();
+    final int length = cp.getLength();
     out.print("ciInstanceKlass " + getName().asString() + " " + (isLinked() ? 1 : 0) + " " + (isInitialized() ? 1 : 0) + " " + length);
     for (int index = 1; index < length; index++) {
       out.print(" " + cp.getTags().at(index));

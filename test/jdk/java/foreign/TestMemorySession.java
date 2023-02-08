@@ -28,13 +28,11 @@
  * @run testng/othervm TestMemorySession
  */
 
-import java.lang.ref.Cleaner;
+import java.lang.foreign.Arena;
 
-import java.lang.foreign.MemorySession;
+import java.lang.foreign.SegmentScope;
 
 import jdk.internal.foreign.MemorySessionImpl;
-import jdk.internal.ref.CleanerFactory;
-
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
@@ -43,31 +41,39 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
 
 public class TestMemorySession {
 
     final static int N_THREADS = 100;
 
-    @Test(dataProvider = "cleaners")
-    public void testConfined(Supplier<Cleaner> cleanerSupplier, UnaryOperator<MemorySession> sessionFunc) {
+    @Test
+    public void testConfined() {
         AtomicInteger acc = new AtomicInteger();
-        Cleaner cleaner = cleanerSupplier.get();
-        MemorySession session = cleaner != null ?
-                MemorySession.openConfined(cleaner) :
-                MemorySession.openConfined();
-        session = sessionFunc.apply(session);
+        Arena arena = Arena.openConfined();
         for (int i = 0 ; i < N_THREADS ; i++) {
             int delta = i;
-            session.addCloseAction(() -> acc.addAndGet(delta));
+            addCloseAction(arena.scope(), () -> acc.addAndGet(delta));
         }
         assertEquals(acc.get(), 0);
 
-        if (cleaner == null) {
-            session.close();
+        arena.close();
+        assertEquals(acc.get(), IntStream.range(0, N_THREADS).sum());
+    }
+
+    @Test(dataProvider = "sharedSessions")
+    public void testSharedSingleThread(SessionSupplier sessionSupplier) {
+        AtomicInteger acc = new AtomicInteger();
+        SegmentScope session = sessionSupplier.get();
+        for (int i = 0 ; i < N_THREADS ; i++) {
+            int delta = i;
+            addCloseAction(session, () -> acc.addAndGet(delta));
+        }
+        assertEquals(acc.get(), 0);
+
+        if (!SessionSupplier.isImplicit(session)) {
+            SessionSupplier.close(session);
             assertEquals(acc.get(), IntStream.range(0, N_THREADS).sum());
         } else {
             session = null;
@@ -78,47 +84,17 @@ public class TestMemorySession {
         }
     }
 
-    @Test(dataProvider = "cleaners")
-    public void testSharedSingleThread(Supplier<Cleaner> cleanerSupplier, UnaryOperator<MemorySession> sessionFunc) {
+    @Test(dataProvider = "sharedSessions")
+    public void testSharedMultiThread(SessionSupplier sessionSupplier) {
         AtomicInteger acc = new AtomicInteger();
-        Cleaner cleaner = cleanerSupplier.get();
-        MemorySession session = cleaner != null ?
-                MemorySession.openShared(cleaner) :
-                MemorySession.openShared();
-        session = sessionFunc.apply(session);
-        for (int i = 0 ; i < N_THREADS ; i++) {
-            int delta = i;
-            session.addCloseAction(() -> acc.addAndGet(delta));
-        }
-        assertEquals(acc.get(), 0);
-
-        if (cleaner == null) {
-            session.close();
-            assertEquals(acc.get(), IntStream.range(0, N_THREADS).sum());
-        } else {
-            session = null;
-            int expected = IntStream.range(0, N_THREADS).sum();
-            while (acc.get() != expected) {
-                kickGC();
-            }
-        }
-    }
-
-    @Test(dataProvider = "cleaners")
-    public void testSharedMultiThread(Supplier<Cleaner> cleanerSupplier, UnaryOperator<MemorySession> sessionFunc) {
-        AtomicInteger acc = new AtomicInteger();
-        Cleaner cleaner = cleanerSupplier.get();
         List<Thread> threads = new ArrayList<>();
-        MemorySession session = cleaner != null ?
-                MemorySession.openShared(cleaner) :
-                MemorySession.openShared();
-        session = sessionFunc.apply(session);
-        AtomicReference<MemorySession> sessionRef = new AtomicReference<>(session);
+        SegmentScope session = sessionSupplier.get();
+        AtomicReference<SegmentScope> sessionRef = new AtomicReference<>(session);
         for (int i = 0 ; i < N_THREADS ; i++) {
             int delta = i;
             Thread thread = new Thread(() -> {
                 try {
-                    sessionRef.get().addCloseAction(() -> {
+                    addCloseAction(sessionRef.get(), () -> {
                         acc.addAndGet(delta);
                     });
                 } catch (IllegalStateException ex) {
@@ -133,10 +109,10 @@ public class TestMemorySession {
 
         // if no cleaner, close - not all segments might have been added to the session!
         // if cleaner, don't unset the session - after all, the session is kept alive by threads
-        if (cleaner == null) {
+        if (!SessionSupplier.isImplicit(session)) {
             while (true) {
                 try {
-                    session.close();
+                    SessionSupplier.close(session);
                     break;
                 } catch (IllegalStateException ise) {
                     // session is acquired (by add) - wait some more
@@ -152,7 +128,7 @@ public class TestMemorySession {
             }
         });
 
-        if (cleaner == null) {
+        if (!SessionSupplier.isImplicit(session)) {
             assertEquals(acc.get(), IntStream.range(0, N_THREADS).sum());
         } else {
             session = null;
@@ -166,22 +142,22 @@ public class TestMemorySession {
 
     @Test
     public void testLockSingleThread() {
-        MemorySession session = MemorySession.openConfined();
-        List<MemorySession> handles = new ArrayList<>();
+        Arena arena = Arena.openConfined();
+        List<Arena> handles = new ArrayList<>();
         for (int i = 0 ; i < N_THREADS ; i++) {
-            MemorySession handle = MemorySession.openConfined();
-            keepAlive(handle, session);
+            Arena handle = Arena.openConfined();
+            keepAlive(handle.scope(), arena.scope());
             handles.add(handle);
         }
 
         while (true) {
             try {
-                session.close();
+                arena.close();
                 assertEquals(handles.size(), 0);
                 break;
             } catch (IllegalStateException ex) {
                 assertTrue(handles.size() > 0);
-                MemorySession handle = handles.remove(0);
+                Arena handle = handles.remove(0);
                 handle.close();
             }
         }
@@ -189,16 +165,15 @@ public class TestMemorySession {
 
     @Test
     public void testLockSharedMultiThread() {
-        MemorySession session = MemorySession.openShared();
+        Arena arena = Arena.openShared();
         AtomicInteger lockCount = new AtomicInteger();
         for (int i = 0 ; i < N_THREADS ; i++) {
             new Thread(() -> {
-                try (MemorySession handle = MemorySession.openConfined()) {
-                    keepAlive(handle, session);
+                try (Arena handle = Arena.openConfined()) {
+                    keepAlive(handle.scope(), arena.scope());
                     lockCount.incrementAndGet();
                     waitSomeTime();
                     lockCount.decrementAndGet();
-                    handle.close();
                 } catch (IllegalStateException ex) {
                     // might be already closed - do nothing
                 }
@@ -207,7 +182,7 @@ public class TestMemorySession {
 
         while (true) {
             try {
-                session.close();
+                arena.close();
                 assertEquals(lockCount.get(), 0);
                 break;
             } catch (IllegalStateException ex) {
@@ -218,19 +193,19 @@ public class TestMemorySession {
 
     @Test
     public void testCloseEmptyConfinedSession() {
-        MemorySession.openConfined().close();
+        Arena.openConfined().close();
     }
 
     @Test
     public void testCloseEmptySharedSession() {
-        MemorySession.openShared().close();
+        Arena.openShared().close();
     }
 
     @Test
     public void testCloseConfinedLock() {
-        MemorySession session = MemorySession.openConfined();
-        MemorySession handle = MemorySession.openConfined();
-        keepAlive(handle, session);
+        Arena arena = Arena.openConfined();
+        Arena handle = Arena.openConfined();
+        keepAlive(handle.scope(), arena.scope());
         AtomicReference<Throwable> failure = new AtomicReference<>();
         Thread t = new Thread(() -> {
             try {
@@ -249,34 +224,33 @@ public class TestMemorySession {
         }
     }
 
-    @Test(dataProvider = "sessions")
-    public void testSessionAcquires(Supplier<MemorySession> sessionFactory) {
-        MemorySession session = sessionFactory.get();
+    @Test(dataProvider = "allSessions")
+    public void testSessionAcquires(SessionSupplier sessionSupplier) {
+        SegmentScope session = sessionSupplier.get();
         acquireRecursive(session, 5);
-        if (session.isCloseable()) {
-            session.close();
-        }
+        if (!SessionSupplier.isImplicit(session))
+            SessionSupplier.close(session);
     }
 
-    private void acquireRecursive(MemorySession session, int acquireCount) {
-        try (MemorySession handle = MemorySession.openConfined()) {
-            keepAlive(handle, session);
+    private void acquireRecursive(SegmentScope session, int acquireCount) {
+        try (Arena arena = Arena.openConfined()) {
+            keepAlive(arena.scope(), session);
             if (acquireCount > 0) {
                 // recursive acquire
                 acquireRecursive(session, acquireCount - 1);
             }
-            if (session.isCloseable()) {
-                assertThrows(IllegalStateException.class, session::close);
+            if (!SessionSupplier.isImplicit(session)) {
+                assertThrows(IllegalStateException.class, () -> SessionSupplier.close(session));
             }
         }
     }
 
     @Test
     public void testConfinedSessionWithImplicitDependency() {
-        MemorySession root = MemorySession.openConfined();
+        Arena root = Arena.openConfined();
         // Create many implicit sessions which depend on 'root', and let them become unreachable.
         for (int i = 0; i < N_THREADS; i++) {
-            keepAlive(MemorySession.openConfined(Cleaner.create()), root);
+            keepAlive(SegmentScope.auto(), root.scope());
         }
         // Now let's keep trying to close 'root' until we succeed. This is trickier than it seems: cleanup action
         // might be called from another thread (the Cleaner thread), so that the confined session lock count is updated racily.
@@ -288,8 +262,8 @@ public class TestMemorySession {
             } catch (IllegalStateException ex) {
                 kickGC();
                 for (int i = 0 ; i < N_THREADS ; i++) {  // add more races from current thread
-                    try (MemorySession session = MemorySession.openConfined()) {
-                        keepAlive(session, root);
+                    try (Arena arena = Arena.openConfined()) {
+                        keepAlive(arena.scope(), root.scope());
                         // dummy
                     }
                 }
@@ -300,19 +274,19 @@ public class TestMemorySession {
 
     @Test
     public void testConfinedSessionWithSharedDependency() {
-        MemorySession root = MemorySession.openConfined();
+        Arena root = Arena.openConfined();
         List<Thread> threads = new ArrayList<>();
         // Create many implicit sessions which depend on 'root', and let them become unreachable.
         for (int i = 0; i < N_THREADS; i++) {
-            MemorySession session = MemorySession.openShared(); // create session inside same thread!
-            keepAlive(session, root);
-            Thread t = new Thread(session::close); // close from another thread!
+            Arena arena = Arena.openShared(); // create session inside same thread!
+            keepAlive(arena.scope(), root.scope());
+            Thread t = new Thread(arena::close); // close from another thread!
             threads.add(t);
             t.start();
         }
         for (int i = 0 ; i < N_THREADS ; i++) { // add more races from current thread
-            try (MemorySession session = MemorySession.openConfined()) {
-                keepAlive(session, root);
+            try (Arena arena = Arena.openConfined()) {
+                keepAlive(arena.scope(), root.scope());
                 // dummy
             }
         }
@@ -345,33 +319,57 @@ public class TestMemorySession {
     }
 
     @DataProvider
-    static Object[][] cleaners() {
+    static Object[][] drops() {
         return new Object[][] {
-                { (Supplier<Cleaner>)() -> null, UnaryOperator.identity() },
-                { (Supplier<Cleaner>)Cleaner::create, UnaryOperator.identity() },
-                { (Supplier<Cleaner>)CleanerFactory::cleaner, UnaryOperator.identity() },
-                { (Supplier<Cleaner>)Cleaner::create, (UnaryOperator<MemorySession>)MemorySession::asNonCloseable },
-                { (Supplier<Cleaner>)CleanerFactory::cleaner, (UnaryOperator<MemorySession>)MemorySession::asNonCloseable }
+                { (Supplier<Arena>) Arena::openConfined},
+                { (Supplier<Arena>) Arena::openShared},
         };
     }
 
-    @DataProvider
-    static Object[][] sessions() {
+    private void keepAlive(SegmentScope child, SegmentScope parent) {
+        MemorySessionImpl parentImpl = (MemorySessionImpl) parent;
+        parentImpl.acquire0();
+        addCloseAction(child, parentImpl::release0);
+    }
+
+    private void addCloseAction(SegmentScope session, Runnable action) {
+        MemorySessionImpl sessionImpl = (MemorySessionImpl) session;
+        sessionImpl.addCloseAction(action);
+    }
+
+    interface SessionSupplier extends Supplier<SegmentScope> {
+
+        static void close(SegmentScope session) {
+            ((MemorySessionImpl)session).close();
+        }
+
+        static boolean isImplicit(SegmentScope session) {
+            return !((MemorySessionImpl)session).isCloseable();
+        }
+
+        static SessionSupplier ofImplicit() {
+            return SegmentScope::auto;
+        }
+
+        static SessionSupplier ofArena(Supplier<Arena> arenaSupplier) {
+            return () -> arenaSupplier.get().scope();
+        }
+    }
+
+    @DataProvider(name = "sharedSessions")
+    static Object[][] sharedSessions() {
         return new Object[][] {
-                { (Supplier<MemorySession>) MemorySession::openConfined},
-                { (Supplier<MemorySession>) MemorySession::openShared},
-                { (Supplier<MemorySession>) MemorySession::openImplicit},
-                { (Supplier<MemorySession>) MemorySession::global},
-                { (Supplier<MemorySession>) () -> MemorySession.openConfined().asNonCloseable() },
-                { (Supplier<MemorySession>) () -> MemorySession.openShared().asNonCloseable() },
-                { (Supplier<MemorySession>) () -> MemorySession.openImplicit().asNonCloseable() },
-                { (Supplier<MemorySession>) () -> MemorySession.global().asNonCloseable()},
+                { SessionSupplier.ofArena(Arena::openShared) },
+                { SessionSupplier.ofImplicit() },
         };
     }
 
-    private void keepAlive(MemorySession child, MemorySession parent) {
-        MemorySessionImpl sessionImpl = MemorySessionImpl.toSessionImpl(parent);
-        sessionImpl.acquire0();
-        child.addCloseAction(sessionImpl::release0);
+    @DataProvider(name = "allSessions")
+    static Object[][] allSessions() {
+        return new Object[][] {
+                { SessionSupplier.ofArena(Arena::openConfined) },
+                { SessionSupplier.ofArena(Arena::openShared) },
+                { SessionSupplier.ofImplicit() },
+        };
     }
 }

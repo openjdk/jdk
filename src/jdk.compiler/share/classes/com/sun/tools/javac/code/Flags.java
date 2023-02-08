@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
 
@@ -127,9 +128,9 @@ public class Flags {
      */
     public static final int BLOCK            = 1<<20;
 
-    /** Flag bit 21 is available. (used earlier to tag compiler-generated abstract methods that implement
-     *  an interface method (Miranda methods)).
+    /** Flag is set for ClassSymbols that are being compiled from source.
      */
+    public static final int FROM_SOURCE      = 1<<21; //ClassSymbols
 
     /** Flag is set for nested classes that do not access instance members
      *  or `this' of an outer class and therefore don't need to be passed
@@ -390,6 +391,15 @@ public class Flags {
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols
 
+    /**
+     * Describe modifier flags as they migh appear in source code, i.e.,
+     * separated by spaces and in the order suggested by JLS 8.1.1.
+     */
+    public static String toSource(long flags) {
+        return asModifierSet(flags).stream()
+          .map(Modifier::toString)
+          .collect(Collectors.joining(" "));
+    }
 
     /** Modifier masks.
      */
@@ -482,6 +492,7 @@ public class Flags {
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
         BLOCK(Flags.BLOCK),
+        FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),
         MANDATED(Flags.MANDATED),
         NOOUTERTHIS(Flags.NOOUTERTHIS),

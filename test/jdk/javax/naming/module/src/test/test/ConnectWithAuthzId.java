@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.PrintStream;
 import java.net.*;
 import java.util.*;
 import javax.naming.*;
-import javax.naming.directory.*;
 import javax.naming.ldap.*;
 
 import org.example.authz.AuthzIdRequestControl;
@@ -68,7 +67,7 @@ public class ConnectWithAuthzId {
             System.err.println("        <ldapurl> is the LDAP URL of the parent entry\n");
             System.err.println("example:");
             System.err.println("        java ConnectWithAuthzId ldap://oasis/o=airius.com");
-            return;
+            throw new IllegalArgumentException();
         }
 
         /*
@@ -134,6 +133,7 @@ public class ConnectWithAuthzId {
                 }
             } catch (NamingException e) {
                 System.err.println("ConnectWithAuthzId: error connecting " + e);
+                throw e;
             } finally {
                 if (ctx != null) {
                     ctx.close();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 //   class loader -> ClassLoaderData -> [class, protection domain set]
 //
 // Classes are loaded lazily. The default VM class loader is
-// represented as NULL.
+// represented as null.
 
 // The underlying data structure is an open hash table (Dictionary) per
 // ClassLoaderData with a fixed number of buckets. During loading the
@@ -70,16 +70,10 @@ class BootstrapInfo;
 class ClassFileStream;
 class ClassLoadInfo;
 class Dictionary;
-template <MEMFLAGS F> class HashtableBucket;
-class ResolutionErrorTable;
-class SymbolPropertyTable;
 class PackageEntry;
-class ProtectionDomainCacheTable;
-class ProtectionDomainCacheEntry;
 class GCTimer;
 class EventClassLoad;
 class Symbol;
-class TableStatistics;
 
 class SystemDictionary : AllStatic {
   friend class BootstrapInfo;
@@ -101,7 +95,7 @@ class SystemDictionary : AllStatic {
   }
 
   // Returns a class with a given class name and class loader.
-  // Loads the class if needed. If not found NULL is returned.
+  // Loads the class if needed. If not found null is returned.
   static Klass* resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS);
   // Version with null loader and protection domain
   static Klass* resolve_or_null(Symbol* class_name, TRAPS) {
@@ -134,6 +128,9 @@ class SystemDictionary : AllStatic {
                                                   const ClassLoadInfo& cl_info,
                                                   TRAPS);
 
+  static oop get_system_class_loader_impl(TRAPS);
+  static oop get_platform_class_loader_impl(TRAPS);
+
  public:
   // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo
   static InstanceKlass* resolve_from_stream(ClassFileStream* st,
@@ -142,13 +139,14 @@ class SystemDictionary : AllStatic {
                                             const ClassLoadInfo& cl_info,
                                             TRAPS);
 
-  // Lookup an already loaded class. If not found NULL is returned.
-  static InstanceKlass* find_instance_klass(Symbol* class_name, Handle class_loader, Handle protection_domain);
+  // Lookup an already loaded class. If not found null is returned.
+  static InstanceKlass* find_instance_klass(Thread* current, Symbol* class_name,
+                                            Handle class_loader, Handle protection_domain);
 
   // Lookup an already loaded instance or array class.
   // Do not make any queries to class loaders; consult only the cache.
-  // If not found NULL is returned.
-  static Klass* find_instance_or_array_klass(Symbol* class_name,
+  // If not found null is returned.
+  static Klass* find_instance_or_array_klass(Thread* current, Symbol* class_name,
                                              Handle class_loader,
                                              Handle protection_domain);
 
@@ -157,7 +155,7 @@ class SystemDictionary : AllStatic {
   // loader that is constrained (via loader constraints) to produce
   // a consistent class.  Do not take protection domains into account.
   // Do not make any queries to class loaders; consult only the cache.
-  // Return NULL if the class is not found.
+  // Return null if the class is not found.
   //
   // This function is a strict superset of find_instance_or_array_klass.
   // This function (the unchecked version) makes a conservative prediction
@@ -188,9 +186,6 @@ class SystemDictionary : AllStatic {
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(GCTimer* gc_timer);
 
-  // Protection Domain Table
-  static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
-
   // Printing
   static void print();
   static void print_on(outputStream* st);
@@ -206,10 +201,6 @@ public:
   // Returns java system loader
   static oop java_system_loader();
 
-  // Returns the class loader data to be used when looking up/updating the
-  // system dictionary.
-  static ClassLoaderData *class_loader_data(Handle class_loader);
-
   // Returns java platform loader
   static oop java_platform_loader();
 
@@ -218,6 +209,9 @@ public:
 
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, bool create_mirror_cld = false);
+
+  static void set_system_loader(ClassLoaderData *cld);
+  static void set_platform_loader(ClassLoaderData *cld);
 
   static Symbol* check_signature_loaders(Symbol* signature, Klass* klass_being_linked,
                                          Handle loader1, Handle loader2, bool is_method);
@@ -279,7 +273,7 @@ public:
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,
-                                   Symbol* message, Symbol* cause = NULL, Symbol* cause_msg = NULL);
+                                   Symbol* message, Symbol* cause = nullptr, Symbol* cause_msg = nullptr);
   static void delete_resolution_error(ConstantPool* pool);
   static Symbol* find_resolution_error(const constantPoolHandle& pool, int which,
                                        Symbol** message, Symbol** cause, Symbol** cause_msg);
@@ -289,18 +283,6 @@ public:
   static void add_nest_host_error(const constantPoolHandle& pool, int which,
                                   const char* message);
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
-
- private:
-  // Static tables owned by the SystemDictionary
-
-  // Resolution errors
-  static ResolutionErrorTable*   _resolution_errors;
-
-  // Invoke methods (JSR 292)
-  static SymbolPropertyTable*    _invoke_method_table;
-
-  // ProtectionDomain cache
-  static ProtectionDomainCacheTable*   _pd_cache_table;
 
 protected:
   static InstanceKlass* _well_known_klasses[];
@@ -312,9 +294,6 @@ private:
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
 
-  static ResolutionErrorTable* resolution_errors() { return _resolution_errors; }
-  static SymbolPropertyTable* invoke_method_table() { return _invoke_method_table; }
-
 private:
   // Basic loading operations
   static InstanceKlass* resolve_instance_class_or_null(Symbol* class_name,
@@ -324,7 +303,6 @@ private:
                                             Handle class_loader,
                                             Handle protection_domain, TRAPS);
   static InstanceKlass* handle_parallel_loading(JavaThread* current,
-                                                unsigned int name_hash,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle lockObject,
@@ -335,8 +313,7 @@ private:
                                               Handle class_loader,
                                               InstanceKlass* k, TRAPS);
   static InstanceKlass* load_instance_class_impl(Symbol* class_name, Handle class_loader, TRAPS);
-  static InstanceKlass* load_instance_class(unsigned int name_hash,
-                                            Symbol* class_name,
+  static InstanceKlass* load_instance_class(Symbol* class_name,
                                             Handle class_loader, TRAPS);
 
   static bool is_shared_class_visible(Symbol* class_name, InstanceKlass* ik,
@@ -377,7 +354,7 @@ protected:
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
-  static bool is_boot_class_loader(oop class_loader) { return class_loader == NULL; }
+  static bool is_boot_class_loader(oop class_loader) { return class_loader == nullptr; }
   static bool is_builtin_class_loader(oop class_loader) {
     return is_boot_class_loader(class_loader)      ||
            is_platform_class_loader(class_loader)  ||
@@ -400,16 +377,9 @@ protected:
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
 
   // Class loader constraints
-  static void check_constraints(unsigned int hash,
-                                InstanceKlass* k, Handle loader,
+  static void check_constraints(InstanceKlass* k, ClassLoaderData* loader,
                                 bool defining, TRAPS);
-  static void update_dictionary(unsigned int hash,
-                                InstanceKlass* k, Handle loader);
-
-public:
-  static TableStatistics placeholders_statistics();
-  static TableStatistics loader_constraints_statistics();
-  static TableStatistics protection_domain_cache_statistics();
+  static void update_dictionary(JavaThread* current, InstanceKlass* k, ClassLoaderData* loader_data);
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

@@ -26,7 +26,6 @@
 
 package jdk.internal.foreign;
 
-import java.lang.foreign.MemoryAddress;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
@@ -39,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.vm.annotation.ForceInline;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 
@@ -49,11 +49,12 @@ public final class Utils {
     private static final MethodHandle BYTE_TO_BOOL;
     private static final MethodHandle BOOL_TO_BYTE;
     private static final MethodHandle ADDRESS_TO_LONG;
-    private static final MethodHandle LONG_TO_ADDRESS;
-    public static final MethodHandle MH_bitsToBytesOrThrowForOffset;
+    private static final MethodHandle LONG_TO_ADDRESS_SAFE;
+    private static final MethodHandle LONG_TO_ADDRESS_UNSAFE;
+    public static final MethodHandle MH_BITS_TO_BYTES_OR_THROW_FOR_OFFSET;
 
-    public static final Supplier<RuntimeException> bitsToBytesThrowOffset
-        = () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8");
+    public static final Supplier<RuntimeException> BITS_TO_BYTES_THROW_OFFSET
+            = () -> new UnsupportedOperationException("Cannot compute byte offset; bit offset is not a multiple of 8");
 
     static {
         try {
@@ -62,15 +63,17 @@ public final class Utils {
                     MethodType.methodType(boolean.class, byte.class));
             BOOL_TO_BYTE = lookup.findStatic(Utils.class, "booleanToByte",
                     MethodType.methodType(byte.class, boolean.class));
-            ADDRESS_TO_LONG = lookup.findVirtual(MemoryAddress.class, "toRawLongValue",
-                    MethodType.methodType(long.class));
-            LONG_TO_ADDRESS = lookup.findStatic(MemoryAddress.class, "ofLong",
-                    MethodType.methodType(MemoryAddress.class, long.class));
-            MH_bitsToBytesOrThrowForOffset = MethodHandles.insertArguments(
-                lookup.findStatic(Utils.class, "bitsToBytesOrThrow",
-                    MethodType.methodType(long.class, long.class, Supplier.class)),
-                1,
-                bitsToBytesThrowOffset);
+            ADDRESS_TO_LONG = lookup.findStatic(SharedUtils.class, "unboxSegment",
+                    MethodType.methodType(long.class, MemorySegment.class));
+            LONG_TO_ADDRESS_SAFE = lookup.findStatic(Utils.class, "longToAddressSafe",
+                    MethodType.methodType(MemorySegment.class, long.class));
+            LONG_TO_ADDRESS_UNSAFE = lookup.findStatic(Utils.class, "longToAddressUnsafe",
+                    MethodType.methodType(MemorySegment.class, long.class));
+            MH_BITS_TO_BYTES_OR_THROW_FOR_OFFSET = MethodHandles.insertArguments(
+                    lookup.findStatic(Utils.class, "bitsToBytesOrThrow",
+                            MethodType.methodType(long.class, long.class, Supplier.class)),
+                    1,
+                    BITS_TO_BYTES_THROW_OFFSET);
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
         }
@@ -80,13 +83,8 @@ public final class Utils {
         return (n + alignment - 1) & -alignment;
     }
 
-    public static MemoryAddress alignUp(MemoryAddress ma, long alignment) {
-        long offset = ma.toRawLongValue();
-        return ma.addOffset(alignUp(offset, alignment) - offset);
-    }
-
     public static MemorySegment alignUp(MemorySegment ms, long alignment) {
-        long offset = ms.address().toRawLongValue();
+        long offset = ms.address();
         return ms.asSlice(alignUp(offset, alignment) - offset);
     }
 
@@ -108,7 +106,7 @@ public final class Utils {
             }
         }
         Class<?> baseCarrier = layout.carrier();
-        if (layout.carrier() == MemoryAddress.class) {
+        if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
                 case 8 -> long.class;
                 case 4 -> int.class;
@@ -123,20 +121,31 @@ public final class Utils {
 
         if (layout.carrier() == boolean.class) {
             handle = MethodHandles.filterValue(handle, BOOL_TO_BYTE, BYTE_TO_BOOL);
-        } else if (layout.carrier() == MemoryAddress.class) {
+        } else if (layout instanceof ValueLayout.OfAddress addressLayout) {
             handle = MethodHandles.filterValue(handle,
-                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemoryAddress.class)),
-                    MethodHandles.explicitCastArguments(LONG_TO_ADDRESS, MethodType.methodType(MemoryAddress.class, baseCarrier)));
+                    MethodHandles.explicitCastArguments(ADDRESS_TO_LONG, MethodType.methodType(baseCarrier, MemorySegment.class)),
+                    MethodHandles.explicitCastArguments(addressLayout.isUnbounded() ?
+                            LONG_TO_ADDRESS_UNSAFE : LONG_TO_ADDRESS_SAFE, MethodType.methodType(MemorySegment.class, baseCarrier)));
         }
         return VarHandleCache.put(layout, handle);
     }
 
-    private static boolean byteToBoolean(byte b) {
+    public static boolean byteToBoolean(byte b) {
         return b != 0;
     }
 
     private static byte booleanToByte(boolean b) {
         return b ? (byte)1 : (byte)0;
+    }
+
+    @ForceInline
+    private static MemorySegment longToAddressSafe(long addr) {
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, 0);
+    }
+
+    @ForceInline
+    private static MemorySegment longToAddressUnsafe(long addr) {
+        return NativeMemorySegmentImpl.makeNativeSegmentUnchecked(addr, Long.MAX_VALUE);
     }
 
     public static void copy(MemorySegment addr, byte[] bytes) {
@@ -146,7 +155,7 @@ public final class Utils {
     }
 
     public static MemorySegment toCString(byte[] bytes, SegmentAllocator allocator) {
-        MemorySegment addr = allocator.allocate(bytes.length + 1, 1L);
+        MemorySegment addr = allocator.allocate(bytes.length + 1);
         copy(addr, bytes);
         return addr;
     }
@@ -163,16 +172,31 @@ public final class Utils {
         }
     }
 
-    public static void checkAllocationSizeAndAlign(long bytesSize, long alignmentBytes) {
+    public static long pointeeSize(MemoryLayout layout) {
+        if (layout instanceof ValueLayout.OfAddress addressLayout) {
+            return addressLayout.isUnbounded() ? Long.MAX_VALUE : 0L;
+        } else {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment, long maxAlignment) {
+        checkAllocationSizeAndAlign(byteSize, byteAlignment);
+        if (maxAlignment != 0 && byteAlignment > maxAlignment) {
+            throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment + " > " + maxAlignment);
+        }
+    }
+
+    public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
         // size should be >= 0
-        if (bytesSize < 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + bytesSize);
+        if (byteSize < 0) {
+            throw new IllegalArgumentException("Invalid allocation size : " + byteSize);
         }
 
         // alignment should be > 0, and power of two
-        if (alignmentBytes <= 0 ||
-                ((alignmentBytes & (alignmentBytes - 1)) != 0L)) {
-            throw new IllegalArgumentException("Invalid alignment constraint : " + alignmentBytes);
+        if (byteAlignment <= 0 ||
+                ((byteAlignment & (byteAlignment - 1)) != 0L)) {
+            throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
         }
     }
 }

@@ -69,7 +69,10 @@
 
 #endif // clang/gcc version check
 
-#if (__GNUC__ >= 10) || (defined(__clang_major__) && (__clang_major__ >= 14))
+#if (__GNUC__ >= 10)
+// TODO: Re-enable warning attribute for Clang once
+// https://github.com/llvm/llvm-project/issues/56519 is fixed and released.
+// || (defined(__clang_major__) && (__clang_major__ >= 14))
 
 // Use "warning" attribute to detect uses of "forbidden" functions.
 //
@@ -92,6 +95,6 @@
   __VA_ARGS__                                           \
   PRAGMA_DIAG_POP
 
-#endif // gcc10+ or clang14+
+#endif // gcc10+
 
 #endif // SHARE_UTILITIES_COMPILERWARNINGS_GCC_HPP

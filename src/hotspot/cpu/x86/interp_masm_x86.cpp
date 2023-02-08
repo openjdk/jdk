@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   jmpb(next);
 
   bind(update);
-  Register tmp_load_klass = LP64_ONLY(rscratch1) NOT_LP64(noreg);
-  load_klass(obj, obj, tmp_load_klass);
+  load_klass(obj, obj, rscratch1);
 
   xorptr(obj, mdo_addr);
   testptr(obj, TypeEntries::type_klass_mask);
@@ -266,7 +265,7 @@ void InterpreterMacroAssembler::call_VM_leaf_base(address entry_point,
 #ifdef ASSERT
   {
     Label L;
-    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_leaf_base:"
          " last_sp != NULL");
@@ -298,7 +297,7 @@ void InterpreterMacroAssembler::call_VM_base(Register oop_result,
 #ifdef ASSERT
   {
     Label L;
-    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    cmpptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     jcc(Assembler::equal, L);
     stop("InterpreterMacroAssembler::call_VM_base:"
          " last_sp != NULL");
@@ -349,7 +348,7 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
 #ifdef _LP64
   switch (state) {
     case atos: movptr(rax, oop_addr);
-               movptr(oop_addr, (int32_t)NULL_WORD);
+               movptr(oop_addr, NULL_WORD);
                interp_verify_oop(rax, state);         break;
     case ltos: movptr(rax, val_addr);                 break;
     case btos:                                   // fall through
@@ -363,8 +362,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
     default  : ShouldNotReachHere();
   }
   // Clean up tos value in the thread object
-  movl(tos_addr,  (int) ilgl);
-  movl(val_addr,  (int32_t) NULL_WORD);
+  movl(tos_addr, ilgl);
+  movl(val_addr, NULL_WORD);
 #else
   const Address val_addr1(rcx, JvmtiThreadState::earlyret_value_offset()
                              + in_ByteSize(wordSize));
@@ -386,8 +385,8 @@ void InterpreterMacroAssembler::load_earlyret_value(TosState state) {
   }
 #endif // _LP64
   // Clean up tos value in the thread object
-  movl(tos_addr,  (int32_t) ilgl);
-  movptr(val_addr,  NULL_WORD);
+  movl(tos_addr, ilgl);
+  movptr(val_addr, NULL_WORD);
   NOT_LP64(movptr(val_addr1, NULL_WORD);)
 }
 
@@ -843,7 +842,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
     int32_t min_frame_size =
       (frame::link_offset - frame::interpreter_frame_initial_sp_offset) *
       wordSize;
-    cmpptr(rcx, (int32_t)min_frame_size);
+    cmpptr(rcx, min_frame_size);
     jcc(Assembler::greaterEqual, L);
     stop("broken stack frame");
     bind(L);
@@ -880,13 +879,13 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
 
     jccb(Assembler::zero, no_safepoint);
     ArrayAddress dispatch_addr(ExternalAddress((address)safepoint_table), index);
-    jump(dispatch_addr);
+    jump(dispatch_addr, noreg);
     bind(no_safepoint);
   }
 
   {
     ArrayAddress dispatch_addr(ExternalAddress((address)table), index);
-    jump(dispatch_addr);
+    jump(dispatch_addr, noreg);
   }
 #endif // _LP64
 }
@@ -1003,7 +1002,7 @@ void InterpreterMacroAssembler::remove_activation(
   jmp(fast_path);
   bind(slow_path);
   push(state);
-  set_last_Java_frame(rthread, noreg, rbp, (address)pc());
+  set_last_Java_frame(rthread, noreg, rbp, (address)pc(), rscratch1);
   super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::at_unwind), rthread);
   NOT_LP64(get_thread(rthread);) // call_VM clobbered it, restore
   reset_last_Java_frame(rthread, true);
@@ -1064,8 +1063,6 @@ void InterpreterMacroAssembler::remove_activation(
 
   bind(unlock);
   unlock_object(robj);
-  dec_held_monitor_count();
-
   pop(state);
 
   // Check that for block-structured locking (i.e., that all locked
@@ -1110,7 +1107,6 @@ void InterpreterMacroAssembler::remove_activation(
       push(state);
       mov(robj, rmon);   // nop if robj and rmon are the same
       unlock_object(robj);
-      dec_held_monitor_count();
       pop(state);
 
       if (install_monitor_exception) {
@@ -1125,7 +1121,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    cmpptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), (int32_t) NULL);
+    cmpptr(Address(rmon, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
     jcc(Assembler::notEqual, exception);
 
     addptr(rmon, entry_size); // otherwise advance to next entry
@@ -1205,19 +1201,17 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
   } else {
-    Label done;
+    Label count_locking, done, slow_case;
 
     const Register swap_reg = rax; // Must use rax for cmpxchg instruction
     const Register tmp_reg = rbx;
     const Register obj_reg = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // Will contain the oop
-    const Register rklass_decode_tmp = LP64_ONLY(rscratch1) NOT_LP64(noreg);
+    const Register rklass_decode_tmp = rscratch1;
 
     const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
     const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
-
-    Label slow_case;
 
     // Load object pointer into obj_reg
     movptr(obj_reg, Address(lock_reg, obj_offset));
@@ -1230,7 +1224,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     }
 
     // Load immediate 1 into swap_reg %rax
-    movl(swap_reg, (int32_t)1);
+    movl(swap_reg, 1);
 
     // Load (object->mark() | 1) into swap_reg %rax
     orptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
@@ -1243,7 +1237,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     lock();
     cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    jcc(Assembler::zero, done);
+    jcc(Assembler::zero, count_locking);
 
     const int zero_bits = LP64_ONLY(7) NOT_LP64(3);
 
@@ -1275,11 +1269,15 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     // least significant bits clear.
     // NOTE: the mark is in swap_reg %rax as the result of cmpxchg
     subptr(swap_reg, rsp);
-    andptr(swap_reg, zero_bits - os::vm_page_size());
+    andptr(swap_reg, zero_bits - (int)os::vm_page_size());
 
     // Save the test result, for recursive case, the result is zero
     movptr(Address(lock_reg, mark_offset), swap_reg);
-    jcc(Assembler::zero, done);
+    jcc(Assembler::notZero, slow_case);
+
+    bind(count_locking);
+    inc_held_monitor_count();
+    jmp(done);
 
     bind(slow_case);
 
@@ -1312,7 +1310,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
   if (UseHeavyMonitors) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
-    Label done;
+    Label count_locking, done, slow_case;
 
     const Register swap_reg   = rax;  // Must use rax for cmpxchg instruction
     const Register header_reg = LP64_ONLY(c_rarg2) NOT_LP64(rbx);  // Will contain the old oopMark
@@ -1328,7 +1326,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     movptr(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
 
     // Free entry
-    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), (int32_t)NULL_WORD);
+    movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), NULL_WORD);
 
     // Load the old header from BasicLock structure
     movptr(header_reg, Address(swap_reg,
@@ -1338,16 +1336,20 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     testptr(header_reg, header_reg);
 
     // zero for recursive case
-    jcc(Assembler::zero, done);
+    jcc(Assembler::zero, count_locking);
 
     // Atomic swap back the old header
     lock();
     cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // zero for simple unlock of a stack-lock case
-    jcc(Assembler::zero, done);
+    jcc(Assembler::notZero, slow_case);
 
+    bind(count_locking);
+    dec_held_monitor_count();
+    jmp(done);
 
+    bind(slow_case);
     // Call the runtime routine for slow case.
     movptr(Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()), obj_reg); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
@@ -1454,11 +1456,11 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
 
   if (decrement) {
     // Decrement the register.  Set condition codes.
-    addptr(data, (int32_t) -DataLayout::counter_increment);
+    addptr(data, -DataLayout::counter_increment);
     // If the decrement causes the counter to overflow, stay negative
     Label L;
     jcc(Assembler::negative, L);
-    addptr(data, (int32_t) DataLayout::counter_increment);
+    addptr(data, DataLayout::counter_increment);
     bind(L);
   } else {
     assert(DataLayout::counter_increment == 1,
@@ -1466,7 +1468,7 @@ void InterpreterMacroAssembler::increment_mdp_data_at(Address data,
     // Increment the register.  Set carry flag.
     addptr(data, DataLayout::counter_increment);
     // If the increment causes the counter to overflow, pull back by 1.
-    sbbptr(data, (int32_t)0);
+    sbbptr(data, 0);
   }
 }
 
@@ -2009,7 +2011,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
   }
 
   {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -2054,7 +2056,7 @@ void InterpreterMacroAssembler::notify_method_exit(
   }
 
   {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
     push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);

@@ -42,7 +42,7 @@ class StringConcat : public ResourceObj {
   PhaseStringOpts*    _stringopts;
   AllocateNode*       _begin;          // The allocation the begins the pattern
   CallStaticJavaNode* _end;            // The final call of the pattern.  Will either be
-                                       // SB.toString or or String.<init>(SB.toString)
+                                       // SB.toString or String.<init>(SB.toString)
   bool                _multiple;       // indicates this is a fusion of two or more
                                        // separate StringBuilders
 
@@ -261,10 +261,12 @@ void StringConcat::eliminate_unneeded_control() {
       Node* cmp = bol->in(1);
       assert(cmp->is_Cmp(), "unexpected if shape");
       if (cmp->in(1)->is_top() || cmp->in(2)->is_top()) {
-        // This region should lose its Phis and be optimized out by igvn but there's a chance the if folds to top first
-        // which then causes a reachable part of the graph to become dead.
+        // This region should lose its Phis. They are removed either in PhaseRemoveUseless (for data phis) or in IGVN
+        // (for memory phis). During IGVN, there is a chance that the If folds to top before the Region is processed
+        // which then causes a reachable part of the graph to become dead. To prevent this, set the boolean input of
+        // the If to a constant to nicely let the diamond Region/If fold away.
         Compile* C = _stringopts->C;
-        C->gvn_replace_by(n, iff->in(0));
+        C->gvn_replace_by(iff->in(1), _stringopts->gvn()->intcon(0));
       }
     }
   }
@@ -1022,6 +1024,21 @@ bool StringConcat::validate_control_flow() {
       fail = true;
       break;
     } else if (ptr->is_Proj() && ptr->in(0)->is_Initialize()) {
+      // Check for side effect between Initialize and the constructor
+      for (SimpleDUIterator iter(ptr); iter.has_next(); iter.next()) {
+        Node* use = iter.get();
+        if (!use->is_CFG() && !use->is_CheckCastPP() && !use->is_Load()) {
+#ifndef PRODUCT
+          if (PrintOptimizeStringConcat) {
+            tty->print_cr("unexpected control use of Initialize");
+            ptr->in(0)->dump(); // Initialize node
+            use->dump(1);
+          }
+#endif
+          fail = true;
+          break;
+        }
+      }
       ptr = ptr->in(0)->in(0);
     } else if (ptr->is_Region()) {
       Node* copy = ptr->as_Region()->is_copy();

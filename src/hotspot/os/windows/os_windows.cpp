@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 // API level must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -34,12 +33,12 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "os_share_windows.hpp"
 #include "os_windows.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -54,7 +53,9 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
+#include "runtime/park.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -69,13 +70,13 @@
 #include "services/attachListener.hpp"
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
+#include "symbolengine.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#include "symbolengine.hpp"
 #include "windbghelp.hpp"
 
 #ifdef _DEBUG
@@ -268,10 +269,10 @@ bool os::have_special_privileges() {
 }
 
 
-// This method is  a periodic task to check for misbehaving JNI applications
+// This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here.
 // For Windows at the moment does nothing
-void os::run_periodic_checks() {
+void os::run_periodic_checks(outputStream* st) {
   return;
 }
 
@@ -381,8 +382,9 @@ void os::init_system_properties_values() {
     char path[MAX_PATH];
     char buf[2 * MAX_PATH + 2 * sizeof(EXT_DIR) + sizeof(PACKAGE_DIR) + 1];
     GetWindowsDirectory(path, MAX_PATH);
-    sprintf(buf, "%s%s;%s%s%s", Arguments::get_java_home(), EXT_DIR,
-            path, PACKAGE_DIR, EXT_DIR);
+    os::snprintf_checked(buf, sizeof(buf), "%s%s;%s%s%s",
+                         Arguments::get_java_home(), EXT_DIR,
+                         path, PACKAGE_DIR, EXT_DIR);
     Arguments::set_ext_dirs(buf);
   }
   #undef EXT_DIR
@@ -509,8 +511,10 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-// Thread start routine for all newly created threads
-static unsigned __stdcall thread_native_entry(Thread* thread) {
+// Thread start routine for all newly created threads.
+// Called with the associated Thread* as the argument.
+unsigned __stdcall os::win32::thread_native_entry(void* t) {
+  Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
   thread->initialize_thread_current();
@@ -531,7 +535,7 @@ static unsigned __stdcall thread_native_entry(Thread* thread) {
     res = 20115;    // java thread
   }
 
-  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / 1024);
+  log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ", stacksize: " SIZE_FORMAT "k).", os::current_thread_id(), thread->stack_size() / K);
 
 #ifdef USE_VECTORED_EXCEPTION_HANDLING
   // Any exception is caught by the Vectored Exception Handler, so VM can
@@ -615,8 +619,10 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   thread->set_osthread(osthread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ").",
-    os::current_thread_id());
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", stack: "
+                       PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), p2i(thread->stack_base()),
+                       p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -647,7 +653,7 @@ static char* describe_beginthreadex_attributes(char* buf, size_t buflen,
   if (stacksize == 0) {
     ss.print("stacksize: default, ");
   } else {
-    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / 1024);
+    ss.print("stacksize: " SIZE_FORMAT "k, ", stacksize / K);
   }
   ss.print("flags: ");
   #define PRINT_FLAG(f) if (initflag & f) ss.print( #f " ");
@@ -741,7 +747,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
-                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             &os::win32::thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -1234,8 +1240,6 @@ void os::die() {
   win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
-const char* os::dll_file_extension() { return ".dll"; }
-
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
@@ -1696,7 +1700,6 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
 }
 
 int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-#if _MSC_VER >= 1900
   // Starting with Visual Studio 2015, vsnprint is C99 compliant.
   ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
   // If an encoding error occurred (result < 0) then it's not clear
@@ -1705,29 +1708,6 @@ int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
     buf[len - 1] = '\0';
   }
   return result;
-#else
-  // Before Visual Studio 2015, vsnprintf is not C99 compliant, so use
-  // _vsnprintf, whose behavior seems to be *mostly* consistent across
-  // versions.  However, when len == 0, avoid _vsnprintf too, and just
-  // go straight to _vscprintf.  The output is going to be truncated in
-  // that case, except in the unusual case of empty output.  More
-  // importantly, the documentation for various versions of Visual Studio
-  // are inconsistent about the behavior of _vsnprintf when len == 0,
-  // including it possibly being an error.
-  int result = -1;
-  if (len > 0) {
-    result = _vsnprintf(buf, len, fmt, args);
-    // If output (including NUL terminator) is truncated, the buffer
-    // won't be NUL terminated.  Add the trailing NUL specified by C99.
-    if ((result < 0) || ((size_t)result >= len)) {
-      buf[len - 1] = '\0';
-    }
-  }
-  if (result < 0) {
-    result = _vscprintf(fmt, args);
-  }
-  return result;
-#endif // _MSC_VER dispatch
 }
 
 static inline time_t get_mtime(const char* filename) {
@@ -1909,6 +1889,10 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     status = RegQueryValueEx(key, "ProcessorNameString", NULL, NULL, (byte*)buf, &size);
     if (status != ERROR_SUCCESS) {
         strncpy(buf, "## __CPU__", buflen);
+    } else {
+      if (size < buflen) {
+        buf[size] = '\0';
+      }
     }
     RegCloseKey(key);
   } else {
@@ -1919,7 +1903,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
@@ -2128,30 +2112,41 @@ int os::get_last_error() {
 // a signal handler for SIGBREAK is installed then that signal handler
 // takes priority over the console control handler for CTRL_CLOSE_EVENT.
 // See bug 4416763.
-static void (*sigbreakHandler)(int) = NULL;
+static signal_handler_t sigbreakHandler = NULL;
 
-static void UserHandler(int sig, void *siginfo, void *context) {
+static void UserHandler(int sig) {
   os::signal_notify(sig);
   // We need to reinstate the signal handler each time...
-  os::signal(sig, (void*)UserHandler);
+  os::win32::install_signal_handler(sig, UserHandler);
 }
 
-void* os::user_handler() {
-  return (void*) UserHandler;
+void* os::win32::user_handler() {
+  return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-void* os::signal(int signal_number, void* handler) {
-  if ((signal_number == SIGBREAK) && (!ReduceSignalUsage)) {
-    void (*oldHandler)(int) = sigbreakHandler;
-    sigbreakHandler = (void (*)(int)) handler;
-    return (void*) oldHandler;
+// Used mainly by JVM_RegisterSignal to install a signal handler,
+// but also to install the VM's BREAK_HANDLER. However, due to
+// the way Windows signals work we also have to reinstall each
+// handler at the end of its own execution.
+// The allowed set of signals is restricted by the caller.
+// The incoming handler is one of:
+// - psuedo-handler: SIG_IGN or SIG_DFL
+// - VM defined signal handling function of type signal_handler_t
+// - unknown signal handling function which we expect* is also
+//   of type signal_handler_t
+//
+// * win32 defines a two-arg signal handling function for use solely with
+//   SIGFPE. As we don't allow that to be set via the Java API we know we
+//   only have the single arg version.
+// Returns the currently installed handler.
+void* os::win32::install_signal_handler(int sig, signal_handler_t handler) {
+  if ((sig == SIGBREAK) && (!ReduceSignalUsage)) {
+    void* oldHandler = CAST_FROM_FN_PTR(void*, sigbreakHandler);
+    sigbreakHandler = handler;
+    return oldHandler;
   } else {
-    return (void*)::signal(signal_number, (void (*)(int))handler);
+    return ::signal(sig, handler);
   }
-}
-
-void os::signal_raise(int signal_number) {
-  raise(signal_number);
 }
 
 // The Win32 C runtime library maps all console control events other than ^C
@@ -2168,7 +2163,7 @@ static BOOL WINAPI consoleHandler(DWORD event) {
       os::die();
     }
 
-    os::signal_raise(SIGINT);
+    ::raise(SIGINT);
     return TRUE;
     break;
   case CTRL_BREAK_EVENT:
@@ -2194,7 +2189,7 @@ static BOOL WINAPI consoleHandler(DWORD event) {
   }
   case CTRL_CLOSE_EVENT:
   case CTRL_SHUTDOWN_EVENT:
-    os::signal_raise(SIGTERM);
+    ::raise(SIGTERM);
     return TRUE;
     break;
   default:
@@ -2239,6 +2234,15 @@ static void jdk_misc_signal_init() {
 
   // Add a CTRL-C handler
   SetConsoleCtrlHandler(consoleHandler, TRUE);
+
+  // Initialize sigbreakHandler.
+  // The actual work for handling CTRL-BREAK is performed by the Signal
+  // Dispatcher thread, which is created and started at a much later point,
+  // see os::initialize_jdk_signal_support(). Any CTRL-BREAK received
+  // before the Signal Dispatcher thread is started is queued up via the
+  // pending_signals[SIGBREAK] counter, and will be processed by the
+  // Signal Dispatcher thread in a delayed fashion.
+  os::win32::install_signal_handler(SIGBREAK, UserHandler);
 }
 
 void os::signal_notify(int sig) {
@@ -2498,7 +2502,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     address addr = (address) exception_record->ExceptionInformation[1];
 
     if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
-      int page_size = os::vm_page_size();
+      size_t page_size = os::vm_page_size();
 
       // Make sure the pc and the faulting address are sane.
       //
@@ -2676,7 +2680,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (exception_code == EXCEPTION_IN_PAGE_ERROR) {
       CompiledMethod* nm = NULL;
       if (in_java) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
       }
 
@@ -2695,9 +2699,9 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (in_java &&
         (exception_code == EXCEPTION_ILLEGAL_INSTRUCTION ||
           exception_code == EXCEPTION_ILLEGAL_INSTRUCTION_2)) {
-      if (nativeInstruction_at(pc)->is_sigill_zombie_not_entrant()) {
+      if (nativeInstruction_at(pc)->is_sigill_not_entrant()) {
         if (TraceTraps) {
-          tty->print_cr("trap: zombie_not_entrant");
+          tty->print_cr("trap: not_entrant");
         }
         return Handle_Exception(exceptionInfo, SharedRuntime::get_handle_wrong_method_stub());
       }
@@ -2726,7 +2730,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       // Check for UD trap caused by NOP patching.
       // If it is, patch return address to be deopt handler.
       if (NativeDeoptInstruction::is_deopt_at(pc)) {
-        CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+        CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != NULL && cb->is_compiled()) {
           CompiledMethod* cm = cb->as_compiled_method();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
@@ -2859,11 +2863,6 @@ address os::win32::fast_jni_accessor_wrapper(BasicType type) {
 #endif
 
 // Virtual Memory
-
-int os::vm_page_size() { return os::win32::vm_page_size(); }
-int os::vm_allocation_granularity() {
-  return os::win32::vm_allocation_granularity();
-}
 
 // Windows large page support is available on Windows 2003. In order to use
 // large page memory, the administrator must first assign additional privilege
@@ -3160,7 +3159,7 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-  const size_t default_page_size = (size_t) vm_page_size();
+  const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes.add(_large_page_size);
   }
@@ -3451,9 +3450,6 @@ bool os::pd_release_memory_special(char* base, size_t bytes) {
   return pd_release_memory(base, bytes);
 }
 
-void os::print_statistics() {
-}
-
 static void warn_fail_commit_memory(char* addr, size_t bytes, bool exec) {
   int err = os::get_last_error();
   char buf[256];
@@ -3732,7 +3728,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 
@@ -3882,8 +3878,6 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_vm_page_size              = 0;
-int    os::win32::_vm_allocation_granularity = 0;
 int    os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
 int    os::win32::_processor_level           = 0;
@@ -3899,8 +3893,8 @@ bool   os::win32::_has_exit_bug              = true;
 void os::win32::initialize_system_info() {
   SYSTEM_INFO si;
   GetSystemInfo(&si);
-  _vm_page_size    = si.dwPageSize;
-  _vm_allocation_granularity = si.dwAllocationGranularity;
+  OSInfo::set_vm_page_size(si.dwPageSize);
+  OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
   set_processor_count(si.dwNumberOfProcessors);
@@ -4214,7 +4208,7 @@ void os::init(void) {
 
   win32::initialize_system_info();
   win32::setmode_streams();
-  _page_sizes.add(win32::vm_page_size());
+  _page_sizes.add(os::vm_page_size());
 
   // This may be overridden later when argument processing is done.
   FLAG_SET_ERGO(UseLargePagesIndividualAllocation, false);
@@ -4328,7 +4322,8 @@ jint os::init_2(void) {
 
   SymbolEngine::recalc_search_path();
 
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal, and install CTRL-C and
+  // CTRL-BREAK handlers.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
@@ -5099,35 +5094,6 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
   return true;
 }
 
-Thread* os::ThreadCrashProtection::_protected_thread = NULL;
-os::ThreadCrashProtection* os::ThreadCrashProtection::_crash_protection = NULL;
-
-os::ThreadCrashProtection::ThreadCrashProtection() {
-  _protected_thread = Thread::current();
-  assert(_protected_thread->is_JfrSampler_thread(), "should be JFRSampler");
-}
-
-// See the caveats for this class in os_windows.hpp
-// Protects the callback call so that raised OS EXCEPTIONS causes a jump back
-// into this method and returns false. If no OS EXCEPTION was raised, returns
-// true.
-// The callback is supposed to provide the method that should be protected.
-//
-bool os::ThreadCrashProtection::call(os::CrashProtectionCallback& cb) {
-  bool success = true;
-  __try {
-    _crash_protection = this;
-    cb.call();
-  } __except(EXCEPTION_EXECUTE_HANDLER) {
-    // only for protection, nothing to do
-    success = false;
-  }
-  _crash_protection = NULL;
-  _protected_thread = NULL;
-  return success;
-}
-
-
 class HighResolutionInterval : public CHeapObj<mtThread> {
   // The default timer resolution seems to be 10 milliseconds.
   // (Where is this written down?)
@@ -5225,7 +5191,7 @@ class HighResolutionInterval : public CHeapObj<mtThread> {
 // explicit "PARKED" == 01b and "SIGNALED" == 10b bits.
 //
 
-int os::PlatformEvent::park(jlong Millis) {
+int PlatformEvent::park(jlong Millis) {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5282,7 +5248,7 @@ int os::PlatformEvent::park(jlong Millis) {
   }
   v = _Event;
   _Event = 0;
-  // see comment at end of os::PlatformEvent::park() below:
+  // see comment at end of PlatformEvent::park() below:
   OrderAccess::fence();
   // If we encounter a nearly simultaneous timeout expiry and unpark()
   // we return OS_OK indicating we awoke via unpark().
@@ -5290,7 +5256,7 @@ int os::PlatformEvent::park(jlong Millis) {
   return (v >= 0) ? OS_OK : OS_TIMEOUT;
 }
 
-void os::PlatformEvent::park() {
+void PlatformEvent::park() {
   // Transitions for _Event:
   //   -1 => -1 : illegal
   //    1 =>  0 : pass - return immediately
@@ -5324,7 +5290,7 @@ void os::PlatformEvent::park() {
   guarantee(_Event >= 0, "invariant");
 }
 
-void os::PlatformEvent::unpark() {
+void PlatformEvent::unpark() {
   guarantee(_ParkHandle != NULL, "Invariant");
 
   // Transitions for _Event:
@@ -5397,11 +5363,14 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int os::PlatformMonitor::wait(jlong millis) {
-  assert(millis >= 0, "negative timeout");
+int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;
+  // The timeout parameter for SleepConditionVariableCS is a DWORD
+  if (millis > UINT_MAX) {
+    millis = UINT_MAX;
+  }
   int status = SleepConditionVariableCS(&_cond, &_mutex,
-                                        millis == 0 ? INFINITE : millis);
+                                        millis == 0 ? INFINITE : (DWORD)millis);
   if (status != 0) {
     ret = OS_OK;
   }
@@ -5567,7 +5536,7 @@ void get_thread_handle_for_extended_context(HANDLE* h,
 
 // Thread sampling implementation
 //
-void os::SuspendedThreadTask::internal_do_task() {
+void SuspendedThreadTask::internal_do_task() {
   CONTEXT    ctxt;
   HANDLE     h = NULL;
 
@@ -5967,4 +5936,17 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
       }
     }
   }
+}
+
+// File conventions
+const char* os::file_separator() { return "\\"; }
+const char* os::line_separator() { return "\r\n"; }
+const char* os::path_separator() { return ";"; }
+
+void os::print_user_info(outputStream* st) {
+  // not implemented yet
+}
+
+void os::print_active_locale(outputStream* st) {
+  // not implemented yet
 }

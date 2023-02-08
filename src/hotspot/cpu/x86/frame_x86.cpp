@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,13 +177,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
     }
 
     // We must always be able to find a recognizable pc
-    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    CodeBlob* sender_blob = CodeCache::find_blob(sender_pc);
     if (sender_pc == NULL ||  sender_blob == NULL) {
-      return false;
-    }
-
-    // Could be a zombie method
-    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
       return false;
     }
 
@@ -311,6 +306,14 @@ intptr_t* frame::entry_frame_argument_at(int offset) const {
   int index = (Interpreter::expr_offset_in_bytes(offset)/wordSize);
   // Entry frame's arguments are always in relation to unextended_sp()
   return &unextended_sp()[index];
+}
+
+// locals
+
+void frame::interpreter_frame_set_locals(intptr_t* locs)  {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized locals
+  ptr_at_put(interpreter_frame_locals_offset, (intptr_t) (locs - fp()));
 }
 
 // sender_sp
@@ -517,7 +520,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // validate locals
 
-  address locals =  (address) *interpreter_frame_locals_addr();
+  address locals =  (address)interpreter_frame_locals();
   return thread->is_in_stack_range_incl(locals, (address)fp());
 }
 

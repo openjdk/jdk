@@ -23,17 +23,16 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
@@ -87,7 +86,7 @@ void Generation::print_on(outputStream* st)  const {
   st->print(" %-20s", name());
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
              capacity()/K, used()/K);
-  st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
               p2i(_virtual_space.low_boundary()),
               p2i(_virtual_space.high()),
               p2i(_virtual_space.high_boundary()));
@@ -182,13 +181,6 @@ oop Generation::promote(oop obj, size_t obj_size) {
   ContinuationGCSupport::transform_stack_chunk(new_obj);
 
   return new_obj;
-}
-
-oop Generation::par_promote(int thread_num,
-                            oop obj, markWord m, size_t word_sz) {
-  // Could do a bad general impl here that gets a lock.  But no.
-  ShouldNotCallThis();
-  return NULL;
 }
 
 Space* Generation::space_containing(const void* p) const {

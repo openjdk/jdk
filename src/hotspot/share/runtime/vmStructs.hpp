@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,27 +106,27 @@ typedef struct {
 class VMStructs {
 public:
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a NULL fieldName
+  // the fact that it has a null fieldName
   static VMStructEntry localHotSpotVMStructs[];
   // The function to get localHotSpotVMStructs length
   static size_t localHotSpotVMStructsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a NULL typeName
+  // the fact that it has a null typeName
   static VMTypeEntry   localHotSpotVMTypes[];
   // The function to get localHotSpotVMTypes length
   static size_t localHotSpotVMTypesLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // Table of integer constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a NULL typeName
+  // the fact that it has a null typeName
   static VMIntConstantEntry localHotSpotVMIntConstants[];
   // The function to get localHotSpotVMIntConstants length
   static size_t localHotSpotVMIntConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
 
   // Table of long constants required by the serviceability agent.
   // The last entry is identified over in the serviceability agent by
-  // the fact that it has a NULL typeName
+  // the fact that it has a null typeName
   static VMLongConstantEntry localHotSpotVMLongConstants[];
   // The function to get localHotSpotVMIntConstants length
   static size_t localHotSpotVMLongConstantsLength() NOT_VM_STRUCTS_RETURN_(0);
@@ -157,7 +157,7 @@ private:
 
 // This macro generates a VMStructEntry line for a nonstatic field
 #define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), nullptr },
 
 // This macro generates a VMStructEntry line for a static field
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
@@ -170,31 +170,36 @@ private:
 
 // This macro generates a VMStructEntry line for an unchecked
 // nonstatic field, in which the size of the type is also specified.
-// The type string is given as NULL, indicating an "opaque" type.
+// The type string is given as null, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
-  { QUOTE(typeName), QUOTE(fieldName), NULL, 0, offset_of(typeName, fieldName), NULL },
+  { QUOTE(typeName), QUOTE(fieldName), nullptr, 0, offset_of(typeName, fieldName), nullptr },
 
 // This macro generates a VMStructEntry line for an unchecked
 // static field, in which the size of the type is also specified.
-// The type string is given as NULL, indicating an "opaque" type.
+// The type string is given as null, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)       \
- { QUOTE(typeName), QUOTE(fieldName), NULL, 1, 0, (void*) &typeName::fieldName },
+ { QUOTE(typeName), QUOTE(fieldName), nullptr, 1, 0, (void*) &typeName::fieldName },
 
 // This macro generates the sentinel value indicating the end of the list
 #define GENERATE_VM_STRUCT_LAST_ENTRY() \
- { NULL, NULL, NULL, 0, 0, NULL }
+ { nullptr, nullptr, nullptr, 0, 0, nullptr }
 
 
 #ifdef ASSERT
 
 // This macro checks the type of a VMStructEntry by comparing pointer types
-#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
- {typeName *dummyObj = NULL; type* dummy = &dummyObj->fieldName;                   \
-  assert(offset_of(typeName, fieldName) < sizeof(typeName), "Illegal nonstatic struct entry, field offset too large"); }
+#define CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) { \
+  static_assert( \
+    std::is_convertible< \
+      std::add_pointer_t<decltype(declval<typeName>().fieldName)>, \
+      std::add_pointer_t<type>>::value, \
+    "type mismatch for " XSTR(fieldName) " member of " XSTR(typeName)); \
+  assert(offset_of(typeName, fieldName) < sizeof(typeName), "..."); \
+}
 
 // This macro checks the type of a volatile VMStructEntry by comparing pointer types
-#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
- {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
+#define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type) \
+  CHECK_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, std::add_volatile_t<type>)
 
 // This macro checks the type of a static VMStructEntry by comparing pointer types
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
@@ -228,22 +233,22 @@ private:
  { QUOTE(type), QUOTE(superclass), 0, 0, 0, sizeof(type) },
 
 #define GENERATE_TOPLEVEL_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 0, 0, sizeof(type) },
+ { QUOTE(type), nullptr,              0, 0, 0, sizeof(type) },
 
 #define GENERATE_OOP_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              1, 0, 0, sizeof(type) },
+ { QUOTE(type), nullptr,              1, 0, 0, sizeof(type) },
 
 #define GENERATE_INTEGER_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 1, 0, sizeof(type) },
+ { QUOTE(type), nullptr,              0, 1, 0, sizeof(type) },
 
 #define GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY(type) \
- { QUOTE(type), NULL,              0, 1, 1, sizeof(type) },
+ { QUOTE(type), nullptr,              0, 1, 1, sizeof(type) },
 
 #define GENERATE_VM_TYPE_LAST_ENTRY() \
- { NULL, NULL, 0, 0, 0, 0 }
+ { nullptr, nullptr, 0, 0, 0, 0 }
 
 #define CHECK_VM_TYPE_ENTRY(type, superclass) \
- { type* dummyObj = NULL; superclass* dummySuperObj = dummyObj; }
+ { type* dummyObj = nullptr; superclass* dummySuperObj = dummyObj; }
 
 #define CHECK_VM_TYPE_NO_OP(a)
 #define CHECK_SINGLE_ARG_VM_TYPE_NO_OP(a)
@@ -264,7 +269,7 @@ private:
 
 // This macro generates the sentinel value indicating the end of the list
 #define GENERATE_VM_INT_CONSTANT_LAST_ENTRY() \
- { NULL, 0 }
+ { nullptr, 0 }
 
 
 //--------------------------------------------------------------------------------
@@ -279,7 +284,7 @@ private:
 
 // This macro generates the sentinel value indicating the end of the list
 #define GENERATE_VM_LONG_CONSTANT_LAST_ENTRY() \
- { NULL, 0 }
+ { nullptr, 0 }
 
 
 //--------------------------------------------------------------------------------
@@ -297,6 +302,6 @@ private:
 
 // This macro generates the sentinel value indicating the end of the list
 #define GENERATE_VM_ADDRESS_LAST_ENTRY() \
- { NULL, NULL }
+ { nullptr, nullptr }
 
 #endif // SHARE_RUNTIME_VMSTRUCTS_HPP

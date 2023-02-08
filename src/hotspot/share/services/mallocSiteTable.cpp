@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
 #include "services/mallocSiteTable.hpp"
 
 // Malloc site hashtable buckets
-MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
-const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
-const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
+MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
+const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = nullptr;
+const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = nullptr;
 
 /*
  * Initialize malloc site table.
@@ -42,6 +42,12 @@ const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = N
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
+
+  ALLOW_C_FUNCTION(::calloc,
+                   _table = (MallocSiteHashtableEntry**)::calloc(table_size, sizeof(MallocSiteHashtableEntry*));)
+  if (_table == nullptr) {
+    return false;
+  }
 
   // Fake the call stack for hashtable entry allocation
   assert(NMT_TrackingStackDepth > 1, "At least one tracking stack");
@@ -65,8 +71,8 @@ bool MallocSiteTable::initialize() {
   static const NativeCallStack stack(pc, MIN2(((int)(sizeof(pc) / sizeof(address))), ((int)NMT_TrackingStackDepth)));
   static const MallocSiteHashtableEntry entry(stack, mtNMT);
 
-  assert(_hash_entry_allocation_stack == NULL &&
-         _hash_entry_allocation_site == NULL,
+  assert(_hash_entry_allocation_stack == nullptr &&
+         _hash_entry_allocation_site == nullptr,
          "Already initialized");
 
   _hash_entry_allocation_stack = &stack;
@@ -85,7 +91,7 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
   MallocSiteHashtableEntry* head;
   for (int index = 0; index < table_size; index ++) {
     head = _table[index];
-    while (head != NULL) {
+    while (head != nullptr) {
       if (!walker->do_malloc_site(head->peek())) {
         return false;
       }
@@ -100,8 +106,8 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *  and each linked list node is inserted via compare-and-swap,
  *  so each linked list is stable, the contention only happens
  *  at the end of linked list.
- *  This method should not return NULL under normal circumstance.
- *  If NULL is returned, it indicates:
+ *  This method should not return nullptr under normal circumstance.
+ *  If nullptr is returned, it indicates:
  *    1. Out of memory, it cannot allocate new hash entry.
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
@@ -113,10 +119,10 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   *marker = 0;
 
   // First entry for this hash bucket
-  if (_table[index] == NULL) {
+  if (_table[index] == nullptr) {
     MallocSiteHashtableEntry* entry = new_entry(key, flags);
     // OOM check
-    if (entry == NULL) return NULL;
+    if (entry == nullptr) return nullptr;
 
     // swap in the head
     if (Atomic::replace_if_null(&_table[index], entry)) {
@@ -129,7 +135,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
   unsigned pos_idx = 0;
   MallocSiteHashtableEntry* head = _table[index];
-  while (head != NULL && pos_idx < MAX_BUCKET_LENGTH) {
+  while (head != nullptr && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
       MallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
@@ -138,10 +144,10 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       }
     }
 
-    if (head->next() == NULL && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
+    if (head->next() == nullptr && pos_idx < (MAX_BUCKET_LENGTH - 1)) {
       MallocSiteHashtableEntry* entry = new_entry(key, flags);
       // OOM check
-      if (entry == NULL) return NULL;
+      if (entry == nullptr) return nullptr;
       if (head->atomic_insert(entry)) {
         pos_idx ++;
         *marker = build_marker(index, pos_idx);
@@ -153,7 +159,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
     head = (MallocSiteHashtableEntry*)head->next();
     pos_idx ++;
   }
-  return NULL;
+  return nullptr;
 }
 
 // Access malloc site
@@ -163,9 +169,9 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   const uint16_t pos_idx = pos_idx_from_marker(marker);
   MallocSiteHashtableEntry* head = _table[bucket_idx];
   for (size_t index = 0;
-       index < pos_idx && head != NULL;
+       index < pos_idx && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
-  assert(head != NULL, "Invalid position index");
+  assert(head != nullptr, "Invalid position index");
   return head->data();
 }
 
@@ -178,31 +184,13 @@ MallocSiteHashtableEntry* MallocSiteTable::new_entry(const NativeCallStack& key,
   return ::new (p) MallocSiteHashtableEntry(key, flags);
 }
 
-void MallocSiteTable::reset() {
-  for (int index = 0; index < table_size; index ++) {
-    MallocSiteHashtableEntry* head = _table[index];
-    _table[index] = NULL;
-    delete_linked_list(head);
-  }
-
-  _hash_entry_allocation_stack = NULL;
-  _hash_entry_allocation_site = NULL;
-}
-
-void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
-  MallocSiteHashtableEntry* p;
-  while (head != NULL) {
-    p = head;
-    head = (MallocSiteHashtableEntry*)head->next();
-    if (p != hash_entry_allocation_site()) {
-      delete p;
-    }
-  }
-}
-
 bool MallocSiteTable::walk_malloc_site(MallocSiteWalker* walker) {
-  assert(walker != NULL, "NuLL walker");
+  assert(walker != nullptr, "NuLL walker");
   return walk(walker);
+}
+
+static int qsort_helper(const void* a, const void* b) {
+  return *((uint16_t*)a) - *((uint16_t*)b);
 }
 
 void MallocSiteTable::print_tuning_statistics(outputStream* st) {
@@ -213,12 +201,17 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   // Number of captured call stack distribution
   int stack_depth_distribution[NMT_TrackingStackDepth + 1] = { 0 };
   // Chain lengths
-  int lengths[table_size] = { 0 };
+  uint16_t lengths[table_size] = { 0 };
+  // Unused buckets
+  int unused_buckets = 0;
 
   for (int i = 0; i < table_size; i ++) {
     int this_chain_length = 0;
     const MallocSiteHashtableEntry* head = _table[i];
-    while (head != NULL) {
+    if (head == nullptr) {
+      unused_buckets ++;
+    }
+    while (head != nullptr) {
       total_entries ++;
       this_chain_length ++;
       if (head->size() == 0) {
@@ -230,43 +223,21 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
       stack_depth_distribution[callstack_depth] ++;
       head = head->next();
     }
-    lengths[i] = this_chain_length;
+    lengths[i] = (uint16_t)MIN2(this_chain_length, USHRT_MAX);
   }
 
   st->print_cr("Malloc allocation site table:");
   st->print_cr("\tTotal entries: %d", total_entries);
-  st->print_cr("\tEmpty entries: %d (%2.2f%%)", empty_entries, ((float)empty_entries * 100) / total_entries);
+  st->print_cr("\tEmpty entries (no outstanding mallocs): %d (%2.2f%%)",
+                  empty_entries, ((float)empty_entries * 100) / total_entries);
   st->cr();
 
-  // We report the hash distribution (chain length distribution) of the n shortest chains
-  //  - under the assumption that this usually contains all lengths. Reporting threshold
-  //  is 20, and the expected avg chain length is 5..6 (see table size).
-  static const int chain_length_threshold = 20;
-  int chain_length_distribution[chain_length_threshold] = { 0 };
-  int over_threshold = 0;
-  int longest_chain_length = 0;
-  for (int i = 0; i < table_size; i ++) {
-    if (lengths[i] >= chain_length_threshold) {
-      over_threshold ++;
-    } else {
-      chain_length_distribution[lengths[i]] ++;
-    }
-    longest_chain_length = MAX2(longest_chain_length, lengths[i]);
-  }
+  qsort(lengths, table_size, sizeof(uint16_t), qsort_helper);
 
-  st->print_cr("Hash distribution:");
-  if (chain_length_distribution[0] == 0) {
-    st->print_cr("no empty buckets.");
-  } else {
-    st->print_cr("%d buckets are empty.", chain_length_distribution[0]);
-  }
-  for (int len = 1; len < MIN2(longest_chain_length + 1, chain_length_threshold); len ++) {
-    st->print_cr("%2d %s: %d.", len, (len == 1 ? "  entry" : "entries"), chain_length_distribution[len]);
-  }
-  if (longest_chain_length >= chain_length_threshold) {
-    st->print_cr(">=%2d entries: %d.", chain_length_threshold, over_threshold);
-  }
-  st->print_cr("most entries: %d.", longest_chain_length);
+  st->print_cr("Bucket chain length distribution:");
+  st->print_cr("unused:  %d", unused_buckets);
+  st->print_cr("longest: %d", lengths[table_size - 1]);
+  st->print_cr("median:  %d", lengths[table_size / 2]);
   st->cr();
 
   st->print_cr("Call stack depth distribution:");

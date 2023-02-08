@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,24 +28,24 @@
 #pragma alloca
 
 // no precompiled headers
-#include "jvm.h"
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
+#include "jvm.h"
 #include "jvmtifiles/jvmti.h"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
 #include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "misc_aix.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
-#include "os_share_aix.hpp"
+#include "os_posix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
@@ -60,6 +60,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osInfo.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/safefetch.hpp"
@@ -160,7 +161,6 @@ static void vmembk_print_on(outputStream* os);
 julong    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
-int       os::Aix::_page_size = -1;
 
 // -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
 int       os::Aix::_on_pase = -1;
@@ -470,7 +470,7 @@ static void query_multipage_support() {
         guarantee0(p != (void*) -1); // Should always work.
         const size_t real_pagesize = os::Aix::query_pagesize(p);
         if (real_pagesize != pagesize) {
-          trcVerbose("real page size (" SIZE_FORMAT_HEX ") differs.", real_pagesize);
+          trcVerbose("real page size (" SIZE_FORMAT_X ") differs.", real_pagesize);
         } else {
           can_use = true;
         }
@@ -523,7 +523,7 @@ void os::init_system_properties_values() {
 #endif
 #define EXTENSIONS_DIR  "/lib/ext"
 
-  // Buffer that fits several sprintfs.
+  // Buffer that fits several snprintfs.
   // Note that the space for the trailing null is provided
   // by the nulls included by the sizeof operator.
   const size_t bufsize =
@@ -571,13 +571,14 @@ void os::init_system_properties_values() {
 
   // Concatenate user and invariant part of ld_library_path.
   // That's +1 for the colon and +1 for the trailing '\0'.
-  char *ld_library_path = NEW_C_HEAP_ARRAY(char, strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1, mtInternal);
-  sprintf(ld_library_path, "%s%s" DEFAULT_LIBPATH, v, v_colon);
+  size_t pathsize = strlen(v) + 1 + sizeof(DEFAULT_LIBPATH) + 1;
+  char *ld_library_path = NEW_C_HEAP_ARRAY(char, pathsize, mtInternal);
+  os::snprintf_checked(ld_library_path, pathsize, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
   FREE_C_HEAP_ARRAY(char, ld_library_path);
 
   // Extensions directories.
-  sprintf(buf, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
+  os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
   FREE_C_HEAP_ARRAY(char, buf);
@@ -890,8 +891,10 @@ bool os::create_attached_thread(JavaThread* thread) {
   // and save the caller's signal mask
   PosixSignals::hotspot_sigmask(thread);
 
-  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread id: " UINTX_FORMAT ").",
-    os::current_thread_id(), (uintx) kernel_thread_id);
+  log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       os::current_thread_id(), (uintx) kernel_thread_id,
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
 
   return true;
 }
@@ -995,8 +998,6 @@ int os::current_process_id() {
 }
 
 // DLL functions
-
-const char* os::dll_file_extension() { return ".so"; }
 
 // This must be hard coded because it's the system's temporary
 // directory not the java application's temp directory, ala java.io.tmpdir.
@@ -1393,14 +1394,6 @@ void os::jvm_path(char *buf, jint buflen) {
   saved_jvm_path[sizeof(saved_jvm_path) - 1] = '\0';
 }
 
-void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
-  // no prefix required, not even "_"
-}
-
-void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
-  // no suffix required
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
@@ -1757,18 +1750,6 @@ static bool uncommit_mmaped_memory(char* addr, size_t size) {
   return rc;
 }
 
-int os::vm_page_size() {
-  // Seems redundant as all get out.
-  assert(os::Aix::page_size() != -1, "must call os::init");
-  return os::Aix::page_size();
-}
-
-// Aix allocates memory by pages.
-int os::vm_allocation_granularity() {
-  assert(os::Aix::page_size() != -1, "must call os::init");
-  return os::Aix::page_size();
-}
-
 #ifdef PRODUCT
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
@@ -1791,10 +1772,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   vmembk_t* const vmi = vmembk_find(addr);
@@ -1826,10 +1807,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   // Dynamically do different things for mmap/shmat.
@@ -1892,7 +1873,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 
@@ -2234,6 +2215,11 @@ extern "C" {
   }
 }
 
+static void set_page_size(size_t page_size) {
+  OSInfo::set_vm_page_size(page_size);
+  OSInfo::set_vm_allocation_granularity(page_size);
+}
+
 // This is called _before_ the most of global arguments have been parsed.
 void os::init(void) {
   // This is basic, we want to know if that ever changes.
@@ -2290,16 +2276,16 @@ void os::init(void) {
       // -XX:-Use64KPages.
       if (Use64KPages) {
         trcVerbose("64K page mode (faked for data segment)");
-        Aix::_page_size = 64*K;
+        set_page_size(64*K);
       } else {
         trcVerbose("4K page mode (Use64KPages=off)");
-        Aix::_page_size = 4*K;
+        set_page_size(4*K);
       }
     } else {
       // .. and not able to allocate 64k pages dynamically. Here, just
       // fall back to 4K paged mode and use mmap for everything.
       trcVerbose("4K page mode");
-      Aix::_page_size = 4*K;
+      set_page_size(4*K);
       FLAG_SET_ERGO(Use64KPages, false);
     }
   } else {
@@ -2308,14 +2294,14 @@ void os::init(void) {
     // (There is one special case where this may be false: EXTSHM=on.
     // but we decided to not support that mode).
     assert0(g_multipage_support.can_use_64K_pages);
-    Aix::_page_size = 64*K;
+    set_page_size(64*K);
     trcVerbose("64K page mode");
     FLAG_SET_ERGO(Use64KPages, true);
   }
 
   // For now UseLargePages is just ignored.
   FLAG_SET_ERGO(UseLargePages, false);
-  _page_sizes.add(Aix::_page_size);
+  _page_sizes.add(os::vm_page_size());
 
   // debug trace
   trcVerbose("os::vm_page_size %s", describe_pagesize(os::vm_page_size()));
@@ -2462,28 +2448,6 @@ void
 os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
                          JavaCallArguments* args, JavaThread* thread) {
   f(value, method, args, thread);
-}
-
-void os::print_statistics() {
-}
-
-bool os::message_box(const char* title, const char* message) {
-  int i;
-  fdStream err(defaultStream::error_fd());
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-  err.print_raw_cr(title);
-  for (i = 0; i < 78; i++) err.print_raw("-");
-  err.cr();
-  err.print_raw_cr(message);
-  for (i = 0; i < 78; i++) err.print_raw("=");
-  err.cr();
-
-  char buf[16];
-  // Prevent process from exiting upon "read error" without consuming all CPU
-  while (::read(0, buf, sizeof(buf)) <= 0) { ::sleep(100); }
-
-  return buf[0] == 'y' || buf[0] == 'Y';
 }
 
 // This code originates from JDK's sysOpen and open64_w

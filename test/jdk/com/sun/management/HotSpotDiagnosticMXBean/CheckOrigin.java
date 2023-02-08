@@ -62,7 +62,7 @@ public class CheckOrigin {
                 createJavaProcessBuilder(
                     "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
                     "-XX:+UseG1GC",  // this will cause MaxNewSize to be FLAG_SET_ERGO
-                    "-XX:+UseCodeAging",
+                    "-XX:+UseCodeCacheFlushing",
                     "-XX:+UseCerealGC",         // Should be ignored.
                     "-XX:Flags=" + flagsFile.getAbsolutePath(),
                     "-Djdk.attach.allowAttachSelf",
@@ -97,7 +97,7 @@ public class CheckOrigin {
             // Not set, so should be default
             checkOrigin("ManagementServer", Origin.DEFAULT);
             // Set on the command line
-            checkOrigin("UseCodeAging", Origin.VM_CREATION);
+            checkOrigin("UseCodeCacheFlushing", Origin.VM_CREATION);
             // Set in _JAVA_OPTIONS
             checkOrigin("CheckJNICalls", Origin.ENVIRON_VAR);
             // Set in JAVA_TOOL_OPTIONS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
+#include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SegmentedArrayFreeMemoryTask.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
@@ -145,7 +146,7 @@ class G1CollectedHeap : public CollectedHeap {
 private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
-  G1SegmentedArrayFreeMemoryTask* _free_segmented_array_memory_task;
+  G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
 
   WorkerThreads* _workers;
   G1CardTable* _card_table;
@@ -162,9 +163,9 @@ private:
   HeapRegionSet _humongous_set;
 
   // Young gen memory statistics before GC.
-  G1SegmentedArrayMemoryStats _young_gen_card_set_stats;
+  G1MonotonicArenaMemoryStats _young_gen_card_set_stats;
   // Collection set candidates memory statistics after GC.
-  G1SegmentedArrayMemoryStats _collection_set_candidates_card_set_stats;
+  G1MonotonicArenaMemoryStats _collection_set_candidates_card_set_stats;
 
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
@@ -229,26 +230,6 @@ private:
   // Helper for monitoring and management support.
   G1MonitoringSupport* _monitoring_support;
 
-  // Records whether the region at the given index is (still) a
-  // candidate for eager reclaim.  Only valid for humongous start
-  // regions; other regions have unspecified values.  Humongous start
-  // regions are initialized at start of collection pause, with
-  // candidates removed from the set as they are found reachable from
-  // roots or the young generation.
-  class HumongousReclaimCandidates : public G1BiasedMappedArray<bool> {
-  protected:
-    bool default_value() const override { return false; }
-  public:
-    void clear() { G1BiasedMappedArray<bool>::clear(); }
-    void set_candidate(uint region, bool value) {
-      set_by_index(region, value);
-    }
-    bool is_candidate(uint region) {
-      return get_by_index(region);
-    }
-  };
-
-  HumongousReclaimCandidates _humongous_reclaim_candidates;
   uint _num_humongous_objects; // Current amount of (all) humongous objects found in the heap.
   uint _num_humongous_reclaim_candidates; // Number of humongous object eager reclaim candidates.
 public:
@@ -256,13 +237,11 @@ public:
   uint num_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates; }
   bool has_humongous_reclaim_candidates() const { return _num_humongous_reclaim_candidates > 0; }
 
-  bool should_do_eager_reclaim() const;
-
   void set_humongous_stats(uint num_humongous_total, uint num_humongous_candidates);
 
   bool should_sample_collection_set_candidates() const;
-  void set_collection_set_candidates_stats(G1SegmentedArrayMemoryStats& stats);
-  void set_young_gen_card_set_stats(const G1SegmentedArrayMemoryStats& stats);
+  void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
+  void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
 private:
 
@@ -273,7 +252,7 @@ private:
   // (a) cause == _g1_humongous_allocation,
   // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent,
   // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent,
-  // (d) cause == _wb_conc_mark or _wb_breakpoint,
+  // (d) cause == _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
@@ -509,7 +488,7 @@ private:
                                       bool* succeeded);
   // Internal helpers used during full GC to split it up to
   // increase readability.
-  void abort_concurrent_cycle();
+  bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
   void prepare_heap_for_mutators();
@@ -544,6 +523,14 @@ public:
 
   // Run the given batch task using the workers.
   void run_batch_task(G1BatchedTask* cl);
+
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim.
+  // The returned value is a trade-off between granularity of work distribution and
+  // memory usage and maintenance costs of that table.
+  // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
+  // and so on seems to be such a good trade-off.
+  static uint get_chunks_per_region();
 
   G1Allocator* allocator() {
     return _allocator;
@@ -582,6 +569,12 @@ public:
 
   // Determines PLAB size for a given destination.
   inline size_t desired_plab_sz(G1HeapRegionAttr dest);
+  // Clamp the given PLAB word size to allowed values. Prevents humongous PLAB sizes
+  // for two reasons:
+  // * PLABs are allocated using a similar paths as oops, but should
+  //   never be in a humongous region
+  // * Allowing humongous PLABs needlessly churns the region free lists
+  inline size_t clamp_plab_size(size_t value) const;
 
   // Do anything common to GC's.
   void gc_prologue(bool full);
@@ -590,9 +583,6 @@ public:
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(HeapRegion* r) const;
 
-  // Modify the reclaim candidate set and test for presence.
-  // These are only valid for starts_humongous regions.
-  inline void set_humongous_reclaim_candidate(uint region, bool value);
   inline bool is_humongous_reclaim_candidate(uint region);
 
   // Remove from the reclaim candidate set.  Also remove from the
@@ -600,7 +590,7 @@ public:
   inline void set_humongous_is_live(oop obj);
 
   // Register the given region to be part of the collection set.
-  inline void register_humongous_region_with_region_attr(uint index);
+  inline void register_humongous_candidate_region_with_region_attr(uint index);
 
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
@@ -624,7 +614,7 @@ public:
   // for all regions.
   void verify_region_attr_remset_is_tracked() PRODUCT_RETURN;
 
-  void clear_prev_bitmap_for_region(HeapRegion* hr);
+  void clear_bitmap_for_region(HeapRegion* hr);
 
   bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
@@ -767,11 +757,11 @@ private:
   // active, true otherwise.
   // precondition: at safepoint on VM thread
   // precondition: !is_gc_active()
-  bool do_collection_pause_at_safepoint(double target_pause_time_ms);
+  bool do_collection_pause_at_safepoint();
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(double target_pause_time_ms);
+  void do_collection_pause_at_safepoint_helper();
 
   G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -797,6 +787,8 @@ private:
   G1RemSet* _rem_set;
   // Global card set configuration
   G1CardSetConfiguration _card_set_config;
+
+  G1MonotonicArenaFreePool _card_set_freelist_pool;
 
 public:
   // After a collection pause, reset eden and the collection set.
@@ -924,6 +916,9 @@ public:
   // The remembered set.
   G1RemSet* rem_set() const { return _rem_set; }
 
+  const G1MonotonicArenaFreePool* card_set_freelist_pool() const { return &_card_set_freelist_pool; }
+  G1MonotonicArenaFreePool* card_set_freelist_pool() { return &_card_set_freelist_pool; }
+
   inline G1GCPhaseTimes* phase_times() const;
 
   const G1CollectionSet* collection_set() const { return &_collection_set; }
@@ -938,7 +933,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  static void start_codecache_marking_cycle_if_inactive();
+  static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
+  static void finish_codecache_marking_cycle();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
@@ -1049,7 +1045,7 @@ public:
   inline bool is_in_cset(oop obj) const;
   inline bool is_in_cset(HeapWord* addr) const;
 
-  inline bool is_in_cset_or_humongous(const oop obj);
+  inline bool is_in_cset_or_humongous_candidate(const oop obj);
 
  private:
   // This array is used for a quick test on whether a reference points into
@@ -1091,6 +1087,7 @@ public:
   // Iterate over heap regions, in address order, terminating the
   // iteration early if the "do_heap_region" method returns "true".
   void heap_region_iterate(HeapRegionClosure* blk) const;
+  void heap_region_iterate(HeapRegionIndexClosure* blk) const;
 
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
@@ -1102,7 +1099,7 @@ public:
 
   // Calculate the region index of the given address. Given address must be
   // within the heap.
-  inline uint addr_to_region(HeapWord* addr) const;
+  inline uint addr_to_region(const void* addr) const;
 
   inline HeapWord* bottom_addr_for_region(uint index) const;
 
@@ -1146,14 +1143,12 @@ public:
                                  size_t length,
                                  uint worker_id) const;
 
-  // Returns the HeapRegion that contains addr. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing(const T addr) const;
+  // Returns the HeapRegion that contains addr. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing(const void* addr) const;
 
-  // Returns the HeapRegion that contains addr, or NULL if that is an uncommitted
-  // region. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing_or_null(const T addr) const;
+  // Returns the HeapRegion that contains addr, or nullptr if that is an uncommitted
+  // region. addr must not be nullptr.
+  inline HeapRegion* heap_region_containing_or_null(const void* addr) const;
 
   // A CollectedHeap is divided into a dense sequence of "blocks"; that is,
   // each address in the (reserved) heap is a member of exactly
@@ -1235,8 +1230,9 @@ public:
   bool check_young_list_empty();
 #endif
 
-  bool is_marked_next(oop obj) const;
+  bool is_marked(oop obj) const;
 
+  inline static bool is_obj_filler(const oop obj);
   // Determine if an object is dead, given the object and also
   // the region to which the object belongs.
   inline bool is_obj_dead(const oop obj, const HeapRegion* hr) const;
@@ -1244,16 +1240,14 @@ public:
   // Determine if an object is dead, given only the object itself.
   // This will find the region to which the object belongs and
   // then call the region version of the same function.
-
-  // Added if it is NULL it isn't dead.
-
+  // If obj is NULL it is not dead.
   inline bool is_obj_dead(const oop obj) const;
 
   inline bool is_obj_dead_full(const oop obj, const HeapRegion* hr) const;
   inline bool is_obj_dead_full(const oop obj) const;
 
-  // Mark the live object that failed evacuation in the prev bitmap.
-  void mark_evac_failure_object(oop obj) const;
+  // Mark the live object that failed evacuation in the bitmap.
+  void mark_evac_failure_object(uint worker_id, oop obj, size_t obj_size) const;
 
   G1ConcurrentMark* concurrent_mark() const { return _cm; }
 
@@ -1269,9 +1263,6 @@ public:
   // Unregister the given nmethod from the G1 heap.
   void unregister_nmethod(nmethod* nm) override;
 
-  // No nmethod flushing needed.
-  void flush_nmethod(nmethod* nm) override {}
-
   // No nmethod verification implemented.
   void verify_nmethod(nmethod* nm) override {}
 
@@ -1282,15 +1273,13 @@ public:
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
   void reset_hot_card_cache();
-  // Free up superfluous code root memory.
-  void purge_code_root_memory();
 
   // Rebuild the code root lists for each region
   // after a full GC.
   void rebuild_code_roots();
 
   // Performs cleaning of data structures after class unloading.
-  void complete_cleaning(BoolObjectClosure* is_alive, bool class_unloading_occurred);
+  void complete_cleaning(bool class_unloading_occurred);
 
   // Verification
 
@@ -1322,6 +1311,9 @@ public:
   G1HeapSummary create_g1_heap_summary();
   G1EvacSummary create_g1_evac_summary(G1EvacStats* stats);
 
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
+
   // Printing
 private:
   void print_heap_regions() const;
@@ -1336,10 +1328,6 @@ public:
 
   // Override
   void print_tracing_info() const override;
-
-  // The following two methods are helpful for debugging RSet issues.
-  void print_cset_rsets() PRODUCT_RETURN;
-  void print_all_rsets() PRODUCT_RETURN;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

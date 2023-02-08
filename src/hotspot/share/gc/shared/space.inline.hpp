@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
 
 #include "gc/shared/space.hpp"
 
-#include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 #if INCLUDE_SERIALGC
+#include "gc/serial/serialBlockOffsetTable.inline.hpp"
 #include "gc/serial/markSweep.inline.hpp"
 #endif
 
@@ -43,7 +43,8 @@ inline HeapWord* Space::block_start(const void* p) {
   return block_start_const(p);
 }
 
-inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
+#if INCLUDE_SERIALGC
+inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
   if (res != NULL) {
     _offsets.alloc_block(res, size);
@@ -54,7 +55,7 @@ inline HeapWord* OffsetTableContigSpace::allocate(size_t size) {
 // Because of the requirement of keeping "_offsets" up to date with the
 // allocations, we sequentialize these with a lock.  Therefore, best if
 // this is used for larger LAB allocations only.
-inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
+inline HeapWord* TenuredSpace::par_allocate(size_t size) {
   MutexLocker x(&_par_alloc_lock);
   // This ought to be just "allocate", because of the lock above, but that
   // ContiguousSpace::allocate asserts that either the allocating thread
@@ -72,11 +73,9 @@ inline HeapWord* OffsetTableContigSpace::par_allocate(size_t size) {
 }
 
 inline HeapWord*
-OffsetTableContigSpace::block_start_const(const void* p) const {
+TenuredSpace::block_start_const(const void* p) const {
   return _offsets.block_start(p);
 }
-
-#if INCLUDE_SERIALGC
 
 class DeadSpacer : StackObj {
   size_t _allowed_deadspace_words;
@@ -157,7 +156,7 @@ inline void CompactibleSpace::clear_empty_region(SpaceType* space) {
   // Reset space after compaction is complete
   space->reset_after_compaction();
   // We do this clear, below, since it has overloaded meanings for some
-  // space subtypes.  For example, OffsetTableContigSpace's that were
+  // space subtypes.  For example, TenuredSpace's that were
   // compacted into will have had their offset table thresholds updated
   // continuously, but those that weren't need to have their thresholds
   // re-initialized.  Also mangles unused area for debugging.

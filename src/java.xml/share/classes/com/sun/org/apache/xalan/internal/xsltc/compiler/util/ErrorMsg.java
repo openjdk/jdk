@@ -33,7 +33,7 @@ import jdk.xml.internal.SecuritySupport;
  * @author G. Todd Miller
  * @author Erwin Bolwidt <ejb@klomp.org>
  * @author Morten Jorgensen
- * @LastModified: Jan 2022
+ * @LastModified: Jul 2022
  */
 public final class ErrorMsg {
 
@@ -169,7 +169,7 @@ public final class ErrorMsg {
     public static final String OUTLINE_ERR_METHOD_TOO_BIG =
                                             "OUTLINE_ERR_METHOD_TOO_BIG";
 
-    public static final String DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TEMPLATES_ERR";
+    public static final String DESERIALIZE_TRANSLET_ERR = "DESERIALIZE_TRANSLET_ERR";
 
     public static final String XPATH_LIMIT = "XPATH_LIMIT";
     public static final String XPATH_GROUP_LIMIT = "XPATH_GROUP_LIMIT";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,6 @@
                                                                             \
   notproduct(bool, PrintIdeal, false,                                       \
           "Print ideal graph before code generation")                       \
-                                                                            \
-  notproduct(uintx, PrintIdealIndentThreshold, 0,                           \
-          "A depth threshold of ideal graph. Indentation is disabled "      \
-          "when users attempt to dump an ideal graph deeper than it.")      \
                                                                             \
   notproduct(bool, PrintOpto, false,                                        \
           "Print compiler2 attempts")                                       \
@@ -416,6 +412,9 @@
           "Set level of loop optimization for tier 1 compiles")             \
           range(5, 43)                                                      \
                                                                             \
+  product(bool, OptimizeUnstableIf, true, DIAGNOSTIC,                       \
+          "Optimize UnstableIf traps")                                      \
+                                                                            \
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
@@ -619,9 +618,12 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(bool, VerifyIterativeGVN, false,                                  \
-          "Verify Def-Use modifications during sparse Iterative Global "    \
-          "Value Numbering")                                                \
+  develop(uint, VerifyIterativeGVN, 0,                                      \
+          "Verify Iterative Global Value Numbering"                         \
+          "=XY, with Y: verify Def-Use modifications during IGVN"           \
+          "          X: verify that type(n) == n->Value() after IGVN"       \
+          "X and Y in 0=off; 1=on")                                         \
+          constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   notproduct(bool, TraceCISCSpill, false,                                   \
           "Trace allocators use of cisc spillable instructions")            \
@@ -633,13 +635,6 @@
   develop(intx, FreqCountInvocations,  1,                                   \
           "Scaling factor for branch frequencies (deprecated)")             \
           range(1, max_intx)                                                \
-                                                                            \
-  product(intx, AliasLevel,     3,                                          \
-          "(Deprecated) 0 for no aliasing, "                                \
-          "1 for oop/field/static/array split, "                            \
-          "2 for class split, 3 for unique instances")                      \
-          range(0, 3)                                                       \
-          constraint(AliasLevelConstraintFunc,AfterErgo)                    \
                                                                             \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \

@@ -36,6 +36,16 @@ import jdk.incubator.vector.VectorSpecies;
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeFill compiler.vectorapi.TestLoopStoreVector
  */
 
+/*
+ * @test
+ * @bug 8288180
+ * @summary VectorPhase must ensure that SafePointNode's memory input is MergeMemNode, required for GraphKit
+ * @modules jdk.incubator.vector
+ *
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+OptimizeFill -XX:+StressReflectiveCode compiler.vectorapi.TestLoopStoreVector
+ */
+
+
 public class TestLoopStoreVector {
     static final VectorSpecies<Integer> SPECIESi = IntVector.SPECIES_PREFERRED;
     static final VectorSpecies<Long> SPECIESl = LongVector.SPECIES_PREFERRED;

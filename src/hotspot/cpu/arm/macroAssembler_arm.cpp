@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -950,13 +950,6 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
-void MacroAssembler::eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
-                                 RegisterOrConstant size_expression, Label& slow_case) {
-  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->eden_allocate(this, obj, obj_end, tmp1, tmp2, size_expression, slow_case);
-}
-
-// Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void MacroAssembler::tlab_allocate(Register obj, Register obj_end, Register tmp1,
                                  RegisterOrConstant size_expression, Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -977,7 +970,7 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
 
 void MacroAssembler::arm_stack_overflow_check(int frame_size_in_bytes, Register tmp) {
   // Version of AbstractAssembler::generate_stack_overflow_check optimized for ARM
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
 
   sub_slow(tmp, SP, StackOverflow::stack_shadow_zone_size());
   strb(R0, Address(tmp));
@@ -1291,20 +1284,57 @@ void MacroAssembler::resolve_jobject(Register value,
                                      Register tmp1,
                                      Register tmp2) {
   assert_different_registers(value, tmp1, tmp2);
-  Label done, not_weak;
-  cbz(value, done);             // Use NULL as-is.
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1u);
-  tbz(value, 0, not_weak);      // Test for jweak tag.
+  Label done, tagged, weak_tagged;
 
+  cbz(value, done);           // Use NULL as-is.
+  tst(value, JNIHandles::tag_mask); // Test for tag.
+  b(tagged, ne);
+
+  // Resolve local handle
+  access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(tagged);
+  tst(value, JNIHandles::TypeTag::weak_global); // Test for weak tag.
+  b(weak_tagged, ne);
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+  b(done);
+
+  bind(weak_tagged);
   // Resolve jweak.
   access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
-                 Address(value, -JNIHandles::weak_tag_value), value, tmp1, tmp2, noreg);
-  b(done);
-  bind(not_weak);
-  // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_NATIVE,
-                 Address(value, 0), value, tmp1, tmp2, noreg);
+                 Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2, noreg);
   verify_oop(value);
+
+  bind(done);
+}
+
+void MacroAssembler::resolve_global_jobject(Register value,
+                                     Register tmp1,
+                                     Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  Label done;
+
+  cbz(value, done);           // Use NULL as-is.
+
+#ifdef ASSERT
+  {
+    Label valid_global_tag;
+    tst(value, JNIHandles::TypeTag::global); // Test for global tag.
+    b(valid_global_tag, ne);
+    stop("non global jobject using resolve_global_jobject");
+    bind(valid_global_tag);
+  }
+#endif
+
+  // Resolve global handle
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2, noreg);
+  verify_oop(value);
+
   bind(done);
 }
 
@@ -1650,7 +1680,7 @@ void MacroAssembler::store_heap_oop_null(Address obj, Register new_val, Register
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     Address src, Register dst, Register tmp1, Register tmp2, Register tmp3) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::load_at(this, decorators, type, dst, src, tmp1, tmp2, tmp3);
@@ -1662,7 +1692,7 @@ void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  decorators = AccessInternal::decorator_fixup(decorators);
+  decorators = AccessInternal::decorator_fixup(decorators, type);
   bool as_raw = (decorators & AS_RAW) != 0;
   if (as_raw) {
     bs->BarrierSetAssembler::store_at(this, decorators, type, obj, new_val, tmp1, tmp2, tmp3, is_null);

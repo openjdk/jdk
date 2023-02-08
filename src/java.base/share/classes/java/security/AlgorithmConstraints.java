@@ -57,14 +57,14 @@ public interface AlgorithmConstraints {
      *
      * @param primitives a set of cryptographic primitives
      * @param algorithm the algorithm name
-     * @param parameters the algorithm parameters, or null if no additional
-     *     parameters
+     * @param parameters the algorithm parameters, or {@code null}
+     *     if no additional parameters
      *
-     * @return true if the algorithm is permitted and can be used for all
-     *     the specified cryptographic primitives
+     * @return {@code true} if the algorithm is permitted and can be used for
+     *     all the specified cryptographic primitives
      *
-     * @throws IllegalArgumentException if primitives or algorithm is null
-     *     or empty
+     * @throws IllegalArgumentException if primitives or algorithm is
+     *     {@code null} or empty
      */
     boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters);
@@ -78,11 +78,11 @@ public interface AlgorithmConstraints {
      * @param primitives a set of cryptographic primitives
      * @param key the key
      *
-     * @return true if the key can be used for all the specified
+     * @return {@code true} if the key can be used for all the specified
      *     cryptographic primitives
      *
-     * @throws IllegalArgumentException if primitives is null or empty,
-     *     or the key is null
+     * @throws IllegalArgumentException if primitives is {@code null}
+     * or empty, or the key is {@code null}
      */
     boolean permits(Set<CryptoPrimitive> primitives, Key key);
 
@@ -93,14 +93,14 @@ public interface AlgorithmConstraints {
      * @param primitives a set of cryptographic primitives
      * @param algorithm the algorithm name
      * @param key the key
-     * @param parameters the algorithm parameters, or null if no additional
-     *     parameters
+     * @param parameters the algorithm parameters, or {@code null}
+     *     if no additional parameters
      *
-     * @return true if the key and the algorithm can be used for all the
+     * @return {@code true} if the key and the algorithm can be used for all the
      *     specified cryptographic primitives
      *
-     * @throws IllegalArgumentException if primitives or algorithm is null
-     *     or empty, or the key is null
+     * @throws IllegalArgumentException if primitives or algorithm is
+     *     {@code null} or empty, or the key is {@code null}
      */
     boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters);

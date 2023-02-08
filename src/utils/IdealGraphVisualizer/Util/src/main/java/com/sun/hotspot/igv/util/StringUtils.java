@@ -58,7 +58,7 @@ public class StringUtils {
                             str.append("&quot;");
                             break;
                         case '\'':
-                            str.append("&apos;");
+                            str.append("&#39;");
                             break;
                         default:
                             assert false;
@@ -117,7 +117,7 @@ public class StringUtils {
      * Rank a match of a query in a word. Full matches of a word rank highest,
      * followed by partial matches at the word start, followed by the rest of
      * matches in increasing size of the partially matched word, for example:
-     *
+     * <p>
      *   rank("5", "5")   = 1 (full match)
      *   rank("5", "554") = 2 (start match)
      *   rank("5", "25")  = 3 (middle match with excess 1)

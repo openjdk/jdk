@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class RSAPSSSignature extends SignatureSpi {
     private static final byte[] EIGHT_BYTES_OF_ZEROS = new byte[8];
 
     private static final Hashtable<KnownOIDs, Integer> DIGEST_LENGTHS =
-        new Hashtable<KnownOIDs, Integer>();
+            new Hashtable<>();
     static {
         DIGEST_LENGTHS.put(KnownOIDs.SHA_1, 20);
         DIGEST_LENGTHS.put(KnownOIDs.SHA_224, 28);
@@ -113,7 +113,7 @@ public class RSAPSSSignature extends SignatureSpi {
     private SecureRandom random;
 
     /**
-     * Construct a new RSAPSSSignatur with arbitrary digest algorithm
+     * Construct a new RSAPSSSignature with arbitrary digest algorithm
      */
     public RSAPSSSignature() {
         this.md = null;
@@ -169,14 +169,13 @@ public class RSAPSSSignature extends SignatureSpi {
             // key with null PSS parameters means no restriction
             return true;
         }
-        if (!(keyParams instanceof PSSParameterSpec)) {
+        if (!(keyParams instanceof PSSParameterSpec pssKeyParams)) {
             return false;
         }
         // nothing to compare yet, defer the check to when sigParams is set
         if (sigParams == null) {
             return true;
         }
-        PSSParameterSpec pssKeyParams = (PSSParameterSpec) keyParams;
         // first check the salt length requirement
         if (pssKeyParams.getSaltLength() > sigParams.getSaltLength()) {
             return false;
@@ -291,12 +290,11 @@ public class RSAPSSSignature extends SignatureSpi {
             throw new InvalidAlgorithmParameterException
                 ("Parameters cannot be null");
         }
-        if (!(p instanceof PSSParameterSpec)) {
+        if (!(p instanceof PSSParameterSpec params)) {
             throw new InvalidAlgorithmParameterException
                 ("parameters must be type PSSParameterSpec");
         }
         // no need to validate again if same as current signature parameters
-        PSSParameterSpec params = (PSSParameterSpec) p;
         if (params == this.sigParams) return params;
 
         RSAKey key = (this.privKey == null? this.pubKey : this.privKey);
@@ -378,7 +376,7 @@ public class RSAPSSSignature extends SignatureSpi {
      * Reset the message digest if it is not already reset.
      */
     private void resetDigest() {
-        if (digestReset == false) {
+        if (!digestReset) {
             this.md.reset();
             digestReset = true;
         }
@@ -429,8 +427,7 @@ public class RSAPSSSignature extends SignatureSpi {
         byte[] mHash = getDigestValue();
         try {
             byte[] encoded = encodeSignature(mHash);
-            byte[] encrypted = RSACore.rsa(encoded, privKey, true);
-            return encrypted;
+            return RSACore.rsa(encoded, privKey, true);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
         } catch (IOException e) {

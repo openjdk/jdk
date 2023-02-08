@@ -85,8 +85,8 @@ class NativeInstruction {
   // Bcrl is currently the only accepted instruction here.
   bool is_jump();
 
-  // We use an illtrap for marking a method as not_entrant or zombie.
-  bool is_sigill_zombie_not_entrant();
+  // We use an illtrap for marking a method as not_entrant.
+  bool is_sigill_not_entrant();
 
   bool is_safepoint_poll() {
     // Is the current instruction a POTENTIAL read access to the polling page?
@@ -657,13 +657,13 @@ class NativeGeneralJump: public NativeInstruction {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { Unimplemented(); return false; }
-  int displacement() const { Unimplemented(); return 0; }
+  int displacement() const { return 0; }
   void patch(jint diff) { Unimplemented(); }
   void make_deopt() { Unimplemented(); }
 };
 
 inline NativePostCallNop* nativePostCallNop_at(address address) {
-  Unimplemented();
+  // Unimplemented();
   return NULL;
 }
 
@@ -675,7 +675,7 @@ public:
   void  verify() { Unimplemented(); }
 
   static bool is_deopt_at(address instr) {
-    Unimplemented();
+    // Unimplemented();
     return false;
   }
 

@@ -84,6 +84,7 @@ hotspot_containers_extended = \
 
 hotspot_vector_1 = \
   compiler/c2/cr6340864 \
+  compiler/c2/irTests \
   compiler/codegen \
   compiler/loopopts/superword \
   compiler/vectorapi \
@@ -422,6 +423,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/jcmd/JCmdTestStaticDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestDynamicDump.java \
  -runtime/cds/appcds/jcmd/JCmdTestFileSafety.java \
+ -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
@@ -435,6 +437,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/LambdaVerificationFailedDuringDump.java \
  -runtime/cds/appcds/LambdaWithJavaAgent.java \
+ -runtime/cds/appcds/LambdaWithUseImplMethodHandle.java \
  -runtime/cds/appcds/LambdaWithOldClass.java \
  -runtime/cds/appcds/LongClassListPath.java \
  -runtime/cds/appcds/LotsOfClasses.java \
@@ -687,9 +690,6 @@ vmTestbase_vm_gc_juggle = \
 # GC Locker
 vmTestbase_vm_gc_locker = \
   vmTestbase/gc/lock \
-  vmTestbase/gc/gctests/mallocWithGC1/mallocWithGC1.java \
-  vmTestbase/gc/gctests/mallocWithGC2/mallocWithGC2.java \
-  vmTestbase/gc/gctests/mallocWithGC3/mallocWithGC3.java \
   vmTestbase/gc/gctests/nativeGC01/nativeGC01.java \
   vmTestbase/gc/gctests/nativeGC02/nativeGC02.java \
   vmTestbase/gc/gctests/nativeGC03/nativeGC03.java \

@@ -197,9 +197,9 @@ public class Script  {
         }
 
         @Override
-        public boolean write(Writer writer, boolean atNewline) throws IOException {
+        public boolean write(Writer writer, String newline, boolean atNewline) throws IOException {
             String s = sb.toString();
-            writer.write(s.replace("\n", DocletConstants.NL));
+            writer.write(s.replace("\n", newline));
             return s.endsWith("\n");
         }
 

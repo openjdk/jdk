@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  *
  */
 
+#include "jni.h"
+#include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "unittest.hpp"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #ifdef __APPLE__
-#  include <dlfcn.h>
+#include <dlfcn.h>
 #endif
-
 #ifdef _WIN32
 #include <windows.h>
 #else
 #include <pthread.h>
 #endif
-
-#include "jni.h"
-#include "unittest.hpp"
-
-#include "runtime/os.hpp"
-#include "runtime/thread.inline.hpp"
 
 // Default value for -new-thread option: true on AIX because we run into
 // problems when attempting to initialize the JVM on the primordial thread.
@@ -193,7 +192,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  char** new_argv = (char**) malloc(sizeof(char*) * argc);
+  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
   int new_argc = 0;
 
   int i = 0;
@@ -231,7 +230,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   bool is_vmassert_test = false;
   bool is_othervm_test = false;
   // death tests facility is used for both regular death tests, other vm and vmassert tests
-  if (::testing::internal::GTEST_FLAG(internal_run_death_test).length() > 0) {
+  if (::testing::GTEST_FLAG(internal_run_death_test).length() > 0) {
     // when we execute death test, filter value equals to test name
     const char* test_name = ::testing::GTEST_FLAG(filter).c_str();
     const char* const othervm_suffix = "_other_vm"; // TEST_OTHER_VM
@@ -288,6 +287,8 @@ static void runUnitTestsInner(int argc, char** argv) {
   }
 
   int result = RUN_ALL_TESTS();
+
+  ALLOW_C_FUNCTION(::free, ::free(argv);)
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have

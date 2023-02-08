@@ -63,10 +63,10 @@ define_pd_global(intx, InlineSmallCode,          1000);
 // Java_java_net_SocketOutputStream_socketWrite0() uses a 64k buffer on the
 // stack if compiled for unix and LP64. To pass stack overflow tests we need
 // 20 shadow pages.
-#define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(7) DEBUG_ONLY(+4))
+#define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(8) DEBUG_ONLY(+4))
 // For those clients that do not use write socket, we allow
 // the min range value to be below that of the default
-#define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(7) DEBUG_ONLY(+4))
+#define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(8) DEBUG_ONLY(+4))
 #else
 #define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
 #define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
@@ -106,13 +106,13 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
-  product(intx, UseSSE, 99,                                                 \
+  product(int, UseSSE, 4,                                                   \
           "Highest supported SSE instructions set on x86/x64")              \
-          range(0, 99)                                                      \
+          range(0, 4)                                                       \
                                                                             \
-  product(intx, UseAVX, 3,                                                  \
+  product(int, UseAVX, 3,                                                   \
           "Highest supported AVX instructions set on x86/x64")              \
-          range(0, 99)                                                      \
+          range(0, 3)                                                       \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \
           "Control whether Knights platform setting should be used")        \

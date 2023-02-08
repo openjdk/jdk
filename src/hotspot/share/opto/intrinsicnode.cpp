@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,21 @@ Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return remove_dead_region(phase, can_reshape) ? this : NULL;
 }
 
+uint VectorizedHashCodeNode::match_edge(uint idx) const {
+  // Do not match memory edge.
+  return idx >= 2 && idx <=  5; // VectorizedHashCodeNode (Binary ary1 cnt1) (Binary result bt)
+}
+
+Node* VectorizedHashCodeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  return remove_dead_region(phase, can_reshape) ? this : NULL;
+}
+
+const Type* VectorizedHashCodeNode::Value(PhaseGVN* phase) const {
+  if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
+  return bottom_type();
+}
+
+
 //=============================================================================
 //------------------------------match_edge-------------------------------------
 // Do not match memory edge
@@ -165,7 +180,6 @@ Node* compress_expand_identity(PhaseGVN* phase, Node* n) {
   if(phase->type(n->in(2))->higher_equal(TypeInteger::zero(bt))) return n->in(2);
   // compress(x, -1) == x, expand(x, -1) == x
   if(phase->type(n->in(2))->higher_equal(TypeInteger::minus_1(bt))) return n->in(1);
-  return n;
   // expand(-1, x) == x
   if(n->Opcode() == Op_ExpandBits &&
      phase->type(n->in(1))->higher_equal(TypeInteger::minus_1(bt))) return n->in(2);
@@ -259,7 +273,9 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     } else {
     // Case 3) Mask value range only includes +ve values.
       assert(mask_type->lo_as_long() >= 0, "");
-      mask_max_bw = max_bw - count_leading_zeros(mask_type->hi_as_long());
+      jlong clz = count_leading_zeros(mask_type->hi_as_long());
+      clz = bt == T_INT ? clz - 32 : clz;
+      mask_max_bw = max_bw - clz;
     }
     if ( opc == Op_CompressBits) {
       lo = mask_max_bw == max_bw ? lo : 0L;
@@ -270,6 +286,8 @@ static const Type* bitshuffle_value(const TypeInteger* src_type, const TypeInteg
     } else {
       assert(opc == Op_ExpandBits, "");
       jlong max_mask = mask_type->hi_as_long();
+      // Since mask here a range and not a constant value, hence being
+      // conservative in determining the value range of result.
       lo = mask_type->lo_as_long() >= 0L ? 0L : lo;
       hi = mask_type->lo_as_long() >= 0L ? max_mask : hi;
     }

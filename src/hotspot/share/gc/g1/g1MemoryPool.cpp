@@ -26,6 +26,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1MemoryPool.hpp"
 #include "gc/g1/heapRegion.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      const char* name,

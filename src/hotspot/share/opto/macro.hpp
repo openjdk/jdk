@@ -58,7 +58,6 @@ public:
     _igvn.register_new_node_with_optimizer(n);
     return n;
   }
-  void set_eden_pointers(Node* &eden_top_adr, Node* &eden_end_adr);
   Node* make_load( Node* ctl, Node* mem, Node* base, int offset,
                    const Type* value_type, BasicType bt);
   Node* make_store(Node* ctl, Node* mem, Node* base, int offset,
@@ -222,6 +221,7 @@ public:
   Node* intcon(jint con)        const { return _igvn.intcon(con); }
   Node* longcon(jlong con)      const { return _igvn.longcon(con); }
   Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
+  Node* zerocon(BasicType bt)   const { return _igvn.zerocon(bt); }
   Node* top()                   const { return C->top(); }
 
   Node* prefetch_allocation(Node* i_o,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.CopyOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
@@ -112,12 +113,14 @@ public class IOUtils {
         }
     }
 
-    public static void copyRecursive(Path src, Path dest) throws IOException {
-        copyRecursive(src, dest, List.of());
+    public static void copyRecursive(Path src, Path dest, CopyOption... options)
+            throws IOException {
+        copyRecursive(src, dest, List.of(), options);
     }
 
     public static void copyRecursive(Path src, Path dest,
-            final List<String> excludes) throws IOException {
+            final List<String> excludes, CopyOption... options)
+            throws IOException {
         Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult preVisitDirectory(final Path dir,
@@ -134,7 +137,7 @@ public class IOUtils {
             public FileVisitResult visitFile(final Path file,
                     final BasicFileAttributes attrs) throws IOException {
                 if (!excludes.contains(file.toFile().getName())) {
-                    Files.copy(file, dest.resolve(src.relativize(file)));
+                    Files.copy(file, dest.resolve(src.relativize(file)), options);
                 }
                 return FileVisitResult.CONTINUE;
             }

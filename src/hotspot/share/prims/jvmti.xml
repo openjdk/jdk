@@ -1263,12 +1263,10 @@ jvmtiEnv *jvmti;
             have this state flag set instead of <code>JVMTI_THREAD_STATE_SLEEPING</code>.
           </constant>
           <constant id="JVMTI_THREAD_STATE_SUSPENDED" num="0x100000">
-            Thread suspended.
-            <code>java.lang.Thread.suspend()</code>
-            or a <jvmti/> suspend function
-            (such as <functionlink id="SuspendThread"></functionlink>)
-            has been called on the thread. If this bit
-            is set, the other bits refer to the thread state before suspension.
+            Thread is suspended by a suspend function
+            (such as <functionlink id="SuspendThread"></functionlink>).
+            If this bit is set, the other bits refer to the thread state before
+            suspension.
           </constant>
           <constant id="JVMTI_THREAD_STATE_INTERRUPTED" num="0x200000">
             Thread has been interrupted.
@@ -1743,7 +1741,7 @@ jvmtiEnv *jvmti;
       <origin>new</origin>
       <capabilities>
         <required id="can_suspend"></required>
-        <required id="can_support_virtual_threads"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
       </capabilities>
       <parameters>
         <param id="except_count">
@@ -1780,7 +1778,6 @@ jvmtiEnv *jvmti;
         Any threads currently suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThread"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution;
         all other threads are unaffected.
       </description>
@@ -1815,7 +1812,6 @@ jvmtiEnv *jvmti;
         Any thread suspended through
         a <jvmti/> suspend function (eg.
         <functionlink id="SuspendThreadList"></functionlink>)
-        or <code>java.lang.Thread.suspend()</code>
         will resume execution.
       </description>
       <origin>jvmdi</origin>
@@ -1871,7 +1867,7 @@ jvmtiEnv *jvmti;
       <origin>new</origin>
       <capabilities>
         <required id="can_suspend"></required>
-        <required id="can_support_virtual_threads"></required>
+        <required id="can_support_virtual_threads">Can support virtual threads</required>
       </capabilities>
       <parameters>
         <param id="except_count">
@@ -5835,6 +5831,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5877,6 +5875,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5888,6 +5889,8 @@ class C2 extends C1 implements I2 {
         frames.  This function can retrieve the "<code>this</code>" object from
         native method frames, whereas <code>GetLocalObject()</code> would
         return <code>JVMTI_ERROR_OPAQUE_FRAME</code> in those cases.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>new</origin>
       <capabilities>
@@ -5917,6 +5920,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_INVALID_SLOT">
           If the specified frame is a static method frame.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
     <function id="GetLocalInt" num="22">
@@ -5926,6 +5932,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -5970,6 +5978,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -5978,6 +5989,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6019,6 +6032,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6027,6 +6043,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6068,6 +6086,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6076,6 +6097,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to retrieve the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6117,6 +6140,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Not a visible frame
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6125,6 +6151,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>Object</code> or a subclass of <code>Object</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6176,6 +6204,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6186,6 +6217,8 @@ class C2 extends C1 implements I2 {
         variable whose type is <code>int</code>,
         <code>short</code>, <code>char</code>, <code>byte</code>, or
         <code>boolean</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6235,6 +6268,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6243,6 +6279,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>long</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6289,6 +6327,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6297,6 +6338,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>float</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6343,6 +6386,9 @@ class C2 extends C1 implements I2 {
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
+        </error>
       </errors>
     </function>
 
@@ -6351,6 +6397,8 @@ class C2 extends C1 implements I2 {
       <description>
         This function can be used to set the value of a local
         variable whose type is <code>double</code>.
+        <p/>
+        The specified thread must be suspended or must be the current thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -6396,6 +6444,9 @@ class C2 extends C1 implements I2 {
           The thread is a virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
+        </error>
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread was not suspended and was not the current thread.
         </error>
       </errors>
     </function>
@@ -10611,7 +10662,7 @@ myInit() {
           <functionlink id="ResumeAllVirtualThreads"></functionlink>,
           and the following events can be enabled:
           <eventlink id="VirtualThreadStart"></eventlink>,
-          <eventlink id="VirtualThreadEnd"></eventlink>,
+          <eventlink id="VirtualThreadEnd"></eventlink>.
         </description>
       </capabilityfield>
     </capabilitiestypedef>
@@ -12892,15 +12943,21 @@ myInit() {
          id="ThreadStart" const="JVMTI_EVENT_THREAD_START" num="52" phase="start">
     <description>
       A thread start event is generated by a new thread before its initial
-      method executes. The capability
-      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
-      <code>can_support_virtual_threads</code></internallink> determines
-      if a new virtual thread generates a <code>ThreadStart</code> event or
-      a <eventlink id="VirtualThreadStart"/> event. If disabled, a virtual
-      thread generates a <code>ThreadStart</code> event. If enabled, a virtual
-      thread generates a <code>VirtualThreadStart</code> event.
+      method executes.
       <p/>
-      A thread may be listed in the array returned by
+      This event is generated by platform threads. It is also generated by
+      virtual threads when the capability
+      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
+      <code>can_support_virtual_threads</code></internallink> is not enabled.
+      Agents without support for virtual threads that enable this event will
+      therefore be notified by all newly started threads.
+      <p/>
+      If the capability <code>can_support_virtual_threads</code> is enabled then
+      this event is not generated by virtual threads. Agents with support for
+      virtual threads can enable <eventlink id="VirtualThreadStart"></eventlink>
+      to be notified by newly started virtual threads.
+      <p/>
+      A platform thread may be listed in the array returned by
       <functionlink id="GetAllThreads"></functionlink>
       before its thread start event is generated.
       It is possible for other events to be generated
@@ -12934,21 +12991,26 @@ myInit() {
     <description>
       A thread end event is generated by a terminating thread after its
       initial method has finished execution.
-      The capability
-      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
-      <code>can_support_virtual_threads</code></internallink> determines
-      if a terminating virtual thread generates a <code>ThreadEnd</code>
-      event or a <eventlink id="VirtualThreadEnd"/> event. If disabled, a
-      virtual thread generates a <code>ThreadEnd</code> event. If enabled,
-      a virtual thread generates a <code>VirtualThreadEnd</code> event.
       <p/>
-      A thread may be listed in the array returned by
+      This event is generated by platform threads. It is also generated by
+      virtual threads when the capability
+      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
+      <code>can_support_virtual_threads</code></internallink> is not enabled.
+      Agents without support for virtual threads that enable this event for
+      all threads will therefore be notified by all terminating threads.
+      <p/>
+      If the capability <code>can_support_virtual_threads</code> is enabled then
+      this event is not generated by virtual threads. Agents with support for
+      virtual threads can enable <eventlink id="VirtualThreadEnd"></eventlink>
+      to be notified by terminating virtual threads.
+      <p/>
+      A platform thread may be listed in the array returned by
       <functionlink id="GetAllThreads"></functionlink>
       after its thread end event is generated.
       No events are generated on a thread
       after its thread end event.
       <p/>
-      The event is sent on the dying <paramlink id="thread"></paramlink>.
+      The event is sent on the terminating <paramlink id="thread"></paramlink>.
     </description>
     <origin>jvmdi</origin>
     <capabilities>
@@ -12980,7 +13042,7 @@ myInit() {
       <p/>
       A virtual thread start event is generated before its initial method executes.
       <p/>
-      The event is sent on the <paramlink id="virtual_thread"></paramlink>.
+      The event is sent on the newly started <paramlink id="virtual_thread"></paramlink>.
     </description>
     <origin>new</origin>
     <capabilities>
@@ -13013,7 +13075,7 @@ myInit() {
       <p/>
       A virtual thread end event is generated after its initial method has finished execution.
       <p/>
-      The event is sent on the <paramlink id="virtual_thread"></paramlink>.
+      The event is sent on the terminating <paramlink id="virtual_thread"></paramlink>.
     </description>
     <origin>new</origin>
     <capabilities>

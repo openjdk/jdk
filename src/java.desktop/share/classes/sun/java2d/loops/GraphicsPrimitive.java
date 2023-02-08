@@ -368,7 +368,7 @@ public abstract class GraphicsPrimitive {
                 System.err.print("GraphicsPrimitive logging ");
                 if ((traceflags & GraphicsPrimitive.TRACELOG) != 0) {
                     System.err.println("enabled");
-                    System.err.print("GraphicsPrimitive timetamps ");
+                    System.err.print("GraphicsPrimitive timestamps ");
                     if ((traceflags & GraphicsPrimitive.TRACETIMESTAMP) != 0) {
                         System.err.println("enabled");
                     } else {

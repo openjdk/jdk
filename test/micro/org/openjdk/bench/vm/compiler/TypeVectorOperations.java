@@ -31,8 +31,11 @@ import java.util.Random;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
+@Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 3)
 public abstract class TypeVectorOperations {
-    @Param({"512","1024", "2048"})
+    @Param({"512", /* "1024", */ "2048"})
     public int COUNT;
 
     private byte[] bytesA;
@@ -363,14 +366,30 @@ public abstract class TypeVectorOperations {
         }
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    public void cmoveD() {
+        for (int i = 0; i < COUNT; i++) {
+            resD[i] = resD[i] < doubles[i] ? resD[i] : doubles[i];
+        }
+    }
+
+    @Benchmark
+    @Fork(jvmArgsPrepend = {"-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov"})
+    public void cmoveF() {
+        for (int i = 0; i < COUNT; i++) {
+            resF[i] = resF[i] < floats[i] ? resF[i] : floats[i];
+        }
+    }
+
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:+UseSuperWord"
     })
     public static class TypeVectorOperationsSuperWord extends TypeVectorOperations {
 
     }
 
-    @Fork(value = 1, jvmArgsPrepend = {
+    @Fork(value = 2, jvmArgsPrepend = {
         "-XX:-UseSuperWord"
     })
     public static class TypeVectorOperationsNonSuperWord extends TypeVectorOperations {

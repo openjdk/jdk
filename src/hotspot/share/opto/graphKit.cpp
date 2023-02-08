@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1019,15 +1019,15 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
     code = method()->java_code_at_bci(bci() + 1);
   }
 
-  BasicType rtype = T_ILLEGAL;
-  int       rsize = 0;
-
   if (code != Bytecodes::_illegal) {
     depth = Bytecodes::depth(code); // checkcast=0, athrow=-1
-    rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
-    if (rtype < T_CONFLICT)
-      rsize = type2size[rtype];
   }
+
+  auto rsize = [&]() {
+    assert(code != Bytecodes::_illegal, "code is illegal!");
+    BasicType rtype = Bytecodes::result_type(code); // checkcast=P, athrow=V
+    return (rtype < T_CONFLICT) ? type2size[rtype] : 0;
+  };
 
   switch (code) {
   case Bytecodes::_illegal:
@@ -1089,8 +1089,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
       iter.reset_to_bci(bci());
       iter.next();
       inputs = iter.get_dimensions();
-      assert(rsize == 1, "");
-      depth = rsize - inputs;
+      assert(rsize() == 1, "");
+      depth = 1 - inputs;
     }
     break;
 
@@ -1099,8 +1099,8 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
   case Bytecodes::_freturn:
   case Bytecodes::_dreturn:
   case Bytecodes::_areturn:
-    assert(rsize == -depth, "");
-    inputs = rsize;
+    assert(rsize() == -depth, "");
+    inputs = -depth;
     break;
 
   case Bytecodes::_jsr:
@@ -1111,7 +1111,7 @@ bool GraphKit::compute_stack_effects(int& inputs, int& depth) {
 
   default:
     // bytecode produces a typed result
-    inputs = rsize - depth;
+    inputs = rsize() - depth;
     assert(inputs >= 0, "");
     break;
   }
@@ -1550,7 +1550,8 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 bool require_atomic_access,
                                 bool unaligned,
                                 bool mismatched,
-                                bool unsafe) {
+                                bool unsafe,
+                                int barrier_data) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1565,6 +1566,7 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
   if (unsafe) {
     st->as_Store()->set_unsafe_access();
   }
+  st->as_Store()->set_barrier_data(barrier_data);
   st = _gvn.transform(st);
   set_memory(st, adr_idx);
   // Back-to-back stores can only remove intermediate store with DU info
@@ -2018,12 +2020,12 @@ void GraphKit::increment_counter(Node* counter_addr) {
 // Bail out to the interpreter in mid-method.  Implemented by calling the
 // uncommon_trap blob.  This helper function inserts a runtime call with the
 // right debug info.
-void GraphKit::uncommon_trap(int trap_request,
+Node* GraphKit::uncommon_trap(int trap_request,
                              ciKlass* klass, const char* comment,
                              bool must_throw,
                              bool keep_exact_action) {
   if (failing())  stop();
-  if (stopped())  return; // trap reachable?
+  if (stopped())  return NULL; // trap reachable?
 
   // Note:  If ProfileTraps is true, and if a deopt. actually
   // occurs here, the runtime will make sure an MDO exists.  There is
@@ -2139,6 +2141,7 @@ void GraphKit::uncommon_trap(int trap_request,
   root()->add_req(halt);
 
   stop_and_kill_map();
+  return call;
 }
 
 
@@ -2181,7 +2184,7 @@ Node* GraphKit::record_profile_for_speculation(Node* n, ciKlass* exact_kls, Prof
 
   // Should the klass from the profile be recorded in the speculative type?
   if (current_type->would_improve_type(exact_kls, jvms()->depth())) {
-    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls);
+    const TypeKlassPtr* tklass = TypeKlassPtr::make(exact_kls, Type::trust_interfaces);
     const TypeOopPtr* xtype = tklass->as_instance_type();
     assert(xtype->klass_is_exact(), "Should be exact");
     // Any reason to believe n is not null (from this profiling or a previous one)?
@@ -2635,7 +2638,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
   default: fatal("unexpected comparison type %s", type2name(bt));
   }
-  gvn.transform(cmp);
+  cmp = gvn.transform(cmp);
   Node* bol = gvn.transform(new BoolNode(cmp, test));
   IfNode* iff = new IfNode(ctrl, bol, p, COUNT_UNKNOWN);
   gvn.transform(iff);
@@ -2843,7 +2846,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
                                     Node* *casted_receiver) {
   assert(!klass->is_interface(), "no exact type check on interfaces");
 
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces);
   Node* recv_klass = load_object_klass(receiver);
   Node* want_klass = makecon(tklass);
   Node* cmp = _gvn.transform(new CmpPNode(recv_klass, want_klass));
@@ -2872,7 +2875,7 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 //------------------------------subtype_check_receiver-------------------------
 Node* GraphKit::subtype_check_receiver(Node* receiver, ciKlass* klass,
                                        Node** casted_receiver) {
-  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass);
+  const TypeKlassPtr* tklass = TypeKlassPtr::make(klass, Type::trust_interfaces)->try_improve();
   Node* want_klass = makecon(tklass);
 
   Node* slow_ctl = gen_subtype_check(receiver, want_klass);
@@ -2995,7 +2998,7 @@ Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
   ciKlass* exact_kls = spec_klass == NULL ? profile_has_unique_klass() : spec_klass;
   if (exact_kls != NULL) {// no cast failures here
     if (require_klass == NULL ||
-        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls)) == Compile::SSC_always_true) {
+        C->static_subtype_check(require_klass, TypeKlassPtr::make(exact_kls, Type::trust_interfaces)) == Compile::SSC_always_true) {
       // If we narrow the type to match what the type profile sees or
       // the speculative type, we can then remove the rest of the
       // cast.
@@ -3181,8 +3184,8 @@ Node* GraphKit::gen_instanceof(Node* obj, Node* superklass, bool safe_for_replac
 Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
                               Node* *failure_control) {
   kill_dead_locals();           // Benefit all the uncommon traps
-  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr();
-  const Type *toop = tk->cast_to_exactness(false)->as_instance_type();
+  const TypeKlassPtr *tk = _gvn.type(superklass)->is_klassptr()->try_improve();
+  const TypeOopPtr *toop = tk->cast_to_exactness(false)->as_instance_type();
 
   // Fast cutout:  Check the case that the cast is vacuously true.
   // This detects the common cases where the test will short-circuit

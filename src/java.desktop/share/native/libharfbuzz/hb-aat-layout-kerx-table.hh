@@ -82,8 +82,8 @@ struct KernPair
   }
 
   protected:
-  HBGlyphID     left;
-  HBGlyphID     right;
+  HBGlyphID16   left;
+  HBGlyphID16   right;
   FWORD         value;
   public:
   DEFINE_SIZE_STATIC (6);
@@ -287,7 +287,7 @@ struct KerxSubTableFormat1
                * in the 'kern' table example. */
               if (v == -0x8000)
               {
-                o.attach_type() = ATTACH_TYPE_NONE;
+                o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_NONE;
                 o.attach_chain() = 0;
                 o.y_offset = 0;
               }
@@ -310,7 +310,7 @@ struct KerxSubTableFormat1
               /* CoreText doesn't do crossStream kerning in vertical.  We do. */
               if (v == -0x8000)
               {
-                o.attach_type() = ATTACH_TYPE_NONE;
+                o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_NONE;
                 o.attach_chain() = 0;
                 o.x_offset = 0;
               }
@@ -567,7 +567,7 @@ struct KerxSubTableFormat4
           }
           break;
         }
-        o.attach_type() = ATTACH_TYPE_MARK;
+        o.attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_MARK;
         o.attach_chain() = (int) mark - (int) buffer->idx;
         buffer->scratch_flags |= HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT;
       }
@@ -710,18 +710,18 @@ struct KerxSubTableFormat6
   {
     struct Long
     {
-      LNNOffsetTo<Lookup<HBUINT32>>             rowIndexTable;
-      LNNOffsetTo<Lookup<HBUINT32>>             columnIndexTable;
-      LNNOffsetTo<UnsizedArrayOf<FWORD32>>      array;
+      NNOffset32To<Lookup<HBUINT32>>            rowIndexTable;
+      NNOffset32To<Lookup<HBUINT32>>            columnIndexTable;
+      NNOffset32To<UnsizedArrayOf<FWORD32>>     array;
     } l;
     struct Short
     {
-      LNNOffsetTo<Lookup<HBUINT16>>             rowIndexTable;
-      LNNOffsetTo<Lookup<HBUINT16>>             columnIndexTable;
-      LNNOffsetTo<UnsizedArrayOf<FWORD>>        array;
+      NNOffset32To<Lookup<HBUINT16>>            rowIndexTable;
+      NNOffset32To<Lookup<HBUINT16>>            columnIndexTable;
+      NNOffset32To<UnsizedArrayOf<FWORD>>       array;
     } s;
   } u;
-  LNNOffsetTo<UnsizedArrayOf<FWORD>>    vector;
+  NNOffset32To<UnsizedArrayOf<FWORD>>   vector;
   public:
   DEFINE_SIZE_STATIC (KernSubTableHeader::static_size + 24);
 };
@@ -775,11 +775,11 @@ struct KerxSubTable
     unsigned int subtable_type = get_type ();
     TRACE_DISPATCH (this, subtable_type);
     switch (subtable_type) {
-    case 0:     return_trace (c->dispatch (u.format0, hb_forward<Ts> (ds)...));
-    case 1:     return_trace (c->dispatch (u.format1, hb_forward<Ts> (ds)...));
-    case 2:     return_trace (c->dispatch (u.format2, hb_forward<Ts> (ds)...));
-    case 4:     return_trace (c->dispatch (u.format4, hb_forward<Ts> (ds)...));
-    case 6:     return_trace (c->dispatch (u.format6, hb_forward<Ts> (ds)...));
+    case 0:     return_trace (c->dispatch (u.format0, std::forward<Ts> (ds)...));
+    case 1:     return_trace (c->dispatch (u.format1, std::forward<Ts> (ds)...));
+    case 2:     return_trace (c->dispatch (u.format2, std::forward<Ts> (ds)...));
+    case 4:     return_trace (c->dispatch (u.format4, std::forward<Ts> (ds)...));
+    case 6:     return_trace (c->dispatch (u.format6, std::forward<Ts> (ds)...));
     default:    return_trace (c->default_return_value ());
     }
   }
@@ -901,7 +901,7 @@ struct KerxTable
         unsigned int count = c->buffer->len;
         for (unsigned int i = 0; i < count; i++)
         {
-          pos[i].attach_type() = ATTACH_TYPE_CURSIVE;
+          pos[i].attach_type() = OT::Layout::GPOS_impl::ATTACH_TYPE_CURSIVE;
           pos[i].attach_chain() = HB_DIRECTION_IS_FORWARD (c->buffer->props.direction) ? -1 : +1;
           /* We intentionally don't set HB_BUFFER_SCRATCH_FLAG_HAS_GPOS_ATTACHMENT,
            * since there needs to be a non-zero attachment for post-positioning to

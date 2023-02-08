@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ enum {
 // Native interfaces for use by Forte tools.
 
 
-#if !defined(IA64)
-
 class vframeStreamForte : public vframeStreamCommon {
  public:
   // constructor that starts with sender of frame fr (top_frame)
@@ -93,7 +91,10 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 vframeStreamForte::vframeStreamForte(JavaThread *jt,
                                      frame fr,
                                      bool stop_at_java_call_stub)
-    : vframeStreamCommon(RegisterMap(jt, false, false, false)) {
+    : vframeStreamCommon(RegisterMap(jt,
+                                     RegisterMap::UpdateMap::skip,
+                                     RegisterMap::ProcessFrames::skip,
+                                     RegisterMap::WalkContinuation::skip)) {
   _reg_map.set_async(true);
   _stop_at_java_call_stub = stop_at_java_call_stub;
   _frame = fr;
@@ -157,7 +158,7 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, Compil
     PcDesc* pc_desc = nm->pc_desc_at(fr->pc());
 
     // Did we find a useful PcDesc?
-    if (pc_desc != NULL &&
+    if (pc_desc != nullptr &&
         pc_desc->scope_decode_offset() != DebugInformationRecorder::serialized_null) {
       return true;
     }
@@ -171,7 +172,7 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, Compil
   PcDesc* pc_desc = nm->pc_desc_near(fr->pc() + 1);
 
   // Now do we have a useful PcDesc?
-  if (pc_desc == NULL ||
+  if (pc_desc == nullptr ||
       pc_desc->scope_decode_offset() == DebugInformationRecorder::serialized_null) {
     // No debug information is available for this PC.
     //
@@ -206,7 +207,7 @@ static bool is_decipherable_compiled_frame(JavaThread* thread, frame* fr, Compil
 
 // Determine if 'fr' is a walkable interpreted frame. Returns false
 // if it is not. *method_p, and *bci_p are not set when false is
-// returned. *method_p is non-NULL if frame was executing a Java
+// returned. *method_p is non-null if frame was executing a Java
 // method. *bci_p is != -1 if a valid BCI in the Java method could
 // be found.
 // Note: this method returns true when a valid Java method is found
@@ -272,13 +273,13 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 // Check the return value of find_initial_Java_frame and the value of
 // 'method_p' to decide on how use the results returned by this method.
 //
-// If 'method_p' is not NULL, an initial Java frame has been found and
+// If 'method_p' is not null, an initial Java frame has been found and
 // the stack can be walked starting from that initial frame. In this case,
 // 'method_p' points to the Method that the initial frame belongs to and
 // the initial Java frame is returned in initial_frame_p.
 //
 // find_initial_Java_frame() returns true if a Method has been found (i.e.,
-// 'method_p' is not NULL) and the initial frame that belongs to that Method
+// 'method_p' is not null) and the initial frame that belongs to that Method
 // is decipherable.
 //
 // A frame is considered to be decipherable:
@@ -291,7 +292,7 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
 // Note that find_initial_Java_frame() can return false even if an initial
 // Java method was found (e.g., there is no PCDesc available for the method).
 //
-// If 'method_p' is NULL, it was not possible to find a Java frame when
+// If 'method_p' is null, it was not possible to find a Java frame when
 // walking the stack starting from 'fr'. In this case find_initial_Java_frame
 // returns false.
 
@@ -304,10 +305,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // It is possible that for a frame containing a compiled method
   // we can capture the method but no bci. If we get no
   // bci the frame isn't walkable but the method is usable.
-  // Therefore we init the returned Method* to NULL so the
+  // Therefore we init the returned Method* to null so the
   // caller can make the distinction.
 
-  *method_p = NULL;
+  *method_p = nullptr;
 
   // On the initial call to this method the frame we get may not be
   // recognizable to us. This should only happen if we are in a JRT_LEAF
@@ -320,7 +321,10 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // Instead, try to do Zero-specific search for Java frame.
 
   {
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
 
     while (true) {
       // Cannot walk this frame? Cannot do anything anymore.
@@ -329,11 +333,11 @@ static bool find_initial_Java_frame(JavaThread* thread,
       }
 
       if (candidate.is_entry_frame()) {
-        // jcw is NULL if the java call wrapper could not be found
+        // jcw is null if the java call wrapper could not be found
         JavaCallWrapper* jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
         // If initial frame is frame from StubGenerator and there is no
         // previous anchor, there are no java frames associated with a method
-        if (jcw == NULL || jcw->is_first_frame()) {
+        if (jcw == nullptr || jcw->is_first_frame()) {
           return false;
         }
       }
@@ -359,35 +363,41 @@ static bool find_initial_Java_frame(JavaThread* thread,
   // it see if we can find such a frame because only frames with codeBlobs
   // are possible Java frames.
 
-  if (fr->cb() == NULL) {
+  if (fr->cb() == nullptr) {
 
     // See if we can find a useful frame
     int loop_count;
     int loop_max = MaxJavaStackTraceDepth * 2;
-    RegisterMap map(thread, false, false);
+    RegisterMap map(thread,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
 
     for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
       if (!candidate.safe_for_sender(thread)) return false;
       candidate = candidate.sender(&map);
-      if (candidate.cb() != NULL) break;
+      if (candidate.cb() != nullptr) break;
     }
-    if (candidate.cb() == NULL) return false;
+    if (candidate.cb() == nullptr) return false;
   }
 
   // We have a frame known to be in the codeCache
   // We will hopefully be able to figure out something to do with it.
   int loop_count;
   int loop_max = MaxJavaStackTraceDepth * 2;
-  RegisterMap map(thread, false, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::skip,
+                  RegisterMap::WalkContinuation::skip);
 
   for (loop_count = 0; loop_max == 0 || loop_count < loop_max; loop_count++) {
 
     if (candidate.is_entry_frame()) {
-      // jcw is NULL if the java call wrapper couldn't be found
+      // jcw is null if the java call wrapper couldn't be found
       JavaCallWrapper *jcw = candidate.entry_frame_call_wrapper_if_safe(thread);
       // If initial frame is frame from StubGenerator and there is no
       // previous anchor, there are no java frames associated with a method
-      if (jcw == NULL || jcw->is_first_frame()) {
+      if (jcw == nullptr || jcw->is_first_frame()) {
         return false;
       }
     }
@@ -433,7 +443,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
       // is_decipherable_compiled_frame may modify candidate's pc
       *initial_frame_p = candidate;
 
-      assert(nm->pc_desc_at(candidate.pc()) != NULL, "debug information must be available if the frame is decipherable");
+      assert(nm->pc_desc_at(candidate.pc()) != nullptr, "debug information must be available if the frame is decipherable");
 
       return true;
     }
@@ -447,7 +457,7 @@ static bool find_initial_Java_frame(JavaThread* thread,
     // since once we find a frame in the code cache they
     // all should be there.
 
-    if (candidate.cb() == NULL) return false;
+    if (candidate.cb() == nullptr) return false;
 
   }
 
@@ -468,13 +478,13 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   int count;
 
   count = 0;
-  assert(trace->frames != NULL, "trace->frames must be non-NULL");
+  assert(trace->frames != nullptr, "trace->frames must be non-null");
 
   // Walk the stack starting from 'top_frame' and search for an initial Java frame.
   find_initial_Java_frame(thd, &top_frame, &initial_Java_frame, &method, &bci);
 
   // Check if a Java Method has been found.
-  if (method == NULL) return;
+  if (method == nullptr) return;
 
   if (!Method::is_valid_method(method)) {
     trace->num_frames = ticks_GC_active; // -2
@@ -569,7 +579,7 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   Thread* raw_thread = Thread::current_or_null_safe();
   JavaThread* thread;
 
-  if (trace->env_id == NULL || raw_thread == NULL || !raw_thread->is_Java_thread() ||
+  if (trace->env_id == nullptr || raw_thread == nullptr || !raw_thread->is_Java_thread() ||
       (thread = JavaThread::cast(raw_thread))->is_exiting()) {
     // bad env_id, thread has exited or thread is exiting
     trace->num_frames = ticks_thread_exit; // -8
@@ -595,9 +605,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }
-
-  // !important! make sure all to call thread->set_in_asgct(false) before every return
-  thread->set_in_asgct(true);
 
   switch (thread->thread_state()) {
   case _thread_new:
@@ -656,7 +663,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     trace->num_frames = ticks_unknown_state; // -7
     break;
   }
-  thread->set_in_asgct(false);
 }
 
 
@@ -669,10 +675,11 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
 // Method to let libcollector know about a dynamically loaded function.
 // Because it is weakly bound, the calls become NOP's when the library
 // isn't present.
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_AIX)
 // XXXDARWIN: Link errors occur even when __attribute__((weak_import))
 // is added
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) ((void) 0)
+#define collector_func_load_enabled() false
 #else
 void    collector_func_load(char* name,
                             void* null_argument_1,
@@ -684,20 +691,28 @@ void    collector_func_load(char* name,
 #pragma weak collector_func_load
 #define collector_func_load(x0,x1,x2,x3,x4,x5,x6) \
         ( collector_func_load ? collector_func_load(x0,x1,x2,x3,x4,x5,x6),(void)0 : (void)0 )
-#endif // __APPLE__
+#define collector_func_load_enabled() (collector_func_load ? true : false)
+#endif // __APPLE__ || _AIX
 #endif // !_WINDOWS
 
 } // end extern "C"
-#endif // !IA64
+
+bool Forte::is_enabled() {
+#if !defined(_WINDOWS)
+  return collector_func_load_enabled();
+#else
+  return false;
+#endif
+}
 
 void Forte::register_stub(const char* name, address start, address end) {
-#if !defined(_WINDOWS) && !defined(IA64)
+#if !defined(_WINDOWS)
   assert(pointer_delta(end, start, sizeof(jbyte)) < INT_MAX,
          "Code size exceeds maximum range");
 
-  collector_func_load((char*)name, NULL, NULL, start,
-    pointer_delta(end, start, sizeof(jbyte)), 0, NULL);
-#endif // !_WINDOWS && !IA64
+  collector_func_load((char*)name, nullptr, nullptr, start,
+    pointer_delta(end, start, sizeof(jbyte)), 0, nullptr);
+#endif // !_WINDOWS
 }
 
 #else // INCLUDE_JVMTI

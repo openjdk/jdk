@@ -23,14 +23,14 @@
  */
 package com.sun.hotspot.igv.view;
 
-import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.InputBlock;
+import com.sun.hotspot.igv.data.InputGraph;
 import com.sun.hotspot.igv.data.Properties.RegexpPropertyMatcher;
 import com.sun.hotspot.igv.data.services.InputGraphProvider;
 import com.sun.hotspot.igv.util.LookupHistory;
 import com.sun.hotspot.igv.util.StringUtils;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import org.netbeans.spi.quicksearch.SearchProvider;
 import org.netbeans.spi.quicksearch.SearchRequest;
@@ -87,13 +87,15 @@ public class BlockQuickSearch implements SearchProvider {
             final InputGraph theGraph = p.getGraph() != matchGraph ? matchGraph : null;
             for (final InputBlock b : matches) {
                 if (!response.addResult(() -> {
-                            final EditorTopComponent comp = EditorTopComponent.getActive();
-                            assert(comp != null);
+                            final EditorTopComponent editor = EditorTopComponent.getActive();
+                            assert(editor != null);
                             if (theGraph != null) {
-                                comp.getDiagramModel().selectGraph(theGraph);
+                                editor.getModel().selectGraph(theGraph);
                             }
-                            comp.setSelectedNodes(b);
-                            comp.requestActive();
+                            editor.clearSelectedNodes();
+                            editor.addSelectedNodes(b.getNodes(), true);
+                            editor.centerSelectedNodes();
+                            editor.requestActive();
                         },
                         "B" + b.getName() + (theGraph != null ? " in " + theGraph.getName() : ""))) {
                     return;

@@ -193,7 +193,9 @@ abstract class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         if (field.isStatic()) {
             return null;
         }
-        return runtime().compilerToVm.readFieldValue(this, (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass(), field.getOffset(), field.getType().getJavaKind());
+        HotSpotResolvedObjectTypeImpl declaringClass = (HotSpotResolvedObjectTypeImpl) field.getDeclaringClass();
+        char typeChar = field.getType().getJavaKind().getTypeChar();
+        return runtime().compilerToVm.readFieldValue(this, declaringClass, field.getOffset(), typeChar);
     }
 
     public ResolvedJavaType asJavaType() {

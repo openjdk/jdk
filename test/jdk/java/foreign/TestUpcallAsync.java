@@ -24,7 +24,8 @@
 /*
  * @test
  * @enablePreview
- * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64"
+ * @requires ((os.arch == "amd64" | os.arch == "x86_64") & sun.arch.data.model == "64") | os.arch == "aarch64" | os.arch == "riscv64"
+ * @requires !vm.musl
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
@@ -32,15 +33,15 @@
  *   TestUpcallAsync
  */
 
-import java.lang.foreign.Addressable;
-import java.lang.foreign.Linker;
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
-import java.lang.foreign.SegmentAllocator;
+
 import org.testng.annotations.Test;
 
+import java.lang.foreign.SegmentScope;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
@@ -60,24 +61,24 @@ public class TestUpcallAsync extends TestUpcallBase {
     public void testUpcallsAsync(int count, String fName, Ret ret, List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         List<Consumer<Object>> returnChecks = new ArrayList<>();
         List<Consumer<Object[]>> argChecks = new ArrayList<>();
-        Addressable addr = findNativeOrThrow(fName);
-        try (MemorySession session = MemorySession.openShared()) {
-            SegmentAllocator allocator = SegmentAllocator.newNativeArena(session);
+        MemorySegment addr = findNativeOrThrow(fName);
+        try (Arena arena = Arena.openShared()) {
             FunctionDescriptor descriptor = function(ret, paramTypes, fields);
-            MethodHandle mh = downcallHandle(ABI, addr, allocator, descriptor);
-            Object[] args = makeArgs(MemorySession.openImplicit(), ret, paramTypes, fields, returnChecks, argChecks);
+            MethodHandle mh = downcallHandle(ABI, addr, arena, descriptor);
+            Object[] args = makeArgs(SegmentScope.auto(), ret, paramTypes, fields, returnChecks, argChecks);
 
             mh = mh.asSpreader(Object[].class, args.length);
             mh = MethodHandles.insertArguments(mh, 0, (Object) args);
             FunctionDescriptor callbackDesc = descriptor.returnLayout()
                     .map(FunctionDescriptor::of)
                     .orElse(FunctionDescriptor.ofVoid());
-            Addressable callback = ABI.upcallStub(mh.asType(Linker.upcallType(callbackDesc)), callbackDesc, session);
+            MemorySegment callback = ABI.upcallStub(mh, callbackDesc, arena.scope());
 
             MethodHandle invoker = asyncInvoker(ret, ret == Ret.VOID ? null : paramTypes.get(0), fields);
 
-            Object res = invoker.type().returnType() == MemorySegment.class
-                    ? invoker.invoke(allocator, callback)
+            Object res = (descriptor.returnLayout().isPresent() &&
+                         descriptor.returnLayout().get() instanceof GroupLayout)
+                    ? invoker.invoke(arena.scope(), callback)
                     : invoker.invoke(callback);
             argChecks.forEach(c -> c.accept(args));
             if (ret == Ret.NON_VOID) {
@@ -101,7 +102,7 @@ public class TestUpcallAsync extends TestUpcallBase {
                 + (returnType == ParamType.STRUCT ? "_" + sigCode(fields) : "");
 
         return INVOKERS.computeIfAbsent(name, symbol -> {
-            Addressable invokerSymbol = findNativeOrThrow(symbol);
+            MemorySegment invokerSymbol = findNativeOrThrow(symbol);
             MemoryLayout returnLayout = returnType.layout(fields);
             FunctionDescriptor desc = FunctionDescriptor.of(returnLayout, C_POINTER);
 

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
-define_pd_global(bool, VMContinuations, false);
+define_pd_global(bool, VMContinuations, true);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -82,20 +82,34 @@ define_pd_global(intx, InlineSmallCode,          1000);
                                                                                  \
   product(bool, NearCpool, true,                                                 \
          "constant pool is close to instructions")                               \
+  product(bool, UseBlockZeroing, false,                                          \
+          "Use Zicboz for block zeroing")                                        \
   product(intx, BlockZeroingLowLimit, 256,                                       \
           "Minimum size in bytes when block zeroing will be used")               \
           range(1, max_jint)                                                     \
+  product(intx, CacheLineSize, DEFAULT_CACHE_LINE_SIZE,                          \
+          "Size in bytes of a CPU cache line")                                   \
+          range(wordSize, max_jint)                                              \
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
   /* For now we're going to be safe and add the I/O bits to userspace fences. */ \
   product(bool, UseConservativeFence, true,                                      \
-          "Extend i for r and o for w in the pred/succ flags of fence;"          \
-          "Extend fence.i to fence.i + fence.")                                  \
+          "Extend i for r and o for w in the pred/succ flags of fence")          \
   product(bool, AvoidUnalignedAccesses, true,                                    \
           "Avoid generating unaligned memory accesses")                          \
+  product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
+  product(bool, UseRVC, false, "Use RVC instructions")                           \
+  product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
   product(bool, UseRVV, false, EXPERIMENTAL, "Use RVV instructions")             \
-  product(bool, UseRVC, false, EXPERIMENTAL, "Use RVC instructions")             \
   product(bool, UseZba, false, EXPERIMENTAL, "Use Zba instructions")             \
   product(bool, UseZbb, false, EXPERIMENTAL, "Use Zbb instructions")             \
+  product(bool, UseZbs, false, EXPERIMENTAL, "Use Zbs instructions")             \
+  product(bool, UseZfhmin, false, EXPERIMENTAL, "Use Zfhmin instructions")       \
+  product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
+  product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
+  product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
+  product(bool, UseZicboz, false, EXPERIMENTAL, "Use Zicboz instructions")       \
+  product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
+          "Use Zihintpause instructions")                                        \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
           "Use RVV instructions for left/right shift of BigInteger")
 

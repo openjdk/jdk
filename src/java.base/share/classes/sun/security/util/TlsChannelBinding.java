@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
+ * Copyright (c) 2022, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Hashtable;
 import java.util.Locale;
 
 /**

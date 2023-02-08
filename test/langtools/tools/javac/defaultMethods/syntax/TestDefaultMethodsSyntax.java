@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,8 @@ public class TestDefaultMethodsSyntax {
     static int checkCount = 0;
 
     enum VersionKind {
-        PRE_LAMBDA("7"),
         LAMBDA("8"),
-        POST_LAMBDA("9");
+        POST_LAMBDA(Integer.toString(javax.lang.model.SourceVersion.latest().runtimeVersion().feature()));
 
         String versionString;
 
@@ -56,7 +55,7 @@ public class TestDefaultMethodsSyntax {
         }
 
         List<String> getOptions() {
-            return Arrays.asList("-XDallowStaticInterfaceMethods", "-source", versionString);
+            return Arrays.asList("-XDallowStaticInterfaceMethods", "--release", versionString);
         }
     }
 
@@ -264,14 +263,8 @@ public class TestDefaultMethodsSyntax {
 
         errorExpected |= !modk1.compatible(ek) || !modk2.compatible(ek);
 
-        errorExpected |= ModifierKind.intersect(ModifierKind.DEFAULT, modk1, modk2) &&
-                vk == VersionKind.PRE_LAMBDA;
-
-        errorExpected |= ModifierKind.intersect(ModifierKind.STATIC, modk1, modk2) &&
-                ek == EnclosingKind.INTERFACE && vk == VersionKind.PRE_LAMBDA;
-
         errorExpected |= ModifierKind.intersect(ModifierKind.PRIVATE, modk1, modk2) &&
-                ek == EnclosingKind.INTERFACE && (vk == VersionKind.LAMBDA || vk == VersionKind.PRE_LAMBDA);
+                ek == EnclosingKind.INTERFACE && (vk == VersionKind.LAMBDA );
 
         checkCount++;
         if (diagChecker.errorFound != errorExpected) {

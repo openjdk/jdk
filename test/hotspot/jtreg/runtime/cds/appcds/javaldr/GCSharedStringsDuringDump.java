@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.jvmti
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver/timeout=480 GCSharedStringsDuringDump
  */
 
@@ -82,7 +82,7 @@ public class GCSharedStringsDuringDump {
             out.close();
         }
 
-        JarBuilder.build(true, "WhiteBox", "sun/hotspot/WhiteBox");
+        JarBuilder.build(true, "WhiteBox", "jdk/test/whitebox/WhiteBox");
         String whiteBoxJar = TestCommon.getTestJar("WhiteBox.jar");
         String bootClassPath = "-Xbootclasspath/a:" + whiteBoxJar;
 

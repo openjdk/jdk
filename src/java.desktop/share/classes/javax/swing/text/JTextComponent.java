@@ -3687,7 +3687,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
         /**
          * Returns the <code>Rectangle</code> enclosing the text between
-         * two indicies.
+         * two indices.
          *
          * @param startIndex the start index in the text
          * @param endIndex the end index in the text
@@ -3958,7 +3958,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
 
     /**
      * Maps from class name to Boolean indicating if
-     * <code>processInputMethodEvent</code> has been overriden.
+     * <code>processInputMethodEvent</code> has been overridden.
      */
     @SuppressWarnings("removal")
     private static Cache<Class<?>,Boolean> METHOD_OVERRIDDEN

@@ -75,16 +75,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="H" draft="unconfirmed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="unconfirmed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="unconfirmed">H:mm–H:mm v</greatestDifference>
@@ -231,25 +231,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>h:mm:ss a zzzz</pattern>
 							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>h:mm:ss a z</pattern>
 							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>h:mm:ss a</pattern>
 							<datetimeSkeleton>ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>h:mm a</pattern>
 							<datetimeSkeleton>ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -284,33 +284,33 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d" draft="contributed">d 'a' d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a 'a' h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h 'a' h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a 'a' h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h 'a' h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">HH 'a' HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">HH:mm 'a' HH:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm 'a' HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a 'a' h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm 'a' h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm 'a' h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">HH:mm 'a' HH:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">HH:mm 'a' HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a 'a' h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h 'a' h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a 'a' h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h 'a' h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">HH 'a' HH v</greatestDifference>
@@ -376,6 +376,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="dayperiod">
+				<displayName draft="contributed">a. m./p. m.</displayName>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<metazone type="Colombia">
 				<short>

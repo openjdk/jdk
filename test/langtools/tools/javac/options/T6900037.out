@@ -1,4 +1,6 @@
 - compiler.warn.source.no.bootclasspath: 8
+- compiler.warn.option.obsolete.source: 8
+- compiler.warn.option.obsolete.suppression
 - compiler.err.warnings.and.werror
 1 error
-1 warning
+3 warnings

@@ -283,7 +283,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
      * Gets a {@link Method} object corresponding to {@code method}. This method guarantees the same
      * {@link Method} object is returned if called twice on the same {@code method} value.
      */
-    private static Executable getMethod(HotSpotResolvedJavaMethodImpl method) {
+    static Executable getMethod(HotSpotResolvedJavaMethodImpl method) {
         assert !method.isClassInitializer() : method;
         if (method.toJavaCache == null) {
             synchronized (method) {
@@ -303,7 +303,7 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
      * {@code f} and annotation class {@code a}, the same object is returned for each call to
      * {@code f.getAnnotation(a)}).
      */
-    private static Field getField(HotSpotResolvedJavaFieldImpl field) {
+    static Field getField(HotSpotResolvedJavaFieldImpl field) {
         HotSpotResolvedObjectTypeImpl declaringClass = field.getDeclaringClass();
         synchronized (declaringClass) {
             HashMap<HotSpotResolvedJavaFieldImpl, Field> cache = declaringClass.reflectionFieldCache;
@@ -333,4 +333,3 @@ final class HotSpotJDKReflection extends HotSpotJVMCIReflection {
         }
     }
 }
-

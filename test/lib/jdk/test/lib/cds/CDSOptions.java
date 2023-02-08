@@ -32,6 +32,8 @@ public class CDSOptions {
     public ArrayList<String> prefix = new ArrayList<String>();
     public ArrayList<String> suffix = new ArrayList<String>();
     public boolean useSystemArchive = false;
+    public String appJar;
+    public String appJarDir;
 
     // classes to be archived
     public String[] classList;
@@ -102,6 +104,17 @@ public class CDSOptions {
         String array[] = new String[list.size()];
         list.toArray(array);
         this.classList = array;
+        return this;
+    }
+
+    // AppCDS methods
+    public CDSOptions setAppJar(String appJar) {
+        this.appJar = appJar;
+        return this;
+    }
+
+    public CDSOptions setAppJarDir(String appJarDir) {
+        this.appJarDir = appJarDir;
         return this;
     }
 

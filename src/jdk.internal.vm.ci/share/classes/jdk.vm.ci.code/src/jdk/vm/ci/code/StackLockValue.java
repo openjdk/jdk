@@ -24,7 +24,6 @@ package jdk.vm.ci.code;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaValue;
-import jdk.vm.ci.meta.Value;
 
 /**
  * Represents lock information in the debug information.
@@ -49,7 +48,7 @@ public final class StackLockValue implements JavaValue {
         this.owner = newOwner;
     }
 
-    public Value getSlot() {
+    public AllocatableValue getSlot() {
         return slot;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ package gc.g1;
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   gc.g1.TestGCLogMessages
  */
@@ -41,7 +41,7 @@ package gc.g1;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class TestGCLogMessages {
 
@@ -96,7 +96,7 @@ public class TestGCLogMessages {
         }
 
         public boolean isAvailable() {
-            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
+            jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
             return WB.isJFRIncluded();
         }
     }
@@ -129,6 +129,7 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Hot Card Cache", Level.DEBUG),
         new LogMessageWithLevel("Log Buffers", Level.DEBUG),
         new LogMessageWithLevel("Dirty Cards", Level.DEBUG),
+        new LogMessageWithLevel("Merged Cards", Level.DEBUG),
         new LogMessageWithLevel("Skipped Cards", Level.DEBUG),
         // Evacuate Collection Set
         new LogMessageWithLevel("Ext Root Scanning", Level.DEBUG),
@@ -179,7 +180,6 @@ public class TestGCLogMessages {
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2", Level.DEBUG),
         new LogMessageWithLevel("Reset Hot Card Cache", Level.DEBUG),
-        new LogMessageWithLevel("Purge Code Roots", Level.DEBUG),
         new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Redirty Logged Cards", Level.DEBUG),
         new LogMessageWithLevel("Redirtied Cards", Level.DEBUG),
@@ -277,7 +277,6 @@ public class TestGCLogMessages {
                                                                   "-XX:G1EvacuationFailureALotCount=100",
                                                                   "-XX:G1EvacuationFailureALotInterval=1",
                                                                   "-XX:+UnlockDiagnosticVMOptions",
-                                                                  "-XX:-G1UsePreventiveGC",
                                                                   "-Xlog:gc+phases=debug",
                                                                   GCTestWithEvacuationFailure.class.getName());
 
@@ -290,7 +289,6 @@ public class TestGCLogMessages {
                                                    "-Xmn16M",
                                                    "-Xms32M",
                                                    "-XX:+UnlockDiagnosticVMOptions",
-                                                   "-XX:-G1UsePreventiveGC",
                                                    "-Xlog:gc+phases=trace",
                                                    GCTestWithEvacuationFailure.class.getName());
 
@@ -300,7 +298,6 @@ public class TestGCLogMessages {
     }
 
     LogMessageWithLevel concurrentStartMessages[] = new LogMessageWithLevel[] {
-        new LogMessageWithLevel("Clear Claimed Marks", Level.DEBUG),
         new LogMessageWithLevel("Reset Marking State", Level.DEBUG),
         new LogMessageWithLevel("Note Start Of Mark", Level.DEBUG),
     };
@@ -367,8 +364,8 @@ public class TestGCLogMessages {
 
     static class GCTestWithConcurrentStart {
         public static void main(String [] args) {
-            sun.hotspot.WhiteBox WB = sun.hotspot.WhiteBox.getWhiteBox();
-            WB.g1StartConcMarkCycle();
+            jdk.test.whitebox.WhiteBox WB = jdk.test.whitebox.WhiteBox.getWhiteBox();
+            WB.g1StartConcurrentGC();
         }
     }
 

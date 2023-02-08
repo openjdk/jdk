@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,9 @@ package sun.security.tools;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.String;
-import java.util.StringTokenizer;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.StringTokenizer;
 
 /**
  * A utility class for handle path list
@@ -68,9 +66,7 @@ public class PathList {
         int count = 0;
         while (st.hasMoreTokens()) {
             URL url = fileToURL(new File(st.nextToken()));
-            if (url != null) {
-                urls[count++] = url;
-            }
+            urls[count++] = url;
         }
         if (urls.length != count) {
             URL[] tmp = new URL[count];
@@ -85,7 +81,7 @@ public class PathList {
      * local file name.
      *
      * @param file the File object
-     * @return the resulting directory or JAR file URL, or null if unknown
+     * @return the resulting directory or JAR file URL
      */
     private static URL fileToURL(File file) {
         String name;
@@ -103,7 +99,9 @@ public class PathList {
             name = name + "/";
         }
         try {
-            return new URL("file", "", name);
+            @SuppressWarnings("deprecation")
+            var result = new URL("file", "", name);
+            return result;
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException("file");
         }

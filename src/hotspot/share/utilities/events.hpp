@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,8 +148,8 @@ template <class T> class EventLogBase : public EventLog {
 
   void print(outputStream* out, EventRecord<T>& e) {
     out->print("Event: %.3f ", e.timestamp);
-    if (e.thread != NULL) {
-      out->print("Thread " INTPTR_FORMAT " ", p2i(e.thread));
+    if (e.thread != nullptr) {
+      out->print("Thread " PTR_FORMAT " ", p2i(e.thread));
     }
     print(out, e.data);
   }
@@ -277,7 +277,7 @@ class Events : AllStatic {
 };
 
 inline void Events::log(Thread* thread, const char* format, ...) {
-  if (LogEvents && _messages != NULL) {
+  if (LogEvents && _messages != nullptr) {
     va_list ap;
     va_start(ap, format);
     _messages->logv(thread, format, ap);
@@ -286,7 +286,7 @@ inline void Events::log(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
-  if (LogEvents && _vm_operations != NULL) {
+  if (LogEvents && _vm_operations != nullptr) {
     va_list ap;
     va_start(ap, format);
     _vm_operations->logv(thread, format, ap);
@@ -295,7 +295,7 @@ inline void Events::log_vm_operation(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_exception(Thread* thread, const char* format, ...) {
-  if (LogEvents && _exceptions != NULL) {
+  if (LogEvents && _exceptions != nullptr) {
     va_list ap;
     va_start(ap, format);
     _exceptions->logv(thread, format, ap);
@@ -304,13 +304,13 @@ inline void Events::log_exception(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
-  if (LogEvents && _exceptions != NULL) {
+  if (LogEvents && _exceptions != nullptr) {
     _exceptions->log(thread, h_exception, message, file, line);
   }
 }
 
 inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
-  if (LogEvents && _redefinitions != NULL) {
+  if (LogEvents && _redefinitions != nullptr) {
     va_list ap;
     va_start(ap, format);
     _redefinitions->logv(thread, format, ap);
@@ -319,13 +319,13 @@ inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_class_unloading(Thread* thread, InstanceKlass* ik) {
-  if (LogEvents && _class_unloading != NULL) {
+  if (LogEvents && _class_unloading != nullptr) {
     _class_unloading->log(thread, ik);
   }
 }
 
 inline void Events::log_class_loading(Thread* thread, const char* format, ...) {
-  if (LogEvents && _class_loading != NULL) {
+  if (LogEvents && _class_loading != nullptr) {
     va_list ap;
     va_start(ap, format);
     _class_loading->logv(thread, format, ap);
@@ -334,7 +334,7 @@ inline void Events::log_class_loading(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
-  if (LogEvents && _deopt_messages != NULL) {
+  if (LogEvents && _deopt_messages != nullptr) {
     va_list ap;
     va_start(ap, format);
     _deopt_messages->logv(thread, format, ap);
@@ -343,7 +343,7 @@ inline void Events::log_deopt_message(Thread* thread, const char* format, ...) {
 }
 
 inline void Events::log_dll_message(Thread* thread, const char* format, ...) {
-  if (LogEvents && _dll_messages != NULL) {
+  if (LogEvents && _dll_messages != nullptr) {
     va_list ap;
     va_start(ap, format);
     _dll_messages->logv(thread, format, ap);
@@ -359,7 +359,7 @@ inline void EventLogBase<T>::print_log_on(outputStream* out, int max) {
     bool         _locked;
 
     MaybeLocker(Mutex* mutex) : _mutex(mutex), _proceed(false), _locked(false) {
-      if (Thread::current_or_null() == NULL) {
+      if (Thread::current_or_null() == nullptr) {
         _proceed = true;
       } else if (VMError::is_error_reported()) {
         if (_mutex->try_lock_without_rank_check()) {

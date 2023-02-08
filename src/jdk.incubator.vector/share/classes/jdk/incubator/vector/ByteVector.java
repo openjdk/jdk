@@ -759,11 +759,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Byte> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (byte) 0);
-                that = that.blend((byte) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Byte> mask
+                    = this.compare(EQ, (byte) 0);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
@@ -809,11 +807,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
         if (opKind(op, VO_SPECIAL  | VO_SHIFT)) {
             if (op == FIRST_NONZERO) {
-                // FIXME: Support this in the JIT.
-                VectorMask<Byte> thisNZ
-                    = this.viewAsIntegralLanes().compare(NE, (byte) 0);
-                that = that.blend((byte) 0, thisNZ.cast(vspecies()));
-                op = OR_UNCHECKED;
+                VectorMask<Byte> mask
+                    = this.compare(EQ, (byte) 0, m);
+                return this.blend(that, mask);
             }
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.

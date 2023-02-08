@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,10 @@
  * @summary Vectorization test on basic byte operations
  * @library /test/lib /
  *
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  *        compiler.vectorization.runner.VectorizationTestRunner
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
@@ -40,9 +40,11 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 public class BasicByteOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private byte[] a;
     private byte[] b;
@@ -61,6 +63,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Arithmetic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public byte[] vectorNeg() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -70,6 +74,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
+        counts = {IRNode.ABS_V, ">0"})
     public byte[] vectorAbs() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +85,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.ADD_V, ">0"})
     public byte[] vectorAdd() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +96,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.SUB_V, ">0"})
     public byte[] vectorSub() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -97,6 +107,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.MUL_V, ">0"})
     public byte[] vectorMul() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -106,6 +118,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
     public byte[] vectorMulAdd() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -115,6 +129,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
     public byte[] vectorMulSub() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -125,6 +141,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Logic ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public byte[] vectorNot() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,6 +152,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.AND_V, ">0"})
     public byte[] vectorAnd() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,6 +163,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.OR_V, ">0"})
     public byte[] vectorOr() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -152,6 +174,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        counts = {IRNode.XOR_V, ">0"})
     public byte[] vectorXor() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -162,6 +186,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     // ---------------- Shift ----------------
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.LSHIFT_V, ">0"})
     public byte[] vectorShiftLeft() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -171,6 +197,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public byte[] vectorSignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -180,6 +208,8 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+        counts = {IRNode.RSHIFT_V, ">0"})
     public byte[] vectorUnsignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -188,4 +218,3 @@ public class BasicByteOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

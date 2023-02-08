@@ -71,6 +71,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -116,7 +117,10 @@ ExceptionBlob* OptoRuntime::_exception_blob;
 #ifdef ASSERT
 static bool check_compiled_frame(JavaThread* thread) {
   assert(thread->last_frame().is_runtime_frame(), "cannot call runtime directly from compiled code");
-  RegisterMap map(thread, false);
+  RegisterMap map(thread,
+                  RegisterMap::UpdateMap::skip,
+                  RegisterMap::ProcessFrames::include,
+                  RegisterMap::WalkContinuation::skip);
   frame caller = thread->last_frame().sender(&map);
   assert(caller.is_compiled_frame(), "not being called from compiled like code");
   return true;
@@ -144,7 +148,7 @@ bool OptoRuntime::generate(ciEnv* env) {
   gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
   gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
   gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C_inc_held_monitor_count, 0, false, false);
+  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
   gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
   gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
   gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , true );
@@ -726,37 +730,6 @@ const TypeFunc* OptoRuntime::void_void_Type() {
    return TypeFunc::make(domain, range);
  }
 
- const TypeFunc* OptoRuntime::continuation_doYield_Type() {
-   // create input type (domain)
-   const Type **fields = TypeTuple::fields(0);
-   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+0, fields);
-
-   // create result type (range)
-   fields = TypeTuple::fields(1);
-   fields[TypeFunc::Parms+0] = TypeInt::INT;
-   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
-
-   return TypeFunc::make(domain, range);
- }
-
- const TypeFunc* OptoRuntime::continuation_jump_Type() {
-  // create input type (domain)
-  const Type **fields = TypeTuple::fields(6);
-  fields[TypeFunc::Parms+0] = TypeLong::LONG;
-  fields[TypeFunc::Parms+1] = Type::HALF;
-  fields[TypeFunc::Parms+2] = TypeLong::LONG;
-  fields[TypeFunc::Parms+3] = Type::HALF;
-  fields[TypeFunc::Parms+4] = TypeLong::LONG;
-  fields[TypeFunc::Parms+5] = Type::HALF;
-  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+6, fields);
-
-  // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
-  return TypeFunc::make(domain, range);
- }
-
-
  const TypeFunc* OptoRuntime::jfr_write_checkpoint_Type() {
    // create input type (domain)
    const Type **fields = TypeTuple::fields(0);
@@ -1045,7 +1018,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompress_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1067,7 +1040,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
   int argp = TypeFunc::Parms;
   fields[argp++] = TypePtr::NOTNULL; // buf
   fields[argp++] = TypePtr::NOTNULL; // state
-  if (is_sha3) fields[argp++] = TypeInt::INT; // digest_length
+  if (is_sha3) fields[argp++] = TypeInt::INT; // block_size
   fields[argp++] = TypeInt::INT;     // ofs
   fields[argp++] = TypeInt::INT;     // limit
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
@@ -1249,6 +1222,26 @@ const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
     return TypeFunc::make(domain, range);
 }
+
+// ChaCha20 Block function
+const TypeFunc* OptoRuntime::chacha20Block_Type() {
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // state
+    fields[argp++] = TypePtr::NOTNULL;      // result
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;     // key stream outlen as int
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
 // Base64 encode function
 const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   int argcnt = 6;
@@ -1290,6 +1283,26 @@ const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms + 0] = TypeInt::INT; // count of bytes written to dst
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// Poly1305 processMultipleBlocks function
+const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // input array
+  fields[argp++] = TypeInt::INT;        // input length
+  fields[argp++] = TypePtr::NOTNULL;    // accumulator array
+  fields[argp++] = TypePtr::NOTNULL;    // r array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
 
@@ -1399,7 +1412,10 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
     bool deopting = false;
     if (nm->is_deopt_pc(pc)) {
       deopting = true;
-      RegisterMap map(current, false);
+      RegisterMap map(current,
+                      RegisterMap::UpdateMap::skip,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
       frame deoptee = current->last_frame().sender(&map);
       assert(deoptee.is_deoptimized_frame(), "must be deopted");
       // Adjust the pc back to the original throwing pc
@@ -1480,7 +1496,10 @@ address OptoRuntime::handle_exception_C(JavaThread* current) {
   // deoptimized frame
 
   if (nm != NULL) {
-    RegisterMap map(current, false /* update_map */, false /* process_frames */);
+    RegisterMap map(current,
+                    RegisterMap::UpdateMap::skip,
+                    RegisterMap::ProcessFrames::skip,
+                    RegisterMap::WalkContinuation::skip);
     frame caller = current->last_frame().sender(&map);
 #ifdef ASSERT
     assert(caller.is_compiled_frame(), "must be");
@@ -1567,7 +1586,10 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread, bool doit) {
 
 void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
-  RegisterMap reg_map(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1579,7 +1601,10 @@ void OptoRuntime::deoptimize_caller_frame(JavaThread *thread) {
 
 bool OptoRuntime::is_deoptimized_caller_frame(JavaThread *thread) {
   // Called from within the owner thread, so no need for safepoint
-  RegisterMap reg_map(thread);
+  RegisterMap reg_map(thread,
+                      RegisterMap::UpdateMap::include,
+                      RegisterMap::ProcessFrames::include,
+                      RegisterMap::WalkContinuation::skip);
   frame stub_frame = thread->last_frame();
   assert(stub_frame.is_runtime_frame() || exception_blob()->contains(stub_frame.pc()), "sanity check");
   frame caller_frame = stub_frame.sender(&reg_map);
@@ -1735,9 +1760,9 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   }
   NamedCounter* c;
   if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.as_string());
+    c = new RTMLockingNamedCounter(st.freeze());
   } else {
-    c = new NamedCounter(st.as_string(), tag);
+    c = new NamedCounter(st.freeze(), tag);
   }
 
   // atomically add the new counter to the head of the list.  We only
@@ -1771,5 +1796,5 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   tempst.print(" at " INTPTR_FORMAT,  p2i(exception_pc));
   tempst.print("]");
 
-  st->print_raw_cr(tempst.as_string());
+  st->print_raw_cr(tempst.freeze());
 }

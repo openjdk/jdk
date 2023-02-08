@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,28 +51,28 @@ static const int UNKNOWN_STACK_DEPTH = -99;
 // Thread local storage for JVMTI.
 //
 
-JvmtiThreadState *JvmtiThreadState::_head = NULL;
+JvmtiThreadState *JvmtiThreadState::_head = nullptr;
 
 JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   : _thread_event_enable() {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
   _thread               = thread;
-  _thread_saved         = NULL;
+  _thread_saved         = nullptr;
   _exception_state      = ES_CLEARED;
   _debuggable           = true;
   _hide_single_stepping = false;
   _pending_interp_only_mode = false;
   _hide_level           = 0;
   _pending_step_for_popframe = false;
-  _class_being_redefined = NULL;
+  _class_being_redefined = nullptr;
   _class_load_kind = jvmti_class_load_kind_load;
-  _classes_being_redefined = NULL;
-  _head_env_thread_state = NULL;
-  _dynamic_code_event_collector = NULL;
-  _vm_object_alloc_event_collector = NULL;
-  _sampled_object_alloc_event_collector = NULL;
-  _the_class_for_redefinition_verification = NULL;
-  _scratch_class_for_redefinition_verification = NULL;
+  _classes_being_redefined = nullptr;
+  _head_env_thread_state = nullptr;
+  _dynamic_code_event_collector = nullptr;
+  _vm_object_alloc_event_collector = nullptr;
+  _sampled_object_alloc_event_collector = nullptr;
+  _the_class_for_redefinition_verification = nullptr;
+  _scratch_class_for_redefinition_verification = nullptr;
   _cur_stack_depth = UNKNOWN_STACK_DEPTH;
   _saved_interp_only_mode = 0;
 
@@ -81,9 +81,9 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   _earlyret_state = earlyret_inactive;
   _earlyret_tos = ilgl;
   _earlyret_value.j = 0L;
-  _earlyret_oop = NULL;
+  _earlyret_oop = nullptr;
 
-  _jvmti_event_queue = NULL;
+  _jvmti_event_queue = nullptr;
   _is_in_VTMS_transition = false;
   _is_virtual = false;
 
@@ -92,7 +92,7 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
   // add all the JvmtiEnvThreadState to the new JvmtiThreadState
   {
     JvmtiEnvIterator it;
-    for (JvmtiEnvBase* env = it.first(); env != NULL; env = it.next(env)) {
+    for (JvmtiEnvBase* env = it.first(); env != nullptr; env = it.next(env)) {
       if (env->is_valid()) {
         add_env(env);
       }
@@ -105,21 +105,21 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
     // See periodic_clean_up().
     debug_only(NoSafepointVerifier nosafepoint;)
 
-    _prev = NULL;
+    _prev = nullptr;
     _next = _head;
-    if (_head != NULL) {
+    if (_head != nullptr) {
       _head->_prev = this;
     }
     _head = this;
   }
 
-  if (thread_oop != NULL) {
+  if (thread_oop != nullptr) {
     java_lang_Thread::set_jvmti_thread_state(thread_oop, this);
     _is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
   }
 
-  if (thread != NULL) {
-    if (thread_oop == NULL || thread->jvmti_vthread() == NULL || thread->jvmti_vthread() == thread_oop) {
+  if (thread != nullptr) {
+    if (thread_oop == nullptr || thread->jvmti_vthread() == nullptr || thread->jvmti_vthread() == thread_oop) {
       // The JavaThread for carrier or mounted virtual thread case.
       // Set this only if thread_oop is current thread->jvmti_vthread().
       thread->set_jvmti_thread_state(this);
@@ -132,18 +132,18 @@ JvmtiThreadState::JvmtiThreadState(JavaThread* thread, oop thread_oop)
 JvmtiThreadState::~JvmtiThreadState()   {
   assert(JvmtiThreadState_lock->is_locked(), "sanity check");
 
-  if (_classes_being_redefined != NULL) {
+  if (_classes_being_redefined != nullptr) {
     delete _classes_being_redefined; // free the GrowableArray on C heap
   }
 
   // clear this as the state for the thread
-  get_thread()->set_jvmti_thread_state(NULL);
+  get_thread()->set_jvmti_thread_state(nullptr);
 
   // zap our env thread states
   {
     JvmtiEnvBase::entering_dying_thread_env_iteration();
     JvmtiEnvThreadStateIterator it(this);
-    for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ) {
+    for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ) {
       JvmtiEnvThreadState* zap = ets;
       ets = it.next(ets);
       delete zap;
@@ -157,21 +157,21 @@ JvmtiThreadState::~JvmtiThreadState()   {
     // See periodic_clean_up().
     debug_only(NoSafepointVerifier nosafepoint;)
 
-    if (_prev == NULL) {
+    if (_prev == nullptr) {
       assert(_head == this, "sanity check");
       _head = _next;
     } else {
       assert(_head != this, "sanity check");
       _prev->_next = _next;
     }
-    if (_next != NULL) {
+    if (_next != nullptr) {
       _next->_prev = _prev;
     }
-    _next = NULL;
-    _prev = NULL;
+    _next = nullptr;
+    _prev = nullptr;
   }
-  if (get_thread_oop() != NULL) {
-    java_lang_Thread::set_jvmti_thread_state(get_thread_oop(), NULL);
+  if (get_thread_oop() != nullptr) {
+    java_lang_Thread::set_jvmti_thread_state(get_thread_oop(), nullptr);
   }
   _thread_oop_h.release(JvmtiExport::jvmti_oop_storage());
 }
@@ -185,13 +185,13 @@ JvmtiThreadState::periodic_clean_up() {
   // because the latter requires the JvmtiThreadState_lock.
   // This iteration is safe at a safepoint as well, see the NoSafepointVerifier
   // asserts at all list manipulation sites.
-  for (JvmtiThreadState *state = _head; state != NULL; state = state->next()) {
+  for (JvmtiThreadState *state = _head; state != nullptr; state = state->next()) {
     // For each environment thread state corresponding to an invalid environment
     // unlink it from the list and deallocate it.
     JvmtiEnvThreadStateIterator it(state);
-    JvmtiEnvThreadState* previous_ets = NULL;
+    JvmtiEnvThreadState* previous_ets = nullptr;
     JvmtiEnvThreadState* ets = it.first();
-    while (ets != NULL) {
+    while (ets != nullptr) {
       if (ets->get_env()->is_valid()) {
         previous_ets = ets;
         ets = it.next(ets);
@@ -199,7 +199,7 @@ JvmtiThreadState::periodic_clean_up() {
         // This one isn't valid, remove it from the list and deallocate it
         JvmtiEnvThreadState* defunct_ets = ets;
         ets = ets->next();
-        if (previous_ets == NULL) {
+        if (previous_ets == nullptr) {
           assert(state->head_env_thread_state() == defunct_ets, "sanity check");
           state->set_head_env_thread_state(ets);
         } else {
@@ -244,7 +244,7 @@ JvmtiVTMSTransitionDisabler::JvmtiVTMSTransitionDisabler(bool is_SR) {
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is no-op without virtual threads
   }
-  if (Thread::current_or_null() == NULL) {
+  if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
   _is_SR = is_SR;
@@ -255,7 +255,7 @@ JvmtiVTMSTransitionDisabler::~JvmtiVTMSTransitionDisabler() {
   if (!Continuations::enabled()) {
     return; // JvmtiVTMSTransitionDisabler is a no-op without virtual threads
   }
-  if (Thread::current_or_null() == NULL) {
+  if (Thread::current_or_null() == nullptr) {
     return;  // Detached thread, can be a call from Agent_OnLoad.
   }
   enable_VTMS_transitions();
@@ -269,6 +269,7 @@ JvmtiVTMSTransitionDisabler::disable_VTMS_transitions() {
     ThreadBlockInVM tbivm(thread);
     MonitorLocker ml(JvmtiVTMSTransition_lock, Mutex::_no_safepoint_check_flag);
 
+    assert(!thread->is_in_tmp_VTMS_transition(), "sanity check");
     assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
     while (_SR_mode) { // Suspender or resumer is a JvmtiVTMSTransitionDisabler monopolist.
       ml.wait(10);     // Wait while there is an active suspender or resumer.
@@ -379,7 +380,7 @@ JvmtiVTMSTransitionDisabler::start_VTMS_transition(jthread vthread, bool is_moun
   assert(!thread->is_in_VTMS_transition(), "VTMS_transition sanity check");
   thread->set_is_in_VTMS_transition(true);
   JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vth());
-  if (vstate != NULL) {
+  if (vstate != nullptr) {
     vstate->set_is_in_VTMS_transition(true);
   }
 }
@@ -393,7 +394,7 @@ JvmtiVTMSTransitionDisabler::finish_VTMS_transition(jthread vthread, bool is_mou
   oop vt = JNIHandles::resolve_external_guard(vthread);
   int64_t thread_id = java_lang_Thread::thread_id(vt);
   JvmtiThreadState* vstate = java_lang_Thread::jvmti_thread_state(vt);
-  if (vstate != NULL) {
+  if (vstate != nullptr) {
     vstate->set_is_in_VTMS_transition(false);
   }
 
@@ -529,11 +530,11 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
     debug_only(NoSafepointVerifier nosafepoint;)
 
     JvmtiEnvThreadStateIterator it(this);
-    JvmtiEnvThreadState* previous_ets = NULL;
-    for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
+    JvmtiEnvThreadState* previous_ets = nullptr;
+    for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       previous_ets = ets;
     }
-    if (previous_ets == NULL) {
+    if (previous_ets == nullptr) {
       set_head_env_thread_state(new_ets);
     } else {
       previous_ets->set_next(new_ets);
@@ -542,14 +543,14 @@ void JvmtiThreadState::add_env(JvmtiEnvBase *env) {
 }
 
 void JvmtiThreadState::enter_interp_only_mode() {
-  assert(_thread != NULL, "sanity check");
+  assert(_thread != nullptr, "sanity check");
   _thread->increment_interp_only_mode();
   invalidate_cur_stack_depth();
 }
 
 void JvmtiThreadState::leave_interp_only_mode() {
   assert(is_interp_only_mode(), "leaving interp only when not in interp only mode");
-  if (_thread == NULL) {
+  if (_thread == nullptr) {
     // Unmounted virtual thread updates the saved value.
     --_saved_interp_only_mode;
   } else {
@@ -563,7 +564,7 @@ int JvmtiThreadState::count_frames() {
   JavaThread* thread = get_thread_or_saved();
   javaVFrame *jvf;
   ResourceMark rm;
-  if (thread == NULL) {
+  if (thread == nullptr) {
     oop thread_obj = get_thread_oop();
     jvf = JvmtiEnvBase::get_vthread_jvf(thread_obj);
   } else {
@@ -575,7 +576,10 @@ int JvmtiThreadState::count_frames() {
            "call by myself / at safepoint / at handshake");
     if (!thread->has_last_Java_frame()) return 0;  // No Java frames.
     // TBD: This might need to be corrected for detached carrier threads.
-    RegisterMap reg_map(thread, /* update_map */ false, /* process_frames */ false, /* walk_cont */ true);
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::skip,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::include);
     jvf = thread->last_java_vframe(&reg_map);
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(thread, jvf);
   }
@@ -666,7 +670,7 @@ void JvmtiThreadState::process_pending_step_for_popframe() {
   // and current method_id after pop and step for recursive calls.
   // Force the step by clearing the last location.
   JvmtiEnvThreadStateIterator it(this);
-  for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     ets->clear_current_location();
   }
 }
@@ -688,7 +692,7 @@ void JvmtiThreadState::update_for_pop_top_frame() {
     int popframe_number = cur_stack_depth();
     {
       JvmtiEnvThreadStateIterator it(this);
-      for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
+      for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
         if (ets->is_frame_pop(popframe_number)) {
           ets->clear_frame_pop(popframe_number);
         }
@@ -719,7 +723,7 @@ void JvmtiThreadState::process_pending_step_for_earlyret() {
     // is the case, then we consider our return from compiled code to
     // complete the ForceEarlyReturn request and we clear the condition.
     clr_earlyret_pending();
-    set_earlyret_oop(NULL);
+    set_earlyret_oop(nullptr);
     clr_earlyret_value();
   }
 
@@ -741,7 +745,7 @@ void JvmtiThreadState::process_pending_step_for_earlyret() {
   // method_id after earlyret and step for recursive calls.
   // Force the step by clearing the last location.
   JvmtiEnvThreadStateIterator it(this);
-  for (JvmtiEnvThreadState* ets = it.first(); ets != NULL; ets = it.next(ets)) {
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     ets->clear_current_location();
   }
 }
@@ -750,21 +754,21 @@ void JvmtiThreadState::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*) &_earlyret_oop);
 
   // Keep nmethods from unloading on the event queue
-  if (_jvmti_event_queue != NULL) {
+  if (_jvmti_event_queue != nullptr) {
     _jvmti_event_queue->oops_do(f, cf);
   }
 }
 
 void JvmtiThreadState::nmethods_do(CodeBlobClosure* cf) {
   // Keep nmethods from unloading on the event queue
-  if (_jvmti_event_queue != NULL) {
+  if (_jvmti_event_queue != nullptr) {
     _jvmti_event_queue->nmethods_do(cf);
   }
 }
 
 // Thread local event queue.
 void JvmtiThreadState::enqueue_event(JvmtiDeferredEvent* event) {
-  if (_jvmti_event_queue == NULL) {
+  if (_jvmti_event_queue == nullptr) {
     _jvmti_event_queue = new JvmtiDeferredEventQueue();
   }
   // copy the event
@@ -772,15 +776,15 @@ void JvmtiThreadState::enqueue_event(JvmtiDeferredEvent* event) {
 }
 
 void JvmtiThreadState::post_events(JvmtiEnv* env) {
-  if (_jvmti_event_queue != NULL) {
+  if (_jvmti_event_queue != nullptr) {
     _jvmti_event_queue->post(env);  // deletes each queue node
     delete _jvmti_event_queue;
-    _jvmti_event_queue = NULL;
+    _jvmti_event_queue = nullptr;
   }
 }
 
 void JvmtiThreadState::run_nmethod_entry_barriers() {
-  if (_jvmti_event_queue != NULL) {
+  if (_jvmti_event_queue != nullptr) {
     _jvmti_event_queue->run_nmethod_entry_barriers();
   }
 }
@@ -790,8 +794,8 @@ oop JvmtiThreadState::get_thread_oop() {
 }
 
 void JvmtiThreadState::set_thread(JavaThread* thread) {
-  _thread_saved = NULL;  // Common case.
-  if (!_is_virtual && thread == NULL) {
+  _thread_saved = nullptr;  // Common case.
+  if (!_is_virtual && thread == nullptr) {
     // Save JavaThread* if carrier thread is being detached.
     _thread_saved = _thread;
   }

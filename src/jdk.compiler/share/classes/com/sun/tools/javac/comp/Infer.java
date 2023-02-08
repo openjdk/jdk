@@ -25,10 +25,8 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.code.Types.TypeMapping;
-import com.sun.tools.javac.comp.Attr.CheckMode;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
 import com.sun.tools.javac.tree.JCTree;
@@ -59,8 +57,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -71,6 +68,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
+import java.util.Comparator;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -88,9 +86,6 @@ public class Infer {
     Types types;
     JCDiagnostic.Factory diags;
     Log log;
-
-    /** should the graph solver be used? */
-    boolean allowGraphInference;
 
     /**
      * folder in which the inference dependency graphs should be written.
@@ -119,9 +114,6 @@ public class Infer {
         diags = JCDiagnostic.Factory.instance(context);
         log = Log.instance(context);
         Options options = Options.instance(context);
-        Source source = Source.instance(context);
-        allowGraphInference = Feature.GRAPH_INFERENCE.allowedInSource(source)
-                && options.isUnset("useLegacyInference");
         dependenciesFolder = options.get("debug.dumpInferenceGraphsTo");
         pendingGraphs = List.nil();
 
@@ -182,11 +174,11 @@ public class Infer {
             resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,   //B2
                     argtypes, mt.getParameterTypes(), warn);
 
-            if (allowGraphInference && resultInfo != null && resultInfo.pt == anyPoly) {
+            if (resultInfo != null && resultInfo.pt == anyPoly) {
                 doIncorporation(inferenceContext, warn);
                 //we are inside method attribution - just return a partially inferred type
                 return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
-            } else if (allowGraphInference && resultInfo != null) {
+            } else if (resultInfo != null) {
 
                 //inject return constraints earlier
                 doIncorporation(inferenceContext, warn); //propagation
@@ -215,22 +207,8 @@ public class Infer {
             deferredAttrContext.complete();
 
             // minimize as yet undetermined type variables
-            if (allowGraphInference) {
-                inferenceContext.solve(warn);
-            } else {
-                inferenceContext.solveLegacy(true, warn, LegacyInferenceSteps.EQ_LOWER.steps); //minimizeInst
-            }
-
+            inferenceContext.solve(warn);
             mt = (MethodType)inferenceContext.asInstType(mt);
-
-            if (!allowGraphInference &&
-                    inferenceContext.restvars().nonEmpty() &&
-                    resultInfo != null &&
-                    !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
-                generateReturnConstraints(env.tree, resultInfo, mt, inferenceContext);
-                inferenceContext.solveLegacy(false, warn, LegacyInferenceSteps.EQ_UPPER.steps); //maximizeInst
-                mt = (MethodType)inferenceContext.asInstType(mt);
-            }
 
             if (resultInfo != null && rs.verboseResolutionMode.contains(VerboseResolutionMode.DEFERRED_INST)) {
                 log.note(env.tree.pos, Notes.DeferredMethodInst(msym, mt, resultInfo.pt));
@@ -239,7 +217,7 @@ public class Infer {
             // return instantiated version of method type
             return mt;
         } finally {
-            if (resultInfo != null || !allowGraphInference) {
+            if (resultInfo != null) {
                 inferenceContext.notifyChange();
             } else {
                 inferenceContext.notifyChange(inferenceContext.boundedVars());
@@ -410,21 +388,16 @@ public class Infer {
         } else if (to.hasTag(NONE)) {
             to = from.isPrimitive() ? from : syms.objectType;
         } else if (qtype.hasTag(UNDETVAR)) {
-            if (needsEagerInstantiation((UndetVar)qtype, to, inferenceContext) &&
-                    (allowGraphInference || !to.isPrimitive())) {
+            if (needsEagerInstantiation((UndetVar)qtype, to, inferenceContext)) {
                 to = generateReferenceToTargetConstraint(tree, (UndetVar)qtype, to, resultInfo, inferenceContext);
             }
         } else if (rsInfoInfContext.free(resultInfo.pt)) {
             //propagation - cache captured vars
             qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, !resultInfo.checkMode.updateTreeType()));
         }
-        Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
-                "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
         //we need to skip capture?
         Warner retWarn = new Warner();
-        if (!resultInfo.checkContext.compatible(qtype, rsInfoInfContext.asUndetVar(to), retWarn) ||
-                //unchecked conversion is not allowed in source 7 mode
-                (!allowGraphInference && retWarn.hasLint(Lint.LintCategory.UNCHECKED))) {
+        if (!resultInfo.checkContext.compatible(qtype, rsInfoInfContext.asUndetVar(to), retWarn)) {
             throw error(diags.fragment(Fragments.InferNoConformingInstanceExists(inferenceContext.restvars(), mt.getReturnType(), to)));
         }
         return from;
@@ -534,8 +507,11 @@ public class Infer {
             }
         }
         //step 2 - replace fresh tvars in their bounds
-        List<Type> formals = vars;
-        for (Type t : todo) {
+        replaceTypeVarsInBounds(todo.toList(), inferenceContext);
+    }
+
+    private void replaceTypeVarsInBounds(List<Type> vars, InferenceContext inferenceContext) {
+        for (Type t : vars) {
             UndetVar uv = (UndetVar)t;
             TypeVar ct = (TypeVar)uv.getInst();
             ct.setUpperBound( types.glb(inferenceContext.asInstTypes(types.getBounds(ct))) );
@@ -543,7 +519,6 @@ public class Infer {
                 //report inference error if glb fails
                 reportBoundError(uv, InferenceBound.UPPER);
             }
-            formals = formals.tail;
         }
     }
 
@@ -616,7 +591,7 @@ public class Infer {
     TypeMapping<Void> fromTypeVarFun = new StructuralTypeMapping<Void>() {
         @Override
         public Type visitTypeVar(TypeVar tv, Void aVoid) {
-            UndetVar uv = new UndetVar(tv, incorporationEngine(), types);
+            UndetVar uv = new UndetVar(tv, incorporationEngine, types);
             if ((tv.tsym.flags() & Flags.THROWS) != 0) {
                 uv.setThrow();
             }
@@ -677,6 +652,122 @@ public class Infer {
             checkContext.compatible(owntype, funcInterface, types.noWarnings);
             return owntype;
         }
+    }
+
+    /**
+     * Infer record type for pattern matching. Given an expression type
+     * (@code expressionType}), and a given record ({@code patternTypeSymbol}),
+     * a parameterized type of {@code patternTypeSymbol} is inferred
+     * according to JLS 18.5.5.
+     *
+     * @param expressionType
+     * @param patternTypeSymbol
+     * @return
+     */
+    public Type instantiatePatternType(Type expressionType, TypeSymbol patternTypeSymbol) {
+        if (expressionType.tsym == patternTypeSymbol)
+            return expressionType;
+
+        //step 1:
+        List<Type> expressionTypes = List.nil();
+        List<Type> params = patternTypeSymbol.type.allparams();
+        List<Type> capturedWildcards = List.nil();
+        List<Type> todo = List.of(expressionType);
+        while (todo.nonEmpty()) {
+            Type current = todo.head;
+            todo = todo.tail;
+            switch (current.getTag()) {
+                case CLASS -> {
+                    if (current.isCompound()) {
+                        todo = todo.prependList(types.directSupertypes(current));
+                    } else {
+                        Type captured = types.capture(current);
+
+                        for (Type ta : captured.getTypeArguments()) {
+                            if (ta.hasTag(TYPEVAR) && ((TypeVar) ta).isCaptured()) {
+                                params = params.prepend((TypeVar) ta);
+                                capturedWildcards = capturedWildcards.prepend(ta);
+                            }
+                        }
+                        expressionTypes = expressionTypes.prepend(captured);
+                    }
+                }
+                case TYPEVAR -> {
+                    todo = todo.prepend(types.skipTypeVars(current, false));
+                }
+                default -> expressionTypes = expressionTypes.prepend(current);
+            }
+        }
+        //add synthetic captured ivars
+        InferenceContext c = new InferenceContext(this, params);
+        Type patternType = c.asUndetVar(patternTypeSymbol.type);
+        List<Type> exprTypes = expressionTypes.map(t -> c.asUndetVar(t));
+
+        capturedWildcards.forEach(s -> ((UndetVar) c.asUndetVar(s)).setNormal());
+
+        try {
+            //step 2:
+            for (Type exprType : exprTypes) {
+                if (exprType.isParameterized()) {
+                    Type patternAsExpression =
+                            types.asSuper(patternType, exprType.tsym);
+                    if (patternAsExpression == null ||
+                        !types.isSameType(patternAsExpression, exprType)) {
+                        return null;
+                    }
+                }
+            }
+
+            doIncorporation(c, types.noWarnings);
+
+            //step 3:
+            List<Type> freshVars = instantiatePatternVars(params, c);
+
+            Type substituted = c.asInstType(patternTypeSymbol.type);
+
+            //step 4:
+            return types.upward(substituted, freshVars);
+        } catch (Infer.InferenceException ex) {
+            return null;
+        }
+    }
+
+    private List<Type> instantiatePatternVars(List<Type> vars, InferenceContext c) {
+        ListBuffer<Type> freshVars = new ListBuffer<>();
+        ListBuffer<Type> todo = new ListBuffer<>();
+
+        //step 1 - create fresh tvars
+        for (Type t : vars) {
+            UndetVar undet = (UndetVar) c.asUndetVar(t);
+            List<Type> bounds = InferenceStep.EQ.filterBounds(undet, c);
+            if (bounds.nonEmpty()) {
+                undet.setInst(bounds.head);
+            } else {
+                List<Type> upperBounds = undet.getBounds(InferenceBound.UPPER);
+                Type upper;
+                boolean recursive = Type.containsAny(upperBounds, vars);
+                if (recursive) {
+                    upper = types.makeIntersectionType(upperBounds);
+                    todo.append(undet);
+                } else if (upperBounds.nonEmpty()) {
+                    upper = types.glb(upperBounds);
+                } else {
+                    upper = syms.objectType;
+                }
+                List<Type> lowerBounds = undet.getBounds(InferenceBound.LOWER);
+                Type lower = lowerBounds.isEmpty() ? syms.botType
+                                                   : lowerBounds.tail.isEmpty() ? lowerBounds.head
+                                                                                : types.lub(lowerBounds);
+                TypeVar vt = new TypeVar(syms.noSymbol, upper, lower);
+                freshVars.add(vt);
+                undet.setInst(vt);
+            }
+        }
+
+        //step 2 - replace fresh tvars in their bounds
+        replaceTypeVarsInBounds(todo.toList(), c);
+
+        return freshVars.toList();
     }
     // </editor-fold>
 
@@ -804,28 +895,6 @@ public class Infer {
         @Override
         public String toString() {
             return String.format("%s[undet=%s,t=%s,bound=%s]", getClass().getSimpleName(), uv.qtype, t, from);
-        }
-    }
-
-    /**
-     * Custom check executed by the legacy incorporation engine. Newly added bounds are checked
-     * against existing eq bounds.
-     */
-    class EqCheckLegacy extends CheckBounds {
-        EqCheckLegacy(UndetVar uv, Type t, InferenceBound from) {
-            super(uv, t, InferenceContext::asInstType, InferenceContext::free, from);
-        }
-
-        @Override
-        public IncorporationAction dup(UndetVar that) {
-            return new EqCheckLegacy(that, t, from);
-        }
-
-        @Override
-        EnumSet<InferenceBound> boundsToCheck() {
-            return (from == InferenceBound.EQ) ?
-                            EnumSet.allOf(InferenceBound.class) :
-                            EnumSet.of(InferenceBound.EQ);
         }
     }
 
@@ -1017,7 +1086,7 @@ public class Infer {
      * This class models an incorporation engine. The engine is responsible for listening to
      * changes in inference variables and register incorporation actions accordingly.
      */
-    abstract class AbstractIncorporationEngine implements UndetVarListener {
+    class IncorporationEngine implements UndetVarListener {
 
         @Override
         public void varInstantiated(UndetVar uv) {
@@ -1030,31 +1099,6 @@ public class Infer {
             uv.incorporationActions.addAll(getIncorporationActions(uv, ib, bound, update));
         }
 
-        abstract List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update);
-    }
-
-    /**
-     * A legacy incorporation engine. Used for source <= 7.
-     */
-    AbstractIncorporationEngine legacyEngine = new AbstractIncorporationEngine() {
-
-        List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update) {
-            ListBuffer<IncorporationAction> actions = new ListBuffer<>();
-            Type inst = uv.getInst();
-            if (inst != null) {
-                actions.add(new CheckInst(uv, ib));
-            }
-            actions.add(new EqCheckLegacy(uv, t, ib));
-            return actions.toList();
-        }
-    };
-
-    /**
-     * The standard incorporation engine. Used for source >= 8.
-     */
-    AbstractIncorporationEngine graphEngine = new AbstractIncorporationEngine() {
-
-        @Override
         List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update) {
             ListBuffer<IncorporationAction> actions = new ListBuffer<>();
             Type inst = uv.getInst();
@@ -1075,14 +1119,9 @@ public class Infer {
 
             return actions.toList();
         }
-    };
-
-    /**
-     * Get the incorporation engine to be used in this compilation.
-     */
-    AbstractIncorporationEngine incorporationEngine() {
-        return allowGraphInference ? graphEngine : legacyEngine;
     }
+
+    IncorporationEngine incorporationEngine = new IncorporationEngine();
 
     /** max number of incorporation rounds. */
     static final int MAX_INCORPORATION_STEPS = 10000;
@@ -1224,7 +1263,7 @@ public class Infer {
     }
 
     /** an incorporation cache keeps track of all executed incorporation-related operations */
-    Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
+    Map<IncorporationBinaryOp, Boolean> incorporationCache = new LinkedHashMap<>();
 
     protected static class BoundFilter implements Predicate<Type> {
 
@@ -1356,7 +1395,7 @@ public class Infer {
         }
 
         /**
-         * Computes a path that goes from a given node to the leafs in the graph.
+         * Computes a path that goes from a given node to the leaves in the graph.
          * Typically this will start from a node containing a variable in
          * {@code varsToSolve}. For any given path, the cost is computed as the total
          * number of type-variables that should be eagerly instantiated across that path.
@@ -1386,7 +1425,7 @@ public class Infer {
         }
 
         /** cache used to avoid redundant computation of tree costs */
-        final Map<Node, Pair<List<Node>, Integer>> treeCache = new HashMap<>();
+        final Map<Node, Pair<List<Node>, Integer>> treeCache = new LinkedHashMap<>();
 
         /** constant value used to mark non-existent paths */
         final Pair<List<Node>, Integer> noPath = new Pair<>(null, Integer.MAX_VALUE);
@@ -1495,21 +1534,6 @@ public class Infer {
         },
         /**
          * Like the former; the only difference is that this step can only be applied
-         * if all upper bounds are ground.
-         */
-        UPPER_LEGACY(InferenceBound.UPPER) {
-            @Override
-            public boolean accepts(UndetVar t, InferenceContext inferenceContext) {
-                return !inferenceContext.free(t.getBounds(ib)) && !t.isCaptured();
-            }
-
-            @Override
-            Type solve(UndetVar uv, InferenceContext inferenceContext) {
-                return UPPER.solve(uv, inferenceContext);
-            }
-        },
-        /**
-         * Like the former; the only difference is that this step can only be applied
          * if all upper/lower bounds are ground.
          */
         CAPTURED(InferenceBound.UPPER) {
@@ -1558,23 +1582,6 @@ public class Infer {
          */
         List<Type> filterBounds(UndetVar uv, InferenceContext inferenceContext) {
             return Type.filter(uv.getBounds(ib), new BoundFilter(inferenceContext));
-        }
-    }
-
-    /**
-     * This enumeration defines the sequence of steps to be applied when the
-     * solver works in legacy mode. The steps in this enumeration reflect
-     * the behavior of old inference routine (see JLS SE 7 15.12.2.7/15.12.2.8).
-     */
-    enum LegacyInferenceSteps {
-
-        EQ_LOWER(EnumSet.of(InferenceStep.EQ, InferenceStep.LOWER)),
-        EQ_UPPER(EnumSet.of(InferenceStep.EQ, InferenceStep.UPPER_LEGACY));
-
-        final EnumSet<InferenceStep> steps;
-
-        LegacyInferenceSteps(EnumSet<InferenceStep> steps) {
-            this.steps = steps;
         }
     }
 
@@ -1746,7 +1753,7 @@ public class Infer {
                  * through all its dependencies.
                  */
                 protected Set<Node> closure() {
-                    Set<Node> closure = new HashSet<>();
+                    Set<Node> closure = new LinkedHashSet<>();
                     closureInternal(closure);
                     return closure;
                 }

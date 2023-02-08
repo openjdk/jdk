@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,7 +1016,6 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     static final int WEEK_OF_YEAR_MASK  = (1 << WEEK_OF_YEAR);
     static final int WEEK_OF_MONTH_MASK = (1 << WEEK_OF_MONTH);
     static final int DAY_OF_MONTH_MASK  = (1 << DAY_OF_MONTH);
-    static final int DATE_MASK          = DAY_OF_MONTH_MASK;
     static final int DAY_OF_YEAR_MASK   = (1 << DAY_OF_YEAR);
     static final int DAY_OF_WEEK_MASK   = (1 << DAY_OF_WEEK);
     static final int DAY_OF_WEEK_IN_MONTH_MASK  = (1 << DAY_OF_WEEK_IN_MONTH);

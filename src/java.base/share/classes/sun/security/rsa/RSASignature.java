@@ -144,7 +144,7 @@ abstract class RSASignature extends SignatureSpi {
      * Reset the message digest if it is not already reset.
      */
     private void resetDigest() {
-        if (digestReset == false) {
+        if (!digestReset) {
             md.reset();
             digestReset = true;
         }
@@ -190,12 +190,9 @@ abstract class RSASignature extends SignatureSpi {
         try {
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
-            byte[] encrypted = RSACore.rsa(padded, privateKey, true);
-            return encrypted;
+            return RSACore.rsa(padded, privateKey, true);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
-        } catch (IOException e) {
-            throw new SignatureException("Could not encode data", e);
         }
     }
 

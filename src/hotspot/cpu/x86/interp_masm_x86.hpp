@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_locals() {
     movptr(_locals_register, Address(rbp, frame::interpreter_frame_locals_offset * wordSize));
+    lea(_locals_register, Address(rbp, _locals_register, Address::times_ptr));
   }
 
   // Helpers for runtime call arguments/results
@@ -176,14 +177,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void pop(TosState state);        // transition vtos -> state
   void push(TosState state);       // transition state -> vtos
 
-  // These are dummies to prevent surprise implicit conversions to Register
-  void pop(void* v); // Add unimplemented ambiguous method
-  void push(void* v);   // Add unimplemented ambiguous method
-
   void empty_expression_stack() {
     movptr(rsp, Address(rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
     // NULL last_sp until next java call
-    movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+    movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
     NOT_LP64(empty_FPU_stack());
   }
 

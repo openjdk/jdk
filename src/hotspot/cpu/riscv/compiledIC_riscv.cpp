@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -69,15 +69,14 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
 #undef __
 
 int CompiledStaticCall::to_interp_stub_size() {
-  // fence_i + fence* + (lui, addi, slli, addi, slli, addi) + (lui, addi, slli, addi, slli) + jalr
-  return NativeFenceI::instruction_size() + 12 * NativeInstruction::instruction_size;
+  return MacroAssembler::static_call_stub_size();
 }
 
 int CompiledStaticCall::to_trampoline_stub_size() {
   // Somewhat pessimistically, we count 4 instructions here (although
   // there are only 3) because we sometimes emit an alignment nop.
   // Trampoline stubs are always word aligned.
-  return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
+  return MacroAssembler::max_trampoline_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
@@ -98,7 +97,7 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
 
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeFenceI::instruction_size());
+    = nativeMovConstReg_at(stub);
 #ifdef ASSERT
   NativeGeneralJump* jump = nativeGeneralJump_at(method_holder->next_instruction_address());
 
@@ -119,7 +118,7 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeFenceI::instruction_size());
+    = nativeMovConstReg_at(stub);
   method_holder->set_data(0);
   NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
   jump->set_jump_destination((address)-1);
@@ -139,7 +138,7 @@ void CompiledDirectStaticCall::verify() {
   assert(stub != NULL, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeFenceI::instruction_size());
+    = nativeMovConstReg_at(stub);
   NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
 
   // Verify state.

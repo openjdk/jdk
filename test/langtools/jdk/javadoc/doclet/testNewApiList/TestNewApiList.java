@@ -102,22 +102,6 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <h1 title="New API in recent releases" class="title">New API in recent releases</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#module">Modules</a></li>
-                <li><a href="#package">Packages</a></li>
-                <li><a href="#interface">Interfaces</a></li>
-                <li><a href="#class">Classes</a></li>
-                <li><a href="#enum-class">Enum Classes</a></li>
-                <li><a href="#exception-class">Exception Classes</a></li>
-                <li><a href="#record-class">Record Classes</a></li>
-                <li><a href="#annotation-interface">Annotation Interfaces</a></li>
-                <li><a href="#field">Fields</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                <li><a href="#enum-constant">Enum Constants</a></li>
-                <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
-                </ul>
                 </div>
                 <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
@@ -131,7 +115,23 @@ public class TestNewApiList extends JavadocTester {
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
                 <span>3.2</span></label> <label for="release-6">
                 <input type="checkbox" id="release-6" disabled checked onclick="toggleGlobal(this, '6', 3)">
-                <span>5</span></label></div>""");
+                <span>5</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-module"><a href="#module">Modules</a></li>
+                <li id="contents-package"><a href="#package">Packages</a></li>
+                <li id="contents-interface"><a href="#interface">Interfaces</a></li>
+                <li id="contents-class"><a href="#class">Classes</a></li>
+                <li id="contents-enum-class"><a href="#enum-class">Enum Classes</a></li>
+                <li id="contents-exception-class"><a href="#exception-class">Exception Classes</a></li>
+                <li id="contents-record-class"><a href="#record-class">Record Classes</a></li>
+                <li id="contents-annotation-interface"><a href="#annotation-interface">Annotation Interfaces</a></li>
+                <li id="contents-field"><a href="#field">Fields</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                </ul>""");
     }
 
     private void checkMultiReleaseNewElements() {
@@ -547,12 +547,12 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <h1 title="New API" class="title">New API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
                 </div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>
                 <ul class="block-list">""");
     }
 
@@ -601,16 +601,20 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("deprecated-list.html", true,
             """
                 <h1 title="Deprecated API" class="title">Deprecated API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#for-removal">Terminally Deprecated</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                <li><a href="#enum-constant">Enum Constants</a></li>
-                <li><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
-                </ul>
                 </div>
-                <div class="checkboxes">Show API deprecated in: <label for="release-1">""",
+                <div class="checkboxes">Show API deprecated in: <label for="release-1">
+                <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
+                <span>5</span></label> <label for="release-2">
+                <input type="checkbox" id="release-2" disabled checked onclick="toggleGlobal(this, '', 3)">
+                <span>other</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-for-removal"><a href="#for-removal">Terminally Deprecated</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                <li id="contents-enum-constant"><a href="#enum-constant">Enum Constants</a></li>
+                <li id="contents-annotation-interface-member"><a href="#annotation-interface-member">Annotation Interface Elements</a></li>
+                </ul>""",
             """
                 <div id="for-removal">
                 <div class="table-tabs" role="tablist" aria-orientation="horizontal">
@@ -662,13 +666,6 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("new-list.html", true,
             """
                 <h1 title="New API" class="title">New API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#class">Classes</a></li>
-                <li><a href="#field">Fields</a></li>
-                <li><a href="#method">Methods</a></li>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
                 </div>
                 <div class="checkboxes">Show API added in: <label for="release-1">
                 <input type="checkbox" id="release-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
@@ -680,7 +677,14 @@ public class TestNewApiList extends JavadocTester {
                 <input type="checkbox" id="release-4" disabled checked onclick="toggleGlobal(this, '4', 3)">
                 <span>5</span></label> <label for="release-5">
                 <input type="checkbox" id="release-5" disabled checked onclick="toggleGlobal(this, '5', 3)">
-                <span>6</span></label></div>""");
+                <span>6</span></label></div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-class"><a href="#class">Classes</a></li>
+                <li id="contents-field"><a href="#field">Fields</a></li>
+                <li id="contents-method"><a href="#method">Methods</a></li>
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>""");
     }
 
     private void checkPackageNewElements() {
@@ -774,11 +778,11 @@ public class TestNewApiList extends JavadocTester {
         checkOutput("deprecated-list.html", true,
             """
                 <h1 title="Deprecated API" class="title">Deprecated API</h1>
-                <h2 title="Contents">Contents</h2>
-                <ul>
-                <li><a href="#constructor">Constructors</a></li>
-                </ul>
                 </div>
+                <h2 title="Contents">Contents</h2>
+                <ul class="contents-list">
+                <li id="contents-constructor"><a href="#constructor">Constructors</a></li>
+                </ul>
                 <ul class="block-list">
                 """,
             """

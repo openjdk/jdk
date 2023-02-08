@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,232 +38,7 @@ import java.util.*;
 
 import static java.util.Calendar.*;
 
-
-
-
-
 public class BasicFloat extends Basic {
-
-    private static void test(String fs, String exp, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), Locale.US);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(Locale l, String fs, String exp, Object ... args)
-    {
-        Formatter f = new Formatter(new StringBuilder(), l);
-        f.format(fs, args);
-        ck(fs, exp, f.toString());
-
-        f = new Formatter(new StringBuilder(), l);
-        f.format("foo " + fs + " bar", args);
-        ck(fs, "foo " + exp + " bar", f.toString());
-    }
-
-    private static void test(String fs, Object ... args) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, args);
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void test(String fs) {
-        Formatter f = new Formatter(new StringBuilder(), Locale.US);
-        f.format(fs, "fail");
-        ck(fs, "fail", f.toString());
-    }
-
-    private static void testSysOut(String fs, String exp, Object ... args) {
-        FileOutputStream fos = null;
-        FileInputStream fis = null;
-        try {
-            PrintStream saveOut = System.out;
-            fos = new FileOutputStream("testSysOut");
-            System.setOut(new PrintStream(fos));
-            System.out.format(Locale.US, fs, args);
-            fos.close();
-
-            fis = new FileInputStream("testSysOut");
-            byte [] ba = new byte[exp.length()];
-            int len = fis.read(ba);
-            String got = new String(ba);
-            if (len != ba.length)
-                fail(fs, exp, got);
-            ck(fs, exp, got);
-
-            System.setOut(saveOut);
-        } catch (FileNotFoundException ex) {
-            fail(fs, ex.getClass());
-        } catch (IOException ex) {
-            fail(fs, ex.getClass());
-        } finally {
-            try {
-                if (fos != null)
-                    fos.close();
-                if (fis != null)
-                    fis.close();
-            } catch (IOException ex) {
-                fail(fs, ex.getClass());
-            }
-        }
-    }
-
-    private static void tryCatch(String fs, Class<?> ex) {
-        boolean caught = false;
-        try {
-            test(fs);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
-
-    private static void tryCatch(String fs, Class<?> ex, Object ... args) {
-        boolean caught = false;
-        try {
-            test(fs, args);
-        } catch (Throwable x) {
-            if (ex.isAssignableFrom(x.getClass()))
-                caught = true;
-        }
-        if (!caught)
-            fail(fs, ex);
-        else
-            pass();
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     private static float create(double v) {
@@ -281,59 +56,6 @@ public class BasicFloat extends Basic {
     private static float recip(float v) {
         return 1.0f / v;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     public static void test() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT-0800"));
@@ -435,7 +157,7 @@ public class BasicFloat extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +215,7 @@ public class BasicFloat extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -522,357 +244,6 @@ public class BasicFloat extends Basic {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         //---------------------------------------------------------------------
         // %s - float
         //---------------------------------------------------------------------
@@ -881,37 +252,6 @@ public class BasicFloat extends Basic {
         float pi  = (float) Math.PI;
 
         test("%s", "3.1415927", pi);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         //---------------------------------------------------------------------
         // flag/conversion errors
@@ -951,36 +291,6 @@ public class BasicFloat extends Basic {
         // double PI^300
         //    = 13962455701329742638131355433930076081862072808 ... e+149
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         test("%10.3e", " 1.000e+00", one);
         test("%+.3e", "+3.142e+00", pi);
         test("%+.3e", "-3.142e+00", negate(pi));
@@ -1017,6 +327,16 @@ public class BasicFloat extends Basic {
         test("%3.0e", "1e+06",   1000000.00);
         test("%3.0e", "1e+07",  10000000.00);
         test("%3.0e", "1e+08", 100000000.00);
+
+        //---------------------------------------------------------------------
+        // %e - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.1e", "9.9e-324", 1e-323);
+        test("%.1e", "9.9e-323", 1e-322);
+        test("%.15e", "7.387900000000000e+20", 7.3879e20);
+        test("%.15e", "1.000000000000000e+23", 1e23);
+        test("%.16e", "2.0000000000000000e+23", 2e23);
+        test("%.16e", "1.9400994884341945e+25", 1.9400994884341945E25);
 
         //---------------------------------------------------------------------
         // %f
@@ -1079,84 +399,13 @@ public class BasicFloat extends Basic {
         test("%,3.0f", "10,000,000",  10000000.00);
         test("%,3.0f", "100,000,000", 100000000.00);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        //---------------------------------------------------------------------
+        // %f - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.0f", "738790000000000000000", 7.3879e20);
+        test("%.0f", "100000000000000000000000", 1e23);
+        test("%.0f", "200000000000000000000000", 2e23);
+        test("%.0f", "19400994884341945000000000", 1.9400994884341945E25);
 
         //---------------------------------------------------------------------
         // %f - float
@@ -1172,22 +421,6 @@ public class BasicFloat extends Basic {
         test("%(.2f", "(3141.59)", mult(pi, -1000.0));
         test("%(,.2f", "3,141.59", mult(pi, 1000.0));
         test("%(,.2f", "(3,141.59)", mult(pi, -1000.0));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1274,44 +507,18 @@ public class BasicFloat extends Basic {
 
         tryCatch("%#3.0g", FormatFlagsConversionMismatchException.class, 1000.00);
 
+        //---------------------------------------------------------------------
+        // %g - adoption of Double.toString(double) algorithm
+        //---------------------------------------------------------------------
+        test("%.2g", "9.9e-324", 1e-323);
+        test("%.2g", "9.9e-323", 1e-322);
+        test("%.16g", "7.387900000000000e+20", 7.3879e20);
+        test("%.16g", "1.000000000000000e+23", 1e23);
+        test("%.17g", "2.0000000000000000e+23", 2e23);
+        test("%.17g", "1.9400994884341945e+25", 1.9400994884341945E25);
+
         // double PI^300
         //    = 13962455701329742638131355433930076081862072808 ... e+149
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         test("%.3g", "10.0", ten);
         test("%.3g", "1.00", one);
@@ -1326,107 +533,14 @@ public class BasicFloat extends Basic {
         test("%(.4g", "3.142e+08", mult(pi, 100000000.0));
         test("%(.4g", "(3.142e+08)", mult(pi, -100000000.0));
 
-
         // Float can not accurately store 1e6 * PI.
         test("%,.6g", "3,141.59", mult(pi, 1000.0));
         test("%(,.6g", "(3,141.59)", mult(pi, -1000.0));
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         //---------------------------------------------------------------------
         // %f, %e, %g, %a - Boundaries
         //---------------------------------------------------------------------
-
         //---------------------------------------------------------------------
         // %f, %e, %g, %a - NaN
         //---------------------------------------------------------------------
@@ -1595,72 +709,6 @@ public class BasicFloat extends Basic {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         //---------------------------------------------------------------------
         // %t
         //
@@ -1679,99 +727,6 @@ public class BasicFloat extends Basic {
         tryCatch("%.5tB", IllegalFormatPrecisionException.class);
         tryCatch("%#tB", FormatFlagsConversionMismatchException.class);
         tryCatch("%-tB", MissingFormatWidthException.class);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         //---------------------------------------------------------------------

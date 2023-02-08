@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,9 +169,18 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_ReverseL:
     return (is_integral_type(bt) ? Op_ReverseV : 0);
   case Op_ReverseBytesS:
+  case Op_ReverseBytesUS:
+    // Subword operations in superword usually don't have precise info
+    // about signedness. But the behavior of reverseBytes for short and
+    // char are exactly the same.
+    return ((bt == T_SHORT || bt == T_CHAR) ? Op_ReverseBytesV : 0);
   case Op_ReverseBytesI:
+    // There is no reverseBytes() in Byte class but T_BYTE may appear
+    // in VectorAPI calls. We still use ReverseBytesI for T_BYTE to
+    // ensure vector intrinsification succeeds.
+    return ((bt == T_INT || bt == T_BYTE) ? Op_ReverseBytesV : 0);
   case Op_ReverseBytesL:
-    return (is_integral_type(bt) ? Op_ReverseBytesV : 0);
+    return (bt == T_LONG ? Op_ReverseBytesV : 0);
   case Op_CompressBits:
     // Not implemented. Returning 0 temporarily
     return 0;
@@ -334,17 +343,6 @@ bool VectorNode::is_muladds2i(Node* n) {
   return false;
 }
 
-bool VectorNode::is_type_transition_long_to_int(Node* n) {
-  switch(n->Opcode()) {
-    case Op_PopCountL:
-    case Op_CountLeadingZerosL:
-    case Op_CountTrailingZerosL:
-       return true;
-    default:
-       return false;
-  }
-}
-
 bool VectorNode::is_roundopD(Node* n) {
   if (n->Opcode() == Op_RoundDoubleMode) {
     return true;
@@ -469,10 +467,16 @@ bool VectorNode::is_convert_opcode(int opc) {
     case Op_ConvD2F:
     case Op_ConvF2D:
     case Op_ConvD2I:
+    case Op_ConvF2HF:
+    case Op_ConvHF2F:
       return true;
     default:
       return false;
   }
+}
+
+bool VectorNode::is_minmax_opcode(int opc) {
+  return opc == Op_MinI || opc == Op_MaxI;
 }
 
 bool VectorNode::is_shift(Node* n) {
@@ -828,26 +832,42 @@ bool VectorNode::is_vector_shift_count(int opc) {
   }
 }
 
-static bool is_con_M1(Node* n) {
+static bool is_con(Node* n, long con) {
   if (n->is_Con()) {
     const Type* t = n->bottom_type();
-    if (t->isa_int() && t->is_int()->get_con() == -1) {
+    if (t->isa_int() && t->is_int()->get_con() == (int)con) {
       return true;
     }
-    if (t->isa_long() && t->is_long()->get_con() == -1) {
+    if (t->isa_long() && t->is_long()->get_con() == con) {
       return true;
     }
   }
   return false;
 }
 
+// Return true if every bit in this vector is 1.
 bool VectorNode::is_all_ones_vector(Node* n) {
   switch (n->Opcode()) {
   case Op_ReplicateB:
   case Op_ReplicateS:
   case Op_ReplicateI:
   case Op_ReplicateL:
-    return is_con_M1(n->in(1));
+  case Op_MaskAll:
+    return is_con(n->in(1), -1);
+  default:
+    return false;
+  }
+}
+
+// Return true if every bit in this vector is 0.
+bool VectorNode::is_all_zeros_vector(Node* n) {
+  switch (n->Opcode()) {
+  case Op_ReplicateB:
+  case Op_ReplicateS:
+  case Op_ReplicateI:
+  case Op_ReplicateL:
+  case Op_MaskAll:
+    return is_con(n->in(1), 0);
   default:
     return false;
   }
@@ -859,6 +879,62 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
            is_all_ones_vector(n->in(2));
   }
   return false;
+}
+
+Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
+  int vopc = node->Opcode();
+  uint vlen = vt->length();
+  BasicType bt = vt->element_basic_type();
+
+  // Predicated vectors do not need to add another mask input
+  if (node->is_predicated_vector() || !Matcher::has_predicated_vectors() ||
+      !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt) ||
+      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, bt)) {
+    return NULL;
+  }
+
+  Node* mask = NULL;
+  // Generate a vector mask for vector operation whose vector length is lower than the
+  // hardware supported max vector length.
+  if (vt->length_in_bytes() < (uint)MaxVectorSize) {
+    Node* length = gvn->transform(new ConvI2LNode(gvn->makecon(TypeInt::make(vlen))));
+    mask = gvn->transform(VectorMaskGenNode::make(length, bt, vlen));
+  } else {
+    return NULL;
+  }
+
+  // Generate the related masked op for vector load/store/load_gather/store_scatter.
+  // Or append the mask to the vector op's input list by default.
+  switch(vopc) {
+  case Op_LoadVector:
+    return new LoadVectorMaskedNode(node->in(0), node->in(1), node->in(2),
+                                    node->as_LoadVector()->adr_type(), vt, mask,
+                                    node->as_LoadVector()->control_dependency());
+  case Op_LoadVectorGather:
+    return new LoadVectorGatherMaskedNode(node->in(0), node->in(1), node->in(2),
+                                          node->as_LoadVector()->adr_type(), vt,
+                                          node->in(3), mask);
+  case Op_StoreVector:
+    return new StoreVectorMaskedNode(node->in(0), node->in(1), node->in(2), node->in(3),
+                                     node->as_StoreVector()->adr_type(), mask);
+  case Op_StoreVectorScatter:
+    return new StoreVectorScatterMaskedNode(node->in(0), node->in(1), node->in(2),
+                                            node->as_StoreVector()->adr_type(),
+                                            node->in(3), node->in(4), mask);
+  default:
+    // Add the mask as an additional input to the original vector node by default.
+    // This is used for almost all the vector nodes.
+    node->add_req(mask);
+    node->add_flag(Node::Flag_is_predicated_vector);
+    return node;
+  }
+}
+
+Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (Matcher::vector_needs_partial_operations(this, vect_type())) {
+    return try_to_gen_masked_vector(phase, this, vect_type());
+  }
+  return NULL;
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
@@ -931,11 +1007,26 @@ LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
   return new LoadVectorNode(ctl, mem, adr, atyp, vt, control_dependency);
 }
 
+Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  if (Matcher::vector_needs_partial_operations(this, vt)) {
+    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  }
+  return LoadNode::Ideal(phase, can_reshape);
+}
+
 // Return the vector version of a scalar store node.
-StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
-                                       Node* adr, const TypePtr* atyp, Node* val,
-                                       uint vlen) {
+StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem, Node* adr,
+                                       const TypePtr* atyp, Node* val, uint vlen) {
   return new StoreVectorNode(ctl, mem, adr, atyp, val);
+}
+
+Node* StoreVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  if (Matcher::vector_needs_partial_operations(this, vt)) {
+    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  }
+  return StoreNode::Ideal(phase, can_reshape);
 }
 
 Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -954,7 +1045,7 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return NULL;
+  return LoadVectorNode::Ideal(phase, can_reshape);
 }
 
 Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -974,7 +1065,7 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       }
     }
   }
-  return NULL;
+  return StoreVectorNode::Ideal(phase, can_reshape);
 }
 
 int ExtractNode::opcode(BasicType bt) {
@@ -994,9 +1085,8 @@ int ExtractNode::opcode(BasicType bt) {
 }
 
 // Extract a scalar element of vector.
-Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
-  assert((int)position < Matcher::max_vector_size(bt), "pos in range");
-  ConINode* pos = ConINode::make((int)position);
+Node* ExtractNode::make(Node* v, ConINode* pos, BasicType bt) {
+  assert(pos->get_int() < Matcher::max_vector_size(bt), "pos in range");
   switch (bt) {
   case T_BOOLEAN: return new ExtractUBNode(v, pos);
   case T_BYTE:    return new ExtractBNode(v, pos);
@@ -1193,6 +1283,14 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   }
 }
 
+Node* ReductionNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  if (Matcher::vector_needs_partial_operations(this, vt)) {
+    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  }
+  return NULL;
+}
+
 Node* VectorLoadMaskNode::Identity(PhaseGVN* phase) {
   BasicType out_bt = type()->is_vect()->element_basic_type();
   if (!Matcher::has_predicated_vectors() && out_bt == T_BOOLEAN) {
@@ -1231,14 +1329,31 @@ VectorCastNode* VectorCastNode::make(int vopc, Node* n1, BasicType bt, uint vlen
     case Op_VectorUCastB2X: return new VectorUCastB2XNode(n1, vt);
     case Op_VectorUCastS2X: return new VectorUCastS2XNode(n1, vt);
     case Op_VectorUCastI2X: return new VectorUCastI2XNode(n1, vt);
+    case Op_VectorCastHF2F: return new VectorCastHF2FNode(n1, vt);
+    case Op_VectorCastF2HF: return new VectorCastF2HFNode(n1, vt);
     default:
       assert(false, "unknown node: %s", NodeClassNames[vopc]);
       return NULL;
   }
 }
 
-int VectorCastNode::opcode(BasicType bt, bool is_signed) {
+int VectorCastNode::opcode(int sopc, BasicType bt, bool is_signed) {
   assert((is_integral_type(bt) && bt != T_LONG) || is_signed, "");
+
+  // Handle special case for to/from Half Float conversions
+  switch (sopc) {
+    case Op_ConvHF2F:
+      assert(bt == T_SHORT, "");
+      return Op_VectorCastHF2F;
+    case Op_ConvF2HF:
+      assert(bt == T_FLOAT, "");
+      return Op_VectorCastF2HF;
+    default:
+      // Handled normally below
+      break;
+  }
+
+  // Handle normal conversions
   switch (bt) {
     case T_BYTE:   return is_signed ? Op_VectorCastB2X : Op_VectorUCastB2X;
     case T_SHORT:  return is_signed ? Op_VectorCastS2X : Op_VectorUCastS2X;
@@ -1254,9 +1369,10 @@ int VectorCastNode::opcode(BasicType bt, bool is_signed) {
 
 bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type) {
   if (is_java_primitive(dst_type) &&
+      is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
       VectorNode::vector_size_supported(dst_type, vlen)) {
-    int vopc = VectorCastNode::opcode(src_type);
+    int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_superword(vopc, vlen, dst_type);
   }
   return false;
@@ -1522,17 +1638,9 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
         if (is_vector_mask) {
+          // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
-          if (in_vt->length_in_bytes() == out_vt->length_in_bytes() &&
-              Matcher::match_rule_supported_vector(Op_VectorMaskCast, out_vt->length(), out_vt->element_basic_type())) {
-            // Apply "VectorUnbox (VectorBox vmask) ==> VectorMaskCast (vmask)"
-            // directly. This could avoid the transformation ordering issue from
-            // "VectorStoreMask (VectorLoadMask vmask) => vmask".
-            return new VectorMaskCastNode(value, vmask_type);
-          }
-          // VectorUnbox (VectorBox vmask) ==> VectorLoadMask (VectorStoreMask vmask)
-          value = phase->transform(VectorStoreMaskNode::make(*phase, value, in_vt->element_basic_type(), in_vt->length()));
-          return new VectorLoadMaskNode(value, vmask_type);
+          return new VectorMaskCastNode(value, vmask_type);
         } else if (is_vector_shuffle) {
           if (!is_shuffle_to_vector()) {
             // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
@@ -1584,7 +1692,11 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
 
 Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt) {
   int max_vector = Matcher::max_vector_size(mask_bt);
-  const TypeVectMask* t_vmask = TypeVectMask::make(mask_bt, max_vector);
+  return make(length, mask_bt, max_vector);
+}
+
+Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt, int mask_len) {
+  const TypeVectMask* t_vmask = TypeVectMask::make(mask_bt, mask_len);
   return new VectorMaskGenNode(length, t_vmask);
 }
 
@@ -1604,54 +1716,19 @@ Node* VectorMaskOpNode::make(Node* mask, const Type* ty, int mopc) {
   return NULL;
 }
 
+Node* VectorMaskOpNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  if (Matcher::vector_needs_partial_operations(this, vt)) {
+    return VectorNode::try_to_gen_masked_vector(phase, this, vt);
+  }
+  return NULL;
+}
+
 Node* VectorMaskToLongNode::Identity(PhaseGVN* phase) {
   if (in(1)->Opcode() == Op_VectorLongToMask) {
     return in(1)->in(1);
   }
   return this;
-}
-
-
-Node* VectorMaskCastNode::makeCastNode(PhaseGVN* phase, Node* src, const TypeVect* dst_type) {
-  const TypeVect* src_type = src->bottom_type()->is_vect();
-  assert(src_type->length() == dst_type->length(), "");
-
-  int num_elem = src_type->length();
-  BasicType elem_bt_from = src_type->element_basic_type();
-  BasicType elem_bt_to = dst_type->element_basic_type();
-
-  if (dst_type->isa_vectmask() == NULL && src_type->isa_vectmask() == NULL &&
-      type2aelembytes(elem_bt_from) != type2aelembytes(elem_bt_to)) {
-
-    Node* op = src;
-    BasicType new_elem_bt_from = elem_bt_from;
-    BasicType new_elem_bt_to = elem_bt_to;
-    if (is_floating_point_type(elem_bt_from)) {
-      new_elem_bt_from =  elem_bt_from == T_FLOAT ? T_INT : T_LONG;
-    }
-    if (is_floating_point_type(elem_bt_to)) {
-      new_elem_bt_to = elem_bt_to == T_FLOAT ? T_INT : T_LONG;
-    }
-
-    // Special handling for casting operation involving floating point types.
-    // Case A) F -> X :=  F -> VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2X
-    // Case B) X -> F :=  X -> VectorCastX2[I/L] -> VectorMaskCast ([I/L]->F [NOP])
-    // Case C) F -> F :=  VectorMaskCast (F->I/L [NOP]) -> VectorCast[I/L]2[L/I] -> VectotMaskCast (L/I->F [NOP])
-
-    if (new_elem_bt_from != elem_bt_from) {
-      const TypeVect* new_src_type = TypeVect::makemask(new_elem_bt_from, num_elem);
-      op = phase->transform(new VectorMaskCastNode(op, new_src_type));
-    }
-
-    op = phase->transform(VectorCastNode::make(VectorCastNode::opcode(new_elem_bt_from), op, new_elem_bt_to, num_elem));
-
-    if (new_elem_bt_to != elem_bt_to) {
-      op = phase->transform(new VectorMaskCastNode(op, dst_type));
-    }
-    return op;
-  } else {
-    return new VectorMaskCastNode(src, dst_type);
-  }
 }
 
 Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
@@ -1674,7 +1751,7 @@ Node* VectorLongToMaskNode::Ideal(PhaseGVN* phase, bool can_reshape) {
      if (src_type->length() == dst_type->length() &&
          ((src_type->isa_vectmask() == NULL && dst_type->isa_vectmask() == NULL) ||
           (src_type->isa_vectmask() && dst_type->isa_vectmask()))) {
-       return VectorMaskCastNode::makeCastNode(phase, src, dst_type);
+       return new VectorMaskCastNode(src, dst_type);
      }
   }
   return NULL;
@@ -1743,34 +1820,161 @@ Node* NegVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return NULL;
 }
 
-Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
-  if (is_predicated_using_blend()) {
-    return this;
+static Node* reverse_operations_identity(Node* n, Node* in1) {
+  if (n->is_predicated_using_blend()) {
+    return n;
   }
-  // ReverseBytesV (ReverseBytesV X , MASK) , MASK =>  X
-  if (in(1)->Opcode() == Op_ReverseBytesV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseBytesV (ReverseBytesV X) =>  X
-      return in(1)->in(1);
+  if (n->Opcode() == in1->Opcode()) {
+    // OperationV (OperationV X MASK) MASK =>  X
+    if (n->is_predicated_vector() && in1->is_predicated_vector() && n->in(2) == in1->in(2)) {
+      return in1->in(1);
+    // OperationV (OperationV X) =>  X
+    } else if (!n->is_predicated_vector() && !in1->is_predicated_vector())  {
+      return in1->in(1);
     }
   }
-  return this;
+  return n;
+}
+
+Node* ReverseBytesVNode::Identity(PhaseGVN* phase) {
+  // "(ReverseBytesV X) => X" if the element type is T_BYTE.
+  if (vect_type()->element_basic_type() == T_BYTE) {
+    return in(1);
+  }
+  return reverse_operations_identity(this, in(1));
 }
 
 Node* ReverseVNode::Identity(PhaseGVN* phase) {
-  if (is_predicated_using_blend()) {
-    return this;
-  }
-  // ReverseV (ReverseV X , MASK) , MASK =>  X
-  if (in(1)->Opcode() == Op_ReverseV) {
-    if (is_predicated_vector() && in(1)->is_predicated_vector() && in(2) == in(1)->in(2)) {
-      return in(1)->in(1);
-    } else {
-      // ReverseV (ReverseV X) =>  X
-      return in(1)->in(1);
+  return reverse_operations_identity(this, in(1));
+}
+
+// Optimize away redundant AndV/OrV nodes when the operation
+// is applied on the same input node multiple times
+static Node* redundant_logical_identity(Node* n) {
+  Node* n1 = n->in(1);
+  // (OperationV (OperationV src1 src2) src1) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2) src2) => (OperationV src1 src2)
+  // (OperationV (OperationV src1 src2 m1) src1 m1) => (OperationV src1 src2 m1)
+  // (OperationV (OperationV src1 src2 m1) src2 m1) => (OperationV src1 src2 m1)
+  if (n->Opcode() == n1->Opcode()) {
+    if (((!n->is_predicated_vector() && !n1->is_predicated_vector()) ||
+         ( n->is_predicated_vector() &&  n1->is_predicated_vector() && n->in(3) == n1->in(3))) &&
+         ( n->in(2) == n1->in(1) || n->in(2) == n1->in(2))) {
+      return n1;
     }
+  }
+
+  Node* n2 = n->in(2);
+  if (n->Opcode() == n2->Opcode()) {
+    // (OperationV src1 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src2 (OperationV src1 src2)) => OperationV(src1, src2)
+    // (OperationV src1 (OperationV src1 src2 m1) m1) => OperationV(src1 src2 m1)
+    // It is not possible to optimize - (OperationV src2 (OperationV src1 src2 m1) m1) as the
+    // results of both "OperationV" nodes are different for unmasked lanes
+    if ((!n->is_predicated_vector() && !n2->is_predicated_vector() &&
+         (n->in(1) == n2->in(1) || n->in(1) == n2->in(2))) ||
+         (n->is_predicated_vector() && n2->is_predicated_vector() && n->in(3) == n2->in(3) &&
+         n->in(1) == n2->in(1))) {
+      return n2;
+    }
+  }
+
+  return n;
+}
+
+Node* AndVNode::Identity(PhaseGVN* phase) {
+  // (AndV src (Replicate m1))   => src
+  // (AndVMask src (MaskAll m1)) => src
+  if (VectorNode::is_all_ones_vector(in(2))) {
+    return in(1);
+  }
+  // (AndV (Replicate zero) src)   => (Replicate zero)
+  // (AndVMask (MaskAll zero) src) => (MaskAll zero)
+  if (VectorNode::is_all_zeros_vector(in(1))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (AndV (Replicate m1) src)   => src
+    // (AndVMask (MaskAll m1) src) => src
+    if (VectorNode::is_all_ones_vector(in(1))) {
+      return in(2);
+    }
+    // (AndV src (Replicate zero))   => (Replicate zero)
+    // (AndVMask src (MaskAll zero)) => (MaskAll zero)
+    if (VectorNode::is_all_zeros_vector(in(2))) {
+      return in(2);
+    }
+  }
+
+  // (AndV src src)     => src
+  // (AndVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return redundant_logical_identity(this);
+}
+
+Node* OrVNode::Identity(PhaseGVN* phase) {
+  // (OrV (Replicate m1) src)   => (Replicate m1)
+  // (OrVMask (MaskAll m1) src) => (MaskAll m1)
+  if (VectorNode::is_all_ones_vector(in(1))) {
+    return in(1);
+  }
+  // (OrV src (Replicate zero))   => src
+  // (OrVMask src (MaskAll zero)) => src
+  if (VectorNode::is_all_zeros_vector(in(2))) {
+    return in(1);
+  }
+  // The following transformations are only applied to
+  // the un-predicated operation, since the VectorAPI
+  // masked operation requires the unmasked lanes to
+  // save the same values in the first operand.
+  if (!is_predicated_vector()) {
+    // (OrV src (Replicate m1))   => (Replicate m1)
+    // (OrVMask src (MaskAll m1)) => (MaskAll m1)
+    if (VectorNode::is_all_ones_vector(in(2))) {
+      return in(2);
+    }
+    // (OrV (Replicate zero) src)   => src
+    // (OrVMask (MaskAll zero) src) => src
+    if (VectorNode::is_all_zeros_vector(in(1))) {
+      return in(2);
+    }
+  }
+
+  // (OrV src src)     => src
+  // (OrVMask src src) => src
+  if (in(1) == in(2)) {
+    return in(1);
+  }
+  return redundant_logical_identity(this);
+}
+
+Node* XorVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // (XorV src src)      => (Replicate zero)
+  // (XorVMask src src)  => (MaskAll zero)
+  //
+  // The transformation is only applied to the un-predicated
+  // operation, since the VectorAPI masked operation requires
+  // the unmasked lanes to save the same values in the first
+  // operand.
+  if (!is_predicated_vector() && (in(1) == in(2))) {
+    BasicType bt = vect_type()->element_basic_type();
+    Node* zero = phase->transform(phase->zerocon(bt));
+    return VectorNode::scalar2vector(zero, length(), Type::get_const_basic_type(bt),
+                                     bottom_type()->isa_vectmask() != NULL);
+  }
+  return NULL;
+}
+
+Node* VectorBlendNode::Identity(PhaseGVN* phase) {
+  // (VectorBlend X X MASK) => X
+  if (in(1) == in(2)) {
+    return in(1);
   }
   return this;
 }

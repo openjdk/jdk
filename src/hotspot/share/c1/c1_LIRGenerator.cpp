@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
 #include "ci/ciUtilities.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
@@ -490,7 +491,7 @@ void LIRGenerator::arithmetic_op(Bytecodes::Code code, LIR_Opr result, LIR_Opr l
   LIR_Opr left_op   = left;
   LIR_Opr right_op  = right;
 
-  if (TwoOperandLIRForm && left_op != result_op) {
+  if (two_operand_lir_form && left_op != result_op) {
     assert(right_op != result_op, "malformed");
     __ move(left_op, result_op);
     left_op = result_op;
@@ -562,7 +563,7 @@ void LIRGenerator::arithmetic_op_fpu(Bytecodes::Code code, LIR_Opr result, LIR_O
 
 void LIRGenerator::shift_op(Bytecodes::Code code, LIR_Opr result_op, LIR_Opr value, LIR_Opr count, LIR_Opr tmp) {
 
-  if (TwoOperandLIRForm && value != result_op
+  if (two_operand_lir_form && value != result_op
       // Only 32bit right shifts require two operand form on S390.
       S390_ONLY(&& (code == Bytecodes::_ishr || code == Bytecodes::_iushr))) {
     assert(count != result_op, "malformed");
@@ -584,7 +585,7 @@ void LIRGenerator::shift_op(Bytecodes::Code code, LIR_Opr result_op, LIR_Opr val
 
 
 void LIRGenerator::logic_op (Bytecodes::Code code, LIR_Opr result_op, LIR_Opr left_op, LIR_Opr right_op) {
-  if (TwoOperandLIRForm && left_op != result_op) {
+  if (two_operand_lir_form && left_op != result_op) {
     assert(right_op != result_op, "malformed");
     __ move(left_op, result_op);
     left_op = result_op;
@@ -1427,8 +1428,8 @@ void LIRGenerator::do_getObjectSize(Intrinsic* x) {
   __ branch_destination(L_done->label());
 }
 
-void LIRGenerator::do_extentLocalCache(Intrinsic* x) {
-  do_JavaThreadField(x, JavaThread::extentLocalCache_offset());
+void LIRGenerator::do_scopedValueCache(Intrinsic* x) {
+  do_JavaThreadField(x, JavaThread::scopedValueCache_offset());
 }
 
 // Example: Thread.currentCarrierThread()
@@ -1713,7 +1714,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     null_check_info = new CodeEmitInfo(range_check_info);
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (use_length) {
       __ cmp(lir_cond_belowEqual, length.result(), index.result());
       __ branch(lir_cond_belowEqual, new RangeCheckStub(range_check_info, index.result(), array.result()));
@@ -2002,7 +2003,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  if (GenerateRangeChecks && needs_range_check) {
+  if (needs_range_check) {
     if (StressLoopInvariantCodeMotion && range_check_info->deoptimize_on_exception()) {
       __ branch(lir_cond_always, new RangeCheckStub(range_check_info, index.result(), array.result()));
     } else if (use_length) {
@@ -2682,10 +2683,6 @@ void LIRGenerator::do_Base(Base* x) {
       __ lock_object(syncTempOpr(), obj, lock, new_register(T_OBJECT), slow_path, NULL);
     }
   }
-  if (compilation()->age_code()) {
-    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, 0), NULL, false);
-    decrement_age(info);
-  }
   // increment invocation counters if needed
   if (!method()->is_accessor()) { // Accessors do not have MDOs, so no counting.
     profile_parameters(x);
@@ -2951,7 +2948,7 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
   case vmIntrinsics::_getObjectSize:  do_getObjectSize(x); break;
   case vmIntrinsics::_currentCarrierThread: do_currentCarrierThread(x); break;
   case vmIntrinsics::_currentThread:  do_vthread(x);       break;
-  case vmIntrinsics::_extentLocalCache: do_extentLocalCache(x); break;
+  case vmIntrinsics::_scopedValueCache: do_scopedValueCache(x); break;
 
   case vmIntrinsics::_dlog:           // fall through
   case vmIntrinsics::_dlog10:         // fall through
@@ -3017,10 +3014,6 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
 
   case vmIntrinsics::_vectorizedMismatch:
     do_vectorizedMismatch(x);
-    break;
-
-  case vmIntrinsics::_Continuation_doYield:
-    do_continuation_doYield(x);
     break;
 
   case vmIntrinsics::_blackhole:
@@ -3251,27 +3244,6 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   }
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);
 }
-
-void LIRGenerator::decrement_age(CodeEmitInfo* info) {
-  ciMethod* method = info->scope()->method();
-  MethodCounters* mc_adr = method->ensure_method_counters();
-  if (mc_adr != NULL) {
-    LIR_Opr mc = new_pointer_register();
-    __ move(LIR_OprFact::intptrConst(mc_adr), mc);
-    int offset = in_bytes(MethodCounters::nmethod_age_offset());
-    LIR_Address* counter = new LIR_Address(mc, offset, T_INT);
-    LIR_Opr result = new_register(T_INT);
-    __ load(counter, result);
-    __ sub(result, LIR_OprFact::intConst(1), result);
-    __ store(result, counter);
-    // DeoptimizeStub will reexecute from the current state in code info.
-    CodeStub* deopt = new DeoptimizeStub(info, Deoptimization::Reason_tenured,
-                                         Deoptimization::Action_make_not_entrant);
-    __ cmp(lir_cond_lessEqual, result, LIR_OprFact::intConst(0));
-    __ branch(lir_cond_lessEqual, deopt);
-  }
-}
-
 
 void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                                                 ciMethod *method, LIR_Opr step, int frequency,
@@ -3575,7 +3547,7 @@ void LIRGenerator::do_MemBar(MemBar* x) {
 
 LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
   LIR_Opr value_fixed = rlock_byte(T_BYTE);
-  if (TwoOperandLIRForm) {
+  if (two_operand_lir_form) {
     __ move(value, value_fixed);
     __ logical_and(value_fixed, LIR_OprFact::intConst(1), value_fixed);
   } else {

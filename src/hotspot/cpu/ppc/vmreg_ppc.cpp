@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ void VMRegImpl::set_regName() {
   for (i = 0; i < ConcreteRegisterImpl::max_gpr; ) {
     regName[i++] = reg->name();
     regName[i++] = reg->name();
-    if (reg->encoding() < RegisterImpl::number_of_registers-1)
+    if (reg->encoding() < Register::number_of_registers-1)
       reg = reg->successor();
   }
 
@@ -41,10 +41,16 @@ void VMRegImpl::set_regName() {
   for ( ; i < ConcreteRegisterImpl::max_fpr; ) {
     regName[i++] = freg->name();
     regName[i++] = freg->name();
-    if (reg->encoding() < FloatRegisterImpl::number_of_registers-1)
+    if (reg->encoding() < FloatRegister::number_of_registers-1)
       freg = freg->successor();
   }
-  for ( ; i < ConcreteRegisterImpl::number_of_registers; i++) {
-    regName[i] = "NON-GPR-FPR";
+
+  VectorSRegister vsreg = ::as_VectorSRegister(0);
+  for ( ; i < ConcreteRegisterImpl::max_vsr; ) {
+    regName[i++] = vsreg->name();
+  }
+
+  for ( ; i < ConcreteRegisterImpl::number_of_registers; ) {
+    regName[i++] = "NON-GPR-FPR-VSR";
   }
 }

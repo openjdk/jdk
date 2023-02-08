@@ -56,10 +56,11 @@
 // the vectors.  The size of the table is the size of either vector.
 //
 // The capacity of the vectors is explicitly controlled, based on the size.
-// Given N > 0 and 2^N <= size < 2^(N+1), then capacity = 2^N + k * 2^(N-1)
+// Given N > 0 and 2^N <= size < 2^(N+1), then capacity <= 2^N + k * 2^(N-1)
 // for the smallest integer k in [0,2] such that size <= capacity.  That is,
 // use a power of 2 or the midpoint between consecutive powers of 2 that is
-// minimally at least size.
+// minimally at least size.  When adding an entry and the capacity has been
+// reached, capacity is increased to the next of those values.
 //
 // The main benefit of this representation is that it uses less space than a
 // more traditional linked-list of entry nodes representation.  Such a
@@ -89,12 +90,11 @@ class StringDedup::Table::Bucket {
   GrowableArrayCHeap<uint, mtStringDedup> _hashes;
   GrowableArrayCHeap<TableValue, mtStringDedup> _values;
 
-  void adjust_capacity(int new_capacity);
   void expand_if_full();
 
 public:
   // precondition: reserve == 0 or is the result of needed_capacity.
-  Bucket(int reserve = 0);
+  explicit Bucket(int reserve = 0);
 
   ~Bucket() {
     while (!_values.is_empty()) {
@@ -107,7 +107,7 @@ public:
   const GrowableArrayView<uint>& hashes() const { return _hashes; }
   const GrowableArrayView<TableValue>& values() const { return _values; }
 
-  bool is_empty() const { return _hashes.length() == 0; }
+  bool is_empty() const { return _hashes.is_empty(); }
   int length() const { return _hashes.length(); }
 
   void add(uint hash_code, TableValue value) {
@@ -150,33 +150,17 @@ int StringDedup::Table::Bucket::needed_capacity(int needed) {
   return (needed <= low) ? low : high;
 }
 
-void StringDedup::Table::Bucket::adjust_capacity(int new_capacity) {
-  GrowableArrayCHeap<uint, mtStringDedup> new_hashes{new_capacity};
-  GrowableArrayCHeap<TableValue, mtStringDedup> new_values{new_capacity};
-  while (!_hashes.is_empty()) {
-    new_hashes.push(_hashes.pop());
-    new_values.push(_values.pop());
-  }
-  _hashes.swap(&new_hashes);
-  _values.swap(&new_values);
-}
-
 void StringDedup::Table::Bucket::expand_if_full() {
-  if (_hashes.length() == _hashes.max_length()) {
-    adjust_capacity(needed_capacity(_hashes.max_length() + 1));
+  if (_hashes.is_full()) {
+    int needed = needed_capacity(_hashes.capacity() + 1);
+    _hashes.reserve(needed);
+    _values.reserve(needed);
   }
 }
 
 void StringDedup::Table::Bucket::shrink() {
-  if (_hashes.is_empty()) {
-    _hashes.clear_and_deallocate();
-    _values.clear_and_deallocate();
-  } else {
-    int target = needed_capacity(_hashes.length());
-    if (target < _hashes.max_length()) {
-      adjust_capacity(target);
-    }
-  }
+  _hashes.shrink_to_fit();
+  _values.shrink_to_fit();
 }
 
 StringDedup::Table::TableValue

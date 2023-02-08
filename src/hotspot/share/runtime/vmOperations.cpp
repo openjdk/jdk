@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ void VM_Operation::print_on_error(outputStream* st) const {
 
 void VM_ClearICs::doit() {
   if (_preserve_static_stubs) {
-    CodeCache::cleanup_inline_caches();
+    CodeCache::cleanup_inline_caches_whitebox();
   } else {
     CodeCache::clear_inline_caches();
   }
@@ -117,7 +117,6 @@ void VM_DeoptimizeFrame::doit() {
 #ifndef PRODUCT
 
 void VM_DeoptimizeAll::doit() {
-  DeoptimizationMarker dm;
   JavaThreadIteratorWithHandle jtiwh;
   // deoptimize all java threads in the system
   if (DeoptimizeALot) {
@@ -186,9 +185,9 @@ void VM_PrintMetadata::doit() {
 }
 
 VM_FindDeadlocks::~VM_FindDeadlocks() {
-  if (_deadlocks != NULL) {
+  if (_deadlocks != nullptr) {
     DeadlockCycle* cycle = _deadlocks;
-    while (cycle != NULL) {
+    while (cycle != nullptr) {
       DeadlockCycle* d = cycle;
       cycle = cycle->next();
       delete d;
@@ -205,9 +204,9 @@ void VM_FindDeadlocks::doit() {
   _setter.set();
 
   _deadlocks = ThreadService::find_deadlocks_at_safepoint(_setter.list(), _concurrent_locks);
-  if (_out != NULL) {
+  if (_out != nullptr) {
     int num_deadlocks = 0;
-    for (DeadlockCycle* cycle = _deadlocks; cycle != NULL; cycle = cycle->next()) {
+    for (DeadlockCycle* cycle = _deadlocks; cycle != nullptr; cycle = cycle->next()) {
       num_deadlocks++;
       cycle->print_on_with(_setter.list(), _out);
     }
@@ -228,7 +227,7 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
                              bool with_locked_synchronizers) {
   _result = result;
   _num_threads = 0; // 0 indicates all threads
-  _threads = NULL;
+  _threads = nullptr;
   _result = result;
   _max_depth = max_depth;
   _with_locked_monitors = with_locked_monitors;
@@ -287,7 +286,7 @@ void VM_ThreadDump::doit() {
     // when there are a lot of inflated monitors. So we deflate idle monitors and
     // gather information about owned monitors at the same time.
     tablep = &table;
-    while (ObjectSynchronizer::deflate_idle_monitors(tablep) >= (size_t)MonitorDeflationMax) {
+    while (ObjectSynchronizer::deflate_idle_monitors(tablep) > 0) {
       ; /* empty */
     }
   }
@@ -302,7 +301,7 @@ void VM_ThreadDump::doit() {
         // skip terminating threads and hidden threads
         continue;
       }
-      ThreadConcurrentLocks* tcl = NULL;
+      ThreadConcurrentLocks* tcl = nullptr;
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
@@ -314,7 +313,7 @@ void VM_ThreadDump::doit() {
 
     for (int i = 0; i < _num_threads; i++) {
       instanceHandle th = _threads->at(i);
-      if (th() == NULL) {
+      if (th() == nullptr) {
         // skip if the thread doesn't exist
         // Add a dummy snapshot
         _result->add_thread_snapshot();
@@ -324,20 +323,20 @@ void VM_ThreadDump::doit() {
       // Dump thread stack only if the thread is alive and not exiting
       // and not VM internal thread.
       JavaThread* jt = java_lang_Thread::thread(th());
-      if (jt != NULL && !_result->t_list()->includes(jt)) {
+      if (jt != nullptr && !_result->t_list()->includes(jt)) {
         // _threads[i] doesn't refer to a valid JavaThread; this check
         // is primarily for JVM_DumpThreads() which doesn't have a good
         // way to validate the _threads array.
-        jt = NULL;
+        jt = nullptr;
       }
-      if (jt == NULL || /* thread not alive */
+      if (jt == nullptr || /* thread not alive */
           jt->is_exiting() ||
           jt->is_hidden_from_external_view())  {
-        // add a NULL snapshot if skipped
+        // add a nullptr snapshot if skipped
         _result->add_thread_snapshot();
         continue;
       }
-      ThreadConcurrentLocks* tcl = NULL;
+      ThreadConcurrentLocks* tcl = nullptr;
       if (_with_locked_synchronizers) {
         tcl = concurrent_locks.thread_concurrent_locks(jt);
       }
@@ -354,7 +353,7 @@ void VM_ThreadDump::snapshot_thread(JavaThread* java_thread, ThreadConcurrentLoc
 }
 
 volatile bool VM_Exit::_vm_exited = false;
-Thread * volatile VM_Exit::_shutdown_thread = NULL;
+Thread * volatile VM_Exit::_shutdown_thread = nullptr;
 
 int VM_Exit::set_vm_exited() {
 
@@ -367,7 +366,7 @@ int VM_Exit::set_vm_exited() {
   _shutdown_thread = thr_cur;
   _vm_exited = true;                                // global flag
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thr = jtiwh.next(); ) {
-    if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
+    if (thr != thr_cur && thr->thread_state() == _thread_in_native) {
       ++num_active;
       thr->set_terminated(JavaThread::_vm_exited);  // per-thread flag
     }
@@ -410,7 +409,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
         if (thr->is_Compiler_thread()) {
 #if INCLUDE_JVMCI
           CompilerThread* ct = (CompilerThread*) thr;
-          if (ct->compiler() == NULL || !ct->compiler()->is_jvmci()) {
+          if (ct->compiler() == nullptr || !ct->compiler()->is_jvmci()) {
             num_active_compiler_thread++;
           } else {
             // A JVMCI compiler thread never accesses VM data structures
@@ -480,7 +479,7 @@ void VM_Exit::doit() {
 
   // Check for exit hook
   exit_hook_t exit_hook = Arguments::exit_hook();
-  if (exit_hook != NULL) {
+  if (exit_hook != nullptr) {
     // exit hook should exit.
     exit_hook(_exit_code);
     // ... but if it didn't, we must do it here
@@ -495,7 +494,7 @@ void VM_Exit::wait_if_vm_exited() {
   if (_vm_exited &&
       Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
-    // we will block here until the process dies
+    // so we will block here until the process dies.
     Threads_lock->lock();
     ShouldNotReachHere();
   }

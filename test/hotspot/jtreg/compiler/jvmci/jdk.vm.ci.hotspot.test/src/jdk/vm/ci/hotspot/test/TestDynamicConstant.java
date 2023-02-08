@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@ import jdk.vm.ci.runtime.JVMCI;
 /**
  * Tests support for Dynamic constants and {@link jdk.vm.ci.meta.ConstantPool#lookupBootstrapMethodInvocation}.
  *
- * @see "https://openjdk.java.net/jeps/309"
- * @see "https://bugs.openjdk.java.net/browse/JDK-8177279"
+ * @see "https://openjdk.org/jeps/309"
+ * @see "https://bugs.openjdk.org/browse/JDK-8177279"
  */
 public class TestDynamicConstant implements Opcodes {
 

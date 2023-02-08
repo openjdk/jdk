@@ -42,8 +42,9 @@ import java.lang.reflect.*;
  * JCE will be used.
  *
  * The jurisdiction policy file has the same syntax as JDK policy files except
- * that JCE has new permission classes called javax.crypto.CryptoPermission
- * and javax.crypto.CryptoAllPermission.
+ * that JCE has new permission classes called
+ * {@code javax.crypto.CryptoPermission} and
+ * {@code javax.crypto.CryptoAllPermission}.
  *
  * The format of a permission entry in the jurisdiction policy file is:
  *
@@ -74,16 +75,16 @@ final class CryptoPolicyParser {
     private boolean allPermEntryFound = false;
 
     /**
-     * Creates a CryptoPolicyParser object.
+     * Creates a {@code CryptoPolicyParser} object.
      */
     CryptoPolicyParser() {
         grantEntries = new Vector<>();
     }
 
     /**
-     * Reads a policy configuration using a Reader object. <p>
+     * Reads a policy configuration using a {@code Reader} object. <p>
      *
-     * @param policy the policy Reader object.
+     * @param policy the policy {@code Reader} object.
      *
      * @exception ParsingException if the policy configuration
      * contains a syntax error.
@@ -470,13 +471,8 @@ final class CryptoPolicyParser {
     CryptoPermission[] getPermissions() {
         ArrayList<CryptoPermission> result = new ArrayList<>();
 
-        Enumeration<GrantEntry> grantEnum = grantEntries.elements();
-        while (grantEnum.hasMoreElements()) {
-            GrantEntry ge = grantEnum.nextElement();
-            Enumeration<CryptoPermissionEntry> permEnum =
-                    ge.permissionElements();
-            while (permEnum.hasMoreElements()) {
-                CryptoPermissionEntry pe = permEnum.nextElement();
+        for (GrantEntry ge : grantEntries) {
+            for (CryptoPermissionEntry pe : ge.permissionEntries) {
                 if (pe.cryptoPermission.equals(
                                         "javax.crypto.CryptoAllPermission")) {
                     result.add(CryptoAllPermission.INSTANCE);
@@ -537,8 +533,8 @@ final class CryptoPolicyParser {
     }
 
     /**
-     * Each grant entry in the policy configuration file is  represented by a
-     * GrantEntry object.
+     * Each grant entry in the policy configuration file is represented by a
+     * {@code GrantEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -576,29 +572,11 @@ final class CryptoPolicyParser {
         {
             permissionEntries.addElement(pe);
         }
-
-        boolean remove(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.removeElement(pe);
-        }
-
-        boolean contains(CryptoPermissionEntry pe)
-        {
-            return permissionEntries.contains(pe);
-        }
-
-        /**
-         * Enumerate all the permission entries in this GrantEntry.
-         */
-        Enumeration<CryptoPermissionEntry> permissionElements(){
-            return permissionEntries.elements();
-        }
-
     }
 
     /**
      * Each crypto permission entry in the policy configuration file is
-     * represented by a CryptoPermissionEntry object.
+     * represented by a {@code CryptoPermissionEntry} object.
      * <p>
      * For example, the entry
      * <pre>
@@ -692,7 +670,7 @@ final class CryptoPolicyParser {
         private static final long serialVersionUID = 7147241245566588374L;
 
         /**
-         * Constructs a ParsingException with the specified
+         * Constructs a {@code ParsingException} with the specified
          * detail message.
          * @param msg the detail message.
          */

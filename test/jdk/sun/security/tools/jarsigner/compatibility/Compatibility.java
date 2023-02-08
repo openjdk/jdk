@@ -67,6 +67,7 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
@@ -1034,13 +1035,13 @@ public class Compatibility {
             throws Throwable {
         long start = System.currentTimeMillis();
         try {
+            String[] cmd;
 
-            String[] cmd = new String[args.length + 4];
+            cmd = new String[args.length + 3];
+            System.arraycopy(args, 0, cmd, 3, args.length);
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";
-            cmd[3] = "-J-Djava.security.egd=file:/dev/./urandom";
-            System.arraycopy(args, 0, cmd, 4, args.length);
             return ProcessTools.executeCommand(cmd);
 
         } finally {

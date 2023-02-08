@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import metaspace.stressHierarchy.common.classloader.tree.Tree;
 import metaspace.stressHierarchy.common.exceptions.ClassNotUnloadedException;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;
 import nsk.share.test.ExecutionController;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import vm.share.gc.TriggerUnloadingHelper;
 
 public class PerformChecksHelper {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,11 @@ class AddPNode;
 class Block;
 class Bundle;
 class CallGenerator;
+class CallStaticJavaNode;
 class CloneMap;
 class ConnectionGraph;
 class IdealGraphPrinter;
 class InlineTree;
-class Int_Array;
 class Matcher;
 class MachConstantNode;
 class MachConstantBaseNode;
@@ -76,12 +76,10 @@ class PhaseCCP;
 class PhaseOutput;
 class RootNode;
 class relocInfo;
-class Scope;
 class StartNode;
 class SafePointNode;
 class JVMState;
 class Type;
-class TypeData;
 class TypeInt;
 class TypeInteger;
 class TypeKlassPtr;
@@ -90,9 +88,11 @@ class TypeOopPtr;
 class TypeFunc;
 class TypeVect;
 class Unique_Node_List;
+class UnstableIfTrap;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
+class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -162,7 +162,6 @@ class CloneMap {
   void set_clone_idx(int x)                      { _clone_idx = x; }
   bool is_debug()                 const          { return _debug; }
   void set_debug(bool debug)                     { _debug = debug; }
-  static const char* debug_option_name;
 
   bool same_idx(node_idx_t k1, node_idx_t k2)  const { return idx(k1) == idx(k2); }
   bool same_gen(node_idx_t k1, node_idx_t k2)  const { return gen(k1) == gen(k2); }
@@ -325,8 +324,7 @@ class Compile : public Phase {
   bool                  _do_freq_based_layout;  // True if we intend to do frequency based block layout
   bool                  _do_vector_loop;        // True if allowed to execute loop in parallel iterations
   bool                  _use_cmove;             // True if CMove should be used without profitability analysis
-  bool                  _age_code;              // True if we need to profile code age (decrement the aging counter)
-  int                   _AliasLevel;            // Locally-adjusted version of AliasLevel flag.
+  bool                  _do_aliasing;           // True if we intend to do aliasing
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
   bool                  _print_inlining;        // True if we should print inlining for this compilation
   bool                  _print_intrinsics;      // True if we should print intrinsics for this compilation
@@ -357,6 +355,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _skeleton_predicate_opaqs; // List of Opaque4 nodes for the loop skeleton predicates.
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
+  GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
   GrowableArray<Node_List*> _coarsened_locks;   // List of coarsened Lock and Unlock nodes
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
@@ -461,7 +460,6 @@ class Compile : public Phase {
 
   void* _replay_inline_data; // Pointer to data loaded from file
 
-  void print_inlining_stream_free();
   void print_inlining_init();
   void print_inlining_reinit();
   void print_inlining_commit();
@@ -475,7 +473,7 @@ class Compile : public Phase {
 
   void* barrier_set_state() const { return _barrier_set_state; }
 
-  outputStream* print_inlining_stream() const {
+  stringStream* print_inlining_stream() {
     assert(print_inlining() || print_intrinsics(), "PrintInlining off?");
     return _print_inlining_stream;
   }
@@ -489,7 +487,7 @@ class Compile : public Phase {
   void print_inlining(ciMethod* method, int inline_level, int bci, const char* msg = NULL) {
     stringStream ss;
     CompileTask::print_inlining_inner(&ss, method, inline_level, bci, msg);
-    print_inlining_stream()->print("%s", ss.as_string());
+    print_inlining_stream()->print("%s", ss.freeze());
   }
 
 #ifndef PRODUCT
@@ -504,6 +502,7 @@ class Compile : public Phase {
 
   // Dump inlining replay data to the stream.
   void dump_inline_data(outputStream* out);
+  void dump_inline_data_reduced(outputStream* out);
 
  private:
   // Matching, CFG layout, allocation, code generation
@@ -614,9 +613,7 @@ class Compile : public Phase {
   void          set_do_vector_loop(bool z)      { _do_vector_loop = z; }
   bool              use_cmove() const           { return _use_cmove; }
   void          set_use_cmove(bool z)           { _use_cmove = z; }
-  bool              age_code() const             { return _age_code; }
-  void          set_age_code(bool z)             { _age_code = z; }
-  int               AliasLevel() const           { return _AliasLevel; }
+  bool              do_aliasing() const          { return _do_aliasing; }
   bool              print_assembly() const       { return _print_assembly; }
   void          set_print_assembly(bool z)       { _print_assembly = z; }
   bool              print_inlining() const       { return _print_inlining; }
@@ -731,6 +728,11 @@ class Compile : public Phase {
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
+
+  void record_unstable_if_trap(UnstableIfTrap* trap);
+  bool remove_unstable_if_trap(CallStaticJavaNode* unc, bool yield);
+  void remove_useless_unstable_if_traps(Unique_Node_List &useful);
+  void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
   void sort_macro_nodes();
 
@@ -945,7 +947,7 @@ class Compile : public Phase {
 
   void              identify_useful_nodes(Unique_Node_List &useful);
   void              update_dead_node_list(Unique_Node_List &useful);
-  void              remove_useless_nodes (Unique_Node_List &useful);
+  void              disconnect_useless_nodes(Unique_Node_List &useful, Unique_Node_List* worklist);
 
   void              remove_useless_node(Node* dead);
 
@@ -1053,6 +1055,10 @@ class Compile : public Phase {
           int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
+  ~Compile() {
+    delete _print_inlining_stream;
+  };
+
   // Are we compiling a method?
   bool has_method() { return method() != NULL; }
 
@@ -1094,9 +1100,7 @@ class Compile : public Phase {
 
  private:
   // Phase control:
-  void Init(int aliaslevel);                     // Prepare for a single compilation
-  int  Inline_Warm();                            // Find more inlining work.
-  void Finish_Warm();                            // Give up on further inlines.
+  void Init(bool aliasing);                      // Prepare for a single compilation
   void Optimize();                               // Given a graph, optimize it
   void Code_Gen();                               // Generate code from a graph
 
@@ -1120,9 +1124,9 @@ class Compile : public Phase {
 #endif
   // Function calls made by the public function final_graph_reshaping.
   // No need to be made public as they are not called elsewhere.
-  void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc);
-  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop);
-  void final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_Reshape_Counts &frc );
+  void final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes);
+  void final_graph_reshaping_walk(Node_Stack& nstack, Node* root, Final_Reshape_Counts& frc, Unique_Node_List& dead_nodes);
   void eliminate_redundant_card_marks(Node* n);
 
   // Logic cone optimization.
@@ -1157,6 +1161,9 @@ class Compile : public Phase {
   // graph is strongly connected from root in both directions.
   void verify_graph_edges(bool no_dead_code = false) PRODUCT_RETURN;
 
+  // Verify bi-directional correspondence of edges
+  void verify_bidirectional_edges(Unique_Node_List &visited);
+
   // End-of-run dumps.
   static void print_statistics() PRODUCT_RETURN;
 
@@ -1168,7 +1175,7 @@ class Compile : public Phase {
 
   // Static parse-time type checking logic for gen_subtype_check:
   enum SubTypeCheckResult { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
-  SubTypeCheckResult static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk);
+  SubTypeCheckResult static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip = StressReflectiveCode);
 
   static Node* conv_I2X_index(PhaseGVN* phase, Node* offset, const TypeInt* sizetype,
                               // Optional control dependency (for example, on range check)
@@ -1205,13 +1212,13 @@ class Compile : public Phase {
   bool in_24_bit_fp_mode() const   { return _in_24_bit_fp_mode; }
 #endif // IA32
 #ifdef ASSERT
-  bool _type_verify_symmetry;
+  VerifyMeetResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif
 
   static bool push_thru_add(PhaseGVN* phase, Node* z, const TypeInteger* tz, const TypeInteger*& rx, const TypeInteger*& ry,
-                            BasicType bt);
+                            BasicType out_bt, BasicType in_bt);
 
   static Node* narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res);
 };

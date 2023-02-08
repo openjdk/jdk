@@ -31,9 +31,9 @@
  * @requires vm.cds.custom.loaders
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @compile ../test-classes/OldInf.jasm ../test-classes/ChildOldInf.java ../test-classes/NestHostOldInfApp.java
- * @build sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar oldclassapp.jar NestHostOldInfApp OldInf ChildOldInf ChildOldInf$InnerChild
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:./WhiteBox.jar NestHostOldInf
  */
 

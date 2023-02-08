@@ -484,7 +484,7 @@ public final class String
      */
     public String(byte[] bytes, int offset, int length, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, offset, length, lookupCharset(charsetName));
+        this(lookupCharset(charsetName), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -517,10 +517,18 @@ public final class String
      *
      * @since  1.6
      */
-    @SuppressWarnings("removal")
     public String(byte[] bytes, int offset, int length, Charset charset) {
-        Objects.requireNonNull(charset);
-        checkBoundsOffCount(offset, length, bytes.length);
+        this(Objects.requireNonNull(charset), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
+    }
+
+    /**
+     * This method does not do any precondition checks on its arguments.
+     * <p>
+     * Important: parameter order of this method is deliberately changed in order to
+     * disambiguate it against other similar methods of this class.
+     */
+    @SuppressWarnings("removal")
+    private String(Charset charset, byte[] bytes, int offset, int length) {
         if (length == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -1370,7 +1378,7 @@ public final class String
      */
     public String(byte[] bytes, String charsetName)
             throws UnsupportedEncodingException {
-        this(bytes, 0, bytes.length, charsetName);
+        this(lookupCharset(charsetName), bytes, 0, bytes.length);
     }
 
     /**
@@ -1394,7 +1402,7 @@ public final class String
      * @since  1.6
      */
     public String(byte[] bytes, Charset charset) {
-        this(bytes, 0, bytes.length, charset);
+        this(Objects.requireNonNull(charset), bytes, 0, bytes.length);
     }
 
     /**
@@ -1424,7 +1432,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes, int offset, int length) {
-        this(bytes, offset, length, Charset.defaultCharset());
+        this(Charset.defaultCharset(), bytes, checkBoundsOffCount(offset, length, bytes.length), length);
     }
 
     /**
@@ -1444,7 +1452,7 @@ public final class String
      * @since  1.1
      */
     public String(byte[] bytes) {
-        this(bytes, 0, bytes.length);
+        this(Charset.defaultCharset(), bytes, 0, bytes.length);
     }
 
     /**
@@ -1633,7 +1641,7 @@ public final class String
      * @param codePointOffset the offset in code points
      * @return the index within this {@code String}
      * @throws    IndexOutOfBoundsException if {@code index}
-     *   is negative or larger then the length of this
+     *   is negative or larger than the length of this
      *   {@code String}, or if {@code codePointOffset} is positive
      *   and the substring starting with {@code index} has fewer
      *   than {@code codePointOffset} code points,
@@ -1643,9 +1651,6 @@ public final class String
      * @since 1.5
      */
     public int offsetByCodePoints(int index, int codePointOffset) {
-        if (index < 0 || index > length()) {
-            throw new IndexOutOfBoundsException();
-        }
         return Character.offsetByCodePoints(this, index, codePointOffset);
     }
 
@@ -3124,41 +3129,50 @@ public final class String
             (ch < Character.MIN_HIGH_SURROGATE ||
              ch > Character.MAX_LOW_SURROGATE))
         {
-            int off = 0;
-            int next = 0;
-            boolean limited = limit > 0;
-            ArrayList<String> list = new ArrayList<>();
-            while ((next = indexOf(ch, off)) != -1) {
-                if (!limited || list.size() < limit - 1) {
-                    list.add(substring(off, next));
-                    off = next + 1;
-                } else {    // last one
-                    //assert (list.size() == limit - 1);
-                    int last = length();
-                    list.add(substring(off, last));
-                    off = last;
-                    break;
-                }
-            }
-            // If no match was found, return this
-            if (off == 0)
-                return new String[]{this};
-
-            // Add remaining segment
-            if (!limited || list.size() < limit)
-                list.add(substring(off, length()));
-
-            // Construct result
-            int resultSize = list.size();
-            if (limit == 0) {
-                while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
-                    resultSize--;
-                }
-            }
-            String[] result = new String[resultSize];
-            return list.subList(0, resultSize).toArray(result);
+            // All the checks above can potentially be constant folded by
+            // a JIT/AOT compiler when the regex is a constant string.
+            // That requires method inlining of the checks, which is only
+            // possible when the actual split logic is in a separate method
+            // because the large split loop can usually not be inlined.
+            return split(ch, limit);
         }
         return Pattern.compile(regex).split(this, limit);
+    }
+
+    private String[] split(char ch, int limit) {
+        int off = 0;
+        int next = 0;
+        boolean limited = limit > 0;
+        ArrayList<String> list = new ArrayList<>();
+        while ((next = indexOf(ch, off)) != -1) {
+            if (!limited || list.size() < limit - 1) {
+                list.add(substring(off, next));
+                off = next + 1;
+            } else {    // last one
+                //assert (list.size() == limit - 1);
+                int last = length();
+                list.add(substring(off, last));
+                off = last;
+                break;
+            }
+        }
+        // If no match was found, return this
+        if (off == 0)
+            return new String[]{this};
+
+        // Add remaining segment
+        if (!limited || list.size() < limit)
+            list.add(substring(off, length()));
+
+        // Construct result
+        int resultSize = list.size();
+        if (limit == 0) {
+            while (resultSize > 0 && list.get(resultSize - 1).isEmpty()) {
+                resultSize--;
+            }
+        }
+        String[] result = new String[resultSize];
+        return list.subList(0, resultSize).toArray(result);
     }
 
     /**
@@ -4062,9 +4076,9 @@ public final class String
 
     /**
      * Returns a stream of {@code int} zero-extending the {@code char} values
-     * from this sequence.  Any char which maps to a <a
-     * href="{@docRoot}/java.base/java/lang/Character.html#unicode">surrogate code
-     * point</a> is passed through uninterpreted.
+     * from this sequence.  Any char which maps to a {@linkplain
+     * Character##unicode surrogate code point} is passed through
+     * uninterpreted.
      *
      * @return an IntStream of char values from this sequence
      * @since 9
@@ -4582,12 +4596,13 @@ public final class String
      * Check {@code offset}, {@code count} against {@code 0} and {@code length}
      * bounds.
      *
+     * @return  {@code offset} if the sub-range within bounds of the range
      * @throws  StringIndexOutOfBoundsException
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    static void checkBoundsOffCount(int offset, int count, int length) {
-        Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
+    static int checkBoundsOffCount(int offset, int count, int length) {
+        return Preconditions.checkFromIndexSize(offset, count, length, Preconditions.SIOOBE_FORMATTER);
     }
 
     /*

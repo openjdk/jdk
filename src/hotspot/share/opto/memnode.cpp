@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,6 +187,8 @@ Node *MemNode::optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oo
           break;
         }
         result = proj_in->in(TypeFunc::Memory);
+      } else if (proj_in->is_top()) {
+        break; // dead code
       } else {
         assert(false, "unexpected projection");
       }
@@ -215,11 +217,26 @@ Node *MemNode::optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *l
     PhiNode *mphi = result->as_Phi();
     assert(mphi->bottom_type() == Type::MEMORY, "memory phi required");
     const TypePtr *t = mphi->adr_type();
-    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ||
-        (t->isa_oopptr() && !t->is_oopptr()->is_known_instance() &&
-         t->is_oopptr()->cast_to_exactness(true)
-           ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
-            ->is_oopptr()->cast_to_instance_id(t_oop->instance_id()) == t_oop)) {
+    bool do_split = false;
+    // In the following cases, Load memory input can be further optimized based on
+    // its precise address type
+    if (t == TypePtr::BOTTOM || t == TypeRawPtr::BOTTOM ) {
+      do_split = true;
+    } else if (t->isa_oopptr() && !t->is_oopptr()->is_known_instance()) {
+      const TypeOopPtr* mem_t =
+        t->is_oopptr()->cast_to_exactness(true)
+        ->is_oopptr()->cast_to_ptr_type(t_oop->ptr())
+        ->is_oopptr()->cast_to_instance_id(t_oop->instance_id());
+      if (t_oop->is_aryptr()) {
+        mem_t = mem_t->is_aryptr()
+                     ->cast_to_stable(t_oop->is_aryptr()->is_stable())
+                     ->cast_to_size(t_oop->is_aryptr()->size())
+                     ->with_offset(t_oop->is_aryptr()->offset())
+                     ->is_aryptr();
+      }
+      do_split = mem_t == t_oop;
+    }
+    if (do_split) {
       // clone the Phi with our address type
       result = mphi->split_out_instance(t_adr, igvn);
     } else {
@@ -394,10 +411,7 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   }
 
   if (mem != old_mem) {
-    set_req(MemNode::Memory, mem);
-    if (can_reshape && old_mem->outcnt() == 0 && igvn != NULL) {
-      igvn->_worklist.push(old_mem);
-    }
+    set_req_X(MemNode::Memory, mem, phase);
     if (phase->type(mem) == Type::TOP) return NodeSentinel;
     return this;
   }
@@ -823,7 +837,7 @@ const TypePtr* MemNode::calculate_adr_type(const Type* t, const TypePtr* cross_c
 //=============================================================================
 // Should LoadNode::Ideal() attempt to remove control edges?
 bool LoadNode::can_remove_control() const {
-  return true;
+  return !has_pinned_control_dependency();
 }
 uint LoadNode::size_of() const { return sizeof(*this); }
 bool LoadNode::cmp( const Node &n ) const
@@ -841,7 +855,17 @@ void LoadNode::dump_spec(outputStream *st) const {
     st->print(" #"); _type->dump_on(st);
   }
   if (!depends_only_on_test()) {
-    st->print(" (does not depend only on test)");
+    st->print(" (does not depend only on test, ");
+    if (control_dependency() == UnknownControl) {
+      st->print("unknown control");
+    } else if (control_dependency() == Pinned) {
+      st->print("pinned");
+    } else if (adr_type() == TypeRawPtr::BOTTOM) {
+      st->print("raw access");
+    } else {
+      st->print("unknown reason");
+    }
+    st->print(")");
   }
 }
 #endif
@@ -858,7 +882,7 @@ bool LoadNode::is_immutable_value(Node* adr) {
       in_bytes(JavaThread::osthread_offset()),
       in_bytes(JavaThread::threadObj_offset()),
       in_bytes(JavaThread::vthread_offset()),
-      in_bytes(JavaThread::extentLocalCache_offset()),
+      in_bytes(JavaThread::scopedValueCache_offset()),
     };
 
     for (size_t i = 0; i < sizeof offsets / sizeof offsets[0]; i++) {
@@ -1219,9 +1243,16 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
     }
     // (This works even when value is a Con, but LoadNode::Value
     // usually runs first, producing the singleton type of the Con.)
-    return value;
+    if (!has_pinned_control_dependency() || value->is_Con()) {
+      return value;
+    } else {
+      return this;
+    }
   }
 
+  if (has_pinned_control_dependency()) {
+    return this;
+  }
   // Search for an existing data phi which was generated before for the same
   // instance's field to avoid infinite generation of phis in a loop.
   Node *region = mem->in(0);
@@ -1488,7 +1519,12 @@ static bool stable_phi(PhiNode* phi, PhaseGVN *phase) {
 }
 //------------------------------split_through_phi------------------------------
 // Split instance or boxed field load through Phi.
-Node *LoadNode::split_through_phi(PhaseGVN *phase) {
+Node* LoadNode::split_through_phi(PhaseGVN* phase) {
+  if (req() > 3) {
+    assert(is_LoadVector() && Opcode() != Op_LoadVector, "load has too many inputs");
+    // LoadVector subclasses such as LoadVectorMasked have extra inputs that the logic below doesn't take into account
+    return NULL;
+  }
   Node* mem     = in(Memory);
   Node* address = in(Address);
   const TypeOopPtr *t_oop = phase->type(address)->isa_oopptr();
@@ -1699,6 +1735,9 @@ AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
 // If the offset is constant and the base is an object allocation,
 // try to hook me up to the exact initializing store.
 Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (has_pinned_control_dependency()) {
+    return NULL;
+  }
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 
@@ -1990,7 +2029,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   }
 
   const TypeKlassPtr *tkls = tp->isa_klassptr();
-  if (tkls != NULL && !StressReflectiveCode) {
+  if (tkls != NULL) {
     if (tkls->is_loaded() && tkls->klass_is_exact()) {
       ciKlass* klass = tkls->exact_klass();
       // We are loading a field from a Klass metaobject whose identity
@@ -2010,7 +2049,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
         // (Folds up type checking code.)
         assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
         ciKlass *ss = klass->super_of_depth(depth);
-        return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
+        return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
@@ -2041,7 +2080,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
           // (Folds up type checking code.)
           assert(Opcode() == Op_LoadKlass, "must load a klass from _primary_supers");
           ciKlass *ss = klass->super_of_depth(depth);
-          return ss ? TypeKlassPtr::make(ss) : TypePtr::NULL_PTR;
+          return ss ? TypeKlassPtr::make(ss, Type::trust_interfaces) : TypePtr::NULL_PTR;
         }
       }
     }
@@ -2301,14 +2340,14 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
             // klass.  Users of this result need to do a null check on the returned klass.
             return TypePtr::NULL_PTR;
           }
-          return TypeKlassPtr::make(ciArrayKlass::make(t));
+          return TypeKlassPtr::make(ciArrayKlass::make(t), Type::trust_interfaces);
         }
         if (!t->is_klass()) {
           // a primitive Class (e.g., int.class) has NULL for a klass field
           return TypePtr::NULL_PTR;
         }
         // (Folds up the 1st indirection in aClassConstant.getModifiers().)
-        return TypeKlassPtr::make(t->as_klass());
+        return TypeKlassPtr::make(t->as_klass(), Type::trust_interfaces);
       }
       // non-constant mirror, so we can't tell what's going on
     }
@@ -2346,7 +2385,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
       ciKlass* sup = tkls->is_instklassptr()->instance_klass()->super();
       // The field is Klass::_super.  Return its (constant) value.
       // (Folds up the 2nd indirection in aClassConstant.getSuperClass().)
-      return sup ? TypeKlassPtr::make(sup) : TypePtr::NULL_PTR;
+      return sup ? TypeKlassPtr::make(sup, Type::trust_interfaces) : TypePtr::NULL_PTR;
     }
   }
 
@@ -2365,7 +2404,7 @@ Node* LoadNode::klass_identity_common(PhaseGVN* phase) {
   Node* x = LoadNode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2466,7 +2505,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* p = MemNode::Ideal_common(phase, can_reshape);
   if (p)  return (p == NodeSentinel) ? NULL : p;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -2498,7 +2537,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   Node* x = LoadINode::Identity(phase);
   if (x != this)  return x;
 
-  // Take apart the address into an oop and and offset.
+  // Take apart the address into an oop and offset.
   // Return 'this' if we cannot.
   Node*    adr    = in(MemNode::Address);
   intptr_t offset = 0;
@@ -3239,7 +3278,6 @@ MemBarNode* MemBarNode::make(Compile* C, int opcode, int atp, Node* pn) {
   case Op_MemBarCPUOrder:    return new MemBarCPUOrderNode(C, atp, pn);
   case Op_OnSpinWait:        return new OnSpinWaitNode(C, atp, pn);
   case Op_Initialize:        return new InitializeNode(C, atp, pn);
-  case Op_Blackhole:         return new BlackholeNode(C, atp, pn);
   default: ShouldNotReachHere(); return NULL;
   }
 }
@@ -3479,26 +3517,6 @@ MemBarNode* MemBarNode::leading_membar() const {
   return mb;
 }
 
-#ifndef PRODUCT
-void BlackholeNode::format(PhaseRegAlloc* ra, outputStream* st) const {
-  st->print("blackhole ");
-  bool first = true;
-  for (uint i = 0; i < req(); i++) {
-    Node* n = in(i);
-    if (n != NULL && OptoReg::is_valid(ra->get_reg_first(n))) {
-      if (first) {
-        first = false;
-      } else {
-        st->print(", ");
-      }
-      char buf[128];
-      ra->dump_register(n, buf);
-      st->print("%s", buf);
-    }
-  }
-  st->cr();
-}
-#endif
 
 //===========================InitializeNode====================================
 // SUMMARY:
@@ -3988,9 +4006,11 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
       ins_req(i, C->top());     // build a new edge
   }
   Node* new_st = st->clone();
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   new_st->set_req(MemNode::Control, in(Control));
   new_st->set_req(MemNode::Memory,  prev_mem);
   new_st->set_req(MemNode::Address, make_raw_address(start, phase));
+  bs->eliminate_gc_barrier_data(new_st);
   new_st = phase->transform(new_st);
 
   // At this point, new_st might have swallowed a pre-existing store
@@ -4884,7 +4904,7 @@ static void verify_memory_slice(const MergeMemNode* m, int alias_idx, Node* n) {
 //-----------------------------memory_at---------------------------------------
 Node* MergeMemNode::memory_at(uint alias_idx) const {
   assert(alias_idx >= Compile::AliasIdxRaw ||
-         alias_idx == Compile::AliasIdxBot && Compile::current()->AliasLevel() == 0,
+         alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
          "must avoid base_memory and AliasIdxTop");
 
   // Otherwise, it is a narrow slice.
@@ -4897,9 +4917,9 @@ Node* MergeMemNode::memory_at(uint alias_idx) const {
            || n->adr_type() == NULL // address is TOP
            || n->adr_type() == TypePtr::BOTTOM
            || n->adr_type() == TypeRawPtr::BOTTOM
-           || Compile::current()->AliasLevel() == 0,
+           || !Compile::current()->do_aliasing(),
            "must be a wide memory");
-    // AliasLevel == 0 if we are organizing the memory states manually.
+    // do_aliasing == false if we are organizing the memory states manually.
     // See verify_memory_slice for comments on TypeRawPtr::BOTTOM.
   } else {
     // make sure the stored slice is sane

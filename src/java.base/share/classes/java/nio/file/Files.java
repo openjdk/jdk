@@ -80,7 +80,6 @@ import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.cs.UTF_8;
-import sun.nio.fs.AbstractFileSystemProvider;
 
 /**
  * This class consists exclusively of static methods that operate on files,
@@ -806,7 +805,7 @@ public final class Files {
         try {
             createDirectory(dir, attrs);
         } catch (FileAlreadyExistsException x) {
-            if (!isDirectory(dir, LinkOption.NOFOLLOW_LINKS))
+            if (!isDirectory(dir))
                 throw x;
         }
     }
@@ -1594,7 +1593,7 @@ public final class Files {
         byte[] buffer1 = new byte[BUFFER_SIZE];
         byte[] buffer2 = new byte[BUFFER_SIZE];
         try (InputStream in1 = Files.newInputStream(path);
-             InputStream in2 = Files.newInputStream(path2);) {
+             InputStream in2 = Files.newInputStream(path2)) {
             long totalRead = 0;
             while (true) {
                 int nRead1 = in1.readNBytes(buffer1, 0, BUFFER_SIZE);
@@ -2310,14 +2309,10 @@ public final class Files {
      *          method denies read access to the file.
      */
     public static boolean isDirectory(Path path, LinkOption... options) {
-        if (options.length == 0) {
-            FileSystemProvider provider = provider(path);
-            if (provider instanceof AbstractFileSystemProvider)
-                return ((AbstractFileSystemProvider)provider).isDirectory(path);
-        }
-
         try {
-            return readAttributes(path, BasicFileAttributes.class, options).isDirectory();
+            var attrs = provider(path)
+                    .readAttributesIfExists(path, BasicFileAttributes.class, options);
+            return (attrs != null) && attrs.isDirectory();
         } catch (IOException ioe) {
             return false;
         }
@@ -2353,14 +2348,10 @@ public final class Files {
      *          method denies read access to the file.
      */
     public static boolean isRegularFile(Path path, LinkOption... options) {
-        if (options.length == 0) {
-            FileSystemProvider provider = provider(path);
-            if (provider instanceof AbstractFileSystemProvider)
-                return ((AbstractFileSystemProvider)provider).isRegularFile(path);
-        }
-
         try {
-            return readAttributes(path, BasicFileAttributes.class, options).isRegularFile();
+            var attrs = provider(path)
+                    .readAttributesIfExists(path, BasicFileAttributes.class, options);
+            return (attrs != null) && attrs.isRegularFile();
         } catch (IOException ioe) {
             return false;
         }
@@ -2502,7 +2493,7 @@ public final class Files {
      *          the path to the file to test
      * @param   options
      *          options indicating how symbolic links are handled
-     * .
+     *
      * @return  {@code true} if the file exists; {@code false} if the file does
      *          not exist or its existence cannot be determined.
      *
@@ -2515,27 +2506,7 @@ public final class Files {
      * @see FileSystemProvider#checkAccess
      */
     public static boolean exists(Path path, LinkOption... options) {
-        if (options.length == 0) {
-            FileSystemProvider provider = provider(path);
-            if (provider instanceof AbstractFileSystemProvider)
-                return ((AbstractFileSystemProvider)provider).exists(path);
-        }
-
-        try {
-            if (followLinks(options)) {
-                provider(path).checkAccess(path);
-            } else {
-                // attempt to read attributes without following links
-                readAttributes(path, BasicFileAttributes.class,
-                               LinkOption.NOFOLLOW_LINKS);
-            }
-            // file exists
-            return true;
-        } catch (IOException x) {
-            // does not exist or unable to determine if file exists
-            return false;
-        }
-
+        return provider(path).exists(path, options);
     }
 
     /**
@@ -2967,7 +2938,12 @@ public final class Files {
      * a size of {@code 0} if it exists.
      *
      * <p> The {@code Writer} methods to write text throw {@code IOException}
-     * if the text cannot be encoded using the specified charset.
+     * if the text cannot be encoded using the specified charset. Due to
+     * buffering, an {@code IOException} caused by an encoding error
+     * (unmappable-character or malformed-input) may be thrown when {@linkplain
+     * BufferedWriter#write(char[],int,int) writing}, {@linkplain
+     * BufferedWriter#flush flushing}, or {@linkplain BufferedWriter#close
+     * closing} the buffered writer.
      *
      * @param   path
      *          the path to the file
@@ -3654,7 +3630,7 @@ public final class Files {
      *          if {@code options} contains an invalid combination of options
      * @throws  IOException
      *          if an I/O error occurs writing to or creating the file, or the
-     *          text cannot be encoded using the specified charset
+     *          text cannot be encoded using UTF-8
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  SecurityException

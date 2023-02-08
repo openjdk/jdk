@@ -31,7 +31,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SerialFieldTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
 /**
@@ -200,7 +200,7 @@ public interface SerializedFormWriter {
          * @param serialFieldTag the field to document (represented by tag)
          * @param content the content to which the member description will be added
          */
-        void addMemberDescription(VariableElement field, DocTree serialFieldTag, Content content);
+        void addMemberDescription(VariableElement field, SerialFieldTree serialFieldTag, Content content);
 
         /**
          * Adds the tag information for this member.

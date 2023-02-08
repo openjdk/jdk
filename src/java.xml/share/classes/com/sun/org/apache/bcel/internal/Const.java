@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -469,7 +469,7 @@ public final class Const {
 
   /**
    * Marks a constant pool entry as dynamically computed.
-   * @see  <a href="https://bugs.openjdk.java.net/secure/attachment/74618/constant-dynamic.html">
+   * @see  <a href="https://bugs.openjdk.org/secure/attachment/74618/constant-dynamic.html">
    * Change request for JEP 309</a>
    * @since 6.3
    */

@@ -23,80 +23,42 @@
 
 package compiler.lib.ir_framework.driver.irmatching.irrule;
 
-import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.CompilePhase;
+import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.driver.irmatching.MatchResult;
-import compiler.lib.ir_framework.driver.irmatching.OutputMatch;
+import compiler.lib.ir_framework.driver.irmatching.irrule.phase.CompilePhaseIRRuleMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
+import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
+
+import java.util.List;
 
 /**
- * This class represents an IR matching result of an IR rule.
+ * This class represents a match result of an {@link IRRule} (applied to all compile phases specified in
+ * {@link IR#phase()}). The {@link CompilePhaseIRRuleMatchResult} are kept in the definition order of the compile phases
+ * in {@link CompilePhase}.
  *
- * @see CheckAttributeMatchResult
  * @see IRRule
  */
 public class IRRuleMatchResult implements MatchResult {
-    private final IRRule irRule;
-    private CheckAttributeMatchResult failOnFailures = null;
-    private CheckAttributeMatchResult countsFailures = null;
-    private OutputMatch outputMatch;
+    private final AcceptChildren acceptChildren;
+    private final boolean failed;
+    private final int irRuleId;
+    private final IR irAnno;
 
-    public IRRuleMatchResult(IRRule irRule) {
-        this.irRule = irRule;
-        this.outputMatch = OutputMatch.NONE;
-    }
-
-    private boolean hasFailOnFailures() {
-        return failOnFailures != null;
-    }
-
-    public void setFailOnFailures(CheckAttributeMatchResult failOnFailures) {
-        this.failOnFailures = failOnFailures;
-    }
-
-    private boolean hasCountsFailures() {
-        return countsFailures != null;
-    }
-
-    public void setCountsFailures(CheckAttributeMatchResult countsFailures) {
-        this.countsFailures = countsFailures;
-    }
-
-    public OutputMatch getOutputMatch() {
-        return outputMatch;
+    public IRRuleMatchResult(int irRuleId, IR irAnno, List<MatchResult> matchResults) {
+        this.acceptChildren = new AcceptChildren(matchResults);
+        this.failed = !matchResults.isEmpty();
+        this.irRuleId = irRuleId;
+        this.irAnno = irAnno;
     }
 
     @Override
     public boolean fail() {
-        return failOnFailures != null || countsFailures != null;
+        return failed;
     }
 
-    public void updateOutputMatch(OutputMatch newOutputMatch) {
-        TestFramework.check(newOutputMatch != OutputMatch.NONE, "must be valid state");
-        switch (outputMatch) {
-            case NONE -> outputMatch = newOutputMatch;
-            case IDEAL -> outputMatch = newOutputMatch != OutputMatch.IDEAL
-                    ? OutputMatch.BOTH : OutputMatch.IDEAL;
-            case OPTO_ASSEMBLY -> outputMatch = newOutputMatch != OutputMatch.OPTO_ASSEMBLY
-                    ? OutputMatch.BOTH : OutputMatch.OPTO_ASSEMBLY;
-        }
-    }
-
-    /**
-     * Build a failure message based on the collected failures of this object.
-     */
     @Override
-    public String buildFailureMessage() {
-        StringBuilder failMsg = new StringBuilder();
-        failMsg.append(getIRRuleLine());
-        if (hasFailOnFailures()) {
-            failMsg.append(failOnFailures.buildFailureMessage());
-        }
-        if (hasCountsFailures()) {
-            failMsg.append(countsFailures.buildFailureMessage());
-        }
-        return failMsg.toString();
-    }
-
-    private String getIRRuleLine() {
-        return "   * @IR rule " + irRule.getRuleId() + ": \"" + irRule.getIRAnno() + "\"" + System.lineSeparator();
+    public void accept(MatchResultVisitor visitor) {
+        visitor.visitIRRule(acceptChildren, irRuleId, irAnno);
     }
 }

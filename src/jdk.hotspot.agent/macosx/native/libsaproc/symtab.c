@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,7 +247,6 @@ struct symtab* build_symtab(int fd) {
   int cnt = 0;
   ELF_SHDR* shbuf = NULL;
   ELF_SHDR* cursct = NULL;
-  ELF_PHDR* phbuf = NULL;
   int symtab_found = 0;
   int dynsym_found = 0;
   uint32_t symsection = SHT_SYMTAB;
@@ -372,7 +371,6 @@ bad:
 
 quit:
   if (shbuf) free(shbuf);
-  if (phbuf) free(phbuf);
   if (scn_cache) {
     for (cnt = 0; cnt < ehdr.e_shnum; cnt++) {
       if (scn_cache[cnt].c_data != NULL) {

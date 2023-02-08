@@ -32,14 +32,9 @@
  * DESCRIPTION
  *     The test runs many threads, that recursively invoke a pure java method.
  *     After arriving at defined depth of recursion, each thread is switched to
- *     waits for a monitor. Then the test calls java.lang.Thread.getStackTrace()
+ *     wait on a monitor. Then the test calls java.lang.Thread.getStackTrace()
  *     and java.lang.Thread.getAllStackTraces() methods and checks their results.
- *     The test fails if:
- *     - amount of stack trace elements and stack trace elements themselves are
- *       the same for both methods;
- *     - there is at least one element corresponding to invocation of unexpected
- *       method. Expected methods are Thread.sleep(), Thread.run() and the
- *       recursive method.
+ *     The test fails if the stacks for each thread do not match.
  *
  * @library /vmTestbase
  *          /test/lib
@@ -55,22 +50,26 @@ import java.io.PrintStream;
 import java.util.Map;
 
 /**
- * The test runs <code>THRD_COUNT</code> instances of <code>strace010Thread</code>,
+ * The test runs <code>THRD_COUNT</code> instances of <code>strace013Thread</code>,
  * that recursively invoke a pure java method. After arriving at defined depth
- * <code>DEPTH</code> of recursion, each thread is switched to wait a monitor.
+ * <code>DEPTH</code> of recursion, each thread is switched to wait on a monitor.
  * Then the test calls <code>java.lang.Thread.getStackTrace()</code> and
  * <code>java.lang.Thread.getAllStackTraces()</code> methods and checks their results.
  * <p>
  * <p>It is expected that these methods return the same stack traces. Each stack frame
- * for both stack traces must be corresponded to invocation of one of the methods
+ * for both stack traces correspond to invocation of one of the methods
  * defined by the <code>EXPECTED_METHODS</code> array.</p>
+ *
+ * There is some leeway in the expected stack depth as a thread may not have
+ * reached the native wait0() call when the stacktrace is taken. So we allow
+ * a difference of 3 for the methods: wait(), wait(0), and wait0(0)
  */
 public class strace013 {
 
     static final int DEPTH = 200;
     static final int THRD_COUNT = 100;
     static final String[] EXPECTED_METHODS = {
-            "java.lang.Object.wait",
+            "java.lang.Object.wait", // two variants
             "java.lang.Object.wait0",
             "nsk.stress.strace.strace013Thread.run",
             "nsk.stress.strace.strace013Thread.recursiveMethod"
@@ -172,7 +171,7 @@ public class strace013 {
         for (int i = 1; i < THRD_COUNT; i++) {
             all = (StackTraceElement[]) traces.get(threads[i]);
             int k = all.length;
-            if (count - k > 2) {
+            if (count - k > 3) {
                 complain("wrong lengths of stack traces:\n\t"
                         + threads[0].getName() + ": " + count
                         + "\t"

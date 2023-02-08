@@ -25,8 +25,8 @@
 #ifndef SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 #define SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP
 
-#include "jni.h"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jni.h"
 #include "memory/allStatic.hpp"
 
 class ClassLoaderData;
@@ -102,9 +102,11 @@ class JfrTraceId : public AllStatic {
   static traceid load_raw(const PackageEntry* package);
   static traceid load_raw(const ClassLoaderData* cld);
 
+#if INCLUDE_CDS
   static void remove(const Klass* klass);
   static void remove(const Method* method);
   static void restore(const Klass* klass);
+#endif
 
   // set of event classes made visible to java
   static bool in_visible_set(const Klass* k);

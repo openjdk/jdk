@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,17 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @test
  * @bug 8267108
  * @summary confirm current subject specification
- * @run main/othervm
- *      -Djdk.security.auth.subject.useTL=false -Dtest=both CurrentSubject
- * @run main/othervm
- *      -Djdk.security.auth.subject.useTL=true -Dtest=old CurrentSubject
- * @run main/othervm
- *      -Djdk.security.auth.subject.useTL=true -Dtest=new CurrentSubject
+ * @run main/othervm CurrentSubject
  */
 public class CurrentSubject {
-
-    static final boolean TEST_NEW = !System.getProperty("test").equals("old");
-    static final boolean TEST_OLD = !System.getProperty("test").equals("new");
 
     static transient boolean failed = false;
     static CountDownLatch cl = new CountDownLatch(1);
@@ -68,12 +60,12 @@ public class CurrentSubject {
     synchronized static void check(String label, Subject expected) {
         Subject cas = Subject.current();
         Subject accs = Subject.getSubject(AccessController.getContext());
-        if (TEST_NEW && TEST_OLD && cas != accs) {
+        if (cas != accs) {
             failed = true;
             System.out.println(label + ": current " + s2s(cas)
                     + " but getSubject is " + s2s(accs));
         }
-        Subject interested = TEST_NEW ? cas : accs;
+        Subject interested = cas;
         if (interested != expected) {
             failed = true;
             System.out.println(label + ": expected " + s2s(expected)
@@ -97,11 +89,11 @@ public class CurrentSubject {
             Subject another = new Subject();
             another.getPrincipals().add(new RawPrincipal(name + "d"));
             // run with a new subject, inside current subject will be the new subject
-            if (TEST_NEW) Subject.callAs(another, () -> test(name + 'c', another));
-            if (TEST_OLD) Subject.doAs(another, (PrivilegedAction<Void>) () -> test(name + 'd', another));
+            Subject.callAs(another, () -> test(name + 'c', another));
+            Subject.doAs(another, (PrivilegedAction<Void>) () -> test(name + 'd', another));
             // run with null, inside current subject will be null
-            if (TEST_NEW) Subject.callAs(null, () -> test(name + 'C', null));
-            if (TEST_OLD) Subject.doAs(null, (PrivilegedAction<Void>) () -> test(name + 'D', null));
+            Subject.callAs(null, () -> test(name + 'C', null));
+            Subject.doAs(null, (PrivilegedAction<Void>) () -> test(name + 'D', null));
             // new thread, inside current subject is unchanged
             count.incrementAndGet();
             new Thread(() -> {

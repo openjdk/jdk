@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,52 +23,52 @@
  */
 package com.sun.hotspot.igv.view.actions;
 
-import com.sun.hotspot.igv.view.EditorTopComponent;
-import java.awt.Event;
-import java.awt.event.KeyEvent;
-import javax.swing.Action;
-import javax.swing.KeyStroke;
-import org.openide.util.HelpCtx;
-import org.openide.util.actions.CallableSystemAction;
-import org.openide.util.Utilities;
+import com.sun.hotspot.igv.view.DiagramViewModel;
+import org.openide.awt.ActionID;
+import org.openide.awt.ActionReference;
+import org.openide.awt.ActionReferences;
+import org.openide.awt.ActionRegistration;
+import org.openide.util.NbBundle;
+import org.openide.util.NbBundle.Messages;
+
 
 /**
- *
  * @author Thomas Wuerthinger
  */
-public final class ExtractAction extends CallableSystemAction {
+@ActionID(category = "View", id = "com.sun.hotspot.igv.view.actions.ExtractAction")
+@ActionRegistration(displayName = "#CTL_ExtractAction")
+@ActionReferences({
+        @ActionReference(path = "Menu/View", position = 350),
+        @ActionReference(path = "Shortcuts", name = "D-X")
+})
+@Messages({
+        "CTL_ExtractAction=Extract action",
+        "HINT_ExtractAction=Extract current set of selected nodes"
+})
+public final class ExtractAction extends ModelAwareAction {
 
     @Override
-    public void performAction() {
-        EditorTopComponent editor = EditorTopComponent.getActive();
-        if (editor != null) {
-            editor.extract();
-        }
+    protected String iconResource() {
+        return "com/sun/hotspot/igv/view/images/extract.gif"; // NOI18N
     }
 
-    public ExtractAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Extract current set of selected nodes");
-        // D is the Control key on most platforms, the Command (meta) key on Macintosh
-        putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-X"));
+    @Override
+    protected String getDescription() {
+        return NbBundle.getMessage(ExtractAction.class, "HINT_ExtractAction");
     }
 
     @Override
     public String getName() {
-        return "Extract action";
+        return NbBundle.getMessage(ExtractAction.class, "CTL_ExtractAction");
     }
 
     @Override
-    public HelpCtx getHelpCtx() {
-        return HelpCtx.DEFAULT_HELP;
+    public void performAction(DiagramViewModel model) {
+        model.showOnly(model.getSelectedNodes());
     }
 
     @Override
-    protected boolean asynchronous() {
-        return false;
-    }
-
-    @Override
-    protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/extract.gif";
+    public boolean isEnabled(DiagramViewModel model) {
+        return model != null && !model.getSelectedNodes().isEmpty();
     }
 }

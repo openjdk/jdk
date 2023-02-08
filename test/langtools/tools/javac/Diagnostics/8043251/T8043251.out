@@ -1,0 +1,2 @@
+T8043251.java:9:42: compiler.err.cant.apply.symbol.noargs: kindname.method, identity, kindname.interface, java.util.function.Function<T,R>, (compiler.misc.wrong.number.type.args: 1)
+1 error

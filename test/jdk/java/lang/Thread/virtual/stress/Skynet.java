@@ -21,21 +21,21 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} Skynet.java
- * @run main/othervm/timeout=300 --enable-preview Skynet
+ * @enablePreview
+ * @run main/othervm/timeout=300 -Xmx1g Skynet
  */
 
-/**
+/*
  * @test
  * @requires vm.debug == true & vm.continuations
  * @requires vm.gc.Z
- * @compile --enable-preview -source ${jdk.version} Skynet.java
- * @run main/othervm/timeout=300 --enable-preview -XX:+UnlockDiagnosticVMOptions
- *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 Skynet
+ * @enablePreview
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */
 
 import java.util.concurrent.BlockingQueue;
@@ -43,10 +43,9 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 
 public class Skynet {
-    public static final int ITERATIONS = 10;
-
     public static void main(String[] args) {
-        for (int i = 0; i < ITERATIONS; i++) {
+        int iterations = (args.length > 0) ? Integer.parseInt(args[0]) : 10;
+        for (int i = 0; i < iterations; i++) {
             skynet(1_000_000, 499999500000L);
         }
     }

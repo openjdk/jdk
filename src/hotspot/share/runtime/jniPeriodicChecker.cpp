@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,13 @@
 class JniPeriodicCheckerTask : public PeriodicTask {
   public:
      JniPeriodicCheckerTask(int interval_time) : PeriodicTask(interval_time) {}
-     void task() { os::run_periodic_checks(); }
-     static void engage();
-     static void disengage();
+     void task() { os::run_periodic_checks(tty); }
 };
-
 
 //----------------------------------------------------------
 // Implementation of JniPeriodicChecker
 
-JniPeriodicCheckerTask*              JniPeriodicChecker::_task   = NULL;
+JniPeriodicCheckerTask*              JniPeriodicChecker::_task   = nullptr;
 
 /*
  * The engage() method is called at initialization time via
@@ -55,23 +52,4 @@ void JniPeriodicChecker::engage() {
     _task = new JniPeriodicCheckerTask(10);
     _task->enroll();
   }
-}
-
-
-/*
- * the disengage() method is responsible for deactivating the periodic
- * task. This  method is called from before_exit() in java.cpp and is only called
- * after the WatcherThread has been stopped.
- */
-void JniPeriodicChecker::disengage() {
-  if (CheckJNICalls && is_active()) {
-    // remove JniPeriodicChecker
-    _task->disenroll();
-    delete _task;
-    _task = NULL;
-  }
-}
-
-void jniPeriodicChecker_exit() {
-  if (!CheckJNICalls) return;
 }

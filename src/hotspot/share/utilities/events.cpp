@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,15 @@
 #include "utilities/events.hpp"
 
 
-EventLog* Events::_logs = NULL;
-StringEventLog* Events::_messages = NULL;
-StringEventLog* Events::_vm_operations = NULL;
-ExceptionsEventLog* Events::_exceptions = NULL;
-StringEventLog* Events::_redefinitions = NULL;
-UnloadingEventLog* Events::_class_unloading = NULL;
-StringEventLog* Events::_class_loading = NULL;
-StringEventLog* Events::_deopt_messages = NULL;
-StringEventLog* Events::_dll_messages = NULL;
+EventLog* Events::_logs = nullptr;
+StringEventLog* Events::_messages = nullptr;
+StringEventLog* Events::_vm_operations = nullptr;
+ExceptionsEventLog* Events::_exceptions = nullptr;
+StringEventLog* Events::_redefinitions = nullptr;
+UnloadingEventLog* Events::_class_unloading = nullptr;
+StringEventLog* Events::_class_loading = nullptr;
+StringEventLog* Events::_deopt_messages = nullptr;
+StringEventLog* Events::_dll_messages = nullptr;
 
 EventLog::EventLog() {
   // This normally done during bootstrap when we're only single
@@ -56,7 +56,7 @@ EventLog::EventLog() {
 // the buffer.
 void Events::print_all(outputStream* out, int max) {
   EventLog* log = _logs;
-  while (log != NULL) {
+  while (log != nullptr) {
     log->print_log_on(out, max);
     log = log->next();
   }
@@ -66,7 +66,7 @@ void Events::print_all(outputStream* out, int max) {
 void Events::print_one(outputStream* out, const char* log_name, int max) {
   EventLog* log = _logs;
   int num_printed = 0;
-  while (log != NULL) {
+  while (log != nullptr) {
     if (log->matches_name_or_handle(log_name)) {
       log->print_log_on(out, max);
       num_printed ++;
@@ -78,7 +78,7 @@ void Events::print_one(outputStream* out, const char* log_name, int max) {
     out->print_cr("The name \"%s\" did not match any known event log. "
                   "Valid event log names are:", log_name);
     EventLog* log = _logs;
-    while (log != NULL) {
+    while (log != nullptr) {
       log->print_names(out);
       out->cr();
       log = log->next();
@@ -118,13 +118,13 @@ EventMarkBase::EventMarkBase(EventLogFunction log_function) :
 void EventMarkBase::log_start(const char* format, va_list argp) {
   // Save a copy of begin message and log it.
   _buffer.printv(format, argp);
-  _log_function(NULL, "%s", _buffer.buffer());
+  _log_function(nullptr, "%s", _buffer.buffer());
 }
 
 void EventMarkBase::log_end() {
   // Append " done" to the begin message and log it
   _buffer.append(" done");
-  _log_function(NULL, "%s", _buffer.buffer());
+  _log_function(nullptr, "%s", _buffer.buffer());
 }
 
 void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
@@ -137,7 +137,7 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   _records[index].timestamp = timestamp;
   stringStream st(_records[index].data.buffer(),
                   _records[index].data.size());
-  st.print("Unloading class " INTPTR_FORMAT " ", p2i(ik));
+  st.print("Unloading class " PTR_FORMAT " ", p2i(ik));
   ik->name()->print_value_on(&st);
 }
 
@@ -153,7 +153,7 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
                   _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
-  st.print("%s%s> (" INTPTR_FORMAT ") \n"
+  st.print("%s%s> (" PTR_FORMAT ") \n"
            "thrown [%s, line %d]",
            message ? ": " : "", message ? message : "",
            p2i(h_exception()), file, line);

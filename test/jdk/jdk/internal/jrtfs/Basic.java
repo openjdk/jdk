@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8141521 8216553 8266291 8290047
  * @summary Basic test of jrt file system provider
  * @run testng Basic
  */
@@ -773,6 +774,20 @@ public class Basic {
         Path m = p.resolve("modules");
         Files.exists(m);
         assertTrue(wasDirectory == Files.isDirectory(p));
+    }
+
+    @DataProvider(name = "badSyntaxAndPattern")
+    private Object[][] badSyntaxAndPattern() {
+        return new Object[][] {
+            { ":glob"},
+        };
+    }
+
+    @Test(dataProvider = "badSyntaxAndPattern",
+          expectedExceptions = IllegalArgumentException.class)
+    public void badSyntaxAndPatternTest(String syntaxAndPattern) {
+        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        PathMatcher pm = fs.getPathMatcher(syntaxAndPattern);
     }
 }
 

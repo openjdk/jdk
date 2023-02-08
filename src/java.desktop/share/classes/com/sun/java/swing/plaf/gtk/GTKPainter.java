@@ -1275,8 +1275,10 @@ class GTKPainter extends SynthPainter {
                 ENGINE.startPainting(g, x, y, w, h, id, state);
                 // the string arg should alternate based on row being painted,
                 // but we currently don't pass that in.
-                ENGINE.paintFlatBox(g, context, id, gtkState, ShadowType.NONE,
-                        "cell_odd", x, y, w, h, ColorType.TEXT_BACKGROUND);
+                if (context.getComponent().isOpaque()) {
+                    ENGINE.paintFlatBox(g, context, id, gtkState, ShadowType.NONE,
+                            "cell_odd", x, y, w, h, ColorType.TEXT_BACKGROUND);
+                }
                 ENGINE.finishPainting();
             }
         }

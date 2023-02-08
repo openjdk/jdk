@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,6 @@ private:
   G1CardTable*           _ct;
   G1Policy*              _g1p;
   G1HotCardCache*        _hot_card_cache;
-  G1RemSetSamplingTask*  _sampling_task;
 
   void print_merge_heap_roots_stats();
 
@@ -86,12 +85,6 @@ public:
            G1CardTable* ct,
            G1HotCardCache* hot_card_cache);
   ~G1RemSet();
-
-  // Initialize and schedule young remembered set sampling task.
-  void initialize_sampling_task(G1ServiceThread* thread);
-
-  // Accumulated vtime used by the sampling task.
-  double sampling_task_vtime();
 
   // Scan all cards in the non-collection set regions that potentially contain
   // references into the current whole collection set.
@@ -147,10 +140,6 @@ public:
 
   // Print accumulated summary info from the last time called.
   void print_periodic_summary_info(const char* header, uint period_count, bool show_thread_times);
-
-  // Rebuilds the remembered set by scanning from bottom to TARS for all regions
-  // using the given workers.
-  void rebuild_rem_set(G1ConcurrentMark* cm, WorkerThreads* workers, uint worker_id_offset);
 };
 
 #endif // SHARE_GC_G1_G1REMSET_HPP

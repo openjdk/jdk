@@ -23,9 +23,11 @@
 
 package compiler.lib.ir_framework.test;
 
-import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.*;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -33,7 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.HashSet;
 
 /**
  * Prints an encoding to the dedicated test framework socket whether @IR rules of @Test methods should be applied or not.
@@ -95,75 +96,40 @@ public class IREncodingPrinter {
         }
     }
 
+    private void printDisableReason(String method, String reason) {
+        TestFrameworkSocket.write("Disabling IR matching for " + method + ": " + reason + ".",
+                                  "[IREncodingPrinter]", true);
+    }
+
     private boolean shouldApplyIrRule(IR irAnno, String m) {
         checkIRAnnotations(irAnno);
-        if (isDefaultRegexUnsupported(irAnno)) {
+        if (isIRNodeUnsupported(irAnno)) {
             return false;
+        } else if (irAnno.applyIf().length != 0 && !hasAllRequiredFlags(irAnno.applyIf(), "applyIf")) {
+            printDisableReason(m, "Flag constraint not met");
+            return false;
+        } else if (irAnno.applyIfNot().length != 0 && !hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot")) {
+            printDisableReason(m, "Flag constraint not met");
+            return false;
+        } else if (irAnno.applyIfAnd().length != 0 && !hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd")) {
+            printDisableReason(m, "All flag constraints not met");
+            return false;
+        } else if (irAnno.applyIfOr().length != 0 && hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr")) {
+            printDisableReason(m, "None of the flag constraints met");
+            return false;
+        } else if (irAnno.applyIfCPUFeature().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature())) {
+            printDisableReason(m, "Feature constraint not met");
+            return false;
+        } else if (irAnno.applyIfCPUFeatureAnd().length != 0 && !hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd())) {
+            printDisableReason(m, "All feature constraints not met");
+            return false;
+        } else if (irAnno.applyIfCPUFeatureOr().length != 0 && !hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr())) {
+            printDisableReason(m, "None of the feature constraints met");
+            return false;
+        } else {
+            // All preconditions satisfied: apply rule.
+            return true;
         }
-        if (irAnno.applyIf().length != 0) {
-            boolean check = hasAllRequiredFlags(irAnno.applyIf(), "applyIf");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfNot().length != 0) {
-            boolean check = hasNoRequiredFlags(irAnno.applyIfNot(), "applyIfNot");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Flag constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfAnd().length != 0) {
-            boolean check = hasAllRequiredFlags(irAnno.applyIfAnd(), "applyIfAnd");
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": All flag constraints not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfOr().length != 0) {
-            boolean check = hasNoRequiredFlags(irAnno.applyIfOr(), "applyIfOr");
-            if (check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the flag constraint met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return !check;
-        }
-
-        if (irAnno.applyIfCPUFeature().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeature());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": Feature constraint not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfCPUFeatureAnd().length != 0) {
-            boolean check = hasAllRequiredCPUFeature(irAnno.applyIfCPUFeatureAnd());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": All feature constraints not met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-
-        if (irAnno.applyIfCPUFeatureOr().length != 0) {
-            boolean check = hasAnyRequiredCPUFeature(irAnno.applyIfCPUFeatureOr());
-            if (!check) {
-                TestFrameworkSocket.write("Disabling IR matching for " + m + ": None of the feature constraint met.",
-                                     "[IREncodingPrinter]", true);
-            }
-            return check;
-        }
-        // No conditions, always apply.
-        return true;
     }
 
     private void checkIRAnnotations(IR irAnno) {
@@ -193,12 +159,12 @@ public class IREncodingPrinter {
         }
         if (irAnno.applyIfCPUFeatureAnd().length != 0) {
             cpuFeatureConstraints++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureAnd().length % 2) == 0 && irAnno.applyIfCPUFeatureAnd().length >= 2,
+            TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureAnd().length % 2 == 0,
                                     "applyIfCPUFeatureAnd expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfCPUFeatureOr().length != 0) {
             cpuFeatureConstraints++;
-            TestFormat.checkNoThrow((irAnno.applyIfCPUFeatureOr().length % 2) == 0 && irAnno.applyIfCPUFeatureOr().length >= 2,
+            TestFormat.checkNoThrow(irAnno.applyIfCPUFeatureOr().length % 2 == 0,
                                     "applyIfCPUFeatureOr expects more than one CPU feature pair" + failAt());
         }
         if (irAnno.applyIfNot().length != 0) {
@@ -210,13 +176,13 @@ public class IREncodingPrinter {
         TestFormat.checkNoThrow(cpuFeatureConstraints <= 1, "Can only specify one CPU feature constraint" + failAt());
     }
 
-    private boolean isDefaultRegexUnsupported(IR irAnno) {
+    private boolean isIRNodeUnsupported(IR irAnno) {
         try {
             for (String s : irAnno.failOn()) {
-                IRNode.checkDefaultRegexSupported(s);
+                IRNode.checkIRNodeSupported(s);
             }
             for (String s : irAnno.counts()) {
-                IRNode.checkDefaultRegexSupported(s);
+                IRNode.checkIRNodeSupported(s);
             }
         } catch (CheckedTestFrameworkException e) {
             TestFrameworkSocket.write("Skip Rule " + ruleIndex + ": " + e.getMessage(), TestFrameworkSocket.DEFAULT_REGEX_TAG, true);
@@ -280,30 +246,7 @@ public class IREncodingPrinter {
             return false;
         }
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
-        // Following feature list is in sync with suppressed feature list for KNL target.
-        // Please refer vm_version_x86.cpp for details.
-        HashSet<String> knlFeatureSet = new HashSet<>();
-        knlFeatureSet.add("AVX512BW");
-        knlFeatureSet.add("AVX512VL");
-        knlFeatureSet.add("AVX512DQ");
-        knlFeatureSet.add("AVX512_VNNI");
-        knlFeatureSet.add("AVX512_VAES");
-        knlFeatureSet.add("AVX512_VPOPCNTDQ");
-        knlFeatureSet.add("AVX512_VPCLMULQDQ");
-        knlFeatureSet.add("AVX512_VBMI");
-        knlFeatureSet.add("AVX512_VBMI2");
-        knlFeatureSet.add("CLWB");
-        knlFeatureSet.add("FLUSHOPT");
-        knlFeatureSet.add("GFNI");
-        knlFeatureSet.add("AVX512_BITALG");
-        Boolean isKNLFlagEnabled = WHITE_BOX.getBooleanVMFlag("UseKNLSetting");
-        // Perform the feature check if UseKNLSetting flag is set to off or if
-        // feature is supported by KNL target.
-        if (isKNLFlagEnabled == null ||
-             (isKNLFlagEnabled && (!knlFeatureSet.contains(feature.toUpperCase()) || falseValue))) {
-            return (trueValue && cpuFeatures.contains(feature)) || (falseValue && !cpuFeatures.contains(feature));
-        }
-        return false;
+        return (trueValue && cpuFeatures.contains(feature)) || (falseValue && !cpuFeatures.contains(feature));
     }
 
     private boolean hasNoRequiredFlags(String[] orRules, String ruleType) {
@@ -375,11 +318,12 @@ public class IREncodingPrinter {
     private <T extends Comparable<T>> boolean checkFlag(Function<String, T> parseFunction, String kind, String flag,
                                                         String value, T actualFlagValue) {
         try {
-            String postFixErrorMsg = "for " + kind + " based flag \"" + flag + "\"" + failAt();
-            Comparison<T> comparison = ComparisonConstraintParser.parse(value, parseFunction, postFixErrorMsg);
+            Comparison<T> comparison = ComparisonConstraintParser.parse(value, parseFunction);
             return comparison.compare(actualFlagValue);
         } catch (TestFormatException e) {
             // Format exception, do not apply rule.
+            String postFixErrorMsg = " for " + kind + " based flag \"" + flag + "\"" + failAt();
+            TestFormat.failNoThrow(e.getMessage() + postFixErrorMsg);
             return false;
         }
     }

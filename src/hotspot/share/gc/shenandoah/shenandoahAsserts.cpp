@@ -48,7 +48,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
     stringStream ss;
     os::print_hex_dump(&ss, start, end, 4);
     msg.append("\n");
-    msg.append("Raw heap memory:\n%s", ss.as_string());
+    msg.append("Raw heap memory:\n%s", ss.freeze());
   }
 }
 
@@ -71,8 +71,8 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
   msg.append("    %3s marked weak\n",                ctx->is_marked_weak(obj) ? "" : "not");
   msg.append("    %3s in collection set\n",          heap->in_collection_set(obj) ? "" : "not");
-  msg.append("  mark:%s\n", mw_ss.as_string());
-  msg.append("  region: %s", ss.as_string());
+  msg.append("  mark:%s\n", mw_ss.freeze());
+  msg.append("  region: %s", ss.freeze());
 }
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
@@ -84,12 +84,12 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
     r->print_on(&ss);
 
     msg.append("    %3s in collection set\n",    heap->in_collection_set_loc(loc) ? "" : "not");
-    msg.append("  region: %s", ss.as_string());
+    msg.append("  region: %s", ss.freeze());
   } else {
     msg.append("  outside of Java heap\n");
     stringStream ss;
     os::print_location(&ss, (intptr_t) loc, false);
-    msg.append("  %s", ss.as_string());
+    msg.append("  %s", ss.freeze());
   }
 }
 
@@ -101,7 +101,7 @@ void ShenandoahAsserts::print_obj_safe(ShenandoahMessageBuffer& msg, void* loc) 
     if (r != NULL) {
       stringStream ss;
       r->print_on(&ss);
-      msg.append("  region: %s", ss.as_string());
+      msg.append("  region: %s", ss.freeze());
       print_raw_memory(msg, loc);
     }
   }

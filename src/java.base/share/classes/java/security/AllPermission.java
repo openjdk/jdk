@@ -30,9 +30,9 @@ import sun.security.util.SecurityConstants;
 import java.util.Enumeration;
 
 /**
- * The AllPermission is a permission that implies all other permissions.
+ * The {@code AllPermission} is a permission that implies all other permissions.
  * <p>
- * <b>Note:</b> Granting AllPermission should be done with extreme care,
+ * <b>Note:</b> Granting {@code AllPermission} should be done with extreme care,
  * as it implies all other permissions. Thus, it grants code the ability
  * to run with security
  * disabled.  Extreme caution should be taken before granting such
@@ -60,7 +60,7 @@ public final class AllPermission extends Permission {
     private static final long serialVersionUID = -2916474571451318075L;
 
     /**
-     * Creates a new AllPermission object.
+     * Creates a new {@code AllPermission} object.
      */
     public AllPermission() {
         super("<all permissions>");
@@ -68,9 +68,9 @@ public final class AllPermission extends Permission {
 
 
     /**
-     * Creates a new AllPermission object. This
+     * Creates a new {@code AllPermission} object. This
      * constructor exists for use by the {@code Policy} object
-     * to instantiate new Permission objects.
+     * to instantiate new {@code Permission} objects.
      *
      * @param name ignored
      * @param actions ignored.
@@ -81,7 +81,7 @@ public final class AllPermission extends Permission {
 
     /**
      * Checks if the specified permission is "implied" by
-     * this object. This method always returns true.
+     * this object. This method always returns {@code true}.
      *
      * @param p the permission to check against.
      *
@@ -92,11 +92,11 @@ public final class AllPermission extends Permission {
     }
 
     /**
-     * Checks two AllPermission objects for equality. Two AllPermission
-     * objects are always equal.
+     * Checks two {@code AllPermission} objects for equality.
+     * Two {@code AllPermission} objects are always equal.
      *
      * @param obj the object we are testing for equality with this object.
-     * @return true if {@code obj} is an AllPermission, false otherwise.
+     * @return true if {@code obj} is an {@code AllPermission}, false otherwise.
      */
     public boolean equals(Object obj) {
         return (obj instanceof AllPermission);
@@ -122,11 +122,11 @@ public final class AllPermission extends Permission {
     }
 
     /**
-     * Returns a new PermissionCollection object for storing AllPermission
-     * objects.
+     * Returns a new {@code PermissionCollection} for storing
+     * {@code AllPermission} objects.
      *
-     * @return a new PermissionCollection object suitable for
-     * storing AllPermissions.
+     * @return a new {@code PermissionCollection} suitable for
+     * storing {@code AllPermission} objects.
      */
     public PermissionCollection newPermissionCollection() {
         return new AllPermissionCollection();
@@ -135,8 +135,8 @@ public final class AllPermission extends Permission {
 }
 
 /**
- * A AllPermissionCollection stores a collection
- * of AllPermission permissions. AllPermission objects
+ * An {@code AllPermissionCollection} stores a collection
+ * of {@code AllPermission} permissions. {@code AllPermission} objects
  * must be stored in a manner that allows them to be inserted in any
  * order, but enable the implies function to evaluate the implies
  * method in an efficient (and consistent) manner.
@@ -160,12 +160,12 @@ final class AllPermissionCollection
     private static final long serialVersionUID = -4023755556366636806L;
 
     /**
-     * True if any AllPermissions have been added.
+     * True if any {@code AllPermissionCollection} objects have been added.
      */
     private boolean all_allowed;
 
     /**
-     * Create an empty AllPermissions object.
+     * Create an empty {@code AllPermissionCollection} object.
      *
      */
 
@@ -174,16 +174,16 @@ final class AllPermissionCollection
     }
 
     /**
-     * Adds a permission to the AllPermissions. The key for the hash is
-     * permission.path.
+     * Adds a permission to the {@code AllPermissionCollection} object.
+     * The key for the hash is {@code permission.path}.
      *
-     * @param permission the Permission object to add.
+     * @param permission the {@code Permission} object to add.
      *
      * @throws    IllegalArgumentException   if the permission is not an
-     *                                       AllPermission
+     *                                       {@code AllPermission}
      *
-     * @throws    SecurityException   if this AllPermissionCollection object
-     *                                has been marked readonly
+     * @throws    SecurityException   if this {@code AllPermissionCollection}
+     *                                object has been marked readonly
      */
 
     public void add(Permission permission) {
@@ -200,9 +200,9 @@ final class AllPermissionCollection
      * Check and see if this set of permissions implies the permissions
      * expressed in "permission".
      *
-     * @param permission the Permission object to compare
+     * @param permission the {@code Permission} object to compare
      *
-     * @return always returns true.
+     * @return always returns {@code true}.
      */
 
     public boolean implies(Permission permission) {
@@ -210,10 +210,10 @@ final class AllPermissionCollection
     }
 
     /**
-     * Returns an enumeration of all the AllPermission objects in the
+     * Returns an enumeration of all the {@code AllPermission} objects in the
      * container.
      *
-     * @return an enumeration of all the AllPermission objects.
+     * @return an enumeration of all the {@code AllPermission} objects.
      */
     public Enumeration<Permission> elements() {
         return new Enumeration<>() {

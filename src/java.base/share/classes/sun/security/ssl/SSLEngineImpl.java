@@ -332,7 +332,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             // after the last flight.  If the last flight get lost, the
             // application data may be discarded accordingly.  As could
             // be an issue for some applications.  This impact can be
-            // mitigated by sending the last fligth twice.
+            // mitigated by sending the last flight twice.
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,verbose")) {
                 SSLLogger.finest("retransmit the last flight messages");
             }
@@ -1130,7 +1130,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                     if (conContext.delegatedThrown == exc) {
                         // clear if/only if both are the same
                         conContext.delegatedThrown = null;
-                    } // otherwise report the hc delegatedThrown
+                    } // otherwise, report the hc delegatedThrown
                 } else {
                     // Nothing waiting in HandshakeContext, but one is in the
                     // TransportContext.

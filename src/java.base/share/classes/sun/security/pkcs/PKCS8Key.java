@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,14 +78,14 @@ public class PKCS8Key implements PrivateKey {
     private static final int V2 = 1;
 
     /**
-     * Default constructor. Constructors in sub-classes that create a new key
+     * Default constructor. Constructors in subclasses that create a new key
      * from its components require this. These constructors must initialize
      * {@link #algid} and {@link #key}.
      */
     protected PKCS8Key() { }
 
     /**
-     * Another constructor. Constructors in sub-classes that create a new key
+     * Another constructor. Constructors in subclasses that create a new key
      * from an encoded byte array require this. We do not assign this
      * encoding to {@link #encodedKey} directly.
      *
@@ -198,8 +198,7 @@ public class PKCS8Key implements PrivateKey {
      * or {@code null} if an encoding error occurs.
      */
     public byte[] getEncoded() {
-        byte[] b = getEncodedInternal();
-        return (b == null) ? null : b.clone();
+        return getEncodedInternal().clone();
     }
 
     /**
@@ -213,21 +212,17 @@ public class PKCS8Key implements PrivateKey {
      * DER-encodes this key as a byte array stored inside this object
      * and return it.
      *
-     * @return the encoding, or null if there is an I/O error.
+     * @return the encoding
      */
     private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
-            try {
-                DerOutputStream tmp = new DerOutputStream();
-                tmp.putInteger(V1);
-                algid.encode(tmp);
-                tmp.putOctetString(key);
-                DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
-                encodedKey = out.toByteArray();
-                out.clear();
-            } catch (IOException e) {
-                // encodedKey is still null
-            }
+            DerOutputStream tmp = new DerOutputStream();
+            tmp.putInteger(V1);
+            algid.encode(tmp);
+            tmp.putOctetString(key);
+            DerValue out = DerValue.wrap(DerValue.tag_Sequence, tmp);
+            encodedKey = out.toByteArray();
+            out.clear();
         }
         return encodedKey;
     }

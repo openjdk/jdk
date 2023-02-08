@@ -33,8 +33,6 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.io.*;
 import java.util.*;
-import java.security.AccessController;
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
@@ -302,12 +300,11 @@ class WindowsFileSystemProvider
         // read security descriptor containing ACL (symlinks are followed)
         boolean hasRights = false;
         String target = WindowsLinkSupport.getFinalPath(file, true);
-        NativeBuffer aclBuffer = WindowsAclFileAttributeView
+        try (NativeBuffer aclBuffer = WindowsAclFileAttributeView
             .getFileSecurity(target,
                 DACL_SECURITY_INFORMATION
                 | OWNER_SECURITY_INFORMATION
-                | GROUP_SECURITY_INFORMATION);
-        try {
+                | GROUP_SECURITY_INFORMATION)) {
             hasRights = checkAccessMask(aclBuffer.address(), rights,
                 FILE_GENERIC_READ,
                 FILE_GENERIC_WRITE,
@@ -315,8 +312,6 @@ class WindowsFileSystemProvider
                 FILE_ALL_ACCESS);
         } catch (WindowsException exc) {
             exc.rethrowAsIOException(file);
-        } finally {
-            aclBuffer.release();
         }
         return hasRights;
     }

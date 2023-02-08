@@ -52,6 +52,11 @@ void elapsedTimer::add(elapsedTimer t) {
   _counter += t._counter;
 }
 
+void elapsedTimer::add_nanoseconds(jlong ns) {
+  jlong freq = os::elapsed_frequency() / NANOUNITS;
+  _counter += ns * freq;
+}
+
 void elapsedTimer::start() {
   if (!_active) {
     _active = true;

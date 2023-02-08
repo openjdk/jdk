@@ -100,7 +100,7 @@ public class MemoryCacheImageOutputStream extends ImageOutputStreamImpl {
 
         // guaranteed by now that bytesLeftInCache > 0 && len > 0
         // and so the rest of the error checking is done by cache.read()
-        // NOTE that alot of error checking is duplicated
+        // NOTE that a lot of error checking is duplicated
         len = (int)Math.min(bytesLeftInCache, (long)len);
         cache.read(b, off, len, streamPos);
         streamPos += len;

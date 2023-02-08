@@ -68,8 +68,8 @@ public abstract class KeyStoreSpi {
      * @param alias the alias name
      * @param password the password for recovering the key
      *
-     * @return the requested key, or null if the given alias does not exist
-     * or does not identify a key-related entry.
+     * @return the requested key, or {@code null} if the given alias
+     * does not exist or does not identify a key-related entry.
      *
      * @throws    NoSuchAlgorithmException if the algorithm for recovering the
      * key cannot be found
@@ -89,8 +89,8 @@ public abstract class KeyStoreSpi {
      * @param alias the alias name
      *
      * @return the certificate chain (ordered with the user's certificate first
-     * and the root certificate authority last), or null if the given alias
-     * does not exist or does not contain a certificate chain
+     * and the root certificate authority last), or {@code null} if the
+     * given alias * does not exist or does not contain a certificate chain
      */
     public abstract Certificate[] engineGetCertificateChain(String alias);
 
@@ -112,8 +112,8 @@ public abstract class KeyStoreSpi {
      *
      * @param alias the alias name
      *
-     * @return the certificate, or null if the given alias does not exist or
-     * does not contain a certificate.
+     * @return the certificate, or {@code null} if the given alias does not
+     * exist or does not contain a certificate.
      */
     public abstract Certificate engineGetCertificate(String alias);
 
@@ -122,8 +122,8 @@ public abstract class KeyStoreSpi {
      *
      * @param alias the alias name
      *
-     * @return the creation date of this entry, or null if the given alias does
-     * not exist
+     * @return the creation date of this entry, or {@code null}
+     * if the given alias does not exist
      */
     public abstract Date engineGetCreationDate(String alias);
 
@@ -222,7 +222,7 @@ public abstract class KeyStoreSpi {
      *
      * @param alias the alias name
      *
-     * @return true if the alias exists, false otherwise
+     * @return {@code true} if the alias exists, {@code false} otherwise
      */
     public abstract boolean engineContainsAlias(String alias);
 
@@ -234,28 +234,28 @@ public abstract class KeyStoreSpi {
     public abstract int engineSize();
 
     /**
-     * Returns true if the entry identified by the given alias
+     * Returns {@code true} if the entry identified by the given alias
      * was created by a call to {@code setKeyEntry},
      * or created by a call to {@code setEntry} with a
      * {@code PrivateKeyEntry} or a {@code SecretKeyEntry}.
      *
      * @param alias the alias for the keystore entry to be checked
      *
-     * @return true if the entry identified by the given alias is a
-     * key-related, false otherwise.
+     * @return {@code true} if the entry identified by the given alias is a
+     * key-related, {@code false} otherwise.
      */
     public abstract boolean engineIsKeyEntry(String alias);
 
     /**
-     * Returns true if the entry identified by the given alias
+     * Returns {@code true} if the entry identified by the given alias
      * was created by a call to {@code setCertificateEntry},
      * or created by a call to {@code setEntry} with a
      * {@code TrustedCertificateEntry}.
      *
      * @param alias the alias for the keystore entry to be checked
      *
-     * @return true if the entry identified by the given alias contains a
-     * trusted certificate, false otherwise.
+     * @return {@code true} if the entry identified by the given alias
+     * contains a trusted certificate, {@code false} otherwise.
      */
     public abstract boolean engineIsCertificateEntry(String alias);
 
@@ -280,7 +280,7 @@ public abstract class KeyStoreSpi {
      * @param cert the certificate to match with.
      *
      * @return the alias name of the first entry with matching certificate,
-     * or null if no such entry exists in this keystore.
+     * or {@code null} if no such entry exists in this keystore.
      */
     public abstract String engineGetCertificateAlias(Certificate cert);
 
@@ -626,7 +626,7 @@ public abstract class KeyStoreSpi {
      * @param alias the alias name
      * @param entryClass the entry class
      *
-     * @return true if the keystore {@code Entry} for the specified
+     * @return {@code true} if the keystore {@code Entry} for the specified
      *          {@code alias} is an instance or subclass of the
      *          specified {@code entryClass}, false otherwise
      *
@@ -655,13 +655,14 @@ public abstract class KeyStoreSpi {
      * keystore that is supported by this implementation, or not.
      *
      * @implSpec
-     * This method returns false by default. Keystore implementations should
-     * override this method to peek at the data stream directly or to use other
-     * content detection mechanisms.
+     * This method returns {@code false} by default. Keystore implementations
+     * should override this method to peek at the data stream directly or
+     * to use other content detection mechanisms.
      *
      * @param  stream the keystore data to be probed
      *
-     * @return true if the keystore data is supported, otherwise false
+     * @return {@code true} if the keystore data is supported,
+     * otherwise {@code false}
      *
      * @throws IOException if there is an I/O problem with the keystore data.
      * @throws NullPointerException if stream is {@code null}.

@@ -1328,7 +1328,3 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
   }
   __ load(address, result, info, lir_patch_none);
 }
-
-void LIRGenerator::do_continuation_doYield(Intrinsic* x) {
-  fatal("Continuation.doYield intrinsic is not implemented on this platform");
-}

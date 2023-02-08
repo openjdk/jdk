@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@
 #endif
 
 class nmethod;
-class nmethodLocker;
 
 // CompilerCounters
 //
@@ -94,10 +93,10 @@ class CompileQueue : public CHeapObj<mtCompiler> {
  public:
   CompileQueue(const char* name) {
     _name = name;
-    _first = NULL;
-    _last = NULL;
+    _first = nullptr;
+    _last = nullptr;
     _size = 0;
-    _first_stale = NULL;
+    _first_stale = nullptr;
   }
 
   const char*  name() const                      { return _name; }
@@ -110,7 +109,7 @@ class CompileQueue : public CHeapObj<mtCompiler> {
 
   CompileTask* get(CompilerThread* thread);
 
-  bool         is_empty() const                  { return _first == NULL; }
+  bool         is_empty() const                  { return _first == nullptr; }
   int          size()     const                  { return _size;          }
 
 
@@ -230,13 +229,12 @@ class CompileBroker: AllStatic {
 
   enum ThreadType {
     compiler_t,
-    sweeper_t,
     deoptimizer_t
   };
 
   static Handle create_thread_oop(const char* name, TRAPS);
   static JavaThread* make_thread(ThreadType type, jobject thread_oop, CompileQueue* queue, AbstractCompiler* comp, JavaThread* THREAD);
-  static void init_compiler_sweeper_threads();
+  static void init_compiler_threads();
   static void possibly_add_compiler_threads(JavaThread* THREAD);
   static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level, bool excluded);
 
@@ -255,8 +253,8 @@ class CompileBroker: AllStatic {
 #endif
 
   static void invoke_compiler_on_method(CompileTask* task);
-  static void post_compile(CompilerThread* thread, CompileTask* task, bool success, ciEnv* ci_env,
-                           int compilable, const char* failure_reason);
+  static void handle_compile_error(CompilerThread* thread, CompileTask* task, ciEnv* ci_env,
+                                   int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
@@ -283,7 +281,7 @@ public:
   static AbstractCompiler* compiler(int comp_level) {
     if (is_c2_compile(comp_level)) return _compilers[1]; // C2
     if (is_c1_compile(comp_level)) return _compilers[0]; // C1
-    return NULL;
+    return nullptr;
   }
 
   static bool compilation_is_complete(const methodHandle& method, int osr_bci, int comp_level);
@@ -291,7 +289,7 @@ public:
   static void print_compile_queues(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
-    return q != NULL ? q->size() : 0;
+    return q != nullptr ? q->size() : 0;
   }
   static void compilation_init_phase1(JavaThread* THREAD);
   static void compilation_init_phase2();
@@ -314,10 +312,10 @@ public:
                                    TRAPS);
 
   // Acquire any needed locks and assign a compile id
-  static uint assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
+  static int assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 
   static void compiler_thread_loop();
-  static uint get_compilation_id() { return _compilation_id; }
+  static int get_compilation_id() { return _compilation_id; }
 
   // Set _should_block.
   // Call this from the VM, with Threads_lock held and a safepoint requested.
@@ -333,8 +331,8 @@ public:
     shutdown_compilation = 2
   };
 
-  static jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
-  static bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
+  static inline jint get_compilation_activity_mode() { return _should_compile_new_jobs; }
+  static inline bool should_compile_new_jobs() { return UseCompiler && (_should_compile_new_jobs == run_compilation); }
   static bool set_should_compile_new_jobs(jint new_state) {
     // Return success if the current caller set it
     jint old = Atomic::cmpxchg(&_should_compile_new_jobs, 1-new_state, new_state);
@@ -358,7 +356,7 @@ public:
   static bool is_compilation_disabled_forever() {
     return _should_compile_new_jobs == shutdown_compilation;
   }
-  static void handle_full_code_cache(int code_blob_type);
+  static void handle_full_code_cache(CodeBlobType code_blob_type);
   // Ensures that warning is only printed once.
   static bool should_print_compiler_warning() {
     jint old = Atomic::cmpxchg(&_print_compilation_warning, 0, 1);
@@ -381,13 +379,13 @@ public:
 
   // Provide access to compiler thread Java objects
   static jobject compiler1_object(int idx) {
-    assert(_compiler1_objects != NULL, "must be initialized");
+    assert(_compiler1_objects != nullptr, "must be initialized");
     assert(idx < _c1_count, "oob");
     return _compiler1_objects[idx];
   }
 
   static jobject compiler2_object(int idx) {
-    assert(_compiler2_objects != NULL, "must be initialized");
+    assert(_compiler2_objects != nullptr, "must be initialized");
     assert(idx < _c2_count, "oob");
     return _compiler2_objects[idx];
   }

@@ -63,13 +63,12 @@ public class HtmlScriptTagParserTest {
 
             frame = new JFrame();
             frame.getContentPane().add(scroll);
-            frame.setVisible(true);
             frame.pack();
-            frame.setLocationRelativeTo(null);
 
-            PassFailJFrame.addTestFrame(frame);
-            PassFailJFrame.positionTestFrame(frame,
+            PassFailJFrame.addTestWindow(frame);
+            PassFailJFrame.positionTestWindow(frame,
                     PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
         });
     }
 
@@ -81,7 +80,6 @@ public class HtmlScriptTagParserTest {
                 "\n\nHTML Used:\n" + htmlText, 5);
 
         createAndShowGUI();
-
         pfjFrame.awaitAndCheck();
     }
 }

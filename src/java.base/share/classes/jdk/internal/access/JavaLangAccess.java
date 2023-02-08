@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package jdk.internal.access;
 
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.vm.Continuation;
@@ -270,12 +271,13 @@ public interface JavaLangAccess {
     /**
      * Updates all unnamed modules to allow access to restricted methods.
      */
-    void addEnableNativeAccessAllUnnamed();
+    void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Returns true if module m can access restricted methods.
+     * Ensure that the given module has native access. If not, warn or
+     * throw exception depending on the configuration.
      */
-    boolean isEnableNativeAccess(Module m);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -299,6 +301,11 @@ public interface JavaLangAccess {
      * given class loader.
      */
     Stream<ModuleLayer> layers(ClassLoader loader);
+
+    /**
+     * Count the number of leading positive bytes in the range.
+     */
+    int countPositives(byte[] ba, int off, int len);
 
     /**
      * Constructs a new {@code String} by decoding the specified subarray of
@@ -341,6 +348,16 @@ public interface JavaLangAccess {
     String newStringUTF8NoRepl(byte[] bytes, int off, int len);
 
     /**
+     * Get the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     * @return the char value
+     */
+    char getUTF16Char(byte[] bytes, int index);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -361,6 +378,12 @@ public interface JavaLangAccess {
      * @return the number of bytes successfully decoded, at most len
      */
     int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len);
+
+    /**
+     * Returns the initial `System.in` to determine if it is replaced
+     * with `System.setIn(newIn)` method
+     */
+    InputStream initialSystemIn();
 
     /**
      * Encodes ASCII codepoints as possible from the source array into
@@ -456,32 +479,47 @@ public interface JavaLangAccess {
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.
      */
-    <T> T getCarrierThreadLocal(ThreadLocal<T> local);
+    <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local);
 
     /**
      * Sets the value of the current carrier thread's copy of a thread-local.
      */
-    <T> void setCarrierThreadLocal(ThreadLocal<T> local, T value);
+    <T> void setCarrierThreadLocal(CarrierThreadLocal<T> local, T value);
 
     /**
-     * Returns the current thread's extent locals cache
+     * Removes the value of the current carrier thread's copy of a thread-local.
      */
-    Object[] extentLocalCache();
+    void removeCarrierThreadLocal(CarrierThreadLocal<?> local);
 
     /**
-     * Sets the current thread's extent locals cache
+     * Returns {@code true} if there is a value in the current carrier thread's copy of
+     * thread-local, even if that values is {@code null}.
      */
-    void setExtentLocalCache(Object[] cache);
+    boolean isCarrierThreadLocalPresent(CarrierThreadLocal<?> local);
 
     /**
-     * Return the current thread's extent local bindings.
+     * Returns the current thread's scoped values cache
      */
-    Object extentLocalBindings();
+    Object[] scopedValueCache();
 
     /**
-     * Set the current thread's extent local bindings.
+     * Sets the current thread's scoped values cache
      */
-    void setExtentLocalBindings(Object bindings);
+    void setScopedValueCache(Object[] cache);
+
+    /**
+     * Return the current thread's scoped value bindings.
+     */
+    Object scopedValueBindings();
+
+    /**
+     * Set the current thread's scoped value bindings.
+     */
+    void setScopedValueBindings(Object bindings);
+
+    Object findScopedValueBindings();
+
+    void ensureMaterializedForStackWalk(Object value);
 
     /**
      * Returns the innermost mounted continuation

@@ -431,7 +431,7 @@ void ConstMethod::print_on(outputStream* st) const {
   ResourceMark rm;
   st->print_cr("%s", internal_name());
   Method* m = method();
-  st->print(" - method:       " INTPTR_FORMAT " ", p2i((address)m));
+  st->print(" - method:       " PTR_FORMAT " ", p2i(m));
   if (m != NULL) {
     m->print_value_on(st);
   }

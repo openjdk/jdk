@@ -53,7 +53,7 @@
 
 public class framepop02 {
 
-    final static int MAX_THREADS_LIMIT = 32;
+    final static int MAX_THREADS_LIMIT = 20;
     final static int NESTING_DEPTH = 20;
     final static String TEST_THREAD_NAME_BASE = "Test Thread #";
 

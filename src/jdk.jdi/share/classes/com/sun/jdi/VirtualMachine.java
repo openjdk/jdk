@@ -144,7 +144,7 @@ public interface VirtualMachine extends Mirror {
      *
      * @return a list of {@link ReferenceType} objects, each mirroring
      * a loaded type in the target VM.
-     * @see <a href="{@docRoot}/../specs/jvmti/jvmti.html#GetLoadedClasses">
+     * @see <a href="{@docRoot}/../specs/jvmti.html#GetLoadedClasses">
      * JVM TI GetLoadedClasses</a> regarding how class and interface creation can be triggered
      */
     List<ReferenceType> allClasses();
@@ -277,13 +277,13 @@ public interface VirtualMachine extends Mirror {
      * Suspends the execution of the application running in this
      * virtual machine. All threads currently running will be suspended.
      * <p>
-     * Unlike {@link java.lang.Thread#suspend Thread.suspend()},
-     * suspends of both the virtual machine and individual threads are
+     * Suspends of both the virtual machine and individual threads are
      * counted. Before a thread will run again, it must be resumed
      * (through {@link #resume} or {@link ThreadReference#resume})
      * the same number of times it has been suspended.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #canBeModified()
      */
     void suspend();
 
@@ -292,9 +292,9 @@ public interface VirtualMachine extends Mirror {
      * virtual machine. All threads are resumed as documented in
      * {@link ThreadReference#resume}.
      *
-     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only - see {@link VirtualMachine#canBeModified()}.
-     *
-     * @see #suspend
+     * @throws VMCannotBeModifiedException if the VirtualMachine is read-only
+     * @see #suspend()
+     * @see #canBeModified()
      */
     void resume();
 

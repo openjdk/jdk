@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_arm.hpp"
@@ -2905,6 +2906,53 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
+  address generate_method_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    Label deoptimize_label;
+
+    address start = __ pc();
+
+    // No need to save PC on Arm
+    __ set_last_Java_frame(SP, FP, false, Rtemp);
+
+    __ enter();
+
+    __ add(Rtemp, SP, wordSize);  // Rtemp points to the saved lr
+    __ sub(SP, SP, 4 * wordSize); // four words for the returned {sp, fp, lr, pc}
+
+    const RegisterSet saved_regs = RegisterSet(R0, R10);
+    __ push(saved_regs);
+    __ fpush(FloatRegisterSet(D0, 16));
+
+    __ mov(c_rarg0, Rtemp);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier), c_rarg0);
+
+    __ reset_last_Java_frame(Rtemp);
+
+    __ mov(Rtemp, R0);
+
+    __ fpop(FloatRegisterSet(D0, 16));
+    __ pop(saved_regs);
+
+    __ cbnz(Rtemp, deoptimize_label);
+
+    __ leave();
+    __ bx(LR);
+
+    __ BIND(deoptimize_label);
+
+    __ ldr(Rtemp, Address(SP, 0));
+    __ ldr(FP, Address(SP, wordSize));
+    __ ldr(LR, Address(SP, wordSize * 2));
+    __ ldr(R5, Address(SP, wordSize * 3));
+    __ mov(SP, Rtemp);
+    __ bx(R5);
+
+    return start;
+  }
+
 #define COMPILE_CRYPTO
 #include "stubRoutinesCrypto_arm.cpp"
 
@@ -2959,12 +3007,6 @@ class StubGenerator: public StubCodeGenerator {
     return stub->entry_point();
   }
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind) {
     if (!Continuations::enabled()) return nullptr;
     Unimplemented();
@@ -3011,13 +3053,7 @@ class StubGenerator: public StubCodeGenerator {
     __ reset_last_Java_frame(Rtemp);
 
     // R0 is jobject handle result, unpack and process it through a barrier.
-    Label L_null_jobject;
-    __ cbz(R0, L_null_jobject);
-
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(masm, ACCESS_READ | IN_NATIVE, T_OBJECT, R0, Address(R0, 0), Rtemp, R1, R2);
-
-    __ bind(L_null_jobject);
+    __ resolve_global_jobject(R0, Rtemp, R1);
 
     __ raw_pop(R1, R2, LR);
     __ ret();
@@ -3075,9 +3111,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                                                                   : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
@@ -3105,6 +3138,11 @@ class StubGenerator: public StubCodeGenerator {
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
+
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
+    }
 
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code

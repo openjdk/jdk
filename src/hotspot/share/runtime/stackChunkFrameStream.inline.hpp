@@ -123,10 +123,60 @@ inline bool StackChunkFrameStream<ChunkFrames::CompiledOnly>::is_interpreted() c
   return false;
 }
 
+// StackChunkFrameStream<frame_kind>::frame_size() returns the words required to
+// store the given frame as the only frame in a StackChunk. This is the size of the
+// frame itself plus its stack arguments plus metadata at the caller's frame top (1)
+//
+// |====================|          ---
+// | F0's stackargs     |           ^
+// |                    |           |
+// |--------------------|           |
+// | metadata@top       | <- caller's sp
+// |====================|           |
+// | metadata@bottom(2) |           |
+// |--------------------|
+// |                    |       size S0
+// | Frame F0           |                 ---     |====================|          ---
+// |                    |           |      ^      | F1's stackargs     |           ^
+// |                    |           |      |      |                    |           |
+// |--------------------|           |   overlap   |--------------------|           |
+// | metadata@top(1)    |<- sp      v      v      | metadata@top       | <- caller's sp
+// |====================|          ---    ---     |====================|           |
+//                                                | metadata@bottom    |           |
+//           |                                    |--------------------|
+//           |                                    | Frame F1           |       size S1
+//      Stack Growth                              | (F0's callee)      |
+//           |                                    |                    |           |
+//           |                                    |                    |           |
+//           v                                    |--------------------|           |
+//                                                | metadata@top       |<- sp      v
+//                                                |====================|          ---
+//
+// 2 frames of the same kind (interpreted or compiled) overlap. So the total
+// size required in the StackChunk is S0 + S1 - overlap, where the overlap is
+// the size of F1's stackargs plus frame::metadata_words_at_top.
+//
+// The callers of frame_size() are supposed to deduct the overlap.  The bottom
+// frame in the StackChunk obviously does not overlap with it's caller, as it is
+// in the parent chunk.
+//
+// There is no overlap if caller/callee are of different kinds. In that case the
+// caller is extended to accomodate the callee's stack arguments. The extension
+// is not counted though in the caller's size, so there is indeed no overlap.
+//
+// See ppc implementation of StackChunkFrameStream<frame_kind>::interpreter_frame_size()
+// for more details.
+//
+// (1) Metadata at frame top (see frame::metadata_words_at_top)
+//     Part of the overlap. Used on ppc64, empty on x86_64, aarch64
+// (2) Metadata at the frame bottom (see frame::metadata_words_at_bottom)
+//     Not part of the overlap.
+//     Used on x86_64 (saved rbp, ret. addr.), aarch64. Empty on ppc64.
+//
 template <ChunkFrames frame_kind>
 inline int StackChunkFrameStream<frame_kind>::frame_size() const {
   return is_interpreted() ? interpreter_frame_size()
-                          : cb()->frame_size() + stack_argsize();
+                          : cb()->frame_size() + stack_argsize() + frame::metadata_words_at_top;
 }
 
 template <ChunkFrames frame_kind>
@@ -187,11 +237,6 @@ inline void StackChunkFrameStream<frame_kind>::next(RegisterMapT* map, bool stop
 }
 
 template <ChunkFrames frame_kind>
-inline intptr_t* StackChunkFrameStream<frame_kind>::next_sp() const {
-  return is_interpreted() ? next_sp_for_interpreter_frame() : unextended_sp() + cb()->frame_size();
-}
-
-template <ChunkFrames frame_kind>
 inline void StackChunkFrameStream<frame_kind>::get_cb() {
   _oopmap = nullptr;
   if (is_done() || is_interpreted()) {
@@ -206,8 +251,6 @@ inline void StackChunkFrameStream<frame_kind>::get_cb() {
 
   assert(_cb != nullptr, "");
   assert(is_interpreted() || ((is_stub() || is_compiled()) && _cb->frame_size() > 0), "");
-  assert(is_interpreted() || cb()->is_alive(),
-    "not alive - not_entrant: %d zombie: %d unloaded: %d", _cb->is_not_entrant(), _cb->is_zombie(), _cb->is_unloaded());
 }
 
 template <ChunkFrames frame_kind>
@@ -285,20 +328,6 @@ inline address StackChunkFrameStream<frame_kind>::orig_pc() const {
 
   return pc1;
 }
-
-template <ChunkFrames frame_kind>
-inline int StackChunkFrameStream<frame_kind>::to_offset(stackChunkOop chunk) const {
-  assert(!is_done(), "");
-  return _sp - chunk->start_address();
-}
-
-#ifdef ASSERT
-template <ChunkFrames frame_kind>
-bool StackChunkFrameStream<frame_kind>::is_deoptimized() const {
-  address pc1 = pc();
-  return is_compiled() && CodeCache::find_oopmap_slot_fast(pc1) < 0 && cb()->as_compiled_method()->is_deopt_pc(pc1);
-}
-#endif
 
 template<ChunkFrames frame_kind>
 void StackChunkFrameStream<frame_kind>::handle_deopted() const {

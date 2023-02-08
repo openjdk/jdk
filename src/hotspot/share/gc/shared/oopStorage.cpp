@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -805,6 +805,10 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
+OopStorage* OopStorage::create(const char* name, MEMFLAGS memflags) {
+  return new (memflags) OopStorage(name, memflags);
+}
+
 const size_t initial_active_array_size = 8;
 
 static Mutex* make_oopstorage_mutex(const char* storage_name,
@@ -813,15 +817,6 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
   char name[256];
   os::snprintf(name, sizeof(name), "%s %s lock", storage_name, kind);
   return new PaddedMutex(rank, name);
-}
-
-void* OopStorage::operator new(size_t size, MEMFLAGS memflags) {
-  assert(size >= sizeof(OopStorage), "precondition");
-  return NEW_C_HEAP_ARRAY(char, size, memflags);
-}
-
-void OopStorage::operator delete(void* obj, MEMFLAGS /* memflags */) {
-  FREE_C_HEAP_ARRAY(char, obj);
 }
 
 OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :

@@ -162,14 +162,14 @@ final class HotSpotMethodData {
     }
 
     /**
-     * Reference to the C++ MethodData object.
+     * A {@code MethodData*} value.
      */
-    final long metaspaceMethodData;
+    final long methodDataPointer;
     private final HotSpotResolvedJavaMethodImpl method;
     private final VMState state;
 
-    HotSpotMethodData(long metaspaceMethodData, HotSpotResolvedJavaMethodImpl method) {
-        this.metaspaceMethodData = metaspaceMethodData;
+    HotSpotMethodData(long methodDataPointer, HotSpotResolvedJavaMethodImpl method) {
+        this.methodDataPointer = methodDataPointer;
         this.method = method;
         this.state = VMState.instance();
     }
@@ -178,7 +178,7 @@ final class HotSpotMethodData {
      * @return value of the MethodData::_data_size field
      */
     private int normalDataSize() {
-        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataDataSize);
+        return UNSAFE.getInt(methodDataPointer + state.config.methodDataDataSize);
     }
 
     /**
@@ -189,7 +189,7 @@ final class HotSpotMethodData {
      */
     private int extraDataSize() {
         final int extraDataBase = state.config.methodDataOopDataOffset + normalDataSize();
-        final int extraDataLimit = UNSAFE.getInt(metaspaceMethodData + state.config.methodDataSize);
+        final int extraDataLimit = UNSAFE.getInt(methodDataPointer + state.config.methodDataSize);
         return extraDataLimit - extraDataBase;
     }
 
@@ -212,25 +212,25 @@ final class HotSpotMethodData {
     public int getDeoptimizationCount(DeoptimizationReason reason) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
-        return UNSAFE.getByte(metaspaceMethodData + state.config.methodDataOopTrapHistoryOffset + reasonIndex) & 0xFF;
+        return UNSAFE.getByte(methodDataPointer + state.config.methodDataOopTrapHistoryOffset + reasonIndex) & 0xFF;
     }
 
     public int getOSRDeoptimizationCount(DeoptimizationReason reason) {
         HotSpotMetaAccessProvider metaAccess = (HotSpotMetaAccessProvider) runtime().getHostJVMCIBackend().getMetaAccess();
         int reasonIndex = metaAccess.convertDeoptReason(reason);
-        return UNSAFE.getByte(metaspaceMethodData + state.config.methodDataOopTrapHistoryOffset + state.config.deoptReasonOSROffset + reasonIndex) & 0xFF;
+        return UNSAFE.getByte(methodDataPointer + state.config.methodDataOopTrapHistoryOffset + state.config.deoptReasonOSROffset + reasonIndex) & 0xFF;
     }
 
     public int getDecompileCount() {
-        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataDecompiles);
+        return UNSAFE.getInt(methodDataPointer + state.config.methodDataDecompiles);
     }
 
     public int getOverflowRecompileCount() {
-        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataOverflowRecompiles);
+        return UNSAFE.getInt(methodDataPointer + state.config.methodDataOverflowRecompiles);
     }
 
     public int getOverflowTrapCount() {
-        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataOverflowTraps);
+        return UNSAFE.getInt(methodDataPointer + state.config.methodDataOverflowTraps);
     }
 
     public HotSpotMethodDataAccessor getNormalData(int position) {
@@ -270,12 +270,12 @@ final class HotSpotMethodData {
 
     int readUnsignedByte(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return UNSAFE.getByte(metaspaceMethodData + fullOffsetInBytes) & 0xFF;
+        return UNSAFE.getByte(methodDataPointer + fullOffsetInBytes) & 0xFF;
     }
 
     int readUnsignedShort(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return UNSAFE.getShort(metaspaceMethodData + fullOffsetInBytes) & 0xFFFF;
+        return UNSAFE.getShort(methodDataPointer + fullOffsetInBytes) & 0xFFFF;
     }
 
     /**
@@ -284,7 +284,7 @@ final class HotSpotMethodData {
      */
     private long readUnsignedInt(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return UNSAFE.getAddress(metaspaceMethodData + fullOffsetInBytes) & 0xFFFFFFFFL;
+        return UNSAFE.getAddress(methodDataPointer + fullOffsetInBytes) & 0xFFFFFFFFL;
     }
 
     private int readUnsignedIntAsSignedInt(int position, int offsetInBytes) {
@@ -298,17 +298,17 @@ final class HotSpotMethodData {
      */
     private int readInt(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return (int) UNSAFE.getAddress(metaspaceMethodData + fullOffsetInBytes);
+        return (int) UNSAFE.getAddress(methodDataPointer + fullOffsetInBytes);
     }
 
     private HotSpotResolvedJavaMethod readMethod(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return compilerToVM().getResolvedJavaMethod(null, metaspaceMethodData + fullOffsetInBytes);
+        return compilerToVM().getResolvedJavaMethod(null, methodDataPointer + fullOffsetInBytes);
     }
 
     private HotSpotResolvedObjectTypeImpl readKlass(int position, int offsetInBytes) {
         long fullOffsetInBytes = state.computeFullOffset(position, offsetInBytes);
-        return compilerToVM().getResolvedJavaType(metaspaceMethodData + fullOffsetInBytes, false);
+        return compilerToVM().getResolvedJavaType(methodDataPointer + fullOffsetInBytes);
     }
 
     /**
@@ -316,7 +316,7 @@ final class HotSpotMethodData {
      * informational data will still be valid even if the profile isn't mature.
      */
     public boolean isProfileMature() {
-        return runtime().getCompilerToVM().isMature(metaspaceMethodData);
+        return runtime().getCompilerToVM().isMature(methodDataPointer);
     }
 
     @Override
@@ -713,7 +713,7 @@ final class HotSpotMethodData {
         @Override
         protected int getDynamicSize(HotSpotMethodData data, int position) {
             assert staticSize == 0;
-            return HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.metaspaceMethodData, position);
+            return HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.methodDataPointer, position);
         }
     }
 
@@ -870,7 +870,7 @@ final class HotSpotMethodData {
         @Override
         protected int getDynamicSize(HotSpotMethodData data, int position) {
             assert staticSize == 0;
-            return HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.metaspaceMethodData, position);
+            return HotSpotJVMCIRuntime.runtime().compilerToVm.methodDataProfileDataSize(data.methodDataPointer, position);
         }
 
         @Override
@@ -881,10 +881,10 @@ final class HotSpotMethodData {
     }
 
     public void setCompiledIRSize(int size) {
-        UNSAFE.putInt(metaspaceMethodData + state.config.methodDataIRSizeOffset, size);
+        UNSAFE.putInt(methodDataPointer + state.config.methodDataIRSizeOffset, size);
     }
 
     public int getCompiledIRSize() {
-        return UNSAFE.getInt(metaspaceMethodData + state.config.methodDataIRSizeOffset);
+        return UNSAFE.getInt(methodDataPointer + state.config.methodDataIRSizeOffset);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,6 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_fmaF,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_math_fmaD,                                        // implementation of java.lang.Math.fma   (x, y, z)
     java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
-    java_lang_continuation_doYield,                             // implementation of jdk.internal.vm.Continuation.doYield()
     java_util_zip_CRC32_update,                                 // implementation of java.util.zip.CRC32.update()
     java_util_zip_CRC32_updateBytes,                            // implementation of java.util.zip.CRC32.updateBytes()
     java_util_zip_CRC32_updateByteBuffer,                       // implementation of java.util.zip.CRC32.updateByteBuffer()
@@ -169,8 +168,8 @@ class AbstractInterpreter: AllStatic {
   // Runtime support
 
   // length = invoke bytecode length (to advance to next bytecode)
-  static address deopt_entry(TosState state, int length) { ShouldNotReachHere(); return NULL; }
-  static address return_entry(TosState state, int length, Bytecodes::Code code) { ShouldNotReachHere(); return NULL; }
+  static address deopt_entry(TosState state, int length) { ShouldNotReachHere(); return nullptr; }
+  static address return_entry(TosState state, int length, Bytecodes::Code code) { ShouldNotReachHere(); return nullptr; }
 
   static address    rethrow_exception_entry()                   { return _rethrow_exception_entry; }
 
@@ -296,7 +295,7 @@ class AbstractInterpreterGenerator: public StackObj {
   InterpreterMacroAssembler* _masm;
 
  public:
-  AbstractInterpreterGenerator(StubQueue* _code);
+  AbstractInterpreterGenerator();
 };
 
 #endif // SHARE_INTERPRETER_ABSTRACTINTERPRETER_HPP

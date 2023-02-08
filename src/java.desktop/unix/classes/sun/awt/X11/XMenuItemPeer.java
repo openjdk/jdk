@@ -138,7 +138,7 @@ public class XMenuItemPeer implements MenuItemPeer {
 
     /************************************************
      *
-     * Implementaion of interface methods
+     * Implementation of interface methods
      *
      ************************************************/
 
@@ -269,7 +269,7 @@ public class XMenuItemPeer implements MenuItemPeer {
      ************************************************/
 
     /**
-     * This function should be overriden simply to
+     * This function should be overridden simply to
      * return false in inherited classes.
      */
     boolean isSeparator() {

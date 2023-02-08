@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "jvm_io.h"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -32,8 +34,6 @@
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "compiler/compilerDefinitions.hpp"
-#include "gc/shared/gcConfig.hpp"
 #include "utilities/defaultStream.hpp"
 
 const char* compilertype2name_tab[compiler_number_of_types] = {
@@ -53,7 +53,7 @@ bool CompilationModeFlag::initialize() {
   _mode = Mode::NORMAL;
   // During parsing we want to be very careful not to use any methods of CompilerConfig that depend on
   // CompilationModeFlag.
-  if (CompilationMode != NULL) {
+  if (CompilationMode != nullptr) {
     if (strcmp(CompilationMode, "default") == 0 || strcmp(CompilationMode, "normal") == 0) {
       assert(_mode == Mode::NORMAL, "Precondition");
     } else if (strcmp(CompilationMode, "quick-only") == 0) {
@@ -223,10 +223,6 @@ bool CompilerConfig::is_compilation_mode_selected() {
                     || !FLAG_IS_DEFAULT(UseJVMCICompiler));
 }
 
-bool CompilerConfig::is_interpreter_only() {
-  return Arguments::is_interpreter_only() || TieredStopAtLevel == CompLevel_none;
-}
-
 static bool check_legacy_flags() {
   JVMFlag* compile_threshold_flag = JVMFlag::flag_from_enum(FLAG_MEMBER_ENUM(CompileThreshold));
   if (JVMFlagAccess::check_constraint(compile_threshold_flag, JVMFlagLimit::get_constraint(compile_threshold_flag)->constraint_func(), false) != JVMFlag::SUCCESS) {
@@ -329,7 +325,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   }
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", NULL);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
   }
 
   if (CompilationModeFlag::disable_intermediate()) {
@@ -405,13 +401,7 @@ void CompilerConfig::set_compilation_policy_flags() {
   if (CompilerConfig::is_tiered() && CompilerConfig::is_c2_enabled()) {
 #ifdef COMPILER2
     // Some inlining tuning
-#ifdef X86
-    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-      FLAG_SET_DEFAULT(InlineSmallCode, 2500);
-    }
-#endif
-
-#if defined AARCH64
+#if defined(X86) || defined(AARCH64) || defined(RISCV64)
     if (FLAG_IS_DEFAULT(InlineSmallCode)) {
       FLAG_SET_DEFAULT(InlineSmallCode, 2500);
     }
@@ -593,19 +583,6 @@ void CompilerConfig::ergo_initialize() {
   // Do JVMCI specific settings
   set_jvmci_specific_flags();
 #endif
-
-  if (FLAG_IS_DEFAULT(SweeperThreshold)) {
-    if (Continuations::enabled()) {
-      // When continuations are enabled, the sweeper needs to trigger GC to
-      // be able to sweep nmethods. Therefore, it's in general a good idea
-      // to be significantly less aggressive with sweeping, in order not to
-      // trigger excessive GC work.
-      FLAG_SET_ERGO(SweeperThreshold, SweeperThreshold * 10.0);
-    } else if ((SweeperThreshold * ReservedCodeCacheSize / 100) > (1.2 * M)) {
-      // Cap default SweeperThreshold value to an equivalent of 1.2 Mb
-      FLAG_SET_ERGO(SweeperThreshold, (1.2 * M * 100) / ReservedCodeCacheSize);
-    }
-  }
 
   if (UseOnStackReplacement && !UseLoopCounter) {
     warning("On-stack-replacement requires loop counters; enabling loop counters");

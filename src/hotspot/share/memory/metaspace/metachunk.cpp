@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,9 +30,11 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 namespace metaspace {
 
@@ -188,14 +190,14 @@ void Metachunk::verify_neighborhood() const {
   assert(!is_dead(), "Do not call on dead chunks.");
   if (is_root_chunk()) {
     // Root chunks are all alone in the world.
-    assert(next_in_vs() == NULL || prev_in_vs() == NULL, "Root chunks should have no neighbors");
+    assert(next_in_vs() == nullptr || prev_in_vs() == nullptr, "Root chunks should have no neighbors");
   } else {
     // Non-root chunks have neighbors, at least one, possibly two.
-    assert(next_in_vs() != NULL || prev_in_vs() != NULL,
+    assert(next_in_vs() != nullptr || prev_in_vs() != nullptr,
            "A non-root chunk should have neighbors (chunk @" PTR_FORMAT
            ", base " PTR_FORMAT ", level " CHKLVL_FORMAT ".",
            p2i(this), p2i(base()), level());
-    if (prev_in_vs() != NULL) {
+    if (prev_in_vs() != nullptr) {
       assert(prev_in_vs()->end() == base(),
              "Chunk " METACHUNK_FULL_FORMAT ": should be adjacent to predecessor: " METACHUNK_FULL_FORMAT ".",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(prev_in_vs()));
@@ -203,7 +205,7 @@ void Metachunk::verify_neighborhood() const {
              "Chunk " METACHUNK_FULL_FORMAT ": broken link to left neighbor: " METACHUNK_FULL_FORMAT " (" PTR_FORMAT ").",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(prev_in_vs()), p2i(prev_in_vs()->next_in_vs()));
     }
-    if (next_in_vs() != NULL) {
+    if (next_in_vs() != nullptr) {
       assert(end() == next_in_vs()->base(),
              "Chunk " METACHUNK_FULL_FORMAT ": should be adjacent to successor: " METACHUNK_FULL_FORMAT ".",
              METACHUNK_FULL_FORMAT_ARGS(this), METACHUNK_FULL_FORMAT_ARGS(next_in_vs()));
@@ -216,7 +218,7 @@ void Metachunk::verify_neighborhood() const {
 
     // The chunk following us or preceding us may be our buddy or a splintered part of it.
     Metachunk* buddy = is_leader() ? next_in_vs() : prev_in_vs();
-    assert(buddy != NULL, "Missing neighbor.");
+    assert(buddy != nullptr, "Missing neighbor.");
     assert(!buddy->is_dead(), "Invalid buddy state.");
 
     // This neighbor is either or buddy (same level) or a splinter of our buddy - hence
@@ -266,7 +268,7 @@ void Metachunk::verify() const {
   // Note: only call this on a life Metachunk.
   chunklevel::check_valid_level(level());
 
-  assert(base() != NULL, "No base ptr");
+  assert(base() != nullptr, "No base ptr");
   assert(committed_words() >= used_words(),
          "mismatch: committed: " SIZE_FORMAT ", used: " SIZE_FORMAT ".",
          committed_words(), used_words());
@@ -275,8 +277,8 @@ void Metachunk::verify() const {
          word_size(), committed_words());
 
   // Test base pointer
-  assert(base() != NULL, "Base pointer NULL");
-  assert(vsnode() != NULL, "No space");
+  assert(base() != nullptr, "Base pointer nullptr");
+  assert(vsnode() != nullptr, "No space");
   vsnode()->check_pointer(base());
 
   // Starting address shall be aligned to chunk size.

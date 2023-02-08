@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 
   bool do_malloc_site(const MallocSite* site) {
     if (site->size() > 0) {
-      if (_malloc_sites.add(*site) != NULL) {
+      if (_malloc_sites.add(*site) != nullptr) {
         _count++;
         return true;
       } else {
@@ -127,7 +127,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
     if (rgn->size() > 0) {
-      if (_virtual_memory_regions.add(*rgn) != NULL) {
+      if (_virtual_memory_regions.add(*rgn) != nullptr) {
         _count ++;
         return true;
       } else {
@@ -145,11 +145,10 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 };
 
 
-bool MemBaseline::baseline_summary() {
+void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
-  return true;
 }
 
 bool MemBaseline::baseline_allocation_sites() {
@@ -186,15 +185,12 @@ bool MemBaseline::baseline_allocation_sites() {
   return true;
 }
 
-bool MemBaseline::baseline(bool summaryOnly) {
+void MemBaseline::baseline(bool summaryOnly) {
   reset();
 
   _instance_class_count = ClassLoaderDataGraph::num_instance_classes();
   _array_class_count = ClassLoaderDataGraph::num_array_classes();
-
-  if (!baseline_summary()) {
-    return false;
-  }
+  baseline_summary();
 
   _baseline_type = Summary_baselined;
 
@@ -205,7 +201,6 @@ bool MemBaseline::baseline(bool summaryOnly) {
     _baseline_type = Detail_baselined;
   }
 
-  return true;
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
@@ -219,13 +214,13 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
   const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
-  while ((rgn = itr.next()) != NULL) {
+  while ((rgn = itr.next()) != nullptr) {
     VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->flag());
     site = allocation_sites.find(tmp);
-    if (site == NULL) {
+    if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =
         allocation_sites.add(tmp);
-      if (node == NULL) return false;
+      if (node == nullptr) return false;
       site = node->data();
     }
     site->reserve_memory(rgn->size());
@@ -280,7 +275,7 @@ void MemBaseline::malloc_sites_to_size_order() {
     // Add malloc sites to sorted linked list to sort into size order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
-    tmp.set_head(NULL);
+    tmp.set_head(nullptr);
     _malloc_sites_order = by_size;
   }
 }
@@ -291,7 +286,7 @@ void MemBaseline::malloc_sites_to_allocation_site_order() {
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
-    tmp.set_head(NULL);
+    tmp.set_head(nullptr);
     _malloc_sites_order = by_site;
   }
 }
@@ -302,7 +297,7 @@ void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
-    tmp.set_head(NULL);
+    tmp.set_head(nullptr);
     _malloc_sites_order = by_site_and_type;
   }
 }
@@ -314,7 +309,7 @@ void MemBaseline::virtual_memory_sites_to_size_order() {
     tmp.move(&_virtual_memory_sites);
 
     _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(NULL);
+    tmp.set_head(nullptr);
     _virtual_memory_sites_order = by_size;
   }
 }
@@ -326,7 +321,7 @@ void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
     tmp.move(&_virtual_memory_sites);
 
     _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(NULL);
+    tmp.set_head(nullptr);
 
     _virtual_memory_sites_order = by_size;
   }

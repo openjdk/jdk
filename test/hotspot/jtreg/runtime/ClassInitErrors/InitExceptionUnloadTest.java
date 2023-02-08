@@ -30,15 +30,15 @@
  * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @build sun.hotspot.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI InitExceptionUnloadTest
  */
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
 public class InitExceptionUnloadTest {

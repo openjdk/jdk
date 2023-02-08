@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 
 #include "asm/codeBuffer.hpp"
 #include "memory/allocation.hpp"
+
+class Mutex;
 
 // The classes in this file provide a simple framework for the
 // management of little pieces of machine code - or stubs -
@@ -66,8 +68,8 @@ class Stub {
   int     size() const                           { ShouldNotCallThis(); return 0; }      // must return the size provided by initialize
 
   // Code info
-  address code_begin() const                     { ShouldNotCallThis(); return NULL; }   // points to the first byte of    the code
-  address code_end() const                       { ShouldNotCallThis(); return NULL; }   // points to the first byte after the code
+  address code_begin() const                     { ShouldNotCallThis(); return nullptr; }   // points to the first byte of    the code
+  address code_end() const                       { ShouldNotCallThis(); return nullptr; }   // points to the first byte after the code
 
   // Debugging
   void    verify()                               { ShouldNotCallThis(); }                // verifies the Stub
@@ -199,11 +201,11 @@ class StubQueue: public CHeapObj<mtCode> {
   void deallocate_unused_tail();                 // deallocate the unused tail of the underlying CodeBlob
                                                  // only used from TemplateInterpreter::initialize()
   // Iteration
-  Stub* first() const                            { return number_of_stubs() > 0 ? stub_at(_queue_begin) : NULL; }
+  Stub* first() const                            { return number_of_stubs() > 0 ? stub_at(_queue_begin) : nullptr; }
   Stub* next(Stub* s) const                      { int i = index_of(s) + stub_size(s);
                                                    // Only wrap around in the non-contiguous case (see stubss.cpp)
                                                    if (i == _buffer_limit && _queue_end < _buffer_limit) i = 0;
-                                                   return (i == _queue_end) ? NULL : stub_at(i);
+                                                   return (i == _queue_end) ? nullptr : stub_at(i);
                                                  }
 
   // Debugging/printing

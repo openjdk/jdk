@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
+import com.sun.source.doctree.SpecTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ThrowsTree;
@@ -124,7 +125,6 @@ import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
 
 import static com.sun.source.doctree.DocTree.Kind.*;
-import static jdk.javadoc.internal.doclets.toolkit.builders.ConstantsSummaryBuilder.MAX_CONSTANT_VALUE_INDEX_LENGTH;
 
 /**
  * Utilities Class for Doclets.
@@ -138,6 +138,7 @@ public class Utils {
     public final Types typeUtils;
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
+    private final DocFinder docFinder = newDocFinder();
 
     public Utils(BaseConfiguration c) {
         configuration = c;
@@ -417,7 +418,7 @@ public class Utils {
     }
 
     public boolean isFunctionalInterface(AnnotationMirror amirror) {
-        return amirror.getAnnotationType().equals(getFunctionalInterface()) &&
+        return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
@@ -906,22 +907,6 @@ public class Utils {
     }
 
     /**
-     * Parse the package name.  We only want to display package name up to
-     * 2 levels.
-     */
-    public String parsePackageName(PackageElement p) {
-        String pkgname = p.isUnnamed() ? "" : getPackageName(p);
-        int index = -1;
-        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
-            index = pkgname.indexOf(".", index + 1);
-        }
-        if (index != -1) {
-            pkgname = pkgname.substring(0, index);
-        }
-        return pkgname;
-    }
-
-    /**
      * Given an annotation, return true if it should be documented and false
      * otherwise.
      *
@@ -1252,32 +1237,6 @@ public class Utils {
         return result.toString();
     }
 
-    public CharSequence normalizeNewlines(CharSequence text) {
-        StringBuilder sb = new StringBuilder();
-        final int textLength = text.length();
-        final String NL = DocletConstants.NL;
-        int pos = 0;
-        for (int i = 0; i < textLength; i++) {
-            char ch = text.charAt(i);
-            switch (ch) {
-                case '\n' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    pos = i + 1;
-                }
-                case '\r' -> {
-                    sb.append(text, pos, i);
-                    sb.append(NL);
-                    if (i + 1 < textLength && text.charAt(i + 1) == '\n')
-                        i++;
-                    pos = i + 1;
-                }
-            }
-        }
-        sb.append(text, pos, textLength);
-        return sb;
-    }
-
     /**
      * Returns a locale independent lower cased String. That is, it
      * always uses US locale, this is a clone of the one in StringUtils.
@@ -1308,7 +1267,7 @@ public class Utils {
      * @return true if the given Element is deprecated for removal.
      */
     public boolean isDeprecatedForRemoval(Element e) {
-        Object forRemoval = getDeprecatedElement(e, "forRemoval");
+        Object forRemoval = getAnnotationElement(e, getDeprecatedType(), "forRemoval");
         return forRemoval != null && (boolean) forRemoval;
     }
 
@@ -1319,21 +1278,31 @@ public class Utils {
      * @return the Deprecated.since value for e, or null.
      */
     public String getDeprecatedSince(Element e) {
-        return (String) getDeprecatedElement(e, "since");
+        return (String) getAnnotationElement(e, getDeprecatedType(), "since");
+    }
+
+    /**
+     * Returns the value of the internal {@code PreviewFeature.feature} element.
+     *
+     * @param e the Element to check
+     * @return the PreviewFeature.feature for e, or null
+     */
+    public Object getPreviewFeature(Element e) {
+        return getAnnotationElement(e, getSymbol("jdk.internal.javac.PreviewFeature"), "feature");
     }
 
     /**
      * Returns the Deprecated annotation element value of the given element, or null.
      */
-    private Object getDeprecatedElement(Element e, String elementName) {
+    private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
         JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType().asElement().asType(), getDeprecatedType())) {
+            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
-                        if (element.getSimpleName().contentEquals(elementName)) {
+                        if (element.getSimpleName().contentEquals(annotationElementName)) {
                             return (pairs.get(element)).getValue();
                         }
                     }
@@ -1434,26 +1403,6 @@ public class Utils {
             filteredOutClasses.add(e);
         }
         return filteredOutClasses;
-    }
-
-    /**
-     * Compares two elements.
-     * @param e1 first Element
-     * @param e2 second Element
-     * @return a true if they are the same, false otherwise.
-     */
-    public boolean elementsEqual(Element e1, Element e2) {
-        if (e1.getKind() != e2.getKind()) {
-            return false;
-        }
-        String s1 = getSimpleName(e1);
-        String s2 = getSimpleName(e2);
-        if (compareStrings(s1, s2) == 0) {
-            String f1 = getFullyQualifiedName(e1, true);
-            String f2 = getFullyQualifiedName(e2, true);
-            return compareStrings(f1, f2) == 0;
-        }
-        return false;
     }
 
     /**
@@ -1966,6 +1915,9 @@ public class Utils {
 
     private SimpleElementVisitor14<String, Void> snvisitor = null;
 
+    // If `e` is a static nested class, this method will return e's simple name
+    // preceded by `.` and an outer type; this is not how JLS defines "simple
+    // name". See "Simple Name", "Qualified Name", "Fully Qualified Name".
     private String getSimpleName0(Element e) {
         if (snvisitor == null) {
             snvisitor = new SimpleElementVisitor14<>() {
@@ -1979,7 +1931,7 @@ public class Utils {
                     StringBuilder sb = new StringBuilder(e.getSimpleName().toString());
                     Element enclosed = e.getEnclosingElement();
                     while (enclosed != null
-                            && (enclosed.getKind().isClass() || enclosed.getKind().isInterface())) {
+                            && (enclosed.getKind().isDeclaredType())) {
                         sb.insert(0, enclosed.getSimpleName() + ".");
                         enclosed = enclosed.getEnclosingElement();
                     }
@@ -2191,18 +2143,6 @@ public class Utils {
             return DocletConstants.DEFAULT_ELEMENT_NAME;
         }
         return mdle.getQualifiedName().toString();
-    }
-
-    public boolean isStartElement(DocTree doctree) {
-        return isKind(doctree, START_ELEMENT);
-    }
-
-    public boolean isText(DocTree doctree) {
-        return isKind(doctree, TEXT);
-    }
-
-    private boolean isKind(DocTree doctree, DocTree.Kind match) {
-        return  doctree.getKind() == match;
     }
 
     private final CommentHelperCache commentHelperCache = new CommentHelperCache(this);
@@ -2475,6 +2415,10 @@ public class Utils {
 
     public List<? extends SerialFieldTree> getSerialFieldTrees(VariableElement field) {
         return getBlockTags(field, DocTree.Kind.SERIAL_FIELD, SerialFieldTree.class);
+    }
+
+    public List<? extends SpecTree> getSpecTrees(Element element) {
+        return getBlockTags(element, SPEC, SpecTree.class);
     }
 
     public List<ThrowsTree> getThrowsTrees(Element element) {
@@ -2856,4 +2800,16 @@ public class Utils {
         boolean isPreview(Element el);
     }
 
+    public DocFinder docFinder() {
+        return docFinder;
+    }
+
+    private DocFinder newDocFinder() {
+        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+    }
+
+    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
+        var type = configuration.utils.getEnclosingTypeElement(m);
+        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    }
 }

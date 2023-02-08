@@ -27,9 +27,6 @@ package jdk.jfr.internal;
 
 import java.io.IOException;
 
-import jdk.jfr.internal.LogLevel;
-import jdk.jfr.internal.LogTag;
-import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.internal.misc.Unsafe;
 

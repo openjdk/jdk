@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ class GrowableArray;
 class InstanceKlass;
 class RecordComponent;
 class Symbol;
-class TempNewSymbol;
 class FieldLayoutBuilder;
 
 // Utility to collect and compact oop maps during layout
@@ -119,7 +118,7 @@ class ClassFileParser {
 
   // Metadata created before the instance klass is created.  Must be deallocated
   // if not transferred to the InstanceKlass upon successful class loading
-  // in which case these pointers have been set to NULL.
+  // in which case these pointers have been set to null.
   const InstanceKlass* _super_klass;
   ConstantPool* _cp;
   Array<u2>* _fields;
@@ -154,7 +153,6 @@ class ClassFileParser {
 
   int _num_miranda_methods;
 
-  ReferenceType _rt;
   Handle _protection_domain;
   AccessFlags _access_flags;
 
@@ -189,6 +187,7 @@ class ClassFileParser {
 
   bool _has_nonstatic_concrete_methods;
   bool _declares_nonstatic_concrete_methods;
+  bool _has_localvariable_table;
   bool _has_final_method;
   bool _has_contended_fields;
 
@@ -269,12 +268,12 @@ class ClassFileParser {
   Method* parse_method(const ClassFileStream* const cfs,
                        bool is_interface,
                        const ConstantPool* cp,
-                       AccessFlags* const promoted_flags,
+                       bool* const has_localvariable_table,
                        TRAPS);
 
   void parse_methods(const ClassFileStream* const cfs,
                      bool is_interface,
-                     AccessFlags* const promoted_flags,
+                     bool* const has_localvariable_table,
                      bool* const has_final_method,
                      bool* const declares_nonstatic_concrete_methods,
                      TRAPS);
@@ -561,7 +560,10 @@ class ClassFileParser {
   const Symbol* class_name() const { return _class_name; }
   const InstanceKlass* super_klass() const { return _super_klass; }
 
-  ReferenceType reference_type() const { return _rt; }
+  ReferenceType super_reference_type() const;
+  bool is_instance_ref_klass() const;
+  bool is_java_lang_ref_Reference_subclass() const;
+
   AccessFlags access_flags() const { return _access_flags; }
 
   bool is_internal() const { return INTERNAL == _pub_level; }

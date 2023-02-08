@@ -116,6 +116,17 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
+  // Enable error context decoding on known platforms
+#if defined(IA32) || defined(AMD64) || defined(ARM) || \
+    defined(AARCH64) || defined(PPC) || defined(RISCV) || \
+    defined(S390)
+  if (FLAG_IS_DEFAULT(DecodeErrorContext)) {
+    FLAG_SET_DEFAULT(DecodeErrorContext, true);
+  }
+#else
+  UNSUPPORTED_OPTION(DecodeErrorContext);
+#endif
+
   // Not implemented
   UNSUPPORTED_OPTION(UseCompiler);
 #ifdef ASSERT

@@ -12,7 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST version number CDATA #REQUIRED >
     <!--@MATCH:regex/\$Revision.*\$-->
     <!--@METADATA-->
-<!ATTLIST version cldrVersion CDATA #FIXED "41" >
+<!ATTLIST version cldrVersion CDATA #FIXED "42" >
     <!--@MATCH:version-->
     <!--@VALUE-->
 

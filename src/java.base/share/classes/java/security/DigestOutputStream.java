@@ -152,8 +152,8 @@ public class DigestOutputStream extends FilterOutputStream {
      * update on the message digest.  But when it is off, the message
      * digest is not updated.
      *
-     * @param on true to turn the digest function on, false to turn it
-     * off.
+     * @param on {@code true} to turn the digest function on,
+     * {@code false} to turn it off.
      */
     public void on(boolean on) {
         this.on = on;

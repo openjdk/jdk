@@ -31,7 +31,6 @@
 
   <Fragment>
 
-    <Binary Id="JpCaDll" SourceFile="wixhelper.dll"/>
     <CustomAction Id="JpCheckInstallDir" BinaryKey="JpCaDll" DllEntry="CheckInstallDir" />
 
     <UI>

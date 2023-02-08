@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,7 @@ package ir_framework.tests;
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.driver.TestVMException;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 /*
  * @test
@@ -42,13 +39,13 @@ import sun.hotspot.WhiteBox;
 public class TestDIgnoreCompilerControls {
     public static void main(String[] args) {
         // Ignore Compiler Control
-        TestFramework.runWithFlags("-XX:CompileCommand=option,ir_framework.tests.TestDIgnoreCompilerControls::test2,bool,PrintInlining,true",
+        TestFramework.runWithFlags("-XX:CompileCommand=PrintInlining,ir_framework.tests.TestDIgnoreCompilerControls::test2,true",
                                    "-DIgnoreCompilerControls=true");
         Asserts.assertFalse(TestFramework.getLastTestVMOutput().contains("don't inline by annotation"), "should have inlined: "
                                                                                                         + TestFramework.getLastTestVMOutput());
         // Don't ignore compiler control, sanity check
         try {
-            TestFramework.runWithFlags("-XX:CompileCommand=option,ir_framework.tests.TestDIgnoreCompilerControls::test2,bool,PrintInlining,true",
+            TestFramework.runWithFlags("-XX:CompileCommand=PrintInlining,ir_framework.tests.TestDIgnoreCompilerControls::test2,true",
                                        "-DIgnoreCompilerControls=false");
             throw new RuntimeException("should throw exception");
         } catch (TestVMException e) {

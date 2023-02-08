@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,16 +24,19 @@
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/os.hpp"
+#include "runtime/frame.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/align.hpp"
 #include "unittest.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/threads.hpp"
+#ifdef _WIN32
+#include "os_windows.hpp"
+#endif
 
 static size_t small_page_size() {
   return os::vm_page_size();
@@ -695,16 +698,16 @@ TEST_VM(os, find_mapping_3) {
 
 TEST_VM(os, os_pagesizes) {
   ASSERT_EQ(os::min_page_size(), 4 * K);
-  ASSERT_LE(os::min_page_size(), (size_t)os::vm_page_size());
+  ASSERT_LE(os::min_page_size(), os::vm_page_size());
   // The vm_page_size should be the smallest in the set of allowed page sizes
   // (contract says "default" page size but a lot of code actually assumes
   //  this to be the smallest page size; notable, deliberate exception is
   //  AIX which can have smaller page sizes but those are not part of the
   //  page_sizes() set).
-  ASSERT_EQ(os::page_sizes().smallest(), (size_t)os::vm_page_size());
+  ASSERT_EQ(os::page_sizes().smallest(), os::vm_page_size());
   // The large page size, if it exists, shall be part of the set
   if (UseLargePages) {
-    ASSERT_GT(os::large_page_size(), (size_t)os::vm_page_size());
+    ASSERT_GT(os::large_page_size(), os::vm_page_size());
     ASSERT_TRUE(os::page_sizes().contains(os::large_page_size()));
   }
   os::page_sizes().print_on(tty);
@@ -886,4 +889,38 @@ TEST_VM(os, is_first_C_frame) {
   frame cur_frame = os::current_frame(); // this frame has to have a sender
   EXPECT_FALSE(os::is_first_C_frame(&cur_frame));
 #endif // _WIN32
+}
+
+#ifdef __GLIBC__
+TEST_VM(os, trim_native_heap) {
+  EXPECT_TRUE(os::can_trim_native_heap());
+  os::size_change_t sc;
+  sc.before = sc.after = (size_t)-1;
+  EXPECT_TRUE(os::trim_native_heap(&sc));
+  tty->print_cr(SIZE_FORMAT "->" SIZE_FORMAT, sc.before, sc.after);
+  // Regardless of whether we freed memory, both before and after
+  // should be somewhat believable numbers (RSS).
+  const size_t min = 5 * M;
+  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+  ASSERT_LE(min, sc.before);
+  ASSERT_GT(max, sc.before);
+  ASSERT_LE(min, sc.after);
+  ASSERT_GT(max, sc.after);
+  // Should also work
+  EXPECT_TRUE(os::trim_native_heap());
+}
+#else
+TEST_VM(os, trim_native_heap) {
+  EXPECT_FALSE(os::can_trim_native_heap());
+}
+#endif // __GLIBC__
+
+TEST_VM(os, open_O_CLOEXEC) {
+#if !defined(_WIN32)
+  int fd = os::open("test_file.txt", O_RDWR | O_CREAT | O_TRUNC, 0666); // open will use O_CLOEXEC
+  EXPECT_TRUE(fd > 0);
+  int flags = ::fcntl(fd, F_GETFD);
+  EXPECT_TRUE((flags & FD_CLOEXEC) != 0); // if O_CLOEXEC worked, then FD_CLOEXEC should be ON
+  ::close(fd);
+#endif
 }

@@ -326,8 +326,7 @@
 # UT-00:25:22 and cites the International Telegraph Bureau.  As it is
 # not clear that there was any practical significance to the change
 # from UT-00:25:22 to UT-00:25:21.1 in civil timekeeping, omit this
-# transition for now and just use the latter value, omitting its
-# fraction since our format cannot represent fractions.
+# transition for now and just use the latter value.
 
 # "Countess Markievicz ... claimed that the [1916] abolition of Dublin Mean Time
 # was among various actions undertaken by the 'English' government that
@@ -523,14 +522,11 @@ Rule	GB-Eire 1990	1995	-	Oct	Sun>=22	1:00u	0	GMT
 # Use Europe/London for Jersey, Guernsey, and the Isle of Man.
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1  0:00s
+Zone	Europe/London	-0:01:15 -	LMT	1847 Dec  1
 			 0:00	GB-Eire	%s	1968 Oct 27
 			 1:00	-	BST	1971 Oct 31  2:00u
 			 0:00	GB-Eire	%s	1996
 			 0:00	EU	GMT/BST
-Link	Europe/London	Europe/Jersey
-Link	Europe/London	Europe/Guernsey
-Link	Europe/London	Europe/Isle_of_Man
 
 # From Paul Eggert (2018-02-15):
 # In January 2018 we discovered that the negative SAVE values in the
@@ -561,7 +557,8 @@ Rule	Eire	1990	1995	-	Oct	Sun>=22	 1:00u	-1:00	-
 Rule	Eire	1996	max	-	Oct	lastSun	 1:00u	-1:00	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Dublin	-0:25:00 -	LMT	1880 Aug  2
+		#STDOFF	-0:25:21.1
+Zone	Europe/Dublin	-0:25:21 -	LMT	1880 Aug  2
 			-0:25:21 -	DMT	1916 May 21  2:00s
 			-0:25:21 1:00	IST	1916 Oct  1  2:00s
 			 0:00	GB-Eire	%s	1921 Dec  6 # independence
@@ -902,6 +899,8 @@ Zone	Europe/Minsk	1:50:16 -	LMT	1880
 			3:00	-	+03
 
 # Belgium
+# Luxembourg
+# Netherlands
 #
 # From Michael Deckers (2019-08-25):
 # The exposition in the web page
@@ -985,9 +984,6 @@ Zone	Europe/Brussels	0:17:30 -	LMT	1880
 			1:00	Belgium	CE%sT	1977
 			1:00	EU	CE%sT
 
-# Bosnia and Herzegovina
-# See Europe/Belgrade.
-
 # Bulgaria
 #
 # From Plamen Simenov via Steffen Thorsen (1999-09-09):
@@ -1013,13 +1009,11 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 			2:00	E-Eur	EE%sT	1997
 			2:00	EU	EE%sT
 
-# Croatia
-# See Europe/Belgrade.
-
 # Cyprus
 # Please see the 'asia' file for Asia/Nicosia.
 
-# Czech Republic / Czechia
+# Czech Republic (Czechia)
+# Slovakia
 #
 # From Paul Eggert (2018-04-15):
 # The source for Czech data is: Kdy začíná a končí letní čas. 2018-04-15.
@@ -1046,65 +1040,14 @@ Zone	Europe/Prague	0:57:44 -	LMT	1850
 # End of rearguard section.
 			1:00	Czech	CE%sT	1979
 			1:00	EU	CE%sT
-# Use Europe/Prague also for Slovakia.
 
-# Denmark, Faroe Islands, and Greenland
-
-# From Jesper Nørgaard Welen (2005-04-26):
-# the law [introducing standard time] was in effect from 1894-01-01....
-# The page https://www.retsinformation.dk/eli/lta/1893/83
-# confirms this, and states that the law was put forth 1893-03-29.
-#
-# The EU [actually, EEC and Euratom] treaty with effect from 1973:
-# https://www.retsinformation.dk/eli/lta/1972/21100
-#
-# This provoked a new law from 1974 to make possible summer time changes
-# in subsequent decrees with the law
-# https://www.retsinformation.dk/eli/lta/1974/223
-#
-# It seems however that no decree was set forward until 1980.  I have
-# not found any decree, but in another related law, the effecting DST
-# changes are stated explicitly to be from 1980-04-06 at 02:00 to
-# 1980-09-28 at 02:00.  If this is true, this differs slightly from
-# the EU rule in that DST runs to 02:00, not 03:00.  We don't know
-# when Denmark began using the EU rule correctly, but we have only
-# confirmation of the 1980-time, so I presume it was correct in 1981:
-# The law is about the management of the extra hour, concerning
-# working hours reported and effect on obligatory-rest rules (which
-# was suspended on that night):
-# https://web.archive.org/web/20140104053304/https://www.retsinformation.dk/Forms/R0710.aspx?id=60267
-
-# From Jesper Nørgaard Welen (2005-06-11):
-# The Herning Folkeblad (1980-09-26) reported that the night between
-# Saturday and Sunday the clock is set back from three to two.
-
-# From Paul Eggert (2005-06-11):
-# Hence the "02:00" of the 1980 law refers to standard time, not
-# wall-clock time, and so the EU rules were in effect in 1980.
-
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Denmark	1916	only	-	May	14	23:00	1:00	S
-Rule	Denmark	1916	only	-	Sep	30	23:00	0	-
-Rule	Denmark	1940	only	-	May	15	 0:00	1:00	S
-Rule	Denmark	1945	only	-	Apr	 2	 2:00s	1:00	S
-Rule	Denmark	1945	only	-	Aug	15	 2:00s	0	-
-Rule	Denmark	1946	only	-	May	 1	 2:00s	1:00	S
-Rule	Denmark	1946	only	-	Sep	 1	 2:00s	0	-
-Rule	Denmark	1947	only	-	May	 4	 2:00s	1:00	S
-Rule	Denmark	1947	only	-	Aug	10	 2:00s	0	-
-Rule	Denmark	1948	only	-	May	 9	 2:00s	1:00	S
-Rule	Denmark	1948	only	-	Aug	 8	 2:00s	0	-
-#
+# Faroe Is
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Europe/Copenhagen	 0:50:20 -	LMT	1890
-			 0:50:20 -	CMT	1894 Jan  1 # Copenhagen MT
-			 1:00	Denmark	CE%sT	1942 Nov  2  2:00s
-			 1:00	C-Eur	CE%sT	1945 Apr  2  2:00
-			 1:00	Denmark	CE%sT	1980
-			 1:00	EU	CE%sT
 Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 			 0:00	-	WET	1981
 			 0:00	EU	WE%sT
+
+# Greenland
 #
 # From Paul Eggert (2004-10-31):
 # During World War II, Germany maintained secret manned weather stations in
@@ -1183,7 +1126,30 @@ Zone Atlantic/Faroe	-0:27:04 -	LMT	1908 Jan 11 # Tórshavn
 # "National Park" by Executive Order:
 # http://naalakkersuisut.gl/~/media/Nanoq/Files/Attached%20Files/Engelske-tekster/Legislation/Executive%20Order%20National%20Park.rtf
 # It is their only National Park.
+
+# From Jonas Nyrup (2022-11-24):
+# On last Saturday in October 2023 when DST ends America/Nuuk will switch
+# from -03/-02 to -02/-01
+# https://sermitsiaq.ag/forslagtidsforskel-danmark-mindskes-sommertid-beholdes
+# ...
+# https://sermitsiaq.ag/groenland-skifte-tidszone-trods-bekymringer
 #
+# From Jürgen Appel (2022-11-25):
+# https://ina.gl/samlinger/oversigt-over-samlinger/samling/dagsordener/dagsorden.aspx?lang=da&day=24-11-2022
+# If I understand this correctly, from the next planned switch to
+# summer time, Greenland will permanently stay at that time, i.e. no
+# switch back to winter time in 2023 will occur.
+#
+# From Paul Eggert (2022-11-28):
+# The official document in Danish
+# https://naalakkersuisut.gl/-/media/naalakkersuisut/filer/kundgoerelser/2022/11/2511/31_da_inatsisartutlov-om-tidens-bestemmelse.pdf?la=da&hash=A33597D8A38CC7038465241119EF34F3
+# says standard time for Greenland is -02, that Naalakkersuisut can lay down
+# rules for DST and can require some areas to use a different time zone,
+# and that this all takes effect 2023-03-25 22:00.  The abovementioned
+# "bekymringer" URL says the intent is no transition March 25, that
+# Greenland will not go back to winter time in fall 2023, and that
+# only America/Nuuk is affected (though further changes may occur).
+
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Thule	1991	1992	-	Mar	lastSun	2:00	1:00	D
 Rule	Thule	1991	1992	-	Sep	lastSun	2:00	0	S
@@ -1206,7 +1172,8 @@ Zone America/Scoresbysund -1:27:52 -	LMT	1916 Jul 28 # Ittoqqortoormiit
 			-1:00	EU	-01/+00
 Zone America/Nuuk	-3:26:56 -	LMT	1916 Jul 28 # Godthåb
 			-3:00	-	-03	1980 Apr  6  2:00
-			-3:00	EU	-03/-02
+			-3:00	EU	-03/-02	2023 Mar 25 22:00
+			-2:00	-	-02
 Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik
 			-4:00	Thule	A%sT
 
@@ -1321,20 +1288,17 @@ Rule	Finland	1942	only	-	Oct	4	1:00	0	-
 Rule	Finland	1981	1982	-	Mar	lastSun	2:00	1:00	S
 Rule	Finland	1981	1982	-	Sep	lastSun	3:00	0	-
 
-# Milne says Helsinki (Helsingfors) time was 1:39:49.2 (official document);
-# round to nearest.
+# Milne says Helsinki (Helsingfors) time was 1:39:49.2 (official document).
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	1:39:49.2
 Zone	Europe/Helsinki	1:39:49 -	LMT	1878 May 31
 			1:39:49	-	HMT	1921 May    # Helsinki Mean Time
 			2:00	Finland	EE%sT	1983
 			2:00	EU	EE%sT
 
-# Åland Is
-Link	Europe/Helsinki	Europe/Mariehamn
-
-
 # France
+# Monaco
 
 # From Ciro Discepolo (2000-12-20):
 #
@@ -1472,7 +1436,10 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 16
 			1:00	France	CE%sT	1977
 			1:00	EU	CE%sT
 
+# Denmark
 # Germany
+# Norway
+# Sweden
 
 # From Markus Kuhn (1998-09-29):
 # The German time zone web site by the Physikalisch-Technische
@@ -1490,6 +1457,53 @@ Zone	Europe/Paris	0:09:21 -	LMT	1891 Mar 16
 # However, Moscow did not observe daylight saving in 1945, so
 # this was equivalent to UT +03, not +04.
 
+# Svalbard & Jan Mayen
+
+# From Steffen Thorsen (2001-05-01):
+# Although I could not find it explicitly, it seems that Jan Mayen and
+# Svalbard have been using the same time as Norway at least since the
+# time they were declared as parts of Norway.  Svalbard was declared
+# as a part of Norway by law of 1925-07-17 no 11, section 4 and Jan
+# Mayen by law of 1930-02-27 no 2, section 2. (From
+# <http://www.lovdata.no/all/nl-19250717-011.html> and
+# <http://www.lovdata.no/all/nl-19300227-002.html>).  The law/regulation
+# for normal/standard time in Norway is from 1894-06-29 no 1 (came
+# into operation on 1895-01-01) and Svalbard/Jan Mayen seem to be a
+# part of this law since 1925/1930. (From
+# <http://www.lovdata.no/all/nl-18940629-001.html>) I have not been
+# able to find if Jan Mayen used a different time zone (e.g. -0100)
+# before 1930. Jan Mayen has only been "inhabited" since 1921 by
+# Norwegian meteorologists and maybe used the same time as Norway ever
+# since 1921.  Svalbard (Arctic/Longyearbyen) has been inhabited since
+# before 1895, and therefore probably changed the local time somewhere
+# between 1895 and 1925 (inclusive).
+
+# From Paul Eggert (2013-09-04):
+#
+# Actually, Jan Mayen was never occupied by Germany during World War II,
+# so it must have diverged from Oslo time during the war, as Oslo was
+# keeping Berlin time.
+#
+# <https://www.jan-mayen.no/history.htm> says that the meteorologists
+# burned down their station in 1940 and left the island, but returned in
+# 1941 with a small Norwegian garrison and continued operations despite
+# frequent air attacks from Germans.  In 1943 the Americans established a
+# radiolocating station on the island, called "Atlantic City".  Possibly
+# the UT offset changed during the war, but I think it unlikely that
+# Jan Mayen used German daylight-saving rules.
+#
+# Svalbard is more complicated, as it was raided in August 1941 by an
+# Allied party that evacuated the civilian population to England (says
+# <http://www.bartleby.com/65/sv/Svalbard.html>).  The Svalbard FAQ
+# <http://www.svalbard.com/SvalbardFAQ.html> says that the Germans were
+# expelled on 1942-05-14.  However, small parties of Germans did return,
+# and according to Wilhelm Dege's book "War North of 80" (1954)
+# http://www.ucalgary.ca/UofC/departments/UP/1-55238/1-55238-110-2.html
+# the German armed forces at the Svalbard weather station code-named
+# Haudegen did not surrender to the Allies until September 1945.
+#
+# All these events predate our cutoff date of 1970, so use Europe/Berlin
+# for these regions.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Germany	1946	only	-	Apr	14	2:00s	1:00	S
@@ -1515,21 +1529,6 @@ Zone	Europe/Berlin	0:53:28 -	LMT	1893 Apr
 			1:00	Germany	CE%sT	1980
 			1:00	EU	CE%sT
 
-# From Tobias Conradi (2011-09-12):
-# Büsingen <http://www.buesingen.de>, surrounded by the Swiss canton
-# Schaffhausen, did not start observing DST in 1980 as the rest of DE
-# (West Germany at that time) and DD (East Germany at that time) did.
-# DD merged into DE, the area is currently covered by code DE in ISO 3166-1,
-# which in turn is covered by the zone Europe/Berlin.
-#
-# Source for the time in Büsingen 1980:
-# http://www.srf.ch/player/video?id=c012c029-03b7-4c2b-9164-aa5902cd58d3
-
-# From Arthur David Olson (2012-03-03):
-# Büsingen and Zurich have shared clocks since 1970.
-
-Link	Europe/Zurich	Europe/Busingen
-
 # Georgia
 # Please see the "asia" file for Asia/Tbilisi.
 # Herodotus (Histories, IV.45) says Georgia north of the Phasis (now Rioni)
@@ -1537,7 +1536,7 @@ Link	Europe/Zurich	Europe/Busingen
 
 # Gibraltar
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Europe/Gibraltar	-0:21:24 -	LMT	1880 Aug  2  0:00s
+Zone Europe/Gibraltar	-0:21:24 -	LMT	1880 Aug  2
 			0:00	GB-Eire	%s	1957 Apr 14  2:00
 			1:00	-	CET	1982
 			1:00	EU	CE%sT
@@ -1647,65 +1646,9 @@ Zone	Europe/Budapest	1:16:20 -	LMT	1890 Nov  1
 			1:00	Hungary	CE%sT	1984
 			1:00	EU	CE%sT
 
-# Iceland
-#
-# From Adam David (1993-11-06):
-# The name of the timezone in Iceland for system / mail / news purposes is GMT.
-#
-# (1993-12-05):
-# This material is paraphrased from the 1988 edition of the University of
-# Iceland Almanak.
-#
-# From January 1st, 1908 the whole of Iceland was standardised at 1 hour
-# behind GMT. Previously, local mean solar time was used in different parts
-# of Iceland, the almanak had been based on Reykjavík mean solar time which
-# was 1 hour and 28 minutes behind GMT.
-#
-# "first day of winter" referred to [below] means the first day of the 26 weeks
-# of winter, according to the old icelandic calendar that dates back to the
-# time the norsemen first settled Iceland.  The first day of winter is always
-# Saturday, but is not dependent on the Julian or Gregorian calendars.
-#
-# (1993-12-10):
-# I have a reference from the Oxford Icelandic-English dictionary for the
-# beginning of winter, which ties it to the ecclesiastical calendar (and thus
-# to the julian/gregorian calendar) over the period in question.
-#	the winter begins on the Saturday next before St. Luke's day
-#	(old style), or on St. Luke's day, if a Saturday.
-# St. Luke's day ought to be traceable from ecclesiastical sources. "old style"
-# might be a reference to the Julian calendar as opposed to Gregorian, or it
-# might mean something else (???).
-#
-# From Paul Eggert (2014-11-22):
-# The information below is taken from the 1988 Almanak; see
-# http://www.almanak.hi.is/klukkan.html
-#
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Iceland	1917	1919	-	Feb	19	23:00	1:00	-
-Rule	Iceland	1917	only	-	Oct	21	 1:00	0	-
-Rule	Iceland	1918	1919	-	Nov	16	 1:00	0	-
-Rule	Iceland	1921	only	-	Mar	19	23:00	1:00	-
-Rule	Iceland	1921	only	-	Jun	23	 1:00	0	-
-Rule	Iceland	1939	only	-	Apr	29	23:00	1:00	-
-Rule	Iceland	1939	only	-	Oct	29	 2:00	0	-
-Rule	Iceland	1940	only	-	Feb	25	 2:00	1:00	-
-Rule	Iceland	1940	1941	-	Nov	Sun>=2	 1:00s	0	-
-Rule	Iceland	1941	1942	-	Mar	Sun>=2	 1:00s	1:00	-
-# 1943-1946 - first Sunday in March until first Sunday in winter
-Rule	Iceland	1943	1946	-	Mar	Sun>=1	 1:00s	1:00	-
-Rule	Iceland	1942	1948	-	Oct	Sun>=22	 1:00s	0	-
-# 1947-1967 - first Sunday in April until first Sunday in winter
-Rule	Iceland	1947	1967	-	Apr	Sun>=1	 1:00s	1:00	-
-# 1949 and 1967 Oct transitions delayed by 1 week
-Rule	Iceland	1949	only	-	Oct	30	 1:00s	0	-
-Rule	Iceland	1950	1966	-	Oct	Sun>=22	 1:00s	0	-
-Rule	Iceland	1967	only	-	Oct	29	 1:00s	0	-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/Reykjavik	-1:28	-	LMT	1908
-			-1:00	Iceland	-01/+00	1968 Apr  7  1:00s
-			 0:00	-	GMT
-
 # Italy
+# San Marino
+# Vatican City
 #
 # From Paul Eggert (2001-03-06):
 # Sicily and Sardinia each had their own time zones from 1866 to 1893,
@@ -1819,18 +1762,11 @@ Rule	Italy	1978	only	-	Oct	 1	 0:00s	0	-
 Rule	Italy	1979	only	-	Sep	30	 0:00s	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Rome	0:49:56 -	LMT	1866 Dec 12
-			0:49:56	-	RMT	1893 Oct 31 23:49:56 # Rome Mean
+			0:49:56	-	RMT	1893 Oct 31 23:00u # Rome Mean
 			1:00	Italy	CE%sT	1943 Sep 10
 			1:00	C-Eur	CE%sT	1944 Jun  4
 			1:00	Italy	CE%sT	1980
 			1:00	EU	CE%sT
-
-# Kosovo
-# See Europe/Belgrade.
-
-
-Link	Europe/Rome	Europe/Vatican
-Link	Europe/Rome	Europe/San_Marino
 
 # Latvia
 
@@ -1914,19 +1850,6 @@ Zone	Europe/Riga	1:36:34	-	LMT	1880
 			2:00	-	EET	2001 Jan  2
 			2:00	EU	EE%sT
 
-# Liechtenstein
-
-# From Paul Eggert (2013-09-09):
-# Shanks & Pottenger say Vaduz is like Zurich.
-
-# From Alois Treindl (2019-07-04):
-# I was able to access the online archive of the Vaduz paper Vaterland ...
-# I could confirm from the paper that Liechtenstein did in fact follow
-# the same DST in 1941 and 1942 as Switzerland did.
-
-Link Europe/Zurich Europe/Vaduz
-
-
 # Lithuania
 
 # From Paul Eggert (2016-03-18):
@@ -1979,45 +1902,6 @@ Zone	Europe/Vilnius	1:41:16	-	LMT	1880
 			2:00	-	EET	2003 Jan  1
 			2:00	EU	EE%sT
 
-# Luxembourg
-# Whitman disagrees with most of these dates in minor ways;
-# go with Shanks & Pottenger.
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Lux	1916	only	-	May	14	23:00	1:00	S
-Rule	Lux	1916	only	-	Oct	 1	 1:00	0	-
-Rule	Lux	1917	only	-	Apr	28	23:00	1:00	S
-Rule	Lux	1917	only	-	Sep	17	 1:00	0	-
-Rule	Lux	1918	only	-	Apr	Mon>=15	 2:00s	1:00	S
-Rule	Lux	1918	only	-	Sep	Mon>=15	 2:00s	0	-
-Rule	Lux	1919	only	-	Mar	 1	23:00	1:00	S
-Rule	Lux	1919	only	-	Oct	 5	 3:00	0	-
-Rule	Lux	1920	only	-	Feb	14	23:00	1:00	S
-Rule	Lux	1920	only	-	Oct	24	 2:00	0	-
-Rule	Lux	1921	only	-	Mar	14	23:00	1:00	S
-Rule	Lux	1921	only	-	Oct	26	 2:00	0	-
-Rule	Lux	1922	only	-	Mar	25	23:00	1:00	S
-Rule	Lux	1922	only	-	Oct	Sun>=2	 1:00	0	-
-Rule	Lux	1923	only	-	Apr	21	23:00	1:00	S
-Rule	Lux	1923	only	-	Oct	Sun>=2	 2:00	0	-
-Rule	Lux	1924	only	-	Mar	29	23:00	1:00	S
-Rule	Lux	1924	1928	-	Oct	Sun>=2	 1:00	0	-
-Rule	Lux	1925	only	-	Apr	 5	23:00	1:00	S
-Rule	Lux	1926	only	-	Apr	17	23:00	1:00	S
-Rule	Lux	1927	only	-	Apr	 9	23:00	1:00	S
-Rule	Lux	1928	only	-	Apr	14	23:00	1:00	S
-Rule	Lux	1929	only	-	Apr	20	23:00	1:00	S
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Europe/Luxembourg	0:24:36 -	LMT	1904 Jun
-			1:00	Lux	CE%sT	1918 Nov 25
-			0:00	Lux	WE%sT	1929 Oct  6  2:00s
-			0:00	Belgium	WE%sT	1940 May 14  3:00
-			1:00	C-Eur	WE%sT	1944 Sep 18  3:00
-			1:00	Belgium	CE%sT	1977
-			1:00	EU	CE%sT
-
-# North Macedonia
-# See Europe/Belgrade.
-
 # Malta
 #
 # From Paul Eggert (2016-10-21):
@@ -2032,7 +1916,7 @@ Rule	Malta	1975	1979	-	Apr	Sun>=15	2:00	1:00	S
 Rule	Malta	1975	1980	-	Sep	Sun>=15	2:00	0	-
 Rule	Malta	1980	only	-	Mar	31	2:00	1:00	S
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2  0:00s # Valletta
+Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2 # Valletta
 			1:00	Italy	CE%sT	1973 Mar 31
 			1:00	Malta	CE%sT	1981
 			1:00	EU	CE%sT
@@ -2113,177 +1997,6 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 # See Romania commentary for the guessed 1997 transition to EU rules.
 			2:00	Moldova	EE%sT
 
-# Monaco
-#
-# From Michael Deckers (2020-06-12):
-# In the "Journal de Monaco" of 1892-05-24, online at
-# https://journaldemonaco.gouv.mc/var/jdm/storage/original/application/b1c67c12c5af11b41ea888fb048e4fe8.pdf
-# we read: ...
-#  [In virtue of a Sovereign Ordinance of the May 13 of the current [year],
-#   legal time in the Principality will be set to, from the date of June 1,
-#   1892 onwards, to the meridian of Paris, as in France.]
-# In the "Journal de Monaco" of 1911-03-28, online at
-# https://journaldemonaco.gouv.mc/var/jdm/storage/original/application/de74ffb7db53d4f599059fe8f0ed482a.pdf
-# we read an ordinance of 1911-03-16: ...
-#  [Legal time in the Principality will be set, from the date of promulgation
-#   of the present ordinance, to legal time in France....  Consequently, legal
-#   time will be retarded by 9 minutes and 21 seconds.]
-#
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Monaco	0:29:32 -	LMT	1892 Jun  1
-			0:09:21	-	PMT	1911 Mar 29 # Paris Mean Time
-			0:00	France	WE%sT	1945 Sep 16  3:00
-			1:00	France	CE%sT	1977
-			1:00	EU	CE%sT
-
-# Montenegro
-# See Europe/Belgrade.
-
-# Netherlands
-
-# Howse writes that the Netherlands' railways used GMT between 1892 and 1940,
-# but for other purposes the Netherlands used Amsterdam mean time.
-
-# However, Robert H. van Gent writes (2001-04-01):
-# Howse's statement is only correct up to 1909. From 1909-05-01 (00:00:00
-# Amsterdam mean time) onwards, the whole of the Netherlands (including
-# the Dutch railways) was required by law to observe Amsterdam mean time
-# (19 minutes 32.13 seconds ahead of GMT). This had already been the
-# common practice (except for the railways) for many decades but it was
-# not until 1909 when the Dutch government finally defined this by law.
-# On 1937-07-01 this was changed to 20 minutes (exactly) ahead of GMT and
-# was generally known as Dutch Time ("Nederlandse Tijd").
-#
-# (2001-04-08):
-# 1892-05-01 was the date when the Dutch railways were by law required to
-# observe GMT while the remainder of the Netherlands adhered to the common
-# practice of following Amsterdam mean time.
-#
-# (2001-04-09):
-# In 1835 the authorities of the province of North Holland requested the
-# municipal authorities of the towns and cities in the province to observe
-# Amsterdam mean time but I do not know in how many cases this request was
-# actually followed.
-#
-# From 1852 onwards the Dutch telegraph offices were by law required to
-# observe Amsterdam mean time. As the time signals from the observatory of
-# Leiden were also distributed by the telegraph system, I assume that most
-# places linked up with the telegraph (and railway) system automatically
-# adopted Amsterdam mean time.
-#
-# Although the early Dutch railway companies initially observed a variety
-# of times, most of them had adopted Amsterdam mean time by 1858 but it
-# was not until 1866 when they were all required by law to observe
-# Amsterdam mean time.
-
-# The data entries before 1945 are taken from
-# https://www.staff.science.uu.nl/~gent0113/wettijd/wettijd.htm
-
-# From Paul Eggert (2021-05-09):
-# I invented the abbreviations AMT for Amsterdam Mean Time and NST for
-# Netherlands Summer Time, used in the Netherlands from 1835 to 1937.
-
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Neth	1916	only	-	May	 1	0:00	1:00	NST	# Netherlands Summer Time
-Rule	Neth	1916	only	-	Oct	 1	0:00	0	AMT	# Amsterdam Mean Time
-Rule	Neth	1917	only	-	Apr	16	2:00s	1:00	NST
-Rule	Neth	1917	only	-	Sep	17	2:00s	0	AMT
-Rule	Neth	1918	1921	-	Apr	Mon>=1	2:00s	1:00	NST
-Rule	Neth	1918	1921	-	Sep	lastMon	2:00s	0	AMT
-Rule	Neth	1922	only	-	Mar	lastSun	2:00s	1:00	NST
-Rule	Neth	1922	1936	-	Oct	Sun>=2	2:00s	0	AMT
-Rule	Neth	1923	only	-	Jun	Fri>=1	2:00s	1:00	NST
-Rule	Neth	1924	only	-	Mar	lastSun	2:00s	1:00	NST
-Rule	Neth	1925	only	-	Jun	Fri>=1	2:00s	1:00	NST
-# From 1926 through 1939 DST began 05-15, except that it was delayed by a week
-# in years when 05-15 fell in the Pentecost weekend.
-Rule	Neth	1926	1931	-	May	15	2:00s	1:00	NST
-Rule	Neth	1932	only	-	May	22	2:00s	1:00	NST
-Rule	Neth	1933	1936	-	May	15	2:00s	1:00	NST
-Rule	Neth	1937	only	-	May	22	2:00s	1:00	NST
-Rule	Neth	1937	only	-	Jul	 1	0:00	1:00	S
-Rule	Neth	1937	1939	-	Oct	Sun>=2	2:00s	0	-
-Rule	Neth	1938	1939	-	May	15	2:00s	1:00	S
-Rule	Neth	1945	only	-	Apr	 2	2:00s	1:00	S
-Rule	Neth	1945	only	-	Sep	16	2:00s	0	-
-#
-# Amsterdam Mean Time was +00:19:32.13, but the .13 is omitted
-# below because the current format requires STDOFF to be an integer.
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Europe/Amsterdam	0:19:32 -	LMT	1835
-			0:19:32	Neth	%s	1937 Jul  1
-			0:20	Neth +0020/+0120 1940 May 16  0:00
-			1:00	C-Eur	CE%sT	1945 Apr  2  2:00
-			1:00	Neth	CE%sT	1977
-			1:00	EU	CE%sT
-
-# Norway
-# http://met.no/met/met_lex/q_u/sommertid.html (2004-01) agrees with Shanks &
-# Pottenger.
-# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
-Rule	Norway	1916	only	-	May	22	1:00	1:00	S
-Rule	Norway	1916	only	-	Sep	30	0:00	0	-
-Rule	Norway	1945	only	-	Apr	 2	2:00s	1:00	S
-Rule	Norway	1945	only	-	Oct	 1	2:00s	0	-
-Rule	Norway	1959	1964	-	Mar	Sun>=15	2:00s	1:00	S
-Rule	Norway	1959	1965	-	Sep	Sun>=15	2:00s	0	-
-Rule	Norway	1965	only	-	Apr	25	2:00s	1:00	S
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Oslo	0:43:00 -	LMT	1895 Jan  1
-			1:00	Norway	CE%sT	1940 Aug 10 23:00
-			1:00	C-Eur	CE%sT	1945 Apr  2  2:00
-			1:00	Norway	CE%sT	1980
-			1:00	EU	CE%sT
-
-# Svalbard & Jan Mayen
-
-# From Steffen Thorsen (2001-05-01):
-# Although I could not find it explicitly, it seems that Jan Mayen and
-# Svalbard have been using the same time as Norway at least since the
-# time they were declared as parts of Norway.  Svalbard was declared
-# as a part of Norway by law of 1925-07-17 no 11, section 4 and Jan
-# Mayen by law of 1930-02-27 no 2, section 2. (From
-# <http://www.lovdata.no/all/nl-19250717-011.html> and
-# <http://www.lovdata.no/all/nl-19300227-002.html>).  The law/regulation
-# for normal/standard time in Norway is from 1894-06-29 no 1 (came
-# into operation on 1895-01-01) and Svalbard/Jan Mayen seem to be a
-# part of this law since 1925/1930. (From
-# <http://www.lovdata.no/all/nl-18940629-001.html>) I have not been
-# able to find if Jan Mayen used a different time zone (e.g. -0100)
-# before 1930. Jan Mayen has only been "inhabited" since 1921 by
-# Norwegian meteorologists and maybe used the same time as Norway ever
-# since 1921.  Svalbard (Arctic/Longyearbyen) has been inhabited since
-# before 1895, and therefore probably changed the local time somewhere
-# between 1895 and 1925 (inclusive).
-
-# From Paul Eggert (2013-09-04):
-#
-# Actually, Jan Mayen was never occupied by Germany during World War II,
-# so it must have diverged from Oslo time during the war, as Oslo was
-# keeping Berlin time.
-#
-# <https://www.jan-mayen.no/history.htm> says that the meteorologists
-# burned down their station in 1940 and left the island, but returned in
-# 1941 with a small Norwegian garrison and continued operations despite
-# frequent air attacks from Germans.  In 1943 the Americans established a
-# radiolocating station on the island, called "Atlantic City".  Possibly
-# the UT offset changed during the war, but I think it unlikely that
-# Jan Mayen used German daylight-saving rules.
-#
-# Svalbard is more complicated, as it was raided in August 1941 by an
-# Allied party that evacuated the civilian population to England (says
-# <http://www.bartleby.com/65/sv/Svalbard.html>).  The Svalbard FAQ
-# <http://www.svalbard.com/SvalbardFAQ.html> says that the Germans were
-# expelled on 1942-05-14.  However, small parties of Germans did return,
-# and according to Wilhelm Dege's book "War North of 80" (1954)
-# http://www.ucalgary.ca/UofC/departments/UP/1-55238/1-55238-110-2.html
-# the German armed forces at the Svalbard weather station code-named
-# Haudegen did not surrender to the Allies until September 1945.
-#
-# All these events predate our cutoff date of 1970, so use Europe/Oslo
-# for these regions.
-Link	Europe/Oslo	Arctic/Longyearbyen
-
 # Poland
 
 # The 1919 dates and times can be found in Tygodnik Urzędowy nr 1 (1919-03-20),
@@ -2336,7 +2049,6 @@ Zone	Europe/Warsaw	1:24:00 -	LMT	1880
 # According to a Portuguese decree (1911-05-26)
 # https://dre.pt/application/dir/pdf1sdip/1911/05/12500/23132313.pdf
 # Lisbon was at -0:36:44.68, but switched to GMT on 1912-01-01 at 00:00.
-# Round the old offset to -0:36:45.  This agrees with Willett....
 #
 # From Michael Deckers (2018-02-15):
 # article 5 [of the 1911 decree; Deckers's translation] ...:
@@ -2423,6 +2135,7 @@ Rule	Port	1981	1982	-	Mar	lastSun	 1:00s	1:00	S
 Rule	Port	1983	only	-	Mar	lastSun	 2:00s	1:00	S
 #
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+		#STDOFF	-0:36:44.68
 Zone	Europe/Lisbon	-0:36:45 -	LMT	1884
 			-0:36:45 -	LMT	1912 Jan  1  0:00u # Lisbon MT
 			 0:00	Port	WE%sT	1966 Apr  3  2:00
@@ -2431,9 +2144,13 @@ Zone	Europe/Lisbon	-0:36:45 -	LMT	1884
 			 0:00	W-Eur	WE%sT	1992 Sep 27  1:00s
 			 1:00	EU	CE%sT	1996 Mar 31  1:00u
 			 0:00	EU	WE%sT
-# This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Azores	-1:42:40 -	LMT	1884        # Ponta Delgada
 			-1:54:32 -	HMT	1912 Jan  1  2:00u # Horta MT
+# Vanguard section, for zic and other parsers that support %z.
+#			-2:00	Port	%z	1966 Apr  3  2:00
+#			-1:00	Port	%z	1983 Sep 25  1:00s
+#			-1:00	W-Eur	%z	1992 Sep 27  1:00s
+# Rearguard section, for parsers lacking %z; see ziguard.awk.
 			-2:00	Port	-02/-01	1942 Apr 25 22:00s
 			-2:00	Port	+00	1942 Aug 15 22:00s
 			-2:00	Port	-02/-01	1943 Apr 17 22:00s
@@ -2445,11 +2162,14 @@ Zone Atlantic/Azores	-1:42:40 -	LMT	1884        # Ponta Delgada
 			-2:00	Port	-02/-01	1966 Apr  3  2:00
 			-1:00	Port	-01/+00	1983 Sep 25  1:00s
 			-1:00	W-Eur	-01/+00	1992 Sep 27  1:00s
+# End of rearguard section.
 			 0:00	EU	WE%sT	1993 Mar 28  1:00u
 			-1:00	EU	-01/+00
-# This Zone can be simplified once we assume zic %z.
 Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 			-1:07:36 -	FMT	1912 Jan  1  1:00u # Funchal MT
+# Vanguard section, for zic and other parsers that support %z.
+#			-1:00	Port	%z	1966 Apr  3  2:00
+# Rearguard section, for parsers lacking %z; see ziguard.awk.
 			-1:00	Port	-01/+00	1942 Apr 25 22:00s
 			-1:00	Port	+01	1942 Aug 15 22:00s
 			-1:00	Port	-01/+00	1943 Apr 17 22:00s
@@ -2459,6 +2179,7 @@ Zone Atlantic/Madeira	-1:07:36 -	LMT	1884        # Funchal
 			-1:00	Port	-01/+00	1945 Apr 21 22:00s
 			-1:00	Port	+01	1945 Aug 25 22:00s
 			-1:00	Port	-01/+00	1966 Apr  3  2:00
+# End of rearguard section.
 			 0:00	Port	WE%sT	1983 Sep 25  1:00s
 			 0:00	EU	WE%sT
 
@@ -2877,28 +2598,31 @@ Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 			 2:00	-	EET	1992 Mar 20
 # Central Crimea used Moscow time 1994/1997.
 #
-# From Paul Eggert (2006-03-22):
-# The _Economist_ (1994-05-28, p 45) reports that central Crimea switched
-# from Kiev to Moscow time sometime after the January 1994 elections.
+# From Paul Eggert (2022-07-21):
+# The _Economist_ (1994-05-28, p 45) reported that central Crimea switched
+# from Kyiv to Moscow time sometime after the January 1994 elections.
 # Shanks (1999) says "date of change uncertain", but implies that it happened
 # sometime between the 1994 DST switches.  Shanks & Pottenger simply say
 # 1994-09-25 03:00, but that can't be right.  For now, guess it
-# changed in May.
+# changed in May.  This change evidently didn't last long; see below.
 			 2:00	C-Eur	EE%sT	1994 May
-# From IATA SSIM (1994/1997), which also says that Kerch is still like Kiev.
-			 3:00	E-Eur	MSK/MSD	1996 Mar 31  0:00s
+# From IATA SSIM (1994/1997), which also said that Kerch is still like Kyiv.
+			 3:00	C-Eur	MSK/MSD	1996 Mar 31  0:00s
 			 3:00	1:00	MSD	1996 Oct 27  3:00s
-# IATA SSIM (1997-09) says Crimea switched to EET/EEST.
+# IATA SSIM (1997-09) said Crimea switched to EET/EEST.
 # Assume it happened in March by not changing the clocks.
-			 3:00	Russia	MSK/MSD	1997
 			 3:00	-	MSK	1997 Mar lastSun  1:00u
 # From Alexander Krivenyshev (2014-03-17):
 # time change at 2:00 (2am) on March 30, 2014
 # https://vz.ru/news/2014/3/17/677464.html
-# From Paul Eggert (2014-03-30):
-# Simferopol and Sevastopol reportedly changed their central town clocks
-# late the previous day, but this appears to have been ceremonial
-# and the discrepancies are small enough to not worry about.
+# From Tim Parenti (2022-07-01), per Paul Eggert (2014-03-30):
+# The clocks at the railway station in Simferopol were put forward from 22:00
+# to 24:00 the previous day in a "symbolic ceremony"; however, per
+# contemporaneous news reports, "ordinary Crimeans [made] the daylight savings
+# time switch at 2am" on Sunday.
+# https://www.business-standard.com/article/pti-stories/crimea-to-set-clocks-to-russia-time-114033000014_1.html
+# https://www.reuters.com/article/us-ukraine-crisis-crimea-time/crimea-switches-to-moscow-time-amid-incorporation-frenzy-idUKBREA2S0LT20140329
+# https://www.bbc.com/news/av/world-europe-26806583
 			 2:00	EU	EE%sT	2014 Mar 30  2:00
 			 4:00	-	MSK	2014 Oct 26  2:00s
 			 3:00	-	MSK
@@ -3059,11 +2783,12 @@ Zone Europe/Ulyanovsk	 3:13:36 -	LMT	1919 Jul  1  0:00u
 # Note: Effective 2005-12-01, (59) Perm Oblast and (81) Komi-Permyak
 # Autonomous Okrug merged to form (90, RU-PER) Perm Krai.
 
-# Milne says Yekaterinburg was 4:02:32.9; round to nearest.
+# Milne says Yekaterinburg was 4:02:32.9.
 # Byalokoz 1919 says its provincial time was based on Perm, at 3:45:05.
 # Assume it switched on 1916-07-03, the time of the new standard.
 # The 1919 and 1930 transitions are from Shanks.
 
+		#STDOFF	 4:02:32.9
 Zone Asia/Yekaterinburg	 4:02:33 -	LMT	1916 Jul  3
 			 3:45:05 -	PMT	1919 Jul 15  4:00
 			 4:00	-	+04	1930 Jun 21
@@ -3375,8 +3100,8 @@ Zone Asia/Vladivostok	 8:47:31 -	LMT	1922 Nov 15
 # 14-28	****	Tomponsky District
 # 14-30	****	Ust-Maysky District
 
-# From Arthur David Olson (2012-05-09):
-# Tomponskij and Ust'-Majskij switched from Vladivostok time to Yakutsk time
+# From Arthur David Olson (2022-03-21):
+# Tomponsky and Ust-Maysky switched from Vladivostok time to Yakutsk time
 # in 2011.
 
 # From Paul Eggert (2012-11-25):
@@ -3501,8 +3226,8 @@ Zone Asia/Srednekolymsk	10:14:52 -	LMT	1924 May  2
 # Asia/Ust-Nera covers parts of (14, RU-SA) Sakha (Yakutia) Republic:
 # 14-22	****	Oymyakonsky District
 
-# From Arthur David Olson (2012-05-09):
-# Ojmyakonskij [and the Kuril Islands] switched from
+# From Arthur David Olson (2022-03-21):
+# Oymyakonsky and the Kuril Islands switched from
 # Magadan time to Vladivostok time in 2011.
 #
 # From Tim Parenti (2014-07-06), per Alexander Krivenyshev (2014-07-02):
@@ -3553,11 +3278,13 @@ Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
 			11:00	Russia	+11/+12	2011 Mar 27  2:00s
 			12:00	-	+12
 
-
-# San Marino
-# See Europe/Rome.
-
+# Bosnia & Herzegovina
+# Croatia
+# Kosovo
+# Montenegro
+# North Macedonia
 # Serbia
+# Slovenia
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 			1:00	-	CET	1941 Apr 18 23:00
@@ -3569,17 +3296,6 @@ Zone	Europe/Belgrade	1:22:00	-	LMT	1884
 # Shanks & Pottenger don't give as much detail, so go with Koželj.
 			1:00	-	CET	1982 Nov 27
 			1:00	EU	CE%sT
-Link Europe/Belgrade Europe/Ljubljana	# Slovenia
-Link Europe/Belgrade Europe/Podgorica	# Montenegro
-Link Europe/Belgrade Europe/Sarajevo	# Bosnia and Herzegovina
-Link Europe/Belgrade Europe/Skopje	# North Macedonia
-Link Europe/Belgrade Europe/Zagreb	# Croatia
-
-# Slovakia
-Link Europe/Prague Europe/Bratislava
-
-# Slovenia
-# See Europe/Belgrade.
 
 # Spain
 #
@@ -3665,11 +3381,11 @@ Rule SpainAfrica 1977	only	-	Sep	28	 0:00	0	-
 Rule SpainAfrica 1978	only	-	Jun	 1	 0:00	1:00	S
 Rule SpainAfrica 1978	only	-	Aug	 4	 0:00	0	-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone	Europe/Madrid	-0:14:44 -	LMT	1900 Dec 31 23:45:16
+Zone	Europe/Madrid	-0:14:44 -	LMT	1901 Jan  1  0:00u
 			 0:00	Spain	WE%sT	1940 Mar 16 23:00
 			 1:00	Spain	CE%sT	1979
 			 1:00	EU	CE%sT
-Zone	Africa/Ceuta	-0:21:16 -	LMT	1900 Dec 31 23:38:44
+Zone	Africa/Ceuta	-0:21:16 -	LMT	1901 Jan  1  0:00u
 			 0:00	-	WET	1918 May  6 23:00
 			 0:00	1:00	WEST	1918 Oct  7 23:00
 			 0:00	-	WET	1924
@@ -3686,64 +3402,11 @@ Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
 # IATA SSIM (1996-09) says the Canaries switch at 2:00u, not 1:00u.
 # Ignore this for now, as the Canaries are part of the EU.
 
-# Sweden
 
-# From Ivan Nilsson (2001-04-13), superseding Shanks & Pottenger:
-#
-# The law "Svensk författningssamling 1878, no 14" about standard time in 1879:
-# From the beginning of 1879 (that is 01-01 00:00) the time for all
-# places in the country is "the mean solar time for the meridian at
-# three degrees, or twelve minutes of time, to the west of the
-# meridian of the Observatory of Stockholm".  The law is dated 1878-05-31.
-#
-# The observatory at that time had the meridian 18° 03' 30"
-# eastern longitude = 01:12:14 in time.  Less 12 minutes gives the
-# national standard time as 01:00:14 ahead of GMT....
-#
-# About the beginning of CET in Sweden. The lawtext ("Svensk
-# författningssamling 1899, no 44") states, that "from the beginning
-# of 1900... ... the same as the mean solar time for the meridian at
-# the distance of one hour of time from the meridian of the English
-# observatory at Greenwich, or at 12 minutes 14 seconds to the west
-# from the meridian of the Observatory of Stockholm". The law is dated
-# 1899-06-16.  In short: At 1900-01-01 00:00:00 the new standard time
-# in Sweden is 01:00:00 ahead of GMT.
-#
-# 1916: The lawtext ("Svensk författningssamling 1916, no 124") states
-# that "1916-05-15 is considered to begin one hour earlier". It is
-# pretty obvious that at 05-14 23:00 the clocks are set to 05-15 00:00....
-# Further the law says, that "1916-09-30 is considered to end one hour later".
-#
-# The laws regulating [DST] are available on the site of the Swedish
-# Parliament beginning with 1985 - the laws regulating 1980/1984 are
-# not available on the site (to my knowledge they are only available
-# in Swedish): <http://www.riksdagen.se/english/work/sfst.asp> (type
-# "sommartid" without the quotes in the field "Fritext" and then click
-# the Sök-button).
-#
-# (2001-05-13):
-#
-# I have now found a newspaper stating that at 1916-10-01 01:00
-# summertime the church-clocks etc were set back one hour to show
-# 1916-10-01 00:00 standard time.  The article also reports that some
-# people thought the switch to standard time would take place already
-# at 1916-10-01 00:00 summer time, but they had to wait for another
-# hour before the event took place.
-#
-# Source: The newspaper "Dagens Nyheter", 1916-10-01, page 7 upper left.
-
-# An extra-special abbreviation style is SET for Swedish Time (svensk
-# normaltid) 1879-1899, 3° west of the Stockholm Observatory.
-
-# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
-			1:00:14	-	SET	1900 Jan  1 # Swedish Time
-			1:00	-	CET	1916 May 14 23:00
-			1:00	1:00	CEST	1916 Oct  1  1:00
-			1:00	-	CET	1980
-			1:00	EU	CE%sT
-
+# Germany (Busingen enclave)
+# Liechtenstein
 # Switzerland
+#
 # From Howse:
 # By the end of the 18th century clocks and watches became commonplace
 # and their performance improved enormously.  Communities began to keep
@@ -3834,6 +3497,19 @@ Zone Europe/Stockholm	1:12:12 -	LMT	1879 Jan  1
 # (Google translation).  For now, model this transition as occurring on
 # 1853-07-16, though it probably occurred at some other date in Zurich, and
 # legal civil time probably changed at still some other transition date.
+
+# From Tobias Conradi (2011-09-12):
+# Büsingen <http://www.buesingen.de>, surrounded by the Swiss canton
+# Schaffhausen, did not start observing DST in 1980 as the rest of DE
+# (West Germany at that time) and DD (East Germany at that time) did.
+# DD merged into DE, the area is currently covered by code DE in ISO 3166-1,
+# which in turn is covered by the zone Europe/Berlin.
+#
+# Source for the time in Büsingen 1980:
+# http://www.srf.ch/player/video?id=c012c029-03b7-4c2b-9164-aa5902cd58d3
+#
+# From Arthur David Olson (2012-03-03):
+# Büsingen and Zurich have shared clocks since 1970.
 
 # Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
 Rule	Swiss	1941	1942	-	May	Mon>=1	1:00	1:00	S
@@ -4047,11 +3723,10 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	1:00	EEST	2015 Nov  8  1:00u
 			2:00	EU	EE%sT	2016 Sep  7
 			3:00	-	+03
-Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine
 #
-# From Alois Triendl (2014-03-01):
+# From Alois Treindl (2014-03-01):
 # REGULATION A N O V A on March 20, 1992 N 139 ...  means that from
 # 1992 on, Ukraine had DST with begin time at 02:00 am, on last Sunday
 # in March, and end time 03:00 am, last Sunday in September....
@@ -4068,8 +3743,8 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # US colleague David Cochrane) are still trying to get more
 # information upon these local deviations from Kiev rules.
 #
-# From Paul Eggert (2022-02-08):
-# For now, assume that Ukraine's other three zones followed the same rules,
+# From Paul Eggert (2022-08-27):
+# For now, assume that Ukraine's zones all followed the same rules,
 # except that Crimea switched to Moscow time in 1994 as described elsewhere.
 
 # From Igor Karpov, who works for the Ukrainian Ministry of Justice,
@@ -4111,7 +3786,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # The law documents themselves are at
 # http://w1.c1.rada.gov.ua/pls/zweb_n/webproc4_1?id=&pf3511=41484
 
-# From Vladimir in Moscow via Alois Treindl re Kiev time 1991/2 (2014-02-28):
+# From Vladimir in Moscow via Alois Treindl re Kyiv time 1991/2 (2014-02-28):
 # First in Ukraine they changed Time zone from UTC+3 to UTC+2 with DST:
 #       03 25 1990 02:00 -03.00 1       Time Zone 3 with DST
 #       07 01 1990 02:00 -02.00 1       Time Zone 2 with DST
@@ -4139,23 +3814,9 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # * Ukrainian Government's Resolution of 20.03.1992, No. 139.
 # http://www.uazakon.com/documents/date_8u/pg_grcasa.htm
 
-# From Paul Eggert (2018-10-03):
-# As is usual in tzdb, Ukrainian zones use the most common English spellings.
-# For example, tzdb uses Europe/Kiev, as "Kiev" is the most common spelling in
-# English for Ukraine's capital, even though it is certainly wrong as a
-# transliteration of the Ukrainian "Київ".  This is similar to tzdb's use of
-# Europe/Prague, which is certainly wrong as a transliteration of the Czech
-# "Praha".  ("Kiev" came from old Slavic via Russian to English, and "Prague"
-# came from old Slavic via French to English, so the two cases have something
-# in common.)  Admittedly English-language spelling of Ukrainian names is
-# controversial, and some day "Kyiv" may become substantially more popular in
-# English; in the meantime, stick with the traditional English "Kiev" as that
-# means less disruption for our users.
-
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-# This represents most of Ukraine.  See above for the spelling of "Kiev".
-Zone Europe/Kiev	2:02:04 -	LMT	1880
-			2:02:04	-	KMT	1924 May  2 # Kiev Mean Time
+Zone Europe/Kyiv	2:02:04 -	LMT	1880
+			2:02:04	-	KMT	1924 May  2 # Kyiv Mean Time
 			2:00	-	EET	1930 Jun 21
 			3:00	-	MSK	1941 Sep 20
 			1:00	C-Eur	CE%sT	1943 Nov  6
@@ -4163,37 +3824,6 @@ Zone Europe/Kiev	2:02:04 -	LMT	1880
 			2:00	1:00	EEST	1991 Sep 29  3:00
 			2:00	C-Eur	EE%sT	1996 May 13
 			2:00	EU	EE%sT
-# Transcarpathia used CET 1990/1991.
-# "Uzhhorod" is the transliteration of the Rusyn/Ukrainian pronunciation, but
-# "Uzhgorod" is more common in English.
-Zone Europe/Uzhgorod	1:29:12 -	LMT	1890 Oct
-			1:00	-	CET	1940
-			1:00	C-Eur	CE%sT	1944 Oct
-			1:00	1:00	CEST	1944 Oct 26
-			1:00	-	CET	1945 Jun 29
-			3:00	Russia	MSK/MSD	1990
-			3:00	-	MSK	1990 Jul  1  2:00
-			1:00	-	CET	1991 Mar 31  3:00
-			2:00	-	EET	1992 Mar 20
-			2:00	C-Eur	EE%sT	1996 May 13
-			2:00	EU	EE%sT
-# Zaporozh'ye and eastern Lugansk oblasts observed DST 1990/1991.
-# "Zaporizhia" is the transliteration of the Ukrainian name, but
-# "Zaporozh'ye" is more common in English.  Use the common English
-# spelling, except omit the apostrophe as it is not allowed in
-# portable Posix file names.
-Zone Europe/Zaporozhye	2:20:40 -	LMT	1880
-			2:20	-	+0220	1924 May  2
-			2:00	-	EET	1930 Jun 21
-			3:00	-	MSK	1941 Aug 25
-			1:00	C-Eur	CE%sT	1943 Oct 25
-			3:00	Russia	MSK/MSD	1991 Mar 31  2:00
-			2:00	E-Eur	EE%sT	1992 Mar 20
-			2:00	C-Eur	EE%sT	1996 May 13
-			2:00	EU	EE%sT
-
-# Vatican City
-# See Europe/Rome.
 
 ###############################################################################
 

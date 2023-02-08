@@ -4,7 +4,7 @@
  * @summary Verify that an anonymous class can contain a static method only if source >= 16
  * @author maddox
  *
- * @compile/fail/ref=AnonStaticMember_2.out -source 15 -XDrawDiagnostics AnonStaticMember_2.java
+ * @compile/fail/ref=AnonStaticMember_2.out --release 15 -XDrawDiagnostics AnonStaticMember_2.java
  * @compile AnonStaticMember_2.java
  */
 

@@ -35,7 +35,13 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64'
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+      configure-arguments:
+        description: 'Additional configure arguments'
+        required: false
+      make-arguments:
+        description: 'Additional make arguments'
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -49,7 +55,7 @@ jobs:
 
   select:
     name: 'Select platforms'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86: ${{ steps.include.outputs.linux-x86 }}
@@ -59,6 +65,7 @@ jobs:
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
       windows-aarch64: ${{ steps.include.outputs.windows-aarch64 }}
+      docs: ${{ steps.include.outputs.docs }}
 
     steps:
         # This function must be inlined in main.yml, or we'd be forced to checkout the repo
@@ -71,19 +78,17 @@ jobs:
           # 'false' otherwise.
           # arg $1: platform name or names to look for
           function check_platform() {
-            if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
-              # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
-              echo 'false'
-              return
-            fi
-
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
             elif [[ $GITHUB_EVENT_NAME == push ]]; then
-              input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
-            else
-              echo 'Internal error in GHA'
-              exit 1
+              if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+                # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
+                >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
+                echo 'false'
+                return
+              else
+                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+              fi
             fi
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
@@ -104,14 +109,15 @@ jobs:
             echo 'false'
           }
 
-          echo "::set-output name=linux-x64::$(check_platform linux-x64 linux x64)"
-          echo "::set-output name=linux-x86::$(check_platform linux-x86 linux x86)"
-          echo "::set-output name=linux-x64-variants::$(check_platform linux-x64-variants variants)"
-          echo "::set-output name=linux-cross-compile::$(check_platform linux-cross-compile cross-compile)"
-          echo "::set-output name=macos-x64::$(check_platform macos-x64 macos x64)"
-          echo "::set-output name=macos-aarch64::$(check_platform macos-aarch64 macos aarch64)"
-          echo "::set-output name=windows-x64::$(check_platform windows-x64 windows x64)"
-          echo "::set-output name=windows-aarch64::$(check_platform windows-aarch64 windows aarch64)"
+          echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
+          echo "linux-x86=$(check_platform linux-x86 linux x86)" >> $GITHUB_OUTPUT
+          echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
+          echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
+          echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
+          echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
+          echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
+          echo "windows-aarch64=$(check_platform windows-aarch64 windows aarch64)" >> $GITHUB_OUTPUT
+          echo "docs=$(check_platform docs)" >> $GITHUB_OUTPUT
 
   ###
   ### Build jobs
@@ -123,7 +129,10 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x64
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     # The linux-x64 jdk bundle is used as buildjdk for the cross-compile job
     if: needs.select.outputs.linux-x64 == 'true' || needs.select.outputs.linux-cross-compile == 'true'
 
@@ -133,12 +142,16 @@ jobs:
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x86
-      apt-gcc-version: '10-multilib'
+      gcc-major-version: '10'
+      gcc-package-suffix: '-multilib'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       apt-architecture: 'i386'
       # Some multilib libraries do not have proper inter-dependencies, so we have to
       # install their dependencies manually.
-      apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386'
+      apt-extra-packages: 'libfreetype6-dev:i386 libtiff-dev:i386 libcupsimage2-dev:i386 libc6-i386'
       extra-conf-options: '--with-target-bits=32'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x86 == 'true'
 
   build-linux-x64-hs-nopch:
@@ -149,8 +162,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       extra-conf-options: '--disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-zero:
@@ -161,8 +177,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=zero --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-minimal:
@@ -173,8 +192,11 @@ jobs:
       platform: linux-x64
       make-target: 'hotspot'
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       extra-conf-options: '--with-jvm-variants=minimal --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-x64-hs-optimized:
@@ -186,8 +208,11 @@ jobs:
       make-target: 'hotspot'
       # Technically this is not the "debug" level, but we can't inject a new matrix state for just this job
       debug-levels: '[ "debug" ]'
-      apt-gcc-version: '10=10.3.0-1ubuntu1~20.04'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
       extra-conf-options: '--with-debug-level=optimized --disable-precompiled-headers'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64-variants == 'true'
 
   build-linux-cross-compile:
@@ -196,6 +221,12 @@ jobs:
       - select
       - build-linux-x64
     uses: ./.github/workflows/build-cross-compile.yml
+    with:
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      apt-gcc-cross-version: '10.4.0-4ubuntu1~22.04cross1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
 
   build-macos-x64:
@@ -204,7 +235,9 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      xcode-toolset-version: '11.3.1'
+      xcode-toolset-version: '12.5.1'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-x64 == 'true'
 
   build-macos-aarch64:
@@ -213,8 +246,10 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
-      xcode-toolset-version: '12.4'
+      xcode-toolset-version: '12.5.1'
       extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-aarch64 == 'true'
 
   build-windows-x64:
@@ -223,8 +258,10 @@ jobs:
     uses: ./.github/workflows/build-windows.yml
     with:
       platform: windows-x64
-      msvc-toolset-version: '14.25'
+      msvc-toolset-version: '14.29'
       msvc-toolset-architecture: 'x86.x64'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-x64 == 'true'
 
   build-windows-aarch64:
@@ -237,7 +274,26 @@ jobs:
       msvc-toolset-architecture: 'arm64'
       make-target: 'hotspot'
       extra-conf-options: '--openjdk-target=aarch64-unknown-cygwin'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.windows-aarch64 == 'true'
+
+  build-docs:
+    name: docs
+    needs: select
+    uses: ./.github/workflows/build-linux.yml
+    with:
+      platform: linux-x64
+      debug-levels: '[ "debug" ]'
+      make-target: 'docs-jdk-bundles'
+      # Make sure we never try to make full docs, since that would require a
+      # build JDK, and we do not need the additional testing of the graphs.
+      extra-conf-options: '--disable-full-docs'
+      gcc-major-version: '10'
+      apt-gcc-version: '10.4.0-4ubuntu1~22.04'
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.docs == 'true'
 
   ###
   ### Test jobs
@@ -251,7 +307,7 @@ jobs:
     with:
       platform: linux-x64
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
 
   test-linux-x86:
     name: linux-x86
@@ -261,7 +317,7 @@ jobs:
     with:
       platform: linux-x86
       bootjdk-platform: linux-x64
-      runs-on: ubuntu-20.04
+      runs-on: ubuntu-22.04
 
   test-macos-x64:
     name: macos-x64
@@ -271,7 +327,7 @@ jobs:
     with:
       platform: macos-x64
       bootjdk-platform: macos-x64
-      runs-on: macos-10.15
+      runs-on: macos-11
 
   test-windows-x64:
     name: windows-x64
@@ -286,7 +342,7 @@ jobs:
   # Remove bundles so they are not misconstrued as binary distributions from the JDK project
   remove-bundles:
     name: 'Remove bundle artifacts'
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     if: always()
     needs:
       - build-linux-x64

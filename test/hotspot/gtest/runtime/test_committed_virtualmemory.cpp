@@ -22,16 +22,12 @@
  */
 
 #include "precompiled.hpp"
-
-// Included early because the NMT flags don't include it.
-#include "utilities/macros.hpp"
-
 #include "runtime/thread.hpp"
 #include "services/memTracker.hpp"
 #include "services/virtualMemoryTracker.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "unittest.hpp"
-
 
 class CommittedVirtualMemoryTest {
 public:

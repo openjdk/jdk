@@ -35,7 +35,7 @@ const uint8_t ZLoadBarrierWeak        = 2;
 const uint8_t ZLoadBarrierPhantom     = 4;
 const uint8_t ZLoadBarrierNoKeepalive = 8;
 
-class ZLoadBarrierStubC2 : public ResourceObj {
+class ZLoadBarrierStubC2 : public ArenaObj {
 private:
   const MachNode* _node;
   const Address   _ref_addr;

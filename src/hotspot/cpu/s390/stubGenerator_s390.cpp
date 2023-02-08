@@ -28,6 +28,7 @@
 #include "registerSaver_s390.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "memory/universe.hpp"
@@ -2857,6 +2858,79 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_nmethod_entry_barrier() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
+
+    address start = __ pc();
+
+    int nbytes_volatile = (8 + 5) * BytesPerWord;
+
+    // VM-Call Prologue
+    __ save_return_pc();
+    __ push_frame_abi160(nbytes_volatile);
+    __ save_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+
+    // Prep arg for VM call
+    // Create ptr to stored return_pc in caller frame.
+    __ z_la(Z_ARG1, _z_abi(return_pc) + frame::z_abi_160_size + nbytes_volatile, Z_R0, Z_SP);
+
+    // VM-Call: BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr)
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSetNMethod::nmethod_stub_entry_barrier));
+    __ z_ltr(Z_R0_scratch, Z_RET);
+
+    // VM-Call Epilogue
+    __ restore_volatile_regs(Z_SP, frame::z_abi_160_size, true, false);
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // Check return val of VM-Call
+    __ z_bcr(Assembler::bcondZero, Z_R14);
+
+    // Pop frame built in prologue.
+    // Required so wrong_method_stub can deduce caller.
+    __ pop_frame();
+    __ restore_return_pc();
+
+    // VM-Call indicates deoptimization required
+    __ load_const_optimized(Z_R1_scratch, SharedRuntime::get_handle_wrong_method_stub());
+    __ z_br(Z_R1_scratch);
+
+    return start;
+  }
+
+  address generate_cont_thaw(bool return_barrier, bool exception) {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+
+  #if INCLUDE_JFR
+  RuntimeStub* generate_jfr_write_checkpoint() {
+    if (!Continuations::enabled()) return nullptr;
+    Unimplemented();
+    return nullptr;
+  }
+  #endif // INCLUD_JFR
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points.
 
@@ -2895,6 +2969,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::zarch::_trot_table_addr = (address)StubRoutines::zarch::_trot_table;
   }
 
+  void generate_phase1() {
+    if (!Continuations::enabled()) return;
+
+    // Continuation stubs:
+    StubRoutines::_cont_thaw          = generate_cont_thaw();
+    StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
+    StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
+    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+  }
 
   void generate_all() {
     // Generates all stubs and initializes the entry points.
@@ -2955,6 +3040,12 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_SHA512_stub(true,  "SHA512_multiBlock");
     }
 
+    // nmethod entry barriers for concurrent class unloading
+    BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+    if (bs_nm != NULL) {
+      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
+    }
+
 #ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
@@ -2971,12 +3062,14 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, bool all) : StubCodeGenerator(code) {
-    _stub_count = !all ? 0x100 : 0x200;
-    if (all) {
-      generate_all();
-    } else {
+  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
+    _stub_count = (phase == 0) ? 0x100 : 0x200;
+    if (phase == 0) {
       generate_initial();
+    } else if (phase == 1) {
+      generate_phase1(); // stubs that must be available for the interpreter
+    } else {
+      generate_all();
     }
   }
 

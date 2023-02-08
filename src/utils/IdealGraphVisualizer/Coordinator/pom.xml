@@ -72,6 +72,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.sun.hotspot.igv</groupId>
+            <artifactId>View</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.netbeans.api</groupId>
             <artifactId>org-openide-util</artifactId>
             <version>${netbeans.version}</version>

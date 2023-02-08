@@ -334,12 +334,12 @@ public final class SecurityPermission extends BasicPermission {
     private static final long serialVersionUID = 5236109936224050470L;
 
     /**
-     * Creates a new SecurityPermission with the specified name.
-     * The name is the symbolic name of the SecurityPermission. An asterisk
-     * may appear at the end of the name, following a ".", or by itself, to
-     * signify a wildcard match.
+     * Creates a new {@code SecurityPermission} with the specified name.
+     * The name is the symbolic name of the {@code SecurityPermission}.
+     * An asterisk may appear at the end of the name, following a ".",
+     * or by itself, to signify a wildcard match.
      *
-     * @param name the name of the SecurityPermission
+     * @param name the name of the {@code SecurityPermission}
      *
      * @throws NullPointerException if {@code name} is {@code null}.
      * @throws IllegalArgumentException if {@code name} is empty.
@@ -350,12 +350,12 @@ public final class SecurityPermission extends BasicPermission {
     }
 
     /**
-     * Creates a new SecurityPermission object with the specified name.
-     * The name is the symbolic name of the SecurityPermission, and the
-     * actions String is currently unused and should be null.
+     * Creates a new {@code SecurityPermission} object with the specified name.
+     * The name is the symbolic name of the {@code SecurityPermission}, and the
+     * actions {@code String} is currently unused and should be {@code null}.
      *
-     * @param name the name of the SecurityPermission
-     * @param actions should be null.
+     * @param name the name of the {@code SecurityPermission}
+     * @param actions should be {@code null}.
      *
      * @throws NullPointerException if {@code name} is {@code null}.
      * @throws IllegalArgumentException if {@code name} is empty.

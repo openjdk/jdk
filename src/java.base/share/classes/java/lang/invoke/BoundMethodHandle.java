@@ -26,16 +26,12 @@
 package java.lang.invoke;
 
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.ValueConversions;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
-import static java.lang.invoke.LambdaForm.BasicType.V_TYPE_NUM;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandleStatics.newInternalError;
@@ -60,22 +56,6 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     //
     // BMH API and internals
     //
-
-    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
-        // for some type signatures, there exist pre-defined concrete BMH classes
-        try {
-            return switch (xtype) {
-                case L_TYPE -> bindSingle(type, form, x);  // Use known fast path.
-                case I_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(I_TYPE_NUM).factory().invokeBasic(type, form, ValueConversions.widenSubword(x));
-                case J_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(J_TYPE_NUM).factory().invokeBasic(type, form, (long) x);
-                case F_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(F_TYPE_NUM).factory().invokeBasic(type, form, (float) x);
-                case D_TYPE -> (BoundMethodHandle) SPECIALIZER.topSpecies().extendWith(D_TYPE_NUM).factory().invokeBasic(type, form, (double) x);
-                default -> throw newInternalError("unexpected xtype: " + xtype);
-            };
-        } catch (Throwable t) {
-            throw uncaughtException(t);
-        }
-    }
 
     /*non-public*/
     LambdaFormEditor editor() {
@@ -158,21 +138,29 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
     final int fieldCount() { return speciesData().fieldCount(); }
 
     @Override
-    Object internalProperties() {
-        return "\n& BMH="+internalValues();
+    Object internalProperties(int indentLevel) {
+        return "\n" + debugPrefix(indentLevel) + "& BMH=" + internalValues(indentLevel);
     }
 
     @Override
-    final String internalValues() {
+    final String internalValues(int indentLevel) {
+        String prefix = debugPrefix(indentLevel);
         int count = fieldCount();
-        if (count == 1) {
+        if (count == 1 && indentLevel < 0) {
             return "[" + arg(0) + "]";
         }
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < count; ++i) {
-            sb.append("\n  ").append(i).append(": ( ").append(arg(i)).append(" )");
+            Object theArg = arg(i);
+            sb.append("\n  ").append(prefix).append(i);
+            if (indentLevel >= 0 && theArg instanceof MethodHandle) {
+                sb.append(": MethodHandle = {").append(((MethodHandle)theArg).debugString(indentLevel+1));
+                sb.append("\n  ").append(prefix).append("}");
+            } else {
+                sb.append(": ( ").append(theArg).append(" )");
+            }
         }
-        return sb.append("\n]").toString();
+        return sb.append("\n").append(prefix).append("]").toString();
     }
 
     /*non-public*/
@@ -348,15 +336,16 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
 
         private boolean verifyTHAargs(MemberName transform, int whichtm, List<?> args, List<?> fields) {
             assert(transform == Specializer.BMH_TRANSFORMS.get(whichtm));
-            assert(args.size() == transform.getMethodType().parameterCount());
+            MethodType tType = transform.getMethodType();
+            assert(args.size() == tType.parameterCount());
             assert(fields.size() == this.fieldCount());
             final int MH_AND_LF = 2;
             if (whichtm == Specializer.TN_COPY_NO_EXTEND) {
-                assert(transform.getMethodType().parameterCount() == MH_AND_LF);
+                assert(tType.parameterCount() == MH_AND_LF);
             } else if (whichtm < ARG_TYPE_LIMIT) {
-                assert(transform.getMethodType().parameterCount() == MH_AND_LF+1);
+                assert(tType.parameterCount() == MH_AND_LF+1);
                 final BasicType type = basicType((byte) whichtm);
-                assert(transform.getParameterTypes()[MH_AND_LF] == type.basicTypeClass());
+                assert(tType.parameterType(MH_AND_LF) == type.basicTypeClass());
             } else {
                 return false;
             }

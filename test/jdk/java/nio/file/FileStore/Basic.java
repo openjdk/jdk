@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,13 @@ public class Basic {
             throw new RuntimeException("Assertion failed");
     }
 
-    static void checkWithin1GB(long value1, long value2) {
-        long diff = Math.abs(value1 - value2);
-        if (diff > G)
-            throw new RuntimeException("values differ by more than 1GB");
+    static void checkWithin1GB(long expected, long actual) {
+        long diff = Math.abs(actual - expected);
+        if (diff > G) {
+            String msg = String.format("|actual %d - expected %d| = %d (%f G)",
+                                       actual, expected, diff, (float)diff/G);
+            throw new RuntimeException(msg);
+        }
     }
 
     static void doTests(Path dir) throws IOException {

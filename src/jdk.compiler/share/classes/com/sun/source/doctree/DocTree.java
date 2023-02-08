@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,15 @@ public interface DocTree {
         SNIPPET("snippet"),
 
         /**
-         * Used for instances of {@link EndElementTree}
+         * Used for instances of {@link SpecTree}
+         * representing an {@code @spec} tag.
+         *
+         * @since 20
+         */
+        SPEC("spec"),
+
+        /**
+         * Used for instances of {@link StartElementTree}
          * representing the start of an HTML element.
          */
         START_ELEMENT,

@@ -52,7 +52,7 @@ import sun.security.util.KnownOIDs;
  * encryption and decryption. It forms the core of the Java Cryptographic
  * Extension (JCE) framework.
  *
- * <p>In order to create a {code Cipher} object, the application calls the
+ * <p>In order to create a {@code Cipher} object, the application calls the
  * cipher's {@code getInstance} method, and passes the name of the
  * requested <i>transformation</i> to it. Optionally, the name of a provider
  * may be specified.
@@ -141,8 +141,8 @@ import sun.security.util.KnownOIDs;
  * information on the ChaCha20 and ChaCha20-Poly1305 algorithms.
  * <p>
  * Every implementation of the Java platform is required to support
- * the following standard {@code Cipher} transformations with the keysizes
- * in parentheses:
+ * the following standard {@code Cipher} object transformations with
+ * the keysizes in parentheses:
  * <ul>
  * <li>{@code AES/CBC/NoPadding} (128)</li>
  * <li>{@code AES/CBC/PKCS5Padding} (128)</li>
@@ -158,7 +158,7 @@ import sun.security.util.KnownOIDs;
  * <li>{@code RSA/ECB/OAEPWithSHA-256AndMGF1Padding} (1024, 2048)</li>
  * </ul>
  * These transformations are described in the
- * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+ * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
  * Cipher section</a> of the
  * Java Security Standard Algorithm Names Specification.
  * Consult the release documentation for your implementation to see if any
@@ -258,14 +258,14 @@ public class Cipher {
     private final Object lock;
 
     /**
-     * Creates a {code Cipher} object.
+     * Creates a {@code Cipher} object.
      *
      * @param cipherSpi the delegate
      * @param provider the provider
      * @param transformation the transformation
      * @throws NullPointerException if {@code provider} is {@code null}
      * @throws IllegalArgumentException if the supplied arguments
-     *         are deemed invalid for constructing the {code Cipher} object
+     *         are deemed invalid for constructing the {@code Cipher} object
      */
     protected Cipher(CipherSpi cipherSpi,
                      Provider provider,
@@ -308,6 +308,8 @@ public class Cipher {
         this.lock = new Object();
     }
 
+    private static final String SHA512TRUNCATED = "SHA512/2";
+
     private static String[] tokenizeTransformation(String transformation)
             throws NoSuchAlgorithmException {
         if (transformation == null) {
@@ -320,27 +322,31 @@ public class Cipher {
          * index 1: feedback component (e.g., CFB)
          * index 2: padding component (e.g., PKCS5Padding)
          */
-        String[] parts = new String[3];
-        int count = 0;
-        StringTokenizer parser = new StringTokenizer(transformation, "/");
-        try {
-            while (parser.hasMoreTokens() && count < 3) {
-                parts[count++] = parser.nextToken().trim();
-            }
-            if (count == 0 || count == 2) {
+        String[] parts = { "", "", "" };
+
+        // check if the transformation contains algorithms with "/" in their
+        // name which can cause the parsing logic to go wrong
+        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH)
+                .indexOf(SHA512TRUNCATED);
+        int startIdx = (sha512Idx == -1 ? 0 :
+                sha512Idx + SHA512TRUNCATED.length());
+        int endIdx = transformation.indexOf('/', startIdx);
+        if (endIdx == -1) {
+            // algorithm
+            parts[0] = transformation.trim();
+        } else {
+            // algorithm/mode/padding
+            parts[0] = transformation.substring(0, endIdx).trim();
+            startIdx = endIdx+1;
+            endIdx = transformation.indexOf('/', startIdx);
+            if (endIdx == -1) {
                 throw new NoSuchAlgorithmException("Invalid transformation"
-                                               + " format:" +
-                                               transformation);
+                            + " format:" + transformation);
             }
-            // treats all subsequent tokens as part of padding
-            if (count == 3 && parser.hasMoreTokens()) {
-                parts[2] = parts[2] + parser.nextToken("\r\n");
-            }
-        } catch (NoSuchElementException e) {
-            throw new NoSuchAlgorithmException("Invalid transformation " +
-                                           "format:" + transformation);
+            parts[1] = transformation.substring(startIdx, endIdx).trim();
+            parts[2] = transformation.substring(endIdx+1).trim();
         }
-        if ((parts[0] == null) || (parts[0].isEmpty())) {
+        if (parts[0].isEmpty()) {
             throw new NoSuchAlgorithmException("Invalid transformation: " +
                                    "algorithm not specified-"
                                    + transformation);
@@ -444,19 +450,13 @@ public class Cipher {
         String alg = parts[0];
         String mode = parts[1];
         String pad = parts[2];
-        if ((mode != null) && (mode.isEmpty())) {
-            mode = null;
-        }
-        if ((pad != null) && (pad.isEmpty())) {
-            pad = null;
-        }
 
-        if ((mode == null) && (pad == null)) {
-            // AES
+        if ((mode.length() == 0) && (pad.length() == 0)) {
+            // Algorithm only
             Transform tr = new Transform(alg, "", null, null);
             return Collections.singletonList(tr);
-        } else { // if ((mode != null) && (pad != null)) {
-            // AES/CBC/PKCS5Padding
+        } else {
+            // Algorithm w/ at least mode or padding or both
             List<Transform> list = new ArrayList<>(4);
             list.add(new Transform(alg, "/" + mode + "/" + pad, null, null));
             list.add(new Transform(alg, "/" + mode, null, pad));
@@ -511,11 +511,12 @@ public class Cipher {
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
-     * @return a cipher that implements the requested transformation
+     * @return a {@code Cipher} object that implements the requested
+     * transformation
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
      *         is {@code null}, empty, in an invalid format,
@@ -600,13 +601,14 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the name of the provider
      *
-     * @return a cipher that implements the requested transformation
+     * @return a {@code Cipher} object that implements the requested
+     * transformation
      *
      * @throws IllegalArgumentException if the {@code provider}
      *         is {@code null} or empty
@@ -671,13 +673,14 @@ public class Cipher {
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
-     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithm-names">
+     *   "{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
      * Java Security Standard Algorithm Names Specification</a>
      * for information about standard transformation names.
      *
      * @param provider the provider
      *
-     * @return a cipher that implements the requested transformation
+     * @return a {@code Cipher} object that implements the requested
+     * transformation
      *
      * @throws IllegalArgumentException if the {@code provider}
      *         is {@code null}
@@ -1014,8 +1017,8 @@ public class Cipher {
      *
      * @return the required output buffer size (in bytes)
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not yet been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object is in a
+     * wrong state (e.g., has not yet been initialized)
      */
     public final int getOutputSize(int inputLen) {
 
@@ -1047,7 +1050,7 @@ public class Cipher {
     }
 
     /**
-     * Returns the parameters used with this cipher.
+     * Returns the parameters used with this {@code Cipher} object.
      *
      * <p>The returned parameters may be the same that were used to initialize
      * this cipher, or may contain additional default or random parameter
@@ -1063,10 +1066,12 @@ public class Cipher {
     }
 
     /**
-     * Returns the exemption mechanism object used with this cipher.
+     * Returns the exemption mechanism object used with this {@code Cipher}
+     * object.
      *
-     * @return the exemption mechanism object used with this cipher, or
-     * {@code null} if this cipher does not use any exemption mechanism.
+     * @return the exemption mechanism object used with this {@code Cipher}
+     * object, or {@code null} if this {@code Cipher} object does not use any
+     * exemption mechanism.
      */
     public final ExemptionMechanism getExemptionMechanism() {
         chooseFirstProvider();
@@ -1183,9 +1188,10 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with a key.
+     * Initializes this {@code Cipher} object with a key.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1214,12 +1220,12 @@ public class Cipher {
      * SecureRandom, a system-provided source of randomness will be used.)
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of
-     * the following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param key the key
@@ -1233,15 +1239,19 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key) throws InvalidKeyException {
         init(opmode, key, JCAUtil.getDefSecureRandom());
     }
 
     /**
-     * Initializes this cipher with a key and a source of randomness.
+     * Initializes this {@code Cipher} object with a key and a
+     * source of randomness.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1266,12 +1276,12 @@ public class Cipher {
      * them from {@code random}.
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that
+     * {@code Cipher} object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -1286,6 +1296,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, SecureRandom random)
             throws InvalidKeyException
@@ -1314,10 +1326,11 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with a key and a set of algorithm
+     * Initializes this {@code Cipher} object with a key and a set of algorithm
      * parameters.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1346,12 +1359,12 @@ public class Cipher {
      * SecureRandom, a system-provided source of randomness will be used.)
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -1370,6 +1383,9 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
+     *
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1378,10 +1394,11 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with a key, a set of algorithm
+     * Initializes this {@code Cipher} object with a key, a set of algorithm
      * parameters, and a source of randomness.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1406,12 +1423,12 @@ public class Cipher {
      * them from {@code random}.
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -1431,6 +1448,9 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
+     *
      */
     public final void init(int opmode, Key key, AlgorithmParameterSpec params,
                            SecureRandom random)
@@ -1455,10 +1475,11 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with a key and a set of algorithm
+     * Initializes this {@code Cipher} object with a key and a set of algorithm
      * parameters.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1487,12 +1508,12 @@ public class Cipher {
      * SecureRandom, a system-provided source of randomness will be used.)
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following: {@code ENCRYPT_MODE},
+     * @param opmode the operation mode of this {@code Cipher} object
+     * this is one of the following: {@code ENCRYPT_MODE},
      * {@code DECRYPT_MODE}, {@code WRAP_MODE}
      * or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -1511,6 +1532,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, AlgorithmParameters params)
             throws InvalidKeyException, InvalidAlgorithmParameterException
@@ -1519,10 +1542,11 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with a key, a set of algorithm
+     * Initializes this {@code Cipher} object with a key, a set of algorithm
      * parameters, and a source of randomness.
      *
-     * <p>The cipher is initialized for one of the following four operations:
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1547,12 +1571,12 @@ public class Cipher {
      * them from {@code random}.
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following: {@code ENCRYPT_MODE},
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following: {@code ENCRYPT_MODE},
      * {@code DECRYPT_MODE}, {@code WRAP_MODE}
      * or {@code UNWRAP_MODE})
      * @param key the encryption key
@@ -1572,6 +1596,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Key key, AlgorithmParameters params,
                            SecureRandom random)
@@ -1596,8 +1622,10 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with the public key from the given certificate.
-     * <p> The cipher is initialized for one of the following four operations:
+     * Initializes this {@code Cipher} object with the public key from the given
+     * certificate.
+     * <p> The {@code Cipher} object is initialized for one of the following
+     * four operations:
      * encryption, decryption, key wrapping or  key unwrapping, depending
      * on the value of {@code opmode}.
      *
@@ -1637,12 +1665,12 @@ public class Cipher {
      * SecureRandom, a system-provided source of randomness will be used.)
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param certificate the certificate
@@ -1657,6 +1685,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Certificate certificate)
             throws InvalidKeyException
@@ -1665,11 +1695,11 @@ public class Cipher {
     }
 
     /**
-     * Initializes this cipher with the public key from the given certificate
-     * and a source of randomness.
+     * Initializes this {@code Cipher} object with the public key from the given
+     * certificate and a source of randomness.
      *
-     * <p>The cipher is initialized for one of the following four operations:
-     * encryption, decryption, key wrapping
+     * <p>The {@code Cipher} object is initialized for one of the following four
+     * operations: encryption, decryption, key wrapping
      * or key unwrapping, depending on
      * the value of {@code opmode}.
      *
@@ -1704,12 +1734,12 @@ public class Cipher {
      * them from {@code random}.
      *
      * <p>Note that when a {@code Cipher} object is initialized, it loses all
-     * previously-acquired state. In other words, initializing a cipher is
-     * equivalent to creating a new instance of that cipher and initializing
-     * it.
+     * previously-acquired state. In other words, initializing a {@code Cipher}
+     * object is equivalent to creating a new instance of that {@code Cipher}
+     * object and initializing it.
      *
-     * @param opmode the operation mode of this cipher (this is one of the
-     * following:
+     * @param opmode the operation mode of this {@code Cipher} object
+     * (this is one of the following:
      * {@code ENCRYPT_MODE}, {@code DECRYPT_MODE},
      * {@code WRAP_MODE} or {@code UNWRAP_MODE})
      * @param certificate the certificate
@@ -1726,6 +1756,8 @@ public class Cipher {
      * @throws UnsupportedOperationException if {@code opmode} is
      * {@code WRAP_MODE} or {@code UNWRAP_MODE} but the mode is not implemented
      * by the underlying {@code CipherSpi}
+     * @throws InvalidParameterException if {@code opmode} is not one of the
+     * recognized values
      */
     public final void init(int opmode, Certificate certificate,
                            SecureRandom random)
@@ -1782,9 +1814,11 @@ public class Cipher {
     }
 
     /**
-     * Ensures that cipher is in a valid state for update() and doFinal()
-     * calls - should be initialized and in ENCRYPT_MODE or DECRYPT_MODE.
-     * @throws IllegalStateException if this cipher is not in valid state
+     * Ensures that {@code Cipher} object is in a valid state for update() and
+     * doFinal() calls - should be initialized and in ENCRYPT_MODE or
+     * DECRYPT_MODE.
+     * @throws IllegalStateException if this {@code Cipher} object is not in
+     * valid state
      */
     private void checkCipherState() {
         if (!(this instanceof NullCipher)) {
@@ -1801,8 +1835,8 @@ public class Cipher {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this cipher was initialized), processing another data
-     * part.
+     * (depending on how this {@code Cipher} object was initialized),
+     * processing another data part.
      *
      * <p>The bytes in the {@code input} buffer are processed, and the
      * result is stored in a new buffer.
@@ -1816,8 +1850,8 @@ public class Cipher {
      * cipher is a block cipher and the input data is too short to result in a
      * new block
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object is in a
+     * wrong state (e.g., has not been initialized)
      */
     public final byte[] update(byte[] input) {
         checkCipherState();
@@ -1836,8 +1870,8 @@ public class Cipher {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this cipher was initialized), processing another data
-     * part.
+     * (depending on how this {@code Cipher} object was initialized),
+     * processing another data part.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, are processed,
@@ -1851,12 +1885,12 @@ public class Cipher {
      * starts
      * @param inputLen the input length
      *
-     * @return the new buffer with the result, or null if this
+     * @return the new buffer with the result, or {@code null} if this
      * cipher is a block cipher and the input data is too short to result in a
      * new block.
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      */
     public final byte[] update(byte[] input, int inputOffset, int inputLen) {
         checkCipherState();
@@ -1876,8 +1910,8 @@ public class Cipher {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this cipher was initialized), processing another data
-     * part.
+     * (depending on how this {@code Cipher} object was initialized),
+     * processing another data part.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, are processed,
@@ -1905,8 +1939,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
      */
@@ -1931,8 +1965,8 @@ public class Cipher {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this cipher was initialized), processing another data
-     * part.
+     * (depending on how this {@code Cipher} object was initialized),
+     * processing another data part.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, are processed,
@@ -1963,8 +1997,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
      */
@@ -1990,8 +2024,8 @@ public class Cipher {
 
     /**
      * Continues a multiple-part encryption or decryption operation
-     * (depending on how this cipher was initialized), processing another data
-     * part.
+     * (depending on how this {@code Cipher} object was initialized),
+     * processing another data part.
      *
      * <p>All {@code input.remaining()} bytes starting at
      * {@code input.position()} are processed. The result is stored
@@ -2017,8 +2051,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalArgumentException if input and output are the
      *   same object
      * @throws ReadOnlyBufferException if the output buffer is read-only
@@ -2047,7 +2081,7 @@ public class Cipher {
 
     /**
      * Finishes a multiple-part encryption or decryption operation, depending
-     * on how this cipher was initialized.
+     * on how this {@code Cipher} object was initialized.
      *
      * <p>Input data that may have been buffered during a previous
      * {@code update} operation is processed, with padding (if requested)
@@ -2057,29 +2091,30 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * @return the new buffer with the result
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
      * block size; or if this encryption algorithm is unable to
      * process the input data provided.
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final byte[] doFinal()
@@ -2092,7 +2127,7 @@ public class Cipher {
 
     /**
      * Finishes a multiple-part encryption or decryption operation, depending
-     * on how this cipher was initialized.
+     * on how this {@code Cipher} object was initialized.
      *
      * <p>Input data that may have been buffered during a previous
      * {@code update} operation is processed, with padding (if requested)
@@ -2109,14 +2144,15 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     *  to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * @param output the buffer for the result
      * @param outputOffset the offset in {@code output} where the result
@@ -2124,8 +2160,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     *  is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2133,11 +2169,11 @@ public class Cipher {
      * process the input data provided.
      * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the
+     * decrypted data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final int doFinal(byte[] output, int outputOffset)
@@ -2157,7 +2193,7 @@ public class Cipher {
     /**
      * Encrypts or decrypts data in a single-part operation, or finishes a
      * multiple-part operation. The data is encrypted or decrypted,
-     * depending on how this cipher was initialized.
+     * depending on how this {@code Cipher} object was initialized.
      *
      * <p>The bytes in the {@code input} buffer, and any input bytes that
      * may have been buffered during a previous {@code update} operation,
@@ -2167,31 +2203,32 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * @param input the input buffer
      *
      * @return the new buffer with the result
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
      * block size; or if this encryption algorithm is unable to
      * process the input data provided.
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the
+     * decrypted data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final byte[] doFinal(byte[] input)
@@ -2210,7 +2247,7 @@ public class Cipher {
     /**
      * Encrypts or decrypts data in a single-part operation, or finishes a
      * multiple-part operation. The data is encrypted or decrypted,
-     * depending on how this cipher was initialized.
+     * depending on how this {@code Cipher} object was initialized.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, and any input
@@ -2221,14 +2258,15 @@ public class Cipher {
      * case of decryption.
      * The result is stored in a new buffer.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * @param input the input buffer
      * @param inputOffset the offset in {@code input} where the input
@@ -2237,18 +2275,18 @@ public class Cipher {
      *
      * @return the new buffer with the result
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
      * block size; or if this encryption algorithm is unable to
      * process the input data provided.
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final byte[] doFinal(byte[] input, int inputOffset, int inputLen)
@@ -2268,7 +2306,7 @@ public class Cipher {
     /**
      * Encrypts or decrypts data in a single-part operation, or finishes a
      * multiple-part operation. The data is encrypted or decrypted,
-     * depending on how this cipher was initialized.
+     * depending on how this {@code Cipher} object was initialized.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, and any input
@@ -2285,14 +2323,15 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
@@ -2307,8 +2346,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2316,11 +2355,11 @@ public class Cipher {
      * process the input data provided.
      * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final int doFinal(byte[] input, int inputOffset, int inputLen,
@@ -2343,7 +2382,7 @@ public class Cipher {
     /**
      * Encrypts or decrypts data in a single-part operation, or finishes a
      * multiple-part operation. The data is encrypted or decrypted,
-     * depending on how this cipher was initialized.
+     * depending on how this {@code Cipher} object was initialized.
      *
      * <p>The first {@code inputLen} bytes in the {@code input}
      * buffer, starting at {@code inputOffset} inclusive, and any input
@@ -2362,14 +2401,15 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
@@ -2386,8 +2426,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalBlockSizeException if this cipher is a block cipher,
      * no padding has been requested (only in encryption mode), and the total
      * input length of the data processed by this cipher is not a multiple of
@@ -2395,11 +2435,11 @@ public class Cipher {
      * process the input data provided.
      * @throws ShortBufferException if the given output buffer is too small
      * to hold the result
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the decrypted
+     * data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      */
     public final int doFinal(byte[] input, int inputOffset, int inputLen,
@@ -2423,7 +2463,7 @@ public class Cipher {
     /**
      * Encrypts or decrypts data in a single-part operation, or finishes a
      * multiple-part operation. The data is encrypted or decrypted,
-     * depending on how this cipher was initialized.
+     * depending on how this {@code Cipher} object was initialized.
      *
      * <p>All {@code input.remaining()} bytes starting at
      * {@code input.position()} are processed.
@@ -2442,14 +2482,15 @@ public class Cipher {
      * {@link #getOutputSize(int) getOutputSize} to determine how big
      * the output buffer should be.
      *
-     * <p>Upon finishing, this method resets this cipher to the state
-     * it was in when previously initialized via a call to {@code init}.
+     * <p>Upon finishing, this method resets this {@code Cipher} object
+     * to the state it was in when previously initialized via a call to
+     * {@code init}.
      * That is, the object is reset and available to encrypt or decrypt
      * (depending on the operation mode that was specified in the call to
      * {@code init}) more data.
      *
-     * <p>Note: if any exception is thrown, this cipher may need to
-     * be reset before it can be used again.
+     * <p>Note: if any exception is thrown, this {@code Cipher} object
+     * may need to be reset before it can be used again.
      *
      * <p>Note: this method should be copy-safe, which means the
      * {@code input} and {@code output} buffers can reference
@@ -2461,8 +2502,8 @@ public class Cipher {
      *
      * @return the number of bytes stored in {@code output}
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized)
      * @throws IllegalArgumentException if input and output are the
      *   same object
      * @throws ReadOnlyBufferException if the output buffer is read-only
@@ -2473,11 +2514,11 @@ public class Cipher {
      * process the input data provided.
      * @throws ShortBufferException if there is insufficient space in the
      * output buffer
-     * @throws BadPaddingException if this cipher is in decryption mode,
-     * and (un)padding has been requested, but the decrypted data is not
-     * bounded by the appropriate padding bytes
-     * @throws AEADBadTagException if this cipher is decrypting in an
-     * AEAD mode (such as GCM/CCM), and the received authentication tag
+     * @throws BadPaddingException if this {@code Cipher} object is in
+     * decryption mode, and (un)padding has been requested, but the
+     * decrypted data is not bounded by the appropriate padding bytes
+     * @throws AEADBadTagException if this {@code Cipher} object is decrypting
+     * in an AEAD mode (such as GCM/CCM), and the received authentication tag
      * does not match the calculated value
      *
      * @since 1.5
@@ -2509,7 +2550,7 @@ public class Cipher {
      *
      * @return the wrapped key
      *
-     * @throws IllegalStateException if this cipher is in a wrong
+     * @throws IllegalStateException if this {@code Cipher} object is in a wrong
      * state (e.g., has not been initialized)
      *
      * @throws IllegalBlockSizeException if this cipher is a block
@@ -2554,8 +2595,8 @@ public class Cipher {
      *
      * @return the unwrapped key
      *
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized)
+     * @throws IllegalStateException if this {@code Cipher} object
+     *  is in a wrong state (e.g., has not been initialized)
      *
      * @throws NoSuchAlgorithmException if no installed providers
      * can create keys of type {@code wrappedKeyType} for the
@@ -2654,7 +2695,7 @@ public class Cipher {
 
     /**
      * Returns an {code AlgorithmParameterSpec} object which contains
-     * the maximum cipher parameter value according to the
+     * the maximum {@code Cipher} parameter value according to the
      * jurisdiction policy file. If JCE unlimited strength jurisdiction
      * policy files are installed or there is no maximum limit on the
      * parameters for the specified transformation in the policy file,
@@ -2680,20 +2721,20 @@ public class Cipher {
      * Continues a multi-part update of the Additional Authentication
      * Data (AAD).
      * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update} and
-     * {@code doFinal} methods).
+     * Calls to this method provide AAD to the {@code Cipher} object
+     * when operating in modes such as AEAD (GCM/CCM).  If this
+     * {@code Cipher} object is operating in either GCM or CCM mode, all AAD
+     * must be supplied before beginning operations on the ciphertext
+     * (via the {@code update} and {@code doFinal} methods).
      *
      * @param src the buffer containing the Additional Authentication Data
      *
      * @throws IllegalArgumentException if the {@code src}
      * byte array is {@code null}
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
+     * @throws IllegalStateException if this {@code Cipher} object
+     *  is in a wrong state (e.g., has not been initialized),
+     * does not accept AAD, or if operating in either GCM or CCM mode and
+     * one of the {@code update} methods has already been called for the active
      * encryption/decryption operation
      * @throws UnsupportedOperationException if the corresponding method
      * in the {@code CipherSpi} has not been overridden by an
@@ -2713,11 +2754,11 @@ public class Cipher {
      * Continues a multi-part update of the Additional Authentication
      * Data (AAD), using a subset of the provided buffer.
      * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update}
-     * and {@code doFinal} methods).
+     * Calls to this method provide AAD to the {@code Cipher} object
+     * when operating in modes such as AEAD (GCM/CCM).  If this
+     * {@code Cipher} object is operating in either GCM or CCM mode,
+     * all AAD must be supplied before beginning operations on the
+     * ciphertext (via the {@code update} and {@code doFinal} methods).
      *
      * @param src the buffer containing the AAD
      * @param offset the offset in {@code src} where the AAD input starts
@@ -2728,10 +2769,10 @@ public class Cipher {
      * is less than 0, or the sum of the {@code offset} and
      * {@code len} is greater than the length of the
      * {@code src} byte array
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized),
+     * does not accept AAD, or if operating in either GCM or CCM mode and
+     * one of the {@code update} methods has already been called for the active
      * encryption/decryption operation
      * @throws UnsupportedOperationException if the corresponding method
      * in the {@code CipherSpi} has not been overridden by an
@@ -2759,11 +2800,11 @@ public class Cipher {
      * Continues a multi-part update of the Additional Authentication
      * Data (AAD).
      * <p>
-     * Calls to this method provide AAD to the cipher when operating in
-     * modes such as AEAD (GCM/CCM).  If this cipher is operating in
-     * either GCM or CCM mode, all AAD must be supplied before beginning
-     * operations on the ciphertext (via the {@code update}
-     * and {@code doFinal} methods).
+     * Calls to this method provide AAD to the {@code Cipher} object
+     * when operating in modes such as AEAD (GCM/CCM).  If this
+     * {@code Cipher} object is operating in either GCM or CCM mode, all AAD
+     * must be supplied before beginning operations on the ciphertext
+     * (via the {@code update} and {@code doFinal} methods).
      * <p>
      * All {@code src.remaining()} bytes starting at
      * {@code src.position()} are processed.
@@ -2774,10 +2815,10 @@ public class Cipher {
      *
      * @throws IllegalArgumentException if the {@code src ByteBuffer}
      * is {@code null}
-     * @throws IllegalStateException if this cipher is in a wrong state
-     * (e.g., has not been initialized), does not accept AAD, or if
-     * operating in either GCM or CCM mode and one of the {@code update}
-     * methods has already been called for the active
+     * @throws IllegalStateException if this {@code Cipher} object
+     * is in a wrong state (e.g., has not been initialized),
+     * does not accept AAD, or if operating in either GCM or CCM mode and
+     * one of the {@code update} methods has already been called for the active
      * encryption/decryption operation
      * @throws UnsupportedOperationException if the corresponding method
      * in the {@code CipherSpi} has not been overridden by an
@@ -2801,14 +2842,15 @@ public class Cipher {
     }
 
     /**
-     * Returns a String representation of this cipher.
+     * Returns a {@code String} representation of this {@code Cipher} object.
      *
      * @implNote
-     * This implementation returns a String containing the transformation,
-     * mode, and provider of this cipher.
-     * The exact format of the String is unspecified and is subject to change.
+     * This implementation returns a {@code String} containing the
+     * transformation, mode, and provider of this {@code Cipher} object.
+     * The exact format of the {@code String} is unspecified and is subject
+     * to change.
      *
-     * @return a String describing this cipher
+     * @return a String describing this {@code Cipher} object
      */
     @Override
     public String toString() {

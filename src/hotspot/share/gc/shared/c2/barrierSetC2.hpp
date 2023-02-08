@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -256,6 +256,7 @@ public:
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barrier_nodes() const { return false; }
+  virtual bool is_gc_pre_barrier_node(Node* node) const { return false; }
   virtual bool is_gc_barrier_node(Node* node) const { return false; }
   virtual Node* step_over_gc_barrier(Node* c) const { return c; }
 
@@ -263,6 +264,7 @@ public:
   virtual void register_potential_barrier_node(Node* node) const { }
   virtual void unregister_potential_barrier_node(Node* node) const { }
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
+  virtual void eliminate_gc_barrier_data(Node* node) const { }
   virtual void enqueue_useful_gc_barrier(PhaseIterGVN* igvn, Node* node) const {}
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const {}
 
@@ -286,7 +288,7 @@ public:
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const {}
 #endif
 
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode) const { return false; }
+  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const { return false; }
 
   virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const { return false; }
   virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const { return false; }

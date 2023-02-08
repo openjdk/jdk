@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,6 +215,9 @@ public class LinkedHashSet<E>
      * @since 19
      */
     public static <T> LinkedHashSet<T> newLinkedHashSet(int numElements) {
+        if (numElements < 0) {
+            throw new IllegalArgumentException("Negative number of elements: " + numElements);
+        }
         return new LinkedHashSet<>(HashMap.calculateHashMapCapacity(numElements));
     }
 

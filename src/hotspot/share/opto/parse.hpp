@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class SwitchRange;
 
 
 //------------------------------InlineTree-------------------------------------
-class InlineTree : public ResourceObj {
+class InlineTree : public AnyObj {
   friend class VMStructs;
 
   Compile*    C;                  // cache
@@ -92,7 +92,6 @@ protected:
 
   InlineTree* caller_tree()       const { return _caller_tree;  }
   InlineTree* callee_at(int bci, ciMethod* m) const;
-  int         inline_level()      const { return stack_depth(); }
   int         stack_depth()       const { return _caller_jvms ? _caller_jvms->depth() : 0; }
   const char* msg()               const { return _msg; }
   void        set_msg(const char* msg)  { _msg = msg; }
@@ -124,6 +123,7 @@ public:
   ciMethod   *method()            const { return _method; }
   int         caller_bci()        const { return _caller_jvms ? _caller_jvms->bci() : InvocationEntryBci; }
   uint        count_inline_bcs()  const { return _count_inline_bcs; }
+  int         inline_level()      const { return stack_depth(); }
 
 #ifndef PRODUCT
 private:
@@ -141,7 +141,7 @@ public:
   // Count number of nodes in this subtree
   int         count() const;
   // Dump inlining replay data to the stream.
-  void dump_replay_data(outputStream* out);
+  void dump_replay_data(outputStream* out, int depth_adjust = 0);
 };
 
 
@@ -222,6 +222,29 @@ class Parse : public GraphKit {
     int start_sp() const                   { return flow()->stack_size(); }
 
     bool is_loop_head() const              { return flow()->is_loop_head(); }
+    bool is_in_irreducible_loop() const {
+      return flow()->is_in_irreducible_loop();
+    }
+    bool is_irreducible_loop_entry() const {
+      return flow()->is_irreducible_loop_head() || flow()->is_irreducible_loop_secondary_entry();
+    }
+    void copy_irreducible_status_to(RegionNode* region, const JVMState* jvms) {
+      assert(!is_irreducible_loop_entry() || is_in_irreducible_loop(), "entry is part of irreducible loop");
+      if (is_in_irreducible_loop()) {
+        // The block is in an irreducible loop of this method, so it is possible that this
+        // region becomes an irreducible loop entry. (no guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::MaybeIrreducibleEntry);
+      } else if (jvms->caller() != nullptr) {
+        // The block is not in an irreducible loop of this method, hence it cannot ever
+        // be the entry of an irreducible loop. But it may be inside an irreducible loop
+        // of a caller of this inlined method. (limited guarantee)
+        assert(region->loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "status not changed");
+      } else {
+        // The block is not in an irreducible loop of this method, and there is no outer
+        // method. This region will never be in an irreducible loop (strong guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::Reducible);
+      }
+    }
     bool is_SEL_head() const               { return flow()->is_single_entry_loop_head(); }
     bool is_SEL_backedge(Block* pred) const{ return is_SEL_head() && pred->rpo() >= rpo(); }
     bool is_invariant_local(uint i) const  {
@@ -268,7 +291,7 @@ class Parse : public GraphKit {
 
 #ifndef PRODUCT
   // BytecodeParseHistogram collects number of bytecodes parsed, nodes constructed, and transformations.
-  class BytecodeParseHistogram : public ResourceObj {
+  class BytecodeParseHistogram : public ArenaObj {
    private:
     enum BPHType {
       BPH_transforms,
@@ -543,8 +566,7 @@ class Parse : public GraphKit {
   void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   int     repush_if_args();
-  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
-                              Block* path, Block* other_path);
+  void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block* path);
   void    sharpen_type_after_if(BoolTest::mask btest,
                                 Node* con, const Type* tcon,
                                 Node* val, const Type* tval);
@@ -560,8 +582,6 @@ class Parse : public GraphKit {
   void    jump_switch_ranges(Node* a, SwitchRange* lo, SwitchRange* hi, int depth = 0);
   bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi);
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
-
-  void decrement_age();
 
   // helper function for call statistics
   void count_compiled_calls(bool at_method_entry, bool is_inline) PRODUCT_RETURN;
@@ -601,6 +621,43 @@ class Parse : public GraphKit {
   void dump();
   void dump_bci(int bci);
 #endif
+};
+
+// Specialized uncommon_trap of unstable_if. C2 uses next_bci of path to update the live locals of it.
+class UnstableIfTrap {
+  CallStaticJavaNode* const _unc;
+  bool _modified;            // modified locals based on next_bci()
+  int _next_bci;
+
+public:
+  UnstableIfTrap(CallStaticJavaNode* call, Parse::Block* path): _unc(call), _modified(false) {
+    assert(_unc != NULL && Deoptimization::trap_request_reason(_unc->uncommon_trap_request()) == Deoptimization::Reason_unstable_if,
+          "invalid uncommon_trap call!");
+    _next_bci = path != nullptr ? path->start() : -1;
+  }
+
+  // The starting point of the pruned block, where control goes when
+  // deoptimization does happen.
+  int next_bci() const {
+    return _next_bci;
+  }
+
+  bool modified() const {
+    return _modified;
+  }
+
+  void set_modified() {
+    _modified = true;
+  }
+
+  CallStaticJavaNode* uncommon_trap() const {
+    return _unc;
+  }
+
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->comp_arena()->AmallocWords(x);
+  }
 };
 
 #endif // SHARE_OPTO_PARSE_HPP

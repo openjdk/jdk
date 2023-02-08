@@ -88,7 +88,7 @@ public class SigningAppImageTwoStepsTest {
         appImageCmd.executeAndAssertHelloAppImageCreated();
 
         // Double check if it is signed or unsigned based on signAppImage
-        verifySignature(appImageCmd, signAppImage);
+        SigningBase.verifyAppImageSignature(appImageCmd, signAppImage, "testAL");
 
         // Sign app image
         JPackageCommand cmd = new JPackageCommand();
@@ -97,24 +97,9 @@ public class SigningAppImageTwoStepsTest {
             .addArguments("--mac-sign")
             .addArguments("--mac-signing-key-user-name", SigningBase.DEV_NAME)
             .addArguments("--mac-signing-keychain", SigningBase.KEYCHAIN);
-        cmd.execute();
+        cmd.executeAndAssertImageCreated();
 
         // Should be signed app image
-        verifySignature(appImageCmd, true);
-    }
-
-    private void verifySignature(JPackageCommand appImageCmd, boolean isSigned) throws Exception {
-        Path launcherPath = appImageCmd.appLauncherPath();
-        SigningBase.verifyCodesign(launcherPath, isSigned);
-
-        Path testALPath = launcherPath.getParent().resolve("testAL");
-        SigningBase.verifyCodesign(testALPath, isSigned);
-
-        Path appImage = appImageCmd.outputBundle();
-        SigningBase.verifyCodesign(appImage, isSigned);
-        if (isSigned) {
-            SigningBase.verifySpctl(appImage, "exec");
-        }
+        SigningBase.verifyAppImageSignature(appImageCmd, true, "testAL");
     }
 }
-

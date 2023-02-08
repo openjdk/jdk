@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
@@ -44,7 +45,6 @@
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -67,7 +67,7 @@ static void update_derived_pointers() {
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
-  return _heap->concurrent_mark()->next_mark_bitmap();
+  return _heap->concurrent_mark()->mark_bitmap();
 }
 
 ReferenceProcessor* G1FullCollector::reference_processor() {
@@ -112,15 +112,16 @@ uint G1FullCollector::calc_active_workers() {
 G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
                                  bool explicit_gc,
                                  bool clear_soft_refs,
-                                 bool do_maximal_compaction) :
+                                 bool do_maximal_compaction,
+                                 G1FullGCTracer* tracer) :
     _heap(heap),
-    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction),
+    _scope(heap->monitoring_support(), explicit_gc, clear_soft_refs, do_maximal_compaction, tracer),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(),
-    _is_alive(this, heap->concurrent_mark()->next_mark_bitmap()),
+    _serial_compaction_point(this),
+    _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _always_subject_to_discovery(),
     _is_subject_mutator(heap->ref_processor_stw(), &_always_subject_to_discovery),
@@ -132,13 +133,15 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_regions(), mtGC);
+  _compaction_tops = NEW_C_HEAP_ARRAY(HeapWord*, _heap->max_regions(), mtGC);
   for (uint j = 0; j < heap->max_regions(); j++) {
     _live_stats[j].clear();
+    _compaction_tops[j] = nullptr;
   }
 
   for (uint i = 0; i < _num_workers; i++) {
     _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint();
+    _compaction_points[i] = new G1FullGCCompactionPoint(this);
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
@@ -152,6 +155,7 @@ G1FullCollector::~G1FullCollector() {
   }
   FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
   FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
+  FREE_C_HEAP_ARRAY(HeapWord*, _compaction_tops);
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
@@ -171,8 +175,13 @@ public:
 void G1FullCollector::prepare_collection() {
   _heap->policy()->record_full_collection_start();
 
-  _heap->abort_concurrent_cycle();
+  // Verification needs the bitmap, so we should clear the bitmap only later.
+  bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
   _heap->verify_before_full_collection(scope()->is_explicit_gc());
+  if (in_concurrent_cycle) {
+    GCTraceTime(Debug, gc) debug("Clear Bitmap");
+    _heap->concurrent_mark()->clear_bitmap(_heap->workers());
+  }
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
@@ -188,7 +197,7 @@ void G1FullCollector::prepare_collection() {
 }
 
 void G1FullCollector::collect() {
-  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive(false /* concurrent_mark_start */);
 
   phase1_mark_live_objects();
   verify_after_marking();
@@ -202,8 +211,7 @@ void G1FullCollector::collect() {
 
   phase4_do_compaction();
 
-  Continuations::on_gc_marking_cycle_finish();
-  Continuations::arm_all_nmethods();
+  G1CollectedHeap::finish_codecache_marking_cycle();
 }
 
 void G1FullCollector::complete_collection() {
@@ -214,9 +222,11 @@ void G1FullCollector::complete_collection() {
   // update the derived pointer table.
   update_derived_pointers();
 
-  _heap->concurrent_mark()->swap_mark_bitmaps();
+  // Need completely cleared claim bits for the next concurrent marking or full gc.
+  ClassLoaderDataGraph::clear_claimed_marks();
+
   // Prepare the bitmap for the next (potentially concurrent) marking.
-  _heap->concurrent_mark()->clear_next_bitmap(_heap->workers());
+  _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
   _heap->prepare_heap_for_mutators();
 
@@ -294,9 +304,10 @@ void G1FullCollector::phase1_mark_live_objects() {
   // Class unloading and cleanup.
   if (ClassUnloading) {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
+    CodeCache::UnloadingScope unloading_scope(&_is_alive);
     // Unload classes and purge the SystemDictionary.
     bool purged_class = SystemDictionary::do_unloading(scope()->timer());
-    _heap->complete_cleaning(&_is_alive, purged_class);
+    _heap->complete_cleaning(purged_class);
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);
@@ -363,7 +374,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction() {
     } else {
       assert(!current->is_humongous(), "Should be no humongous regions in compaction queue");
       G1SerialRePrepareClosure re_prepare(cp, current);
-      current->set_compaction_top(current->bottom());
+      set_compaction_top(current, current->bottom());
       current->apply_to_marked_objects(mark_bitmap(), &re_prepare);
     }
   }

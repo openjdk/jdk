@@ -27,9 +27,9 @@
  * @summary Corrupt the header CRC fields of the top archive. VM should exit with an error.
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build Hello sun.hotspot.WhiteBox
+ * @build Hello jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar Hello
- * @run driver jdk.test.lib.helpers.ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ArchiveConsistency on
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ArchiveConsistency auto
  */
@@ -150,7 +150,23 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                appJar, mainClass, isAuto ? 0 : 1,
                "Base archive name is damaged");
 
-        startTest("5. Make base archive name not terminated with '\0'");
+        startTest("5a. Modify common app classpath size");
+        String wrongCommonAppClasspathOffset = getNewArchiveName("wrongCommonAppClasspathOffset");
+        copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongCommonAppClasspathOffset);
+        int commonAppClasspathPrefixSize = CDSArchiveUtils.commonAppClasspathPrefixSize(copiedJsa);
+        CDSArchiveUtils.writeData(copiedJsa, CDSArchiveUtils.offsetCommonAppClasspathPrefixSize(), -1);
+        runTwo(baseArchiveName, wrongCommonAppClasspathOffset,
+               appJar, mainClass, isAuto ? 0 : 1,
+               "common app classpath prefix len < 0");
+
+        startTest("5b. Modify common app classpath size, run with -XX:-VerifySharedSpaces");
+        VERIFY_CRC = true;
+        runTwo(baseArchiveName, modTop,
+               appJar, mainClass, isAuto ? 0 : 1,
+               "Header checksum verification failed");
+        VERIFY_CRC = false;
+
+        startTest("6. Make base archive name not terminated with '\0'");
         String wrongBaseName = getNewArchiveName("wrongBaseName");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName);
         baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
@@ -162,7 +178,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                appJar, mainClass, isAuto ? 0 : 1,
                "Base archive name is damaged");
 
-        startTest("6. Modify base archive name to a file that doesn't exist");
+        startTest("7. Modify base archive name to a file that doesn't exist");
         String wrongBaseName2 = getNewArchiveName("wrongBaseName2");
         copiedJsa = CDSArchiveUtils.copyArchiveFile(jsa, wrongBaseName2);
         baseArchiveNameOffset = CDSArchiveUtils.baseArchiveNameOffset(copiedJsa);
@@ -182,7 +198,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
         //   -XX:SharedArchiveFile=non-exist-base.jsa:top.jsa
         //   -XX:SharedArchiveFile=base.jsa:non-exist-top.jsa
         //   -XX:SharedArchiveFile=non-exist-base.jsa:non-exist-top.jsa
-        startTest("7. Non-exist base archive");
+        startTest("8. Non-exist base archive");
         String nonExistBase = "non-exist-base.jsa";
         File nonExistBaseFile = new File(nonExistBase);
         nonExistBaseFile.delete();
@@ -190,7 +206,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistBase + ")");
 
-        startTest("8. Non-exist top archive");
+        startTest("9. Non-exist top archive");
         String nonExistTop = "non-exist-top.jsa";
         File nonExistTopFile = new File(nonExistTop);
         nonExistTopFile.delete();
@@ -198,7 +214,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistTop + ")");
 
-        startTest("9. nost-exist-base and non-exist-top");
+        startTest("10. nost-exist-base and non-exist-top");
         runTwo(nonExistBase, nonExistTop,
                appJar, mainClass, isAuto ? 0 : 1,
                "Specified shared archive not found (" + nonExistBase + ")");
@@ -209,7 +225,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
       if (!isUseSharedSpacesDisabled()) {
         new File(baseArchiveName).delete();
 
-        startTest("10. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
+        startTest("11. -XX:+AutoCreateSharedArchive -XX:SharedArchiveFile=" + topArchiveName);
         run(topArchiveName,
             "-Xshare:auto",
             "-XX:+AutoCreateSharedArchive",
@@ -219,7 +235,7 @@ public class ArchiveConsistency extends DynamicArchiveTestBase {
                 output.shouldContain("warning: -XX:+AutoCreateSharedArchive is unsupported when base CDS archive is not loaded");
             });
 
-        startTest("11. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
+        startTest("12. -XX:SharedArchiveFile=" + topArchiveName + " -XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"));
         run(topArchiveName,
             "-Xshare:auto",
             "-XX:ArchiveClassesAtExit=" + getNewArchiveName("top3"),

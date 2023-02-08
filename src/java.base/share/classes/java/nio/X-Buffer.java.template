@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,10 +150,11 @@ import jdk.internal.util.ArraysSupport;
  * values, for example, this class defines:
  *
  * <blockquote><pre>
- * float  {@link #getFloat()}
- * float  {@link #getFloat(int) getFloat(int index)}
- *  void  {@link #putFloat(float) putFloat(float f)}
- *  void  {@link #putFloat(int,float) putFloat(int index, float f)}</pre></blockquote>
+ * float      {@link #getFloat()}
+ * float      {@link #getFloat(int) getFloat(int index)}
+ * ByteBuffer {@link #putFloat(float) putFloat(float f)}
+ * ByteBuffer {@link #putFloat(int,float) putFloat(int index, float f)}
+ * </pre></blockquote>
  *
  * <p> Corresponding methods are defined for the types {@code char,
  * short, int, long}, and {@code double}.  The index
@@ -1516,6 +1517,7 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1529,6 +1531,7 @@ public abstract sealed class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public
@@ -1542,6 +1545,7 @@ public abstract sealed class $Type$Buffer
     
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1555,6 +1559,7 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1568,6 +1573,7 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1581,6 +1587,7 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 
@@ -1594,6 +1601,7 @@ public abstract sealed class $Type$Buffer
 
     /**
      * {@inheritDoc}
+     * @since 9
      */
     @Override
     public 

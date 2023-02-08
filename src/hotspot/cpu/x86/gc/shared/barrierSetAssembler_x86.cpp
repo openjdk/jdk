@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,12 +117,12 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
         assert(!is_not_null, "inconsistent access");
 #ifdef _LP64
         if (UseCompressedOops) {
-          __ movl(dst, (int32_t)NULL_WORD);
+          __ movl(dst, NULL_WORD);
         } else {
-          __ movslq(dst, (int32_t)NULL_WORD);
+          __ movslq(dst, NULL_WORD);
         }
 #else
-        __ movl(dst, (int32_t)NULL_WORD);
+        __ movl(dst, NULL_WORD);
 #endif
       } else {
 #ifdef _LP64
@@ -197,7 +197,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
-  __ clear_jweak_tag(obj);
+  __ clear_jobject_tag(obj);
   __ movptr(obj, Address(obj, 0));
 }
 
@@ -242,42 +242,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
   __ verify_tlab();
 }
 
-// Defines obj, preserves var_size_in_bytes
-void BarrierSetAssembler::eden_allocate(MacroAssembler* masm,
-                                        Register thread, Register obj,
-                                        Register var_size_in_bytes,
-                                        int con_size_in_bytes,
-                                        Register t1,
-                                        Label& slow_case) {
-  assert(obj == rax, "obj must be in rax, for cmpxchg");
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    __ jmp(slow_case);
-  } else {
-    Register end = t1;
-    Label retry;
-    __ bind(retry);
-    ExternalAddress heap_top((address) Universe::heap()->top_addr());
-    __ movptr(obj, heap_top);
-    if (var_size_in_bytes == noreg) {
-      __ lea(end, Address(obj, con_size_in_bytes));
-    } else {
-      __ lea(end, Address(obj, var_size_in_bytes, Address::times_1));
-    }
-    // if end < obj then we wrapped around => object too long => slow case
-    __ cmpptr(end, obj);
-    __ jcc(Assembler::below, slow_case);
-    __ cmpptr(end, ExternalAddress((address) Universe::heap()->end_addr()));
-    __ jcc(Assembler::above, slow_case);
-    // Compare obj with the top addr, and if still equal, store the new top addr in
-    // end at the address of the top addr pointer. Sets ZF if was equal, and clears
-    // it otherwise. Use lock prefix for atomicity on MPs.
-    __ locked_cmpxchgptr(end, heap_top);
-    __ jcc(Assembler::notEqual, retry);
-    incr_allocated_bytes(masm, thread, var_size_in_bytes, con_size_in_bytes, thread->is_valid() ? noreg : t1);
-  }
-}
-
 void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register thread,
                                                Register var_size_in_bytes,
                                                int con_size_in_bytes,
@@ -309,22 +273,34 @@ void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register th
 }
 
 #ifdef _LP64
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;
   }
-  Label continuation;
   Register thread = r15_thread;
-  Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_offset()));
-  __ align(8);
-  __ cmpl(disarmed_addr, 0);
-  __ jcc(Assembler::equal, continuation);
-  __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
-  __ bind(continuation);
+  Address disarmed_addr(thread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
+  // The immediate is the last 4 bytes, so if we align the start of the cmp
+  // instruction to 4 bytes, we know that the second half of it is also 4
+  // byte aligned, which means that the immediate will not cross a cache line
+  __ align(4);
+  uintptr_t before_cmp = (uintptr_t)__ pc();
+  __ cmpl_imm32(disarmed_addr, 0);
+  uintptr_t after_cmp = (uintptr_t)__ pc();
+  guarantee(after_cmp - before_cmp == 8, "Wrong assumed instruction length");
+
+  if (slow_path != NULL) {
+    __ jcc(Assembler::notEqual, *slow_path);
+    __ bind(*continuation);
+  } else {
+    Label done;
+    __ jccb(Assembler::equal, done);
+    __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
+    __ bind(done);
+  }
 }
 #else
-void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
+void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label*, Label*) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm == NULL) {
     return;
@@ -334,10 +310,10 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 
   Register tmp = rdi;
   __ push(tmp);
-  __ movptr(tmp, (intptr_t)bs_nm->disarmed_value_address());
+  __ movptr(tmp, (intptr_t)bs_nm->disarmed_guard_value_address());
   Address disarmed_addr(tmp, 0);
   __ align(4);
-  __ cmpl(disarmed_addr, 0);
+  __ cmpl_imm32(disarmed_addr, 0);
   __ pop(tmp);
   __ jcc(Assembler::equal, continuation);
   __ call(RuntimeAddress(StubRoutines::x86::method_entry_barrier()));
@@ -355,15 +331,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cmpptr(rbx, 0); // rbx contains the incoming method for c2i adapters.
   __ jcc(Assembler::equal, bad_call);
 
-#ifdef _LP64
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
-#else
-  Register tmp1 = rax;
-  Register tmp2 = rcx;
+  Register tmp1 = LP64_ONLY( rscratch1 ) NOT_LP64( rax );
+  Register tmp2 = LP64_ONLY( rscratch2 ) NOT_LP64( rcx );
+#ifndef _LP64
   __ push(tmp1);
   __ push(tmp2);
-#endif // _LP64
+#endif // !_LP64
 
   // Pointer chase to the method holder to find out if the method is concurrently unloading.
   Label method_live;

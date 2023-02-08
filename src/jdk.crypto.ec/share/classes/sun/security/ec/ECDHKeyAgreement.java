@@ -176,7 +176,7 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         // (point of infinity).  However, the point of infinity has no
         // affine coordinates, although the point of infinity could
         // be encoded.  Per IEEE 1363.3-2013 (see section A.6.4.1),
-        // the point of inifinity is represented by a pair of
+        // the point of infinity is represented by a pair of
         // coordinates (x, y) not on the curve.  For EC prime finite
         // field (q = p^m), the point of infinity is (0, 0) unless
         // b = 0; in which case it is (0, 1).
@@ -206,12 +206,9 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         //
         // Compute nQ (using elliptic curve arithmetic), and verify that
         // nQ is the identity element.
-        ImmutableIntegerModuloP xElem = ops.getField().getElement(x);
-        ImmutableIntegerModuloP yElem = ops.getField().getElement(y);
-        AffinePoint affP = new AffinePoint(xElem, yElem);
         byte[] order = spec.getOrder().toByteArray();
         ArrayUtil.reverse(order);
-        Point product = ops.multiply(affP, order);
+        Point product = ops.multiply(key.getW(), order);
         if (!ops.isNeutral(product)) {
             throw new InvalidKeyException("Point has incorrect order");
         }
@@ -275,12 +272,8 @@ public final class ECDHKeyAgreement extends KeyAgreementSpi {
         scalar.setProduct(cofactor);
         int keySize =
             (priv.getParams().getCurve().getField().getFieldSize() + 7) / 8;
-        ImmutableIntegerModuloP x =
-            field.getElement(pubKey.getW().getAffineX());
-        ImmutableIntegerModuloP y =
-            field.getElement(pubKey.getW().getAffineY());
-        Point product = ops.multiply(new AffinePoint(x, y),
-            scalar.asByteArray(keySize));
+        Point product =
+                ops.multiply(pubKey.getW(), scalar.asByteArray(keySize));
         if (ops.isNeutral(product)) {
             throw new InvalidKeyException("Product is zero");
         }

@@ -87,7 +87,6 @@ static jlong page_size = 0;
 static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean available) {
 #if defined(__linux__)
     int ret;
-    FILE *fp;
     jlong total = 0, avail = 0;
 
     struct sysinfo si;

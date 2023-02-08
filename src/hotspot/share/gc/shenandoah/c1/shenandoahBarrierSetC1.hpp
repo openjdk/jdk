@@ -156,19 +156,16 @@ public:
   LIR_Opr tmp2()        const                    { return _tmp2;      }
 
   virtual void visit(LIR_OpVisitState* state) {
-      assert(_addr->is_valid(),      "used");
-      assert(_cmp_value->is_valid(), "used");
-      assert(_new_value->is_valid(), "used");
-      if (_info)                    state->do_info(_info);
-                                    state->do_input(_addr);
-                                    state->do_temp(_addr);
-                                    state->do_input(_cmp_value);
-                                    state->do_temp(_cmp_value);
-                                    state->do_input(_new_value);
-                                    state->do_temp(_new_value);
-      if (_tmp1->is_valid())        state->do_temp(_tmp1);
-      if (_tmp2->is_valid())        state->do_temp(_tmp2);
-      if (_result->is_valid())      state->do_output(_result);
+    if (_info)                              state->do_info(_info);
+    assert(_addr->is_valid(), "used");      state->do_input(_addr);
+                                            state->do_temp(_addr);
+    assert(_cmp_value->is_valid(), "used"); state->do_input(_cmp_value);
+                                            state->do_temp(_cmp_value);
+    assert(_new_value->is_valid(), "used"); state->do_input(_new_value);
+                                            state->do_temp(_new_value);
+    if (_tmp1->is_valid())                  state->do_temp(_tmp1);
+    if (_tmp2->is_valid())                  state->do_temp(_tmp2);
+    if (_result->is_valid())                state->do_output(_result);
   }
 
   virtual void emit_code(LIR_Assembler* masm);

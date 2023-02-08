@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -165,10 +165,8 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   DEBUG_ONLY(_frame_index = -1;)
 
   // Here's a sticky one. This constructor can be called via AsyncGetCallTrace
-  // when last_Java_sp is non-null but the pc fetched is junk. If we are truly
-  // unlucky the junk value could be to a zombied method and we'll die on the
-  // find_blob call. This is also why we can have no asserts on the validity
-  // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
+  // when last_Java_sp is non-null but the pc fetched is junk.
+  // AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
   // call a specilaized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
@@ -259,8 +257,9 @@ inline address  frame::sender_pc()              const { return pauth_strip_point
 
 inline intptr_t*    frame::sender_sp()        const { return            addr_at(   sender_sp_offset); }
 
-inline intptr_t** frame::interpreter_frame_locals_addr() const {
-  return (intptr_t**)addr_at(interpreter_frame_locals_offset);
+inline intptr_t* frame::interpreter_frame_locals() const {
+  intptr_t n = *addr_at(interpreter_frame_locals_offset);
+  return &fp()[n]; // return relativized locals
 }
 
 inline intptr_t* frame::interpreter_frame_last_sp() const {
@@ -336,19 +335,13 @@ inline JavaCallWrapper** frame::entry_frame_call_wrapper_addr() const {
 // Compiled frames
 
 inline oop frame::saved_oop_result(RegisterMap* map) const {
-  PRAGMA_DIAG_PUSH
-  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
   return *result_adr;
 }
 
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
-  PRAGMA_DIAG_PUSH
-  PRAGMA_NONNULL_IGNORED
   oop* result_adr = (oop *)map->location(r0->as_VMReg(), sp());
-  PRAGMA_DIAG_POP
   guarantee(result_adr != NULL, "bad register save location");
 
   *result_adr = obj;
@@ -418,7 +411,7 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
   // in C2 code but it will have been pushed onto the stack. so we
   // have to find it relative to the unextended sp
 
-  assert(_cb->frame_size() >= 0, "must have non-zero frame size");
+  assert(_cb->frame_size() > 0, "must have non-zero frame size");
   intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
                                                                     : sender_sp();
   assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");

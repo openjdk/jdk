@@ -30,8 +30,8 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @build CheckContainerized sun.hotspot.WhiteBox PrintContainerInfo
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
+ * @build CheckContainerized jdk.test.whitebox.WhiteBox PrintContainerInfo
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run driver TestMisc
  */
 import jdk.test.lib.containers.docker.Common;

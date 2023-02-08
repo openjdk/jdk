@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 import java.io.File;
 import java.net.URL;
-import sun.hotspot.WhiteBox;
+import jdk.test.whitebox.WhiteBox;
 
 //
 // - Test static final String field with initial value in cached mirror should be also archived.
