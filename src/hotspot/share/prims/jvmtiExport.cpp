@@ -2937,15 +2937,6 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
   char buffer[JVM_MAXPATHLEN];
   void* library = nullptr;
   jint result = JNI_ERR;
-  if (options != nullptr) {
-    printf("\n options:\n");
-    char* h = (char*)options;
-    while (*h != '\0') {
-      unsigned char ch = (unsigned char)*h;
-      printf("%u\n", (unsigned int)ch);
-      h++;
-    }
-  }
   const char *on_attach_symbols[] = AGENT_ONATTACH_SYMBOLS;
   size_t num_symbol_entries = ARRAY_SIZE(on_attach_symbols);
 
