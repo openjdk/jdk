@@ -348,15 +348,8 @@ class MacroAssembler: public Assembler {
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
-
-  // Loads Klass* from src object into dst. Also emits a null-check
-  // on src.
-  void load_klass_check_null(Register dst, Register src, Register tmp);
-
-  // Loads Klass* from src object into dst. Does not emit any null-check
-  // on src.
   void load_klass(Register dst, Register src, Register tmp);
-
+  void load_klass_check_null(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
   void access_load_at(BasicType type, DecoratorSet decorators, Register dst, Address src,
