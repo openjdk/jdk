@@ -91,7 +91,7 @@ public class LogTests {
         // Probe near decision points in the FDLIBM algorithm.
         double[] decisionPoints = {
             0x1.0p-1022,
-            
+
             0x1.0p-20,
         };
 
