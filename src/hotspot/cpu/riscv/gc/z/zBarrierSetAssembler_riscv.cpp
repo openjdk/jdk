@@ -449,10 +449,10 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // Check if mask is good.
-  // verifies that ZAddressBadMask & x10 == 0
-  __ ld(c_rarg3, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
-  __ andr(c_rarg2, x10, c_rarg3);
-  __ bnez(c_rarg2, error);
+  // verifies that ZAddressBadMask & obj == 0
+  __ ld(tmp2, Address(xthread, ZThreadLocalData::address_bad_mask_offset()));
+  __ andr(tmp1, obj, tmp2);
+  __ bnez(tmp1, error);
 
   BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
 }

@@ -316,8 +316,7 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
   __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
 
   // Compare tmp1 and tmp2.
-  __ xorr(tmp1, tmp1, tmp2);
-  __ bnez(tmp1, error);
+  __ bne(tmp1, tmp2, error);
 
   // Make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj, tmp1); // get klass
