@@ -514,6 +514,9 @@ public class VMProps implements Callable<Map<String, String>> {
 
     // Returns comma-separated file names for stdout and stderr.
     private String redirectOutputToLogFile(String msg, ProcessBuilder pb, String fileNameBase) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
+            return "";
+        }
         String timeStamp = Instant.now().toString().replace(":", "-").replace(".", "-");
 
         String stdoutFileName = String.format("./%s-stdout--%s.log", fileNameBase, timeStamp);
@@ -686,6 +689,10 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param msg
      */
     protected static void log(String msg) {
+        if (!Boolean.getBoolean("jtreg.log.vmprops")) {
+            return;
+        }
+
         // By jtreg design stderr produced here will be visible
         // in the output of a parent process. Note: stdout should not be used
         // for logging as jtreg parses that output directly and only echoes it
