@@ -3898,9 +3898,9 @@ opclass memory(indirect, indOffI, indOffL, indirectN, indOffIN, indOffLN);
 // n.b. this does not elide all L2I conversions. if the truncated
 // value is consumed by more than one operation then the ConvL2I
 // cannot be bundled into the consuming nodes so an l2i gets planted
-// (actually a mvw $dst $src) and the downstream instructions consume
-// the result of the l2i as an iRegI input. That's a shame since the
-// mvw is actually redundant but its not too costly.
+// (actually an addiw $dst, $src, 0) and the downstream instructions
+// consume the result of the L2I as an iRegI input. That's a shame since
+// the addiw is actually redundant but its not too costly.
 
 opclass iRegIorL2I(iRegI, iRegL2I);
 opclass iRegIorL(iRegI, iRegL);
