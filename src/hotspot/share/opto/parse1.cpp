@@ -678,6 +678,7 @@ void Parse::do_all_blocks() {
           record_for_igvn(r);
           r->init_req(edges, control());
           set_control(r);
+          block->copy_irreducible_status_to(r, jvms());
           // Add new phis.
           ensure_phis_everywhere();
         }
@@ -1499,7 +1500,12 @@ void Parse::do_one_block() {
     for (int i = 0; i < nt; i++) {
       tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
     }
-    if (b->is_loop_head()) tty->print("  lphd");
+    if (b->is_loop_head()) {
+      tty->print("  lphd");
+    }
+    if (b->is_irreducible_loop_entry()) {
+      tty->print("  irreducible");
+    }
     tty->cr();
   }
 
@@ -1688,6 +1694,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       // for (int j = 1; j < edges+1; j++) { r->init_req(j, NULL); }
       r->init_req(pnum, control());
       set_control(r);
+      target->copy_irreducible_status_to(r, jvms());
       set_parse_bci(current_bci); // Restore bci
     }
 
@@ -1725,7 +1732,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
     r->init_req(pnum, newin->control());
 
     if (pnum == 1) {            // Last merge for this Region?
-      if (!block()->flow()->is_irreducible_entry()) {
+      if (!block()->flow()->is_irreducible_loop_secondary_entry()) {
         Node* result = _gvn.transform_no_reclaim(r);
         if (r != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
