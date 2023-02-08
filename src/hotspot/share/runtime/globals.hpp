@@ -496,6 +496,9 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TestUnresponsiveErrorHandler, false,                        \
           "If true, simulates an unresponsive error handler.")              \
                                                                             \
+  develop(bool, TestReentrantErrorHandler, false,                           \
+          "If true, simulates an reentrant error handler.")                 \
+                                                                            \
   develop(bool, Verbose, false,                                             \
           "Print additional debugging information from other modes")        \
                                                                             \
