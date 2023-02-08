@@ -421,8 +421,12 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 #endif
 
 intptr_t *frame::initial_deoptimization_info() {
-  // unused... but returns fp() to minimize changes introduced by 7087445
-  return fp();
+  // `this` is the caller of the deoptee. We want to trimm it, if compiled, to
+  // unextended_sp. This is necessary if the deoptee frame is the bottom frame
+  // of a continuation on stack (more frames could be in a StackChunk) as it
+  // will pop its stack args. Otherwise the recursion in
+  // FreezeBase::recurse_freeze_java_frame() would not stop at the bottom frame.
+  return is_compiled_frame() ? unextended_sp() : sp();
 }
 
 #ifndef PRODUCT
