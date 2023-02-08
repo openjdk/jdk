@@ -291,19 +291,19 @@ public class HtmlDocletWriter {
     private void addMethodInfo(ExecutableElement method, Content dl) {
         TypeElement enclosing = utils.getEnclosingTypeElement(method);
         List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
-        ExecutableElement overriddenMethod = utils.overriddenMethod(method);
+        var overrideInfo = utils.overriddenMethod(method);
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
         // Check whether there is any implementation or overridden info to be
         // printed. If no overridden or implementation info needs to be
         // printed, do not print this section.
         if ((!intfacs.isEmpty()
                 && !vmt.getImplementedMethods(method).isEmpty())
-                || overriddenMethod != null) {
+                || overrideInfo != null) {
             MethodWriterImpl.addImplementsInfo(this, method, dl);
-            if (overriddenMethod != null) {
+            if (overrideInfo != null) {
                 MethodWriterImpl.addOverridden(this,
-                        utils.overriddenType(method),
-                        overriddenMethod,
+                        overrideInfo.overriddenMethodOwner(),
+                        overrideInfo.overriddenMethod(),
                         dl);
             }
         }

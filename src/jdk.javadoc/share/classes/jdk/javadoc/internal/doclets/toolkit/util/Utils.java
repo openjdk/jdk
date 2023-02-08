@@ -610,7 +610,15 @@ public class Utils {
                !((DeclaredType)e.getEnclosingElement().asType()).getTypeArguments().isEmpty();
     }
 
+    public record OverrideInfo(ExecutableElement overriddenMethod,
+                               DeclaredType overriddenMethodOwner) { }
+
     /*
+     * The record is used to pass the method along with the type where that method is visible.
+     * Passing the type explicitly allows to preserve a complete type information, including
+     * parametrization, which is otherwise unavailable without computation similar to what
+     * this method does.
+     *
      * Returns the closest superclass (not the superinterface) that contains
      * a method that is both:
      *
@@ -623,25 +631,7 @@ public class Utils {
      * superclass is java.lang.Object no matter how many other interfaces
      * that interface extends.
      */
-    public DeclaredType overriddenType(ExecutableElement method) {
-        var i = overriddenMethod0(method);
-        return i == null ? null : i.ownerType();
-    }
-
-    public ExecutableElement overriddenMethod(ExecutableElement method) {
-        var i = overriddenMethod0(method);
-        return i == null ? null : i.overridden();
-    }
-
-    record OverrideInfo(ExecutableElement overridden, DeclaredType ownerType) { }
-
-    /*
-     * The record is used to pass the method along with the type where that method is visible.
-     * Passing the type explicitly allows to preserve a complete type information, including
-     * parametrization, which is otherwise unavailable without computation similar to what
-     * this method does.
-     */
-    private OverrideInfo overriddenMethod0(ExecutableElement method) {
+    public OverrideInfo overriddenMethod(ExecutableElement method) {
         var t = method.getEnclosingElement().asType();
         // in this context, consider java.lang.Object to be the superclass of an interface
         while (true) {
@@ -2752,7 +2742,10 @@ public class Utils {
     }
 
     private DocFinder newDocFinder() {
-        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+        return new DocFinder(e -> {
+            var i = overriddenMethod(e);
+            return i == null ? null : i.overriddenMethod();
+        }, this::implementedMethods);
     }
 
     private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
