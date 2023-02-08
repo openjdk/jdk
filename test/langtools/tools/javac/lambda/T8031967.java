@@ -23,11 +23,22 @@
 
 /*
  * @test
- * @bug 8031967
+ * @bug 8292647
+ * @requires os.arch == "aarch64" | os.arch == "loongarch64"
  * @summary Ensure javac can handle very deeply nested chain of method invocations occurring as
  *          a parameter to other method invocations.
  * @modules jdk.compiler
- * @run main/othervm -Xss10m T8031967
+ * @run main/othervm -Xss2m T8031967
+ */
+
+/*
+ * @test
+ * @bug 8031967
+ * @requires (os.arch != "aarch64") & (os.arch != "loongarch64")
+ * @summary Ensure javac can handle very deeply nested chain of method invocations occurring as
+ *          a parameter to other method invocations.
+ * @modules jdk.compiler
+ * @run main/othervm -Xss1m T8031967
  */
 
 import java.io.IOException;
