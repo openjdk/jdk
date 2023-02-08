@@ -762,36 +762,16 @@ bool SuperWord::is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWP
                                         Node_List &align_to_refs) {
   bool is_aligned_with_best = memory_alignment(mem_ref, best_iv_adjustment) == 0;
 
-  // Check if alignment ok for hardware
-  if (is_aligned_with_best || _do_vector_loop) {
-    if (!is_mem_ref_alignment_ok_for_hardware(mem_ref, align_to_ref_p, best_align_to_mem_ref)) {
+  if (vectors_should_be_aligned()) {
+    // All vectors need to be vector length aligned. We use best_align_to_mem_ref to adjust
+    // the pre-loop limit such that all vector memory accesses are vector aligned. Hence, we
+    // must ensure that all mem_refs that we vectorize are aligned with best_align_to_mem_ref.
+    // These 3 conditions must be fulfilled:
+    // (1) All packs are aligned with best_align_to_mem_ref.
+    if (!is_aligned_with_best) {
       return false;
     }
-  }
-
-  // We have a compiler hint, so do not check alignment with other packs.
-  if (_do_vector_loop) {
-    return true;
-  }
-
-  // If hardware does not permit independent unaligned memory operations,
-  // then all mem_ref must align with best (no matter the velt type).
-  if (vectors_should_be_aligned() && !is_aligned_with_best) {
-    return false;
-  }
-
-  // Check if the alignment of mem_ref is consistent with other packs of the same velt type.
-  if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
-    return is_aligned_with_best;
-  } else {
-    return is_mem_ref_aligned_with_same_velt_type(mem_ref, iv_adjustment, align_to_refs);
-  }
-}
-
-// Check if alignment of mem_ref permissible on hardware.
-bool SuperWord::is_mem_ref_alignment_ok_for_hardware(MemNode* mem_ref, SWPointer &align_to_ref_p,
-                                                     MemNode* best_align_to_mem_ref) {
-  if (vectors_should_be_aligned()) {
+    // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
     int vw = vector_width(mem_ref);
     int vw_best = vector_width(best_align_to_mem_ref);
     if (vw > vw_best) {
@@ -799,16 +779,42 @@ bool SuperWord::is_mem_ref_alignment_ok_for_hardware(MemNode* mem_ref, SWPointer
       // if unaligned memory access is not allowed because number of
       // iterations in pre-loop will be not enough to align it.
       return false;
+    }
+    // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
+    //     address = base + k*iv + constant [+ invar]
+    //     memory_alignment ignores the invariant.
+    SWPointer p2(best_align_to_mem_ref, this, NULL, false);
+    if (!align_to_ref_p.invar_equals(p2)) {
+      // Do not vectorize memory accesses with different invariants
+      // if unaligned memory accesses are not allowed.
+      return false;
+    }
+    return true;
+  } else {
+    // Alignment is not required by the hardware. However, we still have to make sure that
+    // the memory accesses do not form a cyclic dependency.
+
+    // We have a compiler hint, so do not check alignment with other packs. For now we trust
+    // the hint. We may create cyclic dependencies (packs that are not independent). Later
+    // we will filter out packs that are not internally independent.
+    // This allows us to vectorize cases like this (forward read):
+    // for (int i ...) { v[i] = v[i + 1] + 5; }
+    // And the filtering still removes non-vectorizable cases like this (forward write):
+    // for (int i ...) { v[i + 1] = v[i] + 5; }
+    if (_do_vector_loop) {
+      return true;
+    }
+
+    // An easy way to prevent cyclic dependencies is to require all mem_refs of the same type
+    // to be exactly aligned. This allows us to vectorize these cases:
+    // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
+    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector size
+    if (same_velt_type(mem_ref, best_align_to_mem_ref)) {
+      return is_aligned_with_best;
     } else {
-      SWPointer p2(best_align_to_mem_ref, this, NULL, false);
-      if (!align_to_ref_p.invar_equals(p2)) {
-        // Do not vectorize memory accesses with different invariants
-        // if unaligned memory accesses are not allowed.
-        return false;
-      }
+      return is_mem_ref_aligned_with_same_velt_type(mem_ref, iv_adjustment, align_to_refs);
     }
   }
-  return true;
 }
 
 // Check if alignment of mem_ref is consistent with the other packs of same velt type.

@@ -479,9 +479,6 @@ class SuperWord : public ResourceObj {
   bool is_mem_ref_alignment_ok(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
                                MemNode* best_align_to_mem_ref, int best_iv_adjustment,
                                Node_List &align_to_refs);
-  // Check if alignment of mem_ref permissible on hardware.
-  bool is_mem_ref_alignment_ok_for_hardware(MemNode* mem_ref, SWPointer &align_to_ref_p,
-                                            MemNode* best_align_to_mem_ref);
   // Check if alignment of mem_ref is consistent with the other packs of same velt type.
   bool is_mem_ref_aligned_with_same_velt_type(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
