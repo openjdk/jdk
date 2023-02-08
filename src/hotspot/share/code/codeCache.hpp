@@ -324,7 +324,7 @@ class CodeCache : AllStatic {
   static void flush_dependents_on_method(const methodHandle& dependee);
 
   // tells if there are nmethods with dependencies
-  static bool have_nmethods_with_dependencies();
+  static bool has_nmethods_with_dependencies();
 
   static int get_codemem_full_count(CodeBlobType code_blob_type) {
     CodeHeap* heap = get_code_heap(code_blob_type);

@@ -1219,7 +1219,7 @@ void codeCache_init() {
 
 //------------------------------------------------------------------------------------------------
 
-bool CodeCache::have_nmethods_with_dependencies() {
+bool CodeCache::has_nmethods_with_dependencies() {
   return Atomic::load_acquire(&_number_of_nmethods_with_dependencies) != 0;
 }
 
@@ -1431,7 +1431,7 @@ void CodeCache::make_nmethod_deoptimized(CompiledMethod* nm) {
 void CodeCache::flush_dependents_on(InstanceKlass* dependee) {
   assert_lock_strong(Compile_lock);
 
-  if (!have_nmethods_with_dependencies()) {
+  if (!has_nmethods_with_dependencies()) {
     return;
   }
 
