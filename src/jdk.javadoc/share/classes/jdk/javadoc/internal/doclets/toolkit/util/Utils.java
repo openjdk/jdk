@@ -624,27 +624,46 @@ public class Utils {
      * that interface extends.
      */
     public DeclaredType overriddenType(ExecutableElement method) {
-        return configuration.workArounds.overriddenType(method);
+        var i = overriddenMethod0(method);
+        return i == null ? null : i.ownerType();
     }
 
     public ExecutableElement overriddenMethod(ExecutableElement method) {
-        var origin = (TypeElement) method.getEnclosingElement();
+        var i = overriddenMethod0(method);
+        return i == null ? null : i.overridden();
+    }
+
+    record OverrideInfo(ExecutableElement overridden, DeclaredType ownerType) { }
+
+    /*
+     * The record is used to pass the method along with the type where that method is visible.
+     * Passing the type explicitly allows to preserve a complete type information, including
+     * parametrization, which is otherwise unavailable without computation similar to what
+     * this method does.
+     */
+    private OverrideInfo overriddenMethod0(ExecutableElement method) {
+        var t = method.getEnclosingElement().asType();
         // in this context, consider java.lang.Object to be the superclass of an interface
-        for (TypeMirror t = origin.getKind().isInterface() ? getObjectType() : origin.getSuperclass();
-             t.getKind() != NONE;
-             t = asTypeElement(t).getSuperclass()) {
-            TypeElement te = asTypeElement(t);
-            assert te != null;
+        while (true) {
+            var supertypes = typeUtils.directSupertypes(t);
+            if (supertypes.isEmpty()) {
+                // reached the top of the hierarchy
+                assert typeUtils.isSameType(getObjectType(), t);
+                return null;
+            }
+            t = supertypes.get(0);
+            // if non-empty, the first element is always the superclass
+            var te = (TypeElement) ((DeclaredType) t).asElement();
+            assert te.getKind().isClass();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
             for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
                 var ee = (ExecutableElement) e;
-                if (configuration.workArounds.overrides(method, ee, origin) &&
+                if (configuration.workArounds.overrides(method, ee, (TypeElement) method.getEnclosingElement()) &&
                         !isSimpleOverride(ee)) {
-                    return ee;
+                    return new OverrideInfo(ee, (DeclaredType) t);
                 }
             }
         }
-        return null;
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {

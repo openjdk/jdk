@@ -194,47 +194,6 @@ public class WorkArounds {
         return elementUtils.getTypeElement(className);
     }
 
-    // TODO:  need to re-implement this using j.l.m. correctly!, this has
-    //        implications on testInterface, the note here is that javac's supertype
-    //        does the right thing returning Parameters in scope.
-    /*
-     * Returns the closest superclass (not the superinterface) that contains
-     * a method that is both:
-     *
-     *   - overridden by the specified method, and
-     *   - is not itself a *simple* override
-     *
-     * If no such class can be found, returns null.
-     *
-     * If the specified method belongs to an interface, the only considered
-     * superclass is java.lang.Object no matter how many other interfaces
-     * that interface extends.
-     */
-    public DeclaredType overriddenType(ExecutableElement method) {
-        if (utils.isStatic(method)) {
-            return null;
-        }
-        MethodSymbol sym = (MethodSymbol) method;
-        ClassSymbol origin = (ClassSymbol) sym.owner;
-        for (Type t = javacTypes.supertype(origin.type);
-             t.hasTag(TypeTag.CLASS);
-             t = javacTypes.supertype(t)) {
-            ClassSymbol c = (ClassSymbol) t.tsym;
-            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
-                if (sym.overrides(sym2, origin, javacTypes, true)) {
-                    // Ignore those methods that may be a simple override
-                    // and allow the real API method to be found.
-                    if (utils.isSimpleOverride((MethodSymbol)sym2)) {
-                        continue;
-                    }
-                    assert t.hasTag(TypeTag.CLASS) && !t.isInterface();
-                    return (Type.ClassType) t;
-                }
-            }
-        }
-        return null;
-    }
-
     // TODO: the method jx.l.m.Elements::overrides does not check
     // the return type, see JDK-8174840 until that is resolved,
     // use a  copy of the same method, with a return type check.
