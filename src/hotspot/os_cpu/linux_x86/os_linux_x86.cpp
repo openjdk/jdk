@@ -349,7 +349,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       stub == nullptr &&
       (sig == SIGSEGV || sig == SIGBUS) &&
       uc->uc_mcontext.gregs[REG_TRAPNO] == trap_page_fault) {
-    int page_size = os::vm_page_size();
+    size_t page_size = os::vm_page_size();
     address addr = (address) info->si_addr;
     address pc = os::Posix::ucontext_get_pc(uc);
     // Make sure the pc and the faulting address are sane.
