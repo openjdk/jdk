@@ -28,7 +28,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
- * @summary Test of diagnostic command VM.trim_libc_heap
+ * @summary Test of diagnostic command System.native_heap_info
  * @library /test/lib
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
@@ -39,7 +39,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 public class MallocInfoTest {
     public void run(CommandExecutor executor) {
-        OutputAnalyzer output = executor.execute("System.malloc_info");
+        OutputAnalyzer output = executor.execute("System.native_heap_info");
         output.reportDiagnosticSummary();
         output.shouldNotMatch(".*Error.*");
         output.shouldMatch(".*<malloc version=.*");
