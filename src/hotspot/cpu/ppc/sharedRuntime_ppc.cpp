@@ -1980,7 +1980,7 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   Label L_pinned;
 
-  __ cmpdi(CCR0, R3_RET, 0);
+  __ cmpwi(CCR0, R3_RET, 0);
   __ bne(CCR0, L_pinned);
 
   // yield succeeded
