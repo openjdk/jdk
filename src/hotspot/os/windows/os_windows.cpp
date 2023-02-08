@@ -1891,21 +1891,25 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
 #pragma comment(lib, "Powrprof.lib")
 
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
-  SYSTEM_INFO si;
-  GetSystemInfo(&si);
+  int proc_count = os::processor_count();
+  // handle potential early cases where processor count is not yet set
+  if (proc_count < 1) {
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    proc_count = si.dwNumberOfProcessors;
+  }
 
-  size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)si.dwNumberOfProcessors;
+  size_t sz_check = sizeof(PROCESSOR_POWER_INFORMATION) * (size_t)proc_count;
   NTSTATUS status = ::CallNtPowerInformation(ProcessorInformation, NULL, 0, buf, (ULONG) buflen);
 
   if (status == ERROR_SUCCESS) {
     PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
-    for (size_t i = 0; i < si.dwNumberOfProcessors; i++) {
+    for (size_t i = 0; i < proc_count; i++) {
       st->print_cr("ProcessorInformation for processor %d", (int) pppi->Number);
-      st->print_cr("  Max Mhz: %d", (int) pppi->MaxMhz);
-      st->print_cr("  Current Mhz: %d", (int) pppi->CurrentMhz);
-      st->print_cr("  Mhz Limit: %d", (int) pppi->MhzLimit);
-      st->print_cr("  MaxIdleState: %d", (int) pppi->MaxIdleState);
-      st->print_cr("  CurrentIdleState: %d", (int) pppi->CurrentIdleState);
+      st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d",
+                   (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
+      st->print_cr("  MaxIdleState: %d, CurrentIdleState: %d",
+                   (int) pppi->MaxIdleState, (int) pppi->CurrentIdleState);
       if (sz_check > buflen) break;
       pppi++;
     }
