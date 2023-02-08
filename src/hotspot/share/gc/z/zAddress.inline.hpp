@@ -39,7 +39,7 @@
 
 inline uintptr_t untype(zoffset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value <= ZAddressOffsetMax, "must have no other bits");
+  assert(value < ZAddressOffsetMax, "must have no other bits");
   return value;
 }
 
@@ -50,18 +50,13 @@ inline uintptr_t untype(zoffset_end offset) {
 }
 
 inline zoffset to_zoffset(uintptr_t value) {
-  assert(value <= ZAddressOffsetMax, "must have no other bits");
+  assert(value < ZAddressOffsetMax, "must have no other bits");
   return zoffset(value);
 }
 
 inline zoffset to_zoffset(zoffset_end offset) {
   const uintptr_t value = untype(offset);
   return to_zoffset(value);
-}
-
-inline bool is_overflow(zoffset offset, size_t size) {
-  const uintptr_t value = untype(offset);
-  return value + size > ZAddressOffsetMax;
 }
 
 inline zoffset operator+(zoffset offset, size_t size) {
@@ -89,6 +84,15 @@ inline zoffset& operator-=(zoffset& offset, size_t size) {
   return offset;
 }
 
+inline bool to_zoffset_end(zoffset_end* result, zoffset_end start, size_t size) {
+  const uintptr_t value = untype(start) + size;
+  if (value <= ZAddressOffsetMax) {
+    *result = zoffset_end(value);
+    return true;
+  }
+  return false;
+}
+
 inline zoffset_end to_zoffset_end(zoffset start, size_t size) {
   const uintptr_t value = untype(start) + size;
   assert(value <= ZAddressOffsetMax, "Overflow start: " PTR_FORMAT " size: " PTR_FORMAT " value: " PTR_FORMAT,
@@ -99,6 +103,18 @@ inline zoffset_end to_zoffset_end(zoffset start, size_t size) {
 inline zoffset_end to_zoffset_end(uintptr_t value) {
   assert(value <= ZAddressOffsetMax, "Overflow");
   return zoffset_end(value);
+}
+
+inline zoffset_end to_zoffset_end(zoffset offset) {
+  return zoffset_end(untype(offset));
+}
+
+inline bool operator!=(zoffset first, zoffset_end second) {
+  return untype(first) != untype(second);
+}
+
+inline bool operator!=(zoffset_end first, zoffset second) {
+  return untype(first) != untype(second);
 }
 
 inline bool operator==(zoffset first, zoffset_end second) {
@@ -113,6 +129,10 @@ inline bool operator<(zoffset_end first, zoffset second) {
   return untype(first) < untype(second);
 }
 
+inline bool operator<(zoffset first, zoffset_end second) {
+  return untype(first) < untype(second);
+}
+
 inline bool operator>(zoffset first, zoffset_end second) {
   return untype(first) > untype(second);
 }
@@ -122,6 +142,14 @@ inline bool operator>=(zoffset first, zoffset_end second) {
 }
 
 inline size_t operator-(zoffset_end first, zoffset second) {
+  return untype(first) - untype(second);
+}
+
+inline zoffset_end operator-(zoffset_end first, size_t second) {
+  return to_zoffset_end(untype(first) - second);
+}
+
+inline size_t operator-(zoffset_end first, zoffset_end second) {
   return untype(first) - untype(second);
 }
 

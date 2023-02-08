@@ -73,7 +73,7 @@ private:
 
   // In-place relocation support
   bool                   _in_place;
-  zoffset                _in_place_top_at_start;
+  zoffset_end            _in_place_top_at_start;
 
   // Debugging
   volatile Thread*       _in_place_thread;

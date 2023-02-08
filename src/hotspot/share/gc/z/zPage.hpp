@@ -54,19 +54,19 @@ class ZPage : public CHeapObj<mtGC> {
   friend class ZForwardingTest;
 
 private:
-  ZPageType        _type;
-  ZGenerationId    _generation_id;
-  ZPageAge         _age;
-  uint8_t          _numa_id;
-  uint32_t         _seqnum;
-  uint32_t         _seqnum_other;
-  ZVirtualMemory   _virtual;
-  volatile zoffset _top;
-  ZLiveMap         _livemap;
-  ZRememberedSet   _remembered_set;
-  uint64_t         _last_used;
-  ZPhysicalMemory  _physical;
-  ZListNode<ZPage> _node;
+  ZPageType            _type;
+  ZGenerationId        _generation_id;
+  ZPageAge             _age;
+  uint8_t              _numa_id;
+  uint32_t             _seqnum;
+  uint32_t             _seqnum_other;
+  ZVirtualMemory       _virtual;
+  volatile zoffset_end _top;
+  ZLiveMap             _livemap;
+  ZRememberedSet       _remembered_set;
+  uint64_t             _last_used;
+  ZPhysicalMemory      _physical;
+  ZListNode<ZPage>     _node;
 
   ZPageType type_from_size(size_t size) const;
   const char* type_to_string() const;
@@ -111,7 +111,7 @@ public:
   zoffset start() const;
   zoffset_end end() const;
   size_t size() const;
-  zoffset top() const;
+  zoffset_end top() const;
   size_t remaining() const;
   size_t used() const;
 

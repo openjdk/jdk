@@ -153,7 +153,7 @@ inline size_t ZPage::size() const {
   return _virtual.size();
 }
 
-inline zoffset ZPage::top() const {
+inline zoffset_end ZPage::top() const {
   return _top;
 }
 
@@ -465,43 +465,46 @@ inline zaddress ZPage::alloc_object(size_t size) {
   assert(is_allocating(), "Invalid state");
 
   const size_t aligned_size = align_up(size, object_alignment());
-  const zoffset addr = top();
-  if (is_overflow(addr, aligned_size)) {
+  const zoffset_end addr = top();
+
+  zoffset_end new_top;
+
+  if (!to_zoffset_end(&new_top, addr, aligned_size)) {
+    // Next top would be outside of the heap - bail
     return zaddress::null;
   }
 
-  const zoffset new_top = addr + aligned_size;
-
   if (new_top > end()) {
-    // Not enough space left
+    // Not enough space left in the page
     return zaddress::null;
   }
 
   _top = new_top;
 
-  return ZOffset::address(addr);
+  return ZOffset::address(to_zoffset(addr));
 }
 
 inline zaddress ZPage::alloc_object_atomic(size_t size) {
   assert(is_allocating(), "Invalid state");
 
   const size_t aligned_size = align_up(size, object_alignment());
-  zoffset addr = top();
+  zoffset_end addr = top();
 
   for (;;) {
-    if (is_overflow(addr, aligned_size)) {
+    zoffset_end new_top;
+    if (!to_zoffset_end(&new_top, addr, aligned_size)) {
+      // Next top would be outside of the heap - bail
       return zaddress::null;
     }
-    const zoffset new_top = addr + aligned_size;
     if (new_top > end()) {
       // Not enough space left
       return zaddress::null;
     }
 
-    const zoffset prev_top = Atomic::cmpxchg(&_top, addr, new_top);
+    const zoffset_end prev_top = Atomic::cmpxchg(&_top, addr, new_top);
     if (prev_top == addr) {
       // Success
-      return ZOffset::address(addr);
+      return ZOffset::address(to_zoffset(addr));
     }
 
     // Retry
@@ -514,8 +517,8 @@ inline bool ZPage::undo_alloc_object(zaddress addr, size_t size) {
 
   const zoffset offset = ZAddress::offset(addr);
   const size_t aligned_size = align_up(size, object_alignment());
-  const zoffset old_top = top();
-  const zoffset new_top = old_top - aligned_size;
+  const zoffset_end old_top = top();
+  const zoffset_end new_top = old_top - aligned_size;
 
   if (new_top != offset) {
     // Failed to undo allocation, not the last allocated object
@@ -533,16 +536,16 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
 
   const zoffset offset = ZAddress::offset(addr);
   const size_t aligned_size = align_up(size, object_alignment());
-  zoffset old_top = top();
+  zoffset_end old_top = top();
 
   for (;;) {
-    const zoffset new_top = old_top - aligned_size;
+    const zoffset_end new_top = old_top - aligned_size;
     if (new_top != offset) {
       // Failed to undo allocation, not the last allocated object
       return false;
     }
 
-    const zoffset prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
+    const zoffset_end prev_top = Atomic::cmpxchg(&_top, old_top, new_top);
     if (prev_top == old_top) {
       // Success
       return true;

@@ -84,7 +84,7 @@ typedef ZAttachedArray<ZForwarding, ZForwardingEntry> ZAttachedArrayForForwardin
   nonstatic_field(ZPage,                        _type,                const ZPageType)               \
   volatile_nonstatic_field(ZPage,               _seqnum,              uint32_t)                      \
   nonstatic_field(ZPage,                        _virtual,             const ZVirtualMemory)          \
-  volatile_nonstatic_field(ZPage,               _top,                 zoffset)                       \
+  volatile_nonstatic_field(ZPage,               _top,                 zoffset_end)                   \
                                                                                                      \
   nonstatic_field(ZPageAllocator,               _max_capacity,        const size_t)                  \
   volatile_nonstatic_field(ZPageAllocator,      _capacity,            size_t)                        \

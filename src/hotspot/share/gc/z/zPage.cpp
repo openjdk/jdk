@@ -42,7 +42,7 @@ ZPage::ZPage(ZPageType type, const ZVirtualMemory& vmem, const ZPhysicalMemory& 
     _seqnum(0),
     _seqnum_other(0),
     _virtual(vmem),
-    _top(start()),
+    _top(to_zoffset_end(start())),
     _livemap(object_max_count()),
     _remembered_set(),
     _last_used(0),
@@ -154,7 +154,7 @@ void ZPage::reset(ZPageAge age, ZPageResetType type) {
 
   // Flip aged pages are still filled with the same objects, need to retain the top pointer.
   if (type != ZPageResetType::FlipAging) {
-    _top = start();
+    _top = to_zoffset_end(start());
   }
 
   reset_remembered_set();
