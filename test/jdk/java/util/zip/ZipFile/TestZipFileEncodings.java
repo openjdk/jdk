@@ -132,6 +132,38 @@ public class TestZipFileEncodings {
             assertNotNull(z.getEntry(entryName));
         }
     }
+    @Test(dataProvider = "unicode-charsets")
+    public void sameHashAndLengthSlashLessDirLookup(String charsetName) throws IOException {
+
+        // Two directory names with colliding hash codes and same length
+        String one ="entry-65323-name--5113477560869890044\u2f2f/";
+        String two = "entry-16430-name--2415648292541425091\u2f2f/";
+
+        // Create a ZIP with the two entries
+        Charset charset = Charset.forName(charsetName);
+        Path zip = Path.of("hash-collision-slashmatch-utf16.zip");
+        try (ZipOutputStream z = new ZipOutputStream(Files.newOutputStream(zip), charset)) {
+
+            ZipEntry first = new ZipEntry(one);
+            first.setComment("Entry one");
+            z.putNextEntry(first);
+
+            ZipEntry second = new ZipEntry(two);
+            second.setComment("Entry two");
+            z.putNextEntry(second);
+        }
+
+        // Assert that "slashless" lookups returns correct entry,
+        // even when when hashes collide and lengths are equal
+        try (ZipFile z = new ZipFile(zip.toFile(), charset)) {
+
+            ZipEntry second = z.getEntry(two.substring(0, two.length() - 1));
+            assertEquals(second.getComment(), "Entry two");
+
+            ZipEntry first = z.getEntry(one.substring(0, one.length() - 1));
+            assertEquals(first.getComment(), "Entry one");
+        }
+    }
 
     @AfterClass
     public void tearDown() {
@@ -265,7 +297,7 @@ public class TestZipFileEncodings {
                 crc.update(data);
                 ze.setCrc(crc.getValue());
             }
-            ze.setTime(System.currentTimeMillis());
+            ze.setTime(1675862371399L);
             ze.setComment(ze.getName());
             zos.putNextEntry(ze);
             zos.write(data);

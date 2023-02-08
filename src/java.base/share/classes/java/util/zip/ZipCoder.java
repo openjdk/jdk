@@ -211,8 +211,10 @@ class ZipCoder {
         String decoded = toString(b, off, len);
         if (decoded.equals(str)) {
             return Comparison.EXACT_MATCH;
-        } else if (addSlash && decoded.length() == str.length() + 1
-                && decoded.endsWith("/")) {
+        } else if (addSlash
+                && decoded.length() == str.length() + 1
+                && decoded.startsWith(str)
+                && decoded.endsWith("/") ) {
             return Comparison.SLASH_MATCH;
         } else {
             return Comparison.NO_MATCH;
