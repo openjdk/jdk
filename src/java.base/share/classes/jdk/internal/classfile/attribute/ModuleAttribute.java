@@ -45,7 +45,7 @@ import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the {@code Module} attribute (JVMS 4.7.25), which can
+ * Models the {@code Module} attribute {@jvms 4.7.25}, which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.
@@ -129,6 +129,12 @@ public sealed interface ModuleAttribute
         return new UnboundAttribute.UnboundModuleAttribute(moduleName, moduleFlags, moduleVersion, requires, exports, opens, uses, provides);
     }
 
+    /**
+     * {@return a {@code Module} attribute}
+     *
+     * @param moduleName the module name
+     * @param attrHandler a handler that receives a {@link ModuleAttributeBuilder}
+     */
     static ModuleAttribute of(ModuleDesc moduleName,
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);

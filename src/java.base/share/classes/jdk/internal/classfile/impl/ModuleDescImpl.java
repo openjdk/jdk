@@ -32,7 +32,7 @@ public record ModuleDescImpl(String moduleName) implements ModuleDesc {
      * Validates the correctness of a module name. In particular checks for the presence of
      * invalid characters in the name.
      *
-     * JVMS: 4.2.3. Module and Package Names
+     * {@jvms 4.2.3} Module and Package Names
      *
      * @param name the module name
      * @return the module name passed if valid

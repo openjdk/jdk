@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the {@code PermittedSubclasses} attribute (JVMS 4.7.31), which can
+ * Models the {@code PermittedSubclasses} attribute {@jvms 4.7.31}, which can
  * appear on classes to indicate which classes may extend this class.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.

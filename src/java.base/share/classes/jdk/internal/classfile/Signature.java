@@ -33,7 +33,7 @@ import java.util.Optional;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models generic Java type signatures, as defined in JVMS 4.7.9.1.
+ * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
  */
 public sealed interface Signature {
 

@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code Signature} attribute (JVMS 4.7.9), which
+ * Models the {@code Signature} attribute {@jvms 4.7.9}, which
  * can appear on classes, methods, or fields. Delivered as a
  * {@link jdk.internal.classfile.ClassElement}, {@link jdk.internal.classfile.FieldElement}, or
  * {@link jdk.internal.classfile.MethodElement} when traversing

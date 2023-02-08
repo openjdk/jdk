@@ -39,7 +39,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import static jdk.internal.classfile.Classfile.*;
 
 /**
- * Models the {@code StackMapTable} attribute (JVMS 4.7.4), which can appear
+ * Models the {@code StackMapTable} attribute {@jvms 4.7.4}, which can appear
  * on a {@code Code} attribute.
  */
 public sealed interface StackMapTableAttribute

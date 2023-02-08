@@ -168,7 +168,7 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     }
 
     /**
-     * {@return the tag character for this type as per JVMS 4.7.16.1}
+     * @return the tag character for this type as per {@jvms 4.7.16.1}
      */
     char tag();
 

@@ -31,7 +31,7 @@ import jdk.internal.classfile.Label;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
- * Models the {@code Code} attribute (JVMS 4.7.3), appears on non-native,
+ * Models the {@code Code} attribute {@jvms 4.7.3}, appears on non-native,
  * non-abstract methods and contains the bytecode of the method body.  Delivered
  * as a {@link jdk.internal.classfile.MethodElement} when traversing the elements of a
  * {@link jdk.internal.classfile.MethodModel}.
@@ -49,5 +49,10 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
      */
     byte[] codeArray();
 
+    /**
+     *
+     * @param label a marker for a position within this {@code CodeAttribute}
+     * @return position of the {@code Label} in the {@code codeArray}
+     */
     int labelToBci(Label label);
 }

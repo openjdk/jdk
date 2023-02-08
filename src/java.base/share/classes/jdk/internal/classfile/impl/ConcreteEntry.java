@@ -173,7 +173,7 @@ public abstract sealed class ConcreteEntry {
         }
 
         /**
-         * JVMS 4.4.7. String content is encoded in modified UTF-8.
+         * {@jvms 4.4.7} String content is encoded in modified UTF-8.
          *
          * Modified UTF-8 strings are encoded so that code point sequences that
          * contain only non-null ASCII characters can be represented using only 1

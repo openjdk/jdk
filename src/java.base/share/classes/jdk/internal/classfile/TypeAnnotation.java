@@ -582,7 +582,7 @@ public sealed interface TypeAnnotation
      * of the array type, including the element type.
      *
      * If a nested type T1.T2 is used in a declaration or expression, then an annotation may appear on the name of the
-     * innermost member type and any enclosing type for which a type annotation is admissible (JLS 9.7.4).
+     * innermost member type and any enclosing type for which a type annotation is admissible {@jls 9.7.4}.
      *
      * If a parameterized type {@literal T<A> or T<? extends A> or T<? super A>} is used in a declaration or expression, then an
      * annotation may appear on any type argument or on the bound of any wildcard type argument.

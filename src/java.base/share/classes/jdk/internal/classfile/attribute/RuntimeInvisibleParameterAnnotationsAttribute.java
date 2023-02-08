@@ -35,8 +35,8 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code RuntimeInvisibleParameterAnnotations} attribute (JVMS
- * 4.7.19), which can appear on methods. Delivered as a {@link
+ * Models the {@code RuntimeInvisibleParameterAnnotations} attribute
+ * {@jvms 4.7.19}, which can appear on methods. Delivered as a {@link
  * jdk.internal.classfile.MethodElement} when traversing a {@link MethodModel}.
  */
 public sealed interface RuntimeInvisibleParameterAnnotationsAttribute

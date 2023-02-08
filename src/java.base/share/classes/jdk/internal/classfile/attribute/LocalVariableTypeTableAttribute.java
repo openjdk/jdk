@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import java.util.List;
 
 /**
- * Models the {@code LocalVariableTypeTable} attribute (JVMS 4.7.14), which can appear
+ * Models the {@code LocalVariableTypeTable} attribute {@jvms 4.7.14}, which can appear
  * on a {@code Code} attribute, and records debug information about local
  * variables.
  * Delivered as a {@link jdk.internal.classfile.instruction.LocalVariable} when traversing the

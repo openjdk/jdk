@@ -31,7 +31,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code LineNumberTable} attribute (JVMS 4.7.12), which can appear
+ * Models the {@code LineNumberTable} attribute {@jvms 4.7.12}, which can appear
  * on a {@code Code} attribute, and records the mapping between indexes into
  * the code table and line numbers in the source file.
  * Delivered as a {@link jdk.internal.classfile.instruction.LineNumber} when traversing the
