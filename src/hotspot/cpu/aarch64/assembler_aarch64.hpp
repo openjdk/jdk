@@ -3171,11 +3171,6 @@ public:
   INSN(fcvtas, 0, 0b00, 0b01, 0b11100);
   INSN(fcvtzs, 0, 0b10, 0b01, 0b11011);
   INSN(fcvtms, 0, 0b00, 0b01, 0b11011);
-  INSN(fcmgt,  0, 0b10, 0b01, 0b01100); // Floating-point compare greater than zero (vector)
-  INSN(fcmeq,  0, 0b10, 0b01, 0b01101); // Floating-point compare equal to zero (vector)
-  INSN(fcmlt,  0, 0b10, 0b01, 0b01110); // Floating-point compare less than zero (vector)
-  INSN(fcmge,  1, 0b10, 0b01, 0b01100); // Floating-point compare greater than or equal to zero (vector)
-  INSN(fcmle,  1, 0b10, 0b01, 0b01101); // Floating-point compare less than or equal to zero (vector)
 #undef ASSERTION
 
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)
@@ -3194,6 +3189,27 @@ public:
 #undef MSG
 
 #undef INSN
+
+  // AdvSIMD Floating-point compare with zero (vector)
+  void fcm(Condition cond, FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {
+    starti;
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+    int cond_op;
+    switch (cond) {
+      case EQ: cond_op = 0b010; break;
+      case GT: cond_op = 0b000; break;
+      case GE: cond_op = 0b001; break;
+      case LE: cond_op = 0b011; break;
+      case LT: cond_op = 0b100; break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+
+    f(0, 31), f((int)T & 1, 30), f(cond_op & 1, 29), f(0b011101, 28, 23);
+    f(((int)(T >> 1) & 1), 22), f(0b10000011, 21, 14);
+    f((cond_op >> 1) & 0b11, 13, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0);
+  }
 
   void ext(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index)
   {

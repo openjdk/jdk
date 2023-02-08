@@ -61,11 +61,17 @@ public class VectorCompareWithZeroTest {
     private static final int LENGTH = 1024;
     private static final Random RD = Utils.getRandomInstance();
     private static byte[] ba;
+    private static boolean[] br;
     private static short[] sa;
+    private static boolean[] sr;
     private static int[] ia;
+    private static boolean[] ir;
     private static long[] la;
+    private static boolean[] lr;
     private static float[] fa;
+    private static boolean[] fr;
     private static double[] da;
+    private static boolean[] dr;
 
     static {
         ba = new byte[LENGTH];
@@ -74,6 +80,13 @@ public class VectorCompareWithZeroTest {
         la = new long[LENGTH];
         fa = new float[LENGTH];
         da = new double[LENGTH];
+
+        br = new boolean[LENGTH];
+        sr = new boolean[LENGTH];
+        ir = new boolean[LENGTH];
+        lr = new boolean[LENGTH];
+        fr = new boolean[LENGTH];
+        dr = new boolean[LENGTH];
 
         for (int i = 0; i < LENGTH; i++) {
             ba[i] = (byte) RD.nextInt(25);
@@ -148,55 +161,79 @@ public class VectorCompareWithZeroTest {
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
     public static void testByteVectorEqualToZero() {
-        boolean[] r = new boolean[LENGTH];
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
-        av.compare(VectorOperators.EQ, 0).intoArray(r, 0);
-        assertArrayEquals(ba, r, (a) -> (a == (byte) 0 ? true : false));
+        av.compare(VectorOperators.EQ, 0).intoArray(br, 0);
+    }
+
+    @Run(test = "testByteVectorEqualToZero")
+    public static void testByteVectorEqualToZero_runner() {
+        testByteVectorEqualToZero();
+        assertArrayEquals(ba, br, (a) -> (a == (byte) 0 ? true : false));
     }
 
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
     public static void testShortVectorNotEqualToZero() {
-        boolean[] r = new boolean[LENGTH];
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
-        av.compare(VectorOperators.NE, 0).intoArray(r, 0);
-        assertArrayEquals(sa, r, (a) -> (a != (short) 0 ? true : false));
+        av.compare(VectorOperators.NE, 0).intoArray(sr, 0);
+    }
+
+    @Run(test = "testShortVectorNotEqualToZero")
+    public static void testShortVectorNotEqualToZero_runner() {
+        testShortVectorNotEqualToZero();
+        assertArrayEquals(sa, sr, (a) -> (a != (short) 0 ? true : false));
     }
 
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_I_NEON, ">= 1" })
     public static void testIntVectorGreaterEqualToZero() {
-        boolean[] r = new boolean[LENGTH];
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
-        av.compare(VectorOperators.GE, 0).intoArray(r, 0);
-        assertArrayEquals(ia, r, (a) -> (a >= 0 ? true : false));
+        av.compare(VectorOperators.GE, 0).intoArray(ir, 0);
+    }
+
+    @Run(test = "testIntVectorGreaterEqualToZero")
+    public static void testIntVectorGreaterEqualToZero_runner() {
+        testIntVectorGreaterEqualToZero();
+        assertArrayEquals(ia, ir, (a) -> (a >= 0 ? true : false));
     }
 
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_L_NEON, ">= 1" })
     public static void testLongVectorGreaterThanZero() {
-        boolean[] r = new boolean[LENGTH];
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
-        av.compare(VectorOperators.GT, 0).intoArray(r, 0);
-        assertArrayEquals(la, r, (a) -> (a > 0 ? true : false));
+        av.compare(VectorOperators.GT, 0).intoArray(lr, 0);
+    }
+
+    @Run(test = "testLongVectorGreaterThanZero")
+    public static void testLongVectorGreaterThanZero_runner() {
+        testLongVectorGreaterThanZero();
+        assertArrayEquals(la, lr, (a) -> (a > 0 ? true : false));
     }
 
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_F_NEON, ">= 1" })
     public static void testFloatVectorLessEqualToZero() {
-        boolean[] r = new boolean[LENGTH];
         FloatVector av = FloatVector.fromArray(F_SPECIES, fa, 0);
-        av.compare(VectorOperators.LE, 0).intoArray(r, 0);
-        assertArrayEquals(fa, r, (a) -> (a <= 0.0F ? true : false));
+        av.compare(VectorOperators.LE, 0).intoArray(fr, 0);
+    }
+
+    @Run(test = "testFloatVectorLessEqualToZero")
+    public static void testFloatVectorLessEqualToZero_runner() {
+        testFloatVectorLessEqualToZero();
+        assertArrayEquals(fa, fr, (a) -> (a <= 0.0F ? true : false));
     }
 
     @Test
     @IR(counts = { IRNode.VMASK_CMP_ZERO_D_NEON, ">= 1" })
     public static void testDoubleVectorLessThanZero() {
-        boolean[] r = new boolean[LENGTH];
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);
-        av.compare(VectorOperators.LT, 0).intoArray(r, 0);
-        assertArrayEquals(da, r, (a) -> (a < 0.0 ? true : false));
+        av.compare(VectorOperators.LT, 0).intoArray(dr, 0);
+    }
+
+    @Run(test = "testDoubleVectorLessThanZero")
+    public static void testDoubleVectorLessThanZero_runner() {
+        testDoubleVectorLessThanZero();
+        assertArrayEquals(da, dr, (a) -> (a < 0.0 ? true : false));
     }
 
     public static void main(String[] args) {

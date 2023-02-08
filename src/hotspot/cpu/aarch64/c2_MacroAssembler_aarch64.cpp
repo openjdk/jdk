@@ -964,16 +964,16 @@ void C2_MacroAssembler::neon_compare_zero(FloatRegister dst, BasicType bt, Float
   SIMD_Arrangement size = esize2arrangement((unsigned)type2aelembytes(bt), isQ);
   if (bt == T_FLOAT || bt == T_DOUBLE) {
     switch (cond) {
-      case BoolTest::eq: fcmeq(dst, size, src); break;
+      case BoolTest::eq: fcm(Assembler::EQ, dst, size, src); break;
       case BoolTest::ne: {
-        fcmeq(dst, size, src);
+        fcm(Assembler::EQ, dst, size, src);
         notr(dst, isQ ? T16B : T8B, dst);
         break;
       }
-      case BoolTest::ge: fcmge(dst, size, src); break;
-      case BoolTest::gt: fcmgt(dst, size, src); break;
-      case BoolTest::le: fcmle(dst, size, src); break;
-      case BoolTest::lt: fcmlt(dst, size, src); break;
+      case BoolTest::ge: fcm(Assembler::GE, dst, size, src); break;
+      case BoolTest::gt: fcm(Assembler::GT, dst, size, src); break;
+      case BoolTest::le: fcm(Assembler::LE, dst, size, src); break;
+      case BoolTest::lt: fcm(Assembler::LT, dst, size, src); break;
       default:
         assert(false, "unsupported");
         ShouldNotReachHere();
