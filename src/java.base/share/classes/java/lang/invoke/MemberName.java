@@ -963,7 +963,7 @@ final class MemberName implements Member, Cloneable {
                 if (m == null && speculativeResolve) {
                     return null;
                 }
-                m.checkForTypeAlias(m.getDeclaringClass());
+                m.checkForTypeAlias(m.getDeclaringClass()); // TODO: did we break this?
                 m.resolution = null;
             } catch (ClassNotFoundException | LinkageError ex) {
                 // JVM reports that the "bytecode behavior" would get an error

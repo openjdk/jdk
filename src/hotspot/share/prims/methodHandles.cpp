@@ -339,7 +339,8 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   java_lang_invoke_MemberName::set_flags  (mname_oop, flags);
   java_lang_invoke_MemberName::set_method (mname_oop, resolved_method());
   java_lang_invoke_MemberName::set_vmindex(mname_oop, vmindex);   // vtable/itable index
-  java_lang_invoke_MemberName::set_clazz  (mname_oop, m_klass->java_mirror());
+  if (java_lang_invoke_MemberName::clazz(mname_oop) == NULL)
+    java_lang_invoke_MemberName::set_clazz  (mname_oop, m_klass->java_mirror());
   // Note:  name and type can be lazily computed by resolve_MemberName,
   // if Java code needs them as resolved String and MethodType objects.
   // If relevant, the vtable or itable value is stored as vmindex.
@@ -360,7 +361,8 @@ oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool
   java_lang_invoke_MemberName::set_flags  (mname_oop, flags);
   java_lang_invoke_MemberName::set_method (mname_oop, NULL);
   java_lang_invoke_MemberName::set_vmindex(mname_oop, vmindex);
-  java_lang_invoke_MemberName::set_clazz  (mname_oop, ik->java_mirror());
+  if (java_lang_invoke_MemberName::clazz(mname_oop) == NULL)
+    java_lang_invoke_MemberName::set_clazz  (mname_oop, ik->java_mirror());
 
   oop type = field_signature_type_or_null(fd.signature());
   oop name = field_name_or_null(fd.name());
