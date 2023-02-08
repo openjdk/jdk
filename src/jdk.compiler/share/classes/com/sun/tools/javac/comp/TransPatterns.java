@@ -539,10 +539,10 @@ public class TransPatterns extends TreeTranslator {
                                     pattern = parenthesized.pattern;
                                 }
                                 Assert.check(pattern.hasTag(Tag.BINDINGPATTERN));
-                                VarSymbol binding = ((JCBindingPattern) pattern).var.sym;
+                                BindingSymbol binding = (BindingSymbol) ((JCBindingPattern) pattern).var.sym;
                                 guard = makeBinary(Tag.OR,
                                                    makeBinary(Tag.EQ,
-                                                              make.Ident(binding),
+                                                              make.Ident(bindingContext.getBindingFor(binding)),
                                                               makeNull()),
                                                    guard);
                             }
