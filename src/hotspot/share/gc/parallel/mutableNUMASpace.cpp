@@ -507,7 +507,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
 
   // Try small pages if the chunk size is too small
   if (base_space_size_pages / lgrp_spaces()->length() == 0
-      && page_size() > (size_t)os::vm_page_size()) {
+      && page_size() > os::vm_page_size()) {
     // Changing the page size below can lead to freeing of memory. So we fail initialization.
     if (_must_use_large_pages) {
       vm_exit_during_initialization("Failed initializing NUMA with large pages. Too small heap size");
