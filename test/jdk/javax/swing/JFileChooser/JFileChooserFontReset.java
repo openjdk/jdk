@@ -70,9 +70,9 @@ public class JFileChooserFontReset {
                     throw new RuntimeException(
                          "JFileChooser font did not reset after Look & Feel change");
                 }
-	    }
-	    System.out.println("");
-	    System.out.println("");
+            }
+            System.out.println("");
+            System.out.println("");
         }
     }
 }
