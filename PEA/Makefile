@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := all
 
-JAVA_PATH := $(abspath ../build/linux-x86_64-server-fastdebug/images/jdk)
+JAVA_PATH := $(abspath ../build/linux-x86_64-server-fastdebug/jdk)
 export JAVA_HOME := ${JAVA_PATH}
 export PATH := ${JAVA_HOME}/bin:$(PATH)
 
