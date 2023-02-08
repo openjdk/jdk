@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
  * questions.
  */
 
-/*
- */
-
 package sun.nio.cs;
 
 import java.io.IOException;
@@ -35,7 +32,9 @@ import java.io.Reader;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
@@ -320,10 +319,23 @@ public class StreamDecoder extends Reader {
         bb.compact();
         try {
             if (ch != null) {
-                // Read from the channel
-                int n = ch.read(bb);
-                if (n < 0)
-                    return n;
+                if (ch instanceof SelectableChannel sc) {
+                    synchronized(sc.blockingLock()) {
+                        if (!sc.isBlocking()) {
+                            throw new IllegalBlockingModeException();
+                        }
+
+                        // Read from the channel
+                        int n = ch.read(bb);
+                        if (n < 0)
+                            return n;
+                    }
+                } else {
+                    // Read from the channel
+                    int n = ch.read(bb);
+                    if (n < 0)
+                        return n;
+                }
             } else {
                 // Read from the input stream, and then update the buffer
                 int lim = bb.limit();
