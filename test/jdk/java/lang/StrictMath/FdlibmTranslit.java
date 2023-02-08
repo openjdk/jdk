@@ -942,6 +942,9 @@ public class FdlibmTranslit {
             if (ix < 0x40862E42)  return half*StrictMath.exp(Math.abs(x)); // TODO switch to translit
 
             /* |x| in [log(maxdouble), overflowthresold] */
+            // See note above in the sinh implementation for how this
+            // transliteration port uses __LO(x) in the line below
+            // that differs from the idiom used in the original FDLIBM.
             lx = __LO(x);
             if (ix<0x408633CE ||
                 ((ix==0x408633ce)&&(Integer.compareUnsigned(lx, 0x8fb9f87d) <= 0))) {
