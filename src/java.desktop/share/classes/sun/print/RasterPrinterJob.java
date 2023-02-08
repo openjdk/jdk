@@ -838,7 +838,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
             attributes.add(onTop);
             Window owner = onTop.getOwner();
             if (owner != null) {
-                w = owner; // use the one specifed by the app
+                w = owner; // use the one specified by the app
             } else if (DialogOwnerAccessor.getID(onTop) == 0) {
                 setOnTop = true;
             }

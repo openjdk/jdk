@@ -160,7 +160,7 @@ address NativeCall::destination() const {
   address destination = instruction_address() + displacement();
 
   // Do we use a trampoline stub for this call?
-  CodeBlob* cb = CodeCache::find_blob_unsafe(addr);   // Else we get assertion if nmethod is zombie.
+  CodeBlob* cb = CodeCache::find_blob(addr);
   assert(cb && cb->is_nmethod(), "sanity");
   nmethod *nm = (nmethod *)cb;
   if (nm->stub_contains(destination) && is_NativeCallTrampolineStub_at(destination)) {
@@ -456,7 +456,7 @@ bool NativeInstruction::is_movk() {
   return Instruction_aarch64::extract(int_at(0), 30, 23) == 0b11100101;
 }
 
-bool NativeInstruction::is_sigill_zombie_not_entrant() {
+bool NativeInstruction::is_sigill_not_entrant() {
   return uint_at(0) == 0xd4bbd5a1; // dcps1 #0xdead
 }
 
@@ -471,13 +471,13 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 // MT-safe inserting of a jump over a jump or a nop (used by
-// nmethod::make_not_entrant_or_zombie)
+// nmethod::make_not_entrant)
 
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
 
   assert(dest == SharedRuntime::get_handle_wrong_method_stub(), "expected fixed destination of patch");
   assert(nativeInstruction_at(verified_entry)->is_jump_or_nop()
-         || nativeInstruction_at(verified_entry)->is_sigill_zombie_not_entrant(),
+         || nativeInstruction_at(verified_entry)->is_sigill_not_entrant(),
          "Aarch64 cannot replace non-jump with jump");
 
   // Patch this nmethod atomically.
@@ -488,8 +488,7 @@ void NativeJump::patch_verified_entry(address entry, address verified_entry, add
     unsigned int insn = (0b000101 << 26) | ((disp >> 2) & 0x3ffffff);
     *(unsigned int*)verified_entry = insn;
   } else {
-    // We use an illegal instruction for marking a method as
-    // not_entrant or zombie.
+    // We use an illegal instruction for marking a method as not_entrant.
     NativeIllegalInstruction::insert(verified_entry);
   }
 

@@ -364,7 +364,7 @@ void TemplateTable::sipush() {
 }
 
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Label fastCase, Condy, Done;
 
@@ -373,7 +373,7 @@ void TemplateTable::ldc(bool wide) {
   const Register Rtags  = R3_tmp;
   const Register RtagType = R3_tmp;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(Rindex, 1);
   } else {
     __ ldrb(Rindex, at_bcp(1));
@@ -401,7 +401,7 @@ void TemplateTable::ldc(bool wide) {
   __ b(fastCase, ne);
 
   // slow case - call runtime
-  __ mov(R1, wide);
+  __ mov(R1, is_ldc_wide(type) ? 1 : 0);
   call_VM(R0_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), R1);
   __ push(atos);
   __ b(Done);
@@ -429,9 +429,9 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
   Label resolved;
 
   // We are resolved if the resolved reference cache entry contains a

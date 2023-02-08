@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,9 +117,10 @@ public final class Client extends NTLM {
      * {@code nonce} is null for NTLM v1.
      */
     public byte[] type3(byte[] type2, byte[] nonce) throws NTLMException {
-        if (type2 == null || (v != Version.NTLM && nonce == null)) {
+        if (type2 == null || (v != Version.NTLM && nonce == null) ||
+                (nonce != null && nonce.length != 8)) {
             throw new NTLMException(NTLMException.PROTOCOL,
-                    "type2 and nonce cannot be null");
+                    "type2 cannot be null, and nonce must be 8-byte long");
         }
         debug("NTLM Client: Type 2 received\n");
         debug(type2);

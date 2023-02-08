@@ -81,8 +81,8 @@ void G1CodeBlobClosure::do_evacuation_and_fixup(nmethod* nm) {
   nm->oops_do(&_oc);
 
   if (_strong) {
-    // CodeCache sweeper support
-    nm->mark_as_maybe_on_continuation();
+    // CodeCache unloading support
+    nm->mark_as_maybe_on_stack();
 
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != NULL) {
@@ -97,8 +97,8 @@ void G1CodeBlobClosure::do_marking(nmethod* nm) {
   // Mark through oops in the nmethod
   nm->oops_do(&_marking_oc);
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != NULL) {

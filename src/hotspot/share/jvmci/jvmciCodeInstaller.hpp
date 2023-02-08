@@ -328,7 +328,6 @@ public:
                                    JVMCIObject compiled_code,
                                    objArrayHandle object_pool,
                                    CodeBlob*& cb,
-                                   nmethodLocker& nmethod_handle,
                                    JVMCIObject installed_code,
                                    FailedSpeculation** failed_speculations,
                                    char* speculations,
@@ -362,7 +361,7 @@ protected:
   GrowableArray<MonitorValue*>* read_monitor_values(HotSpotCompiledCodeStream* stream, u1 frame_flags, JVMCI_TRAPS);
 
   // extract the fields of the HotSpotCompiledCode
-  void initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, JVMCI_TRAPS);
+  void initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS);
   void initialize_dependencies(HotSpotCompiledCodeStream* stream, u1 code_flags, OopRecorder* oop_recorder, JVMCI_TRAPS);
 
   int estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_TRAPS);

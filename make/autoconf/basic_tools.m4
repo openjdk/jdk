@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+###############################################################################
+# It is recommended to use exactly this version of pandoc, especially for
+# re-generating checked in html files
+RECOMMENDED_PANDOC_VERSION=2.19.2
 
 ###############################################################################
 # Setup the most fundamental tools that relies on not much else to set up,
@@ -83,6 +88,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_LOOKUP_PROGS(GIT, git)
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
+  UTIL_LOOKUP_PROGS(WHOAMI, whoami)
 
   # These are only needed on some platforms
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
@@ -280,7 +286,7 @@ AC_DEFUN([BASIC_CHECK_TAR],
   if test "x$TAR_TYPE" = "xgnu"; then
     TAR_INCLUDE_PARAM="T"
     TAR_SUPPORTS_TRANSFORM="true"
-  elif test "x$TAR_TYPE" = "aix"; then
+  elif test "x$TAR_TYPE" = "xaix"; then
     # -L InputList of aix tar: name of file listing the files and directories
     # that need to be archived or extracted
     TAR_INCLUDE_PARAM="L"
@@ -342,7 +348,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   UTIL_LOOKUP_PROGS(READELF, greadelf readelf)
   UTIL_LOOKUP_PROGS(DOT, dot)
-  UTIL_LOOKUP_PROGS(HG, hg)
   UTIL_LOOKUP_PROGS(STAT, stat)
   UTIL_LOOKUP_PROGS(TIME, time)
   UTIL_LOOKUP_PROGS(FLOCK, flock)
@@ -376,41 +381,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
     UTIL_REQUIRE_PROGS(MIG, mig)
     UTIL_REQUIRE_PROGS(XATTR, xattr)
     UTIL_LOOKUP_PROGS(CODESIGN, codesign)
-
-    # Check for user provided code signing identity.
-    UTIL_ARG_WITH(NAME: macosx-codesign-identity, TYPE: string,
-        DEFAULT: openjdk_codesign, CHECK_VALUE: UTIL_CHECK_STRING_NON_EMPTY,
-        DESC: [specify the macosx code signing identity],
-        CHECKING_MSG: [for macosx code signing identity]
-    )
-    AC_SUBST(MACOSX_CODESIGN_IDENTITY)
-
-    if test "x$CODESIGN" != "x"; then
-      # Verify that the codesign certificate is present
-      AC_MSG_CHECKING([if codesign certificate is present])
-      $RM codesign-testfile
-      $TOUCH codesign-testfile
-      $CODESIGN -s "$MACOSX_CODESIGN_IDENTITY" codesign-testfile 2>&AS_MESSAGE_LOG_FD \
-          >&AS_MESSAGE_LOG_FD || CODESIGN=
-      $RM codesign-testfile
-      if test "x$CODESIGN" = x; then
-        AC_MSG_RESULT([no])
-      else
-        AC_MSG_RESULT([yes])
-        # Verify that the codesign has --option runtime
-        AC_MSG_CHECKING([if codesign has --option runtime])
-        $RM codesign-testfile
-        $TOUCH codesign-testfile
-        $CODESIGN --option runtime -s "$MACOSX_CODESIGN_IDENTITY" codesign-testfile \
-            2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD || CODESIGN=
-        $RM codesign-testfile
-        if test "x$CODESIGN" = x; then
-          AC_MSG_ERROR([codesign does not have --option runtime. macOS 10.13.6 and above is required.])
-        else
-          AC_MSG_RESULT([yes])
-        fi
-      fi
-    fi
     UTIL_REQUIRE_PROGS(SETFILE, SetFile)
   fi
   if ! test "x$OPENJDK_TARGET_OS" = "xwindows"; then
@@ -462,22 +432,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
 [
   UTIL_LOOKUP_PROGS(PANDOC, pandoc)
 
-  PANDOC_MARKDOWN_FLAG="markdown"
-  if test -n "$PANDOC"; then
-    AC_MSG_CHECKING(if the pandoc smart extension needs to be disabled for markdown)
+  if test "x$PANDOC" != x; then
+    AC_MSG_CHECKING([for pandoc version])
+    PANDOC_VERSION=`$PANDOC --version 2>&1 | $HEAD -1 | $CUT -d " " -f 2`
+    AC_MSG_RESULT([$PANDOC_VERSION])
+
+    if test "x$PANDOC_VERSION" != x$RECOMMENDED_PANDOC_VERSION; then
+      AC_MSG_WARN([pandoc is version $PANDOC_VERSION, not the recommended version $RECOMMENDED_PANDOC_VERSION])
+    fi
+
+    PANDOC_MARKDOWN_FLAG="markdown"
+    AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '\+smart'; then
       AC_MSG_RESULT([yes])
       PANDOC_MARKDOWN_FLAG="markdown-smart"
     else
       AC_MSG_RESULT([no])
     fi
-  fi
 
-  if test -n "$PANDOC"; then
     ENABLE_PANDOC="true"
   else
     ENABLE_PANDOC="false"
   fi
+
   AC_SUBST(ENABLE_PANDOC)
   AC_SUBST(PANDOC_MARKDOWN_FLAG)
 ])

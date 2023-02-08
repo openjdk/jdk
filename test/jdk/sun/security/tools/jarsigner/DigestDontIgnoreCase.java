@@ -47,7 +47,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  */
 /*
  * <pre>mfDigest.equalsIgnoreCase(base64Digests[i])</pre>
- * previously in JarSigner.java on on line 985
+ * previously in JarSigner.java on line 985
  * @see jdk.security.jarsigner.JarSigner#updateDigests
  */
 public class DigestDontIgnoreCase {

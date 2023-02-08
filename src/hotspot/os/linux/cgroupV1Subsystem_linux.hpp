@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class CgroupV1Controller: public CgroupController {
     CgroupV1Controller(char *root, char *mountpoint) {
       _root = os::strdup(root);
       _mount_point = os::strdup(mountpoint);
-      _path = NULL;
+      _path = nullptr;
     }
 
     virtual void set_subsystem_path(char *cgroup_path);
@@ -104,14 +104,12 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CachingCgroupController * cpu_controller() { return _cpu; }
 
   private:
-    julong _unlimited_memory;
-
     /* controllers */
-    CachingCgroupController* _memory = NULL;
-    CgroupV1Controller* _cpuset = NULL;
-    CachingCgroupController* _cpu = NULL;
-    CgroupV1Controller* _cpuacct = NULL;
-    CgroupV1Controller* _pids = NULL;
+    CachingCgroupController* _memory = nullptr;
+    CgroupV1Controller* _cpuset = nullptr;
+    CachingCgroupController* _cpu = nullptr;
+    CgroupV1Controller* _cpuacct = nullptr;
+    CgroupV1Controller* _pids = nullptr;
 
     char * pids_max_val();
 
@@ -128,7 +126,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
       _cpuacct = cpuacct;
       _pids = pids;
       _memory = new CachingCgroupController(memory);
-      _unlimited_memory = (LONG_MAX / os::vm_page_size()) * os::vm_page_size();
     }
 };
 

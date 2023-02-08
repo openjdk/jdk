@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
 
 package sun.security.util;
 
-import java.io.IOException;
 import java.math.BigInteger;
-
-import java.security.spec.*;
-import java.util.Arrays;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.EllipticCurve;
 
 /**
  * Contains Elliptic Curve parameters.
@@ -59,11 +58,7 @@ public final class NamedCurve extends ECParameterSpec {
         this.oid = ko.value();
 
         DerOutputStream out = new DerOutputStream();
-        try {
-            out.putOID(ObjectIdentifier.of(ko));
-        } catch (IOException e) {
-            throw new RuntimeException("Internal error", e);
-        }
+        out.putOID(ObjectIdentifier.of(ko));
         encoded = out.toByteArray();
     }
 

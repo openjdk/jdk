@@ -382,6 +382,11 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   Label done;
   Label runtime;
 
+  // Is marking still active?
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+  __ ldrb(R1, queue_active);
+  __ cbz(R1, done);
+
   __ ldr(r_index_1, queue_index);
   __ ldr(r_pre_val_0, Address(SP, nb_saved_regs*wordSize));
   __ ldr(r_buffer_2, buffer);

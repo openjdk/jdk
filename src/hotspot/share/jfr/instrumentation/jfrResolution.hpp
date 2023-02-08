@@ -39,6 +39,7 @@ class JfrResolution : AllStatic {
   static void on_runtime_resolution(const CallInfo & info, TRAPS);
   static void on_c1_resolution(const GraphBuilder * builder, const ciKlass * holder, const ciMethod * target);
   static void on_c2_resolution(const Parse * parse, const ciKlass * holder, const ciMethod * target);
+  static void on_jvmci_resolution(const Method* caller, const Method* target, TRAPS);
 };
 
 #endif // SHARE_JFR_INSTRUMENTATION_JFRRESOLUTION_HPP

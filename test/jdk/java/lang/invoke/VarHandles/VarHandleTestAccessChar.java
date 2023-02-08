@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 /*
  * @test
- * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccessChar
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessChar
- * @run testng/othervm -Diters=20000                         VarHandleTestAccessChar
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessChar
+ * @run testng/othervm -Diters=10   -Xint                                                   VarHandleTestAccessChar
+ *
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
+ *          to hit compilation thresholds
+ *
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessChar
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessChar
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessChar
  */
 
 import org.testng.annotations.BeforeClass;
@@ -289,9 +293,6 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         }
     }
 
-
-
-
     static void testInstanceFinalField(VarHandleTestAccessChar recv, VarHandle vh) {
         // Plain
         {
@@ -483,6 +484,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain(recv, '\u0123', '\u4567');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain char");
             char x = (char) vh.get(recv);
@@ -500,6 +502,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire(recv, '\u4567', '\u0123');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire char");
             char x = (char) vh.get(recv);
@@ -517,6 +520,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease(recv, '\u0123', '\u4567');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease char");
             char x = (char) vh.get(recv);
@@ -534,6 +538,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet(recv, '\u4567', '\u0123');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet char");
             char x = (char) vh.get(recv);
@@ -787,6 +792,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain('\u0123', '\u4567');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain char");
             char x = (char) vh.get();
@@ -804,6 +810,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire('\u4567', '\u0123');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire char");
             char x = (char) vh.get();
@@ -821,6 +828,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease('\u0123', '\u4567');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease char");
             char x = (char) vh.get();
@@ -838,6 +846,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet('\u4567', '\u0123');
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet char");
             char x = (char) vh.get();
@@ -1094,6 +1103,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetPlain(array, i, '\u0123', '\u4567');
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain char");
                 char x = (char) vh.get(array, i);
@@ -1111,6 +1121,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetAcquire(array, i, '\u4567', '\u0123');
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire char");
                 char x = (char) vh.get(array, i);
@@ -1128,6 +1139,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetRelease(array, i, '\u0123', '\u4567');
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease char");
                 char x = (char) vh.get(array, i);
@@ -1145,6 +1157,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSet(array, i, '\u4567', '\u0123');
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSet char");
                 char x = (char) vh.get(array, i);

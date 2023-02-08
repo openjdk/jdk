@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,12 +83,12 @@ void AbstractInterpreter::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of interpreter
 
-StubQueue* AbstractInterpreter::_code                                       = NULL;
+StubQueue* AbstractInterpreter::_code                                       = nullptr;
 bool       AbstractInterpreter::_notice_safepoints                          = false;
-address    AbstractInterpreter::_rethrow_exception_entry                    = NULL;
+address    AbstractInterpreter::_rethrow_exception_entry                    = nullptr;
 
-address    AbstractInterpreter::_native_entry_begin                         = NULL;
-address    AbstractInterpreter::_native_entry_end                           = NULL;
+address    AbstractInterpreter::_native_entry_begin                         = nullptr;
+address    AbstractInterpreter::_native_entry_end                           = nullptr;
 address    AbstractInterpreter::_slow_signature_handler;
 address    AbstractInterpreter::_entry_table            [AbstractInterpreter::number_of_method_entries];
 address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::number_of_result_handlers];
@@ -96,8 +96,8 @@ address    AbstractInterpreter::_native_abi_to_tosca    [AbstractInterpreter::nu
 //------------------------------------------------------------------------------------------------------------------------
 // Generation of complete interpreter
 
-AbstractInterpreterGenerator::AbstractInterpreterGenerator(StubQueue* _code) {
-  _masm                      = NULL;
+AbstractInterpreterGenerator::AbstractInterpreterGenerator() {
+  _masm                      = nullptr;
 }
 
 
@@ -133,7 +133,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_floatToRawIntBits: return java_lang_Float_floatToRawIntBits;
       case vmIntrinsics::_longBitsToDouble:  return java_lang_Double_longBitsToDouble;
       case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
-#ifdef AMD64
+#if defined(AMD64) || defined(AARCH64) || defined(RISCV64)
       case vmIntrinsics::_currentThread:     return java_lang_Thread_currentThread;
 #endif
 #endif // ZERO
@@ -150,11 +150,6 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
       case vmIntrinsics::_dsqrt:             return java_lang_math_sqrt;
       case vmIntrinsics::_dsqrt_strict:      return native;
       case vmIntrinsics::_Reference_get:     return java_lang_ref_reference_get;
-      case vmIntrinsics::_Continuation_doYield:
-        if (VMContinuations) {
-          return java_lang_continuation_doYield;
-        }
-        break;
       case vmIntrinsics::_Object_init:
         if (RegisterFinalizersAtInit && m->code_size() == 1) {
           // We need to execute the special return bytecode to check for
@@ -168,8 +163,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(const methodHan
 
   // Native method?
   if (m->is_native()) {
-    if (m->is_continuation_enter_intrinsic()) {
-      return zerolocals;
+    if (m->is_continuation_native_intrinsic()) {
+      // This entry will never be called.  The real entry gets generated later, like for MH intrinsics.
+      return abstract;
     }
     assert(!m->is_method_handle_intrinsic(), "overlapping bits here, watch out");
     return m->is_synchronized() ? native_synchronized : native;
@@ -235,7 +231,7 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
         int method_index = invoke_bc.get_index_u2_cpcache(code);
         constantPoolHandle cp(Thread::current(), cpool);
         Method* resolved_method = ConstantPool::method_at_if_loaded(cp, method_index);
-        return (resolved_method == NULL);
+        return (resolved_method == nullptr);
       }
       default: ShouldNotReachHere();
     }

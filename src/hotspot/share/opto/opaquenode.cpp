@@ -34,7 +34,7 @@ bool Opaque1Node::cmp( const Node &n ) const {
 }
 
 //------------------------------Identity---------------------------------------
-// Do NOT remove the opaque Node until no more loop ops can happen.
+// Do NOT remove the opaque node until no more loop opts can happen.
 Node* Opaque1Node::Identity(PhaseGVN* phase) {
   if (phase->C->post_loop_opts_phase()) {
     return in(1);
@@ -44,19 +44,19 @@ Node* Opaque1Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
-//=============================================================================
-// A node to prevent unwanted optimizations.  Allows constant folding.  Stops
-// value-numbering, most Ideal calls or Identity functions.  This Node is
-// specifically designed to prevent the pre-increment value of a loop trip
-// counter from being live out of the bottom of the loop (hence causing the
-// pre- and post-increment values both being live and thus requiring an extra
-// temp register and an extra move).  If we "accidentally" optimize through
-// this kind of a Node, we'll get slightly pessimal, but correct, code.  Thus
-// it's OK to be slightly sloppy on optimizations here.
+// Do NOT remove the opaque node until no more loop opts can happen.
+Node* Opaque3Node::Identity(PhaseGVN* phase) {
+  if (phase->C->post_loop_opts_phase()) {
+    return in(1);
+  } else {
+    phase->C->record_for_post_loop_opts_igvn(this);
+  }
+  return this;
+}
 
 // Do not allow value-numbering
-uint Opaque2Node::hash() const { return NO_HASH; }
-bool Opaque2Node::cmp( const Node &n ) const {
+uint Opaque3Node::hash() const { return NO_HASH; }
+bool Opaque3Node::cmp(const Node &n) const {
   return (&n == this);          // Always fail except on self
 }
 

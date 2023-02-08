@@ -44,10 +44,6 @@ protected:
   // The declaration order of these const fields is important; see the
   // constructor before changing.
   const MemRegion _whole_heap;       // the region covered by the card table
-  size_t          _guard_index;      // index of very last element in the card
-                                     // table; it is set to a guard value
-                                     // (last_card) and should never be modified
-  size_t          _last_valid_index; // index of the last valid element
   const size_t    _page_size;        // page size used when mapping _byte_map
   size_t          _byte_map_size;    // in bytes
   CardValue*      _byte_map;         // the card marking array
@@ -65,12 +61,10 @@ protected:
   // actually extend onto the card-table space for the next covered region.
   MemRegion* _committed;
 
-  // The last card is a guard card, and we commit the page for it so
-  // we can use the card for verification purposes. We make sure we never
-  // uncommit the MemRegion for that page.
+  // The last card is a guard card; never committed.
   MemRegion _guard_region;
 
-  inline size_t compute_byte_map_size();
+  inline size_t compute_byte_map_size(size_t num_bytes);
 
   // Finds and return the index of the region, if any, to which the given
   // region would be contiguous.  If none exists, assign a new region and
@@ -100,8 +94,7 @@ protected:
     clean_card                  = (CardValue)-1,
 
     dirty_card                  =  0,
-    last_card                   =  1,
-    CT_MR_BS_last_reserved      =  2
+    CT_MR_BS_last_reserved      =  1
   };
 
   // a word's worth (row) of clean card values
@@ -112,30 +105,21 @@ protected:
   static uint _card_size;
   static uint _card_size_in_words;
 
+  size_t last_valid_index() const {
+    return cards_required(_whole_heap.word_size()) - 1;
+  }
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable();
   virtual void initialize();
 
-  // The kinds of precision a CardTable may offer.
-  enum PrecisionStyle {
-    Precise,
-    ObjHeadPreciseArray
-  };
-
-  // Tells what style of precision this card table offers.
-  PrecisionStyle precision() {
-    return ObjHeadPreciseArray; // Only one supported for now.
-  }
-
   // *** Barrier set functions.
 
   // Initialization utilities; covered_words is the size of the covered region
   // in, um, words.
-  inline size_t cards_required(size_t covered_words) {
-    // Add one for a guard card, used to detect errors.
-    const size_t words = align_up(covered_words, _card_size_in_words);
-    return words / _card_size_in_words + 1;
+  inline size_t cards_required(size_t covered_words) const {
+    assert(is_aligned(covered_words, _card_size_in_words), "precondition");
+    return covered_words / _card_size_in_words;
   }
 
   // Dirty the bytes corresponding to "mr" (not all of which must be
@@ -173,7 +157,6 @@ public:
 
   virtual void invalidate(MemRegion mr);
   void clear(MemRegion mr);
-  void dirty(MemRegion mr);
 
   // Provide read-only access to the card table array.
   const CardValue* byte_for_const(const void* p) const {
@@ -220,13 +203,6 @@ public:
 
   static uintx ct_max_alignment_constraint();
 
-  // Return the MemRegion corresponding to the first maximal run
-  // of dirty cards lying completely within MemRegion mr.
-  // If reset is "true", then sets those card table entries to the given
-  // value.
-  MemRegion dirty_card_range_after_reset(MemRegion mr, bool reset,
-                                         int reset_val);
-
   static uint card_shift() {
     return _card_shift;
   }
@@ -252,13 +228,10 @@ public:
   // before the beginning of the actual _byte_map.
   CardValue* byte_map_base() const { return _byte_map_base; }
 
-  virtual bool is_in_young(oop obj) const = 0;
+  virtual bool is_in_young(const void* p) const = 0;
 
   // Print a description of the memory for the card table
   virtual void print_on(outputStream* st) const;
-
-  void verify();
-  void verify_guard();
 
   // val_equals -> it will check that all cards covered by mr equal val
   // !val_equals -> it will check that all cards covered by mr do not equal val

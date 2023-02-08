@@ -62,6 +62,26 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     static native byte[] getmntonname0(long pathAddress) throws UnixException;
 
     /**
+     * int clonefile(const char * src, const char * dst, int flags);
+     */
+    static int clonefile(UnixPath src, UnixPath dst, int flags)
+        throws UnixException
+    {
+        try (NativeBuffer srcBuffer = copyToNativeBuffer(src);
+            NativeBuffer dstBuffer = copyToNativeBuffer(dst)) {
+            long comp = Blocker.begin();
+            try {
+                return clonefile0(srcBuffer.address(), dstBuffer.address(),
+                                  flags);
+            } finally {
+                Blocker.end(comp);
+            }
+        }
+    }
+    private static native int clonefile0(long srcAddress, long dstAddress,
+                                         int flags);
+
+    /**
      * setattrlist(const char* path, struct attrlist* attrList, void* attrBuf,
      *             size_t attrBufSize, unsigned long options)
      */
@@ -82,6 +102,27 @@ class BsdNativeDispatcher extends UnixNativeDispatcher {
     private static native void setattrlist0(long pathAddress, int commonattr,
                                             long modTime, long accTime,
                                             long createTime, long options)
+        throws UnixException;
+
+    /**
+     * fsetattrlist(int fd, struct attrlist* attrList, void* attrBuf,
+     *              size_t attrBufSize, unsigned long options)
+     */
+    static void fsetattrlist(int fd, int commonattr, long modTime,
+                             long accTime, long createTime, long options)
+        throws UnixException
+    {
+        long comp = Blocker.begin();
+        try {
+            fsetattrlist0(fd, commonattr, modTime, accTime,
+                          createTime, options);
+        } finally {
+            Blocker.end(comp);
+        }
+    }
+    private static native void fsetattrlist0(int fd, int commonattr,
+                                             long modTime, long accTime,
+                                             long createTime, long options)
         throws UnixException;
 
     // initialize field IDs

@@ -67,9 +67,12 @@ int StubAssembler::call_RT(Register oop_result, Register metadata_result, addres
   set_last_Java_frame(sp, fp, retaddr, t0);
 
   // do the call
-  int32_t off = 0;
-  la_patchable(t0, RuntimeAddress(entry), off);
-  jalr(x1, t0, off);
+  RuntimeAddress target(entry);
+  relocate(target.rspec(), [&] {
+    int32_t offset;
+    la_patchable(t0, target, offset);
+    jalr(x1, t0, offset);
+  });
   bind(retaddr);
   int call_offset = offset();
   // verify callee-saved register
@@ -567,9 +570,12 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   Label retaddr;
   __ set_last_Java_frame(sp, fp, retaddr, t0);
   // do the call
-  int32_t off = 0;
-  __ la_patchable(t0, RuntimeAddress(target), off);
-  __ jalr(x1, t0, off);
+  RuntimeAddress addr(target);
+  __ relocate(addr.rspec(), [&] {
+    int32_t offset;
+    __ la_patchable(t0, addr, offset);
+    __ jalr(x1, t0, offset);
+  });
   __ bind(retaddr);
   OopMapSet* oop_maps = new OopMapSet();
   assert_cond(oop_maps != NULL);
@@ -861,7 +867,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         __ check_klass_subtype_slow_path(x14, x10, x12, x15, NULL, &miss);
 
         // fallthrough on success:
-        __ li(t0, 1);
+        __ mv(t0, 1);
         __ sd(t0, Address(sp, (result_off) * VMRegImpl::stack_slot_size)); // result
         __ pop_reg(RegSet::of(x10, x12, x14, x15), sp);
         __ ret();
@@ -1051,7 +1057,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
     default:
       {
         StubFrame f(sasm, "unimplemented entry", dont_gc_arguments, does_not_return);
-        __ li(x10, (int) id);
+        __ mv(x10, (int)id);
         __ call_RT(noreg, noreg, CAST_FROM_FN_PTR(address, unimplemented_entry), x10);
         __ should_not_reach_here();
       }

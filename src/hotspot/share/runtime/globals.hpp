@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,6 +238,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseBASE64Intrinsics, false,                                 \
           "Use intrinsics for java.util.Base64")                            \
                                                                             \
+  product(bool, UsePoly1305Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for sun.security.util.math.intpoly")              \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Maximum large page size used (0 will use the default large "     \
           "page size for the environment as the maximum)")                  \
@@ -270,7 +273,7 @@ const int ObjectAlignmentInBytes = 8;
           "compilation")                                                    \
                                                                             \
   product(bool, MethodFlushing, true,                                       \
-          "Reclamation of zombie and not-entrant methods")                  \
+          "Reclamation of compiled methods")                                \
                                                                             \
   develop(bool, VerifyStack, false,                                         \
           "Verify stack of each thread when it is entering a runtime call") \
@@ -320,6 +323,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseAESCTRIntrinsics, false, DIAGNOSTIC,                     \
           "Use intrinsics for the paralleled version of AES/CTR crypto")    \
                                                                             \
+  product(bool, UseChaCha20Intrinsics, false, DIAGNOSTIC,                   \
+          "Use intrinsics for the vectorized version of ChaCha20")          \
+                                                                            \
   product(bool, UseMD5Intrinsics, false, DIAGNOSTIC,                        \
           "Use intrinsics for MD5 crypto hash function")                    \
                                                                             \
@@ -351,6 +357,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseVectorizedMismatchIntrinsic, false, DIAGNOSTIC,          \
           "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
                                                                             \
+  product(bool, UseVectorizedHashCodeIntrinsic, false, DIAGNOSTIC,           \
+          "Enables intrinsification of ArraysSupport.vectorizedHashCode()") \
+                                                                            \
   product(bool, UseCopySignIntrinsic, false, DIAGNOSTIC,                    \
           "Enables intrinsification of Math.copySign")                      \
                                                                             \
@@ -379,7 +388,7 @@ const int ObjectAlignmentInBytes = 8;
           "Deoptimize random frames on random exit from the runtime system")\
                                                                             \
   notproduct(bool, ZombieALot, false,                                       \
-          "Create zombies (non-entrant) at exit from the runtime system")   \
+          "Create non-entrant nmethods at exit from the runtime system")    \
                                                                             \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
@@ -449,10 +458,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, UseMallocOnly, false,                                       \
-          "Use only malloc/free for allocation (no resource area/arena). "  \
-          "Used to help diagnose memory stomping bugs.")                    \
-                                                                            \
   develop(bool, ZapResourceArea, trueInDebug,                               \
           "Zap freed resource/arena space")                                 \
                                                                             \
@@ -511,6 +516,13 @@ const int ObjectAlignmentInBytes = 8;
           "error log in case of a crash.")                                  \
           range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
+  product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
+          "If enabled, show details on secondary crashes in the error log") \
+                                                                            \
+  develop(intx, TraceDwarfLevel, 0,                                         \
+          "Debug levels for the dwarf parser")                              \
+          range(0, 4)                                                       \
+                                                                            \
   product(bool, SuppressFatalErrorMessage, false,                           \
           "Report NO fatal error message (avoid deadlock)")                 \
                                                                             \
@@ -532,7 +544,7 @@ const int ObjectAlignmentInBytes = 8;
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
           "from JVM")                                                       \
                                                                             \
-  product(ccstr, HeapDumpPath, NULL, MANAGEABLE,                            \
+  product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is on, the path (filename or "   \
           "directory) of the dump file (defaults to java_pid<pid>.hprof "   \
           "in the working directory)")                                      \
@@ -586,7 +598,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintAssembly, false, DIAGNOSTIC,                           \
           "Print assembly code (using external disassembler.so)")           \
                                                                             \
-  product(ccstr, PrintAssemblyOptions, NULL, DIAGNOSTIC,                    \
+  product(ccstr, PrintAssemblyOptions, nullptr, DIAGNOSTIC,                    \
           "Print options string passed to disassembler.so")                 \
                                                                             \
   notproduct(bool, PrintNMethodStatistics, false,                           \
@@ -614,7 +626,7 @@ const int ObjectAlignmentInBytes = 8;
           "Exercise compiled exception handlers")                           \
                                                                             \
   develop(bool, InterceptOSException, false,                                \
-          "Start debugger when an implicit OS (e.g. NULL) "                 \
+          "Start debugger when an implicit OS (e.g. nullptr) "                 \
           "exception happens")                                              \
                                                                             \
   product(bool, PrintCodeCache, false,                                      \
@@ -672,12 +684,13 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintClassLoaderDataGraphAtExit, false,                  \
           "Print the class loader data graph at exit")                      \
                                                                             \
-  product(bool, DynamicallyResizeSystemDictionaries, true, DIAGNOSTIC,      \
-          "Dynamically resize system dictionaries as needed")               \
-                                                                            \
   product(bool, AllowParallelDefineClass, false,                            \
           "Allow parallel defineClass requests for class loaders "          \
           "registering as parallel capable")                                \
+                                                                            \
+  product(bool, EnableWaitForParallelLoad, false,                           \
+          "(Deprecated) Enable legacy parallel classloading logic for "     \
+          "class loaders not registered as parallel capable")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
           "Throw away obvious excess yield calls")                          \
@@ -819,7 +832,7 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, StressRewriter, false,                                      \
           "Stress linktime bytecode rewriting")                             \
                                                                             \
-  product(ccstr, TraceJVMTI, NULL,                                          \
+  product(ccstr, TraceJVMTI, nullptr,                                          \
           "Trace flags for JVMTI functions and events")                     \
                                                                             \
   product(bool, StressLdcRewrite, false, DIAGNOSTIC,                        \
@@ -931,9 +944,6 @@ const int ObjectAlignmentInBytes = 8;
           "generate locking/unlocking code for synchronized methods and "   \
           "monitors")                                                       \
                                                                             \
-  develop(bool, GenerateRangeChecks, true,                                  \
-          "Generate range checks for array accesses")                       \
-                                                                            \
   product_pd(bool, ImplicitNullChecks, DIAGNOSTIC,                          \
           "Generate code for implicit null checks")                         \
                                                                             \
@@ -973,36 +983,16 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UsePopCountInstruction, false,                              \
           "Use population count instruction")                               \
                                                                             \
-  product(bool, LogTouchedMethods, false, DIAGNOSTIC,                       \
-          "Log methods which have been ever touched in runtime")            \
-                                                                            \
-  product(bool, PrintTouchedMethodsAtExit, false, DIAGNOSTIC,               \
-          "Print all methods that have been ever touched in runtime")       \
-                                                                            \
   develop(bool, TraceMethodReplacement, false,                              \
           "Print when methods are replaced do to recompilation")            \
                                                                             \
-  develop(bool, PrintMethodFlushing, false,                                 \
-          "Print the nmethods being flushed")                               \
-                                                                            \
   product(bool, PrintMethodFlushingStatistics, false, DIAGNOSTIC,           \
           "print statistics about method flushing")                         \
-                                                                            \
-  product(intx, HotMethodDetectionLimit, 100000, DIAGNOSTIC,                \
-          "Number of compiled code invocations after which "                \
-          "the method is considered as hot by the flusher")                 \
-          range(1, max_jint)                                                \
                                                                             \
   product(intx, MinPassesBeforeFlush, 10, DIAGNOSTIC,                       \
           "Minimum number of sweeper passes before an nmethod "             \
           "can be flushed")                                                 \
           range(0, max_intx)                                                \
-                                                                            \
-  product(bool, UseCodeAging, true,                                         \
-          "Insert counter to detect warm methods")                          \
-                                                                            \
-  product(bool, StressCodeAging, false, DIAGNOSTIC,                         \
-          "Start with counters compiled in")                                \
                                                                             \
   develop(bool, StressCodeBuffers, false,                                   \
           "Exercise code buffer expansion and other rare state changes")    \
@@ -1042,11 +1032,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, LogVMOutput, false, DIAGNOSTIC,                             \
           "Save VM output to LogFile")                                      \
                                                                             \
-  product(ccstr, LogFile, NULL, DIAGNOSTIC,                                 \
+  product(ccstr, LogFile, nullptr, DIAGNOSTIC,                                 \
           "If LogVMOutput or LogCompilation is on, save VM output to "      \
           "this file [default: ./hotspot_pid%p.log] (%p replaced with pid)")\
                                                                             \
-  product(ccstr, ErrorFile, NULL,                                           \
+  product(ccstr, ErrorFile, nullptr,                                           \
           "If an error occurs, save the error data to this file "           \
           "[default: ./hs_err_pid%p.log] (%p replaced with pid)")           \
                                                                             \
@@ -1083,19 +1073,16 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, PrintSymbolTableSizeHistogram, false,                    \
           "print histogram of the symbol table")                            \
                                                                             \
-  product(ccstr, AbortVMOnException, NULL, DIAGNOSTIC,                      \
+  product(ccstr, AbortVMOnException, nullptr, DIAGNOSTIC,                      \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
                                                                             \
-  product(ccstr, AbortVMOnExceptionMessage, NULL, DIAGNOSTIC,               \
+  product(ccstr, AbortVMOnExceptionMessage, nullptr, DIAGNOSTIC,               \
           "Call fatal if the exception pointed by AbortVMOnException "      \
           "has this message")                                               \
                                                                             \
   develop(bool, DebugVtables, false,                                        \
           "add debugging code to vtable dispatch")                          \
-                                                                            \
-  develop(bool, TraceCreateZombies, false,                                  \
-          "trace creation of zombie nmethods")                              \
                                                                             \
   product(bool, RangeCheckElimination, true,                                \
           "Eliminate range checks")                                         \
@@ -1122,7 +1109,7 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
                                                                             \
-  product_pd(uintx, TypeProfileLevel,                                       \
+  product_pd(uint, TypeProfileLevel,                                        \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
                      "X: Type profiling of parameters to methods; "         \
@@ -1313,16 +1300,13 @@ const int ObjectAlignmentInBytes = 8;
           "Delay in milliseconds for option SafepointTimeout")              \
           range(0, max_intx LP64_ONLY(/MICROUNITS))                         \
                                                                             \
-  product(intx, NmethodSweepActivity, 10,                                   \
+  product(bool, UseSystemMemoryBarrier, false, EXPERIMENTAL,                \
+          "Try to enable system memory barrier")                            \
+                                                                            \
+  product(intx, NmethodSweepActivity, 4,                                    \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
           "result in more aggressive sweeping")                             \
           range(0, 2000)                                                    \
-                                                                            \
-  notproduct(bool, LogSweeper, false,                                       \
-          "Keep a ring buffer of sweeper activity")                         \
-                                                                            \
-  notproduct(intx, SweeperLogEntries, 1024,                                 \
-          "Number of records in the ring buffer of sweeper activity")       \
                                                                             \
   develop(intx, MallocCatchPtr, -1,                                         \
           "Hit breakpoint when mallocing/freeing this pointer")             \
@@ -1364,6 +1348,16 @@ const int ObjectAlignmentInBytes = 8;
           "If non-zero, maximum number of words that malloc/realloc can "   \
           "allocate (for testing only)")                                    \
           range(0, max_uintx)                                               \
+                                                                            \
+  product(ccstr, MallocLimit, nullptr, DIAGNOSTIC,                          \
+          "Limit malloc allocation size from VM. Reaching the limit will "  \
+          "trigger a fatal error. This feature requires "                   \
+          "NativeMemoryTracking=summary or NativeMemoryTracking=detail."    \
+          "Usage:"                                                          \
+          "- MallocLimit=<size> to set a total limit. "                     \
+          "- MallocLimit=<NMT category>:<size>[,<NMT category>:<size>...] " \
+          "  to set one or more category-specific limits."                  \
+          "Example: -XX:MallocLimit=compiler:500m")                         \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
@@ -1584,8 +1578,8 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCodeCacheFlushing, true,                                 \
           "Remove cold/old nmethods from the code cache")                   \
                                                                             \
-  product(double, SweeperThreshold, 0.5,                                    \
-          "Threshold controlling when code cache sweeper is invoked."       \
+  product(double, SweeperThreshold, 15.0,                                   \
+          "Threshold when a code cache unloading GC is invoked."            \
           "Value is percentage of ReservedCodeCacheSize.")                  \
           range(0.0, 100.0)                                                 \
                                                                             \
@@ -1747,7 +1741,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PerfDataSaveToFile, false,                                  \
           "Save PerfData memory to hsperfdata_<pid> file on exit")          \
                                                                             \
-  product(ccstr, PerfDataSaveFile, NULL,                                    \
+  product(ccstr, PerfDataSaveFile, nullptr,                                    \
           "Save PerfData memory to the specified absolute pathname. "       \
           "The string %p in the file name (if present) "                    \
           "will be replaced by pid")                                        \
@@ -1797,39 +1791,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintConcurrentLocks, false, MANAGEABLE,                    \
           "Print java.util.concurrent locks in thread dump")                \
                                                                             \
-  /* Shared spaces */                                                       \
-                                                                            \
-  product(bool, VerifySharedSpaces, false,                                  \
-          "Verify integrity of shared spaces")                              \
-                                                                            \
-  product(bool, RecordDynamicDumpInfo, false,                               \
-          "Record class info for jcmd VM.cds dynamic_dump")                 \
-                                                                            \
-  product(bool, AutoCreateSharedArchive, false,                             \
-          "Create shared archive at exit if cds mapping failed")            \
-                                                                            \
-  product(bool, PrintSharedArchiveAndExit, false,                           \
-          "Print shared archive file contents")                             \
-                                                                            \
-  product(bool, PrintSharedDictionary, false,                               \
-          "If PrintSharedArchiveAndExit is true, also print the shared "    \
-          "dictionary")                                                     \
-                                                                            \
-  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
-          NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
-          "Address to allocate shared memory region for class data")        \
-          range(0, SIZE_MAX)                                                \
-                                                                            \
-  product(ccstr, SharedArchiveConfigFile, NULL,                             \
-          "Data to add to the CDS archive file")                            \
-                                                                            \
-  product(uint, SharedSymbolTableBucketSize, 4,                             \
-          "Average number of symbols per bucket in shared table")           \
-          range(2, 246)                                                     \
-                                                                            \
-  product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
-          "Allow Java agent to be run with CDS dumping")                    \
-                                                                            \
   product(bool, PrintMethodHandleStubs, false, DIAGNOSTIC,                  \
           "Print generated stub code for method handles")                   \
                                                                             \
@@ -1860,17 +1821,12 @@ const int ObjectAlignmentInBytes = 8;
           "Causes the VM to pause at startup time and wait for the pause "  \
           "file to be removed (default: ./vm.paused.<pid>)")                \
                                                                             \
-  product(ccstr, PauseAtStartupFile, NULL, DIAGNOSTIC,                      \
+  product(ccstr, PauseAtStartupFile, nullptr, DIAGNOSTIC,                      \
           "The file to create and for whose removal to await when pausing " \
           "at startup. (default: ./vm.paused.<pid>)")                       \
                                                                             \
   product(bool, PauseAtExit, false, DIAGNOSTIC,                             \
           "Pause and wait for keypress on exit if a debugger is attached")  \
-                                                                            \
-  product(bool, ExtendedDTraceProbes,    false,                             \
-          "(Deprecated) Enable performance-impacting dtrace probes. "       \
-          "Use the combination of -XX:+DTraceMethodProbes, "                \
-          "-XX:+DTraceAllocProbes and -XX:+DTraceMonitorProbes instead.")   \
                                                                             \
   product(bool, DTraceMethodProbes, false,                                  \
           "Enable dtrace tool probes for method-entry and method-exit")     \
@@ -1933,30 +1889,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, WhiteBoxAPI, false, DIAGNOSTIC,                             \
           "Enable internal testing APIs")                                   \
                                                                             \
-  product(ccstr, DumpLoadedClassList, NULL,                                 \
-          "Dump the names all loaded classes, that could be stored into "   \
-          "the CDS archive, in the specified file")                         \
-                                                                            \
-  product(ccstr, SharedClassListFile, NULL,                                 \
-          "Override the default CDS class list")                            \
-                                                                            \
-  product(ccstr, SharedArchiveFile, NULL,                                   \
-          "Override the default location of the CDS archive file")          \
-                                                                            \
-  product(ccstr, ArchiveClassesAtExit, NULL,                                \
-          "The path and name of the dynamic archive file")                  \
-                                                                            \
-  product(ccstr, ExtraSharedClassListFile, NULL,                            \
-          "Extra classlist for building the CDS archive file")              \
-                                                                            \
-  product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
-           "(0) first map at preferred address, and if "                    \
-           "unsuccessful, map at alternative address (default); "           \
-           "(1) always map at alternative address; "                        \
-           "(2) always map at preferred address, and if unsuccessful, "     \
-           "do not map the archive")                                        \
-           range(0, 2)                                                      \
-                                                                            \
   product(size_t, ArrayAllocatorMallocLimit, (size_t)-1, EXPERIMENTAL,      \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
@@ -1996,7 +1928,7 @@ const int ObjectAlignmentInBytes = 8;
           range(0, max_intx)                                                \
           constraint(InitArrayShortSizeConstraintFunc, AfterErgo)           \
                                                                             \
-  product(ccstr, AllocateHeapAt, NULL,                                      \
+  product(ccstr, AllocateHeapAt, nullptr,                                      \
           "Path to the directory where a temporary file will be created "   \
           "to use as the backing store for Java Heap.")                     \
                                                                             \
@@ -2015,11 +1947,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, UseContinuationFastPath, true,                              \
           "Use fast-path frame walking in continuations")                   \
                                                                             \
-  product(intx, ExtentLocalCacheSize, 16,                                   \
-          "Size of the cache for scoped values")                            \
-           range(0, max_intx)                                               \
-           constraint(ExtentLocalCacheSizeConstraintFunc, AtParse)          \
-                                                                            \
   develop(int, VerifyMetaspaceInterval, DEBUG_ONLY(500) NOT_DEBUG(0),       \
                "Run periodic metaspace verifications (0 - none, "           \
                "1 - always, >1 every nth interval)")                        \
@@ -2036,10 +1963,10 @@ const int ObjectAlignmentInBytes = 8;
   JFR_ONLY(product(bool, FlightRecorder, false,                             \
           "(Deprecated) Enable Flight Recorder"))                           \
                                                                             \
-  JFR_ONLY(product(ccstr, FlightRecorderOptions, NULL,                      \
+  JFR_ONLY(product(ccstr, FlightRecorderOptions, nullptr,                      \
           "Flight Recorder options"))                                       \
                                                                             \
-  JFR_ONLY(product(ccstr, StartFlightRecording, NULL,                       \
+  JFR_ONLY(product(ccstr, StartFlightRecording, nullptr,                       \
           "Start flight recording with options"))                           \
                                                                             \
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
@@ -2055,9 +1982,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  develop(bool, TraceOptimizedUpcallStubs, false,                           \
-                "Trace optimized upcall stub generation")                   \
 
 // end of RUNTIME_FLAGS
 

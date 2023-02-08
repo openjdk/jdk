@@ -35,7 +35,7 @@ class PlainProxyConnection extends PlainHttpConnection {
 
     @Override
     ConnectionPool.CacheKey cacheKey() {
-        return new ConnectionPool.CacheKey(null, address);
+        return ConnectionPool.cacheKey(false, null, address);
     }
 
     @Override

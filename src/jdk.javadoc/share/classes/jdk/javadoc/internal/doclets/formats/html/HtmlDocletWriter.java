@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -43,7 +44,6 @@ import java.util.regex.Pattern;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
@@ -71,7 +71,6 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
-import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.doctree.SummaryTree;
 import com.sun.source.doctree.SystemPropertyTree;
@@ -597,10 +596,21 @@ public class HtmlDocletWriter {
     /**
      * {@return the link to the given package}
      *
-     * @param packageElement the package to link to.
-     * @param label the label for the link.
+     * @param packageElement the package to link to
+     * @param label the label for the link
      */
     public Content getPackageLink(PackageElement packageElement, Content label) {
+        return getPackageLink(packageElement, label, null);
+    }
+
+    /**
+     * {@return the link to the given package}
+     *
+     * @param packageElement the package to link to
+     * @param label the label for the link
+     * @param fragment the link fragment
+     */
+    public Content getPackageLink(PackageElement packageElement, Content label, String fragment) {
         boolean included = packageElement != null && utils.isIncluded(packageElement);
         if (!included) {
             for (PackageElement p : configuration.packages) {
@@ -618,7 +628,7 @@ public class HtmlDocletWriter {
         }
         DocLink targetLink;
         if (included || packageElement == null) {
-            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY));
+            targetLink = new DocLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY), fragment);
         } else {
             targetLink = getCrossPackageLink(packageElement);
         }
@@ -649,11 +659,23 @@ public class HtmlDocletWriter {
      * @param label tag for the link
      */
     public Content getModuleLink(ModuleElement mdle, Content label) {
+        return getModuleLink(mdle, label, null);
+    }
+
+    /**
+     * {@return a link to module}
+     *
+     * @param mdle the module being documented
+     * @param label tag for the link
+     * @param fragment the link fragment
+     */
+    public Content getModuleLink(ModuleElement mdle, Content label, String fragment) {
         Set<ElementFlag> flags = mdle != null ? utils.elementFlags(mdle)
                                               : EnumSet.noneOf(ElementFlag.class);
         boolean included = utils.isIncluded(mdle);
         if (included) {
-            DocLink targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)));
+            DocLink targetLink;
+            targetLink = new DocLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)), fragment);
             Content link = links.createLink(targetLink, label, "");
             if (flags.contains(ElementFlag.PREVIEW) && label != contents.moduleLabel) {
                 link = new ContentBuilder(
@@ -956,7 +978,7 @@ public class HtmlDocletWriter {
             HtmlId id = isProperty ? htmlIds.forProperty(ee) : htmlIds.forMember(ee);
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
-                .where(id.name())
+                .fragment(id.name())
                 .style(style)
                 .targetMember(element));
         }
@@ -964,7 +986,7 @@ public class HtmlDocletWriter {
         if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new HtmlLinkInfo(configuration, context, typeElement)
                 .label(label)
-                .where(element.getSimpleName().toString())
+                .fragment(element.getSimpleName().toString())
                 .style(style)
                 .targetMember(element));
         }
@@ -1522,7 +1544,8 @@ public class HtmlDocletWriter {
         Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
-                && utils.containingPackage(currentPageElement) == utils.containingPackage(element);
+                && Objects.equals(utils.containingPackage(currentPageElement),
+                utils.containingPackage(element));
     }
 
     /**
@@ -1671,7 +1694,7 @@ public class HtmlDocletWriter {
             annotation = new ContentBuilder();
             isAnnotationDocumented = false;
             HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                                                     HtmlLinkInfo.Kind.ANNOTATION, annotationElement);
+                                                     HtmlLinkInfo.Kind.PLAIN, annotationElement);
             Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = aDesc.getElementValues();
             // If the annotation is mandated, do not print the container.
             if (utils.configuration.workArounds.isMandated(aDesc)) {
@@ -1772,7 +1795,7 @@ public class HtmlDocletWriter {
                 }
                 String simpleName = element.getSimpleName().toString();
                 if (multipleValues || !"value".equals(simpleName)) { // Omit "value=" where unnecessary
-                    annotation.add(getDocLink(HtmlLinkInfo.Kind.ANNOTATION, element, simpleName));
+                    annotation.add(getDocLink(HtmlLinkInfo.Kind.PLAIN, element, simpleName));
                     annotation.add("=");
                 }
                 AnnotationValue annotationValue = map.get(element);
@@ -1862,7 +1885,7 @@ public class HtmlDocletWriter {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                                HtmlLinkInfo.Kind.ANNOTATION, t);
+                                HtmlLinkInfo.Kind.PLAIN, t);
                         String name = utils.isIncluded(t.asElement())
                                 ? t.asElement().getSimpleName().toString()
                                 : utils.getFullyQualifiedName(t.asElement());
@@ -1888,7 +1911,7 @@ public class HtmlDocletWriter {
 
             @Override
             public Content visitEnumConstant(VariableElement c, Void p) {
-                return getDocLink(HtmlLinkInfo.Kind.ANNOTATION, c, c.getSimpleName());
+                return getDocLink(HtmlLinkInfo.Kind.PLAIN, c, c.getSimpleName());
             }
 
             @Override
@@ -2165,7 +2188,7 @@ public class HtmlDocletWriter {
         elements.stream()
                 .sorted(Comparator.comparing(te -> te.getSimpleName().toString()))
                 .distinct()
-                .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS, te)
+                .map(te -> getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, te)
                         .label(HtmlTree.CODE(Text.of(te.getSimpleName()))).skipPreview(true)))
                 .forEach(c -> {
                     links.add(sep[0]);
@@ -2176,4 +2199,19 @@ public class HtmlDocletWriter {
                                    HtmlTree.CODE(Text.of(className)),
                                    links);
     }
+
+    public URI resolveExternalSpecURI(URI specURI) {
+        if (!specURI.isAbsolute()) {
+            URI baseURI = configuration.getOptions().specBaseURI();
+            if (baseURI == null) {
+                baseURI = URI.create("../specs/");
+            }
+            if (!baseURI.isAbsolute() && !pathToRoot.isEmpty()) {
+                baseURI = URI.create(pathToRoot.getPath() + "/").resolve(baseURI);
+            }
+            specURI = baseURI.resolve(specURI);
+        }
+        return specURI;
+    }
+
 }

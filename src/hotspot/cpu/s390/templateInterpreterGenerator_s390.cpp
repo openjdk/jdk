@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -482,12 +482,6 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   return __ addr_at(entry_offset);
 }
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Inputs:
   //  Z_ARG1 - receiver
@@ -793,7 +787,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
 
 void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_size, Register tmp1) {
   Register tmp2 = Z_R1_scratch;
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   NearLabel after_frame_check;
 
   BLOCK_COMMENT("stack_overflow_check {");
@@ -1301,7 +1295,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 // native method than the typical interpreter frame setup.
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Determine code generation flags.
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -1658,7 +1652,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry_point = __ pc();
 
-  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter = UseCompiler || CountCompiledCalls;
 
   // Interpreter entry for ordinary Java methods.
   //
@@ -2026,7 +2020,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked. Only true for non-native. For native, we only bang the last page.
-  const int page_size      = os::vm_page_size();
+  const size_t page_size      = os::vm_page_size();
   const int n_shadow_pages = (int)(StackOverflow::stack_shadow_zone_size()/page_size);
   const int start_page_num = native_call ? n_shadow_pages : 1;
   for (int pages = start_page_num; pages <= n_shadow_pages; pages++) {

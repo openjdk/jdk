@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import jdk.internal.event.ProcessStartEvent;
 import sun.security.action.GetPropertyAction;
 
@@ -1005,6 +1004,8 @@ public final class ProcessBuilder
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the process builder's {@link #environment()}.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      *
      * <p>If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}
@@ -1114,12 +1115,8 @@ public final class ProcessBuilder
                                      redirectErrorStream);
             ProcessStartEvent event = new ProcessStartEvent();
             if (event.isEnabled()) {
-                StringJoiner command = new StringJoiner(" ");
-                for (String s: cmdarray) {
-                    command.add(s);
-                }
                 event.directory = dir;
-                event.command = command.toString();
+                event.command = String.join(" ", cmdarray);
                 event.pid = process.pid();
                 event.commit();
             }
@@ -1186,6 +1183,8 @@ public final class ProcessBuilder
      * be required to start a process on some operating systems.
      * As a result, the subprocess may inherit additional environment variable
      * settings beyond those in the process builder's {@link #environment()}.
+     * The minimal set of system dependent environment variables
+     * may override the values provided in the environment.
      * <p>
      * If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}

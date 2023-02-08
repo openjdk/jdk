@@ -26,7 +26,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -111,13 +110,12 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   }
 }
 
-void CardTableRS::younger_refs_in_space_iterate(Space* sp,
-                                                HeapWord* gen_boundary,
+void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate(sp, gen_boundary, urasm, cl, this);
+  non_clean_card_iterate(sp, urasm, cl, this);
 }
 
 #ifdef ASSERT
@@ -431,7 +429,6 @@ void CardTableRS::verify() {
   // generational heaps.
   VerifyCTGenClosure blk(this);
   GenCollectedHeap::heap()->generation_iterate(&blk, false);
-  CardTable::verify();
 }
 
 CardTableRS::CardTableRS(MemRegion whole_heap) :
@@ -441,8 +438,7 @@ void CardTableRS::initialize() {
   CardTable::initialize();
 }
 
-void CardTableRS::non_clean_card_iterate(Space* sp,
-                                         HeapWord* gen_boundary,
+void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
                                          OopIterateClosure* cl,
                                          CardTableRS* ct)
@@ -452,12 +448,12 @@ void CardTableRS::non_clean_card_iterate(Space* sp,
   }
   // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), gen_boundary);
-  ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
+  DirtyCardToOopClosure dcto_cl{sp, cl};
+  ClearNoncleanCardWrapper clear_cl(&dcto_cl, ct);
 
   clear_cl.do_MemRegion(mr);
 }
 
-bool CardTableRS::is_in_young(oop obj) const {
-  return GenCollectedHeap::heap()->is_in_young(obj);
+bool CardTableRS::is_in_young(const void* p) const {
+  return GenCollectedHeap::heap()->is_in_young(p);
 }

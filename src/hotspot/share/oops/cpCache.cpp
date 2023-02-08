@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/archiveBuilder.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/codeCache.hpp"
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -47,7 +49,6 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/vm_version.hpp"
@@ -431,10 +432,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
-    objArrayOop resolved_references = cpool->resolved_references();
-    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
-    resolved_references->obj_at_put(appendix_index, appendix());
+    oop old_oop = cpool->set_resolved_reference_at(appendix_index, appendix());
+    assert(old_oop == nullptr, "init just once");
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -445,7 +444,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   NOT_PRODUCT(verify(tty));
 
   if (log_stream != NULL) {
-    this->print(log_stream, 0);
+    this->print(log_stream, 0, cpool->cache());
   }
 
   assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");
@@ -479,7 +478,7 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   return true;
 }
 
-Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) {
+Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) const {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
@@ -526,12 +525,11 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
 }
 
 
-oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) {
+oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) const {
   if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index();
-  objArrayOop resolved_references = cpool->resolved_references();
-  return resolved_references->obj_at(ref_index);
+  return cpool->resolved_reference_at(ref_index);
 }
 
 
@@ -619,16 +617,50 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
 }
 #endif // INCLUDE_JVMTI
 
-void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
+void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPoolCache* cache) const {
   // print separator
   if (index == 0) st->print_cr("                 -------------");
-  // print entry
-  st->print("%3d  (" PTR_FORMAT ")  ", index, (intptr_t)this);
-  st->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(),
-               constant_pool_index());
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f1);
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f2);
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_flags);
+  // print universal entry info
+  st->print_cr("%3d", index);
+  st->print_cr(" - this: " PTR_FORMAT, p2i(this));
+  st->print_cr(" - bytecode 1: %s %02x", Bytecodes::name(bytecode_1()), bytecode_1());
+  st->print_cr(" - bytecode 2: %s %02x", Bytecodes::name(bytecode_2()), bytecode_2());
+  st->print_cr(" - cp index: %5d", constant_pool_index());
+  if (is_method_entry()) {
+    ResourceMark rm;
+    constantPoolHandle cph(Thread::current(), cache->constant_pool());
+    Method* m = method_if_resolved(cph);
+    st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
+    st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
+    st->print_cr(" - method: " INTPTR_FORMAT " %s", p2i(m), m != nullptr ? m->external_name() : nullptr);
+    st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]",
+                 flag_state(), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
+    st->print_cr(" - tos: %s\n - local signature: %01x\n"
+                 " - has appendix: %01x\n - forced virtual: %01x\n"
+                 " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
+                 " - num parameters: %02x",
+                 type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
+    if (bytecode_1() == Bytecodes::_invokehandle ||
+        bytecode_1() == Bytecodes::_invokedynamic) {
+      oop appendix = appendix_if_resolved(cph);
+      if (appendix != nullptr) {
+        st->print("  appendix: ");
+        appendix->print_on(st);
+      }
+    }
+  } else {
+    assert(is_field_entry(), "must be a field entry");
+    st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
+    st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
+    st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]",
+                 flag_state(), is_final(), is_volatile(), field_index());
+    st->print_cr(" - tos: %s\n - final: %d\n - volatile: %d\n - field index: %04x",
+                 type2name(as_BasicType(flag_state())), is_final(), is_volatile(), field_index());
+  }
   st->print_cr("                 -------------");
 }
 
@@ -680,35 +712,33 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
 
 // Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
 void ConstantPoolCache::record_gc_epoch() {
-  _gc_epoch = Continuations::gc_epoch();
+  _gc_epoch = CodeCache::gc_epoch();
 }
 
-void ConstantPoolCache::save_for_archive() {
 #if INCLUDE_CDS
-  ConstantPoolCacheEntry* copy = NEW_C_HEAP_ARRAY(ConstantPoolCacheEntry, length(), mtClassShared);
+void ConstantPoolCache::save_for_archive(TRAPS) {
+  ClassLoaderData* loader_data = constant_pool()->pool_holder()->class_loader_data();
+  _initial_entries = MetadataFactory::new_array<ConstantPoolCacheEntry>(loader_data, length(), CHECK);
   for (int i = 0; i < length(); i++) {
-    copy[i] = *entry_at(i);
+    _initial_entries->at_put(i, *entry_at(i));
   }
-
-  SystemDictionaryShared::set_saved_cpcache_entries(this, copy);
-#endif
 }
 
 void ConstantPoolCache::remove_unshareable_info() {
-#if INCLUDE_CDS
   Arguments::assert_is_dumping_archive();
-  // <this> is the copy to be written into the archive. It's in
-  // the ArchiveBuilder's "buffer space". However, the saved_cpcache_entries
-  // are recorded with the original ConstantPoolCache object.
-  ConstantPoolCache* orig_cpc = ArchiveBuilder::current()->get_src_obj(this);
-  ConstantPoolCacheEntry* saved = SystemDictionaryShared::get_saved_cpcache_entries_locked(orig_cpc);
+  // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
+  // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
+  // still pointing to the array allocated inside save_for_archive().
+  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
-    *entry_at(i) = saved[i];
+    *entry_at(i) = _initial_entries->at(i);
   }
-#endif
+  _initial_entries = NULL;
 }
+#endif // INCLUDE_CDS
 
 void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   assert(!is_shared(), "shared caches are not deallocated");
@@ -716,10 +746,11 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
   set_reference_map(NULL);
-
 #if INCLUDE_CDS
-  if (Arguments::is_dumping_archive()) {
-    SystemDictionaryShared::remove_saved_cpcache_entries(this);
+  if (_initial_entries != NULL) {
+    Arguments::assert_is_dumping_archive();
+    MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
+    _initial_entries = NULL;
   }
 #endif
 }
@@ -739,9 +770,9 @@ void ConstantPoolCache::clear_archived_references() {
   }
 }
 
-void ConstantPoolCache::set_archived_references(oop o) {
+void ConstantPoolCache::set_archived_references(int root_index) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references_index = HeapShared::append_root(o);
+  _archived_references_index = root_index;
 }
 #endif
 
@@ -784,7 +815,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
     if (entry_at(i)->get_interesting_method_entry() != NULL) {
-      entry_at(i)->print(tty, i);
+      entry_at(i)->print(tty, i, this);
     }
   }
 }
@@ -801,7 +832,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
-  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i);
+  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {

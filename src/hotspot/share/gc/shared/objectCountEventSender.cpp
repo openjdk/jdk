@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,12 @@ template <typename T>
 void ObjectCountEventSender::send_event_if_enabled(Klass* klass, jlong count, julong size, const Ticks& timestamp) {
   T event(UNTIMED);
   if (event.should_commit()) {
+    event.set_starttime(timestamp);
+    event.set_endtime(timestamp);
     event.set_gcId(GCId::current());
     event.set_objectClass(klass);
     event.set_count(count);
     event.set_totalSize(size);
-    event.set_endtime(timestamp);
     event.commit();
   }
 }

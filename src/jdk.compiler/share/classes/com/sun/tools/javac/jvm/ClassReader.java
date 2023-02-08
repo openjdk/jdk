@@ -2199,18 +2199,23 @@ public class ClassReader {
     /** Read a field.
      */
     VarSymbol readField() {
-        long flags = adjustFieldFlags(nextChar());
+        char rawFlags = nextChar();
+        long flags = adjustFieldFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
         Type type = poolReader.getType(nextChar());
         VarSymbol v = new VarSymbol(flags, name, type, currentOwner);
         readMemberAttrs(v);
+        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1 ||
+            Integer.bitCount(rawFlags & (FINAL | VOLATILE)) > 1)
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "field", v);
         return v;
     }
 
     /** Read a method.
      */
     MethodSymbol readMethod() {
-        long flags = adjustMethodFlags(nextChar());
+        char rawFlags = nextChar();
+        long flags = adjustMethodFlags(rawFlags);
         Name name = poolReader.getName(nextChar());
         Type type = poolReader.getType(nextChar());
         if (currentOwner.isInterface() &&
@@ -2259,6 +2264,8 @@ public class ClassReader {
         validateMethodType(name, m.type);
         setParameters(m, type);
 
+        if (Integer.bitCount(rawFlags & (PUBLIC | PRIVATE | PROTECTED)) > 1)
+            throw badClassFile("illegal.flag.combo", Flags.toString((long)rawFlags), "method", m);
         if ((flags & VARARGS) != 0) {
             final Type last = type.getParameterTypes().last();
             if (last == null || !last.hasTag(ARRAY)) {

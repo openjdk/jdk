@@ -49,7 +49,6 @@ com/sun/jdi/RedefineG.java 8285422 generic-all
 com/sun/jdi/RedefineNestmateAttr/TestNestmateAttr.java 8285422 generic-all
 com/sun/jdi/RedefineTTYLineNumber.java 8285422 generic-all
 com/sun/jdi/ReferrersTest.java 8285422 generic-all
-com/sun/jdi/ResumeAfterThreadResumeCallTest.java 8285422 generic-all
 com/sun/jdi/SetLocalWhileThreadInNative.java 8285422 generic-all
 com/sun/jdi/StepTest.java 8285422 generic-all
 com/sun/jdi/redefine/RedefineTest.java 8285422 generic-all

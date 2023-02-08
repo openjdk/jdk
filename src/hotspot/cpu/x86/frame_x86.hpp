@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,6 @@
 #ifndef CPU_X86_FRAME_X86_HPP
 #define CPU_X86_FRAME_X86_HPP
 
-#include "runtime/synchronizer.hpp"
-
 // A frame represents a physical stack frame (an activation).  Frames can be
 // C or Java frames, and the Java frames can be interpreted or compiled.
 // In contrast, vframes represent source-level activations, so that one physical frame
@@ -43,6 +41,7 @@
 //    [pointer to locals     ]                   = locals()             locals_offset
 //    [constant pool cache   ]                   = cache()              cache_offset
 //    [methodData            ]                   = mdp()                mdx_offset
+//    [klass of method       ]                   = mirror()             mirror_offset
 //    [Method*               ]                   = method()             method_offset
 //    [last sp               ]                   = last_sp()            last_sp_offset
 //    [old stack pointer     ]                     (sender_sp)          sender_sp_offset
@@ -99,7 +98,15 @@
 
     // size, in words, of frame metadata (e.g. pc and link)
     metadata_words                                   = sender_sp_offset,
-    // compiled frame alignment, in bytes
+    // size, in words, of metadata at frame bottom, i.e. it is not part of the
+    // caller/callee overlap
+    metadata_words_at_bottom                         = metadata_words,
+    // size, in words, of frame metadata at the frame top, i.e. it is located
+    // between a callee frame and its stack arguments, where it is part
+    // of the caller/callee overlap
+    metadata_words_at_top                            = 0,
+    // size, in words, of frame metadata at the frame top that needs
+    // to be reserved for callee functions in the runtime
     frame_alignment                                  = 16,
     // size, in words, of maximum shift in frame position due to alignment
     align_wiggle                                     =  1

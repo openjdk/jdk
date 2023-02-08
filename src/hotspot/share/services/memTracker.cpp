@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2028, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +47,7 @@
 #include <windows.h>
 #endif
 
-volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
-NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
+NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
@@ -73,11 +73,15 @@ void MemTracker::initialize() {
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
       return;
     }
+  } else {
+    if (MallocLimit != nullptr) {
+      warning("MallocLimit will be ignored since NMT is disabled.");
+    }
   }
 
   NMTPreInit::pre_to_post();
 
-  _tracking_level = _cmdline_tracking_level = level;
+  _tracking_level = level;
 
   // Log state right after NMT initialization
   if (log_is_enabled(Info, nmt)) {
@@ -110,6 +114,7 @@ void MemTracker::error_report(outputStream* output) {
     report(true, output, MemReporterBase::default_scale); // just print summary for error case.
     output->print("Preinit state:");
     NMTPreInit::print_state(output);
+    MallocMemorySummary::print_limits(output);
   }
 }
 
@@ -127,7 +132,7 @@ void MemTracker::final_report(outputStream* output) {
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
- assert(output != NULL, "No output stream");
+ assert(output != nullptr, "No output stream");
   MemBaseline baseline;
   baseline.baseline(summary_only);
   if (summary_only) {
@@ -154,5 +159,6 @@ void MemTracker::tuning_statistics(outputStream* out) {
   out->cr();
   out->print_cr("Preinit state:");
   NMTPreInit::print_state(out);
+  MallocMemorySummary::print_limits(out);
   out->cr();
 }

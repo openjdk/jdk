@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -63,6 +63,9 @@ protected:
 public:
   // Initialization
   static void initialize();
+  static void check_virtualizations();
+
+  static void print_platform_virtualization_info(outputStream*);
 
   // Asserts
   static void assert_is_initialized() {
@@ -102,9 +105,17 @@ public:
     CPU_APPLE     = 'a',
   };
 
+enum Ampere_CPU_Model {
+    CPU_MODEL_EMAG      = 0x0,   /* CPU implementer is CPU_AMCC */
+    CPU_MODEL_ALTRA     = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_ALTRAMAX  = 0xd0c, /* CPU implementer is CPU_ARM, Neoverse N1 */
+    CPU_MODEL_AMPERE_1  = 0xac3, /* CPU implementer is CPU_AMPERE */
+    CPU_MODEL_AMPERE_1A = 0xac4  /* CPU implementer is CPU_AMPERE */
+};
+
 #define CPU_FEATURE_FLAGS(decl)               \
     decl(FP,            fp,            0)     \
-    decl(ASIMD,         simd,          1)     \
+    decl(ASIMD,         asimd,         1)     \
     decl(EVTSTRM,       evtstrm,       2)     \
     decl(AES,           aes,           3)     \
     decl(PMULL,         pmull,         4)     \

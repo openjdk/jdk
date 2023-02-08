@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ class CmpNode;
 class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
+class ConINode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -411,7 +412,7 @@ protected:
 
 #ifdef ASSERT
   bool is_dead() const;
-#define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
+  static bool is_not_dead(const Node* n);
   bool is_reachable_from_root() const;
 #endif
   // Check whether node has become unreachable
@@ -559,6 +560,7 @@ public:
     if (_in[i] != NULL) _in[i]->del_out((Node *)this);
     _in[i] = n;
     n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
 
   // Set this node's index, used by cisc_version to replace current node
@@ -710,6 +712,9 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+      DEFINE_CLASS_ID(Con, Type, 8)
+          DEFINE_CLASS_ID(ConI, Con, 0)
+
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -762,7 +767,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
 
-    _max_classes  = ClassMask_Move
+    _max_classes  = ClassMask_LShift
   };
   #undef DEFINE_CLASS_ID
 
@@ -861,6 +866,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -921,6 +927,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
@@ -1035,7 +1042,7 @@ public:
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
   // treatise in node.cpp above the default implementation AND TEST WITH
-  // +VerifyIterativeGVN!
+  // -XX:VerifyIterativeGVN=1
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Some nodes have specific Ideal subgraph transformations only if they are
@@ -1187,77 +1194,42 @@ public:
 
 //----------------- Printing, etc
 #ifndef PRODUCT
- private:
-  int _indent;
-
  public:
-  void set_indent(int indent) { _indent = indent; }
-
- private:
-  static bool add_to_worklist(Node* n, Node_List* worklist, Arena* old_arena, VectorSet* old_space, VectorSet* new_space);
-public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options); // Print BFS traversal
-  void dump_bfs(const int max_distance); // dump_bfs(max_distance, nullptr, nullptr)
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
-  public:
+   public:
     // overridden to implement coloring of node idx
     virtual void pre_dump(outputStream *st, const Node* n) = 0;
     virtual void post_dump(outputStream *st) = 0;
   };
   void dump_idx(bool align = false, outputStream* st = tty, DumpConfig* dc = nullptr) const;
   void dump_name(outputStream* st = tty, DumpConfig* dc = nullptr) const;
-  void dump() const { dump("\n"); }  // Print this node.
+  void dump() const; // print node with newline
   void dump(const char* suffix, bool mark = false, outputStream* st = tty, DumpConfig* dc = nullptr) const; // Print this node.
   void dump(int depth) const;        // Print this node, recursively to depth d
   void dump_ctrl(int depth) const;   // Print control nodes, to depth d
   void dump_comp() const;            // Print this node in compact representation.
   // Print this node in compact representation.
   void dump_comp(const char* suffix, outputStream *st = tty) const;
+ private:
   virtual void dump_req(outputStream* st = tty, DumpConfig* dc = nullptr) const;    // Print required-edge info
   virtual void dump_prec(outputStream* st = tty, DumpConfig* dc = nullptr) const;   // Print precedence-edge info
   virtual void dump_out(outputStream* st = tty, DumpConfig* dc = nullptr) const;    // Print the output edge info
+ public:
   virtual void dump_spec(outputStream *st) const {};      // Print per-node info
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
-  void dump_related() const;             // Print related nodes (depends on node at hand).
-  // Print related nodes up to given depths for input and output nodes.
-  void dump_related(uint d_in, uint d_out) const;
-  void dump_related_compact() const;     // Print related nodes in compact representation.
-  // Collect related nodes.
-  virtual void related(GrowableArray<Node*> *in_rel, GrowableArray<Node*> *out_rel, bool compact) const;
-  // Collect nodes starting from this node, explicitly including/excluding control and data links.
-  void collect_nodes(GrowableArray<Node*> *ns, int d, bool ctrl, bool data) const;
 
-  // Node collectors, to be used in implementations of Node::rel().
-  // Collect the entire data input graph. Include control inputs if requested.
-  void collect_nodes_in_all_data(GrowableArray<Node*> *ns, bool ctrl) const;
-  // Collect the entire control input graph. Include data inputs if requested.
-  void collect_nodes_in_all_ctrl(GrowableArray<Node*> *ns, bool data) const;
-  // Collect the entire output graph until hitting and including control nodes.
-  void collect_nodes_out_all_ctrl_boundary(GrowableArray<Node*> *ns) const;
-
-  void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
   virtual const char *Name() const;
 
   void dump_format(PhaseRegAlloc *ra) const; // debug access to MachNode::format(...)
-  // RegMask Print Functions
-  void dump_in_regmask(int idx) { in_RegMask(idx).dump(); }
-  void dump_out_regmask() { out_RegMask().dump(); }
-  static bool in_dump() { return Compile::current()->_in_dump_cnt > 0; }
-  void fast_dump() const {
-    tty->print("%4d: %-17s", _idx, Name());
-    for (uint i = 0; i < len(); i++)
-      if (in(i))
-        tty->print(" %4d", in(i)->_idx);
-      else
-        tty->print(" NULL");
-    tty->print("\n");
-  }
+  static bool in_dump() { return Compile::current()->_in_dump_cnt > 0; } // check if we are in a dump call
 #endif
 #ifdef ASSERT
   void verify_construction();
@@ -1549,7 +1521,7 @@ class SimpleDUIterator : public StackObj {
 // Abstractly provides an infinite array of Node*'s, initialized to NULL.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Node_Array : public ResourceObj {
+class Node_Array : public AnyObj {
   friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.util.regex.*;
  */
 public class ClassVersionChecker {
     private static enum Version {
-        SEVEN("7", 51),
         EIGHT("8", 52),
         NINE("9", 53),
         TEN("10", 54),
@@ -55,7 +54,8 @@ public class ClassVersionChecker {
         SEVENTEEN("17", 61),
         EIGHTEEN("18", 62),
         NINETEEN("19", 63),
-        TWENTY("20", 64);
+        TWENTY("20", 64),
+        TWENTY_ONE("21", 65);
 
         private Version(String release, int classFileVer) {
             this.release = release;

@@ -25,7 +25,6 @@
 
 package sun.security.util;
 
-import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -431,9 +430,9 @@ public enum KnownOIDs {
 
     Blowfish("1.3.6.1.4.1.3029.1.1.2");
 
-    private String stdName;
-    private String oid;
-    private String[] aliases;
+    private final String stdName;
+    private final String oid;
+    private final String[] aliases;
 
     // find the matching enum using either name or oid string
     // return null if no match found
@@ -457,7 +456,7 @@ public enum KnownOIDs {
         }
         for (KnownOIDs o : KnownOIDs.values()) {
             register(o);
-        };
+        }
     }
 
     private static void register(KnownOIDs o) {
@@ -493,13 +492,13 @@ public enum KnownOIDs {
         }
     }
 
-    private KnownOIDs(String oid) {
+    KnownOIDs(String oid) {
         this.oid = oid;
         this.stdName = name(); // defaults to enum name
         this.aliases = new String[0];
     }
 
-    private KnownOIDs(String oid, String stdName, String ... aliases) {
+    KnownOIDs(String oid, String stdName, String... aliases) {
         this.oid = oid;
         this.stdName = stdName;
         this.aliases = aliases;

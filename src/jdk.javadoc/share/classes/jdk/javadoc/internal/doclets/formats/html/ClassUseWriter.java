@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,8 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_Packages.that.use.0",
                 getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
-        Table table = new Table(HtmlStyle.summaryTable)
+                        HtmlLinkInfo.Kind.PLAIN, typeElement)));
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -266,9 +266,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content caption = contents.getContent(
                 "doclet.ClassUse_PackageAnnotation",
                 getLink(new HtmlLinkInfo(configuration,
-                        HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)));
+                        HtmlLinkInfo.Kind.PLAIN, typeElement)));
 
-        Table table = new Table(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyle.summaryTable)
                 .setCaption(caption)
                 .setHeader(getPackageTableHeader())
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
@@ -291,7 +291,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             var section = HtmlTree.SECTION(HtmlStyle.detail)
                     .setId(htmlIds.forPackage(pkg));
             Content link = contents.getContent("doclet.ClassUse_Uses.of.0.in.1",
-                    getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER,
+                    getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN,
                             typeElement)),
                     getPackageLink(pkg, getLocalizedPackageName(pkg)));
             var heading = HtmlTree.HEADING(Headings.TypeUse.SUMMARY_HEADING, link);
@@ -309,7 +309,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      * @param pkg the package that uses the given class
      * @param table the table to which the package use information will be added
      */
-    protected void addPackageUse(PackageElement pkg, Table table) {
+    protected void addPackageUse(PackageElement pkg, Table<?> table) {
         Content pkgLink =
                 links.createLink(htmlIds.forPackage(pkg), getLocalizedPackageName(pkg));
         Content summary = new ContentBuilder();
@@ -325,7 +325,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addClassUse(PackageElement pkg, Content content) {
         Content classLink = getLink(new HtmlLinkInfo(configuration,
-            HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement));
+            HtmlLinkInfo.Kind.PLAIN, typeElement));
         Content pkgLink = getPackageLink(pkg, getLocalizedPackageName(pkg));
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg),
                 contents.getContent("doclet.ClassUse_Annotation", classLink,
@@ -425,7 +425,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
                 contents.moduleLabel);
         Content classLinkContent = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.CLASS_USE_HEADER, typeElement)
+                configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
                 .label(resources.getText("doclet.Class"))
                 .skipPreview(true));
         return super.getNavBar(pageMode, element)

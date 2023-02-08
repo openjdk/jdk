@@ -30,7 +30,6 @@
  * @test
  * @bug 8180643
  * @summary Illegal handshake message
- * @ignore the dependent implementation details are changed
  * @run main/othervm IllegalHandshakeMessage
  */
 

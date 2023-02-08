@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,7 @@
 
 ################################################################################
 # The order of these defines the priority by which we try to find them.
-VALID_VS_VERSIONS="2019 2017 2022"
-
-VS_DESCRIPTION_2017="Microsoft Visual Studio 2017"
-VS_VERSION_INTERNAL_2017=141
-VS_MSVCR_2017=vcruntime140.dll
-VS_MSVCP_2017=msvcp140.dll
-VS_ENVVAR_2017="VS150COMNTOOLS"
-VS_USE_UCRT_2017="true"
-VS_VS_INSTALLDIR_2017="Microsoft Visual Studio/2017"
-VS_EDITIONS_2017="BuildTools Community Professional Enterprise"
-VS_SDK_INSTALLDIR_2017=
-VS_VS_PLATFORM_NAME_2017="v141"
-VS_SDK_PLATFORM_NAME_2017=
-VS_SUPPORTED_2017=true
-VS_TOOLSET_SUPPORTED_2017=true
+VALID_VS_VERSIONS="2022 2019"
 
 VS_DESCRIPTION_2019="Microsoft Visual Studio 2019"
 VS_VERSION_INTERNAL_2019=142
@@ -84,7 +70,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
     UTIL_FIXUP_PATH(VS_BASE, NOFAIL)
 
     if test "x$VS_BASE" != x && test -d "$VS_BASE"; then
-      # In VS 2017 and VS 2019, the default installation is in a subdir named after the edition.
+      # In VS 2019, the default installation is in a subdir named after the edition.
       # Find the first one present and use that.
       if test "x$VS_EDITIONS" != x; then
         for edition in $VS_EDITIONS; do
@@ -97,20 +83,18 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
 
       AC_MSG_NOTICE([Found Visual Studio installation at $VS_BASE using $METHOD])
       if test "x$TARGET_CPU" = xx86; then
-        VCVARSFILES="vc/bin/vcvars32.bat vc/auxiliary/build/vcvars32.bat"
+        VCVARSFILES="vcvars32.bat vcvarsamd64_x86.bat"
       elif test "x$TARGET_CPU" = xx86_64; then
-        VCVARSFILES="vc/bin/amd64/vcvars64.bat vc/bin/x86_amd64/vcvarsx86_amd64.bat \
-            vc/auxiliary/build/vcvarsx86_amd64.bat vc/auxiliary/build/vcvars64.bat"
+        VCVARSFILES="vcvars64.bat vcvarsx86_amd64.bat"
       elif test "x$TARGET_CPU" = xaarch64; then
         # for host x86-64, target aarch64
         # aarch64 requires Visual Studio 16.8 or higher
-        VCVARSFILES="vc/auxiliary/build/vcvarsamd64_arm64.bat \
-            vc/auxiliary/build/vcvarsx86_arm64.bat"
+        VCVARSFILES="vcvarsamd64_arm64.bat vcvarsx86_arm64.bat"
       fi
 
       for VCVARSFILE in $VCVARSFILES; do
-        if test -f "$VS_BASE/$VCVARSFILE"; then
-          VS_ENV_CMD="$VS_BASE/$VCVARSFILE"
+        if test -f "$VS_BASE/vc/auxiliary/build/$VCVARSFILE"; then
+          VS_ENV_CMD="$VS_BASE/vc/auxiliary/build/$VCVARSFILE"
           break
         fi
       done
@@ -172,11 +156,9 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
 # build environment and assigns it to VS_ENV_CMD
 AC_DEFUN([TOOLCHAIN_FIND_VISUAL_STUDIO_BAT_FILE],
 [
-  # VS2017 provides the option to install previous minor versions of the MSVC
-  # toolsets. It is not possible to directly download earlier minor versions of
-  # VS2017 and in order to build with a previous minor compiler toolset version,
-  # it is now possible to compile with earlier minor versions by passing
-  # -vcvars_ver=<toolset_version> argument to vcvarsall.bat.
+  # Since VS2017 MS provides the option to install previous minor versions of
+  # the toolset. In order to build with a previous minor compiler toolset
+  # version, pass -vcvars_ver=<toolset_version> argument to vcvarsall.bat.
   AC_ARG_WITH(msvc-toolset-version, [AS_HELP_STRING([--with-msvc-toolset-version],
       [specific MSVC toolset version to use, passed as -vcvars_ver argument to
        pass to vcvarsall.bat (Windows only)])])
@@ -494,14 +476,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_MSVC_DLL],
 
   if test "x$MSVC_DLL" = x; then
     if test "x$VCINSTALLDIR" != x; then
-      if test "$VS_VERSION" -lt 2017; then
-        # Probe: Using well-known location from Visual Studio 12.0 and older
-        POSSIBLE_MSVC_DLL="$VCINSTALLDIR/redist/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME"
-      else
-        # Probe: Using well-known location from VS 2017 and VS 2019
-        POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME 2> /dev/null`"
-      fi
-      # In case any of the above finds more than one file, loop over them.
+      # Probe: Using well-known location
+      POSSIBLE_MSVC_DLL="`ls $VCToolsRedistDir/$vs_target_cpu/microsoft.vc${VS_VERSION_INTERNAL}.crt/$DLL_NAME 2> /dev/null`"
+      # If the above finds more than one file, loop over them.
       for possible_msvc_dll in $POSSIBLE_MSVC_DLL; do
         TOOLCHAIN_CHECK_POSSIBLE_MSVC_DLL([$DLL_NAME], [$possible_msvc_dll],
             [well-known location in VCINSTALLDIR])

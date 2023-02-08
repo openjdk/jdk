@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
@@ -944,7 +945,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       tty->print_cr("# --- schedule_local B%d, before: ---", block->_pre_order);
       for (uint i = 0;i < block->number_of_nodes(); i++) {
         tty->print("# ");
-        block->get_node(i)->fast_dump();
+        block->get_node(i)->dump();
       }
       tty->print_cr("#");
     }
@@ -1212,7 +1213,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
     tty->print_cr("# after schedule_local");
     for (uint i = 0;i < block->number_of_nodes();i++) {
       tty->print("# ");
-      block->get_node(i)->fast_dump();
+      block->get_node(i)->dump();
     }
     tty->print_cr("# ");
 

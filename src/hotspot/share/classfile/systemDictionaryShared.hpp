@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 #define SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
+#include "cds/cds_globals.hpp"
 #include "cds/filemap.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
@@ -34,7 +35,6 @@
 #include "classfile/systemDictionary.hpp"
 #include "oops/klass.hpp"
 #include "oops/oopHandle.hpp"
-#include "utilities/resourceHash.hpp"
 
 
 /*===============================================================================
@@ -127,8 +127,8 @@ class SharedClassLoadingMark {
  public:
   SharedClassLoadingMark(Thread* current, InstanceKlass* ik) : THREAD(current), _klass(ik) {}
   ~SharedClassLoadingMark() {
-    assert(THREAD != NULL, "Current thread is NULL");
-    assert(_klass != NULL, "InstanceKlass is NULL");
+    assert(THREAD != nullptr, "Current thread is nullptr");
+    assert(_klass != nullptr, "InstanceKlass is nullptr");
     if (HAS_PENDING_EXCEPTION) {
       if (_klass->is_shared()) {
         _klass->set_shared_loading_failed();
@@ -168,15 +168,6 @@ private:
   static DumpTimeLambdaProxyClassDictionary* _dumptime_lambda_proxy_class_dictionary;
   static DumpTimeLambdaProxyClassDictionary* _cloned_dumptime_lambda_proxy_class_dictionary;
 
-  // Doesn't need to be cloned as it's not modified during dump time.
-  using SavedCpCacheEntriesTable = ResourceHashtable<
-    ConstantPoolCache*,
-    ConstantPoolCacheEntry*,
-    15889, // prime number
-    ResourceObj::C_HEAP,
-    mtClassShared>;
-  static SavedCpCacheEntriesTable* _saved_cpcache_entries_table;
-
   static ArchiveInfo _static_archive;
   static ArchiveInfo _dynamic_archive;
 
@@ -195,7 +186,7 @@ private:
                                  const ClassFileStream* cfs,
                                  TRAPS);
 
-  // Guaranteed to return non-NULL value for non-shared classes.
+  // Guaranteed to return non-null value for non-shared classes.
   // k must not be a shared class.
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
@@ -248,11 +239,6 @@ public:
     return ClassLoaderData::the_null_class_loader_data()->dictionary();
   }
 
-  static void set_saved_cpcache_entries(ConstantPoolCache* cpc, ConstantPoolCacheEntry* entries);
-  static ConstantPoolCacheEntry* get_saved_cpcache_entries_locked(ConstantPoolCache* k);
-  static void remove_saved_cpcache_entries(ConstantPoolCache* cpc);
-  static void remove_saved_cpcache_entries_locked(ConstantPoolCache* cpc);
-
   static void update_shared_entry(InstanceKlass* klass, int id);
   static void set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs);
 
@@ -292,10 +278,10 @@ public:
                                                       Symbol* invoked_type,
                                                       Symbol* method_type,
                                                       Method* member_method,
-                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(NULL);
-  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(NULL);
+                                                      Symbol* instantiated_method_type) NOT_CDS_RETURN_(nullptr);
+  static InstanceKlass* get_shared_nest_host(InstanceKlass* lambda_ik) NOT_CDS_RETURN_(nullptr);
   static InstanceKlass* prepare_shared_lambda_proxy_class(InstanceKlass* lambda_ik,
-                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(NULL);
+                                                          InstanceKlass* caller_ik, TRAPS) NOT_CDS_RETURN_(nullptr);
   static bool check_linking_constraints(Thread* current, InstanceKlass* klass) NOT_CDS_RETURN_(false);
   static void record_linking_constraint(Symbol* name, InstanceKlass* klass,
                                      Handle loader1, Handle loader2) NOT_CDS_RETURN;
@@ -360,14 +346,6 @@ public:
   }
 
   static unsigned int hash_for_shared_dictionary(address ptr);
-
-#if INCLUDE_CDS_JAVA_HEAP
-private:
-  static void update_archived_mirror_native_pointers_for(RunTimeSharedDictionary* dict);
-  static void update_archived_mirror_native_pointers_for(LambdaProxyClassDictionary* dict);
-public:
-  static void update_archived_mirror_native_pointers() NOT_CDS_RETURN;
-#endif
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

@@ -122,7 +122,7 @@ public class CFRetainedResource {
      * This is utility method which should be used instead of the direct access
      * to the {@link #ptr}, because this method guaranteed that the pointer will
      * not be zero and will be valid till the end of the operation.It is highly
-     * recomended to not use any external lock in action. If the current
+     * recommended to not use any external lock in action. If the current
      * {@link #ptr} is {@code 0} then action will be ignored.
      *
      * @param  action The native operation
@@ -142,7 +142,7 @@ public class CFRetainedResource {
      * This is utility method which should be used instead of the direct access
      * to the {@link #ptr}, because this method guaranteed that the pointer will
      * not be zero and will be valid till the end of the operation. It is highly
-     * recomended to not use any external lock in action. If the current
+     * recommended to not use any external lock in action. If the current
      * {@link #ptr} is {@code 0} then action will be ignored and {@code} is
      * returned.
      *

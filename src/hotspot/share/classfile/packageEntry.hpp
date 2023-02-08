@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "classfile/moduleEntry.hpp"
 #include "oops/symbol.hpp"
+#include "oops/symbolHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/resourceHash.hpp"
@@ -150,7 +151,7 @@ public:
   // return true.
   bool has_qual_exports_list() const {
     assert_locked_or_safepoint(Module_lock);
-    return (!is_unqual_exported() && _qualified_exports != NULL);
+    return (!is_unqual_exported() && _qualified_exports != nullptr);
   }
   bool is_exported_allUnnamed() const {
     assert_locked_or_safepoint(Module_lock);
@@ -236,8 +237,8 @@ public:
 // The PackageEntryTable is a Hashtable containing a list of all packages defined
 // by a particular class loader.  Each package is represented as a PackageEntry node.
 class PackageEntryTable : public CHeapObj<mtModule> {
-  ResourceHashtable<const Symbol*, PackageEntry*, 109, ResourceObj::C_HEAP, mtModule,
-                    Symbol::compute_hash> _table;
+  ResourceHashtable<SymbolHandle, PackageEntry*, 109, AnyObj::C_HEAP, mtModule,
+                    SymbolHandle::compute_hash> _table;
 public:
   PackageEntryTable();
   ~PackageEntryTable();

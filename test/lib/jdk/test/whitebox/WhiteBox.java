@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,8 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  public native void forceClassLoaderStatsSafepoint();
+
   private native long getConstantPool0(Class<?> aClass);
   public         long getConstantPool(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -163,7 +165,52 @@ public class WhiteBox {
   }
 
   // G1
+
   public native boolean g1InConcurrentMark();
+  public native int g1CompletedConcurrentMarkCycles();
+
+  // Perform a complete concurrent GC cycle, using concurrent GC breakpoints.
+  // Completes any in-progress cycle before performing the requested cycle.
+  // Returns true if the cycle completed successfully.  If the cycle was not
+  // successful (e.g. it was aborted), then throws RuntimeException if
+  // errorIfFail is true, returning false otherwise.
+  public boolean g1RunConcurrentGC(boolean errorIfFail) {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      int count = g1CompletedConcurrentMarkCycles();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+      concurrentGCRunToIdle();
+      if (count < g1CompletedConcurrentMarkCycles()) {
+        return true;
+      } else if (errorIfFail) {
+        throw new RuntimeException("Concurrent GC aborted");
+      } else {
+        return false;
+      }
+    } finally {
+      concurrentGCReleaseControl();
+    }
+  }
+
+  public void g1RunConcurrentGC() {
+    g1RunConcurrentGC(true);
+  }
+
+  // Start a concurrent GC cycle, using concurrent GC breakpoints.
+  // The concurrent GC will continue in parallel with the caller.
+  // Completes any in-progress cycle before starting the requested cycle.
+  public void g1StartConcurrentGC() {
+    try {
+      // Take control, waiting until any in-progress cycle completes.
+      concurrentGCAcquireControl();
+      concurrentGCRunTo(AFTER_MARKING_STARTED, false);
+    } finally {
+      // Release control, permitting the cycle to complete.
+      concurrentGCReleaseControl();
+    }
+  }
+
   public native boolean g1HasRegionsToUncommit();
   private native boolean g1IsHumongous0(Object o);
   public         boolean g1IsHumongous(Object o) {
@@ -401,7 +448,6 @@ public class WhiteBox {
       return allocateCodeBlob( intSize, type);
   }
   public native void    freeCodeBlob(long addr);
-  public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
   private native long getMethodData0(Executable method);
@@ -539,10 +585,6 @@ public class WhiteBox {
     }
   }
 
-  // Method tries to start concurrent mark cycle.
-  // It returns false if CM Thread is always in concurrent cycle.
-  public native boolean g1StartConcMarkCycle();
-
   // Tests on ReservedSpace/VirtualSpace classes
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
   public native void readFromNoaccessArea();
@@ -666,6 +708,8 @@ public class WhiteBox {
                                    String procSelfCgroup,
                                    String procSelfMountinfo);
   public native void printOsInfo();
+  public native long hostPhysicalMemory();
+  public native long hostPhysicalSwap();
 
   // Decoder
   public native void disableElfSectionCache();

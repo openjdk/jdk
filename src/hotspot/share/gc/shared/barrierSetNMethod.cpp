@@ -40,8 +40,8 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 
-int BarrierSetNMethod::disarmed_value() const {
-  return *disarmed_value_address();
+int BarrierSetNMethod::disarmed_guard_value() const {
+  return *disarmed_guard_value_address();
 }
 
 bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
@@ -53,11 +53,28 @@ bool BarrierSetNMethod::supports_entry_barrier(nmethod* nm) {
     return false;
   }
 
+  if (nm->method()->is_continuation_yield_intrinsic()) {
+    return false;
+  }
+
+  if (nm->method()->is_continuation_native_intrinsic()) {
+    guarantee(false, "Unknown Continuation native intrinsic");
+    return false;
+  }
+
   if (!nm->is_native_method() && !nm->is_compiled_by_c2() && !nm->is_compiled_by_c1()) {
     return false;
   }
 
   return true;
+}
+
+void BarrierSetNMethod::disarm(nmethod* nm) {
+  set_guard_value(nm, disarmed_guard_value());
+}
+
+bool BarrierSetNMethod::is_armed(nmethod* nm) {
+  return guard_value(nm) != disarmed_guard_value();
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -72,7 +89,9 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
       // conversion that performs the load barriers. This is too subtle, so we instead
       // perform an explicit keep alive call.
       oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(p);
-      Universe::heap()->keep_alive(obj);
+      if (obj != nullptr) {
+        Universe::heap()->keep_alive(obj);
+      }
     }
 
     virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
@@ -83,48 +102,56 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   OopKeepAliveClosure cl;
   nm->oops_do(&cl);
 
-  // CodeCache sweeper support
-  nm->mark_as_maybe_on_continuation();
+  // CodeCache unloading support
+  nm->mark_as_maybe_on_stack();
 
   disarm(nm);
 
   return true;
 }
 
-int* BarrierSetNMethod::disarmed_value_address() const {
+int* BarrierSetNMethod::disarmed_guard_value_address() const {
   return (int*) &_current_phase;
 }
 
-ByteSize BarrierSetNMethod::thread_disarmed_offset() const {
-  return Thread::nmethod_disarmed_offset();
+ByteSize BarrierSetNMethod::thread_disarmed_guard_value_offset() const {
+  return Thread::nmethod_disarmed_guard_value_offset();
 }
 
 class BarrierSetNMethodArmClosure : public ThreadClosure {
 private:
-  int _disarm_value;
+  int _disarmed_guard_value;
 
 public:
-  BarrierSetNMethodArmClosure(int disarm_value) :
-      _disarm_value(disarm_value) {}
+  BarrierSetNMethodArmClosure(int disarmed_guard_value) :
+      _disarmed_guard_value(disarmed_guard_value) {}
 
   virtual void do_thread(Thread* thread) {
-    thread->set_nmethod_disarm_value(_disarm_value);
+    thread->set_nmethod_disarmed_guard_value(_disarmed_guard_value);
   }
 };
 
 void BarrierSetNMethod::arm_all_nmethods() {
   // Change to a new global GC phase. Doing this requires changing the thread-local
   // disarm value for all threads, to reflect the new GC phase.
+  // We wrap around at INT_MAX. That means that we assume nmethods won't have ABA
+  // problems in their nmethod disarm values after INT_MAX - 1 GCs. Every time a GC
+  // completes, ABA problems are removed, but if a concurrent GC is started and then
+  // aborted N times, that is when there could be ABA problems. If there are anything
+  // close to INT_MAX - 1 GCs starting without being able to finish, something is
+  // seriously wrong.
   ++_current_phase;
-  if (_current_phase == 4) {
+  if (_current_phase == INT_MAX) {
     _current_phase = 1;
   }
   BarrierSetNMethodArmClosure cl(_current_phase);
   Threads::threads_do(&cl);
 
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   // We clear the patching epoch when disarming nmethods, so that
   // the counter won't overflow.
-  AARCH64_PORT_ONLY(BarrierSetAssembler::clear_patching_epoch());
+  BarrierSetAssembler::clear_patching_epoch();
+#endif
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
@@ -176,5 +203,6 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
 
   assert(nm->is_osr_method(), "Should not reach here");
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
+  OrderAccess::cross_modify_fence();
   return nmethod_entry_barrier(nm);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zRuntimeWorkers.hpp"
 #include "memory/metaspace.hpp"
+#include "services/memoryUsage.hpp"
 
 class ZDirector;
 class ZDriver;
@@ -49,81 +50,82 @@ private:
   ZStat*            _stat;
   ZRuntimeWorkers   _runtime_workers;
 
-  virtual HeapWord* allocate_new_tlab(size_t min_size,
-                                      size_t requested_size,
-                                      size_t* actual_size);
+  HeapWord* allocate_new_tlab(size_t min_size,
+                              size_t requested_size,
+                              size_t* actual_size) override;
 
 public:
   static ZCollectedHeap* heap();
 
   ZCollectedHeap();
-  virtual Name kind() const;
-  virtual const char* name() const;
-  virtual jint initialize();
-  virtual void initialize_serviceability();
-  virtual void stop();
+  Name kind() const override;
+  const char* name() const override;
+  jint initialize() override;
+  void initialize_serviceability() override;
+  void stop() override;
 
-  virtual SoftRefPolicy* soft_ref_policy();
+  SoftRefPolicy* soft_ref_policy() override;
 
-  virtual size_t max_capacity() const;
-  virtual size_t capacity() const;
-  virtual size_t used() const;
-  virtual size_t unused() const;
+  size_t max_capacity() const override;
+  size_t capacity() const override;
+  size_t used() const override;
+  size_t unused() const override;
 
-  virtual bool is_maximal_no_gc() const;
-  virtual bool is_in(const void* p) const;
-  virtual bool requires_barriers(stackChunkOop obj) const;
+  bool is_maximal_no_gc() const override;
+  bool is_in(const void* p) const override;
+  bool requires_barriers(stackChunkOop obj) const override;
 
-  virtual uint32_t hash_oop(oop obj) const;
+  oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
+  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
+                                               size_t size,
+                                               Metaspace::MetadataType mdtype) override;
+  void collect(GCCause::Cause cause) override;
+  void collect_as_vm_thread(GCCause::Cause cause) override;
+  void do_full_collection(bool clear_all_soft_refs) override;
 
-  virtual oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS);
-  virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
-  virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
-                                                       size_t size,
-                                                       Metaspace::MetadataType mdtype);
-  virtual void collect(GCCause::Cause cause);
-  virtual void collect_as_vm_thread(GCCause::Cause cause);
-  virtual void do_full_collection(bool clear_all_soft_refs);
+  size_t tlab_capacity(Thread* thr) const override;
+  size_t tlab_used(Thread* thr) const override;
+  size_t max_tlab_size() const override;
+  size_t unsafe_max_tlab_alloc(Thread* thr) const override;
 
-  virtual size_t tlab_capacity(Thread* thr) const;
-  virtual size_t tlab_used(Thread* thr) const;
-  virtual size_t max_tlab_size() const;
-  virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
+  bool uses_stack_watermark_barrier() const override;
 
-  virtual bool uses_stack_watermark_barrier() const;
+  MemoryUsage memory_usage() override;
+  GrowableArray<GCMemoryManager*> memory_managers() override;
+  GrowableArray<MemoryPool*> memory_pools() override;
 
-  virtual GrowableArray<GCMemoryManager*> memory_managers();
-  virtual GrowableArray<MemoryPool*> memory_pools();
+  void object_iterate(ObjectClosure* cl) override;
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers) override;
 
-  virtual void object_iterate(ObjectClosure* cl);
-  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers);
+  void keep_alive(oop obj) override;
 
-  virtual void keep_alive(oop obj);
+  void register_nmethod(nmethod* nm) override;
+  void unregister_nmethod(nmethod* nm) override;
+  void verify_nmethod(nmethod* nmethod) override;
 
-  virtual void register_nmethod(nmethod* nm);
-  virtual void unregister_nmethod(nmethod* nm);
-  virtual void flush_nmethod(nmethod* nm);
-  virtual void verify_nmethod(nmethod* nmethod);
+  WorkerThreads* safepoint_workers() override;
 
-  virtual WorkerThreads* safepoint_workers();
+  void gc_threads_do(ThreadClosure* tc) const override;
 
-  virtual void gc_threads_do(ThreadClosure* tc) const;
+  VirtualSpaceSummary create_heap_space_summary() override;
 
-  virtual VirtualSpaceSummary create_heap_space_summary();
+  void safepoint_synchronize_begin() override;
+  void safepoint_synchronize_end() override;
 
-  virtual void safepoint_synchronize_begin();
-  virtual void safepoint_synchronize_end();
+  void pin_object(JavaThread* thread, oop obj) override;
+  void unpin_object(JavaThread* thread, oop obj) override;
 
-  virtual void print_on(outputStream* st) const;
-  virtual void print_on_error(outputStream* st) const;
-  virtual void print_extended_on(outputStream* st) const;
-  virtual void print_tracing_info() const;
-  virtual bool print_location(outputStream* st, void* addr) const;
+  void print_on(outputStream* st) const override;
+  void print_on_error(outputStream* st) const override;
+  void print_extended_on(outputStream* st) const override;
+  void print_tracing_info() const override;
+  bool print_location(outputStream* st, void* addr) const override;
 
-  virtual void prepare_for_verify();
-  virtual void verify(VerifyOption option /* ignored */);
-  virtual bool is_oop(oop object) const;
-  virtual bool supports_concurrent_gc_breakpoints() const;
+  void prepare_for_verify() override;
+  void verify(VerifyOption option /* ignored */) override;
+  bool is_oop(oop object) const override;
+  bool supports_concurrent_gc_breakpoints() const override;
 };
 
 #endif // SHARE_GC_Z_ZCOLLECTEDHEAP_HPP

@@ -716,31 +716,6 @@ void CompilationResourceObj::print_on(outputStream* st) const {
   st->print_cr("CompilationResourceObj(" INTPTR_FORMAT ")", p2i(this));
 }
 
-void Compilation::compile_only_this_method() {
-  ResourceMark rm;
-  fileStream stream(os::fopen("c1_compile_only", "wt"));
-  stream.print_cr("# c1 compile only directives");
-  compile_only_this_scope(&stream, hir()->top_scope());
-}
-
-void Compilation::compile_only_this_scope(outputStream* st, IRScope* scope) {
-  st->print("CompileOnly=");
-  scope->method()->holder()->name()->print_symbol_on(st);
-  st->print(".");
-  scope->method()->name()->print_symbol_on(st);
-  st->cr();
-}
-
-void Compilation::exclude_this_method() {
-  fileStream stream(os::fopen(".hotspot_compiler", "at"));
-  stream.print("exclude ");
-  method()->holder()->name()->print_symbol_on(&stream);
-  stream.print(" ");
-  method()->name()->print_symbol_on(&stream);
-  stream.cr();
-  stream.cr();
-}
-
 // Called from debugger to get the interval with 'reg_num' during register allocation.
 Interval* find_interval(int reg_num) {
   return Compilation::current()->allocator()->find_interval_at(reg_num);

@@ -22,7 +22,7 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @bug 8284161 8290562
  * @summary Test java.lang.management.ThreadMXBean with virtual threads
  * @enablePreview
@@ -31,7 +31,7 @@
  */
 
 /**
- * @test
+ * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @enablePreview
  * @modules java.base/java.lang:+open java.management

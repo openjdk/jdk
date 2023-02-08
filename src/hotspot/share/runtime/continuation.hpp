@@ -25,9 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_CONTINUATION_HPP
 #define SHARE_VM_RUNTIME_CONTINUATION_HPP
 
+#include "jni.h"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "jni.h"
 
 class ContinuationEntry;
 class frame;
@@ -37,21 +37,9 @@ class outputStream;
 class RegisterMap;
 
 class Continuations : public AllStatic {
-private:
-  static uint64_t _gc_epoch;
-
 public:
   static void init();
   static bool enabled(); // TODO: used while virtual threads are in Preview; remove when GA
-
-  // The GC epoch and marking_cycle code below is there to support sweeping
-  // nmethods in loom stack chunks.
-  static uint64_t gc_epoch();
-  static bool is_gc_marking_cycle_active();
-  static uint64_t previous_completed_gc_marking_cycle();
-  static void on_gc_marking_cycle_start();
-  static void on_gc_marking_cycle_finish();
-  static void arm_all_nmethods();
 };
 
 void continuations_init();
@@ -84,13 +72,11 @@ public:
   static int prepare_thaw(JavaThread* thread, bool return_barrier);
   static address thaw_entry();
 
-  static const ContinuationEntry* last_continuation(const JavaThread* thread, oop cont_scope);
   static ContinuationEntry* get_continuation_entry_for_continuation(JavaThread* thread, oop continuation);
   static ContinuationEntry* get_continuation_entry_for_sp(JavaThread* thread, intptr_t* const sp);
   static ContinuationEntry* get_continuation_entry_for_entry_frame(JavaThread* thread, const frame& f);
 
   static bool is_continuation_mounted(JavaThread* thread, oop continuation);
-  static bool is_continuation_scope_mounted(JavaThread* thread, oop cont_scope);
 
   static bool is_cont_barrier_frame(const frame& f);
   static bool is_return_barrier_entry(const address pc);

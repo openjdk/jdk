@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -1121,13 +1122,17 @@ public class FilePane extends JPanel implements PropertyChangeListener {
 
     @SuppressWarnings("serial") // JDK-implementation class
     class DetailsTableCellRenderer extends DefaultTableCellRenderer {
-        JFileChooser chooser;
-        DateFormat df;
+        private final JFileChooser chooser;
+        private final DateFormat df;
+        private final MessageFormat mf = new MessageFormat("");
+        private final NumberFormat nf = NumberFormat.getNumberInstance();
+        private static final double baseFileSize = 1000.0;
 
         DetailsTableCellRenderer(JFileChooser chooser) {
             this.chooser = chooser;
             df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT,
                                                 chooser.getLocale());
+            nf.setMinimumFractionDigits(1);
         }
 
         public void setBounds(int x, int y, int width, int height) {
@@ -1189,21 +1194,38 @@ public class FilePane extends JPanel implements PropertyChangeListener {
                 Icon icon = chooser.getIcon(file);
                 setIcon(icon);
 
-            } else if (value instanceof Long) {
-                long len = ((Long) value) / 1024L;
+            } else if (value instanceof final Long len) {
+                /*
+                 * This code block is relevant to Linux.
+                 * File size is displayed up to 1 decimal precision.
+                 * Base-10 number system is used for formatting file size
+                 * similar to how it's formatted in file managers on Linux.
+                 * Empty file size is shown as 0.0 KB,
+                 * 1-100-byte files are shown as 0.1 KB,
+                 * 101-200-byte files are shown as 0.2 KB and so on.
+                 */
+                Object[] displayedFileSize = new Object[1];
+
                 if (listViewWindowsStyle) {
-                    text = MessageFormat.format(kiloByteString, len + 1);
-                } else if (len < 1024L) {
-                    text = MessageFormat.format(kiloByteString, (len == 0L) ? 1L : len);
+                    updateMessageFormatPattern(kiloByteString);
+                    displayedFileSize[0] = roundToOneDecimalPlace(len);
                 } else {
-                    len /= 1024L;
-                    if (len < 1024L) {
-                        text = MessageFormat.format(megaByteString, len);
+                    double kbVal = roundToOneDecimalPlace(len);
+                    if (kbVal < baseFileSize) {
+                        updateMessageFormatPattern(kiloByteString);
+                        displayedFileSize[0] = kbVal;
                     } else {
-                        len /= 1024L;
-                        text = MessageFormat.format(gigaByteString, len);
+                        double mbVal = roundToOneDecimalPlace(Math.ceil(kbVal));
+                        if (mbVal < baseFileSize) {
+                            updateMessageFormatPattern(megaByteString);
+                            displayedFileSize[0] = mbVal;
+                        } else {
+                            updateMessageFormatPattern(gigaByteString);
+                            displayedFileSize[0] = roundToOneDecimalPlace(Math.ceil(mbVal));
+                        }
                     }
                 }
+                text = mf.format(displayedFileSize);
 
             } else if (value instanceof Date) {
                 text = df.format((Date)value);
@@ -1215,6 +1237,23 @@ public class FilePane extends JPanel implements PropertyChangeListener {
             setText(text);
 
             return this;
+        }
+
+        private void updateMessageFormatPattern(String pattern) {
+            mf.applyPattern(pattern);
+            mf.setFormat(0, nf);
+        }
+
+        /**
+         * Rounds a value to one decimal place. It's used to format
+         * file size similar to how it's formatted in file managers on Linux.
+         * For example, the file size of 1200 bytes is rounded to 1.2 KB.
+         *
+         * @param fileSize the file size to round to one decimal place
+         * @return file size rounded to one decimal place
+         */
+        private static double roundToOneDecimalPlace(double fileSize) {
+            return Math.ceil(fileSize / 100.0d) / 10.0d;
         }
     }
 
@@ -1751,11 +1790,12 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     }
 
     private void doMultiSelectionChanged(PropertyChangeEvent e) {
+        clearSelection();
         if (getFileChooser().isMultiSelectionEnabled()) {
             listSelectionModel.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+            getFileChooser().setSelectedFile(null);
         } else {
             listSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            clearSelection();
             getFileChooser().setSelectedFiles(null);
         }
     }

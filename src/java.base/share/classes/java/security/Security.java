@@ -25,11 +25,13 @@
 
 package java.security;
 
+import java.net.MalformedURLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.*;
 import java.net.URL;
 
+import jdk.internal.access.JavaSecurityPropertiesAccess;
 import jdk.internal.event.EventHelper;
 import jdk.internal.event.SecurityPropertyModificationEvent;
 import jdk.internal.access.SharedSecrets;
@@ -63,6 +65,9 @@ public final class Security {
     /* The java.security properties */
     private static Properties props;
 
+    /* cache a copy for recording purposes */
+    private static Properties initialSecurityProperties;
+
     // An element in the cache
     private static class ProviderProperty {
         String className;
@@ -79,116 +84,102 @@ public final class Security {
             initialize();
             return null;
         });
+        // Set up JavaSecurityPropertiesAccess in SharedSecrets
+        SharedSecrets.setJavaSecurityPropertiesAccess(new JavaSecurityPropertiesAccess() {
+            @Override
+            public Properties getInitialProperties() {
+                return initialSecurityProperties;
+            }
+        });
     }
 
     private static void initialize() {
         props = new Properties();
-        boolean loadedProps = false;
         boolean overrideAll = false;
 
         // first load the system properties file
         // to determine the value of security.overridePropertiesFile
         File propFile = securityPropFile("java.security");
-        if (propFile.exists()) {
-            InputStream is = null;
-            try {
-                is = new FileInputStream(propFile);
-                props.load(is);
-                loadedProps = true;
-
-                if (sdebug != null) {
-                    sdebug.println("reading security properties file: " +
-                                propFile);
-                }
-            } catch (IOException e) {
-                if (sdebug != null) {
-                    sdebug.println("unable to load security properties from " +
-                                propFile);
-                    e.printStackTrace();
-                }
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException ioe) {
-                        if (sdebug != null) {
-                            sdebug.println("unable to close input stream");
-                        }
-                    }
-                }
-            }
+        boolean success = loadProps(propFile, null, false);
+        if (!success) {
+            throw new InternalError("Error loading java.security file");
         }
 
         if ("true".equalsIgnoreCase(props.getProperty
                 ("security.overridePropertiesFile"))) {
 
             String extraPropFile = System.getProperty
-                                        ("java.security.properties");
+                    ("java.security.properties");
             if (extraPropFile != null && extraPropFile.startsWith("=")) {
                 overrideAll = true;
                 extraPropFile = extraPropFile.substring(1);
             }
-
-            if (overrideAll) {
-                props = new Properties();
-                if (sdebug != null) {
-                    sdebug.println
-                        ("overriding other security properties files!");
-                }
+            loadProps(null, extraPropFile, overrideAll);
+        }
+        initialSecurityProperties = (Properties) props.clone();
+        if (sdebug != null) {
+            for (String key : props.stringPropertyNames()) {
+                sdebug.println("Initial security property: " + key + "=" +
+                    props.getProperty(key));
             }
+        }
 
-            // now load the user-specified file so its values
-            // will win if they conflict with the earlier values
-            if (extraPropFile != null) {
-                InputStream is = null;
-                try {
-                    URL propURL;
+    }
 
-                    extraPropFile = PropertyExpander.expand(extraPropFile);
-                    propFile = new File(extraPropFile);
-                    if (propFile.exists()) {
-                        propURL = new URL
-                                ("file:" + propFile.getCanonicalPath());
-                    } else {
-                        propURL = new URL(extraPropFile);
-                    }
-                    is = propURL.openStream();
-                    props.load(is);
-                    loadedProps = true;
+    private static boolean loadProps(File masterFile, String extraPropFile, boolean overrideAll) {
+        InputStream is = null;
+        try {
+            if (masterFile != null && masterFile.exists()) {
+                is = new FileInputStream(masterFile);
+            } else if (extraPropFile != null) {
+                extraPropFile = PropertyExpander.expand(extraPropFile);
+                File propFile = new File(extraPropFile);
+                URL propURL;
+                if (propFile.exists()) {
+                    propURL = newURL
+                            ("file:" + propFile.getCanonicalPath());
+                } else {
+                    propURL = newURL(extraPropFile);
+                }
 
-                    if (sdebug != null) {
-                        sdebug.println("reading security properties file: " +
-                                        propURL);
-                        if (overrideAll) {
-                            sdebug.println
-                                ("overriding other security properties files!");
-                        }
-                    }
-                } catch (Exception e) {
+                is = propURL.openStream();
+                if (overrideAll) {
+                    props = new Properties();
                     if (sdebug != null) {
                         sdebug.println
-                                ("unable to load security properties from " +
-                                extraPropFile);
-                        e.printStackTrace();
+                                ("overriding other security properties files!");
                     }
-                } finally {
-                    if (is != null) {
-                        try {
-                            is.close();
-                        } catch (IOException ioe) {
-                            if (sdebug != null) {
-                                sdebug.println("unable to close input stream");
-                            }
-                        }
+                }
+            } else {
+                // unexpected
+                return false;
+            }
+            props.load(is);
+            if (sdebug != null) {
+                // ExceptionInInitializerError if masterFile.getName() is
+                // called here (NPE!). Leave as is (and few lines down)
+                sdebug.println("reading security properties file: " +
+                        masterFile == null ? extraPropFile : "java.security");
+            }
+            return true;
+        } catch (IOException | PropertyExpander.ExpandException e) {
+            if (sdebug != null) {
+                sdebug.println("unable to load security properties from " +
+                        masterFile == null ? extraPropFile : "java.security");
+                e.printStackTrace();
+            }
+            return false;
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ioe) {
+                    if (sdebug != null) {
+                        sdebug.println("unable to close input stream");
                     }
                 }
             }
         }
-
-        if (!loadedProps) {
-            throw new InternalError("java.security file missing");
-        }
-
     }
 
     /**
@@ -519,14 +510,20 @@ public final class Security {
     public static Provider[] getProviders(String filter) {
         String key;
         String value;
+
         int index = filter.indexOf(':');
 
-        if (index == -1) {
-            key = filter;
+        if (index == -1) { // <crypto_service>.<algo_or_type> only
+            key = filter.trim();
             value = "";
         } else {
-            key = filter.substring(0, index);
-            value = filter.substring(index + 1);
+            // <crypto_service>.<algo_or_type> <attr_name>:<attr_value>
+            key = filter.substring(0, index).trim();
+            value = filter.substring(index + 1).trim();
+            // ensure value is not empty here; rest will be checked in Criteria
+            if (value.isEmpty()) {
+                throw new InvalidParameterException("Invalid filter");
+            }
         }
 
         Hashtable<String, String> hashtableFilter = new Hashtable<>(1);
@@ -591,42 +588,31 @@ public final class Security {
         // Get all installed providers first.
         // Then only return those providers who satisfy the selection criteria.
         Provider[] allProviders = Security.getProviders();
-        Set<String> keySet = filter.keySet();
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
+        Set<Map.Entry<String, String>> entries = filter.entrySet();
 
-        // Returns all installed providers
-        // if the selection criteria is null.
-        if ((keySet == null) || (allProviders == null)) {
+        if (allProviders == null || allProviders.length == 0) {
+            return null;
+        } else if (entries == null) {
+            // return all installed providers if the selection criteria is null
             return allProviders;
+        } else if (entries.isEmpty()) {
+            // return null if the selection criteria is empty; this is to match
+            // earlier behavior
+            return null;
         }
 
-        boolean firstSearch = true;
+        LinkedList<Provider> candidates =
+                new LinkedList<>(Arrays.asList(allProviders));
 
         // For each selection criterion, remove providers
         // which don't satisfy the criterion from the candidate set.
-        for (String key : keySet) {
-            String value = filter.get(key);
-
-            LinkedHashSet<Provider> newCandidates = getAllQualifyingCandidates(key, value,
-                                                               allProviders);
-            if (firstSearch) {
-                candidates = newCandidates;
-                firstSearch = false;
+        for (var e : entries) {
+            Criteria cr = new Criteria(e.getKey(), e.getValue());
+            candidates.removeIf(p -> !cr.isCriterionSatisfied(p));
+            if (candidates.isEmpty()) {
+                return null;
             }
-
-            if (!newCandidates.isEmpty()) {
-                // For each provider in the candidates set, if it
-                // isn't in the newCandidate set, we should remove
-                // it from the candidate set.
-                candidates.removeIf(prov -> !newCandidates.contains(prov));
-            } else {
-                candidates = null;
-                break;
-            }
-        }
-
-        if (candidates == null || candidates.isEmpty())
-            return null;
+        };
 
         return candidates.toArray(new Provider[0]);
     }
@@ -822,194 +808,134 @@ public final class Security {
         }
     }
 
-    /*
-     * Returns all providers who satisfy the specified
-     * criterion.
-     */
-    private static LinkedHashSet<Provider> getAllQualifyingCandidates(
-                                                String filterKey,
-                                                String filterValue,
-                                                Provider[] allProviders) {
-        String[] filterComponents = getFilterComponents(filterKey,
-                                                        filterValue);
+    private static class Criteria {
+        private final String serviceName;
+        private final String algName;
+        private final String attrName;
+        private final String attrValue;
 
-        // The first component is the service name.
-        // The second is the algorithm name.
-        // If the third isn't null, that is the attribute name.
-        String serviceName = filterComponents[0];
-        String algName = filterComponents[1];
-        String attrName = filterComponents[2];
+        Criteria(String key, String value) throws InvalidParameterException {
 
-        return getProvidersNotUsingCache(serviceName, algName, attrName,
-                                         filterValue, allProviders);
-    }
-
-    private static LinkedHashSet<Provider> getProvidersNotUsingCache(
-                                                String serviceName,
-                                                String algName,
-                                                String attrName,
-                                                String filterValue,
-                                                Provider[] allProviders) {
-        LinkedHashSet<Provider> candidates = new LinkedHashSet<>(5);
-        for (int i = 0; i < allProviders.length; i++) {
-            if (isCriterionSatisfied(allProviders[i], serviceName,
-                                     algName,
-                                     attrName, filterValue)) {
-                candidates.add(allProviders[i]);
+            int snEndIndex = key.indexOf('.');
+            if (snEndIndex <= 0) {
+                // There must be a dot in the filter, and the dot
+                // shouldn't be at the beginning of this string.
+                throw new InvalidParameterException("Invalid filter");
             }
-        }
-        return candidates;
-    }
 
-    /*
-     * Returns {@code true} if the given provider satisfies
-     * the selection criterion key:value.
-     */
-    private static boolean isCriterionSatisfied(Provider prov,
-                                                String serviceName,
-                                                String algName,
-                                                String attrName,
-                                                String filterValue) {
-        String key = serviceName + '.' + algName;
+            serviceName = key.substring(0, snEndIndex);
+            attrValue = value;
 
-        if (attrName != null) {
-            key += ' ' + attrName;
-        }
-        // Check whether the provider has a property
-        // whose key is the same as the given key.
-        String propValue = getProviderProperty(key, prov);
-
-        if (propValue == null) {
-            // Check whether we have an alias instead
-            // of a standard name in the key.
-            String standardName = getProviderProperty("Alg.Alias." +
-                                                      serviceName + "." +
-                                                      algName,
-                                                      prov);
-            if (standardName != null) {
-                key = serviceName + "." + standardName;
-
-                if (attrName != null) {
-                    key += ' ' + attrName;
+            if (value.isEmpty()) {
+                // value is empty. So the key should be in the format of
+                // <crypto_service>.<algorithm_or_type>.
+                algName = key.substring(snEndIndex + 1);
+                attrName = null;
+            } else {
+                // value is non-empty. So the key must be in the format
+                // of <crypto_service>.<algorithm_or_type>(one or more
+                // spaces)<attribute_name>
+                int algEndIndex = key.indexOf(' ', snEndIndex);
+                if (algEndIndex == -1) {
+                    throw new InvalidParameterException
+                            ("Invalid filter - need algorithm name");
                 }
-
-                propValue = getProviderProperty(key, prov);
+                algName = key.substring(snEndIndex + 1, algEndIndex);
+                attrName = key.substring(algEndIndex + 1).trim();
+                if (attrName.isEmpty()) {
+                    throw new InvalidParameterException
+                            ("Invalid filter - need attribute name");
+                } else if (isCompositeValue() && attrValue.indexOf('|') != -1) {
+                    throw new InvalidParameterException
+                            ("Invalid filter - composite values unsupported");
+                }
             }
+
+            // check required values
+            if (serviceName.isEmpty() || algName.isEmpty()) {
+                throw new InvalidParameterException
+                        ("Invalid filter - need service and algorithm");
+            }
+        }
+
+        // returns true when this criteria contains a standard attribute
+        // whose value may be composite, i.e. multiple values separated by "|"
+        private boolean isCompositeValue() {
+            return (attrName != null &&
+                    (attrName.equalsIgnoreCase("SupportedKeyClasses") ||
+                    attrName.equalsIgnoreCase("SupportedPaddings") ||
+                    attrName.equalsIgnoreCase("SupportedModes") ||
+                    attrName.equalsIgnoreCase("SupportedKeyFormats")));
+        }
+
+        /*
+         * Returns {@code true} if the given provider satisfies
+         * the selection criterion key:value.
+         */
+        private boolean isCriterionSatisfied(Provider prov) {
+            // Constructed key have ONLY 1 space between algName and attrName
+            String key = serviceName + '.' + algName +
+                    (attrName != null ? (' ' + attrName) : "");
+
+            // Check whether the provider has a property
+            // whose key is the same as the given key.
+            String propValue = getProviderProperty(key, prov);
 
             if (propValue == null) {
-                // The provider doesn't have the given
-                // key in its property list.
-                return false;
-            }
-        }
+                // Check whether we have an alias instead
+                // of a standard name in the key.
+                String standardName = getProviderProperty("Alg.Alias." +
+                        serviceName + "." + algName, prov);
+                if (standardName != null) {
+                    key = serviceName + "." + standardName +
+                            (attrName != null ? ' ' + attrName : "");
+                    propValue = getProviderProperty(key, prov);
+                }
 
-        // If the key is in the format of:
-        // <crypto_service>.<algorithm_or_type>,
-        // there is no need to check the value.
-
-        if (attrName == null) {
-            return true;
-        }
-
-        // If we get here, the key must be in the
-        // format of <crypto_service>.<algorithm_or_provider> <attribute_name>.
-        if (isStandardAttr(attrName)) {
-            return isConstraintSatisfied(attrName, filterValue, propValue);
-        } else {
-            return filterValue.equalsIgnoreCase(propValue);
-        }
-    }
-
-    /*
-     * Returns {@code true} if the attribute is a standard attribute;
-     * otherwise, returns {@code false}.
-     */
-    private static boolean isStandardAttr(String attribute) {
-        // For now, we just have two standard attributes:
-        // KeySize and ImplementedIn.
-        if (attribute.equalsIgnoreCase("KeySize"))
-            return true;
-
-        return attribute.equalsIgnoreCase("ImplementedIn");
-    }
-
-    /*
-     * Returns {@code true} if the requested attribute value is supported;
-     * otherwise, returns {@code false}.
-     */
-    private static boolean isConstraintSatisfied(String attribute,
-                                                 String value,
-                                                 String prop) {
-        // For KeySize, prop is the max key size the
-        // provider supports for a specific <crypto_service>.<algorithm>.
-        if (attribute.equalsIgnoreCase("KeySize")) {
-            int requestedSize = Integer.parseInt(value);
-            int maxSize = Integer.parseInt(prop);
-            return requestedSize <= maxSize;
-        }
-
-        // For Type, prop is the type of the implementation
-        // for a specific <crypto service>.<algorithm>.
-        if (attribute.equalsIgnoreCase("ImplementedIn")) {
-            return value.equalsIgnoreCase(prop);
-        }
-
-        return false;
-    }
-
-    static String[] getFilterComponents(String filterKey, String filterValue) {
-        int algIndex = filterKey.indexOf('.');
-
-        if (algIndex < 0) {
-            // There must be a dot in the filter, and the dot
-            // shouldn't be at the beginning of this string.
-            throw new InvalidParameterException("Invalid filter");
-        }
-
-        String serviceName = filterKey.substring(0, algIndex);
-        String algName;
-        String attrName = null;
-
-        if (filterValue.isEmpty()) {
-            // The filterValue is an empty string. So the filterKey
-            // should be in the format of <crypto_service>.<algorithm_or_type>.
-            algName = filterKey.substring(algIndex + 1).trim();
-            if (algName.isEmpty()) {
-                // There must be an algorithm or type name.
-                throw new InvalidParameterException("Invalid filter");
-            }
-        } else {
-            // The filterValue is a non-empty string. So the filterKey must be
-            // in the format of
-            // <crypto_service>.<algorithm_or_type> <attribute_name>
-            int attrIndex = filterKey.indexOf(' ');
-
-            if (attrIndex == -1) {
-                // There is no attribute name in the filter.
-                throw new InvalidParameterException("Invalid filter");
-            } else {
-                attrName = filterKey.substring(attrIndex + 1).trim();
-                if (attrName.isEmpty()) {
-                    // There is no attribute name in the filter.
-                    throw new InvalidParameterException("Invalid filter");
+                if (propValue == null) {
+                    // The provider doesn't have the given
+                    // key in its property list.
+                    return false;
                 }
             }
 
-            // There must be an algorithm name in the filter.
-            if ((attrIndex < algIndex) ||
-                (algIndex == attrIndex - 1)) {
-                throw new InvalidParameterException("Invalid filter");
+            // If the key is in the format of:
+            // <crypto_service>.<algorithm_or_type>,
+            // there is no need to check the value.
+            if (attrName == null) {
+                return true;
+            }
+
+            // If we get here, the key must be in the
+            // format of <crypto_service>.<algorithm_or_type> <attribute_name>.
+
+            // Check the "Java Security Standard Algorithm Names" guide for the
+            // list of supported Service Attributes
+
+            // For KeySize, prop is the max key size the provider supports
+            // for a specific <crypto_service>.<algorithm>.
+            if (attrName.equalsIgnoreCase("KeySize")) {
+                int requestedSize = Integer.parseInt(attrValue);
+                int maxSize = Integer.parseInt(propValue);
+                return requestedSize <= maxSize;
+            }
+
+            // Handle attributes with composite values
+            if (isCompositeValue()) {
+                String attrValue2 = attrValue.toUpperCase(Locale.ENGLISH);
+                propValue = propValue.toUpperCase(Locale.ENGLISH);
+
+                // match value to the property components
+                String[] propComponents = propValue.split("\\|");
+                for (String pc : propComponents) {
+                    if (attrValue2.equals(pc)) return true;
+                }
+                return false;
             } else {
-                algName = filterKey.substring(algIndex + 1, attrIndex);
+                // direct string compare (ignore case)
+                return attrValue.equalsIgnoreCase(propValue);
             }
         }
-
-        String[] result = new String[3];
-        result[0] = serviceName;
-        result[1] = algName;
-        result[2] = attrName;
-
-        return result;
     }
 
     /**
@@ -1067,5 +993,10 @@ public final class Security {
             }
         }
         return Collections.unmodifiableSet(result);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

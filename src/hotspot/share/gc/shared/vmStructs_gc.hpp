@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,28 +87,7 @@
                                                                                                                                      \
   nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
                                                                                                                                      \
-  nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
-  nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetSharedArray,      _reserved,                                     MemRegion)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _end,                                          HeapWord*)                             \
-  nonstatic_field(BlockOffsetSharedArray,      _vs,                                           VirtualSpace)                          \
-  nonstatic_field(BlockOffsetSharedArray,      _offset_array,                                 u_char*)                               \
-                                                                                                                                     \
-  nonstatic_field(BlockOffsetArray,            _array,                                        BlockOffsetSharedArray*)               \
-  nonstatic_field(BlockOffsetArray,            _sp,                                           Space*)                                \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_threshold,                        HeapWord*)                             \
-  nonstatic_field(BlockOffsetArrayContigSpace, _next_offset_index,                            size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(TenuredGeneration,           _rs,                                           CardTableRS*)                          \
-  nonstatic_field(TenuredGeneration,           _bts,                                          BlockOffsetSharedArray*)               \
-  nonstatic_field(TenuredGeneration,           _shrink_factor,                                size_t)                                \
-  nonstatic_field(TenuredGeneration,           _capacity_at_prologue,                         size_t)                                \
-  nonstatic_field(TenuredGeneration,           _used_at_prologue,                             size_t)                                \
-                                                                                                                                     \
   nonstatic_field(CardTable,                   _whole_heap,                                   const MemRegion)                       \
-  nonstatic_field(CardTable,                   _guard_index,                                  const size_t)                          \
-  nonstatic_field(CardTable,                   _last_valid_index,                             const size_t)                          \
   nonstatic_field(CardTable,                   _page_size,                                    const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map_size,                                const size_t)                          \
   nonstatic_field(CardTable,                   _byte_map,                                     CardTable::CardValue*)                                \
@@ -150,8 +129,6 @@
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
                                                                                                                                      \
-  nonstatic_field(OffsetTableContigSpace,      _offsets,                                      BlockOffsetArray)                      \
-                                                                                                                                     \
   nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
   nonstatic_field(Space,                       _end,                                          HeapWord*)
 
@@ -188,17 +165,12 @@
   declare_toplevel_type(Space)                                            \
            declare_type(CompactibleSpace,             Space)              \
            declare_type(ContiguousSpace,              CompactibleSpace)   \
-           declare_type(OffsetTableContigSpace,       ContiguousSpace)    \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
   declare_toplevel_type(CardTable)                                        \
            declare_type(CardTableRS, CardTable)                           \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(BlockOffsetSharedArray)                           \
-  declare_toplevel_type(BlockOffsetTable)                                 \
-           declare_type(BlockOffsetArray,             BlockOffsetTable)   \
-           declare_type(BlockOffsetArrayContigSpace,  BlockOffsetArray)   \
                                                                           \
   /* Miscellaneous other GC types */                                      \
                                                                           \
@@ -214,7 +186,6 @@
   /* Pointers to Garbage Collection types */                              \
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
-  declare_toplevel_type(BlockOffsetSharedArray*)                          \
   declare_toplevel_type(CardTable*)                                       \
   declare_toplevel_type(CardTable*const)                                  \
   declare_toplevel_type(CardTableRS*)                                     \
@@ -229,7 +200,6 @@
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
-  declare_toplevel_type(OffsetTableContigSpace*)                          \
   declare_toplevel_type(Space*)                                           \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \
@@ -264,10 +234,7 @@
   declare_constant(BOTConstants::N_powers)                                  \
                                                                             \
   declare_constant(CardTable::clean_card)                                   \
-  declare_constant(CardTable::last_card)                                    \
   declare_constant(CardTable::dirty_card)                                   \
-  declare_constant(CardTable::Precise)                                      \
-  declare_constant(CardTable::ObjHeadPreciseArray)                          \
                                                                             \
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \

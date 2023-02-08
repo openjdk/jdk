@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -335,13 +335,13 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
   }
 
   if (new_value > MaxMetaspaceSize) {
-    if (can_retry != NULL) {
+    if (can_retry != nullptr) {
       *can_retry = false;
     }
     return false;
   }
 
-  if (can_retry != NULL) {
+  if (can_retry != nullptr) {
     *can_retry = true;
   }
   size_t prev_value = Atomic::cmpxchg(&_capacity_until_GC, old_capacity_until_GC, new_value);
@@ -350,10 +350,10 @@ bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size
     return false;
   }
 
-  if (new_cap_until_GC != NULL) {
+  if (new_cap_until_GC != nullptr) {
     *new_cap_until_GC = new_value;
   }
-  if (old_cap_until_GC != NULL) {
+  if (old_cap_until_GC != nullptr) {
     *old_cap_until_GC = old_capacity_until_GC;
   }
   return true;
@@ -534,17 +534,17 @@ void MetaspaceGC::compute_new_size() {
 
 //////  Metaspace methods /////
 
-const MetaspaceTracer* Metaspace::_tracer = NULL;
+const MetaspaceTracer* Metaspace::_tracer = nullptr;
 
 bool Metaspace::initialized() {
-  return metaspace::MetaspaceContext::context_nonclass() != NULL
+  return metaspace::MetaspaceContext::context_nonclass() != nullptr
       LP64_ONLY(&& (using_class_space() ? Metaspace::class_space_is_initialized() : true));
 }
 
 #ifdef _LP64
 
 void Metaspace::print_compressed_class_space(outputStream* st) {
-  if (VirtualSpaceList::vslist_class() != NULL) {
+  if (VirtualSpaceList::vslist_class() != nullptr) {
     MetaWord* base = VirtualSpaceList::vslist_class()->base_of_first_node();
     size_t size = VirtualSpaceList::vslist_class()->word_size_of_first_node();
     MetaWord* top = base + size;
@@ -577,7 +577,7 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
 
 // Returns true if class space has been setup (initialize_class_space).
 bool Metaspace::class_space_is_initialized() {
-  return MetaspaceContext::context_class() != NULL;
+  return MetaspaceContext::context_class() != nullptr;
 }
 
 // Reserve a range of memory at an address suitable for en/decoding narrow
@@ -612,10 +612,10 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   } search_ranges[] = {
     {  (address)(4*G),   (address)(32*G),   4*G, },
     {  (address)(32*G),  (address)(1024*G), (4 << LogKlassAlignmentInBytes) * G },
-    {  NULL, NULL, 0 }
+    {  nullptr, nullptr, 0 }
   };
 
-  for (int i = 0; search_ranges[i].from != NULL; i ++) {
+  for (int i = 0; search_ranges[i].from != nullptr; i ++) {
     address a = search_ranges[i].from;
     assert(CompressedKlassPointers::is_valid_base(a), "Sanity");
     while (a < search_ranges[i].to) {
@@ -636,7 +636,7 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   return ReservedSpace();
 #else
   // Default implementation: Just reserve anywhere.
-  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)NULL);
+  return ReservedSpace(size, Metaspace::reserve_alignment(), os::vm_page_size(), (char*)nullptr);
 #endif // AARCH64
 }
 
@@ -760,7 +760,7 @@ void Metaspace::global_initialize() {
     // case (b) (No CDS)
     ReservedSpace rs;
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
-    address base = NULL;
+    address base = nullptr;
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
@@ -771,7 +771,7 @@ void Metaspace::global_initialize() {
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
-                    "(must be aligned to " SIZE_FORMAT_HEX ").",
+                    "(must be aligned to " SIZE_FORMAT_X ").",
                     CompressedClassSpaceBaseAddress, Metaspace::reserve_alignment()));
       }
       rs = ReservedSpace(size, Metaspace::reserve_alignment(),
@@ -795,7 +795,7 @@ void Metaspace::global_initialize() {
               CompressedOops::end() : (address)HeapBaseMinAddress;
       base = align_up(base, Metaspace::reserve_alignment());
 
-      if (base != NULL) {
+      if (base != nullptr) {
         if (CompressedKlassPointers::is_valid_base(base)) {
           rs = ReservedSpace(size, Metaspace::reserve_alignment(),
                              os::vm_page_size(), (char*)base);
@@ -831,7 +831,7 @@ void Metaspace::global_initialize() {
 
   // We must prevent the very first address of the ccs from being used to store
   // metadata, since that address would translate to a narrow pointer of 0, and the
-  // VM does not distinguish between "narrow 0 as in NULL" and "narrow 0 as in start
+  // VM does not distinguish between "narrow 0 as in null" and "narrow 0 as in start
   //  of ccs".
   // Before Elastic Metaspace that did not happen due to the fact that every Metachunk
   // had a header and therefore could not allocate anything at offset 0.
@@ -867,7 +867,7 @@ size_t Metaspace::max_allocation_word_size() {
   return metaspace::chunklevel::MAX_CHUNK_WORD_SIZE;
 }
 
-// This version of Metaspace::allocate does not throw OOM but simply returns NULL, and
+// This version of Metaspace::allocate does not throw OOM but simply returns null, and
 // is suitable for calling from non-Java threads.
 // Callers are responsible for checking null.
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
@@ -875,7 +875,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
 
-  assert(loader_data != NULL, "Should never pass around a NULL loader_data. "
+  assert(loader_data != nullptr, "Should never pass around a nullptr loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
 
   // Deal with concurrent unloading failed allocation starvation
@@ -886,7 +886,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   // Try to allocate metadata.
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
-  if (result != NULL) {
+  if (result != nullptr) {
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
 
@@ -901,12 +901,12 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
 
   if (HAS_PENDING_EXCEPTION) {
     assert(false, "Should not allocate with exception pending");
-    return NULL;  // caller does a CHECK_NULL too
+    return nullptr;  // caller does a CHECK_NULL too
   }
 
   MetaWord* result = allocate(loader_data, word_size, type);
 
-  if (result == NULL) {
+  if (result == nullptr) {
     MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
     tracer()->report_metaspace_allocation_failure(loader_data, word_size, type, mdtype);
 
@@ -918,10 +918,10 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       result = Universe::heap()->satisfy_failed_metadata_allocation(loader_data, word_size, mdtype);
     }
 
-    if (result == NULL) {
+    if (result == nullptr) {
       report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
       assert(HAS_PENDING_EXCEPTION, "sanity");
-      return NULL;
+      return nullptr;
     }
 
     // Zero initialize.
@@ -943,7 +943,7 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
              is_class_space_allocation(mdtype) ? "class" : "data", word_size);
     ResourceMark rm;
     if (log.is_debug()) {
-      if (loader_data->metaspace_or_null() != NULL) {
+      if (loader_data->metaspace_or_null() != nullptr) {
         LogStream ls(log.debug());
         loader_data->print_value_on(&ls);
       }
@@ -991,27 +991,34 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
     case Metaspace::NonClassType: return "Metadata";
     default:
       assert(false, "Got bad mdtype: %d", (int) mdtype);
-      return NULL;
+      return nullptr;
   }
 }
 
-void Metaspace::purge() {
+void Metaspace::purge(bool classes_unloaded) {
   // The MetaspaceCritical_lock is used by a concurrent GC to block out concurrent metaspace
   // allocations, that would starve critical metaspace allocations, that are about to throw
   // OOM if they fail; they need precedence for correctness.
   MutexLocker ml(MetaspaceCritical_lock, Mutex::_no_safepoint_check_flag);
-  ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
-  if (cm != NULL) {
-    cm->purge();
-  }
-  if (using_class_space()) {
-    cm = ChunkManager::chunkmanager_class();
-    if (cm != NULL) {
+  if (classes_unloaded) {
+    ChunkManager* cm = ChunkManager::chunkmanager_nonclass();
+    if (cm != nullptr) {
       cm->purge();
+    }
+    if (using_class_space()) {
+      cm = ChunkManager::chunkmanager_class();
+      if (cm != nullptr) {
+        cm->purge();
+      }
     }
   }
 
-  MetaspaceCriticalAllocation::satisfy();
+  // Try to satisfy queued metaspace allocation requests.
+  //
+  // It might seem unnecessary to try to process allocation requests if no
+  // classes have been unloaded. However, this call is required for the code
+  // in MetaspaceCriticalAllocation::try_allocate_critical to work.
+  MetaspaceCriticalAllocation::process();
 }
 
 bool Metaspace::contains(const void* ptr) {

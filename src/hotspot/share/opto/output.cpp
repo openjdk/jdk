@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,118 +218,13 @@ public:
 
 };
 
-volatile int C2SafepointPollStubTable::_stub_size = 0;
-
-Label& C2SafepointPollStubTable::add_safepoint(uintptr_t safepoint_offset) {
-  C2SafepointPollStub* entry = new (Compile::current()->comp_arena()) C2SafepointPollStub(safepoint_offset);
-  _safepoints.append(entry);
-  return entry->_stub_label;
-}
-
-void C2SafepointPollStubTable::emit(CodeBuffer& cb) {
-  MacroAssembler masm(&cb);
-  for (int i = _safepoints.length() - 1; i >= 0; i--) {
-    // Make sure there is enough space in the code buffer
-    if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
-
-    C2SafepointPollStub* entry = _safepoints.at(i);
-    emit_stub(masm, entry);
-  }
-}
-
-int C2SafepointPollStubTable::stub_size_lazy() const {
-  int size = Atomic::load(&_stub_size);
-
-  if (size != 0) {
-    return size;
-  }
-
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
-  MacroAssembler masm(&cb);
-  C2SafepointPollStub* entry = _safepoints.at(0);
-  emit_stub(masm, entry);
-  size += cb.insts_size();
-
-  Atomic::store(&_stub_size, size);
-
-  return size;
-}
-
-int C2SafepointPollStubTable::estimate_stub_size() const {
-  if (_safepoints.length() == 0) {
-    return 0;
-  }
-
-  int result = stub_size_lazy() * _safepoints.length();
-
-#ifdef ASSERT
-  Compile* const C = Compile::current();
-  BufferBlob* const blob = C->output()->scratch_buffer_blob();
-  int size = 0;
-
-  for (int i = _safepoints.length() - 1; i >= 0; i--) {
-    CodeBuffer cb(blob->content_begin(), C->output()->scratch_buffer_code_size());
-    MacroAssembler masm(&cb);
-    C2SafepointPollStub* entry = _safepoints.at(i);
-    emit_stub(masm, entry);
-    size += cb.insts_size();
-  }
-  assert(size == result, "stubs should not have variable size");
-#endif
-
-  return result;
-}
-
-// Nmethod entry barrier stubs
-C2EntryBarrierStub* C2EntryBarrierStubTable::add_entry_barrier() {
-  assert(_stub == NULL, "There can only be one entry barrier stub");
-  _stub = new (Compile::current()->comp_arena()) C2EntryBarrierStub();
-  return _stub;
-}
-
-void C2EntryBarrierStubTable::emit(CodeBuffer& cb) {
-  if (_stub == NULL) {
-    // No stub - nothing to do
-    return;
-  }
-
-  C2_MacroAssembler masm(&cb);
-  // Make sure there is enough space in the code buffer
-  if (cb.insts()->maybe_expand_to_ensure_remaining(PhaseOutput::MAX_inst_size) && cb.blob() == NULL) {
-    ciEnv::current()->record_failure("CodeCache is full");
-    return;
-  }
-
-  intptr_t before = masm.offset();
-  masm.emit_entry_barrier_stub(_stub);
-  intptr_t after = masm.offset();
-  int actual_size = (int)(after - before);
-  int expected_size = masm.entry_barrier_stub_size();
-  assert(actual_size == expected_size, "Estimated size is wrong, expected %d, was %d", expected_size, actual_size);
-}
-
-int C2EntryBarrierStubTable::estimate_stub_size() const {
-  if (BarrierSet::barrier_set()->barrier_set_nmethod() == NULL) {
-    // No nmethod entry barrier?
-    return 0;
-  }
-
-  return C2_MacroAssembler::entry_barrier_stub_size();
-}
-
 PhaseOutput::PhaseOutput()
   : Phase(Phase::Output),
     _code_buffer("Compile::Fill_buffer"),
     _first_block_size(0),
     _handler_table(),
     _inc_table(),
-    _safepoint_poll_table(),
-    _entry_barrier_table(),
+    _stub_list(),
     _oop_map_set(NULL),
     _scratch_buffer_blob(NULL),
     _scratch_locs_memory(NULL),
@@ -365,7 +260,7 @@ void PhaseOutput::perform_mach_node_analysis() {
 
   pd_perform_mach_node_analysis();
 
-  C->print_method(CompilerPhaseType::PHASE_MACHANALYSIS, 4);
+  C->print_method(CompilerPhaseType::PHASE_MACH_ANALYSIS, 4);
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -475,7 +370,7 @@ bool PhaseOutput::need_stack_bang(int frame_size_in_bytes) const {
   // guarantee it doesn't happen) so we always need the stack bang in
   // a debug VM.
   return (C->stub_function() == NULL &&
-          (C->has_java_calls() || frame_size_in_bytes > os::vm_page_size()>>3
+          (C->has_java_calls() || frame_size_in_bytes > (int)(os::vm_page_size())>>3
            DEBUG_ONLY(|| true)));
 }
 
@@ -930,8 +825,16 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
+    } else if (C->regalloc()->is_oop(local)) {
+      assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||
+             t->base() == Type::AryPtr,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::oop ));
     } else {
-      array->append(new_loc_value( C->regalloc(), regnum, C->regalloc()->is_oop(local) ? Location::oop : Location::normal ));
+      assert(t->base() == Type::Int || t->base() == Type::Half ||
+             t->base() == Type::FloatCon || t->base() == Type::FloatBot,
+             "Unexpected type: %s", t->msg());
+      array->append(new_loc_value( C->regalloc(), regnum, Location::normal ));
     }
     return;
   }
@@ -1341,8 +1244,6 @@ CodeBuffer* PhaseOutput::init_buffer() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
-  stub_req += safepoint_poll_table()->estimate_stub_size();
-  stub_req += entry_barrier_table()->estimate_stub_size();
 
   // nmethod and CodeBuffer count stubs & constants as part of method's code.
   // class HandlerImpl is platform-specific and defined in the *.ad files.
@@ -1472,7 +1373,7 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
     if (!block->is_connector()) {
       stringStream st;
       block->dump_head(C->cfg(), &st);
-      MacroAssembler(cb).block_comment(st.as_string());
+      MacroAssembler(cb).block_comment(st.freeze());
     }
     jmp_target[i] = 0;
     jmp_offset[i] = 0;
@@ -1849,12 +1750,8 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   bs->emit_stubs(*cb);
   if (C->failing())  return;
 
-  // Fill in stubs for calling the runtime from safepoint polls.
-  safepoint_poll_table()->emit(*cb);
-  if (C->failing())  return;
-
-  // Fill in stubs for calling the runtime from nmethod entries.
-  entry_barrier_table()->emit(*cb);
+  // Fill in stubs.
+  _stub_list.emit(*cb);
   if (C->failing())  return;
 
 #ifndef PRODUCT
@@ -1925,13 +1822,13 @@ void PhaseOutput::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       }
       if (C->method() != NULL) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d ------------------------", C->compile_id());
-        tty->print_raw(method_metadata_str.as_string());
+        tty->print_raw(method_metadata_str.freeze());
       } else if (C->stub_name() != NULL) {
         tty->print_cr("----------------------------- RuntimeStub %s -------------------------------", C->stub_name());
       }
       tty->cr();
       tty->print_cr("------------------------ OptoAssembly for Compile_id = %d -----------------------", C->compile_id());
-      tty->print_raw(dump_asm_str.as_string());
+      tty->print_raw(dump_asm_str.freeze());
       tty->print_cr("--------------------------------------------------------------------------------");
       if (xtty != NULL) {
         xtty->tail("opto_assembly");

@@ -354,12 +354,13 @@ public class HotSpotSpeculationLog implements SpeculationLog {
         }
 
         @Override
-        void doCleanup() {
+        boolean doCleanup() {
             long pointer = UnsafeAccess.UNSAFE.getAddress(address);
             if (pointer != 0) {
                 compilerToVM().releaseFailedSpeculations(address);
             }
             UnsafeAccess.UNSAFE.freeMemory(address);
+            return false;
         }
 
         final long address;

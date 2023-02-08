@@ -494,13 +494,15 @@ public class AquaMenuPainter {
         if (!isTopLevelMenu) {
             //    if ( GetSysDirection() < 0 ) hierRect.right = hierRect.left + w + 4;
             //    else hierRect.left = hierRect.right - w - 4;
-            arrowIconR.x = (viewR.width - arrowIconR.width) + 1;
-            arrowIconR.y = viewR.y + (labelR.height / 2) - (arrowIconR.height / 2) + 1;
 
-            checkIconR.y = viewR.y + (labelR.height / 2) - (checkIconR.height / 2);
+            arrowIconR.x = Math.abs((viewR.width - arrowIconR.width) + 1);
+            arrowIconR.y = Math.abs(viewR.y + (labelR.height / 2) - (arrowIconR.height / 2) + 1);
+
+            checkIconR.y = Math.abs(viewR.y + (labelR.height / 2) - (checkIconR.height / 2));
             checkIconR.x = 5;
 
             textR.width += 8;
+
         }
 
         /*System.out.println("Layout: " +horizontalAlignment+ " v=" +viewR+"  c="+checkIconR+" i="+

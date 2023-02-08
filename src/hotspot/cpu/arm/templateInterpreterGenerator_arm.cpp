@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -654,7 +654,9 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset_in_bytes()));
   __ push(Rtemp);                                      // set constant pool cache
-  __ push(Rlocals);                                    // set locals pointer
+  __ sub(Rtemp, Rlocals, FP);
+  __ logical_shift_right(Rtemp, Rtemp, Interpreter::logStackElementSize); // Rtemp = Rlocals - fp();
+  __ push(Rtemp);                                      // set relativized Rlocals, see frame::interpreter_frame_locals()
   __ push(Rbcp);                                       // set bcp
   __ push(R0);                                         // reserve word for pointer to expression stack bottom
   __ str(SP, Address(SP, 0));                          // set expression stack bottom
@@ -728,12 +730,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 // [ parameter 1        ] <--- Rlocals
 //
 
-address TemplateInterpreterGenerator::generate_Continuation_doYield_entry(void) {
-  if (!Continuations::enabled()) return nullptr;
-  Unimplemented();
-  return NULL;
-}
-
 address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // Code: _aload_0, _getfield, _areturn
   // parameter size = 1
@@ -796,7 +792,7 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
 
 address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Incoming registers:
   //
@@ -1128,7 +1124,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
-  bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
+  bool inc_counter  = UseCompiler || CountCompiledCalls;
 
   // Rmethod: Method*
   // Rthread: thread

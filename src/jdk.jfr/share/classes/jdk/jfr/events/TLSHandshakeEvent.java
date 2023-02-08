@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
+import jdk.jfr.Unsigned;
 import jdk.jfr.internal.MirrorEvent;
 
 @Category({"Java Development Kit", "Security"})
@@ -52,5 +53,6 @@ public final class TLSHandshakeEvent extends AbstractJDKEvent {
     @Label("Certificate Id")
     @Description("Peer Certificate Id")
     @CertificateId
+    @Unsigned
     public long certificateId;
 }

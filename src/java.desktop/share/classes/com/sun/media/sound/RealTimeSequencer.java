@@ -782,7 +782,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
     @Override
     protected synchronized void implClose() {
         if (playThread == null) {
-            if (Printer.err) Printer.err("RealTimeSequencer.implClose() called, but playThread not instanciated!");
+            if (Printer.err) Printer.err("RealTimeSequencer.implClose() called, but playThread not instantiated!");
         } else {
             // Interrupt playback loop.
             playThread.close();
@@ -816,7 +816,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     void implStart() {
         if (playThread == null) {
-            if (Printer.err) Printer.err("RealTimeSequencer.implStart() called, but playThread not instanciated!");
+            if (Printer.err) Printer.err("RealTimeSequencer.implStart() called, but playThread not instantiated!");
             return;
         }
 
@@ -829,7 +829,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     void implStop() {
         if (playThread == null) {
-            if (Printer.err) Printer.err("RealTimeSequencer.implStop() called, but playThread not instanciated!");
+            if (Printer.err) Printer.err("RealTimeSequencer.implStop() called, but playThread not instantiated!");
             return;
         }
 

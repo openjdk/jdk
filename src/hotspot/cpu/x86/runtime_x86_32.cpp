@@ -109,7 +109,7 @@ void OptoRuntime::generate_exception_blob() {
   // registers of the frame being removed.
   //
   __ movptr(Address(rsp, thread_off * wordSize), rcx); // Thread is first argument
-  __ set_last_Java_frame(rcx, noreg, noreg, NULL);
+  __ set_last_Java_frame(rcx, noreg, noreg, NULL, noreg);
 
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, OptoRuntime::handle_exception_C)));
 

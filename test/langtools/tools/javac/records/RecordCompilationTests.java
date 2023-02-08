@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647 8294020
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -149,7 +149,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.expected", "record R();");
         assertFail("compiler.err.illegal.start.of.type", "record R(,) { }");
         assertFail("compiler.err.illegal.start.of.type", "record R((int x)) { }");
-        assertFail("compiler.err.record.header.expected", "record R { }");
+        assertFail("compiler.err.expected", "record R { }");
         assertFail("compiler.err.expected", "record R(foo) { }");
         assertFail("compiler.err.expected", "record R(int int) { }");
         assertFail("compiler.err.mod.not.allowed.here", "abstract record R(String foo) { }");
@@ -1566,6 +1566,57 @@ public class RecordCompilationTests extends CompilationTestCase {
         }
     }
 
+    // JDK-8292159: TYPE_USE annotations on generic type arguments
+    //              of record components discarded
+    public void testOnlyTypeAnnotationsOnComponentField() throws Exception {
+        String code =
+                """
+                import java.lang.annotation.*;
+                import java.util.List;
+                @Target({ElementType.TYPE_USE})
+                @Retention(RetentionPolicy.RUNTIME)
+                @interface Anno { }
+                record R(List<@Anno String> s) {}
+                """;
+
+        File dir = assertOK(true, code);
+
+        ClassFile classFile = ClassFile.read(findClassFileOrFail(dir, "R.class"));
+
+        // field first
+        Assert.check(classFile.fields.length == 1);
+        Field field = classFile.fields[0];
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(field.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "FIELD",
+                "Anno");
+
+        // checking for the annotation on the corresponding parameter of the canonical constructor
+        Method init = findMethodOrFail(classFile, "<init>");
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(init.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "METHOD_FORMAL_PARAMETER", "Anno");
+
+        // checking for the annotation in the accessor
+        Method accessor = findMethodOrFail(classFile, "s");
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(accessor.attributes, RuntimeVisibleTypeAnnotations_attribute.class),
+                "METHOD_RETURN", "Anno");
+
+        // checking for the annotation in the Record attribute
+        Record_attribute record = (Record_attribute) findAttributeOrFail(classFile.attributes, Record_attribute.class);
+        Assert.check(record.component_count == 1);
+        checkTypeAnno(
+                classFile,
+                (RuntimeVisibleTypeAnnotations_attribute) findAttributeOrFail(
+                            record.component_info_arr[0].attributes,
+                                RuntimeVisibleTypeAnnotations_attribute.class),
+                        "FIELD", "Anno");
+    }
+
     private void checkTypeAnno(ClassFile classFile,
                                RuntimeTypeAnnotations_attribute rtAnnos,
                                String positionType,
@@ -1977,7 +2028,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testNoAssigmentInsideCompactRecord() {
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {
@@ -1986,7 +2037,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {

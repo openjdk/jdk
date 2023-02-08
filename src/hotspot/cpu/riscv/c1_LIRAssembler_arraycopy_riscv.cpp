@@ -95,14 +95,14 @@ void LIR_Assembler::arraycopy_simple_check(Register src, Register src_pos, Regis
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
       __ load_klass(tmp, dst);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ li(t1, Klass::_lh_neutral_value);
+      __ mv(t1, Klass::_lh_neutral_value);
       __ bge(t0, t1, *stub->entry(), /* is_far */ true);
     }
 
     if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
       __ load_klass(tmp, src);
       __ lw(t0, Address(tmp, in_bytes(Klass::layout_helper_offset())));
-      __ li(t1, Klass::_lh_neutral_value);
+      __ mv(t1, Klass::_lh_neutral_value);
       __ bge(t0, t1, *stub->entry(), /* is_far */ true);
     }
   }
@@ -150,7 +150,7 @@ void LIR_Assembler::arraycopy_checkcast(Register src, Register src_pos, Register
     Address klass_lh_addr(tmp, lh_offset);
     jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ lw(t0, klass_lh_addr);
-    __ mvw(t1, objArray_lh);
+    __ mv(t1, objArray_lh);
     __ bne(t0, t1, *stub->entry(), /* is_far */ true);
   }
 

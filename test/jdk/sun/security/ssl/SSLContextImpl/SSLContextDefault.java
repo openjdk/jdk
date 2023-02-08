@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,9 @@
 
 /*
  * @test
- * @bug 8202343
- * @summary Check that SSLv3, TLSv1 and TLSv1.1 are disabled by default
+ * @bug 8202343 8256660
+ * @summary Check that SSLv3, TLSv1, TLSv1.1, and DTLSv1.0 are disabled
+ *          by default
  * @run main/othervm SSLContextDefault
  */
 
@@ -38,26 +39,43 @@ import javax.net.ssl.*;
 
 public class SSLContextDefault {
 
-    private final static String[] protocols = {
+    private static final String[] tlsProtocols = {
         "", "SSL", "TLS", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"
     };
 
-    private final static List<String> disabledProtocols = List.<String>of(
+    private static final String[] dtlsProtocols = {
+        "DTLS", "DTLSv1.0", "DTLSv1.2"
+    };
+
+    private static final List<String> disabledTlsProtocols = List.<String>of(
         "SSLv3", "TLSv1", "TLSv1.1"
     );
 
+    private static final List<String> disabledDtlsProtocols = List.<String>of(
+        "DTLSv1.0"
+    );
+
     public static void main(String[] args) throws Exception {
-        for (String protocol : protocols) {
-            System.out.println("//");
-            System.out.println("// " + "Testing for SSLContext of " +
-                    (protocol.isEmpty() ? "<default>" : protocol));
-            System.out.println("//");
-            checkForProtocols(protocol);
-            System.out.println();
+        for (String tlsProtocol : tlsProtocols) {
+            testProtocol(tlsProtocol, disabledTlsProtocols);
+        }
+        for (String dtlsProtocol : dtlsProtocols) {
+            testProtocol(dtlsProtocol, disabledDtlsProtocols);
         }
     }
 
-    public static void checkForProtocols(String protocol) throws Exception {
+    private static void testProtocol(String protocol,
+            List<String> disabledProtocols) throws Exception {
+        System.out.println("//");
+        System.out.println("// " + "Testing for SSLContext of " +
+                (protocol.isEmpty() ? "<default>" : protocol));
+        System.out.println("//");
+        checkForProtocols(protocol, disabledProtocols);
+        System.out.println();
+    }
+
+    private static void checkForProtocols(String protocol,
+            List<String> disabledProtocols) throws Exception {
         SSLContext context;
         if (protocol.isEmpty()) {
             context = SSLContext.getDefault();
@@ -68,32 +86,35 @@ public class SSLContextDefault {
 
         // check for the presence of supported protocols of SSLContext
         SSLParameters parameters = context.getSupportedSSLParameters();
-        checkProtocols(parameters.getProtocols(),
+        checkProtocols(parameters.getProtocols(), disabledProtocols,
                 "Supported protocols in SSLContext", false);
-
 
         // check for the presence of default protocols of SSLContext
         parameters = context.getDefaultSSLParameters();
-        checkProtocols(parameters.getProtocols(),
+        checkProtocols(parameters.getProtocols(), disabledProtocols,
                 "Enabled protocols in SSLContext", true);
 
         // check for the presence of supported protocols of SSLEngine
         SSLEngine engine = context.createSSLEngine();
-        checkProtocols(engine.getSupportedProtocols(),
+        checkProtocols(engine.getSupportedProtocols(), disabledProtocols,
                 "Supported protocols in SSLEngine", false);
 
         // Check for the presence of default protocols of SSLEngine
-        checkProtocols(engine.getEnabledProtocols(),
+        checkProtocols(engine.getEnabledProtocols(), disabledProtocols,
                 "Enabled protocols in SSLEngine", true);
+
+        if (protocol.startsWith("DTLS")) {
+            return;
+        }
 
         SSLSocketFactory factory = context.getSocketFactory();
         try (SSLSocket socket = (SSLSocket)factory.createSocket()) {
             // check for the presence of supported protocols of SSLSocket
-            checkProtocols(socket.getSupportedProtocols(),
+            checkProtocols(socket.getSupportedProtocols(), disabledProtocols,
                 "Supported cipher suites in SSLSocket", false);
 
             // Check for the presence of default protocols of SSLSocket
-            checkProtocols(socket.getEnabledProtocols(),
+            checkProtocols(socket.getEnabledProtocols(), disabledProtocols,
                 "Enabled protocols in SSLSocket", true);
         }
 
@@ -102,16 +123,19 @@ public class SSLContextDefault {
                 (SSLServerSocket)serverFactory.createServerSocket()) {
             // check for the presence of supported protocols of SSLServerSocket
             checkProtocols(serverSocket.getSupportedProtocols(),
-                "Supported cipher suites in SSLServerSocket", false);
+                disabledProtocols, "Supported cipher suites in SSLServerSocket",
+                false);
 
             // Check for the presence of default protocols of SSLServerSocket
             checkProtocols(serverSocket.getEnabledProtocols(),
-                "Enabled protocols in SSLServerSocket", true);
+                disabledProtocols, "Enabled protocols in SSLServerSocket",
+                true);
         }
     }
 
     private static void checkProtocols(String[] protocols,
-            String title, boolean disabled) throws Exception {
+            List<String> disabledProtocols, String title, boolean disabled)
+            throws Exception {
         showProtocols(protocols, title);
 
         if (disabled) {

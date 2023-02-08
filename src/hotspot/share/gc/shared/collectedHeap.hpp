@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,8 +280,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   DEBUG_ONLY(bool is_in_or_null(const void* p) const { return p == NULL || is_in(p); })
 
-  virtual uint32_t hash_oop(oop obj) const;
-
   void set_gc_cause(GCCause::Cause v);
   GCCause::Cause gc_cause() { return _gc_cause; }
 
@@ -479,8 +477,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Registering and unregistering an nmethod (compiled code) with the heap.
   virtual void register_nmethod(nmethod* nm) = 0;
   virtual void unregister_nmethod(nmethod* nm) = 0;
-  // Callback for when nmethod is about to be deleted.
-  virtual void flush_nmethod(nmethod* nm) = 0;
   virtual void verify_nmethod(nmethod* nm) = 0;
 
   void trace_heap_before_gc(const GCTracer* gc_tracer);
@@ -505,11 +501,11 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual WorkerThreads* safepoint_workers() { return NULL; }
 
   // Support for object pinning. This is used by JNI Get*Critical()
-  // and Release*Critical() family of functions. If supported, the GC
-  // must guarantee that pinned objects never move.
-  virtual bool supports_object_pinning() const;
-  virtual oop pin_object(JavaThread* thread, oop obj);
-  virtual void unpin_object(JavaThread* thread, oop obj);
+  // and Release*Critical() family of functions. The GC must guarantee
+  // that pinned objects never move and don't get reclaimed as garbage.
+  // These functions are potentially safepointing.
+  virtual void pin_object(JavaThread* thread, oop obj) = 0;
+  virtual void unpin_object(JavaThread* thread, oop obj) = 0;
 
   // Is the given object inside a CDS archive area?
   virtual bool is_archived_object(oop object) const;

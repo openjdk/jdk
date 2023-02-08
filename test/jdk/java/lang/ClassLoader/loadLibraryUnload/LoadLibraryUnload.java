@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jdk.test.lib.util.ForceGC;
+
 import p.Class1;
 
 public class LoadLibraryUnload {
@@ -110,14 +112,13 @@ public class LoadLibraryUnload {
         int LOADER_COUNT = 5;
         List<Thread> threads = new ArrayList<>();
         Object[] canary = new Object[LOADER_COUNT];
-        WeakReference<Object> wCanary[] = new WeakReference[LOADER_COUNT];
-        ReferenceQueue<Object> refQueue = new ReferenceQueue<>();
+        final WeakReference<Object> wCanary[] = new WeakReference[LOADER_COUNT];
 
         for (int i = 0 ; i < LOADER_COUNT ; i++) {
             // LOADER_COUNT loaders and 2X threads in total.
             // winner loads the library in 2 threads
             canary[i] = new Object();
-            wCanary[i] = new WeakReference<>(canary[i], refQueue);
+            wCanary[i] = new WeakReference<>(canary[i], null);
 
             Class<?> clazz = new TestLoader().loadClass("p.Class1");
             threads.add(new Thread(new LoadLibraryFromClass(clazz, canary[i])));
@@ -160,16 +161,18 @@ public class LoadLibraryUnload {
         threads = null;
         canary = null;
         exceptions.clear();
-        // Wait for the canary for each of the libraries to be GC'd
-        // before exiting the test.
-        for (int i = 0; i < LOADER_COUNT; i++) {
-            System.gc();
-            var res = refQueue.remove(Utils.adjustTimeout(30 * 1000L));
-            System.out.println(i + " dequeued: " + res);
-            if (res == null) {
-                Asserts.fail("Too few cleared WeakReferences");
+
+        // Wait for the canary for each of the libraries to be GC'd (cleared)
+        boolean allClear = ForceGC.wait(() -> {
+            for (int i = 0; i < wCanary.length; i++) {
+                if (!wCanary[i].refersTo(null)) {
+                    return false;
+                }
             }
-        }
+            return true;
+        });
+        Asserts.assertTrue(allClear, "Not all WeakReferences cleared");
+
         // Ensure the WeakReferences are strongly referenced until they can be dequeued
         Reference.reachabilityFence(wCanary);
     }

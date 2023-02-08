@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 /*
  * @test
- * @run testng/othervm -Diters=10    -Xint                   VarHandleTestAccessFloat
- * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 VarHandleTestAccessFloat
- * @run testng/othervm -Diters=20000                         VarHandleTestAccessFloat
- * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  VarHandleTestAccessFloat
+ * @run testng/othervm -Diters=10   -Xint                                                   VarHandleTestAccessFloat
+ *
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
+ *          to hit compilation thresholds
+ *
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessFloat
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessFloat
+ * @run testng/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestAccessFloat
  */
 
 import org.testng.annotations.BeforeClass;
@@ -289,9 +293,6 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         }
     }
 
-
-
-
     static void testInstanceFinalField(VarHandleTestAccessFloat recv, VarHandle vh) {
         // Plain
         {
@@ -553,6 +554,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain(recv, 1.0f, 2.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) vh.get(recv);
@@ -570,6 +572,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire(recv, 2.0f, 1.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) vh.get(recv);
@@ -587,6 +590,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease(recv, 1.0f, 2.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) vh.get(recv);
@@ -604,6 +608,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet(recv, 2.0f, 1.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) vh.get(recv);
@@ -809,6 +814,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetPlain(1.0f, 2.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetPlain float");
             float x = (float) vh.get();
@@ -826,6 +832,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetAcquire(2.0f, 1.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetAcquire float");
             float x = (float) vh.get();
@@ -843,6 +850,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSetRelease(1.0f, 2.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSetRelease float");
             float x = (float) vh.get();
@@ -860,6 +868,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                 success = vh.weakCompareAndSet(2.0f, 1.0f);
+                if (!success) weakDelay();
             }
             assertEquals(success, true, "success weakCompareAndSet float");
             float x = (float) vh.get();
@@ -1068,6 +1077,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetPlain(array, i, 1.0f, 2.0f);
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetPlain float");
                 float x = (float) vh.get(array, i);
@@ -1085,6 +1095,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetAcquire(array, i, 2.0f, 1.0f);
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetAcquire float");
                 float x = (float) vh.get(array, i);
@@ -1102,6 +1113,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSetRelease(array, i, 1.0f, 2.0f);
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSetRelease float");
                 float x = (float) vh.get(array, i);
@@ -1119,6 +1131,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 boolean success = false;
                 for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
                     success = vh.weakCompareAndSet(array, i, 2.0f, 1.0f);
+                    if (!success) weakDelay();
                 }
                 assertEquals(success, true, "success weakCompareAndSet float");
                 float x = (float) vh.get(array, i);

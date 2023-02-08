@@ -68,14 +68,14 @@ public class FloatingScalarVectorAbsDiff {
     @Benchmark
     public void testVectorAbsDiffFloat() {
         for (int i = 0; i < count; i++) {
-            floatsD[i] = Math.abs(floatsA[i] - floatsB[i]);
+            floatsD[i] = Math.abs(Math.abs(floatsA[i] - floatsB[i]) - 3.14f);
         }
     }
 
     @Benchmark
     public void testVectorAbsDiffDouble() {
         for (int i = 0; i < count; i++) {
-            doublesD[i] = Math.abs(doublesA[i] - doublesB[i]);
+            doublesD[i] = Math.abs(Math.abs(doublesA[i] - doublesB[i]) - 3.14d);
         }
     }
 

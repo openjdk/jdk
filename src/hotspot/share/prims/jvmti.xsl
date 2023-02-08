@@ -73,6 +73,8 @@
             padding: 3px;
             text-align: left;
           }
+          .toc { }
+          span.bold { font-weight: bold; }
           div.divTable { display: table; }
           <!-- workaround for <div> with border, display: table & width: 100% -->
           div.wideDivTableCtnr { padding-right: 2px; }
@@ -89,100 +91,98 @@
       <xsl:apply-templates select="title"/>
     </header>
     <nav>
-      <ul>
+      <ul class="toc">
         <li>
-          <a href="#SpecificationIntro"><b>Introduction</b></a>
+          <a href="#SpecificationIntro">Introduction</a>
           <ul>
             <xsl:for-each select="intro">
               <li>
                 <a>
                   <xsl:attribute name="href">#<xsl:value-of select="@id"/>
                   </xsl:attribute>
-                  <b><xsl:value-of select="@label"/></b>
+                  <xsl:value-of select="@label"/>
                 </a>
               </li>
             </xsl:for-each>
           </ul>
         </li>
         <li>
-          <a href="#FunctionSection"><b>Functions</b></a>
+          <a href="#FunctionSection">Functions</a>
           <ul>
             <xsl:for-each select="functionsection/intro">
               <li>
                 <a>
                   <xsl:attribute name="href">#<xsl:value-of select="@id"/>
                   </xsl:attribute>
-                  <b><xsl:value-of select="@label"/></b>
+                  <xsl:value-of select="@label"/>
                 </a>
               </li>
             </xsl:for-each>
             <li>
-              <a href="#FunctionIndex"><b>Function Index</b></a>
+              <a href="#FunctionIndex">Function Index</a>
               <ul>
                 <xsl:for-each select="functionsection/category">
                   <li>
                     <a>
                       <xsl:attribute name="href">#<xsl:value-of select="@id"/>
                       </xsl:attribute>
-                      <b><xsl:value-of select="@label"/></b>
+                      <xsl:value-of select="@label"/>
                     </a>
                   </li>
                 </xsl:for-each>
               </ul>
             </li>
             <li>
-              <a href="#ErrorSection"><b>Error Codes</b></a>
+              <a href="#ErrorSection">Error Codes</a>
             </li>
           </ul>
         </li>
         <li>
-          <a href="#EventSection"><b>Events</b></a>
+          <a href="#EventSection">Events</a>
           <ul>
             <li>
-              <a href="#EventIndex"><b>Event Index</b></a>
+              <a href="#EventIndex">Event Index</a>
             </li>
           </ul>
         </li>
         <li>
-          <a href="#DataSection"><b>Data Types</b></a>
+          <a href="#DataSection">Data Types</a>
           <ul>
             <xsl:for-each select="//basetypes">
             <li>
               <a>
                 <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
-                <b>
-                  <xsl:value-of select="@label"/>
-                </b>
+                <xsl:value-of select="@label"/>
               </a>
             </li>
             </xsl:for-each>
             <li>
-              <a href="#StructureTypeDefinitions"><b>Structure Type Definitions</b></a>
+              <a href="#StructureTypeDefinitions">Structure Type Definitions</a>
             </li>
             <li>
-              <a href="#FunctionTypeDefinitions"><b>Function Type Definitions</b></a>
+              <a href="#FunctionTypeDefinitions">Function Type Definitions</a>
             </li>
             <li>
-              <a href="#EnumerationDefinitions"><b>Enumeration Definitions</b></a>
+              <a href="#EnumerationDefinitions">Enumeration Definitions</a>
             </li>
             <li>
-              <a href="#FunctionTable"><b>Function Table</b></a>
+              <a href="#FunctionTable">Function Table</a>
             </li>
           </ul>
         </li>
         <li>
-          <a href="#ConstantIndex"><b>Constant Index</b></a>
+          <a href="#ConstantIndex">Constant Index</a>
         </li>
         <xsl:if test="$development = 'Show'">
           <li>
-            <a href="#SpecificationIssues"><b>Issues</b></a>
+            <a href="#SpecificationIssues">Issues</a>
             <ul>
               <xsl:for-each select="issuessection/intro">
                 <li>
                   <a>
                     <xsl:attribute name="href">#<xsl:value-of select="@id"/>
                     </xsl:attribute>
-                    <b><xsl:value-of select="@label"/></b>
+                    <xsl:value-of select="@label"/>
                   </a>
                 </li>
               </xsl:for-each>
@@ -190,7 +190,7 @@
           </li>
         </xsl:if>
         <li>
-          <a href="#ChangeHistory"><b>Change History</b></a>
+          <a href="#ChangeHistory">Change History</a>
         </li>
       </ul>
     </nav>
@@ -265,9 +265,7 @@
   <li>
     <a>
       <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
-      <b>
-        <xsl:value-of select="@label"/>
-      </b>
+      <xsl:value-of select="@label"/>
     </a>
     <ul>
       <xsl:apply-templates select="function[count(@hide)=0]" mode="index"/>
@@ -597,9 +595,7 @@ typedef struct {
   <li>
     <a>
       <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
-      <b>
-        <xsl:value-of select="@label"/>
-      </b>
+      <xsl:value-of select="@label"/>
     </a>
   </li>
 </xsl:template>
@@ -981,9 +977,7 @@ typedef struct {
       <li>
         <a>
           <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
-          <b>
-            <xsl:value-of select="@id"/>
-          </b>
+          <xsl:value-of select="@id"/>
         </a>
       </li>
     </xsl:for-each>
@@ -997,9 +991,7 @@ typedef struct {
       <li>
         <a>
           <xsl:attribute name="href">#<xsl:value-of select="@id"/></xsl:attribute>
-          <b>
-            <xsl:value-of select="@id"/>
-          </b>
+          <xsl:value-of select="@id"/>
         </a>
       </li>
     </xsl:for-each>
@@ -1094,11 +1086,11 @@ typedef struct {
           <div class="captionTitle">Capabilities</div>
           <xsl:choose>
             <xsl:when test="count(required)=0">
-              <div class="captionDescr"><b>Required Functionality</b></div>
+              <div class="captionDescr"><span class="bold">Required Functionality</span></div>
             </xsl:when>
             <xsl:otherwise>
               <div class="captionDescr">
-                <b>Optional Functionality:</b> might not be implemented for all virtual machines.
+                <span class="bold">Optional Functionality:</span> might not be implemented for all virtual machines.
                 <xsl:choose>
                   <xsl:when test="count(required)=1">
                     The following capability
@@ -1148,7 +1140,7 @@ typedef struct {
     <xsl:otherwise>
       <div class="bordered">
         <div class="captionTitle">Capabilities</div>
-        <div class="captionDescr"><b>Required Functionality</b></div>
+        <div class="captionDescr"><span class="bold">Required Functionality</span></div>
       </div>
     </xsl:otherwise>
   </xsl:choose>
@@ -1159,7 +1151,7 @@ typedef struct {
   <table class="bordered wide">
     <caption>
       <div class="captionTitle">Capabilities</div>
-      <div class="captionDescr"><b>Required Functionality</b></div>
+      <div class="captionDescr"><span class="bold">Required Functionality</span></div>
     </caption>
     <tr class="bgDark">
       <th colspan="2" scope="rowgroup" class="centered">
@@ -1172,7 +1164,7 @@ typedef struct {
     </tr>
     <xsl:for-each select="//capabilityfield">
       <xsl:variable name="capa" select="@id"/>
-      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa]"/>
+      <xsl:variable name="events" select="//event[capabilities/required/@id=$capa and not(ancestor::elide)]"/>
       <xsl:if test="count($events)">
         <tr>
           <th scope="row">
@@ -1812,11 +1804,11 @@ typedef struct {
     <table class="bordered wide">
       <tr class="bgLight">
         <th scope="col">
-          <b>Version</b><br/>
-          <b>Date</b>
+          <span class="bold">Version</span><br/>
+          <span class="bold">Date</span>
         </th>
         <th scope="col">
-          <b>Changes</b>
+          <span class="bold">Changes</span>
         </th>
       </tr>
       <xsl:apply-templates select="change"/>
@@ -1827,9 +1819,9 @@ typedef struct {
   <tr>
     <th scope="row">
       <xsl:if test="count(@version)">
-        <b>
+        <span class="bold">
           <xsl:value-of select="@version"/>
-        </b>
+        </span>
         <br/>
       </xsl:if>
       <xsl:value-of select="@date"/>
@@ -1889,12 +1881,6 @@ typedef struct {
 </xsl:template>
 
 <xsl:template match="elide">
-</xsl:template>
-
-<xsl:template match="b">
-  <b>
-  <xsl:apply-templates/>
-  </b>
 </xsl:template>
 
 <xsl:template match="example">
@@ -2012,9 +1998,9 @@ typedef struct {
 </xsl:template>
 
 <xsl:template match="b">
-  <b>
+  <span class="bold">
     <xsl:apply-templates/>
-  </b>
+  </span>
 </xsl:template>
 
 <xsl:template match="i">

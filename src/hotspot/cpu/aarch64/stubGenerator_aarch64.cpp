@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,7 +66,6 @@
 
 #undef __
 #define __ _masm->
-#define TIMES_OOP Address::sxtw(exact_log2(UseCompressedOops ? 4 : 8))
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -75,10 +74,6 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
-
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots);
-void fill_continuation_entry(MacroAssembler* masm);
-void continuation_enter_cleanup(MacroAssembler* masm);
 
 // Stub Code definitions
 
@@ -623,15 +618,29 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void array_overlap_test(Label& L_no_overlap, Address::sxtw sf) { __ b(L_no_overlap); }
-
   // Generate indices for iota vector.
   address generate_iota_indices(const char *stub_name) {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", stub_name);
     address start = __ pc();
+    // B
     __ emit_data64(0x0706050403020100, relocInfo::none);
     __ emit_data64(0x0F0E0D0C0B0A0908, relocInfo::none);
+    // H
+    __ emit_data64(0x0003000200010000, relocInfo::none);
+    __ emit_data64(0x0007000600050004, relocInfo::none);
+    // S
+    __ emit_data64(0x0000000100000000, relocInfo::none);
+    __ emit_data64(0x0000000300000002, relocInfo::none);
+    // D
+    __ emit_data64(0x0000000000000000, relocInfo::none);
+    __ emit_data64(0x0000000000000001, relocInfo::none);
+    // S - FP
+    __ emit_data64(0x3F80000000000000, relocInfo::none); // 0.0f, 1.0f
+    __ emit_data64(0x4040000040000000, relocInfo::none); // 2.0f, 3.0f
+    // D - FP
+    __ emit_data64(0x0000000000000000, relocInfo::none); // 0.0d
+    __ emit_data64(0x3FF0000000000000, relocInfo::none); // 1.0d
     return start;
   }
 
@@ -1796,7 +1805,7 @@ class StubGenerator: public StubCodeGenerator {
     // caller guarantees that the arrays really are different
     // otherwise, we would have to make conjoint checks
     { Label L;
-      array_overlap_test(L, TIMES_OOP);
+      __ b(L);                  // conjoint check not yet implemented
       __ stop("checkcast_copy within a single array");
       __ bind(L);
     }
@@ -1853,7 +1862,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
 
     __ BIND(L_store_element);
-    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, AS_RAW);  // store the oop
+    __ store_heap_oop(__ post(to, UseCompressedOops ? 4 : 8), copied_oop, noreg, noreg, noreg, AS_RAW);  // store the oop
     __ sub(count, count, 1);
     __ cbz(count, L_do_card_marks);
 
@@ -2352,7 +2361,10 @@ class StubGenerator: public StubCodeGenerator {
       __ cbnz(value, non_block_zeroing);
       __ mov(bz_base, to);
       __ add(to, to, cnt_words, Assembler::LSL, LogBytesPerWord);
-      __ zero_words(bz_base, cnt_words);
+      address tpc = __ zero_words(bz_base, cnt_words);
+      if (tpc == nullptr) {
+        fatal("CodeCache is full at generate_fill");
+      }
       __ b(rest);
       __ bind(non_block_zeroing);
       __ fill_words(to, cnt_words, value);
@@ -3045,8 +3057,9 @@ class StubGenerator: public StubCodeGenerator {
       __ movi(v9, __ T4S, 1);
       __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
 
-      for (FloatRegister f = v0; f < v0 + bulk_width; f++) {
-        __ rev32(f, __ T16B, v16);
+      for (int i = 0; i < bulk_width; i++) {
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        __ rev32(v0_ofs, __ T16B, v16);
         __ addv(v16, __ T4S, v16, v8);
       }
 
@@ -3061,7 +3074,9 @@ class StubGenerator: public StubCodeGenerator {
 
       // XOR the encrypted counters with the inputs
       for (int i = 0; i < bulk_width; i++) {
-        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        FloatRegister v8_ofs = as_FloatRegister(v8->encoding() + i);
+        __ eor(v0_ofs, __ T16B, v0_ofs, v8_ofs);
       }
 
       // Write the encrypted data
@@ -3162,7 +3177,10 @@ class StubGenerator: public StubCodeGenerator {
       __ movi(v8, __ T4S, 0);
       __ movi(v9, __ T4S, 1);
       __ ins(v8, __ S, v9, 3, 3); // v8 contains { 0, 0, 0, 1 }
-      for (FloatRegister f = v0; f < v8; f++) {
+
+      assert(v0->encoding() < v8->encoding(), "");
+      for (int i = v0->encoding(); i < v8->encoding(); i++) {
+        FloatRegister f = as_FloatRegister(i);
         __ rev32(f, __ T16B, v16);
         __ addv(v16, __ T4S, v16, v8);
       }
@@ -3176,7 +3194,9 @@ class StubGenerator: public StubCodeGenerator {
 
       // XOR the encrypted counters with the inputs
       for (int i = 0; i < 8; i++) {
-        __ eor(v0 + i, __ T16B, v0 + i, v8 + i);
+        FloatRegister v0_ofs = as_FloatRegister(v0->encoding() + i);
+        FloatRegister v8_ofs = as_FloatRegister(v8->encoding() + i);
+        __ eor(v0_ofs, __ T16B, v0_ofs, v8_ofs);
       }
       __ st1(v0, v1, v2, v3, __ T16B, __ post(out, 4 * 16));
       __ st1(v4, v5, v6, v7, __ T16B, __ post(out, 4 * 16));
@@ -3216,6 +3236,74 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  // Utility routines for md5.
+  // Clobbers r10 and r11.
+  void md5_FF(Register buf, Register r1, Register r2, Register r3, Register r4,
+              int k, int s, int t) {
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    __ eorw(rscratch3, r3, r4);
+    __ movw(rscratch2, t);
+    __ andw(rscratch3, rscratch3, r2);
+    __ addw(rscratch4, r1, rscratch2);
+    __ ldrw(rscratch1, Address(buf, k*4));
+    __ eorw(rscratch3, rscratch3, r4);
+    __ addw(rscratch4, rscratch4, rscratch1);
+    __ addw(rscratch3, rscratch3, rscratch4);
+    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ addw(r1, rscratch2, r2);
+  }
+
+  void md5_GG(Register buf, Register r1, Register r2, Register r3, Register r4,
+              int k, int s, int t) {
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    __ andw(rscratch3, r2, r4);
+    __ bicw(rscratch4, r3, r4);
+    __ ldrw(rscratch1, Address(buf, k*4));
+    __ movw(rscratch2, t);
+    __ orrw(rscratch3, rscratch3, rscratch4);
+    __ addw(rscratch4, r1, rscratch2);
+    __ addw(rscratch4, rscratch4, rscratch1);
+    __ addw(rscratch3, rscratch3, rscratch4);
+    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ addw(r1, rscratch2, r2);
+  }
+
+  void md5_HH(Register buf, Register r1, Register r2, Register r3, Register r4,
+              int k, int s, int t) {
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    __ eorw(rscratch3, r3, r4);
+    __ movw(rscratch2, t);
+    __ addw(rscratch4, r1, rscratch2);
+    __ ldrw(rscratch1, Address(buf, k*4));
+    __ eorw(rscratch3, rscratch3, r2);
+    __ addw(rscratch4, rscratch4, rscratch1);
+    __ addw(rscratch3, rscratch3, rscratch4);
+    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ addw(r1, rscratch2, r2);
+  }
+
+  void md5_II(Register buf, Register r1, Register r2, Register r3, Register r4,
+              int k, int s, int t) {
+    Register rscratch3 = r10;
+    Register rscratch4 = r11;
+
+    __ movw(rscratch3, t);
+    __ ornw(rscratch2, r2, r4);
+    __ addw(rscratch4, r1, rscratch3);
+    __ ldrw(rscratch1, Address(buf, k*4));
+    __ eorw(rscratch3, rscratch2, r3);
+    __ addw(rscratch4, rscratch4, rscratch1);
+    __ addw(rscratch3, rscratch3, rscratch4);
+    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ addw(r1, rscratch2, r2);
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -3240,9 +3328,7 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
-    Label keys;
     Label md5_loop;
-
     __ BIND(md5_loop);
 
     // Save hash values for addition after rounds
@@ -3251,128 +3337,77 @@ class StubGenerator: public StubCodeGenerator {
     __ ldrw(c, Address(state,  8));
     __ ldrw(d, Address(state, 12));
 
-#define FF(r1, r2, r3, r4, k, s, t)              \
-    __ eorw(rscratch3, r3, r4);                  \
-    __ movw(rscratch2, t);                       \
-    __ andw(rscratch3, rscratch3, r2);           \
-    __ addw(rscratch4, r1, rscratch2);           \
-    __ ldrw(rscratch1, Address(buf, k*4));       \
-    __ eorw(rscratch3, rscratch3, r4);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
-    __ addw(rscratch3, rscratch3, rscratch4);    \
-    __ rorw(rscratch2, rscratch3, 32 - s);       \
-    __ addw(r1, rscratch2, r2);
-
-#define GG(r1, r2, r3, r4, k, s, t)              \
-    __ eorw(rscratch2, r2, r3);                  \
-    __ ldrw(rscratch1, Address(buf, k*4));       \
-    __ andw(rscratch3, rscratch2, r4);           \
-    __ movw(rscratch2, t);                       \
-    __ eorw(rscratch3, rscratch3, r3);           \
-    __ addw(rscratch4, r1, rscratch2);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
-    __ addw(rscratch3, rscratch3, rscratch4);    \
-    __ rorw(rscratch2, rscratch3, 32 - s);       \
-    __ addw(r1, rscratch2, r2);
-
-#define HH(r1, r2, r3, r4, k, s, t)              \
-    __ eorw(rscratch3, r3, r4);                  \
-    __ movw(rscratch2, t);                       \
-    __ addw(rscratch4, r1, rscratch2);           \
-    __ ldrw(rscratch1, Address(buf, k*4));       \
-    __ eorw(rscratch3, rscratch3, r2);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
-    __ addw(rscratch3, rscratch3, rscratch4);    \
-    __ rorw(rscratch2, rscratch3, 32 - s);       \
-    __ addw(r1, rscratch2, r2);
-
-#define II(r1, r2, r3, r4, k, s, t)              \
-    __ movw(rscratch3, t);                       \
-    __ ornw(rscratch2, r2, r4);                  \
-    __ addw(rscratch4, r1, rscratch3);           \
-    __ ldrw(rscratch1, Address(buf, k*4));       \
-    __ eorw(rscratch3, rscratch2, r3);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
-    __ addw(rscratch3, rscratch3, rscratch4);    \
-    __ rorw(rscratch2, rscratch3, 32 - s);       \
-    __ addw(r1, rscratch2, r2);
-
     // Round 1
-    FF(a, b, c, d,  0,  7, 0xd76aa478)
-    FF(d, a, b, c,  1, 12, 0xe8c7b756)
-    FF(c, d, a, b,  2, 17, 0x242070db)
-    FF(b, c, d, a,  3, 22, 0xc1bdceee)
-    FF(a, b, c, d,  4,  7, 0xf57c0faf)
-    FF(d, a, b, c,  5, 12, 0x4787c62a)
-    FF(c, d, a, b,  6, 17, 0xa8304613)
-    FF(b, c, d, a,  7, 22, 0xfd469501)
-    FF(a, b, c, d,  8,  7, 0x698098d8)
-    FF(d, a, b, c,  9, 12, 0x8b44f7af)
-    FF(c, d, a, b, 10, 17, 0xffff5bb1)
-    FF(b, c, d, a, 11, 22, 0x895cd7be)
-    FF(a, b, c, d, 12,  7, 0x6b901122)
-    FF(d, a, b, c, 13, 12, 0xfd987193)
-    FF(c, d, a, b, 14, 17, 0xa679438e)
-    FF(b, c, d, a, 15, 22, 0x49b40821)
+    md5_FF(buf, a, b, c, d,  0,  7, 0xd76aa478);
+    md5_FF(buf, d, a, b, c,  1, 12, 0xe8c7b756);
+    md5_FF(buf, c, d, a, b,  2, 17, 0x242070db);
+    md5_FF(buf, b, c, d, a,  3, 22, 0xc1bdceee);
+    md5_FF(buf, a, b, c, d,  4,  7, 0xf57c0faf);
+    md5_FF(buf, d, a, b, c,  5, 12, 0x4787c62a);
+    md5_FF(buf, c, d, a, b,  6, 17, 0xa8304613);
+    md5_FF(buf, b, c, d, a,  7, 22, 0xfd469501);
+    md5_FF(buf, a, b, c, d,  8,  7, 0x698098d8);
+    md5_FF(buf, d, a, b, c,  9, 12, 0x8b44f7af);
+    md5_FF(buf, c, d, a, b, 10, 17, 0xffff5bb1);
+    md5_FF(buf, b, c, d, a, 11, 22, 0x895cd7be);
+    md5_FF(buf, a, b, c, d, 12,  7, 0x6b901122);
+    md5_FF(buf, d, a, b, c, 13, 12, 0xfd987193);
+    md5_FF(buf, c, d, a, b, 14, 17, 0xa679438e);
+    md5_FF(buf, b, c, d, a, 15, 22, 0x49b40821);
 
     // Round 2
-    GG(a, b, c, d,  1,  5, 0xf61e2562)
-    GG(d, a, b, c,  6,  9, 0xc040b340)
-    GG(c, d, a, b, 11, 14, 0x265e5a51)
-    GG(b, c, d, a,  0, 20, 0xe9b6c7aa)
-    GG(a, b, c, d,  5,  5, 0xd62f105d)
-    GG(d, a, b, c, 10,  9, 0x02441453)
-    GG(c, d, a, b, 15, 14, 0xd8a1e681)
-    GG(b, c, d, a,  4, 20, 0xe7d3fbc8)
-    GG(a, b, c, d,  9,  5, 0x21e1cde6)
-    GG(d, a, b, c, 14,  9, 0xc33707d6)
-    GG(c, d, a, b,  3, 14, 0xf4d50d87)
-    GG(b, c, d, a,  8, 20, 0x455a14ed)
-    GG(a, b, c, d, 13,  5, 0xa9e3e905)
-    GG(d, a, b, c,  2,  9, 0xfcefa3f8)
-    GG(c, d, a, b,  7, 14, 0x676f02d9)
-    GG(b, c, d, a, 12, 20, 0x8d2a4c8a)
+    md5_GG(buf, a, b, c, d,  1,  5, 0xf61e2562);
+    md5_GG(buf, d, a, b, c,  6,  9, 0xc040b340);
+    md5_GG(buf, c, d, a, b, 11, 14, 0x265e5a51);
+    md5_GG(buf, b, c, d, a,  0, 20, 0xe9b6c7aa);
+    md5_GG(buf, a, b, c, d,  5,  5, 0xd62f105d);
+    md5_GG(buf, d, a, b, c, 10,  9, 0x02441453);
+    md5_GG(buf, c, d, a, b, 15, 14, 0xd8a1e681);
+    md5_GG(buf, b, c, d, a,  4, 20, 0xe7d3fbc8);
+    md5_GG(buf, a, b, c, d,  9,  5, 0x21e1cde6);
+    md5_GG(buf, d, a, b, c, 14,  9, 0xc33707d6);
+    md5_GG(buf, c, d, a, b,  3, 14, 0xf4d50d87);
+    md5_GG(buf, b, c, d, a,  8, 20, 0x455a14ed);
+    md5_GG(buf, a, b, c, d, 13,  5, 0xa9e3e905);
+    md5_GG(buf, d, a, b, c,  2,  9, 0xfcefa3f8);
+    md5_GG(buf, c, d, a, b,  7, 14, 0x676f02d9);
+    md5_GG(buf, b, c, d, a, 12, 20, 0x8d2a4c8a);
 
     // Round 3
-    HH(a, b, c, d,  5,  4, 0xfffa3942)
-    HH(d, a, b, c,  8, 11, 0x8771f681)
-    HH(c, d, a, b, 11, 16, 0x6d9d6122)
-    HH(b, c, d, a, 14, 23, 0xfde5380c)
-    HH(a, b, c, d,  1,  4, 0xa4beea44)
-    HH(d, a, b, c,  4, 11, 0x4bdecfa9)
-    HH(c, d, a, b,  7, 16, 0xf6bb4b60)
-    HH(b, c, d, a, 10, 23, 0xbebfbc70)
-    HH(a, b, c, d, 13,  4, 0x289b7ec6)
-    HH(d, a, b, c,  0, 11, 0xeaa127fa)
-    HH(c, d, a, b,  3, 16, 0xd4ef3085)
-    HH(b, c, d, a,  6, 23, 0x04881d05)
-    HH(a, b, c, d,  9,  4, 0xd9d4d039)
-    HH(d, a, b, c, 12, 11, 0xe6db99e5)
-    HH(c, d, a, b, 15, 16, 0x1fa27cf8)
-    HH(b, c, d, a,  2, 23, 0xc4ac5665)
+    md5_HH(buf, a, b, c, d,  5,  4, 0xfffa3942);
+    md5_HH(buf, d, a, b, c,  8, 11, 0x8771f681);
+    md5_HH(buf, c, d, a, b, 11, 16, 0x6d9d6122);
+    md5_HH(buf, b, c, d, a, 14, 23, 0xfde5380c);
+    md5_HH(buf, a, b, c, d,  1,  4, 0xa4beea44);
+    md5_HH(buf, d, a, b, c,  4, 11, 0x4bdecfa9);
+    md5_HH(buf, c, d, a, b,  7, 16, 0xf6bb4b60);
+    md5_HH(buf, b, c, d, a, 10, 23, 0xbebfbc70);
+    md5_HH(buf, a, b, c, d, 13,  4, 0x289b7ec6);
+    md5_HH(buf, d, a, b, c,  0, 11, 0xeaa127fa);
+    md5_HH(buf, c, d, a, b,  3, 16, 0xd4ef3085);
+    md5_HH(buf, b, c, d, a,  6, 23, 0x04881d05);
+    md5_HH(buf, a, b, c, d,  9,  4, 0xd9d4d039);
+    md5_HH(buf, d, a, b, c, 12, 11, 0xe6db99e5);
+    md5_HH(buf, c, d, a, b, 15, 16, 0x1fa27cf8);
+    md5_HH(buf, b, c, d, a,  2, 23, 0xc4ac5665);
 
     // Round 4
-    II(a, b, c, d,  0,  6, 0xf4292244)
-    II(d, a, b, c,  7, 10, 0x432aff97)
-    II(c, d, a, b, 14, 15, 0xab9423a7)
-    II(b, c, d, a,  5, 21, 0xfc93a039)
-    II(a, b, c, d, 12,  6, 0x655b59c3)
-    II(d, a, b, c,  3, 10, 0x8f0ccc92)
-    II(c, d, a, b, 10, 15, 0xffeff47d)
-    II(b, c, d, a,  1, 21, 0x85845dd1)
-    II(a, b, c, d,  8,  6, 0x6fa87e4f)
-    II(d, a, b, c, 15, 10, 0xfe2ce6e0)
-    II(c, d, a, b,  6, 15, 0xa3014314)
-    II(b, c, d, a, 13, 21, 0x4e0811a1)
-    II(a, b, c, d,  4,  6, 0xf7537e82)
-    II(d, a, b, c, 11, 10, 0xbd3af235)
-    II(c, d, a, b,  2, 15, 0x2ad7d2bb)
-    II(b, c, d, a,  9, 21, 0xeb86d391)
-
-#undef FF
-#undef GG
-#undef HH
-#undef II
+    md5_II(buf, a, b, c, d,  0,  6, 0xf4292244);
+    md5_II(buf, d, a, b, c,  7, 10, 0x432aff97);
+    md5_II(buf, c, d, a, b, 14, 15, 0xab9423a7);
+    md5_II(buf, b, c, d, a,  5, 21, 0xfc93a039);
+    md5_II(buf, a, b, c, d, 12,  6, 0x655b59c3);
+    md5_II(buf, d, a, b, c,  3, 10, 0x8f0ccc92);
+    md5_II(buf, c, d, a, b, 10, 15, 0xffeff47d);
+    md5_II(buf, b, c, d, a,  1, 21, 0x85845dd1);
+    md5_II(buf, a, b, c, d,  8,  6, 0x6fa87e4f);
+    md5_II(buf, d, a, b, c, 15, 10, 0xfe2ce6e0);
+    md5_II(buf, c, d, a, b,  6, 15, 0xa3014314);
+    md5_II(buf, b, c, d, a, 13, 21, 0x4e0811a1);
+    md5_II(buf, a, b, c, d,  4,  6, 0xf7537e82);
+    md5_II(buf, d, a, b, c, 11, 10, 0xbd3af235);
+    md5_II(buf, c, d, a, b,  2, 15, 0x2ad7d2bb);
+    md5_II(buf, b, c, d, a,  9, 21, 0xeb86d391);
 
     // write hash values back in the correct order
     __ ldrw(rscratch1, Address(state,  0));
@@ -3610,6 +3645,34 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Double rounds for sha512.
+  void sha512_dround(int dr,
+                     FloatRegister vi0, FloatRegister vi1,
+                     FloatRegister vi2, FloatRegister vi3,
+                     FloatRegister vi4, FloatRegister vrc0,
+                     FloatRegister vrc1, FloatRegister vin0,
+                     FloatRegister vin1, FloatRegister vin2,
+                     FloatRegister vin3, FloatRegister vin4) {
+      if (dr < 36) {
+        __ ld1(vrc1, __ T2D, __ post(rscratch2, 16));
+      }
+      __ addv(v5, __ T2D, vrc0, vin0);
+      __ ext(v6, __ T16B, vi2, vi3, 8);
+      __ ext(v5, __ T16B, v5, v5, 8);
+      __ ext(v7, __ T16B, vi1, vi2, 8);
+      __ addv(vi3, __ T2D, vi3, v5);
+      if (dr < 32) {
+        __ ext(v5, __ T16B, vin3, vin4, 8);
+        __ sha512su0(vin0, __ T2D, vin1);
+      }
+      __ sha512h(vi3, __ T2D, v6, v7);
+      if (dr < 32) {
+        __ sha512su1(vin0, __ T2D, vin2, v5);
+      }
+      __ addv(vi4, __ T2D, vi1, vi3);
+      __ sha512h2(vi3, __ T2D, vi1, vi0);
+  }
+
   // Arguments:
   //
   // Inputs:
@@ -3648,25 +3711,6 @@ class StubGenerator: public StubCodeGenerator {
       0x431D67C49C100D4CL, 0x4CC5D4BECB3E42B6L, 0x597F299CFC657E2AL,
       0x5FCB6FAB3AD6FAECL, 0x6C44198C4A475817L
     };
-
-    // Double rounds for sha512.
-    #define sha512_dround(dr, i0, i1, i2, i3, i4, rc0, rc1, in0, in1, in2, in3, in4) \
-      if (dr < 36)                                                                   \
-        __ ld1(v##rc1, __ T2D, __ post(rscratch2, 16));                              \
-      __ addv(v5, __ T2D, v##rc0, v##in0);                                           \
-      __ ext(v6, __ T16B, v##i2, v##i3, 8);                                          \
-      __ ext(v5, __ T16B, v5, v5, 8);                                                \
-      __ ext(v7, __ T16B, v##i1, v##i2, 8);                                          \
-      __ addv(v##i3, __ T2D, v##i3, v5);                                             \
-      if (dr < 32) {                                                                 \
-        __ ext(v5, __ T16B, v##in3, v##in4, 8);                                      \
-        __ sha512su0(v##in0, __ T2D, v##in1);                                        \
-      }                                                                              \
-      __ sha512h(v##i3, __ T2D, v6, v7);                                             \
-      if (dr < 32)                                                                   \
-        __ sha512su1(v##in0, __ T2D, v##in2, v5);                                    \
-      __ addv(v##i4, __ T2D, v##i1, v##i3);                                          \
-      __ sha512h2(v##i3, __ T2D, v##i1, v##i0);                                      \
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", name);
@@ -3711,46 +3755,46 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(v2, __ T16B, v10);
     __ mov(v3, __ T16B, v11);
 
-    sha512_dround( 0, 0, 1, 2, 3, 4, 20, 24, 12, 13, 19, 16, 17);
-    sha512_dround( 1, 3, 0, 4, 2, 1, 21, 25, 13, 14, 12, 17, 18);
-    sha512_dround( 2, 2, 3, 1, 4, 0, 22, 26, 14, 15, 13, 18, 19);
-    sha512_dround( 3, 4, 2, 0, 1, 3, 23, 27, 15, 16, 14, 19, 12);
-    sha512_dround( 4, 1, 4, 3, 0, 2, 24, 28, 16, 17, 15, 12, 13);
-    sha512_dround( 5, 0, 1, 2, 3, 4, 25, 29, 17, 18, 16, 13, 14);
-    sha512_dround( 6, 3, 0, 4, 2, 1, 26, 30, 18, 19, 17, 14, 15);
-    sha512_dround( 7, 2, 3, 1, 4, 0, 27, 31, 19, 12, 18, 15, 16);
-    sha512_dround( 8, 4, 2, 0, 1, 3, 28, 24, 12, 13, 19, 16, 17);
-    sha512_dround( 9, 1, 4, 3, 0, 2, 29, 25, 13, 14, 12, 17, 18);
-    sha512_dround(10, 0, 1, 2, 3, 4, 30, 26, 14, 15, 13, 18, 19);
-    sha512_dround(11, 3, 0, 4, 2, 1, 31, 27, 15, 16, 14, 19, 12);
-    sha512_dround(12, 2, 3, 1, 4, 0, 24, 28, 16, 17, 15, 12, 13);
-    sha512_dround(13, 4, 2, 0, 1, 3, 25, 29, 17, 18, 16, 13, 14);
-    sha512_dround(14, 1, 4, 3, 0, 2, 26, 30, 18, 19, 17, 14, 15);
-    sha512_dround(15, 0, 1, 2, 3, 4, 27, 31, 19, 12, 18, 15, 16);
-    sha512_dround(16, 3, 0, 4, 2, 1, 28, 24, 12, 13, 19, 16, 17);
-    sha512_dround(17, 2, 3, 1, 4, 0, 29, 25, 13, 14, 12, 17, 18);
-    sha512_dround(18, 4, 2, 0, 1, 3, 30, 26, 14, 15, 13, 18, 19);
-    sha512_dround(19, 1, 4, 3, 0, 2, 31, 27, 15, 16, 14, 19, 12);
-    sha512_dround(20, 0, 1, 2, 3, 4, 24, 28, 16, 17, 15, 12, 13);
-    sha512_dround(21, 3, 0, 4, 2, 1, 25, 29, 17, 18, 16, 13, 14);
-    sha512_dround(22, 2, 3, 1, 4, 0, 26, 30, 18, 19, 17, 14, 15);
-    sha512_dround(23, 4, 2, 0, 1, 3, 27, 31, 19, 12, 18, 15, 16);
-    sha512_dround(24, 1, 4, 3, 0, 2, 28, 24, 12, 13, 19, 16, 17);
-    sha512_dround(25, 0, 1, 2, 3, 4, 29, 25, 13, 14, 12, 17, 18);
-    sha512_dround(26, 3, 0, 4, 2, 1, 30, 26, 14, 15, 13, 18, 19);
-    sha512_dround(27, 2, 3, 1, 4, 0, 31, 27, 15, 16, 14, 19, 12);
-    sha512_dround(28, 4, 2, 0, 1, 3, 24, 28, 16, 17, 15, 12, 13);
-    sha512_dround(29, 1, 4, 3, 0, 2, 25, 29, 17, 18, 16, 13, 14);
-    sha512_dround(30, 0, 1, 2, 3, 4, 26, 30, 18, 19, 17, 14, 15);
-    sha512_dround(31, 3, 0, 4, 2, 1, 27, 31, 19, 12, 18, 15, 16);
-    sha512_dround(32, 2, 3, 1, 4, 0, 28, 24, 12,  0,  0,  0,  0);
-    sha512_dround(33, 4, 2, 0, 1, 3, 29, 25, 13,  0,  0,  0,  0);
-    sha512_dround(34, 1, 4, 3, 0, 2, 30, 26, 14,  0,  0,  0,  0);
-    sha512_dround(35, 0, 1, 2, 3, 4, 31, 27, 15,  0,  0,  0,  0);
-    sha512_dround(36, 3, 0, 4, 2, 1, 24,  0, 16,  0,  0,  0,  0);
-    sha512_dround(37, 2, 3, 1, 4, 0, 25,  0, 17,  0,  0,  0,  0);
-    sha512_dround(38, 4, 2, 0, 1, 3, 26,  0, 18,  0,  0,  0,  0);
-    sha512_dround(39, 1, 4, 3, 0, 2, 27,  0, 19,  0,  0,  0,  0);
+    sha512_dround( 0, v0, v1, v2, v3, v4, v20, v24, v12, v13, v19, v16, v17);
+    sha512_dround( 1, v3, v0, v4, v2, v1, v21, v25, v13, v14, v12, v17, v18);
+    sha512_dround( 2, v2, v3, v1, v4, v0, v22, v26, v14, v15, v13, v18, v19);
+    sha512_dround( 3, v4, v2, v0, v1, v3, v23, v27, v15, v16, v14, v19, v12);
+    sha512_dround( 4, v1, v4, v3, v0, v2, v24, v28, v16, v17, v15, v12, v13);
+    sha512_dround( 5, v0, v1, v2, v3, v4, v25, v29, v17, v18, v16, v13, v14);
+    sha512_dround( 6, v3, v0, v4, v2, v1, v26, v30, v18, v19, v17, v14, v15);
+    sha512_dround( 7, v2, v3, v1, v4, v0, v27, v31, v19, v12, v18, v15, v16);
+    sha512_dround( 8, v4, v2, v0, v1, v3, v28, v24, v12, v13, v19, v16, v17);
+    sha512_dround( 9, v1, v4, v3, v0, v2, v29, v25, v13, v14, v12, v17, v18);
+    sha512_dround(10, v0, v1, v2, v3, v4, v30, v26, v14, v15, v13, v18, v19);
+    sha512_dround(11, v3, v0, v4, v2, v1, v31, v27, v15, v16, v14, v19, v12);
+    sha512_dround(12, v2, v3, v1, v4, v0, v24, v28, v16, v17, v15, v12, v13);
+    sha512_dround(13, v4, v2, v0, v1, v3, v25, v29, v17, v18, v16, v13, v14);
+    sha512_dround(14, v1, v4, v3, v0, v2, v26, v30, v18, v19, v17, v14, v15);
+    sha512_dround(15, v0, v1, v2, v3, v4, v27, v31, v19, v12, v18, v15, v16);
+    sha512_dround(16, v3, v0, v4, v2, v1, v28, v24, v12, v13, v19, v16, v17);
+    sha512_dround(17, v2, v3, v1, v4, v0, v29, v25, v13, v14, v12, v17, v18);
+    sha512_dround(18, v4, v2, v0, v1, v3, v30, v26, v14, v15, v13, v18, v19);
+    sha512_dround(19, v1, v4, v3, v0, v2, v31, v27, v15, v16, v14, v19, v12);
+    sha512_dround(20, v0, v1, v2, v3, v4, v24, v28, v16, v17, v15, v12, v13);
+    sha512_dround(21, v3, v0, v4, v2, v1, v25, v29, v17, v18, v16, v13, v14);
+    sha512_dround(22, v2, v3, v1, v4, v0, v26, v30, v18, v19, v17, v14, v15);
+    sha512_dround(23, v4, v2, v0, v1, v3, v27, v31, v19, v12, v18, v15, v16);
+    sha512_dround(24, v1, v4, v3, v0, v2, v28, v24, v12, v13, v19, v16, v17);
+    sha512_dround(25, v0, v1, v2, v3, v4, v29, v25, v13, v14, v12, v17, v18);
+    sha512_dround(26, v3, v0, v4, v2, v1, v30, v26, v14, v15, v13, v18, v19);
+    sha512_dround(27, v2, v3, v1, v4, v0, v31, v27, v15, v16, v14, v19, v12);
+    sha512_dround(28, v4, v2, v0, v1, v3, v24, v28, v16, v17, v15, v12, v13);
+    sha512_dround(29, v1, v4, v3, v0, v2, v25, v29, v17, v18, v16, v13, v14);
+    sha512_dround(30, v0, v1, v2, v3, v4, v26, v30, v18, v19, v17, v14, v15);
+    sha512_dround(31, v3, v0, v4, v2, v1, v27, v31, v19, v12, v18, v15, v16);
+    sha512_dround(32, v2, v3, v1, v4, v0, v28, v24, v12,  v0,  v0,  v0,  v0);
+    sha512_dround(33, v4, v2, v0, v1, v3, v29, v25, v13,  v0,  v0,  v0,  v0);
+    sha512_dround(34, v1, v4, v3, v0, v2, v30, v26, v14,  v0,  v0,  v0,  v0);
+    sha512_dround(35, v0, v1, v2, v3, v4, v31, v27, v15,  v0,  v0,  v0,  v0);
+    sha512_dround(36, v3, v0, v4, v2, v1, v24,  v0, v16,  v0,  v0,  v0,  v0);
+    sha512_dround(37, v2, v3, v1, v4, v0, v25,  v0, v17,  v0,  v0,  v0,  v0);
+    sha512_dround(38, v4, v2, v0, v1, v3, v26,  v0, v18,  v0,  v0,  v0,  v0);
+    sha512_dround(39, v1, v4, v3, v0, v2, v27,  v0, v19,  v0,  v0,  v0,  v0);
 
     __ addv(v8, __ T2D, v8, v0);
     __ addv(v9, __ T2D, v9, v1);
@@ -3780,8 +3824,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Inputs:
   //   c_rarg0   - byte[]  source+offset
-  //   c_rarg1   - byte[]   SHA.state
-  //   c_rarg2   - int     digest_length
+  //   c_rarg1   - byte[]  SHA.state
+  //   c_rarg2   - int     block_size
   //   c_rarg3   - int     offset
   //   c_rarg4   - int     limit
   //
@@ -3803,12 +3847,12 @@ class StubGenerator: public StubCodeGenerator {
 
     Register buf           = c_rarg0;
     Register state         = c_rarg1;
-    Register digest_length = c_rarg2;
+    Register block_size    = c_rarg2;
     Register ofs           = c_rarg3;
     Register limit         = c_rarg4;
 
     Label sha3_loop, rounds24_loop;
-    Label sha3_512, sha3_384_or_224, sha3_256;
+    Label sha3_512_or_sha3_384, shake128;
 
     __ stpd(v8, v9, __ pre(sp, -64));
     __ stpd(v10, v11, Address(sp, 16));
@@ -3844,46 +3888,54 @@ class StubGenerator: public StubCodeGenerator {
     __ eor(v5, __ T8B, v5, v30);
     __ eor(v6, __ T8B, v6, v31);
 
-    // digest_length == 64, SHA3-512
-    __ tbnz(digest_length, 6, sha3_512);
+    // block_size == 72, SHA3-512; block_size == 104, SHA3-384
+    __ tbz(block_size, 7, sha3_512_or_sha3_384);
 
     __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
-    __ ld1(v29, v30, __ T8B, __ post(buf, 16));
+    __ ld1(v29, v30, v31, __ T8B, __ post(buf, 24));
     __ eor(v7, __ T8B, v7, v25);
     __ eor(v8, __ T8B, v8, v26);
     __ eor(v9, __ T8B, v9, v27);
     __ eor(v10, __ T8B, v10, v28);
     __ eor(v11, __ T8B, v11, v29);
     __ eor(v12, __ T8B, v12, v30);
+    __ eor(v13, __ T8B, v13, v31);
 
-    // digest_length == 28, SHA3-224;  digest_length == 48, SHA3-384
-    __ tbnz(digest_length, 4, sha3_384_or_224);
+    __ ld1(v25, v26, v27,  __ T8B, __ post(buf, 24));
+    __ eor(v14, __ T8B, v14, v25);
+    __ eor(v15, __ T8B, v15, v26);
+    __ eor(v16, __ T8B, v16, v27);
 
-    // SHA3-256
-    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
-    __ eor(v13, __ T8B, v13, v25);
-    __ eor(v14, __ T8B, v14, v26);
-    __ eor(v15, __ T8B, v15, v27);
-    __ eor(v16, __ T8B, v16, v28);
+    // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
+    __ andw(c_rarg5, block_size, 48);
+    __ cbzw(c_rarg5, rounds24_loop);
+
+    __ tbnz(block_size, 5, shake128);
+    // block_size == 144, bit5 == 0, SHA3-244
+    __ ldrd(v28, __ post(buf, 8));
+    __ eor(v17, __ T8B, v17, v28);
     __ b(rounds24_loop);
 
-    __ BIND(sha3_384_or_224);
-    __ tbz(digest_length, 2, rounds24_loop); // bit 2 cleared? SHA-384
+    __ BIND(shake128);
+    __ ld1(v28, v29, v30, v31, __ T8B, __ post(buf, 32));
+    __ eor(v17, __ T8B, v17, v28);
+    __ eor(v18, __ T8B, v18, v29);
+    __ eor(v19, __ T8B, v19, v30);
+    __ eor(v20, __ T8B, v20, v31);
+    __ b(rounds24_loop); // block_size == 168, SHAKE128
 
-    // SHA3-224
-    __ ld1(v25, v26, v27, v28, __ T8B, __ post(buf, 32));
-    __ ld1(v29, __ T8B, __ post(buf, 8));
-    __ eor(v13, __ T8B, v13, v25);
-    __ eor(v14, __ T8B, v14, v26);
-    __ eor(v15, __ T8B, v15, v27);
-    __ eor(v16, __ T8B, v16, v28);
-    __ eor(v17, __ T8B, v17, v29);
-    __ b(rounds24_loop);
-
-    __ BIND(sha3_512);
+    __ BIND(sha3_512_or_sha3_384);
     __ ld1(v25, v26, __ T8B, __ post(buf, 16));
     __ eor(v7, __ T8B, v7, v25);
     __ eor(v8, __ T8B, v8, v26);
+    __ tbz(block_size, 5, rounds24_loop); // SHA3-512
+
+    // SHA3-384
+    __ ld1(v27, v28, v29, v30, __ T8B, __ post(buf, 32));
+    __ eor(v9,  __ T8B, v9,  v27);
+    __ eor(v10, __ T8B, v10, v28);
+    __ eor(v11, __ T8B, v11, v29);
+    __ eor(v12, __ T8B, v12, v30);
 
     __ BIND(rounds24_loop);
     __ subw(rscratch2, rscratch2, 1);
@@ -3968,10 +4020,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbnzw(rscratch2, rounds24_loop);
 
     if (multi_block) {
-      // block_size =  200 - 2 * digest_length, ofs += block_size
-      __ add(ofs, ofs, 200);
-      __ sub(ofs, ofs, digest_length, Assembler::LSL, 1);
-
+      __ add(ofs, ofs, block_size);
       __ cmp(ofs, limit);
       __ br(Assembler::LE, sha3_loop);
       __ mov(c_rarg0, ofs); // return ofs
@@ -4030,6 +4079,132 @@ class StubGenerator: public StubCodeGenerator {
               table0, table1, table2, table3, rscratch1, rscratch2, tmp3);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(lr);
+
+    return start;
+  }
+
+  // ChaCha20 block function.  This version parallelizes by loading
+  // individual 32-bit state elements into vectors for four blocks
+  // (e.g. all four blocks' worth of state[0] in one register, etc.)
+  //
+  // state (int[16]) = c_rarg0
+  // keystream (byte[1024]) = c_rarg1
+  // return - number of bytes of keystream (always 256)
+  address generate_chacha20Block_blockpar() {
+    Label L_twoRounds, L_cc20_const;
+    // The constant data is broken into two 128-bit segments to be loaded
+    // onto FloatRegisters.  The first 128 bits are a counter add overlay
+    // that adds +0/+1/+2/+3 to the vector holding replicated state[12].
+    // The second 128-bits is a table constant used for 8-bit left rotations.
+    __ BIND(L_cc20_const);
+    __ emit_int64(0x0000000100000000UL);
+    __ emit_int64(0x0000000300000002UL);
+    __ emit_int64(0x0605040702010003UL);
+    __ emit_int64(0x0E0D0C0F0A09080BUL);
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "chacha20Block");
+    address start = __ pc();
+    __ enter();
+
+    int i, j;
+    const Register state = c_rarg0;
+    const Register keystream = c_rarg1;
+    const Register loopCtr = r10;
+    const Register tmpAddr = r11;
+
+    const FloatRegister stateFirst = v0;
+    const FloatRegister stateSecond = v1;
+    const FloatRegister stateThird = v2;
+    const FloatRegister stateFourth = v3;
+    const FloatRegister origCtrState = v28;
+    const FloatRegister scratch = v29;
+    const FloatRegister lrot8Tbl = v30;
+
+    // Organize SIMD registers in an array that facilitates
+    // putting repetitive opcodes into loop structures.  It is
+    // important that each grouping of 4 registers is monotonically
+    // increasing to support the requirements of multi-register
+    // instructions (e.g. ld4r, st4, etc.)
+    const FloatRegister workSt[16] = {
+         v4,  v5,  v6,  v7, v16, v17, v18, v19,
+        v20, v21, v22, v23, v24, v25, v26, v27
+    };
+
+    // Load from memory and interlace across 16 SIMD registers,
+    // With each word from memory being broadcast to all lanes of
+    // each successive SIMD register.
+    //      Addr(0) -> All lanes in workSt[i]
+    //      Addr(4) -> All lanes workSt[i + 1], etc.
+    __ mov(tmpAddr, state);
+    for (i = 0; i < 16; i += 4) {
+      __ ld4r(workSt[i], workSt[i + 1], workSt[i + 2], workSt[i + 3], __ T4S,
+          __ post(tmpAddr, 16));
+    }
+
+    // Pull in constant data.  The first 16 bytes are the add overlay
+    // which is applied to the vector holding the counter (state[12]).
+    // The second 16 bytes is the index register for the 8-bit left
+    // rotation tbl instruction.
+    __ adr(tmpAddr, L_cc20_const);
+    __ ldpq(origCtrState, lrot8Tbl, Address(tmpAddr));
+    __ addv(workSt[12], __ T4S, workSt[12], origCtrState);
+
+    // Set up the 10 iteration loop and perform all 8 quarter round ops
+    __ mov(loopCtr, 10);
+    __ BIND(L_twoRounds);
+
+    __ cc20_quarter_round(workSt[0], workSt[4], workSt[8], workSt[12],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[1], workSt[5], workSt[9], workSt[13],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[2], workSt[6], workSt[10], workSt[14],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[3], workSt[7], workSt[11], workSt[15],
+        scratch, lrot8Tbl);
+
+    __ cc20_quarter_round(workSt[0], workSt[5], workSt[10], workSt[15],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[1], workSt[6], workSt[11], workSt[12],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[2], workSt[7], workSt[8], workSt[13],
+        scratch, lrot8Tbl);
+    __ cc20_quarter_round(workSt[3], workSt[4], workSt[9], workSt[14],
+        scratch, lrot8Tbl);
+
+    // Decrement and iterate
+    __ sub(loopCtr, loopCtr, 1);
+    __ cbnz(loopCtr, L_twoRounds);
+
+    __ mov(tmpAddr, state);
+
+    // Add the starting state back to the post-loop keystream
+    // state.  We read/interlace the state array from memory into
+    // 4 registers similar to what we did in the beginning.  Then
+    // add the counter overlay onto workSt[12] at the end.
+    for (i = 0; i < 16; i += 4) {
+      __ ld4r(stateFirst, stateSecond, stateThird, stateFourth, __ T4S,
+          __ post(tmpAddr, 16));
+      __ addv(workSt[i], __ T4S, workSt[i], stateFirst);
+      __ addv(workSt[i + 1], __ T4S, workSt[i + 1], stateSecond);
+      __ addv(workSt[i + 2], __ T4S, workSt[i + 2], stateThird);
+      __ addv(workSt[i + 3], __ T4S, workSt[i + 3], stateFourth);
+    }
+    __ addv(workSt[12], __ T4S, workSt[12], origCtrState);    // Add ctr mask
+
+    // Write to key stream, storing the same element out of workSt[0..15]
+    // to consecutive 4-byte offsets in the key stream buffer, then repeating
+    // for the next element position.
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 16; j += 4) {
+        __ st4(workSt[j], workSt[j + 1], workSt[j + 2], workSt[j + 3], __ S, i,
+            __ post(keystream, 16));
+      }
+    }
+
+    __ mov(r0, 256);             // Return length of output keystream
+    __ leave();
     __ ret(lr);
 
     return start;
@@ -5159,7 +5334,7 @@ class StubGenerator: public StubCodeGenerator {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
       // We can get here despite the nmethod being good, if we have not
       // yet applied our cross modification fence (or data fence).
-      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      Address thread_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
       __ lea(rscratch2, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ ldrw(rscratch2, rscratch2);
       __ strw(rscratch2, thread_epoch_addr);
@@ -6612,69 +6787,6 @@ class StubGenerator: public StubCodeGenerator {
   }
 #endif // LINUX
 
-  RuntimeStub* generate_cont_doYield() {
-    if (!Continuations::enabled()) return nullptr;
-
-    const char *name = "cont_doYield";
-
-    enum layout {
-      rfp_off1,
-      rfp_off2,
-      lr_off,
-      lr_off2,
-      framesize // inclusive of return address
-    };
-    // assert(is_even(framesize/2), "sp not 16-byte aligned");
-
-    int insts_size = 512;
-    int locs_size  = 64;
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-
-    __ enter();
-
-    __ mov(c_rarg1, sp);
-
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-
-    __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
-
-    __ mov(c_rarg0, rthread);
-    __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
-    __ call_VM_leaf(Continuation::freeze_entry(), 2);
-    __ reset_last_Java_frame(true);
-
-    Label pinned;
-
-    __ cbnz(r0, pinned);
-
-    // We've succeeded, set sp to the ContinuationEntry
-    __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-    __ mov(sp, rscratch1);
-    continuation_enter_cleanup(masm);
-
-    __ bind(pinned); // pinned -- return to caller
-
-    __ leave();
-    __ ret(lr);
-
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub::new_runtime_stub(name,
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps, false);
-    return stub;
-  }
-
   address generate_cont_thaw(Continuation::thaw_kind kind) {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
     bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
@@ -6809,14 +6921,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // The handle is dereferenced through a load barrier.
-  static void jfr_epilogue(MacroAssembler* _masm, Register thread) {
+  static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    Label null_jobject;
-    __ cbz(r0, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, r0, Address(r0, 0), c_rarg0, thread);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(r0, rscratch1, rscratch2);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -6831,7 +6938,7 @@ class StubGenerator: public StubCodeGenerator {
       framesize // inclusive of return address
     };
 
-    int insts_size = 512;
+    int insts_size = 1024;
     int locs_size = 64;
     CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
     OopMapSet* oop_maps = new OopMapSet();
@@ -6844,7 +6951,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, rthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-    jfr_epilogue(_masm, rthread);
+    jfr_epilogue(_masm);
     __ leave();
     __ ret(lr);
 
@@ -7246,7 +7353,8 @@ class StubGenerator: public StubCodeGenerator {
     //    Preserves len
     //    Leaves s pointing to the address which was in d at start
     void reverse(Register d, Register s, Register len, Register tmp1, Register tmp2) {
-      assert(tmp1 < r19 && tmp2 < r19, "register corruption");
+      assert(tmp1->encoding() < r19->encoding(), "register corruption");
+      assert(tmp2->encoding() < r19->encoding(), "register corruption");
 
       lea(s, Address(s, len, Address::uxtw(LogBytesPerWord)));
       mov(tmp1, len);
@@ -7848,9 +7956,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-    StubRoutines::_cont_doYield_stub = generate_cont_doYield();
-    StubRoutines::_cont_doYield      = StubRoutines::_cont_doYield_stub == nullptr ? nullptr
-                                        : StubRoutines::_cont_doYield_stub->entry_point();
 
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
@@ -7879,7 +7984,9 @@ class StubGenerator: public StubCodeGenerator {
                                                 SharedRuntime::
                                                 throw_NullPointerException_at_call));
 
-    StubRoutines::aarch64::_vector_iota_indices    = generate_iota_indices("iota_indices");
+    if (UseSVE == 0) {
+      StubRoutines::aarch64::_vector_iota_indices = generate_iota_indices("iota_indices");
+    }
 
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
@@ -7935,6 +8042,10 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
 #endif // COMPILER2
+
+    if (UseChaCha20Intrinsics) {
+      StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+    }
 
     if (UseBASE64Intrinsics) {
         StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
@@ -8049,75 +8160,3 @@ DEFAULT_ATOMIC_OP(cmpxchg, 8, _seq_cst)
 #undef DEFAULT_ATOMIC_OP
 
 #endif // LINUX
-
-
-#undef __
-#define __ masm->
-
-// on exit, sp points to the ContinuationEntry
-OopMap* continuation_enter_setup(MacroAssembler* masm, int& stack_slots) {
-  assert(ContinuationEntry::size() % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::cont_offset())  % VMRegImpl::stack_slot_size == 0, "");
-  assert(in_bytes(ContinuationEntry::chunk_offset()) % VMRegImpl::stack_slot_size == 0, "");
-
-  stack_slots += (int)ContinuationEntry::size()/wordSize;
-  __ sub(sp, sp, (int)ContinuationEntry::size()); // place Continuation metadata
-
-  OopMap* map = new OopMap(((int)ContinuationEntry::size() + wordSize)/ VMRegImpl::stack_slot_size, 0 /* arg_slots*/);
-  ContinuationEntry::setup_oopmap(map);
-
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_offset()));
-  __ mov(rscratch1, sp); // we can't use sp as the source in str
-  __ str(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-
-  return map;
-}
-
-// on entry c_rarg1 points to the continuation
-//          sp points to ContinuationEntry
-//          c_rarg3 -- isVirtualThread
-void fill_continuation_entry(MacroAssembler* masm) {
-#ifdef ASSERT
-  __ movw(rscratch1, ContinuationEntry::cookie_value());
-  __ strw(rscratch1, Address(sp, ContinuationEntry::cookie_offset()));
-#endif
-
-  __ str (c_rarg1, Address(sp, ContinuationEntry::cont_offset()));
-  __ strw(c_rarg3, Address(sp, ContinuationEntry::flags_offset()));
-  __ str (zr,      Address(sp, ContinuationEntry::chunk_offset()));
-  __ strw(zr,      Address(sp, ContinuationEntry::argsize_offset()));
-  __ strw(zr,      Address(sp, ContinuationEntry::pin_count_offset()));
-
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ldr(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-  __ str(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-
-  __ str(zr, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ str(zr, Address(rthread, JavaThread::held_monitor_count_offset()));
-}
-
-// on entry, sp points to the ContinuationEntry
-// on exit, rfp points to the spilled rfp in the entry frame
-void continuation_enter_cleanup(MacroAssembler* masm) {
-#ifndef PRODUCT
-  Label OK;
-  __ ldr(rscratch1, Address(rthread, JavaThread::cont_entry_offset()));
-  __ cmp(sp, rscratch1);
-  __ br(Assembler::EQ, OK);
-  __ stop("incorrect sp1");
-  __ bind(OK);
-#endif
-
-  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ str(rscratch1, Address(rthread, JavaThread::cont_fastpath_offset()));
-  __ ldr(rscratch1, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ str(rscratch1, Address(rthread, JavaThread::held_monitor_count_offset()));
-
-  __ ldr(rscratch2, Address(sp, ContinuationEntry::parent_offset()));
-  __ str(rscratch2, Address(rthread, JavaThread::cont_entry_offset()));
-  __ add(rfp, sp, (int)ContinuationEntry::size());
-}
-
-#undef __

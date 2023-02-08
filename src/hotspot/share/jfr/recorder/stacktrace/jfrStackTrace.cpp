@@ -148,11 +148,23 @@ class JfrVframeStream : public vframeStreamCommon {
   void next_vframe();
 };
 
+static RegisterMap::WalkContinuation walk_continuation(JavaThread* jt) {
+  // NOTE: WalkContinuation::skip, because of interactions with ZGC relocation
+  //       and load barriers. This code is run while generating stack traces for
+  //       the ZPage allocation event, even when ZGC is relocating  objects.
+  //       When ZGC is relocating, it is forbidden to run code that performs
+  //       load barriers. With WalkContinuation::include, we visit heap stack
+  //       chunks and could be using load barriers.
+  return (UseZGC && !StackWatermarkSet::processing_started(jt))
+      ? RegisterMap::WalkContinuation::skip
+      : RegisterMap::WalkContinuation::include;
+}
+
 JfrVframeStream::JfrVframeStream(JavaThread* jt, const frame& fr, bool stop_at_java_call_stub, bool async_mode) :
   vframeStreamCommon(RegisterMap(jt,
                                  RegisterMap::UpdateMap::skip,
                                  RegisterMap::ProcessFrames::skip,
-                                 RegisterMap::WalkContinuation::include)),
+                                 walk_continuation(jt))),
     _cont_entry(JfrThreadLocal::is_vthread(jt) ? jt->last_continuation() : nullptr),
     _async_mode(async_mode), _vthread(JfrThreadLocal::is_vthread(jt)) {
   assert(!_vthread || _cont_entry != nullptr, "invariant");
@@ -226,7 +238,7 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
   // We do this because if space becomes sparse, we cannot rely on the implicit allocation of a new buffer as part of the
   // regular tag mechanism. If the free list is empty, a malloc could result, and the problem with that is that the thread
   // we have suspended could be the holder of the malloc lock. If there is no more available space, the attempt is aborted.
-  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_enqueue_buffer(current_thread);
+  const JfrBuffer* const enqueue_buffer = JfrTraceIdLoadBarrier::get_sampler_enqueue_buffer(current_thread);
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.
   JfrVframeStream vfs(jt, frame, false, true);
   u4 count = 0;
@@ -274,7 +286,10 @@ bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip) {
   assert(jt != NULL, "invariant");
   assert(jt == Thread::current(), "invariant");
   assert(!_lineno, "invariant");
-  HandleMark hm(jt); // RegisterMap uses Handles to support continuations.
+  // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
+  // This is because RegisterMap uses Handles to support continuations.
+  ResetNoHandleMark rnhm;
+  HandleMark hm(jt);
   JfrVframeStream vfs(jt, frame, false, false);
   u4 count = 0;
   _reached_root = true;

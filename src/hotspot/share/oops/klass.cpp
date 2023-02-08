@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,18 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm_io.h"
+#include "cds/archiveHeapLoader.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -43,6 +44,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -61,10 +63,6 @@ void Klass::set_java_mirror(Handle m) {
 
 oop Klass::java_mirror_no_keepalive() const {
   return _java_mirror.peek();
-}
-
-void Klass::replace_java_mirror(oop mirror) {
-  _java_mirror.replace(mirror);
 }
 
 bool Klass::is_cloneable() const {
@@ -537,6 +535,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
+#if INCLUDE_CDS
 void Klass::remove_unshareable_info() {
   assert (Arguments::is_dumping_archive(),
           "only called during CDS dump time");
@@ -604,7 +603,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (HeapShared::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -627,6 +626,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     java_lang_Class::create_mirror(this, loader, module_handle, protection_domain, Handle(), CHECK);
   }
 }
+#endif // INCLUDE_CDS
 
 #if INCLUDE_CDS_JAVA_HEAP
 oop Klass::archived_java_mirror() {
@@ -642,9 +642,9 @@ void Klass::clear_archived_mirror_index() {
 }
 
 // No GC barrier
-void Klass::set_archived_java_mirror(oop m) {
-  assert(DumpSharedSpaces, "called only during runtime");
-  _archived_mirror_index = HeapShared::append_root(m);
+void Klass::set_archived_java_mirror(int mirror_index) {
+  assert(DumpSharedSpaces, "called only during dumptime");
+  _archived_mirror_index = mirror_index;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
@@ -784,7 +784,7 @@ void Klass::verify_on(outputStream* st) {
   }
 
   if (java_mirror_no_keepalive() != NULL) {
-    guarantee(oopDesc::is_oop(java_mirror_no_keepalive()), "should be instance");
+    guarantee(java_lang_Class::is_instance(java_mirror_no_keepalive()), "should be instance");
   }
 }
 

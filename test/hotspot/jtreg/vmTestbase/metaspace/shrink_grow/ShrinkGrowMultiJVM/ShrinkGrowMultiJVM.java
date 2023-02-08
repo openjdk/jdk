@@ -58,7 +58,7 @@ public class ShrinkGrowMultiJVM {
                  .resolve("java")
                  .toAbsolutePath()
                  .toString(),
-            "-Xlog:gc:gc_$i.log", // LOG_GC_ARG_INDEX
+            "UNSET_LOG_GC_ARG", // LOG_GC_ARG_INDEX
             "-XX:MetaspaceSize=10m",
             "-XX:MaxMetaspaceSize=20m",
             "-cp",
@@ -81,7 +81,7 @@ public class ShrinkGrowMultiJVM {
         for (int i = 0; i < 5; i++) {
             // will be used as jvm id
             args[args.length - 1] = "jvm#" + i;
-            args[LOG_GC_ARG_INDEX] = "-Xlog:gc:gc_" + i + ".log";
+            args[LOG_GC_ARG_INDEX] = "-Xlog:gc*:gc_" + i + ".log::filecount=0";
             ProcessBuilder pb = new ProcessBuilder(args);
             try {
                 Process p = pb.start();

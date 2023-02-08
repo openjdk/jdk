@@ -76,7 +76,7 @@ public:
 
 class ShenandoahIsUnloadingBehaviour : public IsUnloadingBehaviour {
 public:
-  virtual bool is_unloading(CompiledMethod* method) const {
+  virtual bool has_dead_oop(CompiledMethod* method) const {
     nmethod* const nm = method->as_nmethod();
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
@@ -176,7 +176,7 @@ void ShenandoahUnload::unload() {
     {
       ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_purge_coderoots);
       SuspendibleThreadSetJoiner sts;
-      ShenandoahCodeRoots::purge(heap->workers());
+      ShenandoahCodeRoots::purge();
     }
 
     {

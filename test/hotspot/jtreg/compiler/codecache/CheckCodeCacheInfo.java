@@ -43,8 +43,7 @@ public class CheckCodeCacheInfo {
 
     static {
         String entry = "\\d+K( \\(hdr \\d+K \\d+%, loc \\d+K \\d+%, code \\d+K \\d+%, stub \\d+K \\d+%, \\[oops \\d+K \\d+%, metadata \\d+K \\d+%, data \\d+K \\d+%, pcs \\d+K \\d+%\\]\\))?\\n";
-        String pair = " #\\d+ live = " + entry
-                    + " #\\d+ dead = " + entry;
+        String pair = " #\\d+ live = " + entry;
 
         VERBOSE_REGEXP = "nmethod blobs per compilation level:\\n"
                        + "none:\\n"

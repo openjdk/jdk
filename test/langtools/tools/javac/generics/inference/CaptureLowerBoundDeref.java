@@ -3,7 +3,7 @@
  * @bug 8075793
  * @summary Capture variable as an inference lower bound followed by a member reference
  * @compile/fail/ref=CaptureLowerBoundDeref.out -XDrawDiagnostics CaptureLowerBoundDeref.java
- * @compile --release 7 CaptureLowerBoundDeref.java
+ *
  */
 
 class CaptureLowerBoundDeref {

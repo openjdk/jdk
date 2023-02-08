@@ -93,8 +93,18 @@ inline bool Method::is_empty_method() const {
 inline bool Method::is_continuation_enter_intrinsic() const {
   return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial;
 }
+
+inline bool Method::is_continuation_yield_intrinsic() const {
+  return intrinsic_id() == vmIntrinsics::_Continuation_doYield;
+}
+
+inline bool Method::is_continuation_native_intrinsic() const {
+  return intrinsic_id() == vmIntrinsics::_Continuation_enterSpecial ||
+         intrinsic_id() == vmIntrinsics::_Continuation_doYield;
+}
+
 inline bool Method::is_special_native_intrinsic() const {
-  return is_method_handle_intrinsic() || is_continuation_enter_intrinsic();
+  return is_method_handle_intrinsic() || is_continuation_native_intrinsic();
 }
 
 #endif // SHARE_OOPS_METHOD_INLINE_HPP

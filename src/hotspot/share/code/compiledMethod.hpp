@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = NULL); }
+  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
   void    reset_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -130,7 +130,7 @@ public:
   PcDesc* find_pc_desc(address pc, bool approximate, const PcDescSearch& search) {
     address base_address = search.code_begin();
     PcDesc* desc = _pc_desc_cache.last_pc_desc();
-    if (desc != NULL && desc->pc_offset() == pc - base_address) {
+    if (desc != nullptr && desc->pc_offset() == pc - base_address) {
       return desc;
     }
     return find_pc_desc_internal(pc, approximate, search);
@@ -140,7 +140,6 @@ public:
 
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
-  friend class NMethodSweeper;
 
   void init_defaults();
 protected:
@@ -204,11 +203,7 @@ public:
                              // allowed to advance state
          in_use        = 0,  // executable nmethod
          not_used      = 1,  // not entrant, but revivable
-         not_entrant   = 2,  // marked for deoptimization but activations may still exist,
-                             // will be transformed to zombie when all activations are gone
-         unloaded      = 3,  // there should be no activations, should not be called, will be
-                             // transformed to zombie by the sweeper, when not "locked in vm".
-         zombie        = 4   // no activations exist, nmethod is ready for purge
+         not_entrant   = 2,  // marked for deoptimization but activations may still exist
   };
 
   virtual bool  is_in_use() const = 0;
@@ -222,13 +217,12 @@ public:
   virtual bool make_not_entrant() = 0;
   virtual bool make_entrant() = 0;
   virtual address entry_point() const = 0;
-  virtual bool make_zombie() = 0;
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
   virtual void print_pcs() = 0;
-  bool is_native_method() const { return _method != NULL && _method->is_native(); }
-  bool is_java_method() const { return _method != NULL && !_method->is_native(); }
+  bool is_native_method() const { return _method != nullptr && _method->is_native(); }
+  bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -287,6 +281,8 @@ public:
   bool consts_contains(address addr) const { return consts_begin() <= addr && addr < consts_end(); }
   int consts_size() const { return consts_end() - consts_begin(); }
 
+  virtual int skipped_instructions_size() const = 0;
+
   virtual address stub_begin() const = 0;
   virtual address stub_end() const = 0;
   bool stub_contains(address addr) const { return stub_begin() <= addr && addr < stub_end(); }
@@ -344,7 +340,6 @@ private:
   address* orig_pc_addr(const frame* fr);
 
 public:
-  virtual bool can_convert_to_zombie() = 0;
   virtual const char* compile_kind() const = 0;
   virtual int get_state() const = 0;
 
@@ -369,8 +364,8 @@ public:
   address continuation_for_implicit_exception(address pc, bool for_div0_check);
 
  public:
-  // Serial version used by sweeper and whitebox test
-  void cleanup_inline_caches(bool clean_all);
+  // Serial version used by whitebox test
+  void cleanup_inline_caches_whitebox();
 
   virtual void clear_inline_caches();
   void clear_ic_callsites();

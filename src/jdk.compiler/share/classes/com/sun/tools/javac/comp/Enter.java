@@ -356,10 +356,12 @@ public class Enter extends JCTree.Visitor {
             tree.packge.complete(); // Find all classes in package.
 
             Env<AttrContext> topEnv = topLevelEnv(tree);
-            Env<AttrContext> packageEnv = isPkgInfo ? topEnv.dup(pd) : null;
+            Env<AttrContext> packageEnv = null;
 
             // Save environment of package-info.java file.
             if (isPkgInfo) {
+                packageEnv = topEnv.dup(pd != null ? pd : tree);
+
                 Env<AttrContext> env0 = typeEnvs.get(tree.packge);
                 if (env0 != null) {
                     JCCompilationUnit tree0 = env0.toplevel;
@@ -497,6 +499,7 @@ public class Enter extends JCTree.Visitor {
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree) | FROM_SOURCE;
         c.classfile = c.sourcefile = env.toplevel.sourcefile;
         c.members_field = WriteableScope.create(c);
+        c.isPermittedExplicit = tree.permitting.nonEmpty();
         c.clearAnnotationMetadata();
 
         ClassType ct = (ClassType)c.type;

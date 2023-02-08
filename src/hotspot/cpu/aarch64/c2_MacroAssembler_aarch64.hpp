@@ -35,9 +35,6 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub);
-  static int entry_barrier_stub_size();
-
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, FloatRegister vtmp1,
@@ -164,5 +161,12 @@
   void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 
   void neon_reverse_bytes(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
+
+  // java.lang.Math::signum intrinsics
+  void vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                          FloatRegister one, SIMD_Arrangement T);
+
+  void vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                         FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T);
 
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP

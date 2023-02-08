@@ -116,6 +116,12 @@ void Jfr::on_resolution(const Parse* parse, const ciKlass* holder, const ciMetho
 }
 #endif
 
+#if INCLUDE_JVMCI
+void Jfr::on_resolution(const Method* caller, const Method* target, TRAPS) {
+  JfrResolution::on_jvmci_resolution(caller, target, CHECK);
+}
+#endif
+
 void Jfr::on_vm_shutdown(bool exception_handler, bool halt) {
   if (!halt && JfrRecorder::is_recording()) {
     JfrEmergencyDump::on_vm_shutdown(exception_handler);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,6 @@ public class StoreRemote {
         System.getProperty("test.src") + "/src/test/test/StoreRemote.ldap";
 
     public static void main(String[] args) throws Exception {
-
         /*
          * Process arguments
          */
@@ -66,7 +65,7 @@ public class StoreRemote {
             System.err.println("        <ldapurl> is the LDAP URL of the parent entry\n");
             System.err.println("example:");
             System.err.println("        java StoreRemote ldap://oasis/o=airius.com");
-            return;
+            throw new IllegalArgumentException();
         }
 
         /*
@@ -120,7 +119,7 @@ public class StoreRemote {
                 System.err.println("StoreRemote: entry '" + dn +
                         "' already exists");
                 cleanup(ctx, (String)null);
-                return;
+                throw e;
             }
 
             /*
@@ -141,7 +140,7 @@ public class StoreRemote {
                         dn + "' " + e);
                 e.printStackTrace();
                 cleanup(ctx, dn);
-                return;
+                throw e;
             }
 
             cleanup(ctx, dn);

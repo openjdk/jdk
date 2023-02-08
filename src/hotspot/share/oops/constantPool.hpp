@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
+#include "utilities/resourceHash.hpp"
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.
@@ -46,8 +47,6 @@
 // modified when the entry is resolved.  If a klass constant pool
 // entry is read without a lock, only the resolved state guarantees that
 // the entry in the constant pool is a klass object and not a Symbol*.
-
-class SymbolHashMap;
 
 // This represents a JVM_CONSTANT_Class, JVM_CONSTANT_UnresolvedClass, or
 // JVM_CONSTANT_UnresolvedClassInError slot in the constant pool.
@@ -82,6 +81,7 @@ class ConstantPool : public Metadata {
   friend class JVMCIVMStructs;
   friend class BytecodeInterpreter;  // Directly extracts a klass in the pool for fast instanceof/checkcast
   friend class Universe;             // For null constructor
+  friend class ClassPrelinker;       // CDS
  private:
   // If you add a new field that points to any metaspace object, you
   // must add this field to ConstantPool::metaspace_pointers_do().
@@ -206,7 +206,7 @@ class ConstantPool : public Metadata {
   // can't be removed from the set of previous versions saved in the instance
   // class.
   bool on_stack() const;
-  bool is_maybe_on_continuation_stack() const;
+  bool is_maybe_on_stack() const;
   void set_on_stack(const bool value);
 
   // Faster than MetaspaceObj::is_shared() - used by set_on_stack()
@@ -236,6 +236,9 @@ class ConstantPool : public Metadata {
   // resolved strings, methodHandles and callsite objects from the constant pool
   objArrayOop resolved_references()  const;
   objArrayOop resolved_references_or_null()  const;
+  oop resolved_reference_at(int obj_index) const;
+  oop set_resolved_reference_at(int index, oop new_value);
+
   // mapping resolved object array indexes to cp indexes and back.
   int object_to_cp_index(int index)         { return reference_map()->at(index); }
   int cp_to_object_index(int index);
@@ -474,7 +477,7 @@ class ConstantPool : public Metadata {
     // behind our back, lest we later load stale values thru the oop.
     // we might want a volatile_obj_at in ObjArrayKlass.
     int obj_index = cp_to_object_index(which);
-    return resolved_references()->obj_at(obj_index);
+    return resolved_reference_at(obj_index);
   }
 
   Symbol* unresolved_string_at(int which) {
@@ -692,17 +695,14 @@ class ConstantPool : public Metadata {
     resolve_string_constants_impl(h_this, CHECK);
   }
 
+#if INCLUDE_CDS
   // CDS support
-  void archive_resolved_references() NOT_CDS_JAVA_HEAP_RETURN;
+  objArrayOop prepare_resolved_references_for_archiving() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   void add_dumped_interned_strings() NOT_CDS_JAVA_HEAP_RETURN;
-  void resolve_class_constants(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  bool maybe_archive_resolved_klass_at(int cp_index);
   void remove_unshareable_info();
   void restore_unshareable_info(TRAPS);
-  // The ConstantPool vtable is restored by this call when the ConstantPool is
-  // in the shared archive.  See patch_klass_vtables() in metaspaceShared.cpp for
-  // all the gory details.  SA, dtrace and pstack helpers distinguish metadata
-  // by their vtable.
-  void restore_vtable() { guarantee(is_constantPool(), "vtable restored by this call"); }
+#endif
 
  private:
   enum { _no_index_sentinel = -1, _possible_index_sentinel = -2 };
@@ -890,8 +890,23 @@ class ConstantPool : public Metadata {
   friend class JvmtiConstantPoolReconstituter;
 
  private:
+  class SymbolHash: public CHeapObj<mtSymbol> {
+    ResourceHashtable<const Symbol*, u2, 256, AnyObj::C_HEAP, mtSymbol, Symbol::compute_hash> _table;
+
+   public:
+    void add_if_absent(const Symbol* sym, u2 value) {
+      bool created;
+      _table.put_if_absent(sym, value, &created);
+    }
+
+    u2 symbol_to_value(const Symbol* sym) {
+      u2* value = _table.get(sym);
+      return (value == nullptr) ? 0 : *value;
+    }
+  }; // End SymbolHash class
+
   jint cpool_entry_size(jint idx);
-  jint hash_entries_to(SymbolHashMap *symmap, SymbolHashMap *classmap);
+  jint hash_entries_to(SymbolHash *symmap, SymbolHash *classmap);
 
   // Copy cpool bytes into byte array.
   // Returns:
@@ -899,7 +914,7 @@ class ConstantPool : public Metadata {
   //        0, OutOfMemory error
   //       -1, Internal error
   int  copy_cpool_bytes(int cpool_size,
-                        SymbolHashMap* tbl,
+                        SymbolHash* tbl,
                         unsigned char *bytes);
 
  public:
@@ -913,89 +928,5 @@ class ConstantPool : public Metadata {
 
   const char* internal_name() const { return "{constant pool}"; }
 };
-
-class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
- private:
-  SymbolHashMapEntry* _next;   // Next element in the linked list for this bucket
-  Symbol*             _symbol; // 1-st part of the mapping: symbol => value
-  unsigned int        _hash;   // 32-bit hash for item
-  u2                  _value;  // 2-nd part of the mapping: symbol => value
-
- public:
-  unsigned   int hash() const             { return _hash;   }
-  void       set_hash(unsigned int hash)  { _hash = hash;   }
-
-  SymbolHashMapEntry* next() const        { return _next;   }
-  void set_next(SymbolHashMapEntry* next) { _next = next;   }
-
-  Symbol*    symbol() const               { return _symbol; }
-  void       set_symbol(Symbol* sym)      { _symbol = sym;  }
-
-  u2         value() const                {  return _value; }
-  void       set_value(u2 value)          { _value = value; }
-
-  SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _next(NULL), _symbol(symbol), _hash(hash), _value(value) {}
-
-}; // End SymbolHashMapEntry class
-
-
-class SymbolHashMapBucket : public CHeapObj<mtSymbol> {
-
-private:
-  SymbolHashMapEntry*    _entry;
-
-public:
-  SymbolHashMapEntry* entry() const         {  return _entry; }
-  void set_entry(SymbolHashMapEntry* entry) { _entry = entry; }
-  void clear()                              { _entry = NULL;  }
-
-}; // End SymbolHashMapBucket class
-
-
-class SymbolHashMap: public CHeapObj<mtSymbol> {
-
- private:
-  // Default number of entries in the table
-  enum SymbolHashMap_Constants {
-    _Def_HashMap_Size = 256
-  };
-
-  int                   _table_size;
-  SymbolHashMapBucket*  _buckets;
-
-  void initialize_table(int table_size);
-
- public:
-
-  int table_size() const        { return _table_size; }
-
-  SymbolHashMap()               { initialize_table(_Def_HashMap_Size); }
-  SymbolHashMap(int table_size) { initialize_table(table_size); }
-
-  // hash P(31) from Kernighan & Ritchie
-  static unsigned int compute_hash(const char* str, int len) {
-    unsigned int hash = 0;
-    while (len-- > 0) {
-      hash = 31*hash + (unsigned) *str;
-      str++;
-    }
-    return hash;
-  }
-
-  SymbolHashMapEntry* bucket(int i) {
-    return _buckets[i].entry();
-  }
-
-  void add_entry(Symbol* sym, u2 value);
-  SymbolHashMapEntry* find_entry(Symbol* sym);
-
-  u2 symbol_to_value(Symbol* sym) {
-    SymbolHashMapEntry *entry = find_entry(sym);
-    return (entry == NULL) ? 0 : entry->value();
-  }
-
-  ~SymbolHashMap();
-}; // End SymbolHashMap class
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

@@ -249,12 +249,6 @@ class Generation: public CHeapObj<mtGC> {
   // avoid repeating the virtual call to retrieve it.
   virtual oop promote(oop obj, size_t obj_size);
 
-  // Informs the current generation that all oop_since_save_marks_iterates
-  // performed by "thread_num" in the current collection, if any, have been
-  // completed; any supporting data structures can be reset.  Default is to
-  // do nothing.
-  virtual void par_oop_since_save_marks_iterate_done(int thread_num) {}
-
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
   // This is a generic implementation which can be overridden.
@@ -339,10 +333,6 @@ class Generation: public CHeapObj<mtGC> {
   // operations to be optimized.
   virtual void save_marks() {}
 
-  // This function allows generations to initialize any "saved marks".  That
-  // is, should only be called when the generation is empty.
-  virtual void reset_saved_marks() {}
-
   // This function is "true" iff any no allocations have occurred in the
   // generation since the last call to "save_marks".
   virtual bool no_allocs_since_save_marks() = 0;
@@ -405,8 +395,6 @@ class Generation: public CHeapObj<mtGC> {
   // Requires "addr" to be the start of a block, and returns "TRUE" iff
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;
-
-  void print_heap_change(size_t prev_used) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;

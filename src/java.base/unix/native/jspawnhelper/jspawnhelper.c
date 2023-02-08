@@ -25,6 +25,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -132,6 +133,7 @@ int main(int argc, char *argv[]) {
     struct stat buf;
     /* argv[0] contains the fd number to read all the child info */
     int r, fdin, fdout;
+    sigset_t unblock_signals;
 
     r = sscanf (argv[argc-1], "%d:%d", &fdin, &fdout);
     if (r == 2 && fcntl(fdin, F_GETFD) != -1) {
@@ -141,6 +143,11 @@ int main(int argc, char *argv[]) {
     } else {
         shutItDown();
     }
+
+    // Reset any mask signals from parent
+    sigemptyset(&unblock_signals);
+    sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
+
     initChildStuff (fdin, fdout, &c);
 
     childProcess (&c);

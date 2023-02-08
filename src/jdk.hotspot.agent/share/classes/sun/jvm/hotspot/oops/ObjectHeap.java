@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,15 +138,15 @@ public class ObjectHeap {
     // Summarize size
     long totalSize = 0;
     for (int i = 0; i < liveRegions.size(); i += 2) {
-      Address bottom = (Address) liveRegions.get(i);
-      Address top    = (Address) liveRegions.get(i+1);
+      Address bottom = liveRegions.get(i);
+      Address top    = liveRegions.get(i+1);
       totalSize += top.minus(bottom);
     }
     visitor.prologue(totalSize);
 
     for (int i = 0; i < liveRegions.size(); i += 2) {
-      Address bottom = (Address) liveRegions.get(i);
-      Address top    = (Address) liveRegions.get(i+1);
+      Address bottom = liveRegions.get(i);
+      Address top    = liveRegions.get(i+1);
 
       // Traverses the space from bottom to top
       while (bottom.lessThan(top)) {
@@ -190,7 +190,7 @@ public class ObjectHeap {
       System.err.println("Oop's klass is " + klass);
     }
 
-    throw new UnknownOopException();
+    throw new UnknownOopException(handle.toString());
   }
 
   // Print all objects in the object heap
@@ -227,15 +227,15 @@ public class ObjectHeap {
     // Summarize size
     long totalSize = 0;
     for (int i = 0; i < liveRegions.size(); i += 2) {
-      Address bottom = (Address) liveRegions.get(i);
-      Address top    = (Address) liveRegions.get(i+1);
+      Address bottom = liveRegions.get(i);
+      Address top    = liveRegions.get(i+1);
       totalSize += top.minus(bottom);
     }
     visitor.prologue(totalSize);
 
     for (int i = 0; i < liveRegions.size(); i += 2) {
-      Address bottom = (Address) liveRegions.get(i);
-      Address top    = (Address) liveRegions.get(i+1);
+      Address bottom = liveRegions.get(i);
+      Address top    = liveRegions.get(i+1);
 
       try {
         // Traverses the space from bottom to top
@@ -355,8 +355,8 @@ public class ObjectHeap {
     if (DEBUG) {
       System.err.println("liveRegions:");
       for (int i = 0; i < liveRegions.size(); i += 2) {
-          Address bottom = (Address) liveRegions.get(i);
-          Address top    = (Address) liveRegions.get(i+1);
+          Address bottom = liveRegions.get(i);
+          Address top    = liveRegions.get(i+1);
           System.err.println(" " + bottom + " - " + top);
       }
     }

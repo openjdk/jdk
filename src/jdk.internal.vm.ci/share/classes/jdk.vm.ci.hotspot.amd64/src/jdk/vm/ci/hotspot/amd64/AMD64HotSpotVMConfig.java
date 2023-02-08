@@ -83,4 +83,8 @@ class AMD64HotSpotVMConfig extends HotSpotVMConfigAccess {
     final long amd64AVX512VL = getConstant("VM_Version::CPU_AVX512VL", Long.class);
     final long amd64SHA = getConstant("VM_Version::CPU_SHA", Long.class);
     final long amd64FMA = getConstant("VM_Version::CPU_FMA", Long.class);
+    final long amd64PKU = getConstant("VM_Version::CPU_PKU", Long.class);
+    final long amd64OSPKE = getConstant("VM_Version::CPU_OSPKE", Long.class);
+    final long amd64CET_IBT = getConstant("VM_Version::CPU_CET_IBT", Long.class);
+    final long amd64CET_SS = getConstant("VM_Version::CPU_CET_SS", Long.class);
 }

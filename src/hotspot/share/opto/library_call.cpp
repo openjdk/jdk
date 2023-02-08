@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "prims/unsafe.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -154,7 +155,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       tty->print("%s", msg);
@@ -215,7 +216,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
     msg_stream.print("Did not generate intrinsic %s%s at bci:%d in",
                      vmIntrinsics::name_at(intrinsic_id()),
                      is_virtual() ? " (virtual)" : "", bci);
-    const char *msg = msg_stream.as_string();
+    const char *msg = msg_stream.freeze();
     log_debug(jit, inlining)("%s", msg);
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining_stream()->print("%s", msg);
@@ -306,6 +307,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
+
+  case vmIntrinsics::_vectorizedHashCode:       return inline_vectorizedHashCode();
 
   case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
   case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
@@ -472,8 +475,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_currentThread:            return inline_native_currentThread();
   case vmIntrinsics::_setCurrentThread:         return inline_native_setCurrentThread();
 
-  case vmIntrinsics::_extentLocalCache:          return inline_native_extentLocalCache();
-  case vmIntrinsics::_setExtentLocalCache:       return inline_native_setExtentLocalCache();
+  case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
+  case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:              return inline_native_time_funcs(CAST_FROM_FN_PTR(address, JfrTime::time_function()), "counterTime");
@@ -514,9 +517,13 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_intBitsToFloat:
   case vmIntrinsics::_doubleToRawLongBits:
   case vmIntrinsics::_doubleToLongBits:
-  case vmIntrinsics::_longBitsToDouble:         return inline_fp_conversions(intrinsic_id());
+  case vmIntrinsics::_longBitsToDouble:
+  case vmIntrinsics::_floatToFloat16:
+  case vmIntrinsics::_float16ToFloat:           return inline_fp_conversions(intrinsic_id());
 
+  case vmIntrinsics::_floatIsFinite:
   case vmIntrinsics::_floatIsInfinite:
+  case vmIntrinsics::_doubleIsFinite:
   case vmIntrinsics::_doubleIsInfinite:         return inline_fp_range_check(intrinsic_id());
 
   case vmIntrinsics::_numberOfLeadingZeros_i:
@@ -604,10 +611,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
+  case vmIntrinsics::_chacha20Block:
+    return inline_chacha20Block();
   case vmIntrinsics::_base64_encodeBlock:
     return inline_base64_encodeBlock();
   case vmIntrinsics::_base64_decodeBlock:
     return inline_base64_decodeBlock();
+  case vmIntrinsics::_poly1305_processBlocks:
+    return inline_poly1305_processBlocks();
 
   case vmIntrinsics::_encodeISOArray:
   case vmIntrinsics::_encodeByteISOArray:
@@ -643,9 +654,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_fmaD:
   case vmIntrinsics::_fmaF:
     return inline_fma(intrinsic_id());
-
-  case vmIntrinsics::_Continuation_doYield:
-    return inline_continuation_do_yield();
 
   case vmIntrinsics::_isDigit:
   case vmIntrinsics::_isLowerCase:
@@ -715,6 +723,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_extract();
   case vmIntrinsics::_VectorCompressExpand:
     return inline_vector_compress_expand();
+  case vmIntrinsics::_IndexVector:
+    return inline_index_vector();
 
   case vmIntrinsics::_getObjectSize:
     return inline_getObjectSize();
@@ -1059,6 +1069,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
+
 //------------------------------inline_countPositives------------------------------
 bool LibraryCallKit::inline_countPositives() {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
@@ -1354,10 +1365,13 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dst);
 
   // Figure out the size and type of the elements we will be copying.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || dst_type == nullptr) {
+    return false;
+  }
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
          (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
          "Unsupported array types for inline_string_copy");
@@ -1618,12 +1632,19 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
     return false;
   }
 
+  // Save state and restore on bailout
+  uint old_sp = sp();
+  SafePointNode* old_map = clone_map();
+
   value = must_be_not_null(value, true);
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (adr->is_top()) {
+    set_map(old_map);
+    set_sp(old_sp);
     return false;
   }
+  old_map->destruct(&_gvn);
   if (is_store) {
     access_store_at(value, adr, TypeAryPtr::BYTES, ch, TypeInt::CHAR, T_CHAR, IN_HEAP | MO_UNORDERED | C2_MISMATCHED);
   } else {
@@ -1778,31 +1799,32 @@ bool LibraryCallKit::inline_math_pow() {
 
 //------------------------------inline_math_native-----------------------------
 bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
-#define FN_PTR(f) CAST_FROM_FN_PTR(address, f)
   switch (id) {
-    // These intrinsics are not properly supported on all hardware
   case vmIntrinsics::_dsin:
     return StubRoutines::dsin() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dsin(), "dsin") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dsin),   "SIN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dsin),   "SIN");
   case vmIntrinsics::_dcos:
     return StubRoutines::dcos() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dcos(), "dcos") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dcos),   "COS");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dcos),   "COS");
   case vmIntrinsics::_dtan:
     return StubRoutines::dtan() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan), "TAN");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
+  case vmIntrinsics::_dexp:
+    return StubRoutines::dexp() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp),  "EXP");
   case vmIntrinsics::_dlog:
     return StubRoutines::dlog() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog),   "LOG");
   case vmIntrinsics::_dlog10:
     return StubRoutines::dlog10() != NULL ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog10(), "dlog10") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
+      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dlog10), "LOG10");
 
-    // These intrinsics are supported on all hardware
   case vmIntrinsics::_roundD: return Matcher::match_rule_supported(Op_RoundD) ? inline_double_math(id) : false;
   case vmIntrinsics::_ceil:
   case vmIntrinsics::_floor:
@@ -1815,12 +1837,6 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_fabs:   return Matcher::match_rule_supported(Op_AbsF)   ? inline_math(id) : false;
   case vmIntrinsics::_iabs:   return Matcher::match_rule_supported(Op_AbsI)   ? inline_math(id) : false;
   case vmIntrinsics::_labs:   return Matcher::match_rule_supported(Op_AbsL)   ? inline_math(id) : false;
-
-  case vmIntrinsics::_dexp:
-    return StubRoutines::dexp() != NULL ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
-#undef FN_PTR
 
   case vmIntrinsics::_dpow:      return inline_math_pow();
   case vmIntrinsics::_dcopySign: return inline_double_math(id);
@@ -3112,7 +3128,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   ciInstanceKlass* const instklass_EventWriter = klass_EventWriter->as_instance_klass();
   const TypeKlassPtr* const aklass = TypeKlassPtr::make(instklass_EventWriter);
   const TypeOopPtr* const xtype = aklass->as_instance_type();
-  Node* event_writer = access_load(jobj, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
+  Node* jobj_untagged = _gvn.transform(new AddPNode(top(), jobj, _gvn.MakeConX(-JNIHandles::TypeTag::global)));
+  Node* event_writer = access_load(jobj_untagged, xtype, T_OBJECT, IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
 
   // Load the current thread id from the event writer object.
   Node* const event_writer_tid = load_field_from_object(event_writer, "threadID", "J");
@@ -3341,45 +3358,47 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
     = make_load(NULL, p, p->bottom_type()->is_ptr(), T_OBJECT, MemNode::unordered);
   thread_obj_handle = _gvn.transform(thread_obj_handle);
   const TypePtr *adr_type = _gvn.type(thread_obj_handle)->isa_ptr();
-  // Stores of oops to native memory not supported yet by BarrierSetC2::store_at_resolved
-  // access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
-  store_to_memory(control(), thread_obj_handle, arr, T_OBJECT, adr_type, MemNode::unordered);
+  access_store_at(NULL, thread_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
   JFR_ONLY(extend_setCurrentThread(thread, arr);)
   return true;
 }
 
-Node* LibraryCallKit::extentLocalCache_helper() {
+Node* LibraryCallKit::scopedValueCache_helper() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
 
   bool xk = etype->klass_is_exact();
 
   Node* thread = _gvn.transform(new ThreadLocalNode());
-  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::extentLocalCache_offset()));
-  return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
-        TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
+  // We cannot use immutable_memory() because we might flip onto a
+  // different carrier thread, at which point we'll need to use that
+  // carrier thread's cache.
+  // return _gvn.transform(LoadNode::make(_gvn, NULL, immutable_memory(), p, p->bottom_type()->is_ptr(),
+  //       TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
+  return make_load(NULL, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
 }
 
-//------------------------inline_native_extentLocalCache------------------
-bool LibraryCallKit::inline_native_extentLocalCache() {
+//------------------------inline_native_scopedValueCache------------------
+bool LibraryCallKit::inline_native_scopedValueCache() {
   ciKlass *objects_klass = ciObjArrayKlass::make(env()->Object_klass());
   const TypeOopPtr *etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
-  // Because we create the extentLocal cache lazily we have to make the
+  // Because we create the scopedValue cache lazily we have to make the
   // type of the result BotPTR.
   bool xk = etype->klass_is_exact();
   const Type* objects_type = TypeAryPtr::make(TypePtr::BotPTR, arr0, objects_klass, xk, 0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
   set_result(access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE));
 
   return true;
 }
 
-//------------------------inline_native_setExtentLocalCache------------------
-bool LibraryCallKit::inline_native_setExtentLocalCache() {
+//------------------------inline_native_setScopedValueCache------------------
+bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = extentLocalCache_helper();
+  Node* cache_obj_handle = scopedValueCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   store_to_memory(control(), cache_obj_handle, arr, T_OBJECT, adr_type,
@@ -3654,7 +3673,7 @@ bool LibraryCallKit::inline_Class_cast() {
       // Don't use intrinsic when class is not loaded.
       return false;
     } else {
-      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass()), tp->as_klass_type());
+      int static_res = C->static_subtype_check(TypeKlassPtr::make(tm->as_klass(), Type::trust_interfaces), tp->as_klass_type());
       if (static_res == Compile::SSC_always_true) {
         // isInstance() is true - fold the code.
         set_result(obj);
@@ -4434,6 +4453,8 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   case vmIntrinsics::_intBitsToFloat:       result = new MoveI2FNode(arg);  break;
   case vmIntrinsics::_doubleToRawLongBits:  result = new MoveD2LNode(arg);  break;
   case vmIntrinsics::_longBitsToDouble:     result = new MoveL2DNode(arg);  break;
+  case vmIntrinsics::_floatToFloat16:       result = new ConvF2HFNode(arg); break;
+  case vmIntrinsics::_float16ToFloat:       result = new ConvHF2FNode(arg); break;
 
   case vmIntrinsics::_doubleToLongBits: {
     // two paths (plus control) merge in a wood
@@ -4533,8 +4554,14 @@ bool LibraryCallKit::inline_fp_range_check(vmIntrinsics::ID id) {
   case vmIntrinsics::_floatIsInfinite:
     result = new IsInfiniteFNode(arg);
     break;
+  case vmIntrinsics::_floatIsFinite:
+    result = new IsFiniteFNode(arg);
+    break;
   case vmIntrinsics::_doubleIsInfinite:
     result = new IsInfiniteDNode(arg);
+    break;
+  case vmIntrinsics::_doubleIsFinite:
+    result = new IsFiniteDNode(arg);
     break;
   default:
     fatal_unexpected_iid(id);
@@ -4890,24 +4917,7 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
       }
 
       if (no_interfering_store) {
-        JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
-        uint size = alloc->req();
-        SafePointNode* sfpt = new SafePointNode(size, old_jvms);
-        old_jvms->set_map(sfpt);
-        for (uint i = 0; i < size; i++) {
-          sfpt->init_req(i, alloc->in(i));
-        }
-        // re-push array length for deoptimization
-        sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
-        old_jvms->set_sp(old_jvms->sp()+1);
-        old_jvms->set_monoff(old_jvms->monoff()+1);
-        old_jvms->set_scloff(old_jvms->scloff()+1);
-        old_jvms->set_endoff(old_jvms->endoff()+1);
-        old_jvms->set_should_reexecute(true);
-
-        sfpt->set_i_o(map()->i_o());
-        sfpt->set_memory(map()->memory());
-        sfpt->set_control(map()->control());
+        SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
 
         JVMState* saved_jvms = jvms();
         saved_reexecute_sp = _reexecute_sp;
@@ -4922,6 +4932,30 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
   return NULL;
 }
 
+// Clone the JVMState of the array allocation and create a new safepoint with it. Re-push the array length to the stack
+// such that uncommon traps can be emitted to re-execute the array allocation in the interpreter.
+SafePointNode* LibraryCallKit::create_safepoint_with_state_before_array_allocation(const AllocateArrayNode* alloc) const {
+  JVMState* old_jvms = alloc->jvms()->clone_shallow(C);
+  uint size = alloc->req();
+  SafePointNode* sfpt = new SafePointNode(size, old_jvms);
+  old_jvms->set_map(sfpt);
+  for (uint i = 0; i < size; i++) {
+    sfpt->init_req(i, alloc->in(i));
+  }
+  // re-push array length for deoptimization
+  sfpt->ins_req(old_jvms->stkoff() + old_jvms->sp(), alloc->in(AllocateNode::ALength));
+  old_jvms->set_sp(old_jvms->sp()+1);
+  old_jvms->set_monoff(old_jvms->monoff()+1);
+  old_jvms->set_scloff(old_jvms->scloff()+1);
+  old_jvms->set_endoff(old_jvms->endoff()+1);
+  old_jvms->set_should_reexecute(true);
+
+  sfpt->set_i_o(map()->i_o());
+  sfpt->set_memory(map()->memory());
+  sfpt->set_control(map()->control());
+  return sfpt;
+}
+
 // In case of a deoptimization, we restart execution at the
 // allocation, allocating a new array. We would leave an uninitialized
 // array in the heap that GCs wouldn't expect. Move the allocation
@@ -4929,18 +4963,20 @@ JVMState* LibraryCallKit::arraycopy_restore_alloc_state(AllocateArrayNode* alloc
 // deoptimize. This is possible because tightly_coupled_allocation()
 // guarantees there's no observer of the allocated array at this point
 // and the control flow is simple enough.
-void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms,
+void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards,
                                                     int saved_reexecute_sp, uint new_idx) {
-  if (saved_jvms != NULL && !stopped()) {
+  if (saved_jvms_before_guards != NULL && !stopped()) {
+    replace_unrelated_uncommon_traps_with_alloc_state(alloc, saved_jvms_before_guards);
+
     assert(alloc != NULL, "only with a tightly coupled allocation");
     // restore JVM state to the state at the arraycopy
-    saved_jvms->map()->set_control(map()->control());
-    assert(saved_jvms->map()->memory() == map()->memory(), "memory state changed?");
-    assert(saved_jvms->map()->i_o() == map()->i_o(), "IO state changed?");
+    saved_jvms_before_guards->map()->set_control(map()->control());
+    assert(saved_jvms_before_guards->map()->memory() == map()->memory(), "memory state changed?");
+    assert(saved_jvms_before_guards->map()->i_o() == map()->i_o(), "IO state changed?");
     // If we've improved the types of some nodes (null check) while
     // emitting the guards, propagate them to the current state
-    map()->replaced_nodes().apply(saved_jvms->map(), new_idx);
-    set_jvms(saved_jvms);
+    map()->replaced_nodes().apply(saved_jvms_before_guards->map(), new_idx);
+    set_jvms(saved_jvms_before_guards);
     _reexecute_sp = saved_reexecute_sp;
 
     // Remove the allocation from above the guards
@@ -5016,6 +5052,58 @@ void LibraryCallKit::arraycopy_move_allocation_here(AllocateArrayNode* alloc, No
   }
 }
 
+// Unrelated UCTs between the array allocation and the array copy, which are considered safe by tightly_coupled_allocation(),
+// need to be replaced by an UCT with a state before the array allocation (including the array length). This is necessary
+// because we could hit one of these UCTs (which are executed before the emitted array copy guards and the actual array
+// allocation which is moved down in arraycopy_move_allocation_here()). When later resuming execution in the interpreter,
+// we would have wrongly skipped the array allocation. To prevent this, we resume execution at the array allocation in
+// the interpreter similar to what we are doing for the newly emitted guards for the array copy.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(AllocateArrayNode* alloc,
+                                                                       JVMState* saved_jvms_before_guards) {
+  if (saved_jvms_before_guards->map()->control()->is_IfProj()) {
+    // There is at least one unrelated uncommon trap which needs to be replaced.
+    SafePointNode* sfpt = create_safepoint_with_state_before_array_allocation(alloc);
+
+    JVMState* saved_jvms = jvms();
+    const int saved_reexecute_sp = _reexecute_sp;
+    set_jvms(sfpt->jvms());
+    _reexecute_sp = jvms()->sp();
+
+    replace_unrelated_uncommon_traps_with_alloc_state(saved_jvms_before_guards);
+
+    // Restore state
+    set_jvms(saved_jvms);
+    _reexecute_sp = saved_reexecute_sp;
+  }
+}
+
+// Replace the unrelated uncommon traps with new uncommon trap nodes by reusing the action and reason. The new uncommon
+// traps will have the state of the array allocation. Let the old uncommon trap nodes die.
+void LibraryCallKit::replace_unrelated_uncommon_traps_with_alloc_state(JVMState* saved_jvms_before_guards) {
+  Node* if_proj = saved_jvms_before_guards->map()->control(); // Start the search right before the newly emitted guards
+  while (if_proj->is_IfProj()) {
+    CallStaticJavaNode* uncommon_trap = get_uncommon_trap_from_success_proj(if_proj);
+    if (uncommon_trap != nullptr) {
+      create_new_uncommon_trap(uncommon_trap);
+    }
+    assert(if_proj->in(0)->is_If(), "must be If");
+    if_proj = if_proj->in(0)->in(0);
+  }
+  assert(if_proj->is_Proj() && if_proj->in(0)->is_Initialize(),
+         "must have reached control projection of init node");
+}
+
+void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_call) {
+  const int trap_request = uncommon_trap_call->uncommon_trap_request();
+  assert(trap_request != 0, "no valid UCT trap request");
+  PreserveJVMState pjvms(this);
+  set_control(uncommon_trap_call->in(0));
+  uncommon_trap(Deoptimization::trap_request_reason(trap_request),
+                Deoptimization::trap_request_action(trap_request));
+  assert(stopped(), "Should be stopped");
+  _gvn.hash_delete(uncommon_trap_call);
+  uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
+}
 
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
@@ -5036,12 +5124,12 @@ bool LibraryCallKit::inline_arraycopy() {
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest);
 
   int saved_reexecute_sp = -1;
-  JVMState* saved_jvms = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
+  JVMState* saved_jvms_before_guards = arraycopy_restore_alloc_state(alloc, saved_reexecute_sp);
   // See arraycopy_restore_alloc_state() comment
   // if alloc == NULL we don't have to worry about a tightly coupled allocation so we can emit all needed guards
-  // if saved_jvms != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
-  // if saved_jvms == NULL and alloc != NULL, we can't emit any guards
-  bool can_emit_guards = (alloc == NULL || saved_jvms != NULL);
+  // if saved_jvms_before_guards != NULL (then alloc != NULL) then we can handle guards and a tightly coupled allocation
+  // if saved_jvms_before_guards == NULL and alloc != NULL, we can't emit any guards
+  bool can_emit_guards = (alloc == NULL || saved_jvms_before_guards != NULL);
 
   // The following tests must be performed
   // (1) src and dest are arrays.
@@ -5057,12 +5145,12 @@ bool LibraryCallKit::inline_arraycopy() {
   // (3) src and dest must not be null.
   // always do this here because we need the JVM state for uncommon traps
   Node* null_ctl = top();
-  src  = saved_jvms != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src,  T_ARRAY);
+  src  = saved_jvms_before_guards != NULL ? null_check_oop(src, &null_ctl, true, true) : null_check(src, T_ARRAY);
   assert(null_ctl->is_top(), "no null control here");
   dest = null_check(dest, T_ARRAY);
 
   if (!can_emit_guards) {
-    // if saved_jvms == NULL and alloc != NULL, we don't emit any
+    // if saved_jvms_before_guards == NULL and alloc != NULL, we don't emit any
     // guards but the arraycopy node could still take advantage of a
     // tightly allocated allocation. tightly_coupled_allocation() is
     // called again to make sure it takes the null check above into
@@ -5176,7 +5264,7 @@ bool LibraryCallKit::inline_arraycopy() {
 
   ciMethod* trap_method = method();
   int trap_bci = bci();
-  if (saved_jvms != NULL) {
+  if (saved_jvms_before_guards != NULL) {
     trap_method = alloc->jvms()->method();
     trap_bci = alloc->jvms()->bci();
   }
@@ -5248,9 +5336,8 @@ bool LibraryCallKit::inline_arraycopy() {
     const TypeKlassPtr* dest_klass_t = _gvn.type(dest_klass)->is_klassptr();
     const Type *toop = dest_klass_t->cast_to_exactness(false)->as_instance_type();
     src = _gvn.transform(new CheckCastPPNode(control(), src, toop));
+    arraycopy_move_allocation_here(alloc, dest, saved_jvms_before_guards, saved_reexecute_sp, new_idx);
   }
-
-  arraycopy_move_allocation_here(alloc, dest, saved_jvms, saved_reexecute_sp, new_idx);
 
   if (stopped()) {
     return true;
@@ -5284,7 +5371,7 @@ bool LibraryCallKit::inline_arraycopy() {
 AllocateArrayNode*
 LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return NULL;  // no fast path
-  if (C->AliasLevel() == 0)  return NULL;  // no MergeMems around
+  if (!C->do_aliasing())     return NULL;  // no MergeMems around
 
   AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr, &_gvn);
   if (alloc == NULL)  return NULL;
@@ -5316,28 +5403,15 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
     // There may be guards which feed into the slow_region.
     // Any other control flow means that we might not get a chance
     // to finish initializing the allocated object.
-    if ((ctl->is_IfFalse() || ctl->is_IfTrue()) && ctl->in(0)->is_If()) {
-      IfNode* iff = ctl->in(0)->as_If();
-      Node* not_ctl = iff->proj_out_or_null(1 - ctl->as_Proj()->_con);
-      assert(not_ctl != NULL && not_ctl != ctl, "found alternate");
-      // One more try:  Various low-level checks bottom out in
-      // uncommon traps.  If the debug-info of the trap omits
-      // any reference to the allocation, as we've already
-      // observed, then there can be no objection to the trap.
-      bool found_trap = false;
-      for (DUIterator_Fast jmax, j = not_ctl->fast_outs(jmax); j < jmax; j++) {
-        Node* obs = not_ctl->fast_out(j);
-        if (obs->in(0) == not_ctl && obs->is_Call() &&
-            (obs->as_Call()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
-          found_trap = true; break;
-        }
-      }
-      if (found_trap) {
-        ctl = iff->in(0);       // This test feeds a harmless uncommon trap.
-        continue;
-      }
+    // Various low-level checks bottom out in uncommon traps. These
+    // are considered safe since we've already checked above that
+    // there is no unexpected observer of this allocation.
+    if (get_uncommon_trap_from_success_proj(ctl) != nullptr) {
+      assert(ctl->in(0)->is_If(), "must be If");
+      ctl = ctl->in(0)->in(0);
+    } else {
+      return nullptr;
     }
-    return NULL;
   }
 
   // If we get this far, we have an allocation which immediately
@@ -5346,6 +5420,20 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   // a new control state to which we will anchor the destination pointer.
 
   return alloc;
+}
+
+CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* node) {
+  if (node->is_IfProj()) {
+    Node* other_proj = node->as_IfProj()->other_if_proj();
+    for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
+      Node* obs = other_proj->fast_out(j);
+      if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&
+          (obs->as_CallStaticJava()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
+        return obs->as_CallStaticJava();
+      }
+    }
+  }
+  return nullptr;
 }
 
 //-------------inline_encodeISOArray-----------------------------------
@@ -5362,19 +5450,17 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   src = must_be_not_null(src, true);
   dst = must_be_not_null(dst, true);
 
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dst_type = dst->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dst_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM ||
-      top_dest == NULL || top_dest->elem() == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dst_type = dst->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM ||
+      dst_type == nullptr || dst_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType dst_elem = dst_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
+  BasicType dst_elem = dst_type->elem()->array_element_basic_type();
   if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
@@ -5417,18 +5503,16 @@ bool LibraryCallKit::inline_multiplyToLen() {
   x = must_be_not_null(x, true);
   y = must_be_not_null(y, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* y_type = y->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_y = y_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_y == NULL || top_y->elem() == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* y_type = y->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      y_type == nullptr || y_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType y_elem = y_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType y_elem = y_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || y_elem != T_INT) {
     return false;
   }
@@ -5525,18 +5609,16 @@ bool LibraryCallKit::inline_squareToLen() {
   x = must_be_not_null(x, true);
   z = must_be_not_null(z, true);
 
-  const Type* x_type = x->Value(&_gvn);
-  const Type* z_type = z->Value(&_gvn);
-  const TypeAryPtr* top_x = x_type->isa_aryptr();
-  const TypeAryPtr* top_z = z_type->isa_aryptr();
-  if (top_x  == NULL || top_x->elem()  == Type::BOTTOM ||
-      top_z  == NULL || top_z->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* x_type = x->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* z_type = z->Value(&_gvn)->isa_aryptr();
+  if (x_type == nullptr || x_type->elem() == Type::BOTTOM ||
+      z_type == nullptr || z_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType x_elem = x_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType z_elem = z_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType x_elem = x_type->elem()->array_element_basic_type();
+  BasicType z_elem = z_type->elem()->array_element_basic_type();
   if (x_elem != T_INT || z_elem != T_INT) {
     return false;
   }
@@ -5572,20 +5654,19 @@ bool LibraryCallKit::inline_mulAdd() {
   Node* len      = argument(3);
   Node* k        = argument(4);
 
+  in = must_be_not_null(in, true);
   out = must_be_not_null(out, true);
 
-  const Type* out_type = out->Value(&_gvn);
-  const Type* in_type = in->Value(&_gvn);
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  if (top_out  == NULL || top_out->elem()  == Type::BOTTOM ||
-      top_in == NULL || top_in->elem() == Type::BOTTOM) {
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  if (out_type == nullptr || out_type->elem() == Type::BOTTOM ||
+       in_type == nullptr ||  in_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType out_elem = out_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType in_elem = in_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType out_elem = out_type->elem()->array_element_basic_type();
+  BasicType in_elem = in_type->elem()->array_element_basic_type();
   if (out_elem != T_INT || in_elem != T_INT) {
     return false;
   }
@@ -5623,26 +5704,22 @@ bool LibraryCallKit::inline_montgomeryMultiply() {
   Node* inv  = argument(4);
   Node* m    = argument(6);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* b_type = b->Value(&_gvn);
-  const TypeAryPtr* top_b = b_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_b == NULL || top_b->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* b_type = b->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      b_type == nullptr || b_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType b_elem = b_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType b_elem = b_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || b_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5682,22 +5759,19 @@ bool LibraryCallKit::inline_montgomerySquare() {
   Node* inv  = argument(3);
   Node* m    = argument(5);
 
-  const Type* a_type = a->Value(&_gvn);
-  const TypeAryPtr* top_a = a_type->isa_aryptr();
-  const Type* n_type = a->Value(&_gvn);
-  const TypeAryPtr* top_n = n_type->isa_aryptr();
-  const Type* m_type = a->Value(&_gvn);
-  const TypeAryPtr* top_m = m_type->isa_aryptr();
-  if (top_a  == NULL || top_a->elem()  == Type::BOTTOM ||
-      top_n == NULL || top_n->elem()  == Type::BOTTOM ||
-      top_m == NULL || top_m->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* a_type = a->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* n_type = n->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* m_type = m->Value(&_gvn)->isa_aryptr();
+  if (a_type == nullptr || a_type->elem() == Type::BOTTOM ||
+      n_type == nullptr || n_type->elem() == Type::BOTTOM ||
+      m_type == nullptr || m_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
-  BasicType a_elem = a_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType n_elem = n_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType m_elem = m_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType a_elem = a_type->elem()->array_element_basic_type();
+  BasicType n_elem = n_type->elem()->array_element_basic_type();
+  BasicType m_elem = m_type->elem()->array_element_basic_type();
   if (a_elem != T_INT || n_elem != T_INT || m_elem != T_INT) {
     return false;
   }
@@ -5738,17 +5812,15 @@ bool LibraryCallKit::inline_bigIntegerShift(bool isRightShift) {
   Node* shiftCount = argument(3);
   Node* numIter = argument(4);
 
-  const Type* newArr_type = newArr->Value(&_gvn);
-  const TypeAryPtr* top_newArr = newArr_type->isa_aryptr();
-  const Type* oldArr_type = oldArr->Value(&_gvn);
-  const TypeAryPtr* top_oldArr = oldArr_type->isa_aryptr();
-  if (top_newArr == NULL || top_newArr->elem() == Type::BOTTOM || top_oldArr == NULL
-      || top_oldArr->elem() == Type::BOTTOM) {
+  const TypeAryPtr* newArr_type = newArr->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* oldArr_type = oldArr->Value(&_gvn)->isa_aryptr();
+  if (newArr_type == nullptr || newArr_type->elem() == Type::BOTTOM ||
+      oldArr_type == nullptr || oldArr_type->elem() == Type::BOTTOM) {
     return false;
   }
 
-  BasicType newArr_elem = newArr_type->isa_aryptr()->elem()->array_element_basic_type();
-  BasicType oldArr_elem = oldArr_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType newArr_elem = newArr_type->elem()->array_element_basic_type();
+  BasicType oldArr_elem = oldArr_type->elem()->array_element_basic_type();
   if (newArr_elem != T_INT || oldArr_elem != T_INT) {
     return false;
   }
@@ -5905,6 +5977,40 @@ bool LibraryCallKit::inline_vectorizedMismatch() {
   return true;
 }
 
+//------------------------------inline_vectorizedHashcode----------------------------
+bool LibraryCallKit::inline_vectorizedHashCode() {
+  assert(UseVectorizedHashCodeIntrinsic, "not implemented on this platform");
+
+  assert(callee()->signature()->size() == 5, "vectorizedHashCode has 5 parameters");
+  Node* array          = argument(0);
+  Node* offset         = argument(1);
+  Node* length         = argument(2);
+  Node* initialValue   = argument(3);
+  Node* basic_type     = argument(4);
+
+  if (basic_type == top()) {
+    return false; // failed input validation
+  }
+
+  const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
+  if (!basic_type_t->is_con()) {
+    return false; // Only intrinsify if mode argument is constant
+  }
+
+  array = must_be_not_null(array, true);
+
+  BasicType bt = (BasicType)basic_type_t->get_con();
+
+  // Resolve address of first element
+  Node* array_start = array_element_address(array, offset, bt);
+
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+    array_start, length, initialValue, basic_type)));
+  clear_upper_avx();
+
+  return true;
+}
+
 /**
  * Calculate CRC32 for byte.
  * int java.util.zip.CRC32.update(int crc, int b)
@@ -5953,15 +6059,14 @@ bool LibraryCallKit::inline_updateBytesCRC32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6042,15 +6147,14 @@ bool LibraryCallKit::inline_updateBytesCRC32C() {
 
   Node* length = _gvn.transform(new SubINode(end, offset));
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6135,15 +6239,14 @@ bool LibraryCallKit::inline_updateBytesAdler32() {
   Node* offset  = argument(2); // type: int
   Node* length  = argument(3); // type: int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
 
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6377,11 +6480,10 @@ bool LibraryCallKit::inline_aescrypt_Block(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, true);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // for the quick and dirty code we will skip all the checks.
   // we are just trying to get the call to be generated.
@@ -6438,12 +6540,10 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   dest = must_be_not_null(dest, false);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert (top_src  != NULL && top_src->elem()  != Type::BOTTOM
-          &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start  = src;
@@ -6526,12 +6626,10 @@ bool LibraryCallKit::inline_electronicCodeBook_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset               = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM
-         &&  top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6600,12 +6698,10 @@ bool LibraryCallKit::inline_counterMode_AESCrypt(vmIntrinsics::ID id) {
   Node* dest_offset = argument(5);
 
   // (1) src and dest are arrays.
-  const Type* src_type = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  assert(top_src != NULL && top_src->elem() != Type::BOTTOM &&
-         top_dest != NULL && top_dest->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* dest_type = dest->Value(&_gvn)->isa_aryptr();
+  assert( src_type != nullptr &&  src_type->elem() != Type::BOTTOM &&
+         dest_type != nullptr && dest_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* src_start = src;
@@ -6882,6 +6978,36 @@ bool LibraryCallKit::inline_ghash_processBlocks() {
   return true;
 }
 
+//------------------------------inline_chacha20Block
+bool LibraryCallKit::inline_chacha20Block() {
+  address stubAddr;
+  const char *stubName;
+  assert(UseChaCha20Intrinsics, "need ChaCha20 intrinsics support");
+
+  stubAddr = StubRoutines::chacha20Block();
+  stubName = "chacha20Block";
+
+  Node* state          = argument(0);
+  Node* result         = argument(1);
+
+  state = must_be_not_null(state, true);
+  result = must_be_not_null(result, true);
+
+  Node* state_start  = array_element_address(state, intcon(0), T_INT);
+  assert(state_start, "state is NULL");
+  Node* result_start  = array_element_address(result, intcon(0), T_BYTE);
+  assert(result_start, "result is NULL");
+
+  Node* cc20Blk = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                  OptoRuntime::chacha20Block_Type(),
+                                  stubAddr, stubName, TypePtr::BOTTOM,
+                                  state_start, result_start);
+  // return key stream length (int)
+  Node* retvalue = _gvn.transform(new ProjNode(cc20Blk, TypeFunc::Parms));
+  set_result(retvalue);
+  return true;
+}
+
 bool LibraryCallKit::inline_base64_encodeBlock() {
   address stubAddr;
   const char *stubName;
@@ -6949,6 +7075,42 @@ bool LibraryCallKit::inline_base64_decodeBlock() {
   return true;
 }
 
+bool LibraryCallKit::inline_poly1305_processBlocks() {
+  address stubAddr;
+  const char *stubName;
+  assert(UsePoly1305Intrinsics, "need Poly intrinsics support");
+  assert(callee()->signature()->size() == 5, "poly1305_processBlocks has %d parameters", callee()->signature()->size());
+  stubAddr = StubRoutines::poly1305_processBlocks();
+  stubName = "poly1305_processBlocks";
+
+  if (!stubAddr) return false;
+  null_check_receiver();  // null-check receiver
+  if (stopped())  return true;
+
+  Node* input = argument(1);
+  Node* input_offset = argument(2);
+  Node* len = argument(3);
+  Node* alimbs = argument(4);
+  Node* rlimbs = argument(5);
+
+  input = must_be_not_null(input, true);
+  alimbs = must_be_not_null(alimbs, true);
+  rlimbs = must_be_not_null(rlimbs, true);
+
+  Node* input_start = array_element_address(input, input_offset, T_BYTE);
+  assert(input_start, "input array is NULL");
+  Node* acc_start = array_element_address(alimbs, intcon(0), T_LONG);
+  assert(acc_start, "acc array is NULL");
+  Node* r_start = array_element_address(rlimbs, intcon(0), T_LONG);
+  assert(r_start, "r array is NULL");
+
+  Node* call = make_runtime_call(RC_LEAF | RC_NO_FP,
+                                 OptoRuntime::poly1305_processBlocks_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 input_start, len, acc_start, r_start);
+  return true;
+}
+
 //------------------------------inline_digestBase_implCompress-----------------------
 //
 // Calculate MD5 for single-block byte[] array.
@@ -6973,14 +7135,13 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   Node* src            = argument(1); // type oop
   Node* ofs            = argument(2); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -6988,7 +7149,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
   src = must_be_not_null(src, true);
   Node* src_start = array_element_address(src, ofs, src_elem);
   Node* state = NULL;
-  Node* digest_length = NULL;
+  Node* block_size = NULL;
   address stubAddr;
   const char *stubName;
 
@@ -7022,8 +7183,8 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     state = get_state_from_digest_object(digestBase_obj, T_BYTE);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
-    digest_length = get_digest_length_from_digest_object(digestBase_obj);
-    if (digest_length == NULL) return false;
+    block_size = get_block_size_from_digest_object(digestBase_obj);
+    if (block_size == NULL) return false;
     break;
   default:
     fatal_unexpected_iid(id);
@@ -7036,14 +7197,14 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
 
   // Call the stub.
   Node* call;
-  if (digest_length == NULL) {
+  if (block_size == NULL) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
                              src_start, state);
   } else {
     call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::digestBase_implCompress_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length);
+                             src_start, state, block_size);
   }
 
   return true;
@@ -7065,14 +7226,13 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
   Node* ofs            = argument(2); // type int
   Node* limit          = argument(3); // type int
 
-  const Type* src_type = src->Value(&_gvn);
-  const TypeAryPtr* top_src = src_type->isa_aryptr();
-  if (top_src  == NULL || top_src->elem()  == Type::BOTTOM) {
+  const TypeAryPtr* src_type = src->Value(&_gvn)->isa_aryptr();
+  if (src_type == nullptr || src_type->elem() == Type::BOTTOM) {
     // failed array check
     return false;
   }
   // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
+  BasicType src_elem = src_type->elem()->array_element_basic_type();
   if (src_elem != T_BYTE) {
     return false;
   }
@@ -7148,22 +7308,22 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
                                                       BasicType elem_type, address stubAddr, const char *stubName,
                                                       Node* src_start, Node* ofs, Node* limit) {
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_digestBase);
-  const TypeOopPtr* xtype = aklass->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
+  const TypeOopPtr* xtype = aklass->cast_to_exactness(false)->as_instance_type()->cast_to_ptr_type(TypePtr::NotNull);
   Node* digest_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
   digest_obj = _gvn.transform(digest_obj);
 
   Node* state = get_state_from_digest_object(digest_obj, elem_type);
   if (state == NULL) return false;
 
-  Node* digest_length = NULL;
+  Node* block_size = NULL;
   if (strcmp("sha3_implCompressMB", stubName) == 0) {
-    digest_length = get_digest_length_from_digest_object(digest_obj);
-    if (digest_length == NULL) return false;
+    block_size = get_block_size_from_digest_object(digest_obj);
+    if (block_size == NULL) return false;
   }
 
   // Call the stub.
   Node* call;
-  if (digest_length == NULL) {
+  if (block_size == NULL) {
     call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(false),
                              stubAddr, stubName, TypePtr::BOTTOM,
@@ -7172,7 +7332,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(Node* digestBase_obj, ciIn
      call = make_runtime_call(RC_LEAF|RC_NO_FP,
                              OptoRuntime::digestBase_implCompressMB_Type(true),
                              stubAddr, stubName, TypePtr::BOTTOM,
-                             src_start, state, digest_length, ofs, limit);
+                             src_start, state, block_size, ofs, limit);
   }
 
   // return ofs (int)
@@ -7203,15 +7363,12 @@ bool LibraryCallKit::inline_galoisCounterMode_AESCrypt() {
   Node* ghash_object = argument(8);
 
   // (1) in, ct and out are arrays.
-  const Type* in_type = in->Value(&_gvn);
-  const Type* ct_type = ct->Value(&_gvn);
-  const Type* out_type = out->Value(&_gvn);
-  const TypeAryPtr* top_in = in_type->isa_aryptr();
-  const TypeAryPtr* top_ct = ct_type->isa_aryptr();
-  const TypeAryPtr* top_out = out_type->isa_aryptr();
-  assert(top_in != NULL && top_in->elem() != Type::BOTTOM &&
-         top_ct != NULL && top_ct->elem() != Type::BOTTOM &&
-         top_out != NULL && top_out->elem() != Type::BOTTOM, "args are strange");
+  const TypeAryPtr* in_type = in->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* ct_type = ct->Value(&_gvn)->isa_aryptr();
+  const TypeAryPtr* out_type = out->Value(&_gvn)->isa_aryptr();
+  assert( in_type != nullptr &&  in_type->elem() != Type::BOTTOM &&
+          ct_type != nullptr &&  ct_type->elem() != Type::BOTTOM &&
+         out_type != nullptr && out_type->elem() != Type::BOTTOM, "args are strange");
 
   // checks are the responsibility of the caller
   Node* in_start = in;
@@ -7329,11 +7486,11 @@ Node * LibraryCallKit::get_state_from_digest_object(Node *digest_object, BasicTy
   return state;
 }
 
-//------------------------------get_digest_length_from_sha3_object----------------------------------
-Node * LibraryCallKit::get_digest_length_from_digest_object(Node *digest_object) {
-  Node* digest_length = load_field_from_object(digest_object, "digestLength", "I");
-  assert (digest_length != NULL, "sanity");
-  return digest_length;
+//------------------------------get_block_size_from_sha3_object----------------------------------
+Node * LibraryCallKit::get_block_size_from_digest_object(Node *digest_object) {
+  Node* block_size = load_field_from_object(digest_object, "blockSize", "I");
+  assert (block_size != NULL, "sanity");
+  return block_size;
 }
 
 //----------------------------inline_digestBase_implCompressMB_predicate----------------------------
@@ -7408,15 +7565,6 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
-}
-
-bool LibraryCallKit::inline_continuation_do_yield() {
-  address call_addr = StubRoutines::cont_doYield();
-  const TypeFunc* tf = OptoRuntime::continuation_doYield_Type();
-  Node* call = make_runtime_call(RC_NO_LEAF, tf, call_addr, "doYield", TypeRawPtr::BOTTOM);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
-  return true;
 }
 
 //-------------inline_fma-----------------------------------
@@ -7767,8 +7915,15 @@ bool LibraryCallKit::inline_blackhole() {
   assert(callee()->is_empty(), "Should have been checked before: only empty methods here");
   assert(callee()->holder()->is_loaded(), "Should have been checked before: only methods for loaded classes here");
 
+  // Blackhole node pinches only the control, not memory. This allows
+  // the blackhole to be pinned in the loop that computes blackholed
+  // values, but have no other side effects, like breaking the optimizations
+  // across the blackhole.
+
+  Node* bh = _gvn.transform(new BlackholeNode(control()));
+  set_control(_gvn.transform(new ProjNode(bh, TypeFunc::Control)));
+
   // Bind call arguments as blackhole arguments to keep them alive
-  Node* bh = insert_mem_bar(Op_Blackhole);
   uint nargs = callee()->arg_size();
   for (uint i = 0; i < nargs; i++) {
     bh->add_req(argument(i));

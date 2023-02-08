@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 //
 ciMethodData::ciMethodData(MethodData* md)
 : ciMetadata(md),
-  _data_size(0), _extra_data_size(0), _data(NULL),
+  _data_size(0), _extra_data_size(0), _data(nullptr),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di(first_di()),
@@ -51,7 +51,7 @@ ciMethodData::ciMethodData(MethodData* md)
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
   _invocation_counter(0),
   _orig(),
-  _parameters(NULL) {}
+  _parameters(nullptr) {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
@@ -70,7 +70,7 @@ public:
     if (!m->method_holder()->is_loader_alive()) {
       return false;
     }
-    if (CURRENT_ENV->cached_metadata(m) == NULL) {
+    if (CURRENT_ENV->cached_metadata(m) == nullptr) {
       // Uncached entries need to be pre-populated.
       _uncached_methods.append(m);
     }
@@ -169,7 +169,7 @@ void ciMethodData::load_remaining_extra_data() {
 
 bool ciMethodData::load_data() {
   MethodData* mdo = get_MethodData();
-  if (mdo == NULL) {
+  if (mdo == nullptr) {
     return false;
   }
 
@@ -236,7 +236,7 @@ bool ciMethodData::load_data() {
     ci_data = next_data(ci_data);
     data = mdo->next_data(data);
   }
-  if (mdo->parameters_type_data() != NULL) {
+  if (mdo->parameters_type_data() != nullptr) {
     _parameters = data_layout_at(mdo->parameters_type_data_di());
     ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
     parameters->translate_from(mdo->parameters_type_data());
@@ -261,21 +261,19 @@ bool ciMethodData::load_data() {
   _arg_local = mdo->arg_local();
   _arg_stack = mdo->arg_stack();
   _arg_returned  = mdo->arg_returned();
-#ifndef PRODUCT
   if (ReplayCompiles) {
     ciReplay::initialize(this);
     if (is_empty()) {
       return false;
     }
   }
-#endif
   return true;
 }
 
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    if (k != NULL) {
+    if (k != nullptr) {
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
         set_receiver(row, klass);
@@ -284,7 +282,7 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
         clear_row(row);
       }
     } else {
-      set_receiver(row, NULL);
+      set_receiver(row, nullptr);
     }
   }
 }
@@ -293,9 +291,9 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
   for (int i = 0; i < number_of_entries(); i++) {
     intptr_t k = entries->type(i);
     Klass* klass = (Klass*)klass_part(k);
-    if (klass != NULL && !klass->is_loader_alive()) {
+    if (klass != nullptr && !klass->is_loader_alive()) {
       // With concurrent class unloading, the MDO could have stale metadata; override it
-      TypeStackSlotEntries::set_type(i, TypeStackSlotEntries::with_status((Klass*)NULL, k));
+      TypeStackSlotEntries::set_type(i, TypeStackSlotEntries::with_status((Klass*)nullptr, k));
     } else {
       TypeStackSlotEntries::set_type(i, translate_klass(k));
     }
@@ -305,9 +303,9 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
 void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
   intptr_t k = ret->type();
   Klass* klass = (Klass*)klass_part(k);
-  if (klass != NULL && !klass->is_loader_alive()) {
+  if (klass != nullptr && !klass->is_loader_alive()) {
     // With concurrent class unloading, the MDO could have stale metadata; override it
-    set_type(ReturnTypeEntry::with_status((Klass*)NULL, k));
+    set_type(ReturnTypeEntry::with_status((Klass*)nullptr, k));
   } else {
     set_type(translate_klass(k));
   }
@@ -322,7 +320,7 @@ void ciSpeculativeTrapData::translate_from(const ProfileData* data) {
 // Get the data at an arbitrary (sort of) data index.
 ciProfileData* ciMethodData::data_at(int data_index) {
   if (out_of_bounds(data_index)) {
-    return NULL;
+    return nullptr;
   }
   DataLayout* data_layout = data_layout_at(data_index);
   return data_from(data_layout);
@@ -333,7 +331,7 @@ ciProfileData* ciMethodData::data_from(DataLayout* data_layout) {
   case DataLayout::no_tag:
   default:
     ShouldNotReachHere();
-    return NULL;
+    return nullptr;
   case DataLayout::bit_data_tag:
     return new ciBitData(data_layout);
   case DataLayout::counter_data_tag:
@@ -373,7 +371,7 @@ DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();
   if (out_of_bounds(next_index)) {
-    return NULL;
+    return nullptr;
   }
   DataLayout* next = data_layout_at(next_index);
   return next;
@@ -388,11 +386,11 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
     case DataLayout::no_tag:
       _saw_free_extra_data = true;  // observed an empty slot (common case)
       two_free_slots = (MethodData::next_extra(dp)->tag() == DataLayout::no_tag);
-      return NULL;
+      return nullptr;
     case DataLayout::arg_info_data_tag:
-      return NULL; // ArgInfoData is after the trap data right before the parameter data.
+      return nullptr; // ArgInfoData is after the trap data right before the parameter data.
     case DataLayout::bit_data_tag:
-      if (m == NULL && dp->bci() == bci) {
+      if (m == nullptr && dp->bci() == bci) {
         return new ciBitData(dp);
       }
       break;
@@ -400,7 +398,7 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
       ciSpeculativeTrapData* data = new ciSpeculativeTrapData(dp);
       // data->method() might be null if the MDO is snapshotted
       // concurrently with a trap
-      if (m != NULL && data->method() == m && dp->bci() == bci) {
+      if (m != nullptr && data->method() == m && dp->bci() == bci) {
         return data;
       }
       break;
@@ -409,13 +407,13 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
       fatal("bad tag = %d", dp->tag());
     }
   }
-  return NULL;
+  return nullptr;
 }
 
-// Translate a bci to its corresponding data, or NULL.
+// Translate a bci to its corresponding data, or nullptr.
 ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
-  // If m is not NULL we look for a SpeculativeTrapData entry
-  if (m == NULL) {
+  // If m is not nullptr we look for a SpeculativeTrapData entry
+  if (m == nullptr) {
     DataLayout* data_layout = data_layout_before(bci);
     for ( ; is_valid(data_layout); data_layout = next_data_layout(data_layout)) {
       if (data_layout->bci() == bci) {
@@ -428,16 +426,16 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
   }
   bool two_free_slots = false;
   ciProfileData* result = bci_to_extra_data(bci, m, two_free_slots);
-  if (result != NULL) {
+  if (result != nullptr) {
     return result;
   }
-  if (m != NULL && !two_free_slots) {
+  if (m != nullptr && !two_free_slots) {
     // We were looking for a SpeculativeTrapData entry we didn't
     // find. Room is not available for more SpeculativeTrapData
     // entries, look in the non SpeculativeTrapData entries.
-    return bci_to_data(bci, NULL);
+    return bci_to_data(bci, nullptr);
   }
-  return NULL;
+  return nullptr;
 }
 
 // Conservatively decode the trap_state of a ciProfileData.
@@ -452,7 +450,7 @@ int ciMethodData::has_trap_at(ciProfileData* data, int reason) {
   } else if (per_bc_reason == Deoptimization::Reason_none) {
     // We cannot conclude anything; a trap happened somewhere, maybe here.
     return -1;
-  } else if (data == NULL) {
+  } else if (data == nullptr) {
     // No profile here, not even an extra_data record allocated on the fly.
     // If there are empty extra_data records, and there had been a trap,
     // there would have been a non-null data pointer.  If there are no
@@ -467,7 +465,7 @@ int ciMethodData::has_trap_at(ciProfileData* data, int reason) {
 }
 
 int ciMethodData::trap_recompiled_at(ciProfileData* data) {
-  if (data == NULL) {
+  if (data == nullptr) {
     return (_saw_free_extra_data? 0: -1);  // (see previous method)
   } else {
     return Deoptimization::trap_state_is_recompiled(data->trap_state())? 1: 0;
@@ -477,10 +475,10 @@ int ciMethodData::trap_recompiled_at(ciProfileData* data) {
 void ciMethodData::clear_escape_info() {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->clear_escape_info();
     ArgInfoData *aid = arg_info();
-    int arg_count = (aid == NULL) ? 0 : aid->number_of_args();
+    int arg_count = (aid == nullptr) ? 0 : aid->number_of_args();
     for (int i = 0; i < arg_count; i++) {
       set_arg_modified(i, 0);
     }
@@ -492,7 +490,7 @@ void ciMethodData::clear_escape_info() {
 void ciMethodData::update_escape_info() {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if ( mdo != NULL) {
+  if ( mdo != nullptr) {
     mdo->set_eflags(_eflags);
     mdo->set_arg_local(_arg_local);
     mdo->set_arg_stack(_arg_stack);
@@ -507,7 +505,7 @@ void ciMethodData::update_escape_info() {
 void ciMethodData::set_compilation_stats(short loops, short blocks) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->set_num_loops(loops);
     mdo->set_num_blocks(blocks);
   }
@@ -516,7 +514,7 @@ void ciMethodData::set_compilation_stats(short loops, short blocks) {
 void ciMethodData::set_would_profile(bool p) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->set_would_profile(p);
   }
 }
@@ -524,9 +522,9 @@ void ciMethodData::set_would_profile(bool p) {
 void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     ProfileData* data = mdo->bci_to_data(bci);
-    if (data != NULL) {
+    if (data != nullptr) {
       if (data->is_CallTypeData()) {
         data->as_CallTypeData()->set_argument_type(i, k->get_Klass());
       } else {
@@ -540,7 +538,7 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
 void ciMethodData::set_parameter_type(int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     mdo->parameters_type_data()->set_type(i, k->get_Klass());
   }
 }
@@ -548,9 +546,9 @@ void ciMethodData::set_parameter_type(int i, ciKlass* k) {
 void ciMethodData::set_return_type(int bci, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
-  if (mdo != NULL) {
+  if (mdo != nullptr) {
     ProfileData* data = mdo->bci_to_data(bci);
-    if (data != NULL) {
+    if (data != nullptr) {
       if (data->is_CallTypeData()) {
         data->as_CallTypeData()->set_return_type(k->get_Klass());
       } else {
@@ -587,7 +585,7 @@ void ciMethodData::set_arg_returned(int i) {
 
 void ciMethodData::set_arg_modified(int arg, uint val) {
   ArgInfoData *aid = arg_info();
-  if (aid == NULL)
+  if (aid == nullptr)
     return;
   assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
   aid->set_arg_modified(arg, val);
@@ -607,10 +605,14 @@ bool ciMethodData::is_arg_returned(int i) const {
 
 uint ciMethodData::arg_modified(int arg) const {
   ArgInfoData *aid = arg_info();
-  if (aid == NULL)
+  if (aid == nullptr)
     return 0;
   assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
   return aid->arg_modified(arg);
+}
+
+ciParametersTypeData* ciMethodData::parameters_type_data() const {
+  return _parameters != nullptr ? new ciParametersTypeData(_parameters) : nullptr;
 }
 
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {
@@ -634,7 +636,7 @@ ciArgInfoData *ciMethodData::arg_info() const {
     if (dp->tag() == DataLayout::arg_info_data_tag)
       return new ciArgInfoData(dp);
   }
-  return NULL;
+  return nullptr;
 }
 
 
@@ -644,7 +646,7 @@ void ciMethodData::print_impl(outputStream* st) {
 }
 
 void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, int& count, ProfileData* pdata, ByteSize offset, ciKlass* k) {
-  if (k != NULL) {
+  if (k != nullptr) {
     if (round == 0) {
       count++;
     } else {
@@ -685,7 +687,7 @@ void ciMethodData::dump_replay_data_extra_data_helper(outputStream* out, int rou
     case DataLayout::speculative_trap_data_tag: {
       ciSpeculativeTrapData* data = new ciSpeculativeTrapData(dp);
       ciMethod* m = data->method();
-      if (m != NULL) {
+      if (m != nullptr) {
         if (round == 0) {
           count++;
         } else {
@@ -724,7 +726,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
     // We could use INTPTR_FORMAT here but that's zero justified
     // which makes comparing it with the SA version of this output
     // harder. data()'s element type is intptr_t.
-    out->print(" " INTPTRNZ_FORMAT, data()[i]);
+    out->print(" " INTX_FORMAT_X, data()[i]);
   }
 
   // The MDO contained oop references as ciObjects, so scan for those
@@ -751,7 +753,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
           dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
       }
     }
-    if (parameters != NULL) {
+    if (parameters != nullptr) {
       for (int i = 0; i < parameters->number_of_parameters(); i++) {
         dump_replay_data_type_helper(out, round, count, parameters, ParametersTypeData::type_offset(i), parameters->valid_parameter_type(i));
       }
@@ -772,7 +774,7 @@ void ciMethodData::print() {
 void ciMethodData::print_data_on(outputStream* st) {
   ResourceMark rm;
   ciParametersTypeData* parameters = parameters_type_data();
-  if (parameters != NULL) {
+  if (parameters != nullptr) {
     parameters->print_data_on(st);
   }
   ciProfileData* data;
@@ -856,11 +858,11 @@ void ciReceiverTypeData::print_receiver_data_on(outputStream* st) const {
   uint row;
   int entries = 0;
   for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL)  entries++;
+    if (receiver(row) != nullptr)  entries++;
   }
   st->print_cr("count(%u) entries(%u)", count(), entries);
   for (row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
+    if (receiver(row) != nullptr) {
       tab(st);
       receiver(row)->print_name_on(st);
       st->print_cr("(%u)", receiver_count(row));

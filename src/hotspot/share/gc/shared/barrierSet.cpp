@@ -26,6 +26,7 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/barrierSetStackChunk.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
@@ -55,12 +56,18 @@ static BarrierSetNMethod* select_barrier_set_nmethod(BarrierSetNMethod* barrier_
   if (barrier_set_nmethod != NULL) {
     // The GC needs nmethod entry barriers to do concurrent GC
     return barrier_set_nmethod;
-  } else if (Continuations::enabled()) {
-    // The GC needs nmethod entry barriers to deal with continuations
-    return new BarrierSetNMethod();
   } else {
-    // The GC does not need nmethod entry barriers
-    return NULL;
+    // The GC needs nmethod entry barriers to deal with continuations
+    // and code cache unloading
+    return new BarrierSetNMethod();
+  }
+}
+
+static BarrierSetStackChunk* select_barrier_set_stack_chunk(BarrierSetStackChunk* barrier_set_stack_chunk) {
+  if (barrier_set_stack_chunk != NULL) {
+    return barrier_set_stack_chunk;
+  } else {
+    return new BarrierSetStackChunk();
   }
 }
 
@@ -68,18 +75,20 @@ BarrierSet::BarrierSet(BarrierSetAssembler* barrier_set_assembler,
                        BarrierSetC1* barrier_set_c1,
                        BarrierSetC2* barrier_set_c2,
                        BarrierSetNMethod* barrier_set_nmethod,
+                       BarrierSetStackChunk* barrier_set_stack_chunk,
                        const FakeRtti& fake_rtti) :
     _fake_rtti(fake_rtti),
     _barrier_set_assembler(barrier_set_assembler),
     _barrier_set_c1(barrier_set_c1),
     _barrier_set_c2(barrier_set_c2),
-    _barrier_set_nmethod(select_barrier_set_nmethod(barrier_set_nmethod)) {
+    _barrier_set_nmethod(select_barrier_set_nmethod(barrier_set_nmethod)),
+    _barrier_set_stack_chunk(select_barrier_set_stack_chunk(barrier_set_stack_chunk)) {
 }
 
 void BarrierSet::on_thread_attach(Thread* thread) {
-  if (Continuations::enabled()) {
-    BarrierSetNMethod* bs_nm = barrier_set_nmethod();
-    thread->set_nmethod_disarm_value(bs_nm->disarmed_value());
+  BarrierSetNMethod* bs_nm = barrier_set_nmethod();
+  if (bs_nm != nullptr) {
+    thread->set_nmethod_disarmed_guard_value(bs_nm->disarmed_guard_value());
   }
 }
 

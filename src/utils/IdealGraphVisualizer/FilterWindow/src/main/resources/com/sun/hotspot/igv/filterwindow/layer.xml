@@ -18,7 +18,7 @@
             <attr name="position" intvalue="900"/>
         </file>
     </folder>
-    
+
     <folder name="Actions">
         <folder name="Window">
             <file name="com-sun-hotspot-igv-filterwindow-actions-FilterAction.instance"/>
@@ -28,6 +28,7 @@
         <folder name="Window">
             <file name="FilterAction.shadow">
                 <attr name="originalFile" stringvalue="Actions/Window/com-sun-hotspot-igv-filterwindow-actions-FilterAction.instance"/>
+                <attr name="position" intvalue="3"/>
             </file>
         </folder>
     </folder>

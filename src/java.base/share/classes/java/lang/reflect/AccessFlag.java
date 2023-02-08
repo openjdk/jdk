@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -99,7 +100,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_PUBLIC}, corresponding to the source
-     * modifier {@link Modifier#PUBLIC public} with a mask value of
+     * modifier {@link Modifier#PUBLIC public}, with a mask value of
      * <code>{@value "0x%04x" Modifier#PUBLIC}</code>.
      */
     PUBLIC(Modifier.PUBLIC, true,
@@ -115,7 +116,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_PRIVATE}, corresponding to the
-     * source modifier {@link Modifier#PRIVATE private} with a mask
+     * source modifier {@link Modifier#PRIVATE private}, with a mask
      * value of <code>{@value "0x%04x" Modifier#PRIVATE}</code>.
      */
     PRIVATE(Modifier.PRIVATE, true, Location.SET_FIELD_METHOD_INNER_CLASS,
@@ -130,7 +131,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_PROTECTED}, corresponding to the
-     * source modifier {@link Modifier#PROTECTED protected} with a mask
+     * source modifier {@link Modifier#PROTECTED protected}, with a mask
      * value of <code>{@value "0x%04x" Modifier#PROTECTED}</code>.
      */
     PROTECTED(Modifier.PROTECTED, true, Location.SET_FIELD_METHOD_INNER_CLASS,
@@ -145,7 +146,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_STATIC}, corresponding to the source
-     * modifier {@link Modifier#STATIC static} with a mask value of
+     * modifier {@link Modifier#STATIC static}, with a mask value of
      * <code>{@value "0x%04x" Modifier#STATIC}</code>.
      */
     STATIC(Modifier.STATIC, true, Location.SET_FIELD_METHOD_INNER_CLASS,
@@ -159,7 +160,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_FINAL}, corresponding to the source
-     * modifier {@link Modifier#FINAL final} with a mask
+     * modifier {@link Modifier#FINAL final}, with a mask
      * value of <code>{@value "0x%04x" Modifier#FINAL}</code>.
      */
     FINAL(Modifier.FINAL, true,
@@ -217,7 +218,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_SYNCHRONIZED}, corresponding to the
-     * source modifier {@link Modifier#SYNCHRONIZED synchronized} with
+     * source modifier {@link Modifier#SYNCHRONIZED synchronized}, with
      * a mask value of <code>{@value "0x%04x" Modifier#SYNCHRONIZED}</code>.
      */
     SYNCHRONIZED(Modifier.SYNCHRONIZED, true, Location.SET_METHOD, null),
@@ -238,7 +239,7 @@ public enum AccessFlag {
 
    /**
      * The access flag {@code ACC_VOLATILE}, corresponding to the
-     * source modifier {@link Modifier#VOLATILE volatile} with a mask
+     * source modifier {@link Modifier#VOLATILE volatile}, with a mask
      * value of <code>{@value "0x%04x" Modifier#VOLATILE}</code>.
      */
     VOLATILE(Modifier.VOLATILE, true, Location.SET_FIELD, null),
@@ -259,7 +260,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_TRANSIENT}, corresponding to the
-     * source modifier {@link Modifier#TRANSIENT transient} with a
+     * source modifier {@link Modifier#TRANSIENT transient}, with a
      * mask value of <code>{@value "0x%04x" Modifier#TRANSIENT}</code>.
      */
     TRANSIENT(Modifier.TRANSIENT, true, Location.SET_FIELD, null),
@@ -280,7 +281,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_NATIVE}, corresponding to the source
-     * modifier {@link Modifier#NATIVE native} with a mask value of
+     * modifier {@link Modifier#NATIVE native}, with a mask value of
      * <code>{@value "0x%04x" Modifier#NATIVE}</code>.
      */
     NATIVE(Modifier.NATIVE, true, Location.SET_METHOD, null),
@@ -301,7 +302,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_ABSTRACT}, corresponding to the
-     * source modifier {@link Modifier#ABSTRACT abstract} with a mask
+     * source modifier {@link Modifier#ABSTRACT abstract}, with a mask
      * value of <code>{@value "0x%04x" Modifier#ABSTRACT}</code>.
      */
     ABSTRACT(Modifier.ABSTRACT, true,
@@ -316,7 +317,7 @@ public enum AccessFlag {
 
     /**
      * The access flag {@code ACC_STRICT}, corresponding to the source
-     * modifier {@link Modifier#STRICT strictfp} with a mask value of
+     * modifier {@link Modifier#STRICT strictfp}, with a mask value of
      * <code>{@value "0x%04x" Modifier#STRICT}</code>.
      *
      * @apiNote
@@ -324,7 +325,7 @@ public enum AccessFlag {
      * major versions 46 through 60, inclusive (JVMS {@jvms 4.6}),
      * corresponding to Java SE 1.2 through 16.
      */
-    STRICT(Modifier.STRICT, true, Location.SET_METHOD,
+    STRICT(Modifier.STRICT, true, Location.EMPTY_SET,
              new Function<ClassFileFormatVersion, Set<Location>>() {
                @Override
                public Set<Location> apply(ClassFileFormatVersion cffv) {
@@ -470,6 +471,7 @@ public enum AccessFlag {
      * @throws NullPointerException if the parameter is {@code null}
      */
     public Set<Location> locations(ClassFileFormatVersion cffv) {
+        Objects.requireNonNull(cffv);
         if (cffvToLocations == null) {
             return locations;
         } else {

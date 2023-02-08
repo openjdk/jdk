@@ -875,9 +875,10 @@ public class LoginContext {
                         firstRequiredError = le;
 
                 } else {
-
-                    if (debug != null)
+                    if (debug != null) {
                         debug.println(name + " " + methodName + " OPTIONAL failure");
+                        le.printStackTrace();
+                    }
 
                     // mark down that an OPTIONAL module failed
                     if (firstError == null)

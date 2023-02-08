@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 #define __ masm->
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  Register dst, Address src, Register tmp1, Register tmp_thread) {
+                                  Register dst, Address src, Register tmp1, Register tmp2) {
 
   // LR is live.  It must be saved around calls.
 
@@ -80,7 +80,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 }
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                   Address dst, Register val, Register tmp1, Register tmp2) {
+                                   Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
@@ -122,8 +122,8 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                                         Register obj, Register tmp, Label& slowpath) {
   // If mask changes we need to ensure that the inverse is still encodable as an immediate
-  STATIC_ASSERT(JNIHandles::weak_tag_mask == 1);
-  __ andr(obj, obj, ~JNIHandles::weak_tag_mask);
+  STATIC_ASSERT(JNIHandles::tag_mask == 0b11);
+  __ andr(obj, obj, ~JNIHandles::tag_mask);
   __ ldr(obj, Address(obj, 0));             // *obj
 }
 
@@ -217,7 +217,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // instruction patching is handled with isb fences on the way back
     // from the safepoint to Java. So here we can do a plain conditional
     // branch with no fencing.
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldrw(rscratch2, thread_disarmed_addr);
     __ cmp(rscratch1, rscratch2);
   } else if (patching_type == NMethodPatchingType::conc_instruction_and_data_patch) {
@@ -238,7 +238,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // Combine the guard value (low order) with the epoch value (high order).
     __ orr(rscratch1, rscratch1, rscratch2, Assembler::LSL, 32);
     // Compare the global values with the thread-local values.
-    Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_and_epoch_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldr(rscratch2, thread_disarmed_and_epoch_addr);
     __ cmp(rscratch1, rscratch2);
   } else {
@@ -246,7 +246,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     // Subsequent loads of oops must occur after load of guard value.
     // BarrierSetNMethod::disarm sets guard with release semantics.
     __ membar(__ LoadLoad);
-    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_offset()));
+    Address thread_disarmed_addr(rthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()));
     __ ldrw(rscratch2, thread_disarmed_addr);
     __ cmpw(rscratch1, rscratch2);
   }
@@ -285,13 +285,12 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?
-  __ stp(r10, r11, Address(__ pre(sp, -2 * wordSize)));
+  __ push(RegSet::of(r10), sp);
   __ ldr(r10, Address(rscratch1, ClassLoaderData::holder_offset()));
 
-  // Uses rscratch1 & rscratch2, so we must pass new temporaries.
-  __ resolve_weak_handle(r10, r11);
+  __ resolve_weak_handle(r10, rscratch1, rscratch2);
   __ mov(rscratch1, r10);
-  __ ldp(r10, r11, Address(__ post(sp, 2 * wordSize)));
+  __ pop(RegSet::of(r10), sp);
   __ cbnz(rscratch1, method_live);
 
   __ bind(bad_call);

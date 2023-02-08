@@ -160,7 +160,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         }
 
         private static byte[] createHkdfInfo(
-                byte[] label, int length) throws IOException {
+                byte[] label, int length) {
             byte[] info = new byte[4 + label.length];
             ByteBuffer m = ByteBuffer.wrap(info);
             try {
@@ -185,7 +185,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         private final byte[] label;
         private final boolean isIv;
 
-        private KeySchedule(String label, boolean isIv) {
+        KeySchedule(String label, boolean isIv) {
             this.label = ("tls13 " + label).getBytes();
             this.isIv = isIv;
         }

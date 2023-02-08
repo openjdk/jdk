@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @compile --enable-preview -source ${jdk.version} TypedDeconstructionPatternExc.java
- * @run main/othervm --enable-preview TypedDeconstructionPatternExc
+ * @enablePreview
  */
 
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 public class TypedDeconstructionPatternExc {
 
@@ -39,6 +39,9 @@ public class TypedDeconstructionPatternExc {
     void run() {
         run(this::testExpr);
         run(this::testExprCond);
+        testTryExpr();
+        run(this::testLambda);
+        runBoxed();
     }
 
     void run(Function<Pair<String, Integer>, Integer> tested) {
@@ -83,6 +86,82 @@ public class TypedDeconstructionPatternExc {
         }
     }
 
+    void testTryExpr() {
+        TEST: {
+            try {
+                var v = switch ((Pair<String, Integer>) (Object) new Pair<Integer, Integer>(1, 1)) {
+                    case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+                    case Object o -> -1;
+                };
+            } catch (ClassCastException ex) {
+                //OK
+                break TEST;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail("Unexpected Throwable!");
+            }
+            fail("ClassCastException not thrown!");
+        }
+        TEST: {
+            try {
+                var v = switch (new Pair<String, Integer>("fail", 1)) {
+                    case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+                    case Object o -> -1;
+                };
+            } catch (MatchException ex) {
+                //OK
+                break TEST;
+            } catch (Throwable t) {
+                t.printStackTrace();
+                fail("Unexpected Throwable!");
+            }
+            fail("MatchException not thrown!");
+        }
+    }
+
+    int testLambda(Pair<String, Integer> p) {
+        var r = prepareLambda();
+        return r.applyAsInt(p);
+    }
+
+    ToIntFunction<Pair<String, Integer>> prepareLambda() {
+        return p -> switch (p) {
+            case Pair<String, Integer>(String s, Integer i) -> s.length() + i;
+            case Object o -> -1;
+        };
+    }
+
+    void runBoxed() {
+        assertEquals(2, testBoxed(new Box(new Pair<>("1", 1))));
+        try {
+            testBoxed(new Box((Pair<String, Integer>) (Object) new Pair<Integer, Integer>(1, 1)));
+            fail("Expected an exception, but none happened!");
+        } catch (ClassCastException ex) {
+            System.err.println("expected exception:");
+            ex.printStackTrace();
+        }
+        try {
+            testBoxed(new Box(new Pair<String, Integer>("fail", 1)));
+            fail("Expected an exception, but none happened!");
+        } catch (MatchException ex) {
+            assertEquals(TestPatternFailed.class.getName() + ": " + EXCEPTION_MESSAGE,
+                         ex.getMessage());
+            if (ex.getCause() instanceof TestPatternFailed ex2) {
+                System.err.println("expected exception:");
+                ex2.printStackTrace();
+            } else {
+                fail("Not the correct exception.");
+            }
+        }
+    }
+
+    int testBoxed(Object p) {
+        return switch (p) {
+            case Box(Pair<String, Integer>(String s, Integer i)) -> s.length() + i;
+            case Object o -> -1;
+        };
+    }
+
     static final String EXCEPTION_MESSAGE = "exception-message";
 
     record Pair<L, R>(L l, R r) {
@@ -96,6 +175,8 @@ public class TypedDeconstructionPatternExc {
             return r;
         }
     }
+
+    record Box(Pair<String, Integer> boxed) {}
 
     void assertEquals(Object expected, Object actual) {
         if (!Objects.equals(expected, actual)) {

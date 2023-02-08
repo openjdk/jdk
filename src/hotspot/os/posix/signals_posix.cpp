@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  */
 
 #include "precompiled.hpp"
-
-#include "jvm.h"
 #include "code/codeCache.hpp"
 #include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
 #include "runtime/atomic.hpp"
@@ -95,11 +94,6 @@ static int get_sanitized_sa_flags(const struct sigaction* sa) {
 #define IS_VALID_PID(p) (p > 0 && p < MAX_PID)
 
 #define NUM_IMPORTANT_SIGS 32
-
-extern "C" {
-  typedef void (*sa_handler_t)(int);
-  typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
-}
 
 // At various places we store handler information for each installed handler.
 //  SavedSignalHandlers is a helper class for those cases, keeping an array of sigaction
@@ -342,7 +336,7 @@ static const struct {
 };
 
 ////////////////////////////////////////////////////////////////////////////////
-// sun.misc.Signal support
+// sun.misc.Signal and BREAK_SIGNAL support
 
 void jdk_misc_signal_init() {
   // Initialize signal structures
@@ -563,11 +557,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 {
   assert(info != NULL && ucVoid != NULL, "sanity");
 
-  if (sig == BREAK_SIGNAL) {
-    assert(!ReduceSignalUsage, "Should not happen with -Xrs/-XX:+ReduceSignalUsage");
-    return true; // ignore it
-  }
-
   // Note: it's not uncommon that JNI code uses signal/sigset to install,
   // then restore certain signal handler (e.g. to temporarily block SIGPIPE,
   // or have a SIGILL handler when detecting CPU type). When that happens,
@@ -607,12 +596,6 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (uc != NULL) {
     if (S390_ONLY(sig == SIGILL || sig == SIGFPE) NOT_S390(false)) {
       pc = (address)info->si_addr;
-    } else if (ZERO_ONLY(true) NOT_ZERO(false)) {
-      // Non-arch-specific Zero code does not really know the pc.
-      // This can be alleviated by making arch-specific os::Posix::ucontext_get_pc
-      // available for Zero for known architectures. But for generic Zero
-      // code, it would still remain unknown.
-      pc = NULL;
     } else {
       pc = os::Posix::ucontext_get_pc(uc);
     }
@@ -629,13 +612,12 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
     signal_was_handled = true; // unconditionally.
   }
 
+#ifndef ZERO
   // Check for UD trap caused by NOP patching.
   // If it is, patch return address to be deopt handler.
-  if (!signal_was_handled) {
-    address pc = os::Posix::ucontext_get_pc(uc);
-    assert(pc != NULL, "");
+  if (!signal_was_handled && pc != NULL && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
-      CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
+      CodeBlob* cb = CodeCache::find_blob(pc);
       if (cb != NULL && cb->is_compiled()) {
         MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
         CompiledMethod* cm = cb->as_compiled_method();
@@ -653,10 +635,11 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       }
     }
   }
+#endif // !ZERO
 
   // Call platform dependent signal handler.
   if (!signal_was_handled) {
-    JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? (JavaThread*) t : NULL;
+    JavaThread* const jt = (t != NULL && t->is_Java_thread()) ? JavaThread::cast(t) : NULL;
     signal_was_handled = PosixSignals::pd_hotspot_signal_handler(sig, info, uc, jt);
   }
 
@@ -669,12 +652,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 
   // Invoke fatal error handling.
   if (!signal_was_handled && abort_if_unrecognized) {
-    // For Zero, we ignore the crash context, because:
-    //  a) The crash would be in C++ interpreter code, so context is not really relevant;
-    //  b) Generic Zero code would not be able to parse it, so when generic error
-    //     reporting code asks e.g. about frames on stack, Zero would experience
-    //     a secondary ShouldNotCallThis() crash.
-    VMError::report_and_die(t, sig, pc, info, NOT_ZERO(ucVoid) ZERO_ONLY(NULL));
+    VMError::report_and_die(t, sig, pc, info, ucVoid);
     // VMError should not return.
     ShouldNotReachHere();
   }
@@ -682,13 +660,13 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
 }
 
 // Entry point for the hotspot signal handler.
-static void javaSignalHandler(int sig, siginfo_t* info, void* ucVoid) {
+static void javaSignalHandler(int sig, siginfo_t* info, void* context) {
   // Do not add any code here!
   // Only add code to either JVM_HANDLE_XXX_SIGNAL or PosixSignals::pd_hotspot_signal_handler.
-  (void)JVM_HANDLE_XXX_SIGNAL(sig, info, ucVoid, true);
+  (void)JVM_HANDLE_XXX_SIGNAL(sig, info, context, true);
 }
 
-static void UserHandler(int sig, void *siginfo, void *context) {
+static void UserHandler(int sig, siginfo_t* siginfo, void* context) {
 
   PosixSignals::unblock_error_signals();
 
@@ -800,7 +778,7 @@ static address get_signal_handler(const struct sigaction* action) {
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context);
+static void SR_handler(int sig, siginfo_t* siginfo, void* context);
 
 // Semantically compare two sigaction structures. Return true if they are referring to
 // the same handler, using the same flags.
@@ -858,20 +836,33 @@ static bool check_signal_handler(int sig) {
   return false;
 }
 
-void* os::user_handler() {
+void* PosixSignals::user_handler() {
   return CAST_FROM_FN_PTR(void*, UserHandler);
 }
 
-void* os::signal(int signal_number, void* handler) {
+// Used by JVM_RegisterSignal to install a signal handler.
+// The allowed set of signals is restricted by the caller.
+// The incoming handler is one of:
+// - psuedo-handler: SIG_IGN or SIG_DFL
+// - the VM's UserHandler of type sa_sigaction_t
+// - unknown signal handling function which we assume is also
+//   of type sa_sigaction_t - this is a bug - see JDK-8295702
+// Returns the currently installed handler.
+void* PosixSignals::install_generic_signal_handler(int sig, void* handler) {
   struct sigaction sigAct, oldSigAct;
 
   sigfillset(&(sigAct.sa_mask));
   remove_error_signals_from_set(&(sigAct.sa_mask));
 
-  sigAct.sa_flags   = SA_RESTART|SA_SIGINFO;
-  sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
+  sigAct.sa_flags = SA_RESTART;
+  if (HANDLER_IS_IGN_OR_DFL(handler)) {
+    sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
+  } else {
+    sigAct.sa_flags |= SA_SIGINFO;
+    sigAct.sa_sigaction = CAST_TO_FN_PTR(sa_sigaction_t, handler);
+  }
 
-  if (sigaction(signal_number, &sigAct, &oldSigAct)) {
+  if (sigaction(sig, &sigAct, &oldSigAct)) {
     // -1 means registration failed
     return (void *)-1;
   }
@@ -879,8 +870,34 @@ void* os::signal(int signal_number, void* handler) {
   return get_signal_handler(&oldSigAct);
 }
 
-void os::signal_raise(int signal_number) {
-  ::raise(signal_number);
+// Installs the given sigaction handler for the given signal.
+// - sigAct: the new struct sigaction to be filled in and used
+//           for this signal. The caller must provide this as it
+//           may need to be stored/accessed by that caller.
+// - oldSigAct: the old struct sigaction that was associated with
+//              this signal
+// Returns 0 on success and -1 on error.
+int PosixSignals::install_sigaction_signal_handler(struct sigaction* sigAct,
+                                                   struct sigaction* oldSigAct,
+                                                   int sig,
+                                                   sa_sigaction_t handler) {
+  sigfillset(&sigAct->sa_mask);
+  remove_error_signals_from_set(&sigAct->sa_mask);
+  sigAct->sa_sigaction = handler;
+  sigAct->sa_flags = SA_SIGINFO|SA_RESTART;
+#if defined(__APPLE__)
+  // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
+  // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
+  // if the signal handler declares it will handle it on alternate stack.
+  // Notice we only declare we will handle it on alt stack, but we are not
+  // actually going to use real alt stack - this is just a workaround.
+  // Please see ux_exception.c, method catch_mach_exception_raise for details
+  // link http://www.opensource.apple.com/source/xnu/xnu-2050.18.24/bsd/uxkern/ux_exception.c
+  if (sig == SIGSEGV) {
+    sigAct->sa_flags |= SA_ONSTACK;
+  }
+#endif
+  return sigaction(sig, sigAct, oldSigAct);
 }
 
 // Will be modified when max signal is changed to be dynamic
@@ -904,8 +921,6 @@ void os::run_periodic_checks(outputStream* st) {
   print_handlers |= check_signal_handler(SIGILL);
   print_handlers |= check_signal_handler(SIGFPE);
   print_handlers |= check_signal_handler(SIGBUS);
-  print_handlers |= check_signal_handler(SIGPIPE);
-  print_handlers |= check_signal_handler(SIGXFSZ);
   PPC64_ONLY(print_handlers |= check_signal_handler(SIGTRAP);)
 
   // ReduceSignalUsage allows the user to override these handlers
@@ -918,6 +933,9 @@ void os::run_periodic_checks(outputStream* st) {
   }
 
   print_handlers |= check_signal_handler(PosixSignals::SR_signum);
+
+  // As we ignore SIGPIPE and SIGXFSZ, and expect other code to potentially
+  // install handlers for them, we don't bother checking them here.
 
   if (print_handlers) {
     // If we had a mismatch:
@@ -1225,7 +1243,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig, bool do_check = true) {
+void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
@@ -1250,34 +1268,24 @@ void set_signal_handler(int sig, bool do_check = true) {
   }
 
   struct sigaction sigAct;
-  sigfillset(&(sigAct.sa_mask));
-  remove_error_signals_from_set(&(sigAct.sa_mask));
-  sigAct.sa_sigaction = javaSignalHandler;
-  sigAct.sa_flags = SA_SIGINFO|SA_RESTART;
-#if defined(__APPLE__)
-  // Needed for main thread as XNU (Mac OS X kernel) will only deliver SIGSEGV
-  // (which starts as SIGBUS) on main thread with faulting address inside "stack+guard pages"
-  // if the signal handler declares it will handle it on alternate stack.
-  // Notice we only declare we will handle it on alt stack, but we are not
-  // actually going to use real alt stack - this is just a workaround.
-  // Please see ux_exception.c, method catch_mach_exception_raise for details
-  // link http://www.opensource.apple.com/source/xnu/xnu-2050.18.24/bsd/uxkern/ux_exception.c
-  if (sig == SIGSEGV) {
-    sigAct.sa_flags |= SA_ONSTACK;
-  }
-#endif
-
-  // Save handler setup for possible later checking
-  if (do_check) {
-    vm_handlers.set(sig, &sigAct);
-  }
-  do_check_signal_periodically[sig] = do_check;
-
-  int ret = sigaction(sig, &sigAct, &oldAct);
+  int ret = PosixSignals::install_sigaction_signal_handler(&sigAct, &oldAct,
+                                                           sig, javaSignalHandler);
   assert(ret == 0, "check");
 
+  // Save handler setup for possible later checking
+  vm_handlers.set(sig, &sigAct);
+
+  bool do_check = true;
+  if (sig == SIGPIPE || sig == SIGXFSZ) {
+    // As we ignore these signals, and expect other code to potentially
+    // install handlers for them, we don't bother checking them.
+    do_check = false;
+  }
+  do_check_signal_periodically[sig] = do_check;
+#ifdef ASSERT
   void* oldhand2  = get_signal_handler(&oldAct);
   assert(oldhand2 == oldhand, "no concurrent signal handler installation");
+#endif
 }
 
 // install signal handlers for signals that HotSpot needs to
@@ -1310,11 +1318,27 @@ void install_signal_handlers() {
   PPC64_ONLY(set_signal_handler(SIGTRAP);)
   set_signal_handler(SIGXFSZ);
   if (!ReduceSignalUsage) {
-    // This is just for early initialization phase. Intercepting the signal here reduces the risk
-    // that an attach client accidentally forces HotSpot to quit prematurely. We skip the periodic
-    // check because late initialization will overwrite it to UserHandler.
-    set_signal_handler(BREAK_SIGNAL, false);
+    // Install BREAK_SIGNAL's handler in early initialization phase, in
+    // order to reduce the risk that an attach client accidentally forces
+    // HotSpot to quit prematurely.
+    // The actual work for handling BREAK_SIGNAL is performed by the Signal
+    // Dispatcher thread, which is created and started at a much later point,
+    // see os::initialize_jdk_signal_support(). Any BREAK_SIGNAL received
+    // before the Signal Dispatcher thread is started is queued up via the
+    // pending_signals[BREAK_SIGNAL] counter, and will be processed by the
+    // Signal Dispatcher thread in a delayed fashion.
+    //
+    // Also note that HotSpot does NOT support signal chaining for BREAK_SIGNAL.
+    // Applications that require a custom BREAK_SIGNAL handler should run with
+    // -XX:+ReduceSignalUsage. Otherwise if libjsig is used together with
+    // -XX:+ReduceSignalUsage, libjsig will prevent changing BREAK_SIGNAL's
+    // handler to a custom handler.
+    struct sigaction sigAct, oldSigAct;
+    int ret =  PosixSignals::install_sigaction_signal_handler(&sigAct, &oldSigAct,
+                                                              BREAK_SIGNAL, UserHandler);
+    assert(ret == 0, "check");
   }
+
 #if defined(__APPLE__)
   // lldb (gdb) installs both standard BSD signal handlers, and mach exception
   // handlers. By replacing the existing task exception handler, we disable lldb's mach
@@ -1397,7 +1421,6 @@ static void print_single_signal_handler(outputStream* st,
   st->print(", flags=");
   int flags = get_sanitized_sa_flags(act);
   print_sa_flags(st, flags);
-
 }
 
 // Print established signal handler for this signal.
@@ -1414,6 +1437,11 @@ void PosixSignals::print_signal_handler(outputStream* st, int sig,
   sigaction(sig, NULL, &current_act);
 
   print_single_signal_handler(st, &current_act, buf, buflen);
+
+  sigset_t thread_sig_mask;
+  if (::pthread_sigmask(/* ignored */ SIG_BLOCK, NULL, &thread_sig_mask) == 0) {
+    st->print(", %s", sigismember(&thread_sig_mask, sig) ? "blocked" : "unblocked");
+  }
   st->cr();
 
   // If we expected to see our own hotspot signal handler but found a different one,
@@ -1586,8 +1614,8 @@ static void resume_clear_context(OSThread *osthread) {
   osthread->set_siginfo(NULL);
 }
 
-static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontext_t* context) {
-  osthread->set_ucontext(context);
+static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, void* ucVoid) {
+  osthread->set_ucontext((ucontext_t*)ucVoid);
   osthread->set_siginfo(siginfo);
 }
 
@@ -1604,7 +1632,7 @@ static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontex
 //
 // Currently only ever called on the VMThread and JavaThreads (PC sampling)
 //
-static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
+static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 
   // Save and restore errno to avoid confusing native code with EINTR
   // after sigsuspend.
@@ -1713,7 +1741,7 @@ int SR_initialize() {
 
   // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
-  act.sa_handler = (void (*)(int)) SR_handler;
+  act.sa_sigaction = SR_handler;
 
   // SR_signum is blocked when the handler runs.
   pthread_sigmask(SIG_BLOCK, NULL, &act.sa_mask);
@@ -1819,12 +1847,12 @@ int PosixSignals::init() {
 
   signal_sets_init();
 
-  install_signal_handlers();
-
-  // Initialize data for jdk.internal.misc.Signal
+  // Initialize data for jdk.internal.misc.Signal and BREAK_SIGNAL's handler.
   if (!ReduceSignalUsage) {
     jdk_misc_signal_init();
   }
+
+  install_signal_handlers();
 
   return JNI_OK;
 }

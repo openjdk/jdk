@@ -50,22 +50,30 @@ public class ExecutionControlTestBase extends KullaTesting {
     }
 
     @Test
+    public void test() {
+        variables();
+        testImportOnDemand();
+        classesDeclaration();
+        interfaceTest();
+        methodOverload();
+        testExprSanity();
+    }
+
     public void classesDeclaration() {
-        assertEval("interface A { }");
-        assertEval("class B implements A { }");
-        assertEval("interface C extends A { }");
+        assertEval("interface AA { }");
+        assertEval("class BB implements AA { }");
+        assertEval("interface C extends AA { }");
         assertEval("enum D implements C { }");
         assertEval("@interface E { }");
         assertClasses(
-                clazz(KullaTesting.ClassType.INTERFACE, "A"),
-                clazz(KullaTesting.ClassType.CLASS, "B"),
+                clazz(KullaTesting.ClassType.INTERFACE, "AA"),
+                clazz(KullaTesting.ClassType.CLASS, "BB"),
                 clazz(KullaTesting.ClassType.INTERFACE, "C"),
                 clazz(KullaTesting.ClassType.ENUM, "D"),
                 clazz(KullaTesting.ClassType.ANNOTATION, "E"));
         assertActiveKeys();
     }
 
-    @Test
     public void interfaceTest() {
         String interfaceSource
                 = "interface A {\n"
@@ -93,7 +101,6 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertEval("new B.Inner2();");
     }
 
-    @Test
     public void variables() {
         VarSnippet snx = varKey(assertEval("int x = 10;"));
         VarSnippet sny = varKey(assertEval("String y = \"hi\";"));
@@ -105,7 +112,6 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test
     public void methodOverload() {
         assertEval("int m() { return 1; }");
         assertEval("int m(int x) { return 2; }");
@@ -130,15 +136,13 @@ public class ExecutionControlTestBase extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test
     public void testExprSanity() {
-        assertEval("int x = 3;", "3");
-        assertEval("int y = 4;", "4");
-        assertEval("x + y;", "7");
+        assertEval("int i = 3;", "3");
+        assertEval("int j = 4;", "4");
+        assertEval("i + j;", "7");
         assertActiveKeys();
     }
 
-    @Test
     public void testImportOnDemand() {
         assertImportKeyMatch("import java.util.*;", "java.util.*", TYPE_IMPORT_ON_DEMAND_SUBKIND, added(VALID));
         assertEval("List<Integer> list = new ArrayList<>();");

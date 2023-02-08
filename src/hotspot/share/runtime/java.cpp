@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
+#include "cds/cds_globals.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
@@ -38,9 +38,7 @@
 #include "interpreter/bytecodeHistogram.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrThreadId.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspaceUtils.hpp"
@@ -68,13 +66,13 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/sweeper.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -93,6 +91,9 @@
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci.hpp"
+#endif
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -107,7 +108,7 @@ int compare_methods(Method** a, Method** b) {
 void collect_profiled_methods(Method* m) {
   Thread* thread = Thread::current();
   methodHandle mh(thread, m);
-  if ((m->method_data() != NULL) &&
+  if ((m->method_data() != nullptr) &&
       (PrintMethodData || CompilerOracle::should_print(mh))) {
     collected_profiled_methods->push(m);
   }
@@ -132,7 +133,7 @@ void print_method_profiling_data() {
         tty->print_cr("  mdo size: %d bytes", m->method_data()->size_in_bytes());
         tty->cr();
         // Dump data on parameters if any
-        if (m->method_data() != NULL && m->method_data()->parameters_type_data() != NULL) {
+        if (m->method_data() != nullptr && m->method_data()->parameters_type_data() != nullptr) {
           tty->fill_to(2);
           m->method_data()->parameters_type_data()->print_data_on(tty);
         }
@@ -294,11 +295,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
-    CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
+    CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
   if (PrintCodeCache2) {
@@ -322,10 +320,6 @@ void print_statistics() {
     ResourceMark rm;
     MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::print();
-  }
-
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
   }
 
   // Native memory tracking data
@@ -366,11 +360,8 @@ void print_statistics() {
   }
 
   // CodeHeap State Analytics.
-  // Does also call NMethodSweeper::print(tty)
   if (PrintCodeHeapAnalytics) {
-    CompileBroker::print_heapinfo(NULL, "all", 4096); // details
-  } else if (PrintMethodFlushingStatistics) {
-    NMethodSweeper::print(tty);
+    CompileBroker::print_heapinfo(nullptr, "all", 4096); // details
   }
 
 #ifdef COMPILER2
@@ -386,10 +377,6 @@ void print_statistics() {
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);
-  }
-
-  if (LogTouchedMethods && PrintTouchedMethodsAtExit) {
-    Method::print_touched_methods(tty);
   }
 
   ThreadsSMRSupport::log_statistics();
@@ -429,6 +416,30 @@ void before_exit(JavaThread* thread, bool halt) {
       }
     }
   }
+
+  // At this point only one thread is executing this logic. Any other threads
+  // attempting to invoke before_exit() will wait above and return early once
+  // this thread finishes before_exit().
+
+  // Do not add any additional shutdown logic between the above mutex logic and
+  // leak sanitizer logic below. Any additional shutdown code which performs some
+  // cleanup should be added after the leak sanitizer logic below.
+
+#ifdef LEAK_SANITIZER
+  // If we are built with LSan, we need to perform leak checking. If we are
+  // terminating normally, not halting and no VM error, we perform a normal
+  // leak check which terminates if leaks are found. If we are not terminating
+  // normally, halting or VM error, we perform a recoverable leak check which
+  // prints leaks but will not terminate.
+  if (!halt && !VMError::is_error_reported()) {
+    LSAN_DO_LEAK_CHECK();
+  } else {
+    // Ignore the return value.
+    static_cast<void>(LSAN_DO_RECOVERABLE_LEAK_CHECK());
+  }
+#endif
+
+  // Actual shutdown logic begins here.
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -505,7 +516,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #if INCLUDE_CDS
   if (DynamicArchive::should_dump_at_vm_exit()) {
-    assert(ArchiveClassesAtExit != NULL, "Must be already set");
+    assert(ArchiveClassesAtExit != nullptr, "Must be already set");
     ExceptionMark em(thread);
     DynamicArchive::dump(ArchiveClassesAtExit, thread);
     if (thread->has_pending_exception()) {
@@ -541,8 +552,8 @@ void before_exit(JavaThread* thread, bool halt) {
 
 void vm_exit(int code) {
   Thread* thread =
-      ThreadLocalStorage::is_initialized() ? Thread::current_or_null() : NULL;
-  if (thread == NULL) {
+      ThreadLocalStorage::is_initialized() ? Thread::current_or_null() : nullptr;
+  if (thread == nullptr) {
     // very early initialization failure -- just exit
     vm_direct_exit(code);
   }
@@ -552,7 +563,7 @@ void vm_exit(int code) {
   // XML termination logging safe is tied to the termination of the
   // VMThread, and it doesn't terminate on this exit path. See 8222534.
 
-  if (VMThread::vm_thread() != NULL) {
+  if (VMThread::vm_thread() != nullptr) {
     if (thread->is_Java_thread()) {
       // We must be "in_vm" for the code below to work correctly.
       // Historically there must have been some exit path for which
@@ -603,7 +614,7 @@ void vm_direct_exit(int code, const char* message) {
 void vm_perform_shutdown_actions() {
   if (is_init_completed()) {
     Thread* thread = Thread::current_or_null();
-    if (thread != NULL && thread->is_Java_thread()) {
+    if (thread != nullptr && thread->is_Java_thread()) {
       // We are leaving the VM, set state to native (in case any OS exit
       // handlers call back to the VM)
       JavaThread* jt = JavaThread::cast(thread);
@@ -636,10 +647,10 @@ void vm_abort(bool dump_core) {
 }
 
 void vm_notify_during_cds_dumping(const char* error, const char* message) {
-  if (error != NULL) {
+  if (error != nullptr) {
     tty->print_cr("Error occurred during CDS dumping");
     tty->print("%s", error);
-    if (message != NULL) {
+    if (message != nullptr) {
       tty->print_cr(": %s", message);
     }
     else {
@@ -656,10 +667,10 @@ void vm_exit_during_cds_dumping(const char* error, const char* message) {
 }
 
 void vm_notify_during_shutdown(const char* error, const char* message) {
-  if (error != NULL) {
+  if (error != nullptr) {
     tty->print_cr("Error occurred during initialization of VM");
     tty->print("%s", error);
-    if (message != NULL) {
+    if (message != nullptr) {
       tty->print_cr(": %s", message);
     }
     else {
@@ -672,7 +683,7 @@ void vm_notify_during_shutdown(const char* error, const char* message) {
 }
 
 void vm_exit_during_initialization() {
-  vm_notify_during_shutdown(NULL, NULL);
+  vm_notify_during_shutdown(nullptr, nullptr);
 
   // Failure during initialization, we don't want to dump core
   vm_abort(false);
@@ -683,13 +694,13 @@ void vm_exit_during_initialization(Handle exception) {
   // If there are exceptions on this thread it must be cleared
   // first and here. Any future calls to EXCEPTION_MARK requires
   // that no pending exceptions exist.
-  JavaThread* THREAD = JavaThread::current(); // can't be NULL
+  JavaThread* THREAD = JavaThread::current(); // can't be null
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
   }
   java_lang_Throwable::print_stack_trace(exception, tty);
   tty->cr();
-  vm_notify_during_shutdown(NULL, NULL);
+  vm_notify_during_shutdown(nullptr, nullptr);
 
   // Failure during initialization, we don't want to dump core
   vm_abort(false);

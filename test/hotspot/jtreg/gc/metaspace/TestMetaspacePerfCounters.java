@@ -23,7 +23,7 @@
 
 package gc.metaspace;
 
-import java.lang.management.GarbageCollectorMXBean;
+import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -183,10 +183,44 @@ import gc.testlibrary.PerfCounters;
  * @run main/othervm -XX:+UsePerfData -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC gc.metaspace.TestMetaspacePerfCounters
  */
 
+class PerfCounterSnapshot {
+    private static long getMinCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".minCapacity").longValue();
+    }
+
+    private static long getCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".capacity").longValue();
+    }
+
+    private static long getMaxCapacity(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".maxCapacity").longValue();
+    }
+
+    private static long getUsed(String ns) throws Exception {
+        return PerfCounters.findByName(ns + ".used").longValue();
+    }
+
+    public long minCapacity;
+    public long maxCapacity;
+    public long capacity;
+    public long used;
+
+    public void get(String ns) throws Exception {
+        minCapacity = getMinCapacity(ns);
+        maxCapacity = getMaxCapacity(ns);
+        used = getUsed(ns);
+        capacity = getCapacity(ns);
+    }
+
+    public boolean consistentWith(PerfCounterSnapshot other) {
+        return (minCapacity == other.minCapacity) && (maxCapacity == other.maxCapacity) &&
+            (used == other.used) && (capacity == other.capacity);
+    }
+}
+
 public class TestMetaspacePerfCounters {
     public static Class<?> fooClass = null;
     private static final String[] counterNames = {"minCapacity", "maxCapacity", "capacity", "used"};
-    private static final List<GarbageCollectorMXBean> gcBeans = ManagementFactoryHelper.getGarbageCollectorMXBeans();
 
     public static void main(String[] args) throws Exception {
         String metaspace = "sun.gc.metaspace";
@@ -204,32 +238,28 @@ public class TestMetaspacePerfCounters {
     }
 
     private static void checkPerfCounters(String ns) throws Exception {
-        long gcCountBefore;
-        long gcCountAfter;
-        long minCapacity;
-        long maxCapacity;
-        long capacity;
-        long used;
+        PerfCounterSnapshot snap1 = new PerfCounterSnapshot();
+        PerfCounterSnapshot snap2 = new PerfCounterSnapshot();
 
-        // The perf counter values are updated during GC and to be able to
-        // do the assertions below we need to ensure that the values are from
-        // the same GC cycle.
-        do {
-            gcCountBefore = currentGCCount();
+        final int MaxAttempts = 10;
 
-            minCapacity = getMinCapacity(ns);
-            maxCapacity = getMaxCapacity(ns);
-            capacity = getCapacity(ns);
-            used = getUsed(ns);
+        for (int attempts = 0; ; attempts++) {
+            snap1.get(ns);
+            VarHandle.fullFence();
+            snap2.get(ns);
 
-            gcCountAfter = currentGCCount();
-            assertGTE(gcCountAfter, gcCountBefore);
-        } while(gcCountAfter > gcCountBefore);
+            if (snap1.consistentWith(snap2)) {
+              // Got a consistent snapshot for examination.
+              break;
+            } else if (attempts == MaxAttempts) {
+              throw new Exception("Failed to get stable reading of metaspace performance counters after " + attempts + " tries");
+            }
+        }
 
-        assertGTE(minCapacity, 0L);
-        assertGTE(used, minCapacity);
-        assertGTE(capacity, used);
-        assertGTE(maxCapacity, capacity);
+        assertGTE(snap1.minCapacity, 0L);
+        assertGTE(snap1.used, snap1.minCapacity);
+        assertGTE(snap1.capacity, snap1.used);
+        assertGTE(snap1.maxCapacity, snap1.capacity);
     }
 
     private static void checkEmptyPerfCounters(String ns) throws Exception {
@@ -243,12 +273,14 @@ public class TestMetaspacePerfCounters {
         // Need to ensure that used is up to date and that all unreachable
         // classes are unloaded before doing this check.
         System.gc();
-        long before = getUsed(ns);
+        PerfCounterSnapshot before = new PerfCounterSnapshot();
+        before.get(ns);
         fooClass = compileAndLoad("Foo", "public class Foo { }");
         System.gc();
-        long after = getUsed(ns);
+        PerfCounterSnapshot after = new PerfCounterSnapshot();
+        after.get(ns);
 
-        assertGT(after, before);
+        assertGT(after.used, before.used);
     }
 
     private static List<PerfCounter> countersInNamespace(String ns) throws Exception {
@@ -266,29 +298,5 @@ public class TestMetaspacePerfCounters {
 
     private static boolean isUsingCompressedClassPointers() {
         return Platform.is64bit() && InputArguments.contains("-XX:+UseCompressedClassPointers");
-    }
-
-    private static long getMinCapacity(String ns) throws Exception {
-        return PerfCounters.findByName(ns + ".minCapacity").longValue();
-    }
-
-    private static long getCapacity(String ns) throws Exception {
-        return PerfCounters.findByName(ns + ".capacity").longValue();
-    }
-
-    private static long getMaxCapacity(String ns) throws Exception {
-        return PerfCounters.findByName(ns + ".maxCapacity").longValue();
-    }
-
-    private static long getUsed(String ns) throws Exception {
-        return PerfCounters.findByName(ns + ".used").longValue();
-    }
-
-    private static long currentGCCount() {
-        long gcCount = 0;
-        for (GarbageCollectorMXBean bean : gcBeans) {
-            gcCount += bean.getCollectionCount();
-        }
-        return gcCount;
     }
 }

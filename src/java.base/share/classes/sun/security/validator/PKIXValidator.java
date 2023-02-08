@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public final class PKIXValidator extends Validator {
     /**
      * Flag indicating whether to enable revocation check for the PKIX trust
      * manager. Typically, this will only work if the PKIX implementation
-     * supports CRL distribution points as we do not manually setup CertStores.
+     * supports CRL distribution points as we do not manually set up CertStores.
      */
     private static final boolean checkTLSRevocation = GetBooleanAction
             .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
@@ -82,8 +82,8 @@ public final class PKIXValidator extends Validator {
     PKIXValidator(String variant, Collection<X509Certificate> trustedCerts) {
         super(TYPE_PKIX, variant);
         this.trustedCerts = (trustedCerts instanceof Set) ?
-                            (Set<X509Certificate>)trustedCerts :
-                            new HashSet<X509Certificate>(trustedCerts);
+                (Set<X509Certificate>)trustedCerts :
+                new HashSet<>(trustedCerts);
 
         Set<TrustAnchor> trustAnchors = new HashSet<>();
         for (X509Certificate cert : trustedCerts) {
@@ -106,7 +106,7 @@ public final class PKIXValidator extends Validator {
 
     PKIXValidator(String variant, PKIXBuilderParameters params) {
         super(TYPE_PKIX, variant);
-        trustedCerts = new HashSet<X509Certificate>();
+        trustedCerts = new HashSet<>();
         for (TrustAnchor anchor : params.getTrustAnchors()) {
             X509Certificate cert = anchor.getTrustedCert();
             if (cert != null) {
@@ -140,7 +140,7 @@ public final class PKIXValidator extends Validator {
             if (subjectMap.containsKey(dn)) {
                 keys = subjectMap.get(dn);
             } else {
-                keys = new ArrayList<PublicKey>();
+                keys = new ArrayList<>();
                 subjectMap.put(dn, keys);
             }
             keys.add(cert.getPublicKey());
@@ -368,7 +368,7 @@ public final class PKIXValidator extends Validator {
 
             // setup CertStores
             Collection<X509Certificate> certs =
-                                        new ArrayList<X509Certificate>();
+                    new ArrayList<>();
             certs.addAll(Arrays.asList(chain));
             if (otherCerts != null) {
                 certs.addAll(otherCerts);

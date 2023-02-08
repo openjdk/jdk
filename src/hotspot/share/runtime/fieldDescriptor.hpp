@@ -61,8 +61,7 @@ class fieldDescriptor {
   inline ConstantPool* constants() const;
 
   AccessFlags access_flags()      const    { return _access_flags; }
-  oop loader()                    const;
-  // Offset (in words) of field from start of instanceOop / Klass*
+  // Offset (in bytes) of field from start of instanceOop / Klass*
   inline int offset()             const;
   Symbol* generic_signature()     const;
   int index()                     const    { return _index; }
@@ -83,16 +82,12 @@ class fieldDescriptor {
   inline BasicType field_type() const;
 
   // Access flags
-  bool is_public()                const    { return access_flags().is_public(); }
   bool is_private()               const    { return access_flags().is_private(); }
   bool is_protected()             const    { return access_flags().is_protected(); }
-  bool is_package_private()       const    { return !is_public() && !is_private() && !is_protected(); }
 
   bool is_static()                const    { return access_flags().is_static(); }
   bool is_final()                 const    { return access_flags().is_final(); }
   bool is_stable()                const    { return access_flags().is_stable(); }
-  bool is_volatile()              const    { return access_flags().is_volatile(); }
-  bool is_transient()             const    { return access_flags().is_transient(); }
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
 

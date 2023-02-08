@@ -49,13 +49,8 @@ public class CodeCache {
     Type type = db.lookupType("CodeCache");
 
     // Get array of CodeHeaps
-    // Note: CodeHeap may be subclassed with optional private heap mechanisms.
-    Type codeHeapType = db.lookupType("CodeHeap");
-    VirtualBaseConstructor<CodeHeap> heapConstructor =
-        new VirtualBaseConstructor<>(db, codeHeapType, "sun.jvm.hotspot.memory", CodeHeap.class);
-
     AddressField heapsField = type.getAddressField("_heaps");
-    heapArray = GrowableArray.create(heapsField.getValue(), heapConstructor);
+    heapArray = GrowableArray.create(heapsField.getValue(), new StaticBaseConstructor<>(CodeHeap.class));
 
     virtualConstructor = new VirtualConstructor(db);
     // Add mappings for all possible CodeBlob subclasses
@@ -92,9 +87,6 @@ public class CodeCache {
     }
     // We could potientially look up non_entrant methods
     // NOTE: this is effectively a "guarantee", and is slightly different from the one in the VM
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(!(result.isZombie() || result.isLockedByVM()), "unsafe access to zombie method");
-    }
     return result;
   }
 

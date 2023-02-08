@@ -245,7 +245,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
     }
 
     void createBufferedImage() {
-        // REMIND:  Be careful!  Is this called everytime there is a
+        // REMIND:  Be careful!  Is this called every time there is a
         // startProduction?  We only want to call it if it is new or
         // there is an error
         isDefaultBI = false;

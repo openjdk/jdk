@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,10 @@ class Abstract_VM_Version: AllStatic {
   static int          _vm_build_number;
   static unsigned int _data_cache_line_flush_size;
 
+ public:
+
   static VirtualizationType _detected_virtualization;
 
- public:
   // Called as part of the runtime services initialization which is
   // called from the management module initialization (via init_globals())
   // after argument parsing and attaching of the main thread has
@@ -102,7 +103,6 @@ class Abstract_VM_Version: AllStatic {
   static const char* vm_info_string();
   static const char* vm_release();
   static const char* vm_platform_string();
-  static const char* vm_build_user();
 
   static int vm_major_version()               { return _vm_major_version; }
   static int vm_minor_version()               { return _vm_minor_version; }
@@ -115,7 +115,6 @@ class Abstract_VM_Version: AllStatic {
 
   // Internal version providing additional build information
   static const char* internal_vm_info_string();
-  static const char* jre_release_version();
   static const char* jdk_debug_level();
   static const char* printable_jdk_debug_level();
 
@@ -165,12 +164,6 @@ class Abstract_VM_Version: AllStatic {
   static bool supports_data_cache_line_flush() {
     return _data_cache_line_flush_size != 0;
   }
-
-  // Number of page sizes efficiently supported by the hardware.  Most chips now
-  // support two sizes, thus this default implementation.  Processor-specific
-  // subclasses should define new versions to hide this one as needed.  Note
-  // that the O/S may support more sizes, but at most this many are used.
-  static uint page_size_count() { return 2; }
 
   // Denominator for computing default ParallelGCThreads for machines with
   // a large number of cores.

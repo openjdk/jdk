@@ -29,6 +29,9 @@
 // C2_MacroAssembler contains high-level macros for C2
 
  private:
+  // Return true if the phase output is in the scratch emit size mode.
+  virtual bool in_scratch_emit_size() override;
+
   void element_compare(Register r1, Register r2,
                        Register result, Register cnt,
                        Register tmp1, Register tmp2,
@@ -36,9 +39,6 @@
                        VectorRegister vrs,
                        bool is_latin, Label& DONE);
  public:
-  void emit_entry_barrier_stub(C2EntryBarrierStub* stub) {}
-  static int entry_barrier_stub_size() { return 0; }
-
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
                       Register tmp1, Register tmp2, Register tmp3,
@@ -134,7 +134,7 @@
 
   void unspill(VectorRegister v, int offset) {
     add(t0, sp, offset);
-    vl1r_v(v, t0);
+    vl1re8_v(v, t0);
   }
 
   void spill_copy_vector_stack_to_stack(int src_offset, int dst_offset, int vec_reg_size_in_bytes) {
@@ -191,5 +191,9 @@
                          FloatRegister src1, VectorRegister src2,
                          VectorRegister tmp1, VectorRegister tmp2,
                          bool is_double, bool is_min);
+
+ void rvv_reduce_integral(Register dst, VectorRegister tmp,
+                          Register src1, VectorRegister src2,
+                          BasicType bt, int opc);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

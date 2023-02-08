@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zDirector.hpp"
@@ -145,10 +146,6 @@ bool ZCollectedHeap::requires_barriers(stackChunkOop obj) const {
   return false;
 }
 
-uint32_t ZCollectedHeap::hash_oop(oop obj) const {
-  return _heap.hash_oop(ZOop::to_address(obj));
-}
-
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
   const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);
@@ -161,11 +158,7 @@ HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_si
 }
 
 oop ZCollectedHeap::array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) {
-  if (!do_zero) {
-    return CollectedHeap::array_allocate(klass, size, length, false /* do_zero */, THREAD);
-  }
-
-  ZObjArrayAllocator allocator(klass, size, length, THREAD);
+  ZObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
   return allocator.allocate();
 }
 
@@ -232,6 +225,10 @@ bool ZCollectedHeap::uses_stack_watermark_barrier() const {
   return true;
 }
 
+MemoryUsage ZCollectedHeap::memory_usage() {
+  return _heap.serviceability_memory_pool()->get_memory_usage();
+}
+
 GrowableArray<GCMemoryManager*> ZCollectedHeap::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(2);
   memory_managers.append(_heap.serviceability_cycle_memory_manager());
@@ -265,10 +262,6 @@ void ZCollectedHeap::unregister_nmethod(nmethod* nm) {
   ZNMethod::unregister_nmethod(nm);
 }
 
-void ZCollectedHeap::flush_nmethod(nmethod* nm) {
-  ZNMethod::flush_nmethod(nm);
-}
-
 void ZCollectedHeap::verify_nmethod(nmethod* nm) {
   // Does nothing
 }
@@ -295,6 +288,14 @@ void ZCollectedHeap::safepoint_synchronize_begin() {
 
 void ZCollectedHeap::safepoint_synchronize_end() {
   SuspendibleThreadSet::desynchronize();
+}
+
+void ZCollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void ZCollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }
 
 void ZCollectedHeap::prepare_for_verify() {

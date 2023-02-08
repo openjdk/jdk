@@ -72,8 +72,7 @@ public class PrintSharedArchiveAndExit {
 
     TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit",
-        "-XX:+PrintSharedDictionary")  // Test PrintSharedDictionary as well.
+        "-XX:+PrintSharedArchiveAndExit")
       .ifNoMappingFailure(output -> check(output, 0, true, lastCheckMsg, "java.lang.Object"));
 
     log("Normal execution -- Make sure -version, help message and app main()\n" +
@@ -120,8 +119,7 @@ public class PrintSharedArchiveAndExit {
     log("Even if hello.jar is out of date, we should still be able to print the dictionary.");
     TestCommon.run(
         "-cp", cp,
-        "-XX:+PrintSharedArchiveAndExit",
-        "-XX:+PrintSharedDictionary")  // Test PrintSharedDictionary as well.
+        "-XX:+PrintSharedArchiveAndExit")
       .ifNoMappingFailure(output -> check(output, 1, true, lastCheckMsg, "java.lang.Object"));
 
 

@@ -69,7 +69,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     private volatile boolean open;
     private int openRefCount;
 
-    /** List of Receivers and Transmitters that opened the device implicitely.
+    /** List of Receivers and Transmitters that opened the device implicitly.
      */
     private List<Object> openKeepingObjects;
 
@@ -127,7 +127,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 openRefCount++;
                 getOpenKeepingObjects().add(object);
             }
-            // double calls to doOpens() will be catched by the open flag.
+            // double calls to doOpens() will be caught by the open flag.
             doOpen();
         }
     }
@@ -149,16 +149,16 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         }
     }
 
-    /** Close the device for an object that implicitely opened it.
+    /** Close the device for an object that implicitly opened it.
      * This method is intended to be used by Transmitter.close() and Receiver.close().
      * Those methods should pass this for the object parameter. Since Transmitters or Receivers
-     * do not know if their device has been opened implicitely because of them, they call this
-     * method in any case. This method now is able to seperate Receivers/Transmitters that opened
-     * the device implicitely from those that didn't by looking up the R/T in the
+     * do not know if their device has been opened implicitly because of them, they call this
+     * method in any case. This method now is able to separate Receivers/Transmitters that opened
+     * the device implicitly from those that didn't by looking up the R/T in the
      * openKeepingObjects list. Only if the R/T is contained there, the reference count is
      * reduced.
      *
-     * @param object The object that might have been opening the device implicitely (for now,
+     * @param object The object that might have been opening the device implicitly (for now,
      * this may be a Transmitter or receiver).
      */
     public final void closeInternal(Object object) {
@@ -342,7 +342,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return transmitter;
     }
 
-    /** Return the list of objects that have opened the device implicitely.
+    /** Return the list of objects that have opened the device implicitly.
      */
     private synchronized List<Object> getOpenKeepingObjects() {
         if (openKeepingObjects == null) {
@@ -434,7 +434,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         Subclasses that use Receivers must use this base class, since it
         contains magic necessary to manage implicit closing the device.
         This is necessary for Receivers retrieved via MidiSystem.getReceiver()
-        (which opens the device implicitely).
+        (which opens the device implicitly).
      */
     abstract class AbstractReceiver implements MidiDeviceReceiver {
         private volatile boolean open = true;

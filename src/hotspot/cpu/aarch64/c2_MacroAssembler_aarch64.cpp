@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,21 +44,6 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
-
-void C2_MacroAssembler::emit_entry_barrier_stub(C2EntryBarrierStub* stub) {
-  bind(stub->slow_path());
-  movptr(rscratch1, (uintptr_t) StubRoutines::aarch64::method_entry_barrier());
-  blr(rscratch1);
-  b(stub->continuation());
-
-  bind(stub->guard());
-  relocate(entry_guard_Relocation::spec());
-  emit_int32(0);   // nmethod guard value
-}
-
-int C2_MacroAssembler::entry_barrier_stub_size() {
-  return 4 * 6;
-}
 
 // Search for str1 in str2 and return index or -1
 void C2_MacroAssembler::string_indexof(Register str2, Register str1,
@@ -313,7 +298,12 @@ void C2_MacroAssembler::string_indexof(Register str2, Register str1,
       stub = RuntimeAddress(StubRoutines::aarch64::string_indexof_linear_uu());
       assert(stub.target() != NULL, "string_indexof_linear_uu stub has not been generated");
     }
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(LINEARSEARCH, LINEAR_MEDIUM, DONE, NOMATCH, MATCH));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
   }
 
@@ -872,7 +862,12 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
         ShouldNotReachHere();
      }
     assert(stub.target() != NULL, "compare_long_string stub has not been generated");
-    trampoline_call(stub);
+    address call = trampoline_call(stub);
+    if (call == nullptr) {
+      DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
     b(DONE);
 
   bind(SHORT_STRING);
@@ -977,7 +972,7 @@ void C2_MacroAssembler::bytemask_compress(Register dst) {
 
 // Pack the lowest-numbered bit of each mask element in src into a long value
 // in dst, at most the first 64 lane elements.
-// Clobbers: rscratch1 if hardware doesn't support FEAT_BITPERM.
+// Clobbers: rscratch1, if UseSVE=1 or the hardware doesn't support FEAT_BITPERM.
 void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType bt, int lane_cnt,
                                          FloatRegister vtmp1, FloatRegister vtmp2) {
   assert(lane_cnt <= 64 && is_power_of_2(lane_cnt), "Unsupported lane count");
@@ -995,25 +990,12 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
     sve_vector_narrow(vtmp1, B, vtmp1, size, vtmp2);
   }
 
-  if (UseSVE > 0 && !VM_Version::supports_svebitperm()) {
-    // Compress the lowest 8 bytes.
-    fmovd(dst, vtmp1);
-    bytemask_compress(dst);
-    if (lane_cnt <= 8) return;
-
-    // Repeat on higher bytes and join the results.
-    // Compress 8 bytes in each iteration.
-    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
-      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
-      bytemask_compress(rscratch1);
-      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
-    }
-  } else if (UseSVE == 2 && VM_Version::supports_svebitperm()) {
-    // Given by the vector with value 0x00 or 0x01 in each byte, the basic idea
+  if (UseSVE > 1 && VM_Version::supports_svebitperm()) {
+    // Given a vector with the value 0x00 or 0x01 in each byte, the basic idea
     // is to compress each significant bit of the byte in a cross-lane way. Due
-    // to the lack of cross-lane bit-compress instruction, here we use BEXT
-    // (bit-compress in each lane) with the biggest lane size (T = D) and
-    // concatenates the results then.
+    // to the lack of a cross-lane bit-compress instruction, we use BEXT
+    // (bit-compress in each lane) with the biggest lane size (T = D) then
+    // concatenate the results.
 
     // The second source input of BEXT, initialized with 0x01 in each byte.
     // vtmp2 = 0x01010101 0x01010101 0x01010101 0x01010101
@@ -1041,6 +1023,19 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, PRegister src, BasicType 
       // the lowest 64 bits after narrowing vtmp1 from D to B.
       sve_vector_narrow(vtmp1, B, vtmp1, D, vtmp2);
       umov(dst, vtmp1, D, 0);
+    }
+  } else if (UseSVE > 0) {
+    // Compress the lowest 8 bytes.
+    fmovd(dst, vtmp1);
+    bytemask_compress(dst);
+    if (lane_cnt <= 8) return;
+
+    // Repeat on higher bytes and join the results.
+    // Compress 8 bytes in each iteration.
+    for (int idx = 1; idx < (lane_cnt / 8); idx++) {
+      sve_extract_integral(rscratch1, T_LONG, vtmp1, idx, vtmp2);
+      bytemask_compress(rscratch1);
+      orr(dst, dst, rscratch1, Assembler::LSL, idx << 3);
     }
   } else {
     assert(false, "unsupported");
@@ -2009,6 +2004,41 @@ void C2_MacroAssembler::vector_round_sve(FloatRegister dst, FloatRegister src, F
   // result in dst
 }
 
+void C2_MacroAssembler::vector_signum_neon(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                           FloatRegister one, SIMD_Arrangement T) {
+  assert_different_registers(dst, src, zero, one);
+  assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");
+
+  facgt(dst, T, src, zero);
+  ushr(dst, T, dst, 1); // dst=0 for +-0.0 and NaN. 0x7FF..F otherwise
+  bsl(dst, T == T2S ? T8B : T16B, one, src); // Result in dst
+}
+
+void C2_MacroAssembler::vector_signum_sve(FloatRegister dst, FloatRegister src, FloatRegister zero,
+                                          FloatRegister one, FloatRegister vtmp, PRegister pgtmp, SIMD_RegVariant T) {
+    assert_different_registers(dst, src, zero, one, vtmp);
+    assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
+
+    sve_orr(vtmp, src, src);
+    sve_fac(Assembler::GT, pgtmp, T, ptrue, src, zero); // pmtp=0 for +-0.0 and NaN. 0x1 otherwise
+    switch (T) {
+    case S:
+      sve_and(vtmp, T, min_jint); // Extract the sign bit of float value in every lane of src
+      sve_orr(vtmp, T, jint_cast(1.0)); // OR it with +1 to make the final result +1 or -1 depending
+                                        // on the sign of the float value
+      break;
+    case D:
+      sve_and(vtmp, T, min_jlong);
+      sve_orr(vtmp, T, jlong_cast(1.0));
+      break;
+    default:
+      assert(false, "unsupported");
+      ShouldNotReachHere();
+    }
+    sve_sel(dst, T, pgtmp, vtmp, src); // Select either from src or vtmp based on the predicate register pgtmp
+                                       // Result in dst
+}
+
 bool C2_MacroAssembler::in_scratch_emit_size() {
   if (ciEnv::current()->task() != NULL) {
     PhaseOutput* phase_output = Compile::current()->output();
@@ -2018,4 +2048,3 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   }
   return MacroAssembler::in_scratch_emit_size();
 }
-

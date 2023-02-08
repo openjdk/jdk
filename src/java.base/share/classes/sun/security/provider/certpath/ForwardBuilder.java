@@ -69,7 +69,7 @@ final class ForwardBuilder extends Builder {
     private AdaptableX509CertSelector caSelector;
     private X509CertSelector caTargetSelector;
     TrustAnchor trustAnchor;
-    private boolean searchAllCertStores = true;
+    private final boolean searchAllCertStores;
 
     /**
      * Initialize the builder with the input parameters.
@@ -98,7 +98,7 @@ final class ForwardBuilder extends Builder {
     /**
      * Retrieves all certs from the specified CertStores that satisfy the
      * requirements specified in the parameters and the current
-     * PKIX state (name constraints, policy constraints, etc).
+     * PKIX state (name constraints, policy constraints, etc.).
      *
      * @param currentState the current state.
      *        Must be an instance of <code>ForwardState</code>
@@ -107,7 +107,7 @@ final class ForwardBuilder extends Builder {
     @Override
     Collection<X509Certificate> getMatchingCerts(State currentState,
                                                  List<CertStore> certStores)
-        throws CertStoreException, CertificateException, IOException
+        throws IOException
     {
         if (debug != null) {
             debug.println("ForwardBuilder.getMatchingCerts()...");
@@ -197,7 +197,7 @@ final class ForwardBuilder extends Builder {
          * Compose a CertSelector to filter out
          * certs which do not satisfy requirements.
          */
-        X509CertSelector sel = null;
+        X509CertSelector sel;
 
         if (currentState.isInitial()) {
             if (targetCertConstraints.getBasicConstraints() == -2) {
@@ -355,7 +355,7 @@ final class ForwardBuilder extends Builder {
     private boolean getCerts(AuthorityInfoAccessExtension aiaExt,
                              Collection<X509Certificate> certs)
     {
-        if (Builder.USE_AIA == false) {
+        if (!Builder.USE_AIA) {
             return false;
         }
         List<AccessDescription> adList = aiaExt.getAccessDescriptions();
@@ -539,16 +539,13 @@ final class ForwardBuilder extends Builder {
                     debug.println(METHOD_NME +" distanceTto2: " + distanceTto2);
                 }
                 if (distanceTto1 > 0 || distanceTto2 > 0) {
-                    if (distanceTto1 == distanceTto2) {
+                    // at least one is positive
+                    if (distanceTto2 <= 0) {        // only d1 is positive
                         return -1;
-                    } else if (distanceTto1 > 0 && distanceTto2 <= 0) {
-                        return -1;
-                    } else if (distanceTto1 <= 0 && distanceTto2 > 0) {
+                    } else if (distanceTto1 <= 0) { // only d2 is positive
                         return 1;
-                    } else if (distanceTto1 < distanceTto2) {
-                        return -1;
-                    } else {    // distanceTto1 > distanceTto2
-                        return 1;
+                    } else {                        // all positive
+                        return distanceTto1 > distanceTto2 ? 1 : -1;
                     }
                 }
             }
@@ -571,16 +568,13 @@ final class ForwardBuilder extends Builder {
                     debug.println(METHOD_NME +" distanceTto2: " + distanceTto2);
                 }
                 if (distanceTto1 < 0 || distanceTto2 < 0) {
-                    if (distanceTto1 == distanceTto2) {
+                    // at least one is negative
+                    if (distanceTto2 >= 0) {        // only d1 is negative
                         return -1;
-                    } else if (distanceTto1 < 0 && distanceTto2 >= 0) {
-                        return -1;
-                    } else if (distanceTto1 >= 0 && distanceTto2 < 0) {
+                    } else if (distanceTto1 >= 0) { // only d2 is negative
                         return 1;
-                    } else if (distanceTto1 > distanceTto2) {
-                        return -1;
-                    } else {
-                        return 1;
+                    } else {                        // all negative
+                        return distanceTto1 < distanceTto2 ? 1 : -1;
                     }
                 }
             }
@@ -678,9 +672,9 @@ final class ForwardBuilder extends Builder {
      * signature and revocation status of the previous cert.
      *
      * If the last certificate is being verified (the one whose subject
-     * matches the target subject, then steps in 6.1.4 of the PKIX
+     * matches the target subject) then steps in 6.1.4 of the PKIX
      * Certification Path Validation algorithm are NOT executed,
-     * regardless of whether or not the last cert is an end-entity
+     * regardless of whether the last cert is an end-entity
      * cert or not. This allows callers to certify CA certs as
      * well as EE certs.
      *
@@ -703,7 +697,7 @@ final class ForwardBuilder extends Builder {
         ForwardState currState = (ForwardState)currentState;
 
         // Don't bother to verify untrusted certificate more.
-        currState.untrustedChecker.check(cert, Collections.<String>emptySet());
+        currState.untrustedChecker.check(cert, Collections.emptySet());
 
         /*
          * check for looping - abort a loop if we encounter the same
@@ -732,7 +726,7 @@ final class ForwardBuilder extends Builder {
              */
             Set<String> unresCritExts = cert.getCriticalExtensionOIDs();
             if (unresCritExts == null) {
-                unresCritExts = Collections.<String>emptySet();
+                unresCritExts = Collections.emptySet();
             }
             for (PKIXCertPathChecker checker : currState.forwardCheckers) {
                 checker.check(cert, unresCritExts);

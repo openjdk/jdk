@@ -103,7 +103,6 @@ private:
   // Returns the amount of time spent in gc pauses in the time slice before the
   // given timestamp.
   double calculate_gc_time(double current_timestamp);
-
 public:
   G1MMUTracker(double time_slice, double max_gc_time);
 

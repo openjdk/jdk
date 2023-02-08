@@ -42,7 +42,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @requires vm.cpu.features ~= ".*simd.*"
+ * @requires vm.cpu.features ~= ".*asimd.*"
  * @summary AArch64: [vector] Make all bits set vector sharable for match rules
  * @modules jdk.incubator.vector
  *
@@ -84,7 +84,7 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "vand_notI", " >= 1" })
+    @IR(counts = { IRNode.VAND_NOT_I, " >= 1" })
     public static void testAllBitsSetVector() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -98,7 +98,8 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
-    @IR(counts = { "and_notL", " >= 1" })
+    @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "0"})
+    @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIf = {"UseSVE", "> 0"})
     public static void testAllBitsSetMask() {
         VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
         VectorMask<Long> bvm = VectorMask.fromArray(L_SPECIES, mb, 0);

@@ -82,8 +82,11 @@ size_t G1EvacStats::compute_desired_plab_size() const {
   // TargetPLABWastePct of 10 had been set.
   //
   // So we could waste up to 10 words to meet that percentage. Given that we
-  // also assume that that buffer is typically half-full, the new desired PLAB
-  // size is set to 20 words.
+  // also assume that that buffer is typically half-full (G1LastPLABAverageOccupancy),
+  // the new desired PLAB size is set to 20 words.
+  //
+  // (This also implies that we expect G1LastPLABAverageOccupancy/TargetPLABWastePct
+  // number of refills during allocation).
   //
   // The amount of allocation performed should be independent of the number of
   // threads, so should the maximum waste we can spend in total. So if

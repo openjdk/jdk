@@ -128,22 +128,43 @@ void ThrowExceptionWithMessage(JNIEnv *env, const char *exceptionName,
     }
 }
 
-/*
- * Throws an arbitrary Java exception.
- * The exception message is a Windows system error message.
- */
-void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
-{
-    char szMessage[1024];
+void ThrowExceptionWithMessageAndErrcode(JNIEnv *env, const char *exceptionName,
+                                         const char *msg, DWORD dwError) {
+    char szMessage[500];
     szMessage[0] = '\0';
+    char szMessage2[1024];
+    szMessage2[0] = '\0';
 
     DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
         NULL, szMessage, sizeof(szMessage), NULL);
     if (res == 0) {
         strcpy(szMessage, "Unknown error");
     }
+    snprintf(szMessage2, sizeof(szMessage2), "%s: error %lu, %s", msg, dwError, szMessage);
 
-    ThrowExceptionWithMessage(env, exceptionName, szMessage);
+    ThrowExceptionWithMessage(env, exceptionName, szMessage2);
+}
+
+
+/*
+ * Throws an arbitrary Java exception.
+ * The exception message is a Windows system error message.
+ */
+void ThrowException(JNIEnv *env, const char *exceptionName, DWORD dwError)
+{
+    char szMessage[500];
+    szMessage[0] = '\0';
+    char szMessage2[1024];
+    szMessage2[0] = '\0';
+
+    DWORD res = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, NULL, dwError,
+        NULL, szMessage, sizeof(szMessage), NULL);
+    if (res == 0) {
+        strcpy(szMessage, "Unknown error");
+    }
+    snprintf(szMessage2, sizeof(szMessage2), "error %lu, %s", dwError, szMessage);
+
+    ThrowExceptionWithMessage(env, exceptionName, szMessage2);
 }
 
 /*
@@ -1845,8 +1866,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
         // Destroying the default key container is not permitted
         // (because it may contain more one keypair).
         if (pszKeyContainerName == NULL) {
-
-            ThrowException(env, KEYSTORE_EXCEPTION, NTE_BAD_KEYSET_PARAM);
+            ThrowExceptionWithMessage(env, KEYSTORE_EXCEPTION, "key container name was NULL, NTE_BAD_KEYSET_PARAM");
             __leave;
         }
 
@@ -1858,7 +1878,7 @@ JNIEXPORT void JNICALL Java_sun_security_mscapi_CKeyStore_destroyKeyContainer
             PROV_RSA_FULL,
             CRYPT_DELETEKEYSET) == FALSE)
         {
-            ThrowException(env, KEYSTORE_EXCEPTION, GetLastError());
+            ThrowExceptionWithMessageAndErrcode(env, KEYSTORE_EXCEPTION, "CryptAcquireContext failure", GetLastError());
             __leave;
         }
 

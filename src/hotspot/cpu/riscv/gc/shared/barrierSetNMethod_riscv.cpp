@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
+#include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -36,21 +37,57 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
+static int slow_path_size(nmethod* nm) {
+  // The slow path code is out of line with C2.
+  // Leave a jal to the stub in the fast path.
+  return nm->is_compiled_by_c2() ? 1 : 8;
+}
+
+static int entry_barrier_offset(nmethod* nm) {
+  BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+  switch (bs_asm->nmethod_patching_type()) {
+    case NMethodPatchingType::stw_instruction_and_data_patch:
+      return -4 * (4 + slow_path_size(nm));
+    case NMethodPatchingType::conc_data_patch:
+      return -4 * (5 + slow_path_size(nm));
+    case NMethodPatchingType::conc_instruction_and_data_patch:
+      return -4 * (15 + slow_path_size(nm));
+  }
+  ShouldNotReachHere();
+  return 0;
+}
+
 class NativeNMethodBarrier: public NativeInstruction {
   address instruction_address() const { return addr_at(0); }
 
-  int *guard_addr() {
-    /* auipc + lwu + fence + lwu + beq + lui + addi + slli + addi + slli + jalr + j */
-    return reinterpret_cast<int*>(instruction_address() + 12 * 4);
+  int local_guard_offset(nmethod* nm) {
+    // It's the last instruction
+    return (-entry_barrier_offset(nm)) - 4;
+  }
+
+  int *guard_addr(nmethod* nm) {
+    if (nm->is_compiled_by_c2()) {
+      // With c2 compiled code, the guard is out-of-line in a stub
+      // We find it using the RelocIterator.
+      RelocIterator iter(nm);
+      while (iter.next()) {
+        if (iter.type() == relocInfo::entry_guard_type) {
+          entry_guard_Relocation* const reloc = iter.entry_guard_reloc();
+          return reinterpret_cast<int*>(reloc->addr());
+        }
+      }
+      ShouldNotReachHere();
+    }
+    return reinterpret_cast<int*>(instruction_address() + local_guard_offset(nm));
   }
 
 public:
-  int get_value() {
-    return Atomic::load_acquire(guard_addr());
+  int get_value(nmethod* nm) {
+    return Atomic::load_acquire(guard_addr(nm));
   }
 
-  void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
+  void set_value(nmethod* nm, int value) {
+    Atomic::release_store(guard_addr(nm), value);
   }
 
   void verify() const;
@@ -64,21 +101,12 @@ struct CheckInsn {
 };
 
 static const struct CheckInsn barrierInsn[] = {
-  { 0x00000fff, 0x00000297, "auipc  t0, 0           "},
-  { 0x000fffff, 0x0002e283, "lwu    t0, 48(t0)      "},
-  { 0xffffffff, 0x0aa0000f, "fence  ir, ir          "},
-  { 0x000fffff, 0x000be303, "lwu    t1, 112(xthread)"},
-  { 0x01fff07f, 0x00628063, "beq    t0, t1, skip    "},
-  { 0x00000fff, 0x000002b7, "lui    t0, imm0        "},
-  { 0x000fffff, 0x00028293, "addi   t0, t0, imm1    "},
-  { 0xffffffff, 0x00b29293, "slli   t0, t0, 11      "},
-  { 0x000fffff, 0x00028293, "addi   t0, t0, imm2    "},
-  { 0xffffffff, 0x00629293, "slli   t0, t0, 6       "},
-  { 0x000fffff, 0x000280e7, "jalr   ra, imm3(t0)    "},
-  { 0x00000fff, 0x0000006f, "j      skip            "}
+  { 0x00000fff, 0x00000297, "auipc  t0, 0                     "},
+  { 0x000fffff, 0x0002e283, "lwu    t0, guard_offset(t0)      "},
+  /* ...... */
+  /* ...... */
   /* guard: */
   /* 32bit nmethod guard value */
-  /* skip: */
 };
 
 // The encodings must match the instructions emitted by
@@ -136,44 +164,38 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
-// This is the offset of the entry barrier from where the frame is completed.
-// If any code changes between the end of the verified entry where the entry
-// barrier resides, and the completion of the frame, then
-// NativeNMethodCmpBarrier::verify() will immediately complain when it does
-// not find the expected native instruction at this offset, which needs updating.
-// Note that this offset is invariant of PreserveFramePointer.
-
-// see BarrierSetAssembler::nmethod_entry_barrier
-// auipc + lwu + fence + lwu + beq + movptr_with_offset(5 instructions) + jalr + j + int32
-static const int entry_barrier_offset = -4 * 13;
-
 static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset;
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + entry_barrier_offset(nm);
   NativeNMethodBarrier* barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
   debug_only(barrier->verify());
   return barrier;
 }
 
-void BarrierSetNMethod::disarm(nmethod* nm) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
 
-  // Disarms the nmethod guard emitted by BarrierSetAssembler::nmethod_entry_barrier.
-  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-
-  barrier->set_value(disarmed_value());
-}
-
-void BarrierSetNMethod::arm(nmethod* nm, int arm_value) {
-  Unimplemented();
-}
-
-bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  if (!supports_entry_barrier(nm)) {
-    return false;
+  if (value == disarmed_guard_value()) {
+    // The patching epoch is incremented before the nmethod is disarmed. Disarming
+    // is performed with a release store. In the nmethod entry barrier, the values
+    // are read in the opposite order, such that the load of the nmethod guard
+    // acquires the patching epoch. This way, the guard is guaranteed to block
+    // entries to the nmethod, until it has safely published the requirement for
+    // further fencing by mutators, before they are allowed to enter.
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->increment_patching_epoch();
   }
 
   NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
-  return barrier->get_value() != disarmed_value();
+  barrier->set_value(nm, value);
+}
+
+int BarrierSetNMethod::guard_value(nmethod* nm) {
+  if (!supports_entry_barrier(nm)) {
+    return disarmed_guard_value();
+  }
+
+  NativeNMethodBarrier* barrier = native_nmethod_barrier(nm);
+  return barrier->get_value(nm);
 }

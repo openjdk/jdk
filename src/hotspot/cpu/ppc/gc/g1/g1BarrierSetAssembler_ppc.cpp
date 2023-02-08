@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -377,8 +377,8 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ cmpdi(CCR0, value, 0);
   __ beq(CCR0, done);         // Use NULL as-is.
 
-  __ clrrdi(tmp1, value, JNIHandles::weak_tag_size);
-  __ andi_(tmp2, value, JNIHandles::weak_tag_mask);
+  __ clrrdi(tmp1, value, JNIHandles::tag_size);
+  __ andi_(tmp2, value, JNIHandles::TypeTag::weak_global);
   __ ld(value, 0, tmp1);      // Resolve (untagged) jobject.
 
   __ beq(CCR0, not_weak);     // Test for jweak tag.
@@ -468,6 +468,16 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   // Spill
   __ std(tmp, -16, R1_SP);
   __ std(tmp2, -24, R1_SP);
+
+  // Is marking still active?
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
+  } else {
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
+  }
+  __ cmpdi(CCR0, tmp, 0);
+  __ beq(CCR0, marking_not_active);
 
   __ bind(restart);
   // Load the index into the SATB buffer. SATBMarkQueue::_index is a
