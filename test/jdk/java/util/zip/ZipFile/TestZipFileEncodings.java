@@ -54,6 +54,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -96,6 +97,13 @@ public class TestZipFileEncodings {
         };
     }
 
+    @DataProvider(name = "all-charsets")
+    public Object[][] allCharsets() {
+        return Stream.concat(Stream.of(nonUnicodeCharsets()),
+                        Stream.of(unicodeCharsets()))
+                .toArray(Object[][]::new);
+    }
+
     @Test(dataProvider = "non-unicode-charsets")
     public void testNonUnicode(String charsetName) throws Throwable {
         test(NUM_ENTRIES, 100 + random().nextInt(ENTRY_SIZE), false, Charset.forName(charsetName));
@@ -132,12 +140,11 @@ public class TestZipFileEncodings {
             assertNotNull(z.getEntry(entryName));
         }
     }
-    @Test(dataProvider = "unicode-charsets")
-    public void sameHashAndLengthSlashLessDirLookup(String charsetName) throws IOException {
-
+    @Test(dataProvider = "all-charsets")
+    public void sameHashAndLengthDirLookup(String charsetName) throws IOException {
         // Two directory names with colliding hash codes and same length
-        String one = "entry-65323-name--5113477560869890044\u2f2f/";
-        String two = "entry-16430-name--2415648292541425091\u2f2f/";
+        String one = "_____1637461950/";
+        String two = "_____-408231241/";
 
         // Create a ZIP with the two entries
         Charset charset = Charset.forName(charsetName);
