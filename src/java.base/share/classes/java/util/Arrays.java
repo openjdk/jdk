@@ -4112,11 +4112,26 @@ public class Arrays {
      * {@link Collections#unmodifiableList Collections.unmodifiableList}
      * or <a href="List.html#unmodifiable">Unmodifiable Lists</a>.
      *
-     * @implNote
-     * The {@link List} implementation returned by this method does not conform to the
-     * specification for {@link List#replaceAll} and {@link List#set}, in that in the
-     * event of encountering an element of an unsuitable type, an {@link ArrayStoreException}
-     * will be thrown instead of a {@link ClassCastException}.
+     * @apiNote
+     * The {@link List} returned by this method does not conform to the
+     * specification for {@link List#set} and {@link ListIterator#set}.
+     * It is possible for the type parameter {@code T} of the returned list
+     * to differ from the array's component type. This can occur, for example,
+     * if the array argument type has been upcast from its component type:
+     *
+     * {@snippet :
+     *    String[] strings = new String[1];
+     *    List<Object> objects = Arrays.asList((Object[])strings);
+     * }
+     *
+     * Writing an element into the returned list may result in an
+     * {@link ArrayStoreException} instead of {@link ClassCastException} being
+     * thrown if the element is incompatible with the underlying array's
+     * component type:
+     *
+     * {@snippet :
+     *    objects.set(0, Integer.valueOf(0)); // throws ArrayStoreException
+     * }
      *
      * @param <T> the class of the objects in the array
      * @param a the array by which the list will be backed
