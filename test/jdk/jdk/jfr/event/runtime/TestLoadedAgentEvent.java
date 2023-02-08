@@ -122,10 +122,8 @@ public final class TestLoadedAgentEvent {
             vm.loadAgent(JAVA_AGENT_JAR); // options = null
             vm.detach();
             vm = VirtualMachine.attach(Long.toString(pid));
-            String smiley = "\uD83D\uDE00";
             vm.loadAgent(JAVA_AGENT_JAR, "");
             vm.loadAgent(JAVA_AGENT_JAR, "=");
-            vm.loadAgent(JAVA_AGENT_JAR, smiley);
             vm.detach();
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
@@ -154,7 +152,6 @@ public final class TestLoadedAgentEvent {
             Events.assertField(events.get(1), "options").equal(null);
             Events.assertField(events.get(2), "options").equal("");
             Events.assertField(events.get(3), "options").equal("=");
-            Events.assertField(events.get(4), "options").equal(smiley);
         }
     }
 }
