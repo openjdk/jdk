@@ -29,6 +29,7 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Provides a reversed-ordered view of a SortedSet. Not serializable.
@@ -166,7 +167,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     }
 
     public Object[] toArray() {
-        return arrayReverse(base.toArray());
+        return ArraysSupport.reverse(base.toArray());
     }
 
     @SuppressWarnings("unchecked")
@@ -176,7 +177,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     }
 
     public <T> T[] toArray(IntFunction<T[]> generator) {
-        return arrayReverse(base.toArray(generator));
+        return ArraysSupport.reverse(base.toArray(generator));
     }
 
     // ========== SortedSet ==========
@@ -202,17 +203,6 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     }
 
     // ========== Infrastructure ==========
-
-    static <T> T[] arrayReverse(T[] a) {
-        int limit = a.length / 2;
-        for (int i = 0; i < limit; i++) {
-            int r = a.length - 1 - i;
-            T t = a[i];
-            a[i] = a[r];
-            a[r] = t;
-        }
-        return a;
-    }
 
     static <T> Iterator<T> descendingIterator(SortedSet<T> set) {
         return new Iterator<>() {

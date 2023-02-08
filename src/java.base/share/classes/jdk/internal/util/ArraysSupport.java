@@ -755,4 +755,21 @@ public class ArraysSupport {
             return minLength;
         }
     }
+
+    /**
+     * Reverses the elements of an array in-place.
+     *
+     * @param <T> the array component type
+     * @param a the array to be reversed
+     * @return the reversed array, always the same array as the argument
+     */
+    public static <T> T[] reverse(T[] a) {
+        int limit = a.length / 2;
+        for (int i = 0, j = a.length - 1; i < limit; i++, j--) {
+            T t = a[i];
+            a[i] = a[j];
+            a[j] = t;
+        }
+        return a;
+    }
 }

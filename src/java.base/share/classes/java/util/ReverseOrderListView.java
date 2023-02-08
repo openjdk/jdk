@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * Provides a reverse-ordered view of a List. Not serializable.
@@ -277,19 +278,8 @@ class ReverseOrderListView<E> implements List<E> {
         return StreamSupport.stream(spliterator(), false);
     }
 
-    private <T> T[] arrayReverse(T[] a) {
-        int limit = a.length / 2;
-        for (int i = 0; i < limit; i++) {
-            int r = a.length - 1 - i;
-            T t = a[i];
-            a[i] = a[r];
-            a[r] = t;
-        }
-        return a;
-    }
-
     public Object[] toArray() {
-        return arrayReverse(base.toArray());
+        return ArraysSupport.reverse(base.toArray());
     }
 
     @SuppressWarnings("unchecked")
@@ -299,7 +289,7 @@ class ReverseOrderListView<E> implements List<E> {
     }
 
     public <T> T[] toArray(IntFunction<T[]> generator) {
-        return arrayReverse(base.toArray(generator));
+        return ArraysSupport.reverse(base.toArray(generator));
     }
 
     // copied from AbstractCollection
