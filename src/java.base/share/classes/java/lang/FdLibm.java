@@ -1212,7 +1212,9 @@ class FdLibm {
      *      sinh(x) is |x| if x is +INF, -INF, or NaN.
      *      only sinh(0)=0 is exact for finite x.
      */
-    static class Sinh {
+    static final class Sinh {
+        private Sinh() {throw new AssertionError("no instances");};
+
         private static final double one = 1.0, shuge = 1.0e307;
 
          static double compute(double x) {
@@ -1286,7 +1288,9 @@ class FdLibm {
      *      cosh(x) is |x| if x is +INF, -INF, or NaN.
      *      only cosh(0)=1 is exact for finite x.
      */
-    static class Cosh {
+    static final class Cosh {
+        private Cosh() {throw new AssertionError("no instances");};
+
         private static final double one = 1.0, half=0.5, huge = 1.0e300;
         static double compute(double x) {
             double t, w;
@@ -1360,7 +1364,9 @@ class FdLibm {
      *      tanh(NaN) is NaN;
      *      only tanh(0)=0 is exact for finite argument.
      */
-    static class Tanh {
+    static final class Tanh {
+        private Tanh() {throw new AssertionError("no instances");};
+
         private static final double one=1.0, two=2.0, tiny = 1.0e-300;
         static double compute(double x) {
             double t, z;

@@ -839,10 +839,10 @@ public class FdlibmTranslit {
      *      sinh(x) is |x| if x is +INF, -INF, or NaN.
      *      only sinh(0)=0 is exact for finite x.
      */
-    static class Sinh {
+    private static final class Sinh {
         private static final double one = 1.0, shuge = 1.0e307;
 
-        private static double compute(double x) {
+        static double compute(double x) {
             double t,w,h;
             int ix,jx;
             /* unsigned */ int lx;
@@ -869,8 +869,15 @@ public class FdlibmTranslit {
             if (ix < 0x40862E42)  return h*StrictMath.exp(Math.abs(x)); // TODO switch to translit
 
             /* |x| in [log(maxdouble), overflowthresold] */
+            // Note: the original FDLIBM sources use
             // lx = *( (((*(unsigned*)&one)>>29)) + (unsigned*)&x);
-            // lx =  (((*(unsigned*)&one)>>29)) + (unsigned*)&x ;
+            // to set lx to the low-order 32 bits of x. The expression
+            // in question is an alternate way to implement the
+            // functionality of the C FDLIBM __LO macro and the
+            // expression is coded to work on both big-edian and
+            // little-endian machines. However, this port will instead
+            // use the __LO method call to represent this
+            // functionality.
             lx = __LO(x);
             if (ix<0x408633CE || ((ix==0x408633ce)&&(Long.compareUnsigned(lx, 0x8fb9f87d) <= 0 ))) {
                 w = StrictMath.exp(0.5*Math.abs(x)); // TODO switch to translit
@@ -903,9 +910,9 @@ public class FdlibmTranslit {
      *      cosh(x) is |x| if x is +INF, -INF, or NaN.
      *      only cosh(0)=1 is exact for finite x.
      */
-    static class Cosh {
+    private static final class Cosh {
         private static final double one = 1.0, half=0.5, huge = 1.0e300;
-        private static double compute(double x) {
+        static double compute(double x) {
             double t,w;
             int ix;
             /*unsigned*/ int lx;
@@ -971,7 +978,7 @@ public class FdlibmTranslit {
      *      tanh(NaN) is NaN;
      *      only tanh(0)=0 is exact for finite argument.
      */
-    static class Tanh {
+    private static final class Tanh {
         private static final double one=1.0, two=2.0, tiny = 1.0e-300;
         static double compute(double x) {
             double t,z;
