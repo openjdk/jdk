@@ -77,7 +77,6 @@ public class MaxIdleConnectionsTest {
     // exceed maxIdleConnections
     @Test
     public void test() throws Exception {
-        final String host = server.getAddress().getHostString();
         final int port = server.getAddress().getPort();
 
         final List<Future<Void>> responses = new ArrayList<>();
