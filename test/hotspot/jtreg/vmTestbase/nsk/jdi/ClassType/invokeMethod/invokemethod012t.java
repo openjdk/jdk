@@ -89,11 +89,15 @@ public class invokemethod012t {
     static volatile boolean isInvoked = false;
 
     static long dummyMeth(long l) throws InterruptedException {
+        /*
+         * WARNING: Since this method is called using INVOKE_SINGLE_THREADED, we need to
+         * be careful not to do anything that might block on another thread. That includes
+         * calling Thread.sleep(), which can be a problem for virtual threads.
+         */
         invokemethod012t.log.display("dummyMeth: going to loop");
         isInvoked = true;
         while(!doExit) {
             l--; l++;
-            Thread.currentThread().sleep(0);
         }
         invokemethod012t.log.display("dummyMeth: exiting");
         isInvoked = false;

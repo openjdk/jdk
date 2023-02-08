@@ -181,11 +181,15 @@ class invokemethod011tDummyClass {
     volatile boolean isInvoked = false;
 
     long longMeth(long l) throws InterruptedException {
+        /*
+         * WARNING: Since this method is called using INVOKE_SINGLE_THREADED, we need to
+         * be careful not to do anything that might block on another thread. That includes
+         * calling Thread.sleep(), which can be a problem for virtual threads.
+         */
         invokemethod011t.log.display("invokemethod011tDummyClass: longMeth: going to loop");
         isInvoked = true;
         while(!doExit) {
             l--; l++;
-            Thread.currentThread().sleep(0);
         }
         invokemethod011t.log.display("invokemethod011tDummyClass: longMeth: exiting");
         isInvoked = false;
