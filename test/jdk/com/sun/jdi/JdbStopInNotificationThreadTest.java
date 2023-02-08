@@ -79,8 +79,8 @@ class JdbStopInNotificationThreadTestTarg {
         while (!done) {
             numbers.add(new Object[1000]);
             counter++;
-            if (counter % 100 == 0) {
-                Thread.sleep(10);
+            if (counter % 1000 == 0) {
+                Thread.sleep(100);
             }
         }
         System.out.println("Done");
