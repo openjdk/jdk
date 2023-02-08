@@ -3666,7 +3666,7 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     ldrq(v0, Address(table));
     b(CRC_by128_loop);
 
-    align(CodeEntryAlignment);
+    align(OptoLoopAlignment);
   BIND(CRC_by128_loop);
     pmull (v9,  T1Q, v1, v0, T1D);
     pmull2(v10, T1Q, v1, v0, T2D);
@@ -3876,8 +3876,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   if (UseCRC32) {
       if (UseCryptoPmull) {
         kernel_crc32_using_crypto_pmull(crc, buf, len, table0, table1, table2, table3);
-      }
-      else {
+      } else {
         kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);
       }
       return;
