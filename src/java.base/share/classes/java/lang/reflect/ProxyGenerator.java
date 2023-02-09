@@ -45,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 
 import static jdk.internal.classfile.Classfile.*;
 
@@ -181,6 +182,7 @@ final class ProxyGenerator {
                                      final String name,
                                      List<Class<?>> interfaces,
                                      int accessFlags) {
+        Objects.requireNonNull(interfaces);
         ProxyGenerator gen = new ProxyGenerator(loader, name, interfaces, accessFlags);
         final byte[] classFile = gen.generateClassFile();
 
@@ -212,16 +214,11 @@ final class ProxyGenerator {
     }
 
     /**
-     * Return an array of the class and interface names from an array of Classes.
-     *
-     * @param classes an array of classes or interfaces
-     * @return the array of class and interface names; or null if classes is
-     * null or empty
+     * {@return the {@code ClassDesc} of the given type}
+     * @param type the {@code Class} object
      */
-    private static List<ClassDesc> typeNames(List<Class<?>> classes) {
-        if (classes == null || classes.isEmpty())
-            return List.of();
-        return classes.stream().map(cls -> ClassDesc.ofDescriptor(cls.descriptorString())).toList();
+    private static ClassDesc toClassDesc(Class<?> type) {
+        return ClassDesc.ofDescriptor(type.descriptorString());
     }
 
     /**
@@ -387,7 +384,7 @@ final class ProxyGenerator {
             // This exception is unique (so far): add it to the list to catch.
             uniqueList.add(ex);
         }
-        return uniqueList.stream().map(ex -> ClassDesc.ofDescriptor(ex.descriptorString())).toList();
+        return uniqueList.stream().map(ProxyGenerator::toClassDesc).toList();
     }
 
     /**
@@ -431,8 +428,8 @@ final class ProxyGenerator {
                         var cls = Class.forName(desc.substring(1, desc.length() - 1).replace('/', '.'), false, loader);
                         var superCls = cls.getSuperclass();
                         return new ClassHierarchyResolver.ClassHierarchyInfo(cd,
-                                cls.isInterface(),
-                                superCls == null ? null : ClassDesc.ofDescriptor(superCls.descriptorString()));
+                                                                             cls.isInterface(),
+                                                                             superCls == null ? null : toClassDesc(superCls));
                     } catch (ClassNotFoundException e) {
                         throw new TypeNotPresentException(cd.descriptorString(), e);
                     }
@@ -440,7 +437,7 @@ final class ProxyGenerator {
         )), clb -> {
             clb.withFlags(accessFlags);
             clb.withSuperclass(CD_Proxy);
-            clb.withInterfaceSymbols(typeNames(interfaces));
+            clb.withInterfaceSymbols(interfaces.stream().map(ProxyGenerator::toClassDesc).toList());
             clb.withVersion(CLASSFILE_VERSION, 0);
 
             /*
@@ -653,21 +650,23 @@ final class ProxyGenerator {
          */
         private ProxyMethod(Method method, String methodFieldName) {
             this(method, method.toShortSignature(),
-                    method.getSharedParameterTypes(), method.getReturnType(),
-                    method.getSharedExceptionTypes(), method.getDeclaringClass(), methodFieldName);
+                 method.getSharedParameterTypes(), method.getReturnType(),
+                 method.getSharedExceptionTypes(), method.getDeclaringClass(), methodFieldName);
         }
 
         /**
          * Generate this method, including the code and exception table entry.
          */
         private void generateMethod(ClassBuilder clb, ClassDesc className) {
-            MethodTypeDesc desc = MethodTypeDesc.ofDescriptor(MethodType.methodType(returnType, parameterTypes).toMethodDescriptorString());
-            int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL : ACC_PUBLIC | ACC_FINAL;
+            MethodTypeDesc desc = MethodType.methodType(returnType, parameterTypes).describeConstable().orElseThrow();
+            int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
+                                                   : ACC_PUBLIC | ACC_FINAL;
             var catchList = computeUniqueCatchList(exceptionTypes);
             clb.withMethod(method.getName(), desc, accessFlags, mb -> {
                 ConstantPoolBuilder cpb = mb.constantPool();
-                List<ClassEntry> exceptionClassEntries = typeNames(Arrays.asList(exceptionTypes))
+                List<ClassEntry> exceptionClassEntries = Arrays.asList(exceptionTypes)
                         .stream()
+                        .map(ProxyGenerator::toClassDesc)
                         .map(cpb::classEntry)
                         .toList();
                 mb.with(ExceptionsAttribute.of(exceptionClassEntries));
@@ -745,7 +744,7 @@ final class ProxyGenerator {
                    .invokevirtual(prim.wrapperClass, prim.unwrapMethodName, prim.unwrapMethodType)
                    .returnInstruction(TypeKind.fromDescriptor(type.descriptorString()).asLoadable());
             } else {
-                cob.checkcast(ClassDesc.ofDescriptor(type.descriptorString()))
+                cob.checkcast(toClassDesc(type))
                    .areturn();
             }
         }
