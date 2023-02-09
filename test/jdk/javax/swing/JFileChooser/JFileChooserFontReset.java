@@ -45,35 +45,36 @@ public class JFileChooserFontReset {
     }
 
     public static void main(String args[]) throws Exception {
-        for (UIManager.LookAndFeelInfo laf :
-                 UIManager.getInstalledLookAndFeels()) {
-            System.out.println("Testing L&F: " + laf.getClassName());
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            JFileChooser fc = new JFileChooser();
-            Font origFont = fc.getFont();
-            System.out.println(" orig font " + origFont);
-            for (UIManager.LookAndFeelInfo newLaF :
-                UIManager.getInstalledLookAndFeels()) {
-                if (laf.equals(newLaF)) {
-                    // Skip same laf
-                    continue;
-                }
-                System.out.println("Transition to L&F: " + newLaF);
-                SwingUtilities.invokeAndWait(() -> setLookAndFeel(newLaF));
-                SwingUtilities.updateComponentTreeUI(fc);
-                SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-                System.out.println("Back to L&F: " + laf);
-                SwingUtilities.updateComponentTreeUI(fc);
-                Font curFont = fc.getFont();
-                System.out.println("current font " + curFont);
-                if (curFont != null && !curFont.equals(origFont)) {
-                    throw new RuntimeException(
+        SwingUtilities.invokeAndWait(() -> {
+            for (UIManager.LookAndFeelInfo laf :
+                     UIManager.getInstalledLookAndFeels()) {
+                System.out.println("Testing L&F: " + laf.getClassName());
+                setLookAndFeel(laf);
+                JFileChooser fc = new JFileChooser();
+                Font origFont = fc.getFont();
+                System.out.println(" orig font " + origFont);
+                for (UIManager.LookAndFeelInfo newLaF :
+                    UIManager.getInstalledLookAndFeels()) {
+                    if (laf.equals(newLaF)) {
+                        continue;
+                    }
+                    System.out.println("Transition to L&F: " + newLaF);
+                    setLookAndFeel(newLaF);
+                    SwingUtilities.updateComponentTreeUI(fc);
+                    setLookAndFeel(laf);
+                    System.out.println("Back to L&F: " + laf);
+                    SwingUtilities.updateComponentTreeUI(fc);
+                    Font curFont = fc.getFont();
+                    System.out.println("current font " + curFont);
+                    if (curFont != null && !curFont.equals(origFont)) {
+                        throw new RuntimeException(
                          "JFileChooser font did not reset after Look & Feel change");
+                    }
                 }
+                System.out.println("");
+                System.out.println("");
             }
-            System.out.println("");
-            System.out.println("");
-        }
+        });
     }
 }
 
