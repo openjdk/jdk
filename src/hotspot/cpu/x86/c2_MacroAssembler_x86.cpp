@@ -813,7 +813,14 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     if (UseFastLocking) {
       // If the owner is ANONYMOUS, we need to fix it - in the slow-path.
       testb(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t) (intptr_t) ANONYMOUS_OWNER);
+#ifdef _LP64
+      C2FixAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2FixAnonOMOwnerStub(tmpReg);
+      Compile::current()->output()->add_stub(stub);
+      jcc(Assembler::notEqual, stub->entry());
+      bind(stub->continuation());
+#else
       jcc(Assembler::notEqual, NO_COUNT);
+#endif
     }
   }
 

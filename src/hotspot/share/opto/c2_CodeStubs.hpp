@@ -94,4 +94,16 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
+#ifdef _LP64
+class C2FixAnonOMOwnerStub : public C2CodeStub {
+private:
+  Register _monitor;
+public:
+  C2FixAnonOMOwnerStub(Register monitor) : C2CodeStub(), _monitor(monitor) {}
+  Register monitor() { return _monitor; }
+  int max_size() const;
+  void emit(C2_MacroAssembler& masm);
+};
+#endif
+
 #endif // SHARE_OPTO_C2_CODESTUBS_HPP
