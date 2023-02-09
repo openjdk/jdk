@@ -142,15 +142,10 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             if (mapper == null) {
                 mapper = customAttributes.apply(name);
             }
-            if (mapper != null && (enclosing == null || mapper.whereApplicable().contains(enclosing.attributedElementKind()))) {
+            if (mapper != null) {
                 filled[i] = mapper.readAttribute(enclosing, reader, p);
             } else if (reader.optionValue(Classfile.Option.Key.PROCESS_UNKNOWN_ATTRIBUTES)) {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
-                    @Override
-                    public Set<AttributedElement.Kind> whereApplicable() {
-                        return AttributedElement.Kind.EVERYWHERE;
-                    }
-
                     @Override
                     public String name() {
                         return name.stringValue();

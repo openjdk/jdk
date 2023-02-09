@@ -162,7 +162,7 @@ public final class BufferedCodeBuilder
             implements CodeModel {
 
         private Model() {
-            super(elements, Kind.CODE_ATTRIBUTE);
+            super(elements);
         }
 
         @Override

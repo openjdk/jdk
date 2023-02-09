@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
 
 /**
- * Models the {@code NestMembers} attribute (JVMS 4.7.29), which can
+ * Models the {@code NestMembers} attribute {@jvms 4.7.29}, which can
  * appear on classes to indicate that this class is the host of a nest.
  * Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing the elements of a {@link jdk.internal.classfile.ClassModel}.

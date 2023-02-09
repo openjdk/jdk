@@ -40,42 +40,31 @@ public abstract class AbstractAttributeMapper<T extends Attribute<T>>
         implements AttributeMapper<T> {
 
     private final String name;
-    private final Set<AttributedElement.Kind> whereApplicable;
     private final boolean allowMultiple;
     private final int majorVersion;
 
     protected abstract void writeBody(BufWriter buf, T attr);
 
-    public AbstractAttributeMapper(String name,
-                                   Set<AttributedElement.Kind> whereApplicable) {
-        this(name, whereApplicable, false);
+    public AbstractAttributeMapper(String name) {
+        this(name, false);
     }
 
     public AbstractAttributeMapper(String name,
-                                   Set<AttributedElement.Kind> whereApplicable,
                                    boolean allowMultiple) {
-        this(name, whereApplicable, allowMultiple, JAVA_1_VERSION);
+        this(name, allowMultiple, JAVA_1_VERSION);
     }
 
     public AbstractAttributeMapper(String name,
-                                   Set<AttributedElement.Kind> whereApplicable,
                                    int majorVersion) {
-        this(name, whereApplicable, false, majorVersion);
+        this(name, false, majorVersion);
     }
 
     public AbstractAttributeMapper(String name,
-                                   Set<AttributedElement.Kind> whereApplicable,
                                    boolean allowMultiple,
                                    int majorVersion) {
         this.name = name;
-        this.whereApplicable = whereApplicable;
         this.allowMultiple = allowMultiple;
         this.majorVersion = majorVersion;
-    }
-
-    @Override
-    public Set<AttributedElement.Kind> whereApplicable() {
-        return whereApplicable;
     }
 
     @Override
@@ -105,7 +94,7 @@ public abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
     @Override
     public String toString() {
-        return String.format("AttributeMapper[name=%s, allowMultiple=%b, validSince=%d, whereApplicable=%s]",
-                name, allowMultiple, majorVersion, whereApplicable);
+        return String.format("AttributeMapper[name=%s, allowMultiple=%b, validSince=%d]",
+                name, allowMultiple, majorVersion);
     }
 }

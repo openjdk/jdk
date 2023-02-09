@@ -33,10 +33,10 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code AnnotationDefault} attribute (JVMS 4.7.22), which can
- * appear on methods of annotation types, and records the default value (JLS
- * 9.6.2) for the element corresponding to this method.  Delivered as a {@link
- * MethodElement} when traversing the elements of a {@link MethodModel}.
+ * Models the {@code AnnotationDefault} attribute {@jvms 4.7.22}, which can
+ * appear on methods of annotation types, and records the default value
+ * {@jls 9.6.2} for the element corresponding to this method.  Delivered as a
+ * {@link MethodElement} when traversing the elements of a {@link MethodModel}.
  */
 public sealed interface AnnotationDefaultAttribute
         extends Attribute<AnnotationDefaultAttribute>, MethodElement

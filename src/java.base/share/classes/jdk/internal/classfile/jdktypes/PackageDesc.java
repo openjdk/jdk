@@ -42,7 +42,7 @@ public sealed interface PackageDesc
      * Returns a {@linkplain PackageDesc} for a package,
      * given the name of the package, such as {@code "java.lang"}.
      * <p>
-     * JLS 13.1
+     * {@jls 13.1}
      *
      * @param name the fully qualified (dot-separated) binary package name
      * @return a {@linkplain PackageDesc} describing the desired package
@@ -60,7 +60,7 @@ public sealed interface PackageDesc
      * given the name of the package in internal form,
      * such as {@code "java/lang"}.
      * <p>
-     * JVMS: 4.2.1. In this internal form, the ASCII periods (.) that normally separate the identifiers
+     * {@jvms 4.2.1} In this internal form, the ASCII periods (.) that normally separate the identifiers
      * which make up the binary name are replaced by ASCII forward slashes (/).
      * @param name the fully qualified class name, in internal (slash-separated) form
      * @return a {@linkplain PackageDesc} describing the desired package

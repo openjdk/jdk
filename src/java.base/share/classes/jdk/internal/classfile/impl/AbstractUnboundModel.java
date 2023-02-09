@@ -41,17 +41,10 @@ public abstract sealed class AbstractUnboundModel<E extends ClassfileElement>
         implements CompoundElement<E>, AttributedElement
         permits BufferedCodeBuilder.Model, BufferedFieldBuilder.Model, BufferedMethodBuilder.Model {
     private final List<E> elements;
-    private final Kind kind;
     private List<Attribute<?>> attributes;
 
-    public AbstractUnboundModel(List<E> elements, Kind kind) {
+    public AbstractUnboundModel(List<E> elements) {
         this.elements = elements;
-        this.kind = kind;
-    }
-
-    @Override
-    public Kind attributedElementKind() {
-        return kind;
     }
 
     @Override
