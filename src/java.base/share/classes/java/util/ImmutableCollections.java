@@ -890,6 +890,39 @@ class ImmutableCollections {
         }
     }
 
+    /**
+     * Creates a new Set from an untrusted array and checking for and
+     * rejecting null elements.
+     *
+     * @param <E> the Set's element type
+     * @param input the input array
+     * @return the new set
+     */
+    @SafeVarargs
+    @SuppressWarnings({"varargs", "unchecked", "rawtypes"})
+    static <E> Set<E> setFromArray(E... input) {
+        if (input.length == 0) {
+            return (Set<E>)EMPTY_SET;
+        }
+        if (!(input[0] instanceof Enum)) {
+            return new SetN<>(input);
+        }
+        EnumSet<?> es;
+        try {
+            // Sorry, I have to use a raw type here.
+            es = EnumSet.copyOf((Collection)Arrays.asList(input));  // rejects null
+        } catch (ClassCastException e) {
+            return new SetN<>(input);
+        }
+        if (es instanceof RegularEnumSet<?> res) {
+            return (Set<E>)new ImmutableRegularEnumSet<>(res.elements(), res.elementType());
+        }
+        if (es instanceof JumboEnumSet<?> jes) {
+            return (Set<E>)new ImmutableJumboEnumSet<>(jes.elements(), jes.elementType(), jes.size());
+        }
+        // Should not be reached here. This is a fallback.
+        return new SetN<>(input);
+    }
 
     /**
      * An array-based Set implementation. The element array must be strictly
@@ -1059,6 +1092,305 @@ class ImmutableCollections {
                 array[size] = null; // null-terminate
             }
             return array;
+        }
+    }
+
+    @jdk.internal.ValueBased
+    static final class ImmutableRegularEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
+            implements RegularEnumSetCompatible<E>, Serializable {
+        @Stable
+        final long elements;
+
+        @Stable
+        final Class<E> elementType;
+
+        ImmutableRegularEnumSet(long elements, Class<E> elementType) {
+            this.elements = elements;
+            this.elementType = elementType;
+        }
+
+        @Override
+        public long elements() {
+            return elements;
+        }
+
+        @Override
+        public Class<E> elementType() {
+            return elementType;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new ImmutableRESIterator();
+        }
+
+        private final class ImmutableRESIterator implements Iterator<E> {
+            long unseen = elements;
+            long lastReturned = 0;
+            final Enum<?>[] universe
+                = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
+            
+            @Override
+            public boolean hasNext() {
+                return unseen != 0;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public E next() {
+                if (unseen == 0)
+                    throw new NoSuchElementException();
+                lastReturned = unseen & -unseen;
+                unseen -= lastReturned;
+                return (E) universe[Long.numberOfTrailingZeros(lastReturned)];
+            }
+        }
+
+        @Override
+        public int size() {
+            return Long.bitCount(elements);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return elements == 0;
+        }
+
+        @Override
+        public boolean contains(Object e) {
+            if (e == null)
+                throw new NullPointerException();
+            Class<?> eClass = e.getClass();
+            if (eClass != elementType && eClass.getSuperclass() != elementType)
+                return false;
+    
+            return (elements & (1L << ((Enum<?>)e).ordinal())) != 0;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            if ((c instanceof RegularEnumSetCompatible<?> es)) {
+                if (es.elementType() != elementType)
+                    return es.isEmpty();
+    
+                return (es.elements() & ~elements) == 0;
+            } else {
+                for (Object o : c) {
+                    if (!contains(o)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof RegularEnumSetCompatible<?> es))
+                return super.equals(o);
+    
+            if (es.elementType() != elementType)
+                return elements == 0 && es.elements() == 0;
+            return es.elements() == elements;
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            for (Object o : this) {
+                h += o.hashCode();
+            }
+            return h;
+        }
+
+        @Override
+        public Object[] toArray() {
+            Object[] result = new Object[size()];
+            int i = 0;
+            for (Object o : this) {
+                result[i++] = o;
+            }
+            return result;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            int size = size();
+            T[] result = a.length >= size ? a :
+                    (T[])Array.newInstance(a.getClass().getComponentType(), size);
+            int i = 0;
+            for (Object o : this) {
+                result[i++] = (T)o;
+            }
+            if (result.length > size) {
+                result[i] = null;
+            }
+            return result;
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new CollSer(CollSer.IMM_SET, toArray());
+        }
+    }
+
+    @jdk.internal.ValueBased
+    static final class ImmutableJumboEnumSet<E extends Enum<E>> extends AbstractImmutableSet<E>
+            implements JumboEnumSetCompatible<E>, Serializable {
+        @Stable
+        final long[] elements;
+
+        @Stable
+        final Class<E> elementType;
+
+        @Stable
+        final int size;
+
+        ImmutableJumboEnumSet(long[] elements, Class<E> elementType, int size) {
+            this.elements = elements;
+            this.elementType = elementType;
+            this.size = size;
+        }
+
+        @Override
+        public long[] elements() {
+            return elements;
+        }
+
+        @Override
+        public Class<E> elementType() {
+            return elementType;
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new ImmutableJESIterator();
+        }
+
+        private final class ImmutableJESIterator implements Iterator<E> {
+            long unseen = elements[0];
+            int unseenIndex = 0;
+            long lastReturned = 0;
+            int lastReturnedIndex = 0;
+            final Enum<?>[] universe
+                = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
+            
+            @Override
+            public boolean hasNext() {
+                while (unseen == 0 && unseenIndex < elements.length - 1)
+                    unseen = elements[++unseenIndex];
+                return unseen != 0;
+            }
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public E next() {
+                if (!hasNext())
+                    throw new NoSuchElementException();
+                lastReturned = unseen & -unseen;
+                lastReturnedIndex = unseenIndex;
+                unseen -= lastReturned;
+                return (E) universe[(lastReturnedIndex << 6)
+                                    + Long.numberOfTrailingZeros(lastReturned)];
+            }
+        }
+
+        @Override
+        public int size() {
+            return size;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return size == 0L;
+        }
+
+        @Override
+        public boolean contains(Object e) {
+            if (e == null)
+                return false;
+            Class<?> eClass = e.getClass();
+            if (eClass != elementType && eClass.getSuperclass() != elementType)
+                return false;
+    
+            int eOrdinal = ((Enum<?>)e).ordinal();
+            return (elements[eOrdinal >>> 6] & (1L << eOrdinal)) != 0;
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            if (!(c instanceof JumboEnumSetCompatible<?> es))
+                return super.containsAll(c);
+    
+            if (es.elementType() != elementType)
+                return es.isEmpty();
+    
+            long[] esElements = es.elements();
+            for (int i = 0; i < elements.length; i++)
+                if ((esElements[i] & ~elements[i]) != 0)
+                    return false;
+            return true;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof JumboEnumSetCompatible<?> es))
+                return super.equals(o);
+    
+            if (es.elementType() != elementType)
+                return size == 0 && es.size() == 0;
+    
+            return Arrays.equals(es.elements(), elements);
+        }
+
+        @Override
+        public int hashCode() {
+            int h = 0;
+            for (Object o : this) {
+                h += o.hashCode();
+            }
+            return h;
+        }
+
+        @Override
+        public Object[] toArray() {
+            Object[] result = new Object[size];
+            int i = 0;
+            for (Object o : this) {
+                result[i++] = o;
+            }
+            return result;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <T> T[] toArray(T[] a) {
+            T[] result = a.length >= size ? a :
+                    (T[])Array.newInstance(a.getClass().getComponentType(), size);
+            int i = 0;
+            for (Object o : this) {
+                result[i++] = (T)o;
+            }
+            if (result.length > size) {
+                result[i] = null;
+            }
+            return result;
+        }
+
+        @java.io.Serial
+        private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+            throw new InvalidObjectException("not serial proxy");
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new CollSer(CollSer.IMM_SET, toArray());
         }
     }
 
