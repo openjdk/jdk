@@ -7205,6 +7205,7 @@ typedef uint32_t u32;
     __ adc(sum._hi, sum._hi, rscratch2);
   }
 
+  // Widening multiply s * r -> u
   void poly1305_multiply(RegPair u[], Register s[], Register r[], Register RR2,
                          RegSetIterator<Register> scratch) {
       // Compute (S2 << 26) * 5.
@@ -7212,7 +7213,10 @@ typedef uint32_t u32;
       __ lsl(RS2, s[2], 26);
       __ add(RS2, RS2, RS2, __ LSL, 2);
 
-      wide_mul(u[0], s[0], r[0]); wide_madd(u[0], RS2, r[1]);  wide_madd(u[0], s[1], RR2);
+      wide_mul(u[0], s[0], r[0]); wide_madd(u[0], s[1], RR2);      poo = __ pc();
+
+
+      wide_madd(u[0], RS2, r[1]);
       wide_mul(u[1], s[0], r[1]); wide_madd(u[1], s[1], r[0]); wide_madd(u[1], RS2, r[2]);
       wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
   }
@@ -7228,7 +7232,14 @@ typedef uint32_t u32;
     __ bfc(u[1]._lo, 52, 64-52);
     DEBUG_ONLY(__ bfc(u[1]._hi, 0, 52));
     __ adds(u[2]._lo, u[2]._lo, rscratch1);
-    __ adc(u[2]._hi, u[2]._hi, zr);
+#ifdef ASSERT
+    {
+      Label L;
+      __ br(__ CC, L);
+      __ stop("Overflow in poly1305 reduction");
+      __ BIND(L);
+    }
+#endif
 
     // Then multiply the high part of u2 by 5 and add it back to u1:u0
     __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
@@ -7237,11 +7248,18 @@ typedef uint32_t u32;
     __ adds(u[0]._lo, u[0]._lo, rscratch1);
     __ adc(u[0]._hi, u[0]._hi, zr);
     __ bfc(u[2]._lo, 26, 64-26);
-    DEBUG_ONLY(__ bfc(u[2]._hi, 0, 14));
 
     // Multiply the highest part of u2 by 5 and add it back to u1
     __ ubfx(rscratch1, u[2]._hi, 14, 50);
-    DEBUG_ONLY(__ bfc(u[2]._hi, 14, 50));
+#ifdef ASSERT
+    {
+      Label L;
+      __ bfc(u[2]._hi, 0, 50);
+      __ cbz(u[2]._hi, L);
+      __ stop("Overflow in poly1305 reduction");
+      __ BIND(L);
+    }
+#endif
     __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
     __ add(u[1]._lo, u[1]._lo, rscratch1);
 
@@ -7250,7 +7268,14 @@ typedef uint32_t u32;
     __ bfc(u[0]._lo, 52, 64-52);
     DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
     __ adds(u[1]._lo, u[1]._lo, rscratch1);
-    __ adc(u[1]._hi, u[1]._hi, zr);
+#ifdef ASSERT
+    {
+      Label L;
+      __ br(__ CC, L);
+      __ stop("Overflow in poly1305 reduction");
+      __ BIND(L);
+    }
+#endif
   }
 
   void poly1305_step(Register s[], RegPair u[], Register input_start) {
@@ -7264,6 +7289,12 @@ typedef uint32_t u32;
     __ add(s[0], u[0]._lo, s[0]);
     __ add(s[1], u[1]._lo, s[1]);
     __ add(s[2], u[2]._lo, s[2]);
+  }
+
+  void copy_3_regs(Register src[], Register dest[]) {
+    __ mov(dest[0], src[0]);
+    __ mov(dest[1], src[1]);
+    __ mov(dest[2], src[2]);
   }
 
   address generate_poly1305_processBlocks1() {
@@ -7304,6 +7335,112 @@ typedef uint32_t u32;
 
     // Compute (R2 << 26) * 5.
     Register RR2 = *++regs;
+
+    __ lsl(RR2, R2, 26);
+    __ add(RR2, RR2, RR2, __ LSL, 2);
+    __ subsw(length, length, BLOCK_LENGTH);
+    __ br(~ Assembler::GE, DONE); {
+      __ bind(LOOP);
+
+      poly1305_step(S, U, input_start);
+      poly1305_multiply(U, S, R, RR2, regs);
+      poly1305_reduce(U);
+
+      __ subsw(length, length, BLOCK_LENGTH);
+      __ br(Assembler::GE, LOOP);
+    }
+
+    // Fully reduce modulo 2^130 - 5
+    __ adds(U0, U0, U1, __ LSL, 52);
+    __ lsr(U1, U1, 12);
+    __ lsl(rscratch1, U2, 40);
+    __ adcs(U1, U1, rscratch1);
+    __ lsr(U2, U2, 24);
+    __ adc(U2, U2, zr);
+
+    // Subtract 2^130 - 5
+    // = 0x3_ffffffffffffffff_fffffffffffffffb
+    __ mov(rscratch1, 0xfffffffffffffffb); __ subs(S0, U0, rscratch1);
+    __ mov(rscratch1, 0xffffffffffffffff); __ sbcs(S1, U1, rscratch1);
+    __ mov(rscratch1, 0x3);                __ sbcs(S2, U2, rscratch1);
+    __ csel(U0, S0, U0, __ HS);
+    __ csel(U1, S1, U1, __ HS);
+    __ csel(U2, S2, U2, __ HS);
+
+    // And store it all back
+    __ ubfiz(rscratch1, U0, 0, 26);
+    __ ubfx(rscratch2, U0, 26, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start));
+
+    __ ubfx(rscratch1, U0, 52, 12);
+    __ bfi(rscratch1, U1, 12, 14);
+    __ ubfx(rscratch2, U1, 14, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+
+    __ extr(rscratch1, U2, U1, 40);
+    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+    __ bind(DONE);
+    __ pop(callee_saved, sp);
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
+
+  address generate_poly1305_processBlocks2() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks2");
+    address start = __ pc();
+    Label here;
+    __ enter();
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
+
+    RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
+
+    // Arguments
+    const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+
+    // Rn is the randomly-generated key, packed into three registers
+    const Register R0 = *++regs, R1 = *++regs, R2 = *++regs;
+    pack_26(R0, R1, R2, r_start);
+
+
+    // Un is the current checksum
+    const Register U0 = *++regs, U1 = *++regs, U2 = *++regs;
+
+    // Sn is to be the sum of Un and the next block of data
+    const Register S0 = *++regs, S1 = *++regs, S2 = *++regs;
+
+    RegPair u0(U0, *++regs);
+    RegPair u1(U1, *++regs);
+    RegPair u2(U2, *++regs);
+
+    RegPair U[] = {u0, u1, u2};
+    Register S[] = {S0, S1, S2};
+    Register R[] = {R0, R1, R2};
+
+    {
+      Register RR2 = *++regs;
+      __ lsl(RR2, R2, 26);
+      __ add(RR2, RR2, RR2, __ LSL, 2);
+
+      copy_3_regs(S, R);
+      poly1305_multiply(U, S, R, RR2, regs);
+      poly1305_reduce(U);
+      Register u[] = {U0, U1, U2};
+      copy_3_regs(R, u);
+    }
+
+    pack_26(U0, U1, U2, acc_start);
+
+    static constexpr int BLOCK_LENGTH = 16;
+    Label DONE, LOOP;
+
+    // Compute (R2 << 26) * 5.
+    Register RR2 = *++regs;
     __ lsl(RR2, R2, 26);
     __ add(RR2, RR2, RR2, __ LSL, 2);
 
@@ -7318,8 +7455,6 @@ typedef uint32_t u32;
       __ subsw(length, length, BLOCK_LENGTH);
       __ br(Assembler::GE, LOOP);
     }
-
-    poo = __ pc();
 
     // Fully reduce modulo 2^130 - 5
     __ adds(U0, U0, U1, __ LSL, 52);
