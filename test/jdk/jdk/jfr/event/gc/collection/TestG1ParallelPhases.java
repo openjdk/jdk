@@ -88,6 +88,7 @@ public class TestG1ParallelPhases {
 
         Set<String> allPhases = of(
             "RetireTLABsAndFlushLogs",
+            "NonJavaThreadFlushLogs",
             "ExtRootScan",
             "ThreadRoots",
             "VM Global",

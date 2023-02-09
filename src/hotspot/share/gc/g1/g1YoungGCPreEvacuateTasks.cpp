@@ -154,7 +154,7 @@ G1PreEvacuateCollectionSetBatchTask::G1PreEvacuateCollectionSetBatchTask() :
 }
 
 static void verify_empty_dirty_card_logs() {
-#ifdef ASSERT
+  ResourceMark rm;
   struct Verifier : public ThreadClosure {
     size_t _buffer_size;
     Verifier() : _buffer_size(G1BarrierSet::dirty_card_queue_set().buffer_size()) {}
@@ -165,7 +165,6 @@ static void verify_empty_dirty_card_logs() {
     }
   } verifier;
   Threads::threads_do(&verifier);
-#endif // ASSERT
 }
 
 G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {

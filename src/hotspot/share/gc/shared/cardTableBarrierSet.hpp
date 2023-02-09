@@ -68,7 +68,7 @@ protected:
 
   virtual void initialize();
 
-  void write_region(MemRegion mr) {
+  void write_region(JavaThread* thread, MemRegion mr) override {
     invalidate(mr);
   }
 

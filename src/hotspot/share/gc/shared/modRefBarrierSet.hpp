@@ -51,9 +51,10 @@ public:
   template <DecoratorSet decorators, typename T>
   inline void write_ref_field_post(T *addr, oop new_value) {}
 
-  // Causes all refs in "mr" to be assumed to be modified.
+  // Causes all refs in "mr" to be assumed to be modified by this (JavaThread).
   virtual void invalidate(MemRegion mr) = 0;
-  virtual void write_region(MemRegion mr) = 0;
+  // Causes all refs in "mr" to be assumed to be modified by the given JavaThread.
+  virtual void write_region(JavaThread* thread, MemRegion mr) = 0;
 
   // Operations on arrays, or general regions (e.g., for "clone") may be
   // optimized by some barriers.
