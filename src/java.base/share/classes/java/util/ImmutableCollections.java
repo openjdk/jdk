@@ -1129,7 +1129,7 @@ class ImmutableCollections {
             long lastReturned = 0;
             final Enum<?>[] universe
                 = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
-            
+
             @Override
             public boolean hasNext() {
                 return unseen != 0;
@@ -1163,7 +1163,7 @@ class ImmutableCollections {
             Class<?> eClass = e.getClass();
             if (eClass != elementType && eClass.getSuperclass() != elementType)
                 return false;
-    
+
             return (elements & (1L << ((Enum<?>)e).ordinal())) != 0;
         }
 
@@ -1172,7 +1172,7 @@ class ImmutableCollections {
             if ((c instanceof RegularEnumSetCompatible<?> es)) {
                 if (es.elementType() != elementType)
                     return es.isEmpty();
-    
+
                 return (es.elements() & ~elements) == 0;
             } else {
                 for (Object o : c) {
@@ -1188,7 +1188,7 @@ class ImmutableCollections {
         public boolean equals(Object o) {
             if (!(o instanceof RegularEnumSetCompatible<?> es))
                 return super.equals(o);
-    
+
             if (es.elementType() != elementType)
                 return elements == 0 && es.elements() == 0;
             return es.elements() == elements;
@@ -1280,7 +1280,7 @@ class ImmutableCollections {
             int lastReturnedIndex = 0;
             final Enum<?>[] universe
                 = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(elementType);
-            
+
             @Override
             public boolean hasNext() {
                 while (unseen == 0 && unseenIndex < elements.length - 1)
@@ -1318,7 +1318,7 @@ class ImmutableCollections {
             Class<?> eClass = e.getClass();
             if (eClass != elementType && eClass.getSuperclass() != elementType)
                 return false;
-    
+
             int eOrdinal = ((Enum<?>)e).ordinal();
             return (elements[eOrdinal >>> 6] & (1L << eOrdinal)) != 0;
         }
@@ -1327,10 +1327,10 @@ class ImmutableCollections {
         public boolean containsAll(Collection<?> c) {
             if (!(c instanceof JumboEnumSetCompatible<?> es))
                 return super.containsAll(c);
-    
+
             if (es.elementType() != elementType)
                 return es.isEmpty();
-    
+
             long[] esElements = es.elements();
             for (int i = 0; i < elements.length; i++)
                 if ((esElements[i] & ~elements[i]) != 0)
@@ -1342,10 +1342,10 @@ class ImmutableCollections {
         public boolean equals(Object o) {
             if (!(o instanceof JumboEnumSetCompatible<?> es))
                 return super.equals(o);
-    
+
             if (es.elementType() != elementType)
                 return size == 0 && es.size() == 0;
-    
+
             return Arrays.equals(es.elements(), elements);
         }
 
