@@ -22,20 +22,49 @@
  *
  */
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.GroupLayout;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.SegmentScope;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+import java.util.random.RandomGenerator;
+
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 
 public class NativeTestHelper {
 
     public static final boolean IS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+
+    private static final MethodHandle MH_SAVER;
+
+    static {
+        try {
+            MH_SAVER = MethodHandles.lookup().findStatic(NativeTestHelper.class, "saver",
+                    MethodType.methodType(Object.class, Object[].class, List.class, AtomicReference.class, SegmentAllocator.class, int.class));
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public static boolean isIntegral(MemoryLayout layout) {
         return layout instanceof ValueLayout valueLayout && isIntegral(valueLayout.carrier());
@@ -125,5 +154,128 @@ public class NativeTestHelper {
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public record TestValue (Object value, Consumer<Object> check) {}
+
+    public static TestValue genTestValue(RandomGenerator random, MemoryLayout layout, SegmentAllocator allocator) {
+        if (layout instanceof StructLayout struct) {
+            MemorySegment segment = allocator.allocate(struct);
+            List<Consumer<Object>> fieldChecks = new ArrayList<>();
+            for (MemoryLayout fieldLayout : struct.memberLayouts()) {
+                if (fieldLayout instanceof PaddingLayout) continue;
+                MemoryLayout.PathElement fieldPath = groupElement(fieldLayout.name().orElseThrow());
+                fieldChecks.add(initField(random, segment, struct, fieldLayout, fieldPath, allocator));
+            }
+            return new TestValue(segment, actual -> fieldChecks.forEach(check -> check.accept(actual)));
+        } else if (layout instanceof UnionLayout union) {
+            MemorySegment segment = allocator.allocate(union);
+            List<MemoryLayout> filteredFields = union.memberLayouts().stream()
+                                                                     .filter(l -> !(l instanceof PaddingLayout))
+                                                                     .toList();
+            int fieldIdx = random.nextInt(filteredFields.size());
+            MemoryLayout fieldLayout = filteredFields.get(fieldIdx);
+            MemoryLayout.PathElement fieldPath = groupElement(fieldLayout.name().orElseThrow());
+            Consumer<Object> check = initField(random, segment, union, fieldLayout, fieldPath, allocator);
+            return new TestValue(segment, check);
+        } else if (layout instanceof SequenceLayout array) {
+            MemorySegment segment = allocator.allocate(array);
+            List<Consumer<Object>> elementChecks = new ArrayList<>();
+            for (int i = 0; i < array.elementCount(); i++) {
+                elementChecks.add(initField(random, segment, array, array.elementLayout(), sequenceElement(i), allocator));
+            }
+            return new TestValue(segment, actual -> elementChecks.forEach(check -> check.accept(actual)));
+        } else if (layout instanceof ValueLayout.OfAddress) {
+            MemorySegment value = MemorySegment.ofAddress(random.nextLong());
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        }else if (layout instanceof ValueLayout.OfByte) {
+            byte value = (byte) random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfShort) {
+            short value = (short) random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfInt) {
+            int value = random.nextInt();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfLong) {
+            long value = random.nextLong();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfFloat) {
+            float value = random.nextFloat();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        } else if (layout instanceof ValueLayout.OfDouble) {
+            double value = random.nextDouble();
+            return new TestValue(value, actual -> assertEquals(actual, value));
+        }
+
+        throw new IllegalStateException("Unexpected layout: " + layout);
+    }
+
+    private static Consumer<Object> initField(RandomGenerator random, MemorySegment container, MemoryLayout containerLayout,
+                                              MemoryLayout fieldLayout, MemoryLayout.PathElement fieldPath,
+                                              SegmentAllocator allocator) {
+        TestValue fieldValue = genTestValue(random, fieldLayout, allocator);
+        Consumer<Object> fieldCheck = fieldValue.check();
+        if (fieldLayout instanceof GroupLayout || fieldLayout instanceof SequenceLayout) {
+            UnaryOperator<MemorySegment> slicer = slicer(containerLayout, fieldPath);
+            MemorySegment slice = slicer.apply(container);
+            slice.copyFrom((MemorySegment) fieldValue.value());
+            return actual -> fieldCheck.accept(slicer.apply((MemorySegment) actual));
+        } else {
+            VarHandle accessor = containerLayout.varHandle(fieldPath);
+            //set value
+            accessor.set(container, fieldValue.value());
+            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual));
+        }
+    }
+
+    private static UnaryOperator<MemorySegment> slicer(MemoryLayout containerLayout, MemoryLayout.PathElement fieldPath) {
+        MethodHandle slicer = containerLayout.sliceHandle(fieldPath);
+        return container -> {
+              try {
+                return (MemorySegment) slicer.invokeExact(container);
+            } catch (Throwable e) {
+                throw new IllegalStateException(e);
+            }
+        };
+    }
+
+    private static void assertEquals(Object actual, Object expected) {
+        if (actual.getClass() != expected.getClass()) {
+            throw new AssertionError("Type mismatch: " + actual.getClass() + " != " + expected.getClass());
+        }
+        if (!actual.equals(expected)) {
+            throw new AssertionError("Not equal: " + actual + " != " + expected);
+        }
+    }
+
+    /**
+     * Make an upcall stub that saves its arguments into the given 'ref' array
+     *
+     * @param fd function descriptor for the upcall stub
+     * @param capturedArgs box to save arguments in
+     * @param arena allocator for making copies of by-value structs
+     * @param retIdx the index of the argument to return
+     * @return return the upcall stub
+     */
+    public static MemorySegment makeArgSaverCB(FunctionDescriptor fd, Arena arena,
+                                               AtomicReference<Object[]> capturedArgs, int retIdx) {
+        MethodHandle target = MethodHandles.insertArguments(MH_SAVER, 1, fd.argumentLayouts(), capturedArgs, arena, retIdx);
+        target = target.asCollector(Object[].class, fd.argumentLayouts().size());
+        target = target.asType(fd.toMethodType());
+        return LINKER.upcallStub(target, fd, arena.scope());
+    }
+
+    private static Object saver(Object[] o, List<MemoryLayout> argLayouts, AtomicReference<Object[]> ref, SegmentAllocator allocator, int retArg) {
+        for (int i = 0; i < o.length; i++) {
+            if (argLayouts.get(i) instanceof GroupLayout gl) {
+                MemorySegment ms = (MemorySegment) o[i];
+                MemorySegment copy = allocator.allocate(gl);
+                copy.copyFrom(ms);
+                o[i] = copy;
+            }
+        }
+        ref.set(o);
+        return retArg != -1 ? o[retArg] : null;
     }
 }

@@ -264,9 +264,17 @@ public abstract class CallArranger {
         Windows, VF     | CW in regs       | CW split between regs and stack | CW on the stack
          */
         StructStorage[] structStorages(GroupLayout layout, boolean forHFA) {
-            int regType = forHFA ? StorageType.VECTOR : StorageType.INTEGER;
             int numChunks = (int)Utils.alignUp(layout.byteSize(), MAX_COPY_SIZE) / MAX_COPY_SIZE;
-            int requiredStorages = forHFA ? layout.memberLayouts().size() : numChunks;
+
+            int regType = StorageType.INTEGER;
+            List<MemoryLayout> scalarLayouts = null;
+            int requiredStorages = numChunks;
+            if (forHFA) {
+                regType = StorageType.VECTOR;
+                scalarLayouts = TypeClass.scalarLayouts(layout);
+                requiredStorages = scalarLayouts.size();
+            }
+
             boolean hasEnoughRegisters = hasEnoughRegisters(regType, requiredStorages);
 
             // For the ABI variants that pack arguments spilled to the
@@ -299,7 +307,7 @@ public abstract class CallArranger {
                 ValueLayout copyLayout;
                 if (isFieldWise) {
                     // We should only get here for HFAs, which can't have padding
-                    copyLayout = (ValueLayout) layout.memberLayouts().get(i);
+                    copyLayout = (ValueLayout) scalarLayouts.get(i);
                 } else {
                     // chunk-wise copy
                     long copySize = Math.min(layout.byteSize() - offset, MAX_COPY_SIZE);

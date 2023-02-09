@@ -28,7 +28,10 @@ package jdk.internal.foreign.abi.aarch64;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
+import java.util.List;
+import java.util.ArrayList;
 
 public enum TypeClass {
     STRUCT_REGISTER,
@@ -58,15 +61,38 @@ public enum TypeClass {
         return type.bitSize() <= MAX_AGGREGATE_REGS_SIZE * 64;
     }
 
+    static List<MemoryLayout> scalarLayouts(GroupLayout gl) {
+        List<MemoryLayout> out = new ArrayList<>();
+        scalarLayoutsInternal(out, gl);
+        return out;
+    }
+
+    private static void scalarLayoutsInternal(List<MemoryLayout> out, GroupLayout gl) {
+        for (MemoryLayout member : gl.memberLayouts()) {
+            if (member instanceof GroupLayout memberGl) {
+                scalarLayoutsInternal(out, memberGl);
+            } else if (member instanceof SequenceLayout memberSl) {
+                for (long i = 0; i < memberSl.elementCount(); i++) {
+                    out.add(memberSl.elementLayout());
+                }
+            } else {
+                // padding or value layouts
+                out.add(member);
+            }
+        }
+    }
+
     static boolean isHomogeneousFloatAggregate(MemoryLayout type) {
         if (!(type instanceof GroupLayout groupLayout))
             return false;
 
-        final int numElements = groupLayout.memberLayouts().size();
+        List<MemoryLayout> scalarLayouts = scalarLayouts(groupLayout);
+
+        final int numElements = scalarLayouts.size();
         if (numElements > 4 || numElements == 0)
             return false;
 
-        MemoryLayout baseType = groupLayout.memberLayouts().get(0);
+        MemoryLayout baseType = scalarLayouts.get(0);
 
         if (!(baseType instanceof ValueLayout))
             return false;
@@ -75,7 +101,7 @@ public enum TypeClass {
         if (baseArgClass != FLOAT)
            return false;
 
-        for (MemoryLayout elem : groupLayout.memberLayouts()) {
+        for (MemoryLayout elem : scalarLayouts) {
             if (!(elem instanceof ValueLayout))
                 return false;
 
