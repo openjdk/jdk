@@ -194,33 +194,6 @@ public class WorkArounds {
         return elementUtils.getTypeElement(className);
     }
 
-    // TODO: the method jx.l.m.Elements::overrides does not check
-    // the return type, see JDK-8174840 until that is resolved,
-    // use a  copy of the same method, with a return type check.
-
-    // Note: the rider.overrides call in this method *must* be consistent
-    // with the call in overrideType(....), the method above.
-    public boolean overrides(ExecutableElement e1, ExecutableElement e2, TypeElement cls) {
-        MethodSymbol rider = (MethodSymbol)e1;
-        MethodSymbol ridee = (MethodSymbol)e2;
-        ClassSymbol origin = (ClassSymbol)cls;
-
-        return rider.name == ridee.name &&
-
-               // not reflexive as per JLS
-               rider != ridee &&
-
-               // we don't care if ridee is static, though that wouldn't
-               // compile
-               !rider.isStatic() &&
-
-               // Symbol.overrides assumes the following
-               ridee.isMemberOf(origin, javacTypes) &&
-
-               // check access, signatures and check return types
-               rider.overrides(ridee, origin, javacTypes, true);
-    }
-
     // TODO: jx.l.m ?
     public Location getLocationForModule(ModuleElement mdle) {
         ModuleSymbol msym = (ModuleSymbol)mdle;

@@ -648,7 +648,7 @@ public class Utils {
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
             for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
                 var ee = (ExecutableElement) e;
-                if (configuration.workArounds.overrides(method, ee, (TypeElement) method.getEnclosingElement()) &&
+                if (elementUtils.overrides(method, ee, (TypeElement) method.getEnclosingElement()) &&
                         !isSimpleOverride(ee)) {
                     return new OverrideInfo(ee, (DeclaredType) t);
                 }
