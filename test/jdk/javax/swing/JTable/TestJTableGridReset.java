@@ -61,17 +61,15 @@ public class TestJTableGridReset {
                 table = new JTable();
                 table.setShowHorizontalLines(true);
                 table.setShowVerticalLines(true);
-            });
-            SwingUtilities.updateComponentTreeUI(table);
-            SwingUtilities.invokeAndWait(() -> {
+                SwingUtilities.updateComponentTreeUI(table);
                 origHorizLines = table.getShowHorizontalLines();
                 origVertLines = table.getShowVerticalLines();
             });
             UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-            SwingUtilities.updateComponentTreeUI(table);
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            SwingUtilities.updateComponentTreeUI(table);
             SwingUtilities.invokeAndWait(() -> {
+                SwingUtilities.updateComponentTreeUI(table);
+                setLookAndFeel(laf);
+                SwingUtilities.updateComponentTreeUI(table);
                 curHorizLines = table.getShowHorizontalLines();
                 curVertLines = table.getShowVerticalLines();
             });

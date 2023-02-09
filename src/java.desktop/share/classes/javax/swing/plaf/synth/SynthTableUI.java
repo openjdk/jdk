@@ -88,7 +88,6 @@ public class SynthTableUI extends BasicTableUI
 
     private boolean showHorizLines;
     private boolean showVertLines;
-    private boolean showGrid;
 //
 //  The installation/uninstall procedures and support
 //
@@ -183,10 +182,8 @@ public class SynthTableUI extends BasicTableUI
             }
             showHorizLines = table.getShowHorizontalLines();
             showVertLines = table.getShowVerticalLines();
-            showGrid = style.getBoolean(context, "Table.showGrid", true);
-            if (!showGrid) {
-                table.setShowGrid(false);
-            }
+            boolean showGrid = style.getBoolean(context, "Table.showGrid", true);
+            table.setShowGrid(showGrid);
             Dimension d = table.getIntercellSpacing();
 //            if (d == null || d instanceof UIResource) {
             if (d != null) {
@@ -232,14 +229,8 @@ public class SynthTableUI extends BasicTableUI
             table.setTransferHandler(null);
         }
         SynthContext context = getContext(table, ENABLED);
-        if (!showGrid) {
-            if (showHorizLines) {
-                table.setShowHorizontalLines(true);
-            }
-            if (showVertLines) {
-                table.setShowVerticalLines(true);
-            }
-        }
+        table.setShowHorizontalLines(showHorizLines);
+        table.setShowVerticalLines(showVertLines);
         style.uninstallDefaults(context);
         style = null;
     }
