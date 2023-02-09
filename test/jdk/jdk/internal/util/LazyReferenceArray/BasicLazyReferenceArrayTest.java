@@ -53,7 +53,7 @@ final class BasicLazyReferenceArrayTest {
     }
 
     @Test
-    void emptyGet() {
+    void emptyGetOrNull() {
         for (int i = 0; i < LENGTH; i++) {
             assertNull(instance.getOrNull(i));
         }
