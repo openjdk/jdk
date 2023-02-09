@@ -747,7 +747,6 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
                                                     TRAPS) {
 
   assert(caller_ik->class_loader() == lambda_ik->class_loader(), "mismatched class loader");
-  assert(caller_ik->class_loader_data() == lambda_ik->class_loader_data(), "mismatched class loader data");
   assert(java_lang_Class::class_data(lambda_ik->java_mirror()) == nullptr, "must not have class data");
 
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
@@ -758,7 +757,7 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
   assert(nest_host != nullptr, "unexpected nullptr nest_host");
 
   DumpTimeClassInfo* info = _dumptime_table->get(lambda_ik);
-  if (info != nullptr && !lambda_ik->is_non_strong_hidden() && is_builtin(lambda_ik) && is_builtin(caller_ik)
+  if (info != nullptr && is_builtin(lambda_ik) && is_builtin(caller_ik)
       // Don't include the lambda proxy if its nest host is not in the "linked" state.
       && nest_host->is_linked()) {
     // Set _is_archived_lambda_proxy in DumpTimeClassInfo so that the lambda_ik

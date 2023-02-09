@@ -3613,7 +3613,6 @@ JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
   Klass* lambda_k = java_lang_Class::as_Klass(JNIHandles::resolve(lambdaProxyClass));
   InstanceKlass* lambda_ik = InstanceKlass::cast(lambda_k);
   assert(lambda_ik->is_hidden(), "must be a hidden class");
-  assert(!lambda_ik->is_non_strong_hidden(), "expected a strong hidden class");
 
   Symbol* interface_method_name = nullptr;
   if (interfaceMethodName != nullptr) {
