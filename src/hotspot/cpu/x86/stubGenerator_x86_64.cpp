@@ -2162,11 +2162,11 @@ address StubGenerator::base64_AVX2_decode_tables_addr() {
 
   assert(((unsigned long long)start & 0x3f) == 0,
          "Alignment problem (0x%08llx)", (unsigned long long)start);
-  __ emit_data64(0x2f2f2f2f2f2f2f2f, relocInfo::none);
-  __ emit_data64(0x5f5f5f5f5f5f5f5f, relocInfo::none);  // for URL
+  __ emit_data(0x2f2f2f2f, relocInfo::none, 0);
+  __ emit_data(0x5f5f5f5f, relocInfo::none, 0);  // for URL
 
-  __ emit_data64(0xffffffffffffffff, relocInfo::none);
-  __ emit_data64(0xfcfcfcfcfcfcfcfc, relocInfo::none);  // for URL
+  __ emit_data(0xffffffff, relocInfo::none, 0);
+  __ emit_data(0xfcfcfcfc, relocInfo::none, 0);  // for URL
 
   // Permute table
   __ emit_data64(0x0000000100000000, relocInfo::none);
@@ -2174,34 +2174,22 @@ address StubGenerator::base64_AVX2_decode_tables_addr() {
   __ emit_data64(0x0000000600000005, relocInfo::none);
   __ emit_data64(0xffffffffffffffff, relocInfo::none);
 
-  // lut_hi
-  __ emit_data64(0x0804080402011010, relocInfo::none);
-  __ emit_data64(0x1010101010101010, relocInfo::none);
-  __ emit_data64(0x0804080402011010, relocInfo::none);
-  __ emit_data64(0x1010101010101010, relocInfo::none);
-
-  // merge table
-  __ emit_data64(0x0140014001400140, relocInfo::none);
-  __ emit_data64(0x0140014001400140, relocInfo::none);
-  __ emit_data64(0x0140014001400140, relocInfo::none);
-  __ emit_data64(0x0140014001400140, relocInfo::none);
-
-  // merge multiplier
-  __ emit_data64(0x0001100000011000, relocInfo::none);
-  __ emit_data64(0x0001100000011000, relocInfo::none);
-  __ emit_data64(0x0001100000011000, relocInfo::none);
-  __ emit_data64(0x0001100000011000, relocInfo::none);
-
   // Shuffle table
   __ emit_data64(0x090a040506000102, relocInfo::none);
   __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
   __ emit_data64(0x090a040506000102, relocInfo::none);
   __ emit_data64(0xffffffff0c0d0e08, relocInfo::none);
 
+  // merge table
+  __ emit_data(0x01400140, relocInfo::none, 0);
+
+  // merge multiplier
+  __ emit_data(0x00011000, relocInfo::none, 0);
+
   return start;
 }
 
-address StubGenerator::base64_AVX2_decode_URL_tables_addr() {
+address StubGenerator::base64_AVX2_decode_LUT_tables_addr() {
   __ align64();
   StubCodeMark mark(this, "StubRoutines", "AVX2_tables_URL_base64");
   address start = __ pc();
@@ -2231,6 +2219,12 @@ address StubGenerator::base64_AVX2_decode_URL_tables_addr() {
   __ emit_data64(0x0000000000000000, relocInfo::none);
   __ emit_data64(0xb9b9bfbf0411e000, relocInfo::none);
   __ emit_data64(0x0000000000000000, relocInfo::none);
+
+  // lut_hi
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
+  __ emit_data64(0x0804080402011010, relocInfo::none);
+  __ emit_data64(0x1010101010101010, relocInfo::none);
 
   return start;
 }
@@ -2666,26 +2660,26 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ cmpl(isMIME, 0);
     __ jcc(Assembler::notEqual, L_tailProc);
 
-    __ shll(isURL, 3);
+    __ shll(isURL, 2);
 
     // Algorithm adapted from https://arxiv.org/abs/1704.00605, "Faster Base64
     // Encoding and Decoding using AVX2 Instructions".  URL modifications added.
 
     // Set up constants
     __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_tables_addr()));
-    __ vpbroadcastq(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
-    __ vpbroadcastq(xmm10, Address(r13, isURL, Address::times_1, 0x10), Assembler::AVX_256bit);  // -1 or -4
-    __ vmovdqu(xmm12, Address(r13, 0x20));  // permute
-    __ vmovdqu(xmm9, Address(r13, 0x40));  // lut_hi
-    __ vmovdqu(xmm7, Address(r13, 0x60)); // merge
-    __ vmovdqu(xmm6, Address(r13, 0x80)); // merge mult
-    __ vmovdqu(xmm13, Address(r13, 0xa0)); // shuffle
+    __ vpbroadcastd(xmm4, Address(r13, isURL, Address::times_1), Assembler::AVX_256bit);  // 2F or 5F
+    __ vpbroadcastd(xmm10, Address(r13, isURL, Address::times_1, 0x08), Assembler::AVX_256bit);  // -1 or -4
+    __ vmovdqu(xmm12, Address(r13, 0x10));  // permute
+    __ vmovdqu(xmm13, Address(r13, 0x30)); // shuffle
+    __ vpbroadcastd(xmm7, Address(r13, 0x50), Assembler::AVX_256bit);  // merge
+    __ vpbroadcastd(xmm6, Address(r13, 0x54), Assembler::AVX_256bit);  // merge mult
 
-    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_URL_tables_addr()));
-    __ shll(isURL, 3);
+    __ lea(r13, ExternalAddress(StubRoutines::x86::base64_AVX2_decode_LUT_tables_addr()));
+    __ shll(isURL, 4);
     __ vmovdqu(xmm11, Address(r13, isURL, Address::times_1, 0x00));  // lut_lo
     __ vmovdqu(xmm8, Address(r13, isURL, Address::times_1, 0x20)); // lut_roll
     __ shrl(isURL, 6);  // restore isURL
+    __ vmovdqu(xmm9, Address(r13, 0x80));  // lut_hi
     __ jmp(L_enterLoop);
 
     __ align32();
@@ -4019,7 +4013,7 @@ void StubGenerator::generate_all() {
       StubRoutines::x86::_avx2_input_mask_base64 = base64_avx2_input_mask_addr();
       StubRoutines::x86::_avx2_lut_base64 = base64_avx2_lut_addr();
       StubRoutines::x86::_avx2_decode_tables_base64 = base64_AVX2_decode_tables_addr();
-      StubRoutines::x86::_avx2_decode_tables_url_base64 = base64_AVX2_decode_URL_tables_addr();
+      StubRoutines::x86::_avx2_decode_lut_tables_base64 = base64_AVX2_decode_LUT_tables_addr();
     }
     StubRoutines::x86::_encoding_table_base64 = base64_encoding_table_addr();
     if (VM_Version::supports_avx512_vbmi()) {
