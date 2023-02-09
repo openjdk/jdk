@@ -358,6 +358,14 @@ void PEAState::add_new_allocation(Node* obj) {
 
   if (nfields >= 0) {
     AllocateNode* alloc = obj->in(1)->in(0)->as_Allocate();
+#ifndef PRODUCT
+    // node_idx_t is unsigned. Use static_cast<> here to avoid comparison between signed and unsigned.
+    if (PEA_debug_idx > 0 && alloc->_idx != static_cast<node_idx_t>(PEA_debug_idx)) {         // only allow PEA_debug_idx
+      return;
+    } else if (PEA_debug_idx < 0 && alloc->_idx == static_cast<node_idx_t>(-PEA_debug_idx)) { // block PEA_debug_idx
+      return;
+    }
+#endif
     bool result = _state.put(alloc, new VirtualState(nfields));
     assert(result, "the key existed in _state");
     add_alias(alloc, obj);

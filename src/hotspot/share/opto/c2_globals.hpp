@@ -491,6 +491,10 @@
   product(bool, DoPartialEscapeAnalysis, false, EXPERIMENTAL,               \
           "Perform partial escape analysis")                                \
                                                                             \
+  notproduct(intx, PEA_debug_idx, 0,                                        \
+          "only select ObjID in PEA when debug_idx > 0;"                    \
+          "skip ObjID if debug_idx < 0")                                    \
+                                                                            \
   product(bool, EliminateAllocations, true,                                 \
           "Use escape analysis to eliminate allocations")                   \
                                                                             \
