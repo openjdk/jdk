@@ -1,0 +1,2 @@
+NarrowingNameClash.java:15:14: compiler.err.name.clash.same.erasure.no.override: method, java.lang.Class<?>, NarrowingNameClash.Lower, method, java.lang.Class<R>, NarrowingNameClash.Upper
+1 error

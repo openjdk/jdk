@@ -2581,7 +2581,10 @@ public class Check {
                 //if (i) the signature of 'sym' is not a subsignature of m1 (seen as
                 //a member of 'site') and (ii) m1 has the same erasure as m2, issue an error
                 if (!types.isSubSignature(sym.type, types.memberType(site, m2)) &&
-                        types.hasSameArgs(m2.erasure(types), m1.erasure(types))) {
+                        (types.hasSameArgs(m2.erasure(types), m1.erasure(types)) ||
+                        types.hasSameArgs(
+                            m2.asMemberOf(site, types).erasure(types),
+                            m1.asMemberOf(site, types).erasure(types)))) {
                     sym.flags_field |= CLASH;
                     if (m1 == sym) {
                         log.error(pos, Errors.NameClashSameErasureNoOverride(
