@@ -50,15 +50,14 @@ $(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
         @@VENDOR_URL_VM_BUG@@ => $(VENDOR_URL_VM_BUG), \
 ))
 
-$(eval $(call SetupTextFileProcessing, BUILD_INITPLATFORM_JAVA, \
-    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/InitPlatform.java.template, \
-    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/InitPlatform.java, \
+$(eval $(call SetupTextFileProcessing, BUILD_PLATFORMPROPERTIES_JAVA, \
+    SOURCE_FILES := $(TOPDIR)/src/java.base/share/classes/jdk/internal/misc/PlatformProperties.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/misc/PlatformProperties.java, \
     REPLACEMENTS := \
-        @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS) ; \
-        @@OPENJDK_TARGET_CPU@@ => $(OPENJDK_TARGET_CPU), \
+        @@OPENJDK_TARGET_OS@@ => $(OPENJDK_TARGET_OS), \
 ))
 
-TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_INITPLATFORM_JAVA)
+TARGETS += $(BUILD_VERSION_JAVA) $(BUILD_PLATFORMPROPERTIES_JAVA)
 ################################################################################
 
 ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )

@@ -62,19 +62,19 @@ public enum OperatingSystem {
     /**
      * The Linux Operating system.
      */
-    Linux("Linux", InitPlatform.OS_TARGET_IS_LINUX),
+    Linux("Linux", PlatformProperties.TARGET_OS_IS_LINUX),
     /**
      * The Mac OS X Operating system.
      */
-    MacOSX("Mac OS X", InitPlatform.OS_TARGET_IS_MACOS),
+    MacOSX("Mac OS X", PlatformProperties.TARGET_OS_IS_MACOS),
     /**
      * The Windows Operating system.
      */
-    Windows("Windows", InitPlatform.OS_TARGET_IS_WINDOWS),
+    Windows("Windows", PlatformProperties.TARGET_OS_IS_WINDOWS),
     /**
      * The AIX Operating system.
      */
-    AIX("AIX", InitPlatform.OS_TARGET_IS_AIX),
+    AIX("AIX", PlatformProperties.TARGET_OS_IS_AIX),
     ;
 
     /**
@@ -98,35 +98,35 @@ public enum OperatingSystem {
      * {@return {@code true} if the operating system is Linux}
      */
     public static boolean isLinux() {
-        return InitPlatform.OS_TARGET_IS_LINUX;
+        return PlatformProperties.TARGET_OS_IS_LINUX;
     }
 
     /**
      * {@return {@code true} if the operating system is Linux}
      */
     public static boolean isMacOS() {
-        return InitPlatform.OS_TARGET_IS_MACOS;
+        return PlatformProperties.TARGET_OS_IS_MACOS;
     }
 
     /**
      * {@return {@code true} if the operating system is Linux}
      */
     public static boolean isWindows() {
-        return InitPlatform.OS_TARGET_IS_WINDOWS;
+        return PlatformProperties.TARGET_OS_IS_WINDOWS;
     }
 
     /**
      * {@return {@code true} if the operating system is Linux}
      */
     public static boolean isAix() {
-        return InitPlatform.OS_TARGET_IS_AIX;
+        return PlatformProperties.TARGET_OS_IS_AIX;
     }
 
     /**
      * Construct an operating system enum for the named operating system.
      *
      * @param name       the name that identifies the operating system
-     * @param isCurrent  the InitPlatform.OS_TARGET_IS_XXX boolean for the OS
+     * @param isCurrent  the PlatformProperties.TARGET_OS_IS_XXX boolean for the OS
      */
     OperatingSystem(String name, boolean isCurrent) {
         this.name = name;
