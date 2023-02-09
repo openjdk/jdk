@@ -510,38 +510,40 @@ public:
   template <class T>
   void verify_liveness(T* p) {
     T heap_oop = RawAccess<>::oop_load(p);
-    Log(gc, verify) log;
-    if (!CompressedOops::is_null(heap_oop)) {
-      oop obj = CompressedOops::decode_raw_not_null(heap_oop);
-      bool failed = false;
-      bool is_in_heap = _g1h->is_in(obj);
-      if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
-        MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+    if (CompressedOops::is_null(heap_oop)) {
+      return;
+    }
 
-        if (!_failures) {
-          log.error("----------");
-        }
-        ResourceMark rm;
+    oop obj = CompressedOops::decode_raw_not_null(heap_oop);
+    bool failed = false;
+    bool is_in_heap = _g1h->is_in(obj);
+    if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
+      MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
 
-        HeapRegion* from = _g1h->heap_region_containing(p);
-        log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
-                  p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
-        LogStream ls(log.error());
-        print_object(&ls, _containing_obj);
-
-        if (!is_in_heap) {
-          log.error("points to address " PTR_FORMAT " outside of heap", p2i(obj));
-        } else {
-          HeapRegion* to = _g1h->heap_region_containing(obj);
-          log.error("points to dead obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
-                    p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
-          print_object(&ls, obj);
-        }
+      Log(gc, verify) log;
+      if (!_failures) {
         log.error("----------");
-        _failures = true;
-        failed = true;
-        _n_failures++;
       }
+      ResourceMark rm;
+
+      HeapRegion* from = _g1h->heap_region_containing(p);
+      log.error("Field " PTR_FORMAT " of live obj " PTR_FORMAT " in region " HR_FORMAT,
+                p2i(p), p2i(_containing_obj), HR_FORMAT_PARAMS(from));
+      LogStream ls(log.error());
+      print_object(&ls, _containing_obj);
+
+      if (!is_in_heap) {
+        log.error("points to address " PTR_FORMAT " outside of heap", p2i(obj));
+      } else {
+        HeapRegion* to = _g1h->heap_region_containing(obj);
+        log.error("points to dead obj " PTR_FORMAT " in region " HR_FORMAT " remset %s",
+                  p2i(obj), HR_FORMAT_PARAMS(to), to->rem_set()->get_state_str());
+        print_object(&ls, obj);
+      }
+      log.error("----------");
+      _failures = true;
+      failed = true;
+      _n_failures++;
     }
   }
 };
