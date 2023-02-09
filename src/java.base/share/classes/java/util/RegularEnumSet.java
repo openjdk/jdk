@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ package java.util;
  * @since 1.5
  * @serial exclude
  */
-final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
+final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> implements RegularEnumSetCompatible<E> {
     @java.io.Serial
     private static final long serialVersionUID = 3411599620347842686L;
     /**
@@ -41,6 +41,16 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * presence of universe[k] in this set.
      */
     private long elements = 0L;
+
+    @Override
+    public long elements() {
+        return elements;
+    }
+
+    @Override
+    public Class<E> elementType() {
+        return elementType;
+    }
 
     RegularEnumSet(Class<E>elementType, Enum<?>[] universe) {
         super(elementType, universe);
@@ -196,13 +206,13 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * @throws NullPointerException if the specified collection is null
      */
     public boolean containsAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSet<?> es))
+        if (!(c instanceof RegularEnumSetCompatible<?> es))
             return super.containsAll(c);
 
-        if (es.elementType != elementType)
+        if (es.elementType() != elementType)
             return es.isEmpty();
 
-        return (es.elements & ~elements) == 0;
+        return (es.elements() & ~elements) == 0;
     }
 
     /**
@@ -214,19 +224,19 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      *     of its elements are null
      */
     public boolean addAll(Collection<? extends E> c) {
-        if (!(c instanceof RegularEnumSet<?> es))
+        if (!(c instanceof RegularEnumSetCompatible<?> es))
             return super.addAll(c);
 
-        if (es.elementType != elementType) {
+        if (es.elementType() != elementType) {
             if (es.isEmpty())
                 return false;
             else
                 throw new ClassCastException(
-                    es.elementType + " != " + elementType);
+                    es.elementType() + " != " + elementType);
         }
 
         long oldElements = elements;
-        elements |= es.elements;
+        elements |= es.elements();
         return elements != oldElements;
     }
 
@@ -239,14 +249,14 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * @throws NullPointerException if the specified collection is null
      */
     public boolean removeAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSet<?> es))
+        if (!(c instanceof RegularEnumSetCompatible<?> es))
             return super.removeAll(c);
 
-        if (es.elementType != elementType)
+        if (es.elementType() != elementType)
             return false;
 
         long oldElements = elements;
-        elements &= ~es.elements;
+        elements &= ~es.elements();
         return elements != oldElements;
     }
 
@@ -259,17 +269,17 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * @throws NullPointerException if the specified collection is null
      */
     public boolean retainAll(Collection<?> c) {
-        if (!(c instanceof RegularEnumSet<?> es))
+        if (!(c instanceof RegularEnumSetCompatible<?> es))
             return super.retainAll(c);
 
-        if (es.elementType != elementType) {
+        if (es.elementType() != elementType) {
             boolean changed = (elements != 0);
             elements = 0;
             return changed;
         }
 
         long oldElements = elements;
-        elements &= es.elements;
+        elements &= es.elements();
         return elements != oldElements;
     }
 
@@ -290,11 +300,11 @@ final class RegularEnumSet<E extends Enum<E>> extends EnumSet<E> {
      * @return {@code true} if the specified object is equal to this set
      */
     public boolean equals(Object o) {
-        if (!(o instanceof RegularEnumSet<?> es))
+        if (!(o instanceof RegularEnumSetCompatible<?> es))
             return super.equals(o);
 
-        if (es.elementType != elementType)
-            return elements == 0 && es.elements == 0;
-        return es.elements == elements;
+        if (es.elementType() != elementType)
+            return elements == 0 && es.elements() == 0;
+        return es.elements() == elements;
     }
 }
