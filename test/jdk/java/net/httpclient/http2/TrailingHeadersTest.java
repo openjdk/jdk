@@ -28,10 +28,6 @@
  * @bug 8296410
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm -Djdk.httpclient.HttpClient.log=all TrailingHeadersTest
  */
 
@@ -150,17 +146,14 @@ public class TrailingHeadersTest {
     }
 
     private void verifyPushPromise()  {
-        if (pushPromiseMap.size() > 1) {
-            throw new TestException("Push Promise map size is greater than 1");
-        } else {
-            // This will only iterate once
-            for (HttpRequest r : pushPromiseMap.keySet()) {
-                CompletableFuture<HttpResponse<String>> serverPushResp = pushPromiseMap.get(r);
-                // Get the push promise HttpResponse result if present
-                HttpResponse<String> resp = serverPushResp.join();
-                assertEquals(resp.body(), "Sample_Push_Data", "Unexpected Push Promise response body");
-                assertEquals(resp.statusCode(), 200, "Status code of Push Promise response should be 200");
-            }
+        assertEquals(pushPromiseMap.size(), 1, "Push Promise should not be greater than 1");
+        // This will only iterate once
+        for (HttpRequest r : pushPromiseMap.keySet()) {
+            CompletableFuture<HttpResponse<String>> serverPushResp = pushPromiseMap.get(r);
+            // Get the push promise HttpResponse result if present
+            HttpResponse<String> resp = serverPushResp.join();
+            assertEquals(resp.body(), "Sample_Push_Data", "Unexpected Push Promise response body");
+            assertEquals(resp.statusCode(), 200, "Status code of Push Promise response should be 200");
         }
     }
 
