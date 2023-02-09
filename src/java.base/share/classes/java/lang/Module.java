@@ -181,8 +181,9 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module is a named module.
      *
      * @return {@code true} if this is a named module
-     * @jls 7.7.5 Unnamed Modules
+     *
      * @see ClassLoader#getUnnamedModule()
+     * @jls 7.7.5 Unnamed Modules
      */
     public boolean isNamed() {
         return name != null;
@@ -207,6 +208,7 @@ public final class Module implements AnnotatedElement {
      * class loader. </p>
      *
      * @return The class loader for this module
+     *
      * @throws SecurityException
      *         If denied by the security manager
      */
@@ -241,6 +243,7 @@ public final class Module implements AnnotatedElement {
      * not be in a module layer. </p>
      *
      * @return The module layer that contains this module
+     *
      * @see java.lang.reflect.Proxy
      */
     public ModuleLayer getLayer() {
