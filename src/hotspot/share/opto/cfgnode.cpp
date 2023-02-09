@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,6 +435,19 @@ bool RegionNode::are_all_nodes_in_infinite_subgraph(Unique_Node_List& worklist) 
 }
 #endif //ASSERT
 
+void RegionNode::set_loop_status(RegionNode::LoopStatus status) {
+  assert(status != RegionNode::LoopStatus::NeverIrreducibleEntry, "do not set this");
+  assert(loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "why set our status again?");
+  _loop_status = status;
+}
+
+#ifdef ASSERT
+void RegionNode::verify_can_be_irreducible_entry() const {
+  assert(loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry, "must be marked irreducible");
+  assert(!is_Loop(), "LoopNode cannot be irreducible loop entry");
+}
+#endif //ASSERT
+
 bool RegionNode::try_clean_mem_phi(PhaseGVN *phase) {
   // Incremental inlining + PhaseStringOpts sometimes produce:
   //
@@ -522,6 +535,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
   int del_it = 0;               // The last input path we delete
+  bool found_top = false; // irreducible loops need to check reachability if we find TOP
   // For all inputs...
   for( uint i=1; i<req(); ++i ){// For all paths in
     Node *n = in(i);            // Get the input
@@ -545,6 +559,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if( phase->type(n) == Type::TOP ) {
         set_req_X(i, NULL, phase); // Ignore TOP inputs
         modified = true;
+        found_top = true;
         i--;
         continue;
       }
@@ -580,7 +595,20 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  if (can_reshape && cnt == 1) {
+  if (can_reshape && found_top && loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
+    // Is it a dead irreducible loop?
+    // If an irreducible loop loses one of the multiple entries
+    // that went into the loop head, or any secondary entries,
+    // we need to verify if the irreducible loop is still reachable,
+    // as the special logic in is_unreachable_region only works
+    // for reducible loops.
+    if (is_unreachable_from_root(phase)) {
+      // The irreducible loop is dead - must remove it
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      remove_unreachable_subgraph(igvn);
+      return nullptr;
+    }
+  } else if (can_reshape && cnt == 1) {
     // Is it dead loop?
     // If it is LoopNopde it had 2 (+1 itself) inputs and
     // one of them was cut. The loop is dead if it was EntryContol.
@@ -590,49 +618,9 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if ((this->is_Loop() && (del_it == LoopNode::EntryControl ||
                              (del_it == 0 && is_unreachable_region(phase)))) ||
         (!this->is_Loop() && has_phis && is_unreachable_region(phase))) {
-      // This region and therefore all nodes on the input control path(s) are unreachable
-      // from root. To avoid incomplete removal of unreachable subgraphs, walk up the CFG
-      // and aggressively replace all nodes by top.
       PhaseIterGVN* igvn = phase->is_IterGVN();
-      Node* top = phase->C->top();
-      ResourceMark rm;
-      Node_List nstack;
-      VectorSet visited;
-      nstack.push(this);
-      visited.set(_idx);
-      while (nstack.size() != 0) {
-        Node* n = nstack.pop();
-        for (uint i = 0; i < n->req(); ++i) {
-          Node* m = n->in(i);
-          assert(m != (Node*)phase->C->root(), "Should be unreachable from root");
-          if (m != NULL && m->is_CFG() && !visited.test_set(m->_idx)) {
-            nstack.push(m);
-          }
-        }
-        if (n->is_Region()) {
-          // Eagerly replace phis with top to avoid regionless phis.
-          n->set_req(0, NULL);
-          bool progress = true;
-          uint max = n->outcnt();
-          DUIterator j;
-          while (progress) {
-            progress = false;
-            for (j = n->outs(); n->has_out(j); j++) {
-              Node* u = n->out(j);
-              if (u->is_Phi()) {
-                igvn->replace_node(u, top);
-                if (max != n->outcnt()) {
-                  progress = true;
-                  j = n->refresh_out_pos(j);
-                  max = n->outcnt();
-                }
-              }
-            }
-          }
-        }
-        igvn->replace_node(n, top);
-      }
-      return NULL;
+      remove_unreachable_subgraph(igvn);
+      return nullptr;
     }
   }
 
@@ -804,6 +792,59 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return modified ? this : NULL;
 }
 
+//--------------------------remove_unreachable_subgraph----------------------
+// This region and therefore all nodes on the input control path(s) are unreachable
+// from root. To avoid incomplete removal of unreachable subgraphs, walk up the CFG
+// and aggressively replace all nodes by top.
+// If a control node "def" with a single control output "use" has its single output
+// "use" replaced with top, then "use" removes itself. This has the consequence that
+// when we visit "use", it already has all inputs removed. They are lost and we cannot
+// traverse them. This is why we fist find all unreachable nodes, and then remove
+// them in a second step.
+void RegionNode::remove_unreachable_subgraph(PhaseIterGVN* igvn) {
+  Node* top = igvn->C->top();
+  ResourceMark rm;
+  Unique_Node_List unreachable; // visit each only once
+  unreachable.push(this);
+  // Recursively find all control inputs.
+  for (uint i = 0; i < unreachable.size(); i++) {
+    Node* n = unreachable.at(i);
+    for (uint i = 0; i < n->req(); ++i) {
+      Node* m = n->in(i);
+      assert(m == nullptr || !m->is_Root(), "Should be unreachable from root");
+      if (m != nullptr && m->is_CFG()) {
+        unreachable.push(m);
+      }
+    }
+  }
+  // Remove all unreachable nodes.
+  for (uint i = 0; i < unreachable.size(); i++) {
+    Node* n = unreachable.at(i);
+    if (n->is_Region()) {
+      // Eagerly replace phis with top to avoid regionless phis.
+      n->set_req(0, nullptr);
+      bool progress = true;
+      uint max = n->outcnt();
+      DUIterator j;
+      while (progress) {
+        progress = false;
+        for (j = n->outs(); n->has_out(j); j++) {
+          Node* u = n->out(j);
+          if (u->is_Phi()) {
+            igvn->replace_node(u, top);
+            if (max != n->outcnt()) {
+              progress = true;
+              j = n->refresh_out_pos(j);
+              max = n->outcnt();
+            }
+          }
+        }
+      }
+    }
+    igvn->replace_node(n, top);
+  }
+}
+
 //------------------------------optimize_trichotomy--------------------------
 // Optimize nested comparisons of the following kind:
 //
@@ -951,6 +992,22 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
 const RegMask &RegionNode::out_RegMask() const {
   return RegMask::Empty;
 }
+
+#ifndef PRODUCT
+void RegionNode::dump_spec(outputStream* st) const {
+  Node::dump_spec(st);
+  switch (loop_status()) {
+  case RegionNode::LoopStatus::MaybeIrreducibleEntry:
+    st->print("#irreducible ");
+    break;
+  case RegionNode::LoopStatus::Reducible:
+    st->print("#reducible ");
+    break;
+  case RegionNode::LoopStatus::NeverIrreducibleEntry:
+    break; // nothing
+  }
+}
+#endif
 
 // Find the one non-null required input.  RegionNode only
 Node *Node::nonnull_req() const {
@@ -1271,8 +1328,7 @@ const Type* PhiNode::Value(PhaseGVN* phase) const {
 #endif //ASSERT
 
   // Deal with conversion problems found in data loops.
-  ft = phase->saturate(ft, phase->type_or_null(this), _type);
-
+  ft = phase->saturate_and_maybe_push_to_igvn_worklist(this, ft);
   return ft;
 }
 
@@ -1354,6 +1410,9 @@ Node* PhiNode::is_cmove_id(PhaseTransform* phase, int true_path) {
 //------------------------------Identity---------------------------------------
 // Check for Region being Identity.
 Node* PhiNode::Identity(PhaseGVN* phase) {
+  if (must_wait_for_region_in_irreducible_loop(phase)) {
+    return this;
+  }
   // Check for no merging going on
   // (There used to be special-case code here when this->region->is_Loop.
   // It would check for a tributary phi on the backedge that the main phi
@@ -1701,6 +1760,18 @@ static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *
 //------------------------------split_flow_path--------------------------------
 // Check for merging identical values and split flow paths
 static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
+  // This optimization tries to find two or more inputs of phi with the same constant value
+  // It then splits them into a separate Phi, and according Region. If this is a loop-entry,
+  // and the loop entry has multiple fall-in edges, and some of those fall-in edges have that
+  // constant, and others not, we may split the fall-in edges into separate Phi's, and create
+  // an irreducible loop. For reducible loops, this never seems to happen, as the multiple
+  // fall-in edges are already merged before the loop head during parsing. But with irreducible
+  // loops present the order or merging during parsing can sometimes prevent this.
+  if (phase->C->has_irreducible_loop()) {
+    // Avoid this optimization if any irreducible loops are present. Else we may create
+    // an irreducible loop that we do not detect.
+    return nullptr;
+  }
   BasicType bt = phi->type()->basic_type();
   if( bt == T_ILLEGAL || type2size[bt] <= 0 )
     return NULL;                // Bail out on funny non-value stuff
@@ -1895,6 +1966,31 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   return delay;
 }
 
+// If the Phi's Region is in an irreducible loop, and the Region
+// has had an input removed, but not yet transformed, it could be
+// that the Region (and this Phi) are not reachable from Root.
+// If we allow the Phi to collapse before the Region, this may lead
+// to dead-loop data. Wait for the Region to check for reachability,
+// and potentially remove the dead code.
+bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
+  RegionNode* region = in(0)->as_Region();
+  if (region->loop_status() == RegionNode::LoopStatus::MaybeIrreducibleEntry) {
+    Node* top = phase->C->top();
+    for (uint j = 1; j < req(); j++) {
+      Node* rc = region->in(j); // for each control input
+      if (rc == nullptr || phase->type(rc) == Type::TOP) {
+        // Region is missing a control input
+        Node* n = in(j);
+        if (n != nullptr && n != top) {
+          // Phi still has its input, so region just lost its input
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Must preserve
 // the CFG, but we can still strip out dead paths.
@@ -1913,6 +2009,10 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // No change for igvn if new phi is not hooked
   if (new_phi && can_reshape)
     return NULL;
+
+  if (must_wait_for_region_in_irreducible_loop(phase)) {
+    return nullptr;
+  }
 
   // The are 2 situations when only one valid phi's input is left
   // (in addition to Region input).
@@ -2031,7 +2131,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     debug_only(Node* ident = Identity(phase));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
-    if (ident != uin && !ident->is_top()) {
+    if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
       // print this output before failing assert
       r->dump(3);
       this->dump(3);
@@ -2039,7 +2139,8 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       uin->dump();
     }
 #endif
-    assert(ident == uin || ident->is_top(), "Identity must clean this up");
+    // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
+    assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
     return NULL;
   }
 
@@ -2493,7 +2594,11 @@ Node* PhiNode::merge_through_phi(Node* root_phi, PhaseIterGVN* igvn) {
       stack.pop();
     }
   }
-  assert(cached_vbox != NULL, "sanity");
+  if (cached_vbox == nullptr) {
+    // We have a Phi dead-loop (no data-input). Phi nodes are considered safe,
+    // so just avoid this optimization.
+    return nullptr;
+  }
   const TypeInstPtr* btype = cached_vbox->box_type();
   const TypeVect*    vtype = cached_vbox->vec_type();
   Node* new_vbox_phi = clone_through_phi(root_phi, btype, VectorBoxNode::Box,   igvn);
@@ -2734,6 +2839,10 @@ void CatchProjNode::dump_spec(outputStream *st) const {
 Node* CreateExNode::Identity(PhaseGVN* phase) {
   if( phase->type(in(1)) == Type::TOP ) return in(1);
   if( phase->type(in(0)) == Type::TOP ) return in(0);
+  if (phase->type(in(0)->in(0)) == Type::TOP) {
+    assert(in(0)->is_CatchProj(), "control is CatchProj");
+    return phase->C->top(); // dead code
+  }
   // We only come from CatchProj, unless the CatchProj goes away.
   // If the CatchProj is optimized away, then we just carry the
   // exception oop through.

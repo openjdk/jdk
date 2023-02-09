@@ -211,4 +211,4 @@ private:
 
     IManagedResource* pHead;
 };
-#endif _D3DRESOURCEMANAGER_H_
+#endif // _D3DRESOURCEMANAGER_H_
