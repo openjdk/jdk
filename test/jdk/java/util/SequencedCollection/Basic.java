@@ -264,6 +264,40 @@ public class Basic {
         ).iterator();
     }
 
+    // mode bit tests for subList testing
+
+    boolean reverseList(int mode) { return (mode & 1) != 0; }
+    boolean reverseSub(int mode)  { return (mode & 2) != 0; }
+    boolean isReversed(int mode) { return reverseList(mode) ^ reverseSub(mode); }
+
+    List<String> applyMode(int mode, List<String> base) {
+        var list = reverseList(mode) ? base.reversed() : base;
+        var sub = list.subList(2, 5);
+        return reverseSub(mode) ? sub.reversed() : sub;
+    }
+
+    /**
+     * Generate cases for testing subLists. For each different List implementation, generate 4
+     * cases from the two bits of the testing mode int value:
+     *
+     *  (bit 1) if true, the List is reversed
+     *  (bit 2) if true, the subList is reversed
+     *
+     * @return the generated cases
+     */
+    @DataProvider(name="subListMods")
+    public Iterator<Object[]> subListMods() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 4; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "ArrayList", mode, new ArrayList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "LinkedList", mode, new LinkedList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleList", mode, new SimpleList<>(ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
+
     // ========== Assertions ==========
 
     /**
@@ -559,5 +593,95 @@ public class Basic {
     public void testCheckedSortedSet(String label, SortedSet<String> set, List<String> ref) {
         checkCheckedSortedSet(set);
         checkContents(set, ref);
+    }
+
+    // Indexes for subList tests:
+    // 0  1  2  3  4  5  6
+    // a, b, c, d, e, f, g
+    //       c, d, e
+
+    @Test(dataProvider="subListMods")
+    public void testSubListGet(String label, int mode, List<String> list, List<String> base) {
+        var sub = applyMode(mode, list);
+        assertEquals(sub.getFirst(), isReversed(mode) ? "e" : "c");
+        assertEquals(sub.getLast(),  isReversed(mode) ? "c" : "e");
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListAddFirst(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        refList.add(isReversed(mode) ? 5 : 2, "x");
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.addFirst("x");
+        refSub.add(0, "x");
+        checkContents(sub, refSub);
+        checkContents(list, refList);
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListAddLast(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        refList.add(isReversed(mode) ? 2 : 5, "x");
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.addLast("x");
+        refSub.add("x");
+        checkContents(sub, refSub);
+        checkContents(list, refList);
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListRemoveFirst(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        refList.remove(isReversed(mode) ? 4 : 2);
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.removeFirst();
+        refSub.remove(0);
+        checkContents(sub, refSub);
+        checkContents(list, refList);
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListRemoveLast(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        refList.remove(isReversed(mode) ? 2 : 4);
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.removeLast();
+        refSub.remove(refSub.size() - 1);
+        checkContents(sub, refSub);
+        checkContents(list, refList);
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListAddAllFirst(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        if (isReversed(mode))
+            refList.addAll(5, List.of("y", "x"));
+        else
+            refList.addAll(2, List.of("x", "y"));
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.addAll(0, List.of("x", "y"));
+        refSub.addAll(0, List.of("x", "y"));
+        checkContents(sub, refSub);
+        checkContents(list, refList);
+    }
+
+    @Test(dataProvider="subListMods")
+    public void testSubListAddAllLast(String label, int mode, List<String> list, List<String> base) {
+        var refList = new ArrayList<>(base);
+        if (isReversed(mode))
+            refList.addAll(2, List.of("y", "x"));
+        else
+            refList.addAll(5, List.of("x", "y"));
+        var sub = applyMode(mode, list);
+        var refSub = new ArrayList<>(sub);
+        sub.addAll(List.of("x", "y"));
+        refSub.addAll(List.of("x", "y"));
+        checkContents(sub, refSub);
+        checkContents(list, refList);
     }
 }
