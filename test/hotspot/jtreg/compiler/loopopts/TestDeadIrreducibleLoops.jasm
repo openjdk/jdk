@@ -1,0 +1,1496 @@
+/*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+super public class TestDeadIrreducibleLoops
+{
+    public Method "<init>":"()V"
+    stack 2 locals 1
+    {
+        aload_0;
+        invokespecial  Method java/lang/Object."<init>":"()V";
+        return;
+    }
+
+    static Method test_001:"(IIII)I"
+    stack 20 locals 20
+    {
+        // Irreducible loop with 3 Regions, 2 are entries, 1 is not entry
+        iconst_0;
+        istore 10;
+
+        iload_0;
+        ifeq LEND; // runtime check, skip all code
+
+        iload_1;
+        ifeq ENTRY1; // irreducible entry
+        goto ENTRY2;
+
+    ENTRY1:
+        // 43 Region - irreducible-entry
+        iload 3;
+        ifeq L1;
+        iinc 10, 1;
+    ENTRY2:
+        // 44 Region - irreducible-entry
+        iinc 10, 2;
+    L1:
+        // 60 Region - irreducible (but not entry)
+        // can be loop-head, if build_loop_tree
+        // first reaches ENTRY2
+        iinc 10, 4;
+        iload_2;
+        ifeq ENTRY1; // loop-end
+
+    LEND:
+        iload 10;
+        ireturn;
+    }
+
+    static Method test_002:"(I)V"
+    stack 10 locals 10
+    {
+        // split_fall_in splits up an irreducible-entry Region
+        iconst_0;
+        istore     1;
+        iload      0;
+        ifle L2;
+    L1:
+        // bci:8
+        // 30  Region (tagged irreducible at parsing)
+        iload      0;
+        ifne L3;
+    L2:
+        // bci:13
+        // 29  Region (tagged irreducible at parsing)
+        // 100 Region
+        // 129 Region (produced in split_fall_in, must be tagged irreducible)
+        // 134 Loop
+        goto L1;
+    L3:
+        iload      1;
+        ifgt L1;
+        return;
+    }
+
+    static Method test_003:"(I)I"
+    stack 5 locals 25
+    {
+        // Cut off both entries to irreducible loop at the same time:
+        // LOOP_y (empty_loop) collapses -> cut off both entries to irreducible LOOP_3
+        // LOOP_3 should be removed during IGVN
+        iconst_m1;
+        istore           12;
+        
+        // empty loop, where var[20] counts to 0
+        // and var[21] counts to 10001
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    LOOP_Y:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            20;
+        ifgt             LOOP_Y;
+
+        // once the empty_loop above collapses, we see this is true
+        iload            21;
+        ldc              10001;
+        if_icmpeq        LEND;
+
+        iload_0;
+        ldc              1;
+        iand;
+        ifeq             LOOP_3c; // second entry
+
+        // first entry
+    LOOP_3a:
+        iinc             12, 11;
+        iload            12;
+        ifge             LOOP_3c; // skip
+    LOOP_3b:
+        iinc             12, 7;
+    LOOP_3c:
+        iinc             12, 3;
+        iload            12;
+        ldc              1001;
+        if_icmpne        LOOP_3a; // loop
+    LEND:
+        iload            12;
+        ireturn;
+    }
+
+    static Method test_004:"(Ljava/lang/Object;)Ljava/lang/Object;"
+    stack 10 locals 10
+    {
+        // When we detect irreducible loops, we add more Phi nodes
+        // This test generates dead code, where we create a dead-loop
+        // of Phi nodes. Phi nodes are considered dead-loop safe,
+        // so they should be handled gracefully.
+        // This is a regression test for the faulty "sanity" assert
+        // in PhiNode::merge_through_phi. Instead of asserting,
+        // we now just abort the optimization.
+        iconst_1;
+        istore      5;
+    LOOP:
+        iconst_0;
+        ifge        HEAD;
+        goto        LOOP;
+    HEAD:
+        iload       5;
+        ifge        LCMP;
+        iload       5;
+        iflt        L29;
+    L30:
+        iload       5;
+        iflt        BOTTOM;
+    L29:
+        iload       5;
+        ifeq        L30;
+    BOTTOM:
+        goto        HEAD;
+    LCMP:
+        aload_0;
+        areturn;
+    }
+
+    static Method test_005:"(II)V"
+    stack 20 locals 20
+    {
+        // Triggers compile bailout: bad CFG: both infinite and irreducible
+
+        iload_0;
+        ifeq LEND; // runtime check, avoid infinte loop below
+
+        iconst_0;
+        istore 10;
+
+        iload_1;
+        ifeq ENTRY2;
+
+    ENTRY1:
+        iinc 10, 1;
+    ENTRY2:
+        iinc 10, 2;
+        goto ENTRY1; // backedge
+        
+    LEND:
+        return;
+    }
+
+    static Method test_006:"(I)I"
+    stack 5 locals 25
+    {
+        // check that disconnected irreducible loop collapses instantly
+        // and does not create data dead-loop with iinc / AddI
+        iconst_m1;
+        istore           12;
+
+        // empty loop, where var[20] counts to 0
+        // and var[21] counts to 10001
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    LOOP_Y:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            20;
+        ifgt             LOOP_Y;
+
+        // once the empty_loop above collapses, we see this is true
+        iload            21;
+        ldc              10001;
+        if_icmpeq        LEND;
+
+        // second entry
+        iload_0;
+        ldc              1;
+        iand;
+        ifgt             LOOP_3d;
+        
+        // first entry
+    LOOP_3a:
+        iload            12;
+        ifge             LOOP_3d;
+    LOOP_3b:
+        iload_0; // eventually, we get TOP and things die from the inside out
+        ldc              2;
+        if_icmplt        LOOP_3b;
+        iinc             12, 1; // the problematic AddI
+        goto             LOOP_3a;
+    LOOP_3d:
+        iload            12;
+        ldc              1001;
+        if_icmpne        LOOP_3a;
+    LEND:
+        iload_0;
+        ireturn;
+    }
+
+    static Method test_007:"(III)V"
+    stack 20 locals 40
+    {
+        // Irreducible entry Regions lose all loop-internal control
+        // Once empty_loop collapses, we never loop-back to
+        // ENTRY1 nor ENTRY2. SKIP1 and SKIP2 become the new
+        // irreducible loop entries.
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // empty loop, where var[20] counts to 0
+        // and var[21] counts to 10001
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    EMPTY_LOOP:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            20;
+        ifgt             EMPTY_LOOP;
+
+        iconst_0;
+        istore 30; // x = 0
+
+        iload_1;
+        ifeq ENTRY1;
+        goto ENTRY2; // the order here is arbitrary
+
+    ENTRY1:
+        iinc 30, 1; // x += 1
+
+    SKIP1:
+        ldc 10001;
+        iload 21;
+        if_icmpeq SKIP2; // always true after empty_loop collapses
+
+    ENTRY2:
+        iinc 30, 32; // x += 2
+
+    SKIP2:
+        iload_2;
+        ifeq LEND; // loop-exit
+
+        ldc 10001;
+        iload 21;
+        if_icmpeq SKIP1; // always true after empty_loop collapses
+
+        goto ENTRY1; // backedge
+
+    LEND:
+        return;
+    }
+
+    static Method test_008:"(III)V"
+    stack 20 locals 20
+    {
+        // Same as test_008, but ENTRY1 and ENTRY2 already
+        // lose internal loop control during parsing,
+        // and SKIP1 and SKIP2 are new entry Regions.
+
+        iload_0;
+        ifeq LEND; // runtime check, skip code below
+
+        iconst_0;
+        istore 10; // x = 0
+
+        iload_1;
+        ifeq ENTRY2;
+        goto ENTRY1; // the order here is arbitrary
+
+    ENTRY1:
+        iinc 10, 1; // x += 1
+
+    SKIP1:
+        iconst_0;
+        ifeq SKIP2; // always true
+
+    ENTRY2:
+        iinc 10, 32; // x += 2
+
+    SKIP2:
+        iload_2;
+        ifeq LEND; // loop-exit
+
+        iconst_0;
+        ifeq SKIP1; // always true
+
+        goto ENTRY1; // backedge
+
+    LEND:
+        return;
+    }
+
+    static Method test_009:"(IIIIIII)V"
+    stack 20 locals 40
+    {
+        // same as test_007, except extra ifs in ENTRY1 and ENTRY2
+        // once ENTRY1 and ENTRY2 lose "backedges",
+        // the ELSE1 and ELSE2 sections are no longer in the irreducible loop
+        // and SKIP1 and SKIP2 become the new loop entries
+        iload 0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // empty loop, where var[20] counts to 0
+        // and var[21] counts to 10001
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    EMPTY_LOOP:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            20;
+        ifgt             EMPTY_LOOP;
+
+        iconst_0;
+        istore 30; // x = 0
+
+        iload 1;
+        ifeq ENTRY1;
+        goto ENTRY2; // the order here is arbitrary
+
+    ENTRY1:
+        iinc 30, 1; // x += 1
+        iload 2;
+        ifeq ELSE1;
+
+        iinc 30, 2; // x += 2
+        iload 3;
+        ifeq ELSE1;
+
+        iinc 30, 4; // x += 4
+
+    ELSE1:
+        iinc 30, 8; // x += 8
+
+    SKIP1:
+        ldc 10001;
+        iload 21;
+        if_icmpeq SKIP2; // always true after empty_loop collapses
+
+    ENTRY2:
+        iinc 30, 16; // x += 16
+        iload 4;
+        ifeq ELSE2;
+
+        iinc 30, 32; // x += 32
+        iload 5;
+        ifeq ELSE2;
+
+        iinc 30, 64; // x += 64
+
+    ELSE2:
+        iinc 30, 128; // x += 128
+
+    SKIP2:
+        iload 6;
+        ifeq LEND; // loop-exit
+
+        ldc 10001;
+        iload 21;
+        if_icmpeq SKIP1; // always true after empty_loop collapses
+
+        goto ENTRY1; // backedge
+
+    LEND:
+        return;
+    }
+
+    static Method test_010:"(IIIII)V"
+    stack 10 locals 5
+    {
+    // outer: irreducible, inner: reducible loop
+    // ENTRY1 is loop-head for both
+    // test that is_in_irreducible_loop walks up to outermost loop with that loop-head
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        iload 4;
+        ifeq SYMMETRY;
+
+        iload_1;
+        ifeq ENTRY1;
+        goto ENTRY2;
+
+    ENTRY1:
+        // loop-head
+        iload_2;
+        ifeq ENTRY1; // backedge of reducible loop (inner)
+    ENTRY2:
+        // second-entry block
+        iload_3;
+        ifeq LEND;
+        goto ENTRY1; // backedge of irreducible loop (outer)
+
+    SYMMETRY: // same as ENTRY1 / ENTRY2
+        iload_1;
+        ifeq ENTRY4; // but these are swapped
+        goto ENTRY3;
+
+    ENTRY3:
+        // loop-head
+        iload_2;
+        ifeq ENTRY3; // backedge of reducible loop (inner)
+    ENTRY4:
+        // second-entry block
+        iload_3;
+        ifeq LEND;
+        goto ENTRY3; // backedge of irreducible loop (outer)
+
+    LEND:
+        return;
+    }
+
+    static Method test_011:"(IIIII)V"
+    stack 20 locals 20
+    {
+    // If we define irreducible-entry as the Block / Region
+    // that is either the head of the (outermost) irreducible loop,
+    // or the location where we found a secondary entry to the loop,
+    // we find that this definition depends on the order of the
+    // DF traversal.
+    // (backtrack, edge 0 -> 29, normal forward edge)
+    // 
+    // bci-order 1:
+    // 0, 29, 4, 11, 24 (backedge to 11), 16, 21 (backedge to 11),
+    // 8 (second entry to 16, make 11 irreducible loop head)
+    // 
+    // bci-order 2:
+    // 0, 4, 8, 16, 21, 11 (backedge to 16), 24 (backedge to 11), 29
+    // (backtrack, find edge from 16 -> 24, second entry to 24,
+    //  16 is irreducible loop head)
+    // (backtrack, find edge from 4 -> 11, second entry to 11,
+    //  16 is again irreducible loop head)
+    // (backtrack, edge 0 -> 29, normal forward edge)
+    // 
+    // Note: in order 2, bci:24 is a entry, but not for order 1.
+    // This makes asserts that check the consistency of entries
+    // difficult, if not impossible.
+
+    // bci: 0
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+    // bci: 4
+        iload_1;
+        ifeq ENTRY1;
+    // bci: 8
+        goto ENTRY2;
+
+    ENTRY1:
+    // bci: 11
+        iload            2;
+        ifeq             BOTTOM;
+    ENTRY2:
+    // bci: 16
+        iload            3;
+        ifeq             BOTTOM;
+    // bci: 21
+        goto             ENTRY1;
+
+    BOTTOM:
+    // bci: 24
+        iload            4;
+        ifeq             ENTRY1;
+ 
+    LEND:
+    // bci: 29
+        return;
+    }
+
+    static Method test_012a:"(IIIIIIII)V"
+    stack 20 locals 20
+    {
+    // reducible loop inside irreducible loop
+    // block numbers give order that leads to only
+    // ENTRY1 and ENTRY2 being irreducible loop entries
+
+        // block 0
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // block 2
+        iload_1;
+        ifeq ENTRY1;
+        // block 12
+        goto ENTRY2;
+
+    ENTRY1:
+        // block 3
+        iload            2;
+        ifeq             BOTTOM1;
+        // block 8
+        goto             ENTRY2;
+    ENTRY2:
+        // block 9
+        iload            3;
+        ifeq             BOTTOM1;
+        // block 10
+        iload            7;
+        ifeq             LEND;
+        // block 11
+        goto             ENTRY1;
+
+    BOTTOM1:
+        // region must be marked as irreducible
+        // it is loop-head of irreducible loop, but also
+        // itself in the irreducible loop that surrounds it
+        // there is also a traversal that makes this a
+        // irreducible loop entry:
+        // 0, 2, 12, 9, 10, 11, 3, 8 (-> backedge to 9)
+        // 4 (-> backedge to 3), 5, 7 (->backedge to 4),
+        // 1, 6 (-> backedge to 5, -> backedge to 3) ... backtrack all the way to 9
+        // -> irreducible entry edge to 4
+        // Since this kind of block / region can be an irreducible loop
+        // entry, we should mark the block / region as in the irreducible loop
+        // this block is split
+        // block 4 (in: 3 7 9, out: 5 3)
+        // block 6 (in: 5, out: 5 3)
+        iload            4;
+        ifeq ENTRY1;
+    BOTTOM2:
+        // block 5
+        iload            5;
+        ifeq             BOTTOM1;
+        // block 7
+        iload            6;
+        ifeq             BOTTOM1;
+ 
+    LEND:
+        // block 1
+        return;
+    }
+
+    static Method test_012b:"(IIIII)V"
+    stack 20 locals 20
+    {
+    // reducible loop inside irreducible loop
+    // this nested loop is an infinite loop (no exit)
+
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        iload_1;
+        ifeq ENTRY1;
+        goto ENTRY2;
+
+    ENTRY1:
+        iload            2;
+        ifeq             BOTTOM;
+        goto             ENTRY2;
+    ENTRY2:
+        iload            3;
+        ifeq             BOTTOM;
+        goto             ENTRY1;
+
+    BOTTOM:
+        // this must still be marked as in irreducible loop from above,
+        // even though it is the head of a reducible loop
+        iload            4;
+        ifeq ENTRY1;
+        goto BOTTOM; // reducible loop
+ 
+    LEND:
+        return;
+    }
+
+    static Method test_013:"(IIIIIIIII)V"
+    stack 20 locals 40
+    {
+    // Irreducible loop ENTRY1 / ENTRY2, eventually collapses
+    // Reducible loops LOOP1 / LOOP2 inside irreducible loop
+    // Irreducible loop BOTTOM, with backedge to ENTRY1 (eventually collapses)
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // empty loop
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    EMPTY_LOOP:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            21;
+        ldc              10001;
+        if_icmplt        EMPTY_LOOP;
+        // var[20] == 0
+
+        iconst_1;
+        istore           30; // for LOOP1, LOOP2
+
+        iload_1;
+        ifeq ENTRY1;
+        goto ENTRY2;
+
+    ENTRY1:
+        iload            20;
+        ifeq             LOOP1;
+        goto             ENTRY2; // removed by empty_loop
+    ENTRY2:
+        iload            20;
+        ifeq             LOOP2;
+        goto             ENTRY1; // removed by empty_loop
+
+    LOOP1:
+        iload            30;
+        ldc              2;
+        imul;
+        istore           30;
+        iload            30;
+        ldc              10000;
+        if_icmple        LOOP1;
+        goto             BOTTOM1;
+    LOOP2:
+        iload            30;
+        ldc              2;
+        imul;
+        istore           30;
+        iload            30;
+        ldc              10000;
+        if_icmple        LOOP2;
+        goto             BOTTOM2;
+
+    BOTTOM1:
+        iload            3;
+        ifeq             BOTTOM2;
+        iload            4;
+        ifeq             BOTTOM3;
+        iload            20;
+        ifne             ENTRY1; // removed by empty_loop
+        goto LEND;
+    BOTTOM2:
+        iload            5;
+        ifeq             BOTTOM3;
+        iload            6;
+        ifeq             BOTTOM1;
+        goto LEND;
+    BOTTOM3:
+        iload            7;
+        ifeq             BOTTOM1;
+        iload            8;
+        ifeq             BOTTOM2;
+        goto LEND;
+ 
+    LEND:
+        return;
+    }
+
+    static Method test_014a:"(III)V"
+    stack 20 locals 40
+    {
+    // Irreducible loop that becomes normal loop
+    // and is then removed as empty loop (#2)
+    // which finally takes out ENTRY3 / ENTRY4
+    // 
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // empty_loop #1
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    EMPTY_LOOP:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            21;
+        ldc              10001;
+        if_icmplt        EMPTY_LOOP;
+        // var[20] == 0 // empty_loop (#1)
+
+        // variables for ENTRY1 / ENTRY2
+        // when path to ENTRY2 collapses,
+        // the loop becomes reducible and
+        // can be removed as empty_loop (#2)
+        iconst_0;
+        istore           30;
+        ldc              20002;
+        istore           31;
+
+        iload            20;
+        ifeq ENTRY1;
+        goto ENTRY2; // removed by empty_loop (#1)
+
+    ENTRY1:
+        iinc             30, 1;
+    ENTRY2:
+        iinc             31, -1;
+        iload            30;
+        ldc              20002;
+        if_icmplt        ENTRY1;
+        // var[31] == 0 // empty_loop (#2)
+
+        iload            31;
+        ifeq             LEND; // always taken due to empty_loop (#2)
+
+        iload_1;
+        ifeq ENTRY3;
+        goto ENTRY4;
+
+        // irreducible loop at the end
+        // expected to be removed after empty_loop (#2) collapses
+    ENTRY3:
+        iload_2;
+        ifeq LEND;
+    ENTRY4:
+        goto ENTRY3;
+
+    LEND:
+        return;
+    }
+
+    static Method test_014b:"(III)V"
+    stack 200 locals 200
+    {
+    // Sequence of these loops:
+    // Irreducible with 2 entries.
+    // One entry collapses, turning the irreducible loop
+    // into an empty_loop. This collapses one entry of
+    // the next loop. This cascades until all loops are
+    // removed.
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // setting up all variables for the loops below
+        iconst_0;
+        istore           100;
+        ldc              10001;
+        istore           101;
+        iconst_0;
+        istore           102;
+        ldc              10001;
+        istore           103;
+        iconst_0;
+        istore           104;
+        ldc              10001;
+        istore           105;
+        iconst_0;
+        istore           106;
+        ldc              10001;
+        istore           107;
+        iconst_0;
+        istore           108;
+        ldc              10001;
+        istore           109;
+        iconst_0;
+        istore           110;
+        ldc              10001;
+        istore           111;
+        iconst_0;
+        istore           112;
+        ldc              10001;
+        istore           113;
+        iconst_0;
+        istore           114;
+        ldc              10001;
+        istore           115;
+
+        iconst_0; // collapse during parsing
+        ifeq ENTRY00;
+        goto ENTRY01;
+    ENTRY00:
+        iinc             100, 1;
+    ENTRY01:
+        iinc             101, -1;
+        iload            100;
+        ldc              10001;
+        if_icmplt        ENTRY00;
+        // var[101] == 0 // empty_loop (#1)
+
+        iload            101; // from last empty_loop
+        ifeq ENTRY02;
+        goto ENTRY03;
+    ENTRY02:
+        iinc             102, 1;
+    ENTRY03:
+        iinc             103, -1;
+        iload            102;
+        ldc              10001;
+        if_icmplt        ENTRY02;
+        // var[103] == 0 // empty_loop (#2)
+
+        iload            103; // from last empty_loop
+        ifeq ENTRY04;
+        goto ENTRY05;
+    ENTRY04:
+        iinc             104, 1;
+    ENTRY05:
+        iinc             105, -1;
+        iload            104;
+        ldc              10001;
+        if_icmplt        ENTRY04;
+        // var[105] == 0 // empty_loop (#3)
+
+        iload            105; // from last empty_loop
+        ifeq ENTRY06;
+        goto ENTRY07;
+    ENTRY06:
+        iinc             106, 1;
+    ENTRY07:
+        iinc             107, -1;
+        iload            106;
+        ldc              10001;
+        if_icmplt        ENTRY06;
+        // var[107] == 0 // empty_loop (#4)
+
+        iload            107; // from last empty_loop
+        ifeq ENTRY08;
+        goto ENTRY09;
+    ENTRY08:
+        iinc             108, 1;
+    ENTRY09:
+        iinc             109, -1;
+        iload            108;
+        ldc              10001;
+        if_icmplt        ENTRY08;
+        // var[109] == 0 // empty_loop (#5)
+
+        iload            109; // from last empty_loop
+        ifeq ENTRY10;
+        goto ENTRY11;
+    ENTRY10:
+        iinc             110, 1;
+    ENTRY11:
+        iinc             111, -1;
+        iload            110;
+        ldc              10001;
+        if_icmplt        ENTRY10;
+        // var[111] == 0 // empty_loop (#6)
+
+        iload            111; // from last empty_loop
+        ifeq ENTRY12;
+        goto ENTRY13;
+    ENTRY12:
+        iinc             112, 1;
+    ENTRY13:
+        iinc             113, -1;
+        iload            112;
+        ldc              10001;
+        if_icmplt        ENTRY12;
+        // var[113] == 0 // empty_loop (#7)
+
+        iload            113; // from last empty_loop
+        ifeq ENTRY14;
+        goto ENTRY15;
+    ENTRY14:
+        iinc             114, 1;
+    ENTRY15:
+        iinc             115, -1;
+        iload            114;
+        ldc              10001;
+        if_icmplt        ENTRY14;
+        // var[115] == 0 // empty_loop (#8)
+
+        // final loop, removed after last empty_loop collapses
+        iload            115;
+        ifeq             LEND;
+        iload_1;
+        ifeq ENTRY3;
+        goto ENTRY4;
+    ENTRY3:
+        iload_2;
+        ifeq LEND;
+    ENTRY4:
+        goto ENTRY3;
+
+    LEND:
+        return;
+    }
+
+    static Method test_015a:"(I)I"
+    stack 20 locals 40
+    {
+    // Irreducible loop that loses second entry already during parsing
+    // and later becomes counted loop
+        iconst_0;
+        istore           30;
+        iconst_1;
+        istore           31;
+
+        ldc              0;
+        ifeq ENTRY1;
+        goto ENTRY2; // removed during parsing
+
+    ENTRY1:
+        iinc             30, 1; // trip count
+    ENTRY2:
+        iload            31;
+        ldc              3; // compute pow(3,x)
+        imul;
+        istore           31;
+        iload            30;
+        iload            0;
+        if_icmplt        ENTRY1;
+
+    LEND:
+        iload            31;
+        ireturn;
+    }
+
+    static Method test_015b:"(I)I"
+    stack 20 locals 40
+    {
+    // Similar as test_015a, but the irreducible loop only loses the
+    // second entry during loop-opts (empty_loop), and the now
+    // reducible loop does not become a CountedLoop any more.
+        iconst_0;
+        istore           30;
+        iconst_1;
+        istore           31;
+
+        // empty_loop
+        ldc              10001;
+        istore           20;
+        iconst_0;
+        istore           21;
+    EMPTY_LOOP:
+        iinc             20, -1;
+        iinc             21, 1;
+        iload            21;
+        ldc              10001;
+        if_icmplt        EMPTY_LOOP;
+        // var[20] == 0 // empty_loop (#1)
+
+        iload            20;
+        ifeq ENTRY1;
+        goto ENTRY2; // removed by empty_loop
+
+    ENTRY1:
+        iinc             30, 1; // trip count
+    ENTRY2:
+        iload            31;
+        ldc              3; // compute pow(3,x)
+        imul;
+        istore           31;
+        iload            30;
+        iload            0;
+        if_icmplt        ENTRY1;
+
+    LEND:
+        iload            31;
+        ireturn;
+    }
+
+    static Method test_016:"(III)V"
+    stack 200 locals 300
+    {
+    // Similar to test_014b.
+    // Same sequence of irreducible loops collapsing to
+    // empty_loops, collapsing and cascading to the next
+    // loop.
+    // In addition: each of the the loops in that sequence
+    // controls an entry to a final big irreducible loop,
+    // which slowly collapses, losing entry after entry.
+        iload_0;
+        ifeq LEND; // runtime check, avoid code below
+
+        // setting up all variables for the loops below
+        iconst_0;
+        istore           100;
+        ldc              10001;
+        istore           101;
+        iconst_0;
+        istore           102;
+        ldc              10001;
+        istore           103;
+        iconst_0;
+        istore           104;
+        ldc              10001;
+        istore           105;
+        iconst_0;
+        istore           106;
+        ldc              10001;
+        istore           107;
+        iconst_0;
+        istore           108;
+        ldc              10001;
+        istore           109;
+        iconst_0;
+        istore           110;
+        ldc              10001;
+        istore           111;
+        iconst_0;
+        istore           112;
+        ldc              10001;
+        istore           113;
+        iconst_0;
+        istore           114;
+        ldc              10001;
+        istore           115;
+
+        iconst_0; // collapse during parsing
+        ifeq ENTRY00;
+        goto ENTRY01;
+    ENTRY00:
+        iinc             100, 1;
+    ENTRY01:
+        iinc             101, -1;
+        iload            100;
+        ldc              10001;
+        if_icmplt        ENTRY00;
+        // var[101] == 0 // empty_loop (#1)
+
+        iload            101; // from last empty_loop
+        ifeq ENTRY02;
+        goto ENTRY03;
+    ENTRY02:
+        iinc             102, 1;
+    ENTRY03:
+        iinc             103, -1;
+        iload            102;
+        ldc              10001;
+        if_icmplt        ENTRY02;
+        // var[103] == 0 // empty_loop (#2)
+
+        iload            103; // from last empty_loop
+        ifeq ENTRY04;
+        goto ENTRY05;
+    ENTRY04:
+        iinc             104, 1;
+    ENTRY05:
+        iinc             105, -1;
+        iload            104;
+        ldc              10001;
+        if_icmplt        ENTRY04;
+        // var[105] == 0 // empty_loop (#3)
+
+        iload            105; // from last empty_loop
+        ifeq ENTRY06;
+        goto ENTRY07;
+    ENTRY06:
+        iinc             106, 1;
+    ENTRY07:
+        iinc             107, -1;
+        iload            106;
+        ldc              10001;
+        if_icmplt        ENTRY06;
+        // var[107] == 0 // empty_loop (#4)
+
+        iload            107; // from last empty_loop
+        ifeq ENTRY08;
+        goto ENTRY09;
+    ENTRY08:
+        iinc             108, 1;
+    ENTRY09:
+        iinc             109, -1;
+        iload            108;
+        ldc              10001;
+        if_icmplt        ENTRY08;
+        // var[109] == 0 // empty_loop (#5)
+
+        iload            109; // from last empty_loop
+        ifeq ENTRY10;
+        goto ENTRY11;
+    ENTRY10:
+        iinc             110, 1;
+    ENTRY11:
+        iinc             111, -1;
+        iload            110;
+        ldc              10001;
+        if_icmplt        ENTRY10;
+        // var[111] == 0 // empty_loop (#6)
+
+        iload            111; // from last empty_loop
+        ifeq ENTRY12;
+        goto ENTRY13;
+    ENTRY12:
+        iinc             112, 1;
+    ENTRY13:
+        iinc             113, -1;
+        iload            112;
+        ldc              10001;
+        if_icmplt        ENTRY12;
+        // var[113] == 0 // empty_loop (#7)
+
+        iload            113; // from last empty_loop
+        ifeq ENTRY14;
+        goto ENTRY15;
+    ENTRY14:
+        iinc             114, 1;
+    ENTRY15:
+        iinc             115, -1;
+        iload            114;
+        ldc              10001;
+        if_icmplt        ENTRY14;
+        // var[115] == 0 // empty_loop (#8)
+
+        // final loop, every empty_loop from above
+        // controls one of the entries
+        iconst_0;
+        istore           200;
+        iload            101;
+        ifne             BOTTOM1;
+        iload            103;
+        ifne             BOTTOM2;
+        iload            105;
+        ifne             BOTTOM3;
+        iload            107;
+        ifne             BOTTOM4;
+        iload            109;
+        ifne             BOTTOM5;
+        iload            111;
+        ifne             BOTTOM6;
+        iload            113;
+        ifne             BOTTOM7;
+        iload            115;
+        ifeq             LEND;
+        // finally cut off completely
+        // trigger irreducible loop removal
+        iload            1;
+        ifeq             BOTTOM8;
+        goto             BOTTOM0;
+
+    BOTTOM0:
+        iinc             200, 1;
+    BOTTOM1:
+        iinc             200, 2;
+    BOTTOM2:
+        iinc             200, 4;
+    BOTTOM3:
+        iinc             200, 8;
+    BOTTOM4:
+        iinc             200, 16;
+    BOTTOM5:
+        iinc             200, 32;
+    BOTTOM6:
+        iinc             200, 64;
+    BOTTOM7:
+        iinc             200, 128;
+    BOTTOM8:
+        iload            200;
+        ldc              30003;
+        if_icmpgt        LEND;
+        goto BOTTOM1;
+
+    LEND:
+        return;
+    }
+
+    static Method test_017:"(III)V"
+    stack 20 locals 20
+    {
+        // Triggers partial_peel and strip-mining for a loop
+        // where the head was marked is_in_irreducible_loop
+
+        iload 2;
+        ifeq  LEND; // skip code
+
+        iload      1;
+        ifgt L2;
+    L1:
+        nop;
+    L2:
+        iinc       1, 1;
+        iload      1;
+        ifgt L1;
+        iload      0;
+        ifne LEND;
+        goto L2;
+
+    LEND:
+        return;
+    }
+
+    static Method test_018:"(I)V"
+    stack 20 locals 20
+    {
+    // ciTypeFlow: infinite loop has no parent loop
+        iload_0;
+        ifeq LEND; // skip code
+    LOOP:
+        goto LOOP; // infinite loop
+    LEND:
+        return;
+    }
+
+    static Method test_019:"(IIII)V"
+    stack 20 locals 20
+    {
+    // may triggers split_flow_path, because of that aconst_null
+
+        iload_0;
+        ifeq LEND; // skip code
+
+        aconst_null; // this has a strange side-effect
+        goto LOOP3;
+
+    LOOP1:
+        nop;
+    LOOP2:
+        iload      1;
+        ifne LOOP1;
+    LOOP3:
+        iload      2;
+        ifge LOOP2;
+    LOOP4:
+        iload      3;
+        ifle LOOP1;
+        iconst_m1;
+        iflt LOOP2;
+        goto LOOP4;
+
+    LEND:
+        return;
+    }
+
+    static Method test_020:"(IIIII)V"
+    stack 20 locals 40
+    {
+    // Get infinite loop at some point that has no NeverBranch node
+        iload_0;
+        ifeq LEND; // skip
+
+        iconst_0;
+        istore     20;
+    LOOP1:
+        iload      1;
+        ifeq LOOP3;
+    LOOP2:
+        iconst_0;
+        ifne LEND;
+    LOOP3:
+        iload      20;
+        istore     30; // old
+        iload      2;
+        iflt LOOP4;
+        iconst_1;
+        istore     20; // overwrite new
+        iload      30;
+        iload      3;
+        if_icmpgt LOOP1;
+        goto LOOP3;
+    LOOP4:
+        iload      4;
+        iflt LOOP2;
+        goto LOOP4;
+
+    LEND:
+        return;
+    }
+
+    static Method test_021:"(IIIIII)V"
+    stack 20 locals 20
+    {
+    // Produces a graph where one node is originally located inside
+    // a reducible loop, but later that loop collapses, and exposes
+    // the node to the outerloop, which is irreducible.
+        iload_0;
+        ifeq LEND; // skip
+
+    L1:
+        iload      1;
+        ifgt MERGE;
+    L2:
+        iload      2;
+        ifge MERGE;
+        goto L1;
+
+    MERGE:
+        nop;
+    LOOP:
+        iload      3;
+        ifle L2;
+        iconst_0; // always true
+        ifeq LOOP;
+        iconst_0; // always true
+        ifeq LOOP;
+    INFTY:
+        goto INFTY; // infinite loop
+
+    LEND:
+        return;
+    }
+
+    static Method test_022a:"(IIII)V"
+    stack 20 locals 10
+    {
+        // see test_022b for explanation
+        iload_0;
+        ifeq LEND;
+
+        aconst_null;
+        astore     9;
+        iconst_1;
+        ifeq ENTRY1; // eventually collapses
+        goto ENTRY2;
+    ENTRY1:
+        iconst_0;
+        ifeq LOOP;
+    ENTRY2:
+        iload      1;
+        ifge LOOP;
+        goto ENTRY1;
+
+    LOOP:
+        // head is split -> new irreducible loop
+        aload      9;
+        pop;
+        iconst_0;
+        iflt LOOP;
+        aconst_null;
+        astore     9;
+        iload      2;
+        ifeq LEND;
+        goto LOOP;
+
+    LEND:
+        return;
+    }
+
+    static Method test_022b:"(II)V"
+    stack 20 locals 20
+    {
+    // Triggered split_flow_path for a reducible loop that had multiple fall-in
+    // edges. The fall-in edges were split over two Phis/Regions, creating a new
+    // undetected irreducible loop. This only seems to happen when there are other
+    // irreducible loops present, as it changes the merge-order during parsing.
+    // If there are only reducible loops present, we merge the fall-in in a region
+    // prior to the loop-head, as far as I understand.
+        iload_0;
+        ifeq LEND; // skip
+
+        aconst_null;
+        astore     9;
+        iload      1;
+        ifeq OTHER;
+    LOOP:
+        iconst_0; 
+        iflt LEND; // false - old exit?
+        aload      9;
+        pop;
+        iconst_0;
+        ifne LOOP; // false
+        goto LOOP;
+ 
+    OTHER:
+        iconst_m1;
+        ifeq ENTRY1; // false
+        goto ENTRY2; 
+    ENTRY1:
+        iconst_0;
+        ifeq LOOP; // true
+    ENTRY2:
+        goto ENTRY1;
+
+    LEND:
+        return;
+    }
+
+    static Method test_023:"(I)V"
+    stack 20 locals 20
+    {
+        iload_0;
+        ifeq LEND;
+
+        iconst_0;  
+        istore     7;
+        iconst_0;
+        ifne L4;
+    L2:
+        nop;
+    L4:
+        iload      7;
+        ifeq L12;
+    L12:
+        iconst_0;
+        ifeq L2;
+        goto L12;
+
+    LEND:
+        return;
+    }   
+
+    static Method test_024_inline:"(I)I"
+    stack 20 locals 10
+    {
+        iload_0;
+        ldc 3;
+        irem;
+        ifeq SKIP; // if (v % 3 == 0)
+
+        // (v % 5)
+        iload_0;
+        ldc 5;
+        irem;
+        istore_0;
+        goto LEND;
+
+    SKIP:
+        // (v % 7)
+        iload_0;
+        ldc 7;
+        irem;
+        istore_0;
+        goto LEND;
+
+    LEND:
+        iload_0;
+        ireturn;
+    }
+
+    static Method test_024:"()I"
+    stack 20 locals 10
+    {
+    // Outer loop, irreducible inside, and inline call
+    // Test that regions in inline are also handled as
+    // they are nested in the irreducible loop
+        iconst_0;
+        istore 1; // i = 0
+        iconst_0;
+        istore 3; // x = 0
+
+    LOOP:
+        iconst_0;
+        istore 2; // j = 0
+        iload 1;
+        ldc 2;
+        irem;
+        ifeq ENTRY1; // if (i % 2 == 0)
+        goto ENTRY2;
+
+    ENTRY1:
+        iinc 2, 1; // j++
+    ENTRY2:
+        iload 2;
+        invokestatic Method test_024_inline:"(I)I";
+        iload 3;
+        iadd;
+        istore 3;
+        iload 2;
+        ldc 1000;
+        if_icmplt ENTRY1; // while (j < 1000)
+
+        iinc 1, 1; // i++
+        iload 1;
+        ldc 10000;
+        if_icmplt LOOP; // while (i < 10000)
+
+    LEND:
+        iload 3;
+        ireturn;
+    }
+}
