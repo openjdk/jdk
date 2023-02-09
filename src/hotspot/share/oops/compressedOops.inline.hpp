@@ -78,6 +78,11 @@ inline narrowOop CompressedOops::encode(oop v) {
   return is_null(v) ? narrowOop::null : encode_not_null(v);
 }
 
+inline oop CompressedOops::decode_raw_not_null(oop v) {
+  assert(v != nullptr, "object is null");
+  return v;
+}
+
 inline oop CompressedOops::decode_not_null(oop v) {
   assert(Universe::is_in_heap(v), "object not in heap " PTR_FORMAT, p2i(v));
   return v;

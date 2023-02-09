@@ -254,15 +254,19 @@ void Threads::threads_do(ThreadClosure* tc) {
 }
 
 void Threads::possibly_parallel_threads_do(bool is_par, ThreadClosure* tc) {
+  assert_at_safepoint();
+
   uintx claim_token = Threads::thread_claim_token();
   ALL_JAVA_THREADS(p) {
     if (p->claim_threads_do(is_par, claim_token)) {
       tc->do_thread(p);
     }
   }
-  VMThread* vmt = VMThread::vm_thread();
-  if (vmt->claim_threads_do(is_par, claim_token)) {
-    tc->do_thread(vmt);
+  for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
+    Thread* current = njti.current();
+    if (current->claim_threads_do(is_par, claim_token)) {
+      tc->do_thread(current);
+    }
   }
 }
 
@@ -1305,9 +1309,20 @@ void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
 
 void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
-    assert_thread_claimed("Thread", p, _thread_claim_token);
+    assert_thread_claimed("JavaThread", p, _thread_claim_token);
   }
-  assert_thread_claimed("VMThread", VMThread::vm_thread(), _thread_claim_token);
+
+  struct NJTClaimedVerifierClosure : public ThreadClosure {
+    uintx _thread_claim_token;
+
+    NJTClaimedVerifierClosure(uintx thread_claim_token) : ThreadClosure(), _thread_claim_token(thread_claim_token) { }
+
+    virtual void do_thread(Thread* thread) override {
+      assert_thread_claimed("Non-JavaThread", VMThread::vm_thread(), _thread_claim_token);
+    }
+  } tc(_thread_claim_token);
+
+  non_java_threads_do(&tc);
 }
 #endif // ASSERT
 

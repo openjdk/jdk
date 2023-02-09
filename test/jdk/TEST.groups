@@ -635,7 +635,8 @@ jdk_core_manual_no_input_security = \
     sun/security/smartcardio/TestMultiplePresent.java \
     sun/security/smartcardio/TestPresent.java \
     sun/security/smartcardio/TestTransmit.java \
-    sun/security/tools/jarsigner/compatibility/Compatibility.java
+    sun/security/tools/jarsigner/compatibility/Compatibility.java \
+    java/security/Policy/Root/Root.java
 
 jdk_core_manual_requires_human_input = \
     com/sun/jndi/dns/Test6991580.java \
