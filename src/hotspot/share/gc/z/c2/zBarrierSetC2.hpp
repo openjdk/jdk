@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,10 @@ public:
   virtual void emit_stubs(CodeBuffer& cb) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
+
+#ifndef PRODUCT
+  virtual void dump_barrier_data(const MachNode* mach, outputStream* st) const;
+#endif
 };
 
 #endif // SHARE_GC_Z_C2_ZBARRIERSETC2_HPP

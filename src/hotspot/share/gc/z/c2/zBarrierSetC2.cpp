@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -942,3 +942,26 @@ void ZBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
     mem->set_barrier_data(ZBarrierElided);
   }
 }
+
+#ifndef PRODUCT
+void ZBarrierSetC2::dump_barrier_data(const MachNode* mach, outputStream* st) const {
+  if ((mach->barrier_data() & ZBarrierStrong) != 0) {
+    st->print("strong ");
+  }
+  if ((mach->barrier_data() & ZBarrierWeak) != 0) {
+    st->print("weak ");
+  }
+  if ((mach->barrier_data() & ZBarrierPhantom) != 0) {
+    st->print("phantom ");
+  }
+  if ((mach->barrier_data() & ZBarrierNoKeepalive) != 0) {
+    st->print("nokeepalive ");
+  }
+  if ((mach->barrier_data() & ZBarrierNative) != 0) {
+    st->print("native ");
+  }
+  if ((mach->barrier_data() & ZBarrierElided) != 0) {
+    st->print("elided ");
+  }
+}
+#endif // !PRODUCT
