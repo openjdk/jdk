@@ -129,7 +129,8 @@ public final class Module implements AnnotatedElement {
     Module(ModuleLayer layer,
            ClassLoader loader,
            ModuleDescriptor descriptor,
-           URI uri) {
+           URI uri)
+    {
         this.layer = layer;
         this.name = descriptor.name();
         this.loader = loader;
@@ -206,7 +207,8 @@ public final class Module implements AnnotatedElement {
      * class loader. </p>
      *
      * @return The class loader for this module
-     * @throws SecurityException If denied by the security manager
+     * @throws SecurityException
+     *         If denied by the security manager
      */
     public ClassLoader getClassLoader() {
         @SuppressWarnings("removal")
@@ -230,7 +232,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Returns the module layer that contains this module or {@code null} if
      * this module is not in a module layer.
-     * <p>
+     *
      * A module layer contains named modules and therefore this method always
      * returns {@code null} when invoked on an unnamed module.
      *
