@@ -128,7 +128,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     return true;
   }
 
-#ifndef PRODUCT
   int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
@@ -139,7 +138,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     _forced_inline = true;
     return true;
   }
-#endif
 
   int size = callee_method->code_size_for_inlining();
 
@@ -243,7 +241,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return true;
   }
 
-#ifndef PRODUCT
   int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
@@ -263,7 +260,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     set_msg("disallowed by ciReplay");
     return true;
   }
-#endif
 
   if (callee_method->force_inline()) {
     set_msg("force inline by annotation");
