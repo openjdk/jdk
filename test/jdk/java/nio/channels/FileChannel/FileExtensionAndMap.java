@@ -60,7 +60,7 @@ public class FileExtensionAndMap {
 
     private static boolean useRaf = false;
 
-    private static final long FILESIZE = 3L * 1024L * 1024L * 1024L;
+    private static final long FILESIZE = 2L * 1024L * 1024L * 1024L;
     private static final int PARALLELISM = 3;
 
     public static void main(String args[]) throws Exception {
@@ -91,7 +91,7 @@ public class FileExtensionAndMap {
 
         ForkJoinPool fjPool = new ForkJoinPool(PARALLELISM);
         fjPool.submit(() -> {
-            IntStream.range(0, 20).parallel().forEach((index) -> {
+            IntStream.range(0, 10).parallel().forEach((index) -> {
                 String fileName = "testBigFile_" + index + ".dat";
                 Path source = null;
                 Path target = null;
