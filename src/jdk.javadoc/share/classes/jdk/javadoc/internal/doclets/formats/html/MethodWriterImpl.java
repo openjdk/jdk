@@ -308,14 +308,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
             return;
         }
         Contents contents = writer.contents;
-        VisibleMemberTable vmt = writer.configuration
-                .getVisibleMemberTable(utils.getEnclosingTypeElement(method));
+        var enclosing = (TypeElement) method.getEnclosingElement();
+        VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
         SortedSet<ExecutableElement> implementedMethods =
                 new TreeSet<>(utils.comparators.makeOverrideUseComparator());
         implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
-            intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
+            intfac = utils.getDeclaredType(enclosing, intfac);
             Content intfaclink = writer.getLink(new HtmlLinkInfo(
                     writer.configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, intfac));
             var codeIntfacLink = HtmlTree.CODE(intfaclink);
