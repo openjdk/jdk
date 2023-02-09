@@ -1482,7 +1482,7 @@ size_t Arguments::max_heap_for_compressed_oops() {
   // keeping alignment constraints of the heap. To guarantee the latter, as the
   // null page is located before the heap, we pad the null page to the conservative
   // maximum alignment that the GC may ever impose upon the heap.
-  size_t displacement_due_to_null_page = align_up((size_t)os::vm_page_size(),
+  size_t displacement_due_to_null_page = align_up(os::vm_page_size(),
                                                   _conservative_max_heap_alignment);
 
   LP64_ONLY(return OopEncodingHeapMax - displacement_due_to_null_page);
@@ -1551,7 +1551,7 @@ void Arguments::set_conservative_max_heap_alignment() {
   // itself and the maximum page size we may run the VM with.
   size_t heap_alignment = GCConfig::arguments()->conservative_max_heap_alignment();
   _conservative_max_heap_alignment = MAX4(heap_alignment,
-                                          (size_t)os::vm_allocation_granularity(),
+                                          os::vm_allocation_granularity(),
                                           os::max_page_size(),
                                           GCArguments::compute_heap_alignment());
 }

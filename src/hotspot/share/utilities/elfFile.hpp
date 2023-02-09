@@ -797,7 +797,7 @@ class DwarfFile : public ElfFile {
       uint32_t _line;
 
       // A column number within a source line. Columns are numbered beginning at 1. The value 0 is reserved to indicate
-      // that a statement begins at the “left edge” of the line.
+      // that a statement begins at the "left edge" of the line.
       uint32_t _column;
 
       // Indicates that the current instruction is a recommended breakpoint location.
