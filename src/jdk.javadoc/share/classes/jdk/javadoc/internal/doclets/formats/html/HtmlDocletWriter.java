@@ -290,13 +290,12 @@ public class HtmlDocletWriter {
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
         var enclosing = (TypeElement) method.getEnclosingElement();
-        List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
         var overrideInfo = utils.overriddenMethod(method);
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
         // Check whether there is any implementation or overridden info to be
         // printed. If no overridden or implementation info needs to be
         // printed, do not print this section.
-        if ((!intfacs.isEmpty()
+        if ((!enclosing.getInterfaces().isEmpty() // has direct superinterfaces
                 && !vmt.getImplementedMethods(method).isEmpty())
                 || overrideInfo != null) {
             MethodWriterImpl.addImplementsInfo(this, method, dl);
