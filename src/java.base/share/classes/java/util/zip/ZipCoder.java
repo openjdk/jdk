@@ -269,7 +269,6 @@ class ZipCoder {
             return end > 0 && a[end - 1] == '/';
         }
 
-        /*
         @Override
         Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
             try {
@@ -286,7 +285,5 @@ class ZipCoder {
                 return Comparison.NO_MATCH;
             }
         }
-        */
-
     }
 }
