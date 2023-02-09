@@ -40,9 +40,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class MallocInfoTest {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("System.native_heap_info");
+        output.shouldNotContain("Error: ");
+        output.shouldContain("<malloc version=");
         output.reportDiagnosticSummary();
-        output.shouldNotMatch(".*Error.*");
-        output.shouldMatch(".*<malloc version=.*");
     }
 
     @Test
