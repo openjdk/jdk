@@ -209,16 +209,16 @@ class ZipCoder {
      */
     Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
         String decoded = toString(b, off, len);
-        if (decoded.equals(str)) {
-            return Comparison.EXACT_MATCH;
-        } else if (addSlash
+        if (decoded.startsWith(str)) {
+            if (decoded.length() == str.length()) {
+                return Comparison.EXACT_MATCH;
+            } else if (addSlash
                 && decoded.length() == str.length() + 1
-                && decoded.startsWith(str)
                 && decoded.endsWith("/") ) {
-            return Comparison.SLASH_MATCH;
-        } else {
-            return Comparison.NO_MATCH;
+                return Comparison.SLASH_MATCH;
+            }
         }
+        return Comparison.NO_MATCH;
     }
     static final class UTF8ZipCoder extends ZipCoder {
 
@@ -269,6 +269,7 @@ class ZipCoder {
             return end > 0 && a[end - 1] == '/';
         }
 
+        /*
         @Override
         Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
             try {
@@ -285,5 +286,7 @@ class ZipCoder {
                 return Comparison.NO_MATCH;
             }
         }
+        */
+
     }
 }
