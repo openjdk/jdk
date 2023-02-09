@@ -3599,11 +3599,11 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     Label CRC_by128_loop, CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
     assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
 
-    subs(len, len, 256);
+    subs(tmp0, len, 384);
     mvnw(crc, crc);
     br(Assembler::GE, CRC_by128_pre);
   BIND(CRC_less128);
-    adds(len, len, 256 - 32);
+    subs(len, len, 32);
     br(Assembler::GE, CRC_by32_loop);
   BIND(CRC_less32);
     adds(len, len, 32 - 4);
@@ -3641,6 +3641,7 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     b(L_exit);
 
   BIND(CRC_by128_pre);
+    sub(len, len, 256);
     Register table = tmp0;
     {
       uint64_t offset;
@@ -3752,11 +3753,10 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     crc32x(crc, crc, tmp2);
     crc32x(crc, crc, tmp1);
 
-    sub(len, len, 0x80);
+    add(len, len, 0x80);
     add(buf, buf, 0x10);
 
-    cmn(len, (u1)255);
-    br(Assembler::GE, CRC_less128);
+    cbnz(len, CRC_less128);
 
   BIND(L_exit);
     mvnw(crc, crc);
