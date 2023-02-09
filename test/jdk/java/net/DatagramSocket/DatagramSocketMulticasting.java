@@ -68,6 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DatagramSocketMulticasting {
     static final ProtocolFamily UNSPEC = () -> "UNSPEC";
+    static final int MAX_TRIES = 3;
 
     @Test
     public void main() throws IOException {
@@ -318,14 +319,19 @@ public class DatagramSocketMulticasting {
         p.setSocketAddress(target);
         s.send(p);
 
-        // receive message
+        // receive message with retry in case of stray messages
         s.setSoTimeout(0);
-        p = new DatagramPacket(new byte[1024], 100);
-        s.receive(p);
+        for (int i = 1; i <= MAX_TRIES; i++) {
+            p = new DatagramPacket(new byte[1024], 100);
+            s.receive(p);
+            if(s.getLocalPort()==p.getPort()){
+                assertEquals(p.getLength(), message.length,
+                        String.format("expected message %s, instead received %s%n", message, p));
+                break;
+            }
 
-        assertEquals(p.getLength(), message.length,
-                String.format("expected message %s, instead received %s%n", message, p));
-        assertEquals(p.getPort(), s.getLocalPort());
+            assertNotEquals(i, MAX_TRIES, "testSendReceive: too many retries");
+        }
     }
 
     /**
