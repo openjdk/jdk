@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/c2_CodeStubs.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 
@@ -71,6 +72,26 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
   __ bind(entry());
   assert(StubRoutines::aarch64::check_lock_stack() != NULL, "need runtime call stub");
   __ far_call(StubRoutines::aarch64::check_lock_stack());
+  __ b(continuation());
+}
+
+int C2FixAnonOMOwnerStub::max_size() const {
+  return 0;
+}
+
+void C2FixAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
+  __ bind(entry());
+  Register mon = monitor();
+  Register t = tmp();
+
+  // Fix owner to be the current thread.
+  __ str(rthread, Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+
+  // Pop owner object from lock-stack.
+  __ ldr(t, Address(rthread, JavaThread::lock_stack_current_offset()));
+  __ sub(t, t, oopSize);
+  __ str(t, Address(rthread, JavaThread::lock_stack_current_offset()));
+
   __ b(continuation());
 }
 

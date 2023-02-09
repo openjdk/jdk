@@ -3934,7 +3934,10 @@ encode %{
       // but we want to carry-over the NE condition to the exit at the cont label,
       // in order to take the slow-path.
       __ tst(disp_hdr, (uint64_t)(intptr_t) ANONYMOUS_OWNER);
-      __ br(Assembler::NE, no_count);
+      C2FixAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2FixAnonOMOwnerStub(tmp, disp_hdr);
+      Compile::current()->output()->add_stub(stub);
+      __ br(Assembler::NE, stub->entry());
+      __ bind(stub->continuation());
     }
 
     __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
