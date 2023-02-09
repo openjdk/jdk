@@ -77,6 +77,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
+#ifdef INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here
 # include <sys/types.h>
@@ -2460,6 +2463,22 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
   print_sys_devices_cpu_info(st);
 }
+
+#ifdef INCLUDE_JFR
+void os::Linux::jfr_process_memory_info() {
+  log_info(gc)("JFR:ing process memory info");
+
+  meminfo_t info;
+  if (query_process_memory_info(&info)) {
+    EventResidentSetSize event;
+    event.set_size(info.vmrss * K);
+    event.set_peak(info.vmhwm * K);
+    event.commit();
+  } else {
+    log_info(gc)("JFR:ing - Could not open /proc/self/status to get process memory related information");
+  }
+}
+#endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
