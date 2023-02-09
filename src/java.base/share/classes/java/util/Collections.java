@@ -1150,6 +1150,12 @@ public class Collections {
         if (s.getClass() == UnmodifiableSet.class) {
             return (Set<T>) s;
         }
+        if (s instanceof RegularEnumSetCompatible) {
+            return (Set<T>)new UnmodifiableRegularEnumSet<>((RegularEnumSetCompatible<?>)s);
+        }
+        if (s instanceof JumboEnumSetCompatible) {
+            return (Set<T>)new UnmodifiableJumboEnumSet<>((JumboEnumSetCompatible<?>)s);
+        }
         return new UnmodifiableSet<>(s);
     }
 
@@ -1164,6 +1170,81 @@ public class Collections {
         UnmodifiableSet(Set<? extends E> s)     {super(s);}
         public boolean equals(Object o) {return o == this || c.equals(o);}
         public int hashCode()           {return c.hashCode();}
+
+        @java.io.Serial
+        private Object readResolve() {
+            if (c instanceof RegularEnumSetCompatible<?> es) {
+                return new UnmodifiableRegularEnumSet<>(es);
+            }
+            if (c instanceof JumboEnumSetCompatible<?> es) {
+                return new UnmodifiableJumboEnumSet<>(es);
+            }
+            return this;
+        }
+    }
+
+    /**
+     * @serial include
+     */
+    static final class UnmodifiableRegularEnumSet<E extends Enum<E>> extends UnmodifiableSet<E>
+            implements RegularEnumSetCompatible<E> {
+        @java.io.Serial
+        private static final long serialVersionUID = -1110577510253015312L;
+
+        final RegularEnumSetCompatible<? extends E> es;
+
+        UnmodifiableRegularEnumSet(RegularEnumSetCompatible<? extends E> es) {
+            super(es);
+            this.es = es;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Class<E> elementType() {
+            return (Class<E>)es.elementType();
+        }
+
+        @Override
+        public long elements() {
+            return es.elements();
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new UnmodifiableSet<>(es);
+        }
+    }
+
+    /**
+     * @serial include
+     */
+    static final class UnmodifiableJumboEnumSet<E extends Enum<E>> extends UnmodifiableSet<E>
+            implements JumboEnumSetCompatible<E> {
+        @java.io.Serial
+        private static final long serialVersionUID = 1730197349714300593L;
+
+        final JumboEnumSetCompatible<? extends E> es;
+
+        UnmodifiableJumboEnumSet(JumboEnumSetCompatible<? extends E> es) {
+            super(es);
+            this.es = es;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public Class<E> elementType() {
+            return (Class<E>)es.elementType();
+        }
+
+        @Override
+        public long[] elements() {
+            return es.elements();
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new UnmodifiableSet<>(es);
+        }
     }
 
     /**
@@ -2196,11 +2277,25 @@ public class Collections {
      * @param  s the set to be "wrapped" in a synchronized set.
      * @return a synchronized view of the specified set.
      */
+    @SuppressWarnings("unchecked")
     public static <T> Set<T> synchronizedSet(Set<T> s) {
+        if (s instanceof RegularEnumSetCompatible<?> es) {
+            return (Set<T>)new SynchronizedRegularEnumSet<>(es);
+        }
+        if (s instanceof JumboEnumSetCompatible<?> es) {
+            return (Set<T>)new SynchronizedJumboEnumSet<>(es);
+        }
         return new SynchronizedSet<>(s);
     }
 
+    @SuppressWarnings("unchecked")
     static <T> Set<T> synchronizedSet(Set<T> s, Object mutex) {
+        if (s instanceof RegularEnumSetCompatible<?> es) {
+            return (Set<T>)new SynchronizedRegularEnumSet<>(es, mutex);
+        }
+        if (s instanceof JumboEnumSetCompatible<?> es) {
+            return (Set<T>)new SynchronizedJumboEnumSet<>(es, mutex);
+        }
         return new SynchronizedSet<>(s, mutex);
     }
 
@@ -2227,6 +2322,97 @@ public class Collections {
         }
         public int hashCode() {
             synchronized (mutex) {return c.hashCode();}
+        }
+
+        @java.io.Serial
+        private Object readResolve() {
+            if (c instanceof RegularEnumSetCompatible<?> es) {
+                return new SynchronizedRegularEnumSet<>(es);
+            }
+            if (c instanceof JumboEnumSetCompatible<?> es) {
+                return new SynchronizedJumboEnumSet<>(es);
+            }
+            return this;
+        }
+    }
+
+    /**
+     * @serial include
+     */
+    static final class SynchronizedRegularEnumSet<E extends Enum<E>>
+          extends SynchronizedSet<E>
+          implements RegularEnumSetCompatible<E> {
+        @java.io.Serial
+        private static final long serialVersionUID = -5185717517664879222L;
+
+        final RegularEnumSetCompatible<E> es;
+
+        SynchronizedRegularEnumSet(RegularEnumSetCompatible<E> es) {
+            super(es);
+            this.es = es;
+        }
+
+        SynchronizedRegularEnumSet(RegularEnumSetCompatible<E> es, Object mutex) {
+            super(es, mutex);
+            this.es = es;
+        }
+
+        @Override
+        public Class<E> elementType() {
+            // No need to be synchronized since elementType is never modified.
+            return es.elementType();
+        }
+
+        @Override
+        public long elements() {
+            synchronized (mutex) {
+                return es.elements();
+            }
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new SynchronizedSet<E>(es);
+        }
+    }
+
+    /**
+     * @serial include
+     */
+    static final class SynchronizedJumboEnumSet<E extends Enum<E>>
+          extends SynchronizedSet<E>
+          implements JumboEnumSetCompatible<E> {
+        @java.io.Serial
+        private static final long serialVersionUID = -2197803204861808334L;
+
+        final JumboEnumSetCompatible<E> es;
+
+        SynchronizedJumboEnumSet(JumboEnumSetCompatible<E> es) {
+            super(es);
+            this.es = es;
+        }
+
+        SynchronizedJumboEnumSet(JumboEnumSetCompatible<E> es, Object mutex) {
+            super(es, mutex);
+            this.es = es;
+        }
+
+        @Override
+        public Class<E> elementType() {
+            // No need to be synchronized since elementType is never modified.
+            return es.elementType();
+        }
+
+        @Override
+        public long[] elements() {
+            synchronized (mutex) {
+                return es.elements();
+            }
+        }
+
+        @java.io.Serial
+        private Object writeReplace() {
+            return new SynchronizedSet<>(es);
         }
     }
 
@@ -3338,6 +3524,14 @@ public class Collections {
      * @since 1.5
      */
     public static <E> Set<E> checkedSet(Set<E> s, Class<E> type) {
+        // All implementing classes of RegularEnumSetCompatible and JumboEnumSetCompatible
+        // always reject wrong types.
+        if (s instanceof RegularEnumSetCompatible<?> es && type == es.elementType()) {
+            return s;
+        }
+        if (s instanceof JumboEnumSetCompatible<?> es && type == es.elementType()) {
+            return s;
+        }
         return new CheckedSet<>(s, type);
     }
 
