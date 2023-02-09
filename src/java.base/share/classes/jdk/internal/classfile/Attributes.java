@@ -82,11 +82,6 @@ import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.ConcreteEntry;
 
 import static java.util.Map.entry;
-import static jdk.internal.classfile.AttributedElement.Kind.CLASS_ONLY;
-import static jdk.internal.classfile.AttributedElement.Kind.CODE_ONLY;
-import static jdk.internal.classfile.AttributedElement.Kind.EVERYWHERE;
-import static jdk.internal.classfile.AttributedElement.Kind.FIELD_ONLY;
-import static jdk.internal.classfile.AttributedElement.Kind.METHOD_ONLY;
 import jdk.internal.classfile.impl.StackMapDecoder;
 
 /**
@@ -174,7 +169,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code AnnotationDefault} attribute */
     public static final AttributeMapper<AnnotationDefaultAttribute>
-            ANNOTATION_DEFAULT = new AbstractAttributeMapper<>(NAME_ANNOTATION_DEFAULT, METHOD_ONLY, Classfile.JAVA_5_VERSION) {
+            ANNOTATION_DEFAULT = new AbstractAttributeMapper<>(NAME_ANNOTATION_DEFAULT, Classfile.JAVA_5_VERSION) {
                 @Override
                 public AnnotationDefaultAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundAnnotationDefaultAttr(e, cf, this, p);
@@ -188,7 +183,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code BootstrapMethods} attribute */
     public static final AttributeMapper<BootstrapMethodsAttribute>
-            BOOTSTRAP_METHODS = new AbstractAttributeMapper<>(NAME_BOOTSTRAP_METHODS, CLASS_ONLY, Classfile.JAVA_17_VERSION) {
+            BOOTSTRAP_METHODS = new AbstractAttributeMapper<>(NAME_BOOTSTRAP_METHODS, Classfile.JAVA_17_VERSION) {
                 @Override
                 public BootstrapMethodsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundBootstrapMethodsAttribute(e, cf, this, p);
@@ -202,7 +197,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code CharacterRangeTable} attribute */
     public static final AttributeMapper<CharacterRangeTableAttribute>
-            CHARACTER_RANGE_TABLE = new AbstractAttributeMapper<>(NAME_CHARACTER_RANGE_TABLE, CODE_ONLY, true, Classfile.JAVA_4_VERSION) {
+            CHARACTER_RANGE_TABLE = new AbstractAttributeMapper<>(NAME_CHARACTER_RANGE_TABLE, true, Classfile.JAVA_4_VERSION) {
                 @Override
                 public CharacterRangeTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundCharacterRangeTableAttribute(e, cf, this, p);
@@ -224,7 +219,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Code} attribute */
     public static final AttributeMapper<CodeAttribute>
-            CODE = new AbstractAttributeMapper<>(NAME_CODE, METHOD_ONLY) {
+            CODE = new AbstractAttributeMapper<>(NAME_CODE) {
                 @Override
                 public CodeAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new CodeImpl(e, cf, this, p);
@@ -239,7 +234,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code CompilationID} attribute */
     public static final AttributeMapper<CompilationIDAttribute>
-            COMPILATION_ID = new AbstractAttributeMapper<>(NAME_COMPILATION_ID, CLASS_ONLY, true) {
+            COMPILATION_ID = new AbstractAttributeMapper<>(NAME_COMPILATION_ID, true) {
                 @Override
                 public CompilationIDAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundCompilationIDAttribute(e, cf, this, p);
@@ -253,7 +248,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ConstantValue} attribute */
     public static final AttributeMapper<ConstantValueAttribute>
-            CONSTANT_VALUE = new AbstractAttributeMapper<>(NAME_CONSTANT_VALUE, FIELD_ONLY) {
+            CONSTANT_VALUE = new AbstractAttributeMapper<>(NAME_CONSTANT_VALUE) {
                 @Override
                 public ConstantValueAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundConstantValueAttribute(e, cf, this, p);
@@ -267,7 +262,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Deprecated} attribute */
     public static final AttributeMapper<DeprecatedAttribute>
-            DEPRECATED = new AbstractAttributeMapper<>(NAME_DEPRECATED, EVERYWHERE, true) {
+            DEPRECATED = new AbstractAttributeMapper<>(NAME_DEPRECATED, true) {
                 @Override
                 public DeprecatedAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundDeprecatedAttribute(e, cf, this, p);
@@ -281,7 +276,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code EnclosingMethod} attribute */
     public static final AttributeMapper<EnclosingMethodAttribute>
-            ENCLOSING_METHOD = new AbstractAttributeMapper<>(NAME_ENCLOSING_METHOD, CLASS_ONLY, Classfile.JAVA_5_VERSION) {
+            ENCLOSING_METHOD = new AbstractAttributeMapper<>(NAME_ENCLOSING_METHOD, Classfile.JAVA_5_VERSION) {
                 @Override
                 public EnclosingMethodAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundEnclosingMethodAttribute(e, cf, this, p);
@@ -296,7 +291,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Exceptions} attribute */
     public static final AttributeMapper<ExceptionsAttribute>
-            EXCEPTIONS = new AbstractAttributeMapper<>(NAME_EXCEPTIONS, METHOD_ONLY) {
+            EXCEPTIONS = new AbstractAttributeMapper<>(NAME_EXCEPTIONS) {
                 @Override
                 public ExceptionsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundExceptionsAttribute(e, cf, this, p);
@@ -310,7 +305,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code InnerClasses} attribute */
     public static final AttributeMapper<InnerClassesAttribute>
-            INNER_CLASSES = new AbstractAttributeMapper<>(NAME_INNER_CLASSES, CLASS_ONLY) {
+            INNER_CLASSES = new AbstractAttributeMapper<>(NAME_INNER_CLASSES) {
                 @Override
                 public InnerClassesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundInnerClassesAttribute(e, cf, this, p);
@@ -331,7 +326,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code LineNumberTable} attribute */
     public static final AttributeMapper<LineNumberTableAttribute>
-            LINE_NUMBER_TABLE = new AbstractAttributeMapper<>(NAME_LINE_NUMBER_TABLE, CODE_ONLY, true) {
+            LINE_NUMBER_TABLE = new AbstractAttributeMapper<>(NAME_LINE_NUMBER_TABLE, true) {
                 @Override
                 public LineNumberTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundLineNumberTableAttribute(e, cf, this, p);
@@ -350,7 +345,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code LocalVariableTable} attribute */
     public static final AttributeMapper<LocalVariableTableAttribute>
-            LOCAL_VARIABLE_TABLE = new AbstractAttributeMapper<>(NAME_LOCAL_VARIABLE_TABLE, CODE_ONLY, true) {
+            LOCAL_VARIABLE_TABLE = new AbstractAttributeMapper<>(NAME_LOCAL_VARIABLE_TABLE, true) {
                 @Override
                 public LocalVariableTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundLocalVariableTableAttribute(e, cf, this, p);
@@ -372,7 +367,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code LocalVariableTypeTable} attribute */
     public static final AttributeMapper<LocalVariableTypeTableAttribute>
-            LOCAL_VARIABLE_TYPE_TABLE = new AbstractAttributeMapper<>(NAME_LOCAL_VARIABLE_TYPE_TABLE, CODE_ONLY, true, Classfile.JAVA_5_VERSION) {
+            LOCAL_VARIABLE_TYPE_TABLE = new AbstractAttributeMapper<>(NAME_LOCAL_VARIABLE_TYPE_TABLE, true, Classfile.JAVA_5_VERSION) {
                 @Override
                 public LocalVariableTypeTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundLocalVariableTypeTableAttribute(e, cf, this, p);
@@ -394,7 +389,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code MethodParameters} attribute */
     public static final AttributeMapper<MethodParametersAttribute>
-            METHOD_PARAMETERS = new AbstractAttributeMapper<>(NAME_METHOD_PARAMETERS, METHOD_ONLY, Classfile.JAVA_8_VERSION) {
+            METHOD_PARAMETERS = new AbstractAttributeMapper<>(NAME_METHOD_PARAMETERS, Classfile.JAVA_8_VERSION) {
                 @Override
                 public MethodParametersAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundMethodParametersAttribute(e, cf, this, p);
@@ -413,7 +408,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Module} attribute */
     public static final AttributeMapper<ModuleAttribute>
-            MODULE = new AbstractAttributeMapper<>(NAME_MODULE, CLASS_ONLY, Classfile.JAVA_9_VERSION) {
+            MODULE = new AbstractAttributeMapper<>(NAME_MODULE, Classfile.JAVA_9_VERSION) {
         @Override
         public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
             return new BoundAttribute.BoundModuleAttribute(e, cf, this, p);
@@ -453,7 +448,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleHashes} attribute */
     public static final AttributeMapper<ModuleHashesAttribute>
-            MODULE_HASHES = new AbstractAttributeMapper<>(NAME_MODULE_HASHES, CLASS_ONLY, Classfile.JAVA_9_VERSION) {
+            MODULE_HASHES = new AbstractAttributeMapper<>(NAME_MODULE_HASHES, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleHashesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleHashesAttribute(e, cf, this, p);
@@ -474,7 +469,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleMainClass} attribute */
     public static final AttributeMapper<ModuleMainClassAttribute>
-            MODULE_MAIN_CLASS = new AbstractAttributeMapper<>(NAME_MODULE_MAIN_CLASS, CLASS_ONLY, Classfile.JAVA_9_VERSION) {
+            MODULE_MAIN_CLASS = new AbstractAttributeMapper<>(NAME_MODULE_MAIN_CLASS, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleMainClassAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleMainClassAttribute(e, cf, this, p);
@@ -488,7 +483,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModulePackages} attribute */
     public static final AttributeMapper<ModulePackagesAttribute>
-            MODULE_PACKAGES = new AbstractAttributeMapper<>(NAME_MODULE_PACKAGES, CLASS_ONLY, Classfile.JAVA_9_VERSION) {
+            MODULE_PACKAGES = new AbstractAttributeMapper<>(NAME_MODULE_PACKAGES, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModulePackagesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModulePackagesAttribute(e, cf, this, p);
@@ -502,7 +497,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleResolution} attribute */
     public static final AttributeMapper<ModuleResolutionAttribute>
-            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, CLASS_ONLY, true, Classfile.JAVA_9_VERSION) {
+            MODULE_RESOLUTION = new AbstractAttributeMapper<>(NAME_MODULE_RESOLUTION, true, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleResolutionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleResolutionAttribute(e, cf, this, p);
@@ -516,7 +511,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code ModuleTarget} attribute */
     public static final AttributeMapper<ModuleTargetAttribute>
-            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, CLASS_ONLY, true, Classfile.JAVA_9_VERSION) {
+            MODULE_TARGET = new AbstractAttributeMapper<>(NAME_MODULE_TARGET, true, Classfile.JAVA_9_VERSION) {
                 @Override
                 public ModuleTargetAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundModuleTargetAttribute(e, cf, this, p);
@@ -530,7 +525,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code NestHost} attribute */
     public static final AttributeMapper<NestHostAttribute>
-            NEST_HOST = new AbstractAttributeMapper<>(NAME_NEST_HOST, CLASS_ONLY, Classfile.JAVA_11_VERSION) {
+            NEST_HOST = new AbstractAttributeMapper<>(NAME_NEST_HOST, Classfile.JAVA_11_VERSION) {
                 @Override
                 public NestHostAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundNestHostAttribute(e, cf, this, p);
@@ -544,7 +539,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code NestMembers} attribute */
     public static final AttributeMapper<NestMembersAttribute>
-            NEST_MEMBERS = new AbstractAttributeMapper<>(NAME_NEST_MEMBERS, CLASS_ONLY, Classfile.JAVA_11_VERSION) {
+            NEST_MEMBERS = new AbstractAttributeMapper<>(NAME_NEST_MEMBERS, Classfile.JAVA_11_VERSION) {
                 @Override
                 public NestMembersAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundNestMembersAttribute(e, cf, this, p);
@@ -558,7 +553,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code PermittedSubclasses} attribute */
     public static final AttributeMapper<PermittedSubclassesAttribute>
-            PERMITTED_SUBCLASSES = new AbstractAttributeMapper<>(NAME_PERMITTED_SUBCLASSES, CLASS_ONLY, Classfile.JAVA_15_VERSION) {
+            PERMITTED_SUBCLASSES = new AbstractAttributeMapper<>(NAME_PERMITTED_SUBCLASSES, Classfile.JAVA_15_VERSION) {
                 @Override
                 public PermittedSubclassesAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundPermittedSubclassesAttribute(e, cf, this, p);
@@ -572,7 +567,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Record} attribute */
     public static final AttributeMapper<RecordAttribute>
-            RECORD = new AbstractAttributeMapper<>(NAME_RECORD, CLASS_ONLY, Classfile.JAVA_16_VERSION) {
+            RECORD = new AbstractAttributeMapper<>(NAME_RECORD, Classfile.JAVA_16_VERSION) {
                 @Override
                 public RecordAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundRecordAttribute(e, cf, this, p);
@@ -592,7 +587,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeInvisibleAnnotations} attribute */
     public static final AttributeMapper<RuntimeInvisibleAnnotationsAttribute>
-            RUNTIME_INVISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_5_VERSION) {
+            RUNTIME_INVISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
                 @Override
                 public RuntimeInvisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
                     return new BoundAttribute.BoundRuntimeInvisibleAnnotationsAttribute(cf, pos);
@@ -606,7 +601,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute */
     public static final AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute>
-            RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_5_VERSION) {
+            RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
                 @Override
                 public RuntimeInvisibleParameterAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundRuntimeInvisibleParameterAnnotationsAttribute(e, cf, this, p);
@@ -623,7 +618,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute */
     public static final AttributeMapper<RuntimeInvisibleTypeAnnotationsAttribute>
-            RUNTIME_INVISIBLE_TYPE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_8_VERSION) {
+            RUNTIME_INVISIBLE_TYPE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, Classfile.JAVA_8_VERSION) {
                 @Override
                 public RuntimeInvisibleTypeAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundRuntimeInvisibleTypeAnnotationsAttribute(e, cf, this, p);
@@ -637,7 +632,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeVisibleAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleAnnotationsAttribute>
-            RUNTIME_VISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_5_VERSION) {
+            RUNTIME_VISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
         @Override
         public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
             return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
@@ -651,7 +646,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeVisibleParameterAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleParameterAnnotationsAttribute>
-            RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_5_VERSION) {
+            RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
                 @Override
                 public RuntimeVisibleParameterAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute(e, cf, this, p);
@@ -668,7 +663,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code RuntimeVisibleTypeAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleTypeAnnotationsAttribute>
-            RUNTIME_VISIBLE_TYPE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS, EVERYWHERE, Classfile.JAVA_8_VERSION) {
+            RUNTIME_VISIBLE_TYPE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS, Classfile.JAVA_8_VERSION) {
                 @Override
                 public RuntimeVisibleTypeAnnotationsAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundRuntimeVisibleTypeAnnotationsAttribute(e, cf, this, p);
@@ -682,7 +677,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Signature} attribute */
     public static final AttributeMapper<SignatureAttribute>
-            SIGNATURE = new AbstractAttributeMapper<>(NAME_SIGNATURE, EVERYWHERE, Classfile.JAVA_5_VERSION) {
+            SIGNATURE = new AbstractAttributeMapper<>(NAME_SIGNATURE, Classfile.JAVA_5_VERSION) {
                 @Override
                 public SignatureAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSignatureAttribute(e, cf, this, p);
@@ -696,7 +691,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code SourceDebug} attribute */
     public static final AttributeMapper<SourceDebugExtensionAttribute>
-            SOURCE_DEBUG_EXTENSION = new AbstractAttributeMapper<>(NAME_SOURCE_DEBUG_EXTENSION, CLASS_ONLY, Classfile.JAVA_5_VERSION) {
+            SOURCE_DEBUG_EXTENSION = new AbstractAttributeMapper<>(NAME_SOURCE_DEBUG_EXTENSION, Classfile.JAVA_5_VERSION) {
                 @Override
                 public SourceDebugExtensionAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSourceDebugExtensionAttribute(e, cf, this, p);
@@ -710,7 +705,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code SourceFile} attribute */
     public static final AttributeMapper<SourceFileAttribute>
-            SOURCE_FILE = new AbstractAttributeMapper<>(NAME_SOURCE_FILE, CLASS_ONLY) {
+            SOURCE_FILE = new AbstractAttributeMapper<>(NAME_SOURCE_FILE) {
                 @Override
                 public SourceFileAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSourceFileAttribute(e, cf, this, p);
@@ -724,7 +719,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code SourceID} attribute */
     public static final AttributeMapper<SourceIDAttribute>
-            SOURCE_ID = new AbstractAttributeMapper<>(NAME_SOURCE_ID, CLASS_ONLY) {
+            SOURCE_ID = new AbstractAttributeMapper<>(NAME_SOURCE_ID) {
                 @Override
                 public SourceIDAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSourceIDAttribute(e, cf, this, p);
@@ -738,7 +733,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code StackMapTable} attribute */
     public static final AttributeMapper<StackMapTableAttribute>
-            STACK_MAP_TABLE = new AbstractAttributeMapper<>(NAME_STACK_MAP_TABLE, CODE_ONLY, Classfile.JAVA_6_VERSION) {
+            STACK_MAP_TABLE = new AbstractAttributeMapper<>(NAME_STACK_MAP_TABLE, Classfile.JAVA_6_VERSION) {
                 @Override
                 public StackMapTableAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundStackMapTableAttribute((CodeImpl)e, cf, this, p);
@@ -753,7 +748,7 @@ public class Attributes {
 
     /** Attribute mapper for the {@code Synthetic} attribute */
     public static final AttributeMapper<SyntheticAttribute>
-            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC, EVERYWHERE) {
+            SYNTHETIC = new AbstractAttributeMapper<>(NAME_SYNTHETIC) {
                 @Override
                 public SyntheticAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
                     return new BoundAttribute.BoundSyntheticAttribute(e, cf, this, p);

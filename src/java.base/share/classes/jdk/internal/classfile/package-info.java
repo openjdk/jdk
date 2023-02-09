@@ -162,8 +162,7 @@
  * For nonstandard attributes, user-provided attribute mappers can be specified
  * through the use of the {@link jdk.internal.classfile.Classfile.Option#attributeMapper(java.util.function.Function)}}
  * classfile option.  Implementations of custom attributes should extend {@link
- * jdk.internal.classfile.CustomAttribute}. Custom attributes will be delivered as
- * elements in all of the contexts specified by {@link jdk.internal.classfile.AttributeMapper#whereApplicable()}.
+ * jdk.internal.classfile.CustomAttribute}.
  *
  * <h3>Options</h3>
  * <p>

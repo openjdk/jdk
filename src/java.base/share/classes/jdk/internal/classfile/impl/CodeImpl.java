@@ -194,11 +194,6 @@ public final class CodeImpl
     }
 
     @Override
-    public Kind attributedElementKind() {
-        return Kind.CODE_ATTRIBUTE;
-    }
-
-    @Override
     public void forEachElement(Consumer<CodeElement> consumer) {
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);

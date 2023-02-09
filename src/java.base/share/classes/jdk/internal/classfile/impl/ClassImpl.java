@@ -151,11 +151,6 @@ public final class ClassImpl
     // ClassModel
 
     @Override
-    public Kind attributedElementKind() {
-        return Kind.CLASS;
-    }
-
-    @Override
     public void forEachElement(Consumer<ClassElement> consumer) {
         consumer.accept(flags());
         consumer.accept(ClassfileVersion.of(majorVersion(), minorVersion()));

@@ -86,7 +86,7 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements, Kind.FIELD);
+            super(elements);
         }
 
         @Override

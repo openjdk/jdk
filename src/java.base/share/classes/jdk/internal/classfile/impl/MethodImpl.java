@@ -110,11 +110,6 @@ public final class MethodImpl
     // MethodModel
 
     @Override
-    public Kind attributedElementKind() {
-        return Kind.METHOD;
-    }
-
-    @Override
     public Optional<CodeModel> code() {
         return findAttribute(Attributes.CODE).map(a -> (CodeModel) a);
     }

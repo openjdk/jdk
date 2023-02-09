@@ -96,11 +96,6 @@ public final class FieldImpl
     // FieldModel
 
     @Override
-    public Kind attributedElementKind() {
-        return Kind.FIELD;
-    }
-
-    @Override
     public void writeTo(DirectClassBuilder builder) {
         if (builder.canWriteDirect(reader)) {
             builder.withField(this);
