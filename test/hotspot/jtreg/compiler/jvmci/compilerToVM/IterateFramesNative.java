@@ -104,7 +104,7 @@ public class IterateFramesNative {
     }
 
     private void test() {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < (CHECK_COMPILED ? 1 : CompilerWhiteBoxTest.THRESHOLD + 1); i++) {
             testNativeFrame("someString", i);
         }
     }
