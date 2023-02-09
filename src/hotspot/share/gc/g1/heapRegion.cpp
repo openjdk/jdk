@@ -494,28 +494,19 @@ public:
 };
 
 class VerifyLiveClosure : public G1VerificationClosure {
-public:
-  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(oop* p) { do_oop_work(p); }
 
   template <class T>
   void do_oop_work(T* p) {
     assert(_containing_obj != NULL, "Precondition");
     assert(!_g1h->is_obj_dead_cond(_containing_obj, _vo),
       "Precondition");
-    verify_liveness(p);
-  }
 
-  template <class T>
-  void verify_liveness(T* p) {
     T heap_oop = RawAccess<>::oop_load(p);
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
 
     oop obj = CompressedOops::decode_raw_not_null(heap_oop);
-    bool failed = false;
     bool is_in_heap = _g1h->is_in(obj);
     if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
       MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
@@ -542,10 +533,15 @@ public:
       }
       log.error("----------");
       _failures = true;
-      failed = true;
       _n_failures++;
     }
   }
+
+public:
+  VerifyLiveClosure(G1CollectedHeap* g1h, VerifyOption vo) : G1VerificationClosure(g1h, vo) {}
+
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) { do_oop_work(p); }
 };
 
 class VerifyRemSetClosure : public G1VerificationClosure {
