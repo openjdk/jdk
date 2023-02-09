@@ -160,10 +160,7 @@ public:
   char*           _instrument_lib_name;
   char*           _instrument_lib_options;
   bool            _is_dynamic;
-  jlong           _start_seconds;
-  jlong           _start_nanos;
-  jlong           _start_time_epoch_ms;
-  jlong           _duration_ns;
+  jlong           _load_time_epoch_ms;
   AgentState      _state;
   AgentLibrary*   _next;
 
@@ -183,10 +180,8 @@ public:
   void set_static_lib(bool is_static_lib)   { _is_static_lib = is_static_lib; }
   bool valid()                              { return (_state == agent_valid); }
   void set_valid()                          { _state = agent_valid; }
-  jlong start_time_epoch_ms() const         { return _start_time_epoch_ms; }
-  jlong duration_ns() const                 { return _duration_ns; }
-  void start_timing();
-  void end_timing();
+  jlong load_time_epoch_ms() const          { return _load_time_epoch_ms; }
+  void set_load_time();
 
   // Constructor
   AgentLibrary(const char* name, const char* options, bool is_absolute_path,

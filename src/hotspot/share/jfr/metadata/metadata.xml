@@ -1180,8 +1180,8 @@
       description="If the agent is implemented using java.lang.instrument" />
     <Field type="boolean" name="dynamic" label="Dynamically Loaded"
       description="If the agent was loaded after startup using the attach mechanism" />
-    <Field type="long" contentType="epochmillis" name="loadStart" label="Load Start" />
-    <Field type="long" contentType="nanos" name="loadDuration" label="Load Duration" />
+    <Field type="long" contentType="epochmillis" name="loadTime" label="Load Time"
+     description="Timestamp taken before Agent_OnLoad was called"/>
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">

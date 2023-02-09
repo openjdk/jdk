@@ -232,9 +232,7 @@ AgentLibrary::AgentLibrary(const char* name, const char* options,
   _is_static_lib = false;
   _is_instrument_lib = instrument_lib;
   _is_dynamic = is_dynamic;
-  _start_seconds = 0;
-  _start_nanos = 0;
-  _duration_ns = 0;
+  _load_time_epoch_ms = 0;
   _instrument_lib_options = nullptr;
   _instrument_lib_name = nullptr;
   if (_is_instrument_lib && _options != nullptr) {
@@ -254,19 +252,11 @@ AgentLibrary::AgentLibrary(const char* name, const char* options,
   }
 }
 
-void AgentLibrary::start_timing() {
+void AgentLibrary::set_load_time() {
   // Ticks not initialized, use os::javaTimeSystemUTC
-  os::javaTimeSystemUTC(_start_seconds, _start_nanos);
-}
-
-void AgentLibrary::end_timing() {
-  assert(_start_seconds != 0, "invariant");
-  jlong end_seconds, end_nanos;
-  os::javaTimeSystemUTC(end_seconds, end_nanos);
-  jlong s = end_seconds - _start_seconds;
-  jlong n = end_nanos - _start_nanos;
-  _duration_ns = 1000000000 * s + n;
-  _start_time_epoch_ms = _start_seconds * 1000 + _start_nanos / 1000000;
+  jlong seconds, nanos;
+  os::javaTimeSystemUTC(seconds, nanos);
+  _load_time_epoch_ms = seconds * 1000 + nanos / 1000000;
 }
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining

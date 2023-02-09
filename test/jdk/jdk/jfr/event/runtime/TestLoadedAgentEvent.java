@@ -128,21 +128,21 @@ public final class TestLoadedAgentEvent {
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
+            Instant endTime = events.get(0).getEndTime();
             for (RecordedEvent e : events) {
                 System.out.println(e);
-                Instant loadStart = e.getInstant("loadStart");
-                if (loadStart.isBefore(r.getStartTime())) {
+                if (!e.getEndTime().equals(endTime)) {
+                    throw new Exception("Expected all events to have the same end time");
+                }
+                if (!e.getStartTime().equals(endTime)) {
+                    throw new Exception("Expected start and end time to be the same");
+                }
+                Instant loadTime = e.getInstant("loadTime");
+                if (loadTime.isBefore(r.getStartTime())) {
                     throw new Exception("Expected agent to be loaded after recording start");
                 }
-                if (loadStart.isAfter(r.getStopTime())) {
+                if (loadTime.isAfter(r.getStopTime())) {
                     throw new Exception("Expected agent to be loaded before recording stop");
-                }
-                Duration duration = e.getDuration("loadDuration");
-                if (duration.isNegative()) {
-                    throw new Exception("Expected duration to be positive value");
-                }
-                if (duration.toSeconds() > 3600) {
-                    throw new Exception("Expected duration to be less than 1 hour");
                 }
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);
                 Events.assertField(e, "dynamic").equal(true);

@@ -272,11 +272,12 @@ TRACE_REQUEST_FUNC(SystemProcess) {
 TRACE_REQUEST_FUNC(LoadedAgent) {
   MutexLocker m(JfrAgentList_lock, Mutex::_no_safepoint_check_flag);
   for (AgentLibrary* a = Arguments::agents(); a != nullptr; a = a->next()) {
-    assert (a->start_time_epoch_ms() != 0, "agent not timed");
-    EventLoadedAgent event;
+    assert (a->load_time_epoch_ms() != 0, "agent not loaded");
+    EventLoadedAgent event(UNTIMED);
+    event.set_starttime(timestamp());
+    event.set_endtime(timestamp());
     event.set_dynamic(a->is_dynamic());
-    event.set_loadStart(a->start_time_epoch_ms());
-    event.set_loadDuration(a->duration_ns());
+    event.set_loadTime(a->load_time_epoch_ms());
     if (a->is_instrument_lib()) {
       event.set_java(true);
       event.set_name(a->instrument_name());

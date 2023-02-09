@@ -2995,9 +2995,8 @@ jint JvmtiExport::load_agent_library(const char *agent, const char *absParam,
         JvmtiThreadEventMark jem(THREAD);
         JvmtiJavaThreadEventTransition jet(THREAD);
 
-        agent_lib->start_timing();
+        agent_lib->set_load_time();
         result = (*on_attach_entry)(&main_vm, (char*)options, nullptr);
-        agent_lib->end_timing();
 
         // Agent_OnAttach may have used JNI
         if (THREAD->is_pending_jni_exception_check()) {
