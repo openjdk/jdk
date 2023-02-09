@@ -154,6 +154,7 @@ G1PreEvacuateCollectionSetBatchTask::G1PreEvacuateCollectionSetBatchTask() :
 }
 
 static void verify_empty_dirty_card_logs() {
+#ifdef ASSERT
   ResourceMark rm;
 
   struct Verifier : public ThreadClosure {
@@ -166,6 +167,7 @@ static void verify_empty_dirty_card_logs() {
     }
   } verifier;
   Threads::threads_do(&verifier);
+#endif
 }
 
 G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {
@@ -181,7 +183,7 @@ G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {
   total_refinement_stats += _non_java_stats->refinement_stats();
   qset.update_refinement_stats(total_refinement_stats);
 
-  DEBUG_ONLY(verify_empty_dirty_card_logs();)
+  verify_empty_dirty_card_logs();
 
   size_t pending_cards = qset.num_cards();
   size_t thread_buffer_cards = pending_cards - _old_pending_cards;
