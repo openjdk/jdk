@@ -292,19 +292,26 @@ public class HtmlDocletWriter {
         var enclosing = (TypeElement) method.getEnclosingElement();
         var overrideInfo = utils.overriddenMethod(method);
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
-        // Check whether there is any implementation or overridden info to be
-        // printed. If no overridden or implementation info needs to be
-        // printed, do not print this section.
-        if ((!enclosing.getInterfaces().isEmpty() // has direct superinterfaces
+        if ((!enclosing.getInterfaces().isEmpty()
                 && !vmt.getImplementedMethods(method).isEmpty())
                 || overrideInfo != null) {
+            // TODO note that if there are any overridden interface methods throughout the
+            //   hierarchy, !vmt.getImplementedMethods(method).isEmpty(), their information
+            //   will be printed if *any* of the below is true:
+            //     * the enclosing has _directly_ implemented interfaces
+            //     * the overridden method is not null
+            //   If both are false, the information will not be printed: there will be no
+            //   "Specified by" documentation. The examples of that can be seen in documentation
+            //   for these methods:
+            //     * ForkJoinPool.execute(java.lang.Runnable)
+            //  This is a long-standing bug, which must be fixed separately.
             MethodWriterImpl.addImplementsInfo(this, method, dl);
-            if (overrideInfo != null) {
-                MethodWriterImpl.addOverridden(this,
-                        overrideInfo.overriddenMethodOwner(),
-                        overrideInfo.overriddenMethod(),
-                        dl);
-            }
+        }
+        if (overrideInfo != null) {
+            MethodWriterImpl.addOverridden(this,
+                    overrideInfo.overriddenMethodOwner(),
+                    overrideInfo.overriddenMethod(),
+                    dl);
         }
     }
 
