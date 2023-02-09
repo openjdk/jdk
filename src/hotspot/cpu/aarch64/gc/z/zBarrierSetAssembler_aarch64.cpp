@@ -33,6 +33,7 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -864,6 +865,10 @@ static void change_immediate(uint32_t& instr, uint32_t imm, uint32_t start, uint
   uint32_t imm_mask = ((1u << start) - 1u) ^ ((1u << (end + 1)) - 1u);
   instr &= ~imm_mask;
   instr |= imm << start;
+  // There is no instruction cache coherency on AArch64, so we need to force invalidate
+  // instruction caches, as well as trigger ISB fence on all threads wanting to execute
+  // the patched code.
+  ICache::invalidate_word((address)&instr);
 }
 
 void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
