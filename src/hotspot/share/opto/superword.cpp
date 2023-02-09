@@ -662,9 +662,9 @@ void SuperWord::find_adjacent_refs() {
         }
       }
     } else {
-      if (_phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type())) {
+      if (same_memory_slice(best_align_to_mem_ref, mem_ref)) {
         // Can't allow vectorization of unaligned memory accesses with the
-        // same type since it could be overlapped accesses to the same array.
+        // same memory slice since it could be overlapped accesses to the same array.
         create_pack = false;
       } else {
         // Allow independent (different type) unaligned memory operations
@@ -672,7 +672,7 @@ void SuperWord::find_adjacent_refs() {
         if (vectors_should_be_aligned()) {
           create_pack = false;
         } else {
-          // Check if packs of the same memory type but
+          // Check if packs of the same memory slice but
           // with a different alignment were created before.
           for (uint i = 0; i < align_to_refs.size(); i++) {
             MemNode* mr = align_to_refs.at(i)->as_Mem();
@@ -680,7 +680,7 @@ void SuperWord::find_adjacent_refs() {
               // Skip when we are looking at same memory operation.
               continue;
             }
-            if (_phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(mr->adr_type()) &&
+            if (same_memory_slice(mem_ref, mr) &&
                 memory_alignment(mr, iv_adjustment) != 0)
               create_pack = false;
           }
@@ -1253,9 +1253,9 @@ bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
 
   // FIXME - co_locate_pack fails on Stores in different mem-slices, so
   // only pack memops that are in the same alias set until that's fixed.
-  if (_phase->C->get_alias_index(s1->as_Mem()->adr_type()) !=
-      _phase->C->get_alias_index(s2->as_Mem()->adr_type()))
+  if (!same_memory_slice(s1->as_Mem(), s2->as_Mem())) {
     return false;
+  }
   SWPointer p1(s1->as_Mem(), this, NULL, false);
   SWPointer p2(s2->as_Mem(), this, NULL, false);
   if (p1.base() != p2.base() || !p1.comparable(p2)) return false;
@@ -3677,6 +3677,10 @@ bool SuperWord::same_velt_type(Node* n1, Node* n2) {
     return data_size(n1) == data_size(n2);
   }
   return vt1 == vt2;
+}
+
+bool SuperWord::same_memory_slice(MemNode* best_align_to_mem_ref, MemNode* mem_ref) const {
+  return _phase->C->get_alias_index(mem_ref->adr_type()) == _phase->C->get_alias_index(best_align_to_mem_ref->adr_type());
 }
 
 //------------------------------in_packset---------------------------
