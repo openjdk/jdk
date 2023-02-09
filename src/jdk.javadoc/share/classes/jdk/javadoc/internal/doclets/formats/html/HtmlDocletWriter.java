@@ -306,7 +306,7 @@ public class HtmlDocletWriter {
             //   for these methods:
             //     * ForkJoinPool.execute(java.lang.Runnable)
             //  This is a long-standing bug, which must be fixed separately.
-            MethodWriterImpl.addImplementsInfo(this, method, dl);
+            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
         }
         if (overrideInfo != null) {
             MethodWriterImpl.addOverridden(this,

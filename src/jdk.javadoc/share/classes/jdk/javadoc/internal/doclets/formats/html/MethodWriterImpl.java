@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.Collection;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -293,12 +294,14 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      * Adds "implements" information for a method (if appropriate)
      * into a definition list.
      *
-     * @param writer the writer for the method
-     * @param method the method
-     * @param dl     the definition list
+     * @param writer  the writer for the method
+     * @param method  the method
+     * @param methods implemented methods
+     * @param dl      the definition list
      */
     protected static void addImplementsInfo(HtmlDocletWriter writer,
                                             ExecutableElement method,
+                                            Collection<ExecutableElement> methods,
                                             Content dl) {
         Utils utils = writer.utils;
         if (writer.options.noComment()) {
@@ -309,7 +312,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .getVisibleMemberTable(utils.getEnclosingTypeElement(method));
         SortedSet<ExecutableElement> implementedMethods =
                 new TreeSet<>(utils.comparators.makeOverrideUseComparator());
-        implementedMethods.addAll(vmt.getImplementedMethods(method));
+        implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
             intfac = utils.getDeclaredType(utils.getEnclosingTypeElement(method), intfac);
