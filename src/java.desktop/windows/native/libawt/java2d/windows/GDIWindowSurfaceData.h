@@ -256,4 +256,4 @@ GDIWindowSurfaceData_GetComp(JNIEnv *env, GDIWinSDOps *wsdo);
 } /* extern "C" */
 
 
-#endif _WIN32SURFACEDATA_H_
+#endif // _WIN32SURFACEDATA_H_
