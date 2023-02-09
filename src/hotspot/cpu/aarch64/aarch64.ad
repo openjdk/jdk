@@ -3930,9 +3930,8 @@ encode %{
     if (UseFastLocking) {
       // If the owner is anonymous, we need to fix it -- in the slow-path.
       __ ldr(disp_hdr, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      // We cannot use tbnz here: tbnz would leave the condition flags untouched,
-      // but we want to carry-over the NE condition to the exit at the cont label,
-      // in order to take the slow-path.
+      // We cannot use tbnz here, the target might be too far away and cannot
+      // be encoded.
       __ tst(disp_hdr, (uint64_t)(intptr_t) ANONYMOUS_OWNER);
       C2FixAnonOMOwnerStub* stub = new (Compile::current()->comp_arena()) C2FixAnonOMOwnerStub(tmp, disp_hdr);
       Compile::current()->output()->add_stub(stub);

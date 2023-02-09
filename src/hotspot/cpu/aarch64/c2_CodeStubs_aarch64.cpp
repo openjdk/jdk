@@ -76,7 +76,7 @@ void C2CheckLockStackStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2FixAnonOMOwnerStub::max_size() const {
-  return 0;
+  return 20;
 }
 
 void C2FixAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
@@ -85,7 +85,7 @@ void C2FixAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   Register t = tmp();
 
   // Fix owner to be the current thread.
-  __ str(rthread, Address(mon, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  __ str(rthread, Address(mon, ObjectMonitor::owner_offset_in_bytes()));
 
   // Pop owner object from lock-stack.
   __ ldr(t, Address(rthread, JavaThread::lock_stack_current_offset()));

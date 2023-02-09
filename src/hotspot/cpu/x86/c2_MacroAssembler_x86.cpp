@@ -621,7 +621,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
       jmp(COUNT);
 #else
       // We can not emit the lock-stack-check in verified_entry() because we don't have enough
-      // registers (for thread ptr). Therefor we have to emit the lock-stack-check in
+      // registers (for thread ptr). Therefore we have to emit the lock-stack-check in
       // fast_lock_impl(). However, that check can take a slow-path with ZF=1, therefore
       // we need to handle it specially and force ZF=0 before taking the actual slow-path.
       Label slow;

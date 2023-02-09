@@ -9695,7 +9695,7 @@ void MacroAssembler::fast_lock_impl(Register obj, Register hdr, Register thread,
 
   // Now we attempt to take the fast-lock.
   // Clear lowest two header bits (locked state).
-  andptr(hdr, ~(int32_t )markWord::lock_mask_in_place);
+  andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
   movptr(tmp, hdr);
   // Set lowest bit (unlocked state).
   orptr(hdr, markWord::unlocked_value);
