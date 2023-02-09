@@ -5919,3 +5919,110 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
       strd(src.first()->as_FloatRegister(), Address(sp, reg2offset_out(dst.first())));
   }
 }
+
+void MacroAssembler::pack_26(Register dest0, Register dest1, Register dest2, Register src) {
+  ldp(dest0, rscratch1, Address(src, 0));
+  orr(dest0, dest0, rscratch1, Assembler::LSL, 26);
+
+  ldp(dest1, rscratch1, Address(src, 2 * sizeof (jlong)));
+  orr(dest1, dest1, rscratch1, Assembler::LSL, 26);
+
+  ldr(dest2, Address(src, 4 * sizeof (jlong)));
+}
+
+void MacroAssembler::wide_mul(RegPair prod, Register n, Register m) {
+  mul(prod._lo, n, m);
+  umulh(prod._hi, n, m);
+}
+void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
+  wide_mul(RegPair(rscratch1, rscratch2), n, m);
+  adds(sum._lo, sum._lo, rscratch1);
+  adc(sum._hi, sum._hi, rscratch2);
+}
+
+// Widening multiply s * r -> u
+void MacroAssembler::poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
+                       RegSetIterator<Register> scratch) {
+  // Compute (S2 << 26) * 5.
+  Register RS2 = *++scratch;
+  lsl(RS2, s[2], 26);
+  add(RS2, RS2, RS2, LSL, 2);
+
+  wide_mul(u[0], s[0], r[0]); wide_madd(u[0], s[1], RR2);  wide_madd(u[0], RS2, r[1]);
+  wide_mul(u[1], s[0], r[1]); wide_madd(u[1], s[1], r[0]); wide_madd(u[1], RS2, r[2]);
+  wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
+}
+
+void MacroAssembler::poly1305_reduce(const RegPair u[]) {
+  // Partial reduction mod 2**130 - 5
+
+  // Add the high part of u1 to u2
+  extr(rscratch1, u[1]._hi, u[1]._lo, 52);
+  bfc(u[1]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[1]._hi, 0, 52));
+  adds(u[2]._lo, u[2]._lo, rscratch1);
+#ifdef ASSERT
+  {
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
+  }
+#endif
+
+  // Then multiply the high part of u2 by 5 and add it back to u1:u0
+  extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+  ubfx(rscratch1, rscratch1, 0, 52);
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  adds(u[0]._lo, u[0]._lo, rscratch1);
+  adc(u[0]._hi, u[0]._hi, zr);
+  bfc(u[2]._lo, 26, 64-26);
+
+  // Multiply the highest part of u2 by 5 and add it back to u1
+  ubfx(rscratch1, u[2]._hi, 14, 50);
+#ifdef ASSERT
+  {
+    Label L;
+    bfc(u[2]._hi, 0, 50);
+    cbz(u[2]._hi, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
+  }
+#endif
+  add(rscratch1, rscratch1, rscratch1, LSL, 2);
+  add(u[1]._lo, u[1]._lo, rscratch1);
+
+  // Propagate carries through u2:u1:u0
+  extr(rscratch1, u[0]._hi, u[0]._lo, 52);
+  bfc(u[0]._lo, 52, 64-52);
+  DEBUG_ONLY(bfc(u[0]._hi, 0, 52));
+  adds(u[1]._lo, u[1]._lo, rscratch1);
+#ifdef ASSERT
+  {
+    Label L;
+    br(CC, L);
+    stop("Overflow in poly1305 reduction");
+    BIND(L);
+  }
+#endif
+}
+
+void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register input_start) {
+  ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
+  ubfx(s[0], rscratch1, 0, 52);
+  extr(s[1], rscratch2, rscratch1, 52);
+  ubfx(s[1], s[1], 0, 52);
+  ubfx(s[2], rscratch2, 40, 24);
+  orr(s[2], s[2], 1 << 24);
+
+  add(s[0], u[0]._lo, s[0]);
+  add(s[1], u[1]._lo, s[1]);
+  add(s[2], u[2]._lo, s[2]);
+}
+
+void MacroAssembler::copy_3_regs(Register src[], Register dest[]) {
+  mov(dest[0], src[0]);
+  mov(dest[1], src[1]);
+  mov(dest[2], src[2]);
+}
+

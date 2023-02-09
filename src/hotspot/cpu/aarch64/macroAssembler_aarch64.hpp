@@ -35,6 +35,18 @@
 
 class OopMap;
 
+struct RegPair {
+  const Register _lo, _hi;
+  RegPair(Register r1, Register r2) : _lo(r1), _hi(r2) { }
+  RegPair(const RegPair &pair) : _lo(pair._lo), _hi(pair._hi) { }
+};
+
+struct RegTriple {
+  const Register _lo, _mid, _hi;
+  RegTriple(Register r1, Register r2, Register r3)
+    : _lo(r1), _mid(r2), _hi(r3) { }
+};
+
 // MacroAssembler extends Assembler by frequently used macros.
 //
 // Instructions for which a 'better' code sequence exists depending
@@ -1560,7 +1572,17 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-private:
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src);
+  void wide_mul(RegPair prod, Register n, Register m);
+  void wide_madd(RegPair sum, Register n, Register m);
+  // Widening multiply s * r -> u
+  void poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
+                       RegSetIterator<Register> scratch);
+  void poly1305_reduce(const RegPair u[]);
+  void poly1305_step(Register s[], const RegPair u[], Register input_start);
+  void copy_3_regs(Register src[], Register dest[]);
+
+ private:
   // Check the current thread doesn't need a cross modify fence.
   void verify_cross_modify_fence_not_required() PRODUCT_RETURN;
 

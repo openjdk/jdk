@@ -7173,129 +7173,9 @@ typedef uint32_t u32;
   //   return start;
   // }
 
-  struct RegPair {
-    const Register _lo, _hi;
-    RegPair(Register r1, Register r2) : _lo(r1), _hi(r2) { }
-    RegPair(const RegPair &pair) : _lo(pair._lo), _hi(pair._hi) { }
-  };
-
-  struct RegTriple {
-    const Register _lo, _mid, _hi;
-    RegTriple(Register r1, Register r2, Register r3)
-      : _lo(r1), _mid(r2), _hi(r3) { }
-  };
-
-  void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
-    __ ldp(dest0, rscratch1, Address(src, 0));
-    __ orr(dest0, dest0, rscratch1, Assembler::LSL, 26);
-
-    __ ldp(dest1, rscratch1, Address(src, 2 * sizeof (jlong)));
-    __ orr(dest1, dest1, rscratch1, Assembler::LSL, 26);
-
-    __ ldr(dest2, Address(src, 4 * sizeof (jlong)));
-  }
-
-  void wide_mul(RegPair prod, Register n, Register m) {
-    __ mul(prod._lo, n, m);
-    __ umulh(prod._hi, n, m);
-  }
-  void wide_madd(RegPair sum, Register n, Register m) {
-    wide_mul(RegPair(rscratch1, rscratch2), n, m);
-    __ adds(sum._lo, sum._lo, rscratch1);
-    __ adc(sum._hi, sum._hi, rscratch2);
-  }
-
-  // Widening multiply s * r -> u
-  void poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
-                         RegSetIterator<Register> scratch) {
-      // Compute (S2 << 26) * 5.
-      Register RS2 = *++scratch;
-      __ lsl(RS2, s[2], 26);
-      __ add(RS2, RS2, RS2, __ LSL, 2);
-
-      wide_mul(u[0], s[0], r[0]); wide_madd(u[0], s[1], RR2);      poo = __ pc();
-
-
-      wide_madd(u[0], RS2, r[1]);
-      wide_mul(u[1], s[0], r[1]); wide_madd(u[1], s[1], r[0]); wide_madd(u[1], RS2, r[2]);
-      wide_mul(u[2], s[0], r[2]); wide_madd(u[2], s[1], r[1]); wide_madd(u[2], s[2], r[0]);
-  }
-
-  void poly1305_reduce(const RegPair u[]) {
-    // Partial reduction mod 2**130 - 5
-
-    DEBUG_ONLY(__ mov(rscratch2, (address)&flippy));
-    DEBUG_ONLY(__ addmw(Address(rscratch2), 1, rscratch1));
-
-    // Add the high part of u1 to u2
-    __ extr(rscratch1, u[1]._hi, u[1]._lo, 52);
-    __ bfc(u[1]._lo, 52, 64-52);
-    DEBUG_ONLY(__ bfc(u[1]._hi, 0, 52));
-    __ adds(u[2]._lo, u[2]._lo, rscratch1);
-#ifdef ASSERT
-    {
-      Label L;
-      __ br(__ CC, L);
-      __ stop("Overflow in poly1305 reduction");
-      __ BIND(L);
-    }
-#endif
-
-    // Then multiply the high part of u2 by 5 and add it back to u1:u0
-    __ extr(rscratch1, u[2]._hi, u[2]._lo, 26);
-    __ ubfx(rscratch1, rscratch1, 0, 52);
-    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-    __ adds(u[0]._lo, u[0]._lo, rscratch1);
-    __ adc(u[0]._hi, u[0]._hi, zr);
-    __ bfc(u[2]._lo, 26, 64-26);
-
-    // Multiply the highest part of u2 by 5 and add it back to u1
-    __ ubfx(rscratch1, u[2]._hi, 14, 50);
-#ifdef ASSERT
-    {
-      Label L;
-      __ bfc(u[2]._hi, 0, 50);
-      __ cbz(u[2]._hi, L);
-      __ stop("Overflow in poly1305 reduction");
-      __ BIND(L);
-    }
-#endif
-    __ add(rscratch1, rscratch1, rscratch1, __ LSL, 2);
-    __ add(u[1]._lo, u[1]._lo, rscratch1);
-
-    // Propagate carries through u2:u1:u0
-    __ extr(rscratch1, u[0]._hi, u[0]._lo, 52);
-    __ bfc(u[0]._lo, 52, 64-52);
-    DEBUG_ONLY(__ bfc(u[0]._hi, 0, 52));
-    __ adds(u[1]._lo, u[1]._lo, rscratch1);
-#ifdef ASSERT
-    {
-      Label L;
-      __ br(__ CC, L);
-      __ stop("Overflow in poly1305 reduction");
-      __ BIND(L);
-    }
-#endif
-  }
-
-  void poly1305_step(Register s[], const RegPair u[], Register input_start) {
-    __ ldp(rscratch1, rscratch2, __ post(input_start, 2 * wordSize));
-    __ ubfx(s[0], rscratch1, 0, 52);
-    __ extr(s[1], rscratch2, rscratch1, 52);
-    __ ubfx(s[1], s[1], 0, 52);
-    __ ubfx(s[2], rscratch2, 40, 24);
-    __ orr(s[2], s[2], 1 << 24);
-
-    __ add(s[0], u[0]._lo, s[0]);
-    __ add(s[1], u[1]._lo, s[1]);
-    __ add(s[2], u[2]._lo, s[2]);
-  }
-
-  void copy_3_regs(Register src[], Register dest[]) {
-    __ mov(dest[0], src[0]);
-    __ mov(dest[1], src[1]);
-    __ mov(dest[2], src[2]);
-  }
+#define INCLUDE_GEN2
+  #include "stubGenerator_poly1305_aarch64.cpp"
+#undef INCLUDE_GEN2
 
   address generate_poly1305_processBlocks1() {
     __ align(CodeEntryAlignment);
@@ -7313,13 +7193,13 @@ typedef uint32_t u32;
 
     // Rn is the randomly-generated key, packed into three registers
     Register R[] = { *++regs, *++regs, *++regs,};
-    pack_26(R[0], R[1], R[2], r_start);
+    __ pack_26(R[0], R[1], R[2], r_start);
 
     // Un is the current checksum
     const RegPair u[] = {{*++regs, *++regs},
                          {*++regs, *++regs},
                          {*++regs, *++regs},};
-    pack_26(u[0]._lo, u[1]._lo, u[2]._lo, acc_start);
+    __ pack_26(u[0]._lo, u[1]._lo, u[2]._lo, acc_start);
 
     static constexpr int BLOCK_LENGTH = 16;
     Label DONE, LOOP;
@@ -7337,9 +7217,9 @@ typedef uint32_t u32;
     __ br(~ Assembler::GE, DONE); {
       __ bind(LOOP);
 
-      poly1305_step(S, u, input_start);
-      poly1305_multiply(u, S, R, RR2, regs);
-      poly1305_reduce(u);
+      __ poly1305_step(S, u, input_start);
+      __ poly1305_multiply(u, S, R, RR2, regs);
+      __ poly1305_reduce(u);
 
       __ subsw(length, length, BLOCK_LENGTH);
       __ br(Assembler::GE, LOOP);
@@ -7382,7 +7262,6 @@ typedef uint32_t u32;
 
     return start;
   }
-
 
 #if INCLUDE_JFR
 
