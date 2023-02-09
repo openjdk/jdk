@@ -60,14 +60,6 @@ public class ZoneOffsetBench {
             .sorted()
             .toArray();
 
-    @Setup
-    public void setup() {
-        for (int s : CACHED_SECONDS) {
-            ZoneOffset zo = ZoneOffset.ofTotalSeconds(s);
-            System.out.println(zo.getId() + " = " + zo.getTotalSeconds());
-        }
-    }
-
     @Benchmark
     public void getFromCache(Blackhole bh) {
         for (int s : CACHED_SECONDS) {
