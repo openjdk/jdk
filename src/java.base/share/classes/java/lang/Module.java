@@ -57,6 +57,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.ModuleLoaderMap;
 import jdk.internal.module.ServicesCatalog;
@@ -113,8 +114,10 @@ public final class Module implements AnnotatedElement {
     private final ModuleDescriptor descriptor;
 
     // true, if this module allows restricted native access
-    // Accessing this variable is mostly done under synchronization as
-    // constructs like VarHandle and AtomicBoolean are not available at this stage.
+    // Accessing this variable is made through Unsafe in order to use the
+    // memory semantics that preserves ordering and visibility across threads.
+    //
+    // Used reflectively via Unsafe
     @Stable
     private boolean enableNativeAccess;
 
@@ -126,8 +129,7 @@ public final class Module implements AnnotatedElement {
     Module(ModuleLayer layer,
            ClassLoader loader,
            ModuleDescriptor descriptor,
-           URI uri)
-    {
+           URI uri) {
         this.layer = layer;
         this.name = descriptor.name();
         this.loader = loader;
@@ -178,9 +180,8 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module is a named module.
      *
      * @return {@code true} if this is a named module
-     *
-     * @see ClassLoader#getUnnamedModule()
      * @jls 7.7.5 Unnamed Modules
+     * @see ClassLoader#getUnnamedModule()
      */
     public boolean isNamed() {
         return name != null;
@@ -205,9 +206,7 @@ public final class Module implements AnnotatedElement {
      * class loader. </p>
      *
      * @return The class loader for this module
-     *
-     * @throws SecurityException
-     *         If denied by the security manager
+     * @throws SecurityException If denied by the security manager
      */
     public ClassLoader getClassLoader() {
         @SuppressWarnings("removal")
@@ -231,7 +230,7 @@ public final class Module implements AnnotatedElement {
     /**
      * Returns the module layer that contains this module or {@code null} if
      * this module is not in a module layer.
-     *
+     * <p>
      * A module layer contains named modules and therefore this method always
      * returns {@code null} when invoked on an unnamed module.
      *
@@ -240,7 +239,6 @@ public final class Module implements AnnotatedElement {
      * not be in a module layer. </p>
      *
      * @return The module layer that contains this module
-     *
      * @see java.lang.reflect.Proxy
      */
     public ModuleLayer getLayer() {
@@ -261,7 +259,7 @@ public final class Module implements AnnotatedElement {
      * Update this module to allow access to restricted methods.
      */
     Module implAddEnableNativeAccess() {
-        trySetEnableNativeAccess(this);
+        AccessHolder.trySetEnableNativeAccess(this);
         return this;
     }
 
@@ -269,21 +267,32 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module can access
      * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
      *
-     * @since 20
-     *
      * @return {@code true} if this module can access <em>restricted</em> methods.
+     * @since 20
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
+    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
-        return isNativeAccessEnabled(target);
+        return AccessHolder.isNativeAccessEnabled(target);
     }
 
-    private static boolean isNativeAccessEnabled(Module target) {
-        if (target.enableNativeAccess)
-            return true;
-        synchronized(target) {
-            return target.enableNativeAccess;
+    // This class is used to be able to bootstrap without using Unsafe
+    // in the outer Module class as that would create a circular initializer dependency
+    private static final class AccessHolder {
+
+        private AccessHolder() {}
+
+        private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+        private static final long FIELD_OFFSET = UNSAFE.objectFieldOffset(Module.class, "enableNativeAccess");
+
+        private static boolean isNativeAccessEnabled(Module target) {
+            return UNSAFE.getBooleanVolatile(target, FIELD_OFFSET);
+        }
+
+        // Atomically sets enableNativeAccess if not already set
+        // returning if the value was updated
+        private static boolean trySetEnableNativeAccess(Module target) {
+            return UNSAFE.compareAndSetBoolean(target, FIELD_OFFSET, false, true);
         }
     }
 
@@ -297,43 +306,30 @@ public final class Module implements AnnotatedElement {
     void ensureNativeAccess(Class<?> owner, String methodName) {
         // The target module whose enableNativeAccess flag is ensured
         Module target = moduleForNativeAccess();
-        if (!isNativeAccessEnabled(target)) {
+        if (!AccessHolder.isNativeAccessEnabled(target)) {
             if (ModuleBootstrap.hasEnableNativeAccessFlag()) {
                 throw new IllegalCallerException("Illegal native access from: " + this);
-            } else {
-                if (trySetEnableNativeAccess(target)) {
-                    // warn and set flag, so that only one warning is reported per module
-                    String cls = owner.getName();
-                    String mtd = cls + "::" + methodName;
-                    String mod = isNamed() ? "module " + getName() : "the unnamed module";
-                    String modflag = isNamed() ? getName() : "ALL-UNNAMED";
-                    System.err.printf("""
-                            WARNING: A restricted method in %s has been called
-                            WARNING: %s has been called by %s
-                            WARNING: Use --enable-native-access=%s to avoid a warning for this module
-                            %n""", cls, mtd, mod, modflag);
-                }
+            }
+            if (AccessHolder.trySetEnableNativeAccess(target)) {
+                // warn and set flag, so that only one warning is reported per module
+                String cls = owner.getName();
+                String mtd = cls + "::" + methodName;
+                String mod = isNamed() ? "module " + getName() : "the unnamed module";
+                String modflag = isNamed() ? getName() : "ALL-UNNAMED";
+                System.err.printf("""
+                        WARNING: A restricted method in %s has been called
+                        WARNING: %s has been called by %s
+                        WARNING: Use --enable-native-access=%s to avoid a warning for this module
+                        %n""", cls, mtd, mod, modflag);
             }
         }
-    }
-
-    // Atomically sets enableNativeAccess if not already set
-    // returning if the value was updated
-    private static boolean trySetEnableNativeAccess(Module target) {
-        synchronized (target) {
-            if (!target.enableNativeAccess) {
-                target.enableNativeAccess = true;
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
      * Update all unnamed modules to allow access to restricted methods.
      */
     static void implAddEnableNativeAccessToAllUnnamed() {
-        trySetEnableNativeAccess(ALL_UNNAMED_MODULE);
+        AccessHolder.trySetEnableNativeAccess(ALL_UNNAMED_MODULE);
     }
 
     // --
