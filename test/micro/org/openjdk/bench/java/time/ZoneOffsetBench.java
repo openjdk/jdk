@@ -52,12 +52,21 @@ public class ZoneOffsetBench {
     // An array with all the cached values [-18h, 18h]
     private static final int CACHED_SECONDS[] = IntStream.range(-18, 18)
             // Convert hour to seconds
-            .map(h -> h * 3600)
+            .map(h -> h * 3_600)
             // Include each even quarter of an hour
-            .flatMap(s -> IntStream.iterate(s, l -> l + 3600 / 4).limit(4))
+            .flatMap(s -> IntStream.iterate(s, l -> l + 3_600 / 4).limit(4 + 1))
             // There some overlaps so remove these
             .distinct()
+            .sorted()
             .toArray();
+
+    @Setup
+    public void setup() {
+        for (int s : CACHED_SECONDS) {
+            ZoneOffset zo = ZoneOffset.ofTotalSeconds(s);
+            System.out.println(zo.getId() + " = " + zo.getTotalSeconds());
+        }
+    }
 
     @Benchmark
     public void getFromCache(Blackhole bh) {

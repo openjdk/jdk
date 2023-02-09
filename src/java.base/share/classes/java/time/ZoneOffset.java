@@ -72,8 +72,6 @@ import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
@@ -87,7 +85,9 @@ import java.time.zone.ZoneRules;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.IntFunction;
 
+import jdk.internal.util.LazyReferenceArray;
 import jdk.internal.vm.annotation.Stable;
 
 /**
@@ -145,11 +145,7 @@ public final class ZoneOffset
     private static final int MAX_SECONDS_CACHE_SLOT = MAX_SECONDS / (15 * SECONDS_PER_MINUTE);
 
     /** Cache of time-zone offset by offset in seconds [-18h, +18h] for each even quarter of an hour. */
-    @Stable
-    private static final ZoneOffset[] SECONDS_CACHE = new ZoneOffset[MAX_SECONDS_CACHE_SLOT * 2 + 1];
-
-    /** Access to the SECONDS_CACHE must be made via VarHandle volatile access */
-    private static final VarHandle SECONDS_CACHE_VH = MethodHandles.arrayElementVarHandle(ZoneOffset[].class);
+    private static final LazyReferenceArray<ZoneOffset> SECONDS_CACHE = LazyReferenceArray.create(MAX_SECONDS_CACHE_SLOT * 2 + 1);
 
     /** Cache of time-zone offset by ID. */
     private static final ConcurrentMap<String, ZoneOffset> ID_CACHE = new ConcurrentHashMap<>(16, 0.75f, 4);
@@ -430,39 +426,38 @@ public final class ZoneOffset
      * @throws DateTimeException if the offset is not in the required range
      */
     public static ZoneOffset ofTotalSeconds(int totalSeconds) {
+        final class Holder {
+            private static final IntFunction<ZoneOffset> ZONE_OFFSET_MAPPER = new ZoneOffsetMapper();
+        }
         if (totalSeconds < -MAX_SECONDS || totalSeconds > MAX_SECONDS) {
             throw new DateTimeException("Zone offset not in valid range: -18:00 to +18:00");
         }
         if (totalSeconds % (15 * SECONDS_PER_MINUTE) == 0) {
-            int slot = cacheSlot(totalSeconds);
-            // Happens-before semantics are needed for double-checked locking
-            // to prevent reading uninitialized ZoneOffset objects due to reordering.
-            ZoneOffset cached = getAcquireSecondsCache(slot);
-            if (cached == null) {
-                synchronized (SECONDS_CACHE) {
-                    cached = getAcquireSecondsCache(slot);
-                    if (cached == null) {
-                        cached = new ZoneOffset(totalSeconds);
-                        setReleaseSecondsCache(slot, cached);
-                        ID_CACHE.putIfAbsent(cached.getId(), cached);
-                    }
-                }
-            }
-            return cached;
+            int slot = secondsToSlot(totalSeconds);
+            return SECONDS_CACHE.computeIfAbsent(slot, Holder.ZONE_OFFSET_MAPPER);
         } else {
             return new ZoneOffset(totalSeconds);
         }
     }
 
-    static ZoneOffset getAcquireSecondsCache(int slot) {
-        return (ZoneOffset) SECONDS_CACHE_VH.getAcquire(SECONDS_CACHE, slot);
-    }
-    static void setReleaseSecondsCache(int slot, ZoneOffset value) {
-        SECONDS_CACHE_VH.setRelease(SECONDS_CACHE, slot, value);
+    // Declare a concrete class rather than a lambda to improve startup time
+    private static final class ZoneOffsetMapper implements IntFunction<ZoneOffset> {
+
+        @Override
+        public ZoneOffset apply(int slot) {
+            int totalSeconds = slotToSeconds(slot);
+            ZoneOffset newValue = new ZoneOffset(totalSeconds);
+            ID_CACHE.putIfAbsent(newValue.getId(), newValue);
+            return newValue;
+        }
     }
 
-    private static int cacheSlot(int totalSeconds) {
+    private static int secondsToSlot(int totalSeconds) {
         return MAX_SECONDS_CACHE_SLOT + totalSeconds / (15 * SECONDS_PER_MINUTE);
+    }
+
+    private static int slotToSeconds(int slot) {
+        return (slot - MAX_SECONDS_CACHE_SLOT) * (15 * SECONDS_PER_MINUTE);
     }
 
     //-----------------------------------------------------------------------
