@@ -1887,9 +1887,6 @@ typedef struct _PROCESSOR_POWER_INFORMATION {
     ULONG CurrentIdleState;
 } PROCESSOR_POWER_INFORMATION;
 
-// additional lib needed for PowerProf functionality
-#pragma comment(lib, "Powrprof.lib")
-
 void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   int proc_count = os::processor_count();
   // handle potential early cases where processor count is not yet set
@@ -1904,7 +1901,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 
   if (status == ERROR_SUCCESS) {
     PROCESSOR_POWER_INFORMATION* pppi = (PROCESSOR_POWER_INFORMATION*) buf;
-    for (size_t i = 0; i < proc_count; i++) {
+    for (int i = 0; i < proc_count; i++) {
       st->print_cr("ProcessorInformation for processor %d", (int) pppi->Number);
       st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d",
                    (int) pppi->MaxMhz, (int) pppi->CurrentMhz, (int) pppi->MhzLimit);
