@@ -380,9 +380,9 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             Lookup lookup;
             if (useImplMethodHandle) {
                 lookup = caller.defineHiddenClassWithClassData(classBytes, implementation, !disableEagerInitialization,
-                                                               NESTMATE, STRONG);
+                                                               NESTMATE);
             } else {
-                lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE, STRONG);
+                lookup = caller.defineHiddenClass(classBytes, !disableEagerInitialization, NESTMATE);
             }
             return lookup.lookupClass();
         } catch (IllegalAccessException e) {
