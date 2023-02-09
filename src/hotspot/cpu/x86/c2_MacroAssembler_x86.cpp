@@ -613,7 +613,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     // Locked by current thread if difference with current SP is less than one page.
     subptr(tmpReg, rsp);
     // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - (int)os::vm_page_size())) );
     movptr(Address(boxReg, 0), tmpReg);
   } else {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
@@ -2784,8 +2784,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
       // since heaps are aligned and mapped by pages.
       assert(os::vm_page_size() < (int)G, "default page should be small");
       movl(result, str2); // We need only low 32 bits
-      andl(result, (os::vm_page_size()-1));
-      cmpl(result, (os::vm_page_size()-16));
+      andl(result, ((int)os::vm_page_size()-1));
+      cmpl(result, ((int)os::vm_page_size()-16));
       jccb(Assembler::belowEqual, CHECK_STR);
 
       // Move small strings to stack to allow load 16 bytes into vec.
@@ -2814,8 +2814,8 @@ void C2_MacroAssembler::string_indexof(Register str1, Register str2,
 
     // Check cross page boundary.
     movl(result, str1); // We need only low 32 bits
-    andl(result, (os::vm_page_size()-1));
-    cmpl(result, (os::vm_page_size()-16));
+    andl(result, ((int)os::vm_page_size()-1));
+    cmpl(result, ((int)os::vm_page_size()-16));
     jccb(Assembler::belowEqual, BIG_STRINGS);
 
     subptr(rsp, 16);

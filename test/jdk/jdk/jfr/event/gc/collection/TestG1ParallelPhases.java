@@ -107,6 +107,7 @@ public class TestG1ParallelPhases {
             "RedirtyCards",
             "RecalculateUsed",
             "ResetHotCardCache",
+            "ResizeTLABs",
             "FreeCSet",
             "UpdateDerivedPointers",
             "EagerlyReclaimHumongousObjects",

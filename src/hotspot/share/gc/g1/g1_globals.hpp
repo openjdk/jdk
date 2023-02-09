@@ -244,11 +244,6 @@
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
                                                                             \
-  develop(uintx, G1DummyRegionsPerGC, 0,                                    \
-          "The number of dummy regions G1 will allocate at the end of "     \
-          "each evacuation pause in order to artificially fill up the "     \
-          "heap and stress the marking implementation.")                    \
-                                                                            \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \
           " that heap expansion fails due to running out of swap.")         \

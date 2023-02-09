@@ -228,7 +228,7 @@ void G1FullCollector::complete_collection() {
   // Prepare the bitmap for the next (potentially concurrent) marking.
   _heap->concurrent_mark()->clear_bitmap(_heap->workers());
 
-  _heap->prepare_heap_for_mutators();
+  _heap->prepare_for_mutator_after_full_collection();
 
   _heap->resize_all_tlabs();
 
