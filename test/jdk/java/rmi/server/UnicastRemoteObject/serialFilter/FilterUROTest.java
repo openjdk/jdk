@@ -38,19 +38,12 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8301737
- * @requires os.arch != "loongarch64"
  * @run testng/othervm FilterUROTest
- * @summary Check that objects are exported with ObjectInputFilters via UnicastRemoteObject
- */
-/*
- * @test
- * @requires os.arch == "loongarch64"
- * @run testng/othervm -XX:ReservedCodeCacheSize=512m FilterUROTest
  * @summary Check that objects are exported with ObjectInputFilters via UnicastRemoteObject
  */
 public class FilterUROTest {
 
+    private static RemoteImpl impl;
     /**
      * Data to test serialFilter call counts.
      * - name
@@ -78,7 +71,7 @@ public class FilterUROTest {
     @Test(dataProvider = "bindData")
     public void useExportObject(String name, Object obj, int expectedFilterCount) throws RemoteException {
         try {
-            RemoteImpl impl = RemoteImpl.create();
+            impl = RemoteImpl.create();
             Echo client = (Echo) UnicastRemoteObject
                     .exportObject(impl, 0, impl.checker);
             int count = client.filterCount(obj);
@@ -105,7 +98,7 @@ public class FilterUROTest {
     @Test(dataProvider = "bindData")
     public void useExportObject2(String name, Object obj, int expectedFilterCount) throws RemoteException {
         try {
-            RemoteImpl impl = RemoteImpl.create();
+            impl = RemoteImpl.create();
             Echo client = (Echo) UnicastRemoteObject
                     .exportObject(impl, 0, null, null, impl.checker);
             int count = client.filterCount(obj);
