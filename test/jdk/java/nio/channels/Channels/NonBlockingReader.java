@@ -29,6 +29,7 @@
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.Pipe;
 import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.Pipe.SourceChannel;
@@ -61,8 +62,12 @@ public class NonBlockingReader {
         source.configureBlocking(false);
 
         Scanner scanner = new Scanner(source);
-        while(scanner.hasNextLine()) {
-            System.out.println(scanner.nextLine());
+        try {
+            while(scanner.hasNextLine()) {
+                System.out.println(scanner.nextLine());
+            }
+            throw new RuntimeException("IllegalBlockingModeException expected");
+        } catch (IllegalBlockingModeException expected) {
         }
     }
 }
