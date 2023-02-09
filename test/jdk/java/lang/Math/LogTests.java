@@ -55,7 +55,7 @@ public class LogTests {
      * If the argument is NaN or less than zero, then the result is NaN.
      * If the argument is positive infinity, then the result is positive infinity.
      * If the argument is positive zero or negative zero, then the result is negative infinity.
-     * If the argument is 1.0, then the result is positive zero. 
+     * If the argument is 1.0, then the result is positive zero.
      */
     private static int testLogSpecialCases() {
         int failures = 0;
