@@ -72,8 +72,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void invalidate(MemRegion mr) override;
-  inline void write_region(JavaThread* thread, MemRegion mr) override;
+  inline void invalidate(MemRegion mr);
+  inline void write_region(JavaThread* thread, MemRegion mr);
 
   inline void write_ref_array_work(MemRegion mr);
 
