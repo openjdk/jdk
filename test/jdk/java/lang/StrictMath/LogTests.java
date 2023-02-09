@@ -57,11 +57,17 @@ public class LogTests {
                           StrictMath::log, expected);
     }
 
-    // TODO: Find inputs where Math.log and StrictMath.log differ.
+    // Inputs where Math.log and StrictMath.log differ for at least
+    // one Math.log implementation.
     static int testLog() {
         int failures = 0;
 
         double [][] testCases = {
+            {0x1.000000089cd6fp-43, -0x1.dce2a0697a102p4},
+            {0x1.0000000830698p182,  0x1.f89c7428dd67ap6},
+            {0x1.0000000744b3ap632,  0x1.b611ab2bd53cep8},
+            {0x1.000000037d81fp766,  0x1.0979b1dbc4a42p9},
+            {0x1.000000024028p991,   0x1.577455642bb92p9},
         };
 
         for (double[] testCase: testCases)
