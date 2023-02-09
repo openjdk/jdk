@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
@@ -348,6 +349,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
         String s = env.trees.getCharacters(tree);
@@ -356,6 +358,14 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
         return null;
 
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitEscape(EscapeTree tree, Void ignore) {
+        hasNonWhitespaceText = true;
+        checkAllowsText(tree);
+        markEnclosingTag(Flag.HAS_TEXT);
+        return null;
     }
 
     void checkAllowsText(DocTree tree) {

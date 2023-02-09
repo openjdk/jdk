@@ -178,9 +178,9 @@ jint ShenandoahHeap::initialize() {
 
   _committed = _initial_size;
 
-  size_t heap_page_size   = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
-  size_t bitmap_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
-  size_t region_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
+  size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t region_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
   //
   // Reserve and commit memory for heap

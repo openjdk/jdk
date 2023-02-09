@@ -602,7 +602,6 @@ void GenCollectedHeap::do_collection(bool           full,
     }
 
     CodeCache::on_gc_marking_cycle_start();
-    CodeCache::arm_all_nmethods();
 
     collect_generation(_old_gen,
                        full,

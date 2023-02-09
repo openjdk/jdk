@@ -1903,7 +1903,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
@@ -2502,7 +2502,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     address addr = (address) exception_record->ExceptionInformation[1];
 
     if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
-      int page_size = os::vm_page_size();
+      size_t page_size = os::vm_page_size();
 
       // Make sure the pc and the faulting address are sane.
       //
@@ -3159,7 +3159,7 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-  const size_t default_page_size = (size_t) os::vm_page_size();
+  const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes.add(_large_page_size);
   }
