@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1080,8 +1080,11 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     generate_stack_overflow_check(frame_size, fp/*tmp1*/);
   }
 
-  DEBUG_ONLY(__ z_cg(Z_R14, _z_abi16(return_pc), Z_SP));
+#ifdef ASSERT
+  __ z_cg(Z_R14, _z_abi16(return_pc), Z_SP);
   __ asm_assert_eq("killed Z_R14", 0);
+#endif //ASSERT
+
   __ resize_frame_absolute(sp_after_resize, fp, true);
   __ save_return_pc(Z_R14);
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
 
   // Check that fields in JavaThread for exception oop and issuing pc are set.
   __ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_oop_offset()), Z_thread, "exception oop already set : " FILE_AND_LINE, 0);
-  __ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_pc_offset()), Z_thread, "exception pc already set : " FILE_AND_LINE, 0);
+  DEBUG_ONLY(__ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_pc_offset()), Z_thread, "exception pc already set : " FILE_AND_LINE, 0));
 
   // Save exception_oop and pc in callee-saved register to preserve it
   // during runtime calls.
@@ -841,7 +841,7 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
   // Check that fields in JavaThread for exception oop and issuing pc
   // are empty before writing to them.
   __ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_oop_offset()), Z_thread, "exception oop already set : " FILE_AND_LINE, 0);
-  __ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_pc_offset()), Z_thread, "exception pc already set : " FILE_AND_LINE, 0);
+  DEBUG_ONLY(__ asm_assert_mem8_is_zero(in_bytes(JavaThread::exception_pc_offset()), Z_thread, "exception pc already set : " FILE_AND_LINE, 0));
 
   // Save exception oop and issuing pc into JavaThread.
   // (Exception handler will load it from here.)
