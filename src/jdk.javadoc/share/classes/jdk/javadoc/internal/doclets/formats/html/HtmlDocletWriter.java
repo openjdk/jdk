@@ -289,7 +289,7 @@ public class HtmlDocletWriter {
      * @param dl the content to which the method information will be added
      */
     private void addMethodInfo(ExecutableElement method, Content dl) {
-        TypeElement enclosing = utils.getEnclosingTypeElement(method);
+        var enclosing = (TypeElement) method.getEnclosingElement();
         List<? extends TypeMirror> intfacs = enclosing.getInterfaces();
         var overrideInfo = utils.overriddenMethod(method);
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
