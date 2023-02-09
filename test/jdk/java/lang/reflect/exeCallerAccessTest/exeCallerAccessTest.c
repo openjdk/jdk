@@ -45,7 +45,7 @@ int setAccessible(JNIEnv *env, char* declaringClass_name, char* field_name);
 int trySetAccessible(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
 int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboolean canAccess);
 
-void* run(void* argp){
+static void* run(void* argp) {
     JavaVM *jvm;
     JNIEnv *env;
     JavaVMInitArgs vm_args;
@@ -240,7 +240,7 @@ int checkAccess(JNIEnv *env, char* declaringClass_name, char* field_name, jboole
     return 0;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 #ifdef AIX
     size_t adjusted_stack_size = 1024*1024;
     pthread_t id;

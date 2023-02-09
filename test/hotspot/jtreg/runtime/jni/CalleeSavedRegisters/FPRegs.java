@@ -25,8 +25,6 @@
 /*
  * @test
  * @bug 8067744
- * @comment Test uses custom launcher that starts VM in primordial thread. This is
- *          not possible on aix.
  * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

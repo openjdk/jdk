@@ -108,11 +108,11 @@ long long unsigned int d2l(double d) {
 #define print_reg(r) printf("%s = %f (0x%llX)\n", #r, r, d2l(r));
 
 typedef struct {
-     int argc;
-     char **argv;
+  int argc;
+  char **argv;
 } args_list;
 
-void* run(void* argp){
+static void* run(void* argp) {
   args_list *arg = (args_list*) argp;
   int argc =  arg->argc;
   char **argv = arg->argv;
@@ -251,23 +251,23 @@ void* run(void* argp){
 }
 
 int main(int argc, char *argv[]) {
-    args_list args;
-    args.argc = argc;
-    args.argv = argv;
+  args_list args;
+  args.argc = argc;
+  args.argv = argv;
 #ifdef AIX
-    size_t adjusted_stack_size = 1024*1024;
-    pthread_t id;
-    int result;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    pthread_attr_setstacksize(&attr, adjusted_stack_size);
-    result = pthread_create(&id, &attr, run, (void *)&args);
-    if (result != 0) {
-      fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
-      return -1;
-    }
-    pthread_join(id, NULL);
+  size_t adjusted_stack_size = 1024*1024;
+  pthread_t id;
+  int result;
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, adjusted_stack_size);
+  result = pthread_create(&id, &attr, run, (void *)&args);
+  if (result != 0) {
+    fprintf(stderr, "Error: pthread_create failed with error code %d \n", result);
+    return -1;
+  }
+  pthread_join(id, NULL);
 #else
-    run(&args);
+  run(&args);
 #endif //AIX
 }

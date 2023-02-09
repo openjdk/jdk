@@ -28,7 +28,7 @@
 #include <pthread.h>
 #endif //AIX
 
-void* run(void *arg){
+static void* run(void *arg) {
     JavaVM *jvm;
     JNIEnv* env;
     JavaVMInitArgs args;
@@ -66,7 +66,7 @@ void* run(void *arg){
     return 0;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 #ifdef AIX
     size_t adjusted_stack_size = 1024*1024;
     pthread_t id;

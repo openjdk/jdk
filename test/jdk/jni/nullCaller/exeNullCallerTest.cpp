@@ -159,7 +159,7 @@ void getResourceAsStream(JNIEnv *env) {
         class_ClosedResources, env->NewStringUTF("test.txt"));
 }
 
-void* run(void *arg){
+static void* run(void *arg) {
     JavaVM *jvm;
     JNIEnv *env;
     JavaVMInitArgs vm_args;
@@ -187,7 +187,7 @@ void* run(void *arg){
     return 0;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 #ifdef AIX
     size_t adjusted_stack_size = 1024*1024;
     pthread_t id;
