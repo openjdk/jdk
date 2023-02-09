@@ -242,12 +242,12 @@ AgentLibrary::AgentLibrary(const char* name, const char* options,
       size_t name_length = p - options;
       size_t option_length = length - name_length - 1;
       _instrument_lib_name = AllocateHeap(name_length + 1, mtArguments);
-      snprintf(_instrument_lib_name, name_length + 1, "%s", options);
+      jio_snprintf(_instrument_lib_name, name_length + 1, "%s", options);
       _instrument_lib_options = AllocateHeap(option_length + 1, mtArguments);
-      snprintf(_instrument_lib_options, option_length + 1, "%s", p + 1);
+      jio_snprintf(_instrument_lib_options, option_length + 1, "%s", p + 1);
     } else {
       _instrument_lib_name = AllocateHeap(length + 1, mtArguments);
-      snprintf(_instrument_lib_name, length + 1, "%s", options);
+      jio_snprintf(_instrument_lib_name, length + 1, "%s", options);
     }
   }
 }
