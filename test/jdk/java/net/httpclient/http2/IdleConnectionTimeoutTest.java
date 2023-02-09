@@ -162,27 +162,24 @@ public class IdleConnectionTimeoutTest {
 
     static class ServerTimeoutHandler implements Http2Handler {
 
-        boolean acceptedFirstConnection;
-        int firstConnectionHash = 0;
+        volatile Object firstConnection = null;
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             if (exchange instanceof TestExchangeSupplier exch) {
-                if (!acceptedFirstConnection) {
-                    firstConnectionHash = exch.getTestConnection().hashCode();
-                    acceptedFirstConnection = true;
+                if (firstConnection == null) {
+                    firstConnection = exch.getTestConnection();
                     exch.sendResponseHeaders(200, 0);
                 } else {
-                    int secondConnectionHash = exch.getTestConnection().hashCode();
-                    int cmp = Integer.compare(firstConnectionHash, secondConnectionHash);
+                    var secondConnection = exch.getTestConnection();
 
-                    if (cmp < 0 | cmp > 0) {
+                    if (firstConnection != secondConnection) {
                         testLog.println("ServerTimeoutHandler: New Connection was used, idleConnectionTimeoutEvent fired."
-                                + " First Connection Hash: " + firstConnectionHash + ", Second Connection Hash: " + secondConnectionHash);
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
                         exch.sendResponseHeaders(200, 0);
                     } else {
                         testLog.println("ServerTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
-                                + " First Connection Hash: " + firstConnectionHash + ", Second Connection Hash: " + secondConnectionHash);
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
                         exch.sendResponseHeaders(400, 0);
                     }
                 }
@@ -192,27 +189,24 @@ public class IdleConnectionTimeoutTest {
 
     static class ServerNoTimeoutHandler implements Http2Handler {
 
-        boolean acceptedFirstConnection;
-        int firstConnectionHash = 0;
+        volatile Object firstConnection = null;
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
             if (exchange instanceof TestExchangeSupplier exch) {
-                if (!acceptedFirstConnection) {
-                    firstConnectionHash = exch.getTestConnection().hashCode();
-                    acceptedFirstConnection = true;
+                if (firstConnection == null) {
+                    firstConnection = exch.getTestConnection();
                     exch.sendResponseHeaders(200, 0);
                 } else {
-                    int secondConnectionHash = exch.getTestConnection().hashCode();
-                    int cmp = Integer.compare(firstConnectionHash, secondConnectionHash);
+                    var secondConnection = exch.getTestConnection();
 
-                    if (cmp == 0) {
+                    if (firstConnection == secondConnection) {
                         testLog.println("ServerTimeoutHandler: Same Connection was used, idleConnectionTimeoutEvent did not fire."
-                                + " First Connection Hash: " + firstConnectionHash + ", Second Connection Hash: " + secondConnectionHash);
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
                         exch.sendResponseHeaders(200, 0);
                     } else {
                         testLog.println("ServerTimeoutHandler: Different Connection was used, idleConnectionTimeoutEvent fired."
-                                + " First Connection Hash: " + firstConnectionHash + ", Second Connection Hash: " + secondConnectionHash);
+                                + " First Connection Hash: " + firstConnection + ", Second Connection Hash: " + secondConnection);
                         exch.sendResponseHeaders(400, 0);
                     }
                 }
