@@ -161,7 +161,7 @@ static void verify_empty_dirty_card_logs() {
     void do_thread(Thread* t) override {
       G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
       assert((queue.buffer() == nullptr) || (queue.index() == _buffer_size),
-             "non-empty dirty card queue for thread");
+             "non-empty dirty card queue for thread %s", t->name());
     }
   } verifier;
   Threads::threads_do(&verifier);

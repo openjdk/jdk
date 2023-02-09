@@ -108,7 +108,8 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Other", Level.INFO),
 
         // Pre Evacuate Collection Set
-        new LogMessageWithLevel("Retire TLABs and Flush Logs", Level.DEBUG),
+        new LogMessageWithLevel("JT Retire TLABs And Flush Logs", Level.DEBUG),
+        new LogMessageWithLevel("Non-JT Flush Logs", Level.DEBUG),
         new LogMessageWithLevel("Choose Collection Set", Level.DEBUG),
         new LogMessageWithLevel("Region Register", Level.DEBUG),
         new LogMessageWithLevel("Prepare Heap Roots", Level.DEBUG),
