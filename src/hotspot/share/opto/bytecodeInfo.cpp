@@ -114,7 +114,7 @@ static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
 
 // positive filter: should callee be inlined?
 bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
-                               int caller_bci, NOT_PRODUCT_ARG(bool& should_delay) ciCallProfile& profile) {
+                               int caller_bci, bool& should_delay, ciCallProfile& profile) {
   // Allows targeted inlining
   if (C->directive()->should_inline(callee_method)) {
     set_msg("force inline by CompileCommand");
@@ -197,7 +197,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
-                                   int caller_bci, NOT_PRODUCT_ARG(bool& should_delay) ciCallProfile& profile) {
+                                   int caller_bci, bool& should_delay, ciCallProfile& profile) {
   const char* fail_msg = NULL;
 
   // First check all inlining restrictions which are required for correctness
@@ -375,11 +375,11 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   _forced_inline = false; // Reset
 
   // 'should_delay' can be overridden during replay compilation
-  if (!should_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
+  if (!should_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
   // 'should_delay' can be overridden during replay compilation
-  if (should_not_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
+  if (should_not_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
 
