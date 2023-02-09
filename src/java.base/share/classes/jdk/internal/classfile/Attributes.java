@@ -24,8 +24,11 @@
  */
 package jdk.internal.classfile;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
 import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
@@ -80,8 +83,6 @@ import jdk.internal.classfile.impl.AbstractAttributeMapper;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.ConcreteEntry;
-
-import static java.util.Map.entry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 
 /**
@@ -126,43 +127,6 @@ public class Attributes {
     public static final String NAME_SOURCE_ID = "SourceID";
     public static final String NAME_STACK_MAP_TABLE = "StackMapTable";
     public static final String NAME_SYNTHETIC = "Synthetic";
-
-    private static final int HASH_ANNOTATION_DEFAULT = ConcreteEntry.hashString(NAME_ANNOTATION_DEFAULT.hashCode());
-    private static final int HASH_BOOTSTRAP_METHODS = ConcreteEntry.hashString(NAME_BOOTSTRAP_METHODS.hashCode());
-    private static final int HASH_CHARACTER_RANGE_TABLE = ConcreteEntry.hashString(NAME_CHARACTER_RANGE_TABLE.hashCode());
-    private static final int HASH_CODE = ConcreteEntry.hashString(NAME_CODE.hashCode());
-    private static final int HASH_COMPILATION_ID = ConcreteEntry.hashString(NAME_COMPILATION_ID.hashCode());
-    private static final int HASH_CONSTANT_VALUE = ConcreteEntry.hashString(NAME_CONSTANT_VALUE.hashCode());
-    private static final int HASH_DEPRECATED = ConcreteEntry.hashString(NAME_DEPRECATED.hashCode());
-    private static final int HASH_ENCLOSING_METHOD = ConcreteEntry.hashString(NAME_ENCLOSING_METHOD.hashCode());
-    private static final int HASH_EXCEPTIONS = ConcreteEntry.hashString(NAME_EXCEPTIONS.hashCode());
-    private static final int HASH_INNER_CLASSES = ConcreteEntry.hashString(NAME_INNER_CLASSES.hashCode());
-    private static final int HASH_LINE_NUMBER_TABLE = ConcreteEntry.hashString(NAME_LINE_NUMBER_TABLE.hashCode());
-    private static final int HASH_LOCAL_VARIABLE_TABLE = ConcreteEntry.hashString(NAME_LOCAL_VARIABLE_TABLE.hashCode());
-    private static final int HASH_LOCAL_VARIABLE_TYPE_TABLE = ConcreteEntry.hashString(NAME_LOCAL_VARIABLE_TYPE_TABLE.hashCode());
-    private static final int HASH_METHOD_PARAMETERS = ConcreteEntry.hashString(NAME_METHOD_PARAMETERS.hashCode());
-    private static final int HASH_MODULE = ConcreteEntry.hashString(NAME_MODULE.hashCode());
-    private static final int HASH_MODULE_HASHES = ConcreteEntry.hashString(NAME_MODULE_HASHES.hashCode());
-    private static final int HASH_MODULE_MAIN_CLASS = ConcreteEntry.hashString(NAME_MODULE_MAIN_CLASS.hashCode());
-    private static final int HASH_MODULE_PACKAGES = ConcreteEntry.hashString(NAME_MODULE_PACKAGES.hashCode());
-    private static final int HASH_MODULE_RESOLUTION = ConcreteEntry.hashString(NAME_MODULE_RESOLUTION.hashCode());
-    private static final int HASH_MODULE_TARGET = ConcreteEntry.hashString(NAME_MODULE_TARGET.hashCode());
-    private static final int HASH_NEST_HOST = ConcreteEntry.hashString(NAME_NEST_HOST.hashCode());
-    private static final int HASH_NEST_MEMBERS = ConcreteEntry.hashString(NAME_NEST_MEMBERS.hashCode());
-    private static final int HASH_PERMITTED_SUBCLASSES = ConcreteEntry.hashString(NAME_PERMITTED_SUBCLASSES.hashCode());
-    private static final int HASH_RECORD = ConcreteEntry.hashString(NAME_RECORD.hashCode());
-    private static final int HASH_RUNTIME_INVISIBLE_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_INVISIBLE_ANNOTATIONS.hashCode());
-    private static final int HASH_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS.hashCode());
-    private static final int HASH_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS.hashCode());
-    private static final int HASH_RUNTIME_VISIBLE_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_VISIBLE_ANNOTATIONS.hashCode());
-    private static final int HASH_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS.hashCode());
-    private static final int HASH_RUNTIME_VISIBLE_TYPE_ANNOTATIONS = ConcreteEntry.hashString(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS.hashCode());
-    private static final int HASH_SIGNATURE = ConcreteEntry.hashString(NAME_SIGNATURE.hashCode());
-    private static final int HASH_SOURCE_DEBUG_EXTENSION = ConcreteEntry.hashString(NAME_SOURCE_DEBUG_EXTENSION.hashCode());
-    private static final int HASH_SOURCE_FILE = ConcreteEntry.hashString(NAME_SOURCE_FILE.hashCode());
-    private static final int HASH_SOURCE_ID = ConcreteEntry.hashString(NAME_SOURCE_ID.hashCode());
-    private static final int HASH_STACK_MAP_TABLE = ConcreteEntry.hashString(NAME_STACK_MAP_TABLE.hashCode());
-    private static final int HASH_SYNTHETIC = ConcreteEntry.hashString(NAME_SYNTHETIC.hashCode());
 
     private Attributes() {
     }
@@ -766,161 +730,57 @@ public class Attributes {
      * @param name the name of the attribute to find
      */
     public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
-        int hash = name.hashCode();
-        switch (name.length()) {
-            case 4:
-                if (hash == HASH_CODE && name.equalsString(NAME_CODE))
-                    return CODE;
-                break;
-            case 6:
-                if (hash == HASH_MODULE && name.equalsString(NAME_MODULE))
-                    return MODULE;
-                else if (hash == HASH_RECORD && name.equalsString(NAME_RECORD))
-                    return RECORD;
-                break;
-            case 8:
-                if (hash == HASH_NEST_HOST && name.equalsString(NAME_NEST_HOST))
-                    return NEST_HOST;
-                else if (hash == HASH_SOURCE_ID && name.equalsString(NAME_SOURCE_ID))
-                    return SOURCE_ID;
-                break;
-            case 9:
-                if (hash == HASH_SIGNATURE && name.equalsString(NAME_SIGNATURE))
-                    return SIGNATURE;
-                else if (hash == HASH_SYNTHETIC && name.equalsString(NAME_SYNTHETIC))
-                    return SYNTHETIC;
-                break;
-            case 10:
-                if (hash == HASH_DEPRECATED && name.equalsString(NAME_DEPRECATED))
-                    return DEPRECATED;
-                else if (hash == HASH_EXCEPTIONS && name.equalsString(NAME_EXCEPTIONS))
-                    return EXCEPTIONS;
-                else if (hash == HASH_SOURCE_FILE && name.equalsString(NAME_SOURCE_FILE))
-                    return SOURCE_FILE;
-                break;
-            case 11:
-                if (hash == HASH_NEST_MEMBERS && name.equalsString(NAME_NEST_MEMBERS))
-                    return NEST_MEMBERS;
-                break;
-            case 12:
-                if (hash == HASH_INNER_CLASSES && name.equalsString(NAME_INNER_CLASSES))
-                    return INNER_CLASSES;
-                else if (hash == HASH_MODULE_HASHES && name.equalsString(NAME_MODULE_HASHES))
-                    return MODULE_HASHES;
-                else if (hash == HASH_MODULE_TARGET && name.equalsString(NAME_MODULE_TARGET))
-                    return MODULE_TARGET;
-                break;
-            case 13:
-                if (hash == HASH_COMPILATION_ID && name.equalsString(NAME_COMPILATION_ID))
-                    return COMPILATION_ID;
-                else if (hash == HASH_CONSTANT_VALUE && name.equalsString(NAME_CONSTANT_VALUE))
-                    return CONSTANT_VALUE;
-                else if (hash == HASH_STACK_MAP_TABLE && name.equalsString(NAME_STACK_MAP_TABLE))
-                    return STACK_MAP_TABLE;
-                break;
-            case 14:
-                if (hash == HASH_MODULE_PACKAGES && name.equalsString(NAME_MODULE_PACKAGES))
-                    return MODULE_PACKAGES;
-                break;
-            case 15:
-                if (hash == HASH_ENCLOSING_METHOD && name.equalsString(NAME_ENCLOSING_METHOD))
-                    return ENCLOSING_METHOD;
-                else if (hash == HASH_LINE_NUMBER_TABLE && name.equalsString(NAME_LINE_NUMBER_TABLE))
-                    return LINE_NUMBER_TABLE;
-                else if (hash == HASH_MODULE_MAIN_CLASS && name.equalsString(NAME_MODULE_MAIN_CLASS))
-                    return MODULE_MAIN_CLASS;
-                break;
-            case 16:
-                if (hash == HASH_BOOTSTRAP_METHODS && name.equalsString(NAME_BOOTSTRAP_METHODS))
-                    return BOOTSTRAP_METHODS;
-                else if (hash == HASH_METHOD_PARAMETERS && name.equalsString(NAME_METHOD_PARAMETERS))
-                    return METHOD_PARAMETERS;
-                else if (hash == HASH_MODULE_RESOLUTION && name.equalsString(NAME_MODULE_RESOLUTION))
-                    return MODULE_RESOLUTION;
-                break;
-            case 17:
-                if (hash == HASH_ANNOTATION_DEFAULT && name.equalsString(NAME_ANNOTATION_DEFAULT))
-                    return ANNOTATION_DEFAULT;
-                break;
-            case 18:
-                if (hash == HASH_LOCAL_VARIABLE_TABLE && name.equalsString(NAME_LOCAL_VARIABLE_TABLE))
-                    return LOCAL_VARIABLE_TABLE;
-                break;
-            case 19:
-                if (hash == HASH_CHARACTER_RANGE_TABLE && name.equalsString(NAME_CHARACTER_RANGE_TABLE))
-                    return CHARACTER_RANGE_TABLE;
-                else if (hash == HASH_PERMITTED_SUBCLASSES && name.equalsString(NAME_PERMITTED_SUBCLASSES))
-                    return PERMITTED_SUBCLASSES;
-                break;
-            case 20:
-                if (hash == HASH_SOURCE_DEBUG_EXTENSION && name.equalsString(NAME_SOURCE_DEBUG_EXTENSION))
-                    return SOURCE_DEBUG_EXTENSION;
-                break;
-            case 22:
-                if (hash == HASH_LOCAL_VARIABLE_TYPE_TABLE && name.equalsString(NAME_LOCAL_VARIABLE_TYPE_TABLE))
-                    return LOCAL_VARIABLE_TYPE_TABLE;
-                break;
-            case 25:
-                if (hash == HASH_RUNTIME_VISIBLE_ANNOTATIONS && name.equalsString(NAME_RUNTIME_VISIBLE_ANNOTATIONS))
-                    return RUNTIME_VISIBLE_ANNOTATIONS;
-                break;
-            case 27:
-                if (hash == HASH_RUNTIME_INVISIBLE_ANNOTATIONS && name.equalsString(NAME_RUNTIME_INVISIBLE_ANNOTATIONS))
-                    return RUNTIME_INVISIBLE_ANNOTATIONS;
-                break;
-            case 29:
-                if (hash == HASH_RUNTIME_VISIBLE_TYPE_ANNOTATIONS && name.equalsString(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS))
-                    return RUNTIME_VISIBLE_TYPE_ANNOTATIONS;
-                break;
-            case 31:
-                if (hash == HASH_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS && name.equalsString(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS))
-                    return RUNTIME_INVISIBLE_TYPE_ANNOTATIONS;
-                break;
-            case 34:
-                if (hash == HASH_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS && name.equalsString(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS))
-                    return RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS;
-                break;
-            case 36:
-                if (hash == HASH_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS && name.equalsString(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS))
-                    return RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS;
-                break;
-        }
-        return null;
+        return _ATTR_MAP.get(name);
     }
 
     /**
-     * Map from names to attribute mappers for all standard attributes.
+     * All standard attribute mappers.
      */
-    public static final Map<String, ? extends AttributeMapper<?>> PREDEFINED_ATTRIBUTES = Map.ofEntries(
-            entry(NAME_CONSTANT_VALUE, CONSTANT_VALUE),
-            entry(NAME_CODE, CODE),
-            entry(NAME_STACK_MAP_TABLE, STACK_MAP_TABLE),
-            entry(NAME_EXCEPTIONS, EXCEPTIONS),
-            entry(NAME_INNER_CLASSES, INNER_CLASSES),
-            entry(NAME_ENCLOSING_METHOD, ENCLOSING_METHOD),
-            entry(NAME_SYNTHETIC, SYNTHETIC),
-            entry(NAME_SIGNATURE, SIGNATURE),
-            entry(NAME_SOURCE_FILE, SOURCE_FILE),
-            entry(NAME_SOURCE_DEBUG_EXTENSION, SOURCE_DEBUG_EXTENSION),
-            entry(NAME_LINE_NUMBER_TABLE, LINE_NUMBER_TABLE),
-            entry(NAME_LOCAL_VARIABLE_TABLE, LOCAL_VARIABLE_TABLE),
-            entry(NAME_LOCAL_VARIABLE_TYPE_TABLE, LOCAL_VARIABLE_TYPE_TABLE),
-            entry(NAME_DEPRECATED, DEPRECATED),
-            entry(NAME_RUNTIME_VISIBLE_ANNOTATIONS, RUNTIME_VISIBLE_ANNOTATIONS),
-            entry(NAME_RUNTIME_INVISIBLE_ANNOTATIONS, RUNTIME_INVISIBLE_ANNOTATIONS),
-            entry(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS, RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS),
-            entry(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS, RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS),
-            entry(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS, RUNTIME_VISIBLE_TYPE_ANNOTATIONS),
-            entry(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS, RUNTIME_INVISIBLE_TYPE_ANNOTATIONS),
-            entry(NAME_ANNOTATION_DEFAULT, ANNOTATION_DEFAULT),
-            entry(NAME_BOOTSTRAP_METHODS, BOOTSTRAP_METHODS),
-            entry(NAME_METHOD_PARAMETERS, METHOD_PARAMETERS),
-            entry(NAME_MODULE, MODULE),
-            entry(NAME_MODULE_PACKAGES, MODULE_PACKAGES),
-            entry(NAME_MODULE_MAIN_CLASS, MODULE_MAIN_CLASS),
-            entry(NAME_NEST_HOST, NEST_HOST),
-            entry(NAME_NEST_MEMBERS, NEST_MEMBERS),
-            entry(NAME_RECORD, RECORD),
-            entry(NAME_PERMITTED_SUBCLASSES, PERMITTED_SUBCLASSES));
+    public static final Set<AttributeMapper<?>> PREDEFINED_ATTRIBUTES = Set.of(
+            ANNOTATION_DEFAULT,
+            BOOTSTRAP_METHODS,
+            CHARACTER_RANGE_TABLE,
+            CODE,
+            COMPILATION_ID,
+            CONSTANT_VALUE,
+            DEPRECATED,
+            ENCLOSING_METHOD,
+            EXCEPTIONS,
+            INNER_CLASSES,
+            LINE_NUMBER_TABLE,
+            LOCAL_VARIABLE_TABLE,
+            LOCAL_VARIABLE_TYPE_TABLE,
+            METHOD_PARAMETERS,
+            MODULE,
+            MODULE_HASHES,
+            MODULE_MAIN_CLASS,
+            MODULE_PACKAGES,
+            MODULE_RESOLUTION,
+            MODULE_TARGET,
+            NEST_HOST,
+            NEST_MEMBERS,
+            PERMITTED_SUBCLASSES,
+            RECORD,
+            RUNTIME_INVISIBLE_ANNOTATIONS,
+            RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS,
+            RUNTIME_INVISIBLE_TYPE_ANNOTATIONS,
+            RUNTIME_VISIBLE_ANNOTATIONS,
+            RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS,
+            RUNTIME_VISIBLE_TYPE_ANNOTATIONS,
+            SIGNATURE,
+            SOURCE_DEBUG_EXTENSION,
+            SOURCE_FILE,
+            SOURCE_ID,
+            STACK_MAP_TABLE,
+            SYNTHETIC);
 
+    private static final Map<Utf8Entry, AttributeMapper<?>> _ATTR_MAP;
+    //no lambdas here as this is on critical JDK boostrap path
+    static {
+        var map = new HashMap<Utf8Entry, AttributeMapper<?>>(64);
+        for (var am : PREDEFINED_ATTRIBUTES) {
+            map.put(ConcreteEntry.rawUtf8EntryFromStandardAttributeName(am.name()), am);
+        }
+        _ATTR_MAP = Collections.unmodifiableMap(map);
+    }
 }

@@ -221,14 +221,17 @@ public final class ClassImpl
                                                     .collect(Collectors.toSet());
 
         found.removeAll(allowedModuleAttributes);
-        found.retainAll(Attributes.PREDEFINED_ATTRIBUTES.values());
+        found.retainAll(Attributes.PREDEFINED_ATTRIBUTES);
         return found.isEmpty();
     }
 
     private static final Set<AttributeMapper<?>> allowedModuleAttributes
             = Set.of(Attributes.MODULE,
-                     Attributes.MODULE_PACKAGES,
+                     Attributes.MODULE_HASHES,
                      Attributes.MODULE_MAIN_CLASS,
+                     Attributes.MODULE_PACKAGES,
+                     Attributes.MODULE_RESOLUTION,
+                     Attributes.MODULE_TARGET,
                      Attributes.INNER_CLASSES,
                      Attributes.SOURCE_FILE,
                      Attributes.SOURCE_DEBUG_EXTENSION,

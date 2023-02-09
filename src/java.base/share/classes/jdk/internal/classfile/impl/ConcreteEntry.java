@@ -87,6 +87,12 @@ public abstract sealed class ConcreteEntry {
         return h ^ (h >> 16);
     }
 
+    public static Utf8Entry rawUtf8EntryFromStandardAttributeName(String name) {
+        //assuming standard attribute names are all US_ASCII
+        var raw = name.getBytes(StandardCharsets.US_ASCII);
+        return new ConcreteUtf8Entry(null, 0, raw, 0, raw.length);
+    }
+
     final ConstantPool constantPool;
     public final byte tag;
     private final int index;
