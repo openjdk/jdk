@@ -43,6 +43,7 @@ G1FullGCScope::G1FullGCScope(G1MonitoringSupport* monitoring_support,
                              G1FullGCTracer* tracer) :
     _rm(),
     _explicit_gc(explicit_gc),
+    _do_maximal_compaction(do_maximal_compaction),
     _g1h(G1CollectedHeap::heap()),
     _svc_marker(SvcGCMarker::FULL),
     _timer(),

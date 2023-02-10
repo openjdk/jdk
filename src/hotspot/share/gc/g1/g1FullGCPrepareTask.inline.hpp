@@ -110,10 +110,14 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
 }
 
 inline size_t G1SerialRePrepareClosure::apply(oop obj) {
-  // We only re-prepare objects forwarded within the current region, so
-  // skip objects that are already forwarded to another region.
-  if (obj->is_forwarded() && !_current->is_in(obj->forwardee())) {
-    return obj->size();
+  if (obj->is_forwarded()) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* target_hr = g1h->heap_region_containing(obj->forwardee());
+    // We skip objects compiled into the first region or
+    // into regions not part of the serial compaction point.
+    if (target_hr->hrm_index() <= _bottom_index) {
+      return obj->size();
+    }
   }
 
   // Get size and forward.

@@ -44,6 +44,9 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   void switch_region();
   HeapRegion* next_region();
 
+  static int compare(const uint& hrm_index, HeapRegion* const& e);
+  int find_sorted(HeapRegion* hr);
+
 public:
   G1FullGCCompactionPoint(G1FullCollector* collector);
   ~G1FullGCCompactionPoint();
@@ -55,7 +58,8 @@ public:
   void forward(oop object, size_t size);
   void add(HeapRegion* hr);
 
-  HeapRegion* remove_last();
+  void move_regions_with_higher_hrm_index(G1FullGCCompactionPoint* cp, uint bottom);
+  void sort_regions();
   HeapRegion* current_region();
 
   GrowableArray<HeapRegion*>* regions();

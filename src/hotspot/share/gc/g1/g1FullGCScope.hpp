@@ -48,6 +48,7 @@ public:
 class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
   bool                    _explicit_gc;
+  bool                    _do_maximal_compaction;
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
   STWGCTimer              _timer;
@@ -68,6 +69,7 @@ public:
 
   bool is_explicit_gc();
   bool should_clear_soft_refs();
+  bool do_maximal_compaction() { return _do_maximal_compaction; }
 
   STWGCTimer* timer();
   G1FullGCTracer* tracer();

@@ -144,6 +144,7 @@ private:
   void phase2a_determine_worklists();
   bool phase2b_forward_oops();
   void phase2c_prepare_serial_compaction();
+  void add_regions_for_serial_compaction();
 
   void phase3_adjust_pointers();
   void phase4_do_compaction();

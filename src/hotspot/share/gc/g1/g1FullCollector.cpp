@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,7 @@ void G1FullCollector::phase2_prepare_compaction() {
   // Try to avoid OOM immediately after Full GC in case there are no free regions
   // left after determining the result locations (i.e. this phase). Prepare to
   // maximally compact the tail regions of the compaction queues serially.
-  if (!has_free_compaction_targets) {
+  if (scope()->do_maximal_compaction() || !has_free_compaction_targets) {
     phase2c_prepare_serial_compaction();
   }
 }
@@ -348,20 +348,43 @@ bool G1FullCollector::phase2b_forward_oops() {
   return task.has_free_compaction_targets();
 }
 
-void G1FullCollector::phase2c_prepare_serial_compaction() {
-  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
-  // At this point we know that after parallel compaction there will be no
-  // completely free regions. That means that the last region of
-  // all compaction queues still have data in them. We try to compact
-  // these regions in serial to avoid a premature OOM when the mutator wants
-  // to allocate the first eden region after gc.
+void G1FullCollector::add_regions_for_serial_compaction() {
+  // At this point, we know that after parallel compaction there will be regions that
+  // are partially compacted into. Thus, the last compaction region of all
+  // compaction queues still have space in them. We try to re-compact these regions
+  // in serial to avoid a premature OOM when the mutator wants to allocate the first
+  // eden region after gc.
+
+  // For maximum compaction, we need to re-prepare all objects above the lowest
+  // region among the current regions for all thread compaction points. It may
+  // happen that due to the uneven distribution of objects to parallel threads, holes
+  // have been created as threads compact to different target regions.
+  uint lowest_current_hr = (uint)-1;
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
     if (cp->has_regions()) {
-      serial_compaction_point()->add(cp->remove_last());
+      lowest_current_hr = MIN2(lowest_current_hr, cp->current_region()->hrm_index());
     }
   }
 
+  G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
+  for (uint i = 0; i < workers(); i++) {
+    G1FullGCCompactionPoint* cp = compaction_point(i);
+    if (cp->has_regions()) {
+      cp->move_regions_with_higher_hrm_index(serial_cp, lowest_current_hr);
+    }
+  }
+
+  // We use regions as compaction targets in the order they appear in the compaction
+  // point. To get maximum compaction and reduce fragmentation, we sort the regions
+  // by hrm_idex so that we compact objects to one end of the heap.
+  serial_cp->sort_regions();
+}
+
+void G1FullCollector::phase2c_prepare_serial_compaction() {
+  GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
+
+  add_regions_for_serial_compaction();
   // Update the forwarding information for the regions in the serial
   // compaction point.
   G1FullGCCompactionPoint* cp = serial_compaction_point();
