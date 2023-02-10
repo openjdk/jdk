@@ -107,6 +107,14 @@ Klass* oopDesc::klass_or_null_acquire() const {
   }
 }
 
+Klass* oopDesc::klass_raw() const {
+  if (UseCompressedClassPointers) {
+    return CompressedKlassPointers::decode_raw(_metadata._compressed_klass);
+  } else {
+    return _metadata._klass;
+  }
+}
+
 void oopDesc::set_klass(Klass* k) {
   assert(Universe::is_bootstrapping() || (k != NULL && k->is_klass()), "incorrect Klass");
   if (UseCompressedClassPointers) {
