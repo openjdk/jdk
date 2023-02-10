@@ -23,13 +23,12 @@
 package org.openjdk.bench.java.lang;
 
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
 /*
- * This benchmark naively explores String::startsWith and other String comparison
- * methods performance
+ * This benchmark naively explores String::startsWith and other String
+ * comparison methods
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -39,31 +38,44 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class StringComparisons {
 
-    public String longString = new String("jkljayeiksdhsdkjkdjkldfnbmnbdgfaddfflsdhbdkj");
-    public String equallyLongString = new String("jkljayeiksdhsdkjkdjkldfnbmnbdgfaddfflsdhbdkj");
+    @Param({"6", "15", "1024"})
+    public int size;
 
-    public String longerString = new String("jkljayeiksdhsdkjkdjkldfnbmnbdgfaddfflsdhbdkj_");
+    @Param({"true", "false"})
+    public boolean utf16;
 
-    public String endsWithA= new String("jkljayeiksdhsdkjkdjkldfnbmnbdgfaddfflsdhbdkjA");
-    public String endsWithB= new String("jkljayeiksdhsdkjkdjkldfnbmnbdgfaddfflsdhbdkjB");
+    public String string;
+    public String equalString;
 
-    @Benchmark
-    public void startsWith(Blackhole blackhole) {
-        blackhole.consume(longerString.startsWith(longString));
+    public String endsWithA;
+    public String endsWithB;
+
+    @Setup
+    public void setup() {
+        String c = utf16 ? "\uff11" : "c";
+        string = c.repeat(size);
+        equalString = c.repeat(size);
+        endsWithA = c.repeat(size).concat("A");
+        endsWithB = c.repeat(size).concat("B");
     }
 
     @Benchmark
-    public void compareTo(Blackhole blackhole) {
-        blackhole.consume(endsWithA.compareTo(endsWithB));
+    public boolean startsWith() {
+        return endsWithA.startsWith(string);
     }
 
     @Benchmark
-    public void regionMatches(Blackhole blackhole) {
-        blackhole.consume(endsWithA.regionMatches( 0, endsWithB, 0, endsWithB.length()));
+    public int compareTo() {
+        return endsWithA.compareTo(endsWithB);
     }
 
     @Benchmark
-    public void stringEquals(Blackhole blackhole) {
-        blackhole.consume(endsWithA.equals( equallyLongString));
+    public boolean regionMatches() {
+        return endsWithA.regionMatches(0, endsWithB, 0, endsWithB.length());
+    }
+
+    @Benchmark
+    public boolean stringEquals() {
+        return endsWithA.equals(endsWithB);
     }
 }
