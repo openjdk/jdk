@@ -126,9 +126,9 @@ import sun.swing.AccumulativeRunnable;
  * Before the {@code doInBackground} method is invoked on a <i>worker</i> thread,
  * {@code SwingWorker} notifies any {@code PropertyChangeListeners} about the
  * {@code state} property change to {@code StateValue.STARTED}.  After the
- * {@code doInBackground} method is finished, {@code SwingWorker} notifies
- * any {@code PropertyChangeListeners} about the {@code state} property
- * change to {@code StateValue.DONE}. Finally, {@code done} method is executed.
+ * {@code doInBackground} method is finished the {@code done} method is
+ * executed.  Then {@code SwingWorker} notifies any {@code PropertyChangeListeners}
+ * about the {@code state} property change to {@code StateValue.DONE}.
  *
  * <p>
  * {@code SwingWorker} is only designed to be executed once.  Executing a
@@ -301,16 +301,17 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 new Callable<T>() {
                     public T call() throws Exception {
                         setState(StateValue.STARTED);
-                        try {
+			try {
                             return doInBackground();
                         } finally {
-                            setState(StateValue.DONE);
                             doneEDT();
+                            setState(StateValue.DONE);
                         }
                     }
                 };
 
-       future = new FutureTask<T>(callable);
+        future = new FutureTask<T>(callable);
+
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);
        doProcess = null;

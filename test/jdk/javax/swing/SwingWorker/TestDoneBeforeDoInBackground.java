@@ -32,10 +32,12 @@ import java.beans.PropertyChangeEvent;
 import javax.swing.SwingWorker;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TestDoneBeforeDoInBackground {
 
-    private static volatile boolean doInBackground = false;
+    private static AtomicBoolean doInBackgroundStarted = new AtomicBoolean(false);
+    private static AtomicBoolean doInBackgroundFinished = new AtomicBoolean(false);
     private static final int WAIT_TIME = 200;
     private static final long CLEANUP_TIME = 1000;
     private static final CountDownLatch doneLatch = new CountDownLatch(1);
@@ -53,10 +55,11 @@ public class TestDoneBeforeDoInBackground {
                     System.out.println("Got interrupted!");
                 }
                 try {
+                    doInBackgroundStarted.set(true);
                     System.out.println("Cleaning up");
                     Thread.sleep(CLEANUP_TIME);
                     System.out.println("Done cleaning");
-                    doInBackground = true;
+                    doInBackgroundFinished.set(true);
                 } catch (InterruptedException ex) {
                     System.out.println("Got interrupted second time!");
                 }
@@ -65,7 +68,7 @@ public class TestDoneBeforeDoInBackground {
 
             @Override
             protected void done() {
-                if (!doInBackground) {
+                if (!doInBackgroundFinished.get()) {
                     throw new RuntimeException("done called before " +
                                              " doInBackground is finished");
                 }
@@ -77,12 +80,10 @@ public class TestDoneBeforeDoInBackground {
         worker.addPropertyChangeListener(
             new PropertyChangeListener() {
                 public void propertyChange(PropertyChangeEvent evt) {
-                    System.out.println("doInBackground " + doInBackground +
-                                       " state " + worker.getState());
                     // Before doInBackground method is invoked,
                     // SwingWorker notifies PropertyChangeListeners about the
                     // property change to StateValue.STARTED
-                    if (doInBackground &&
+                    if (doInBackgroundFinished.get() &&
                          worker.getState() == SwingWorker.StateValue.STARTED) {
                         throw new RuntimeException(
                                "PropertyChangeListeners called with " +
@@ -90,7 +91,7 @@ public class TestDoneBeforeDoInBackground {
                     }
                     // Ensure the STARTED state is notified
                     // before doInBackground started running
-                    if (!doInBackground &&
+                    if (doInBackgroundStarted.get() &&
                          worker.getState() == SwingWorker.StateValue.STARTED) {
                         throw new RuntimeException(
                                "PropertyChangeListeners called with " +
@@ -99,11 +100,11 @@ public class TestDoneBeforeDoInBackground {
                     // After the doInBackground method is finished
                     // SwingWorker notifies PropertyChangeListeners
                     // property change to StateValue.DONE
-                    if (doInBackground &&
+                    if (doInBackgroundFinished.get() &&
                             worker.getState() != SwingWorker.StateValue.DONE) {
                         throw new RuntimeException(
                             "PropertyChangeListeners called after " +
-                            " doInBackground is finised but before State changed to DONE");
+                            " doInBackground is finished but before State changed to DONE");
                     }
                 }
             });
@@ -121,9 +122,10 @@ public class TestDoneBeforeDoInBackground {
         if (!doneLatch.await(CLEANUP_TIME + 1000L, TimeUnit.MILLISECONDS)) {
             throw new RuntimeException("done didn't complete in time");
         }
-        System.out.println("doInBackground " + doInBackground +
+        System.out.println("doInBackground " + doInBackgroundFinished.get() +
                            " getState " + worker.getState());
-        if (doInBackground && worker.getState() != SwingWorker.StateValue.DONE) {
+        if (doInBackgroundFinished.get() &&
+              worker.getState() != SwingWorker.StateValue.DONE) {
             throw new RuntimeException("doInBackground is finished " +
                                        " but State is not DONE");
         }
