@@ -33,6 +33,8 @@
 import java.awt.FlowLayout;
 import java.awt.event.ActionListener;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JButton;
@@ -53,6 +55,14 @@ public class DisabledComboBoxFontTest {
 
     public static void createAndShowGUI() throws InterruptedException,
             InvocationTargetException {
+        final int[] lafIndex = {0};
+
+        List<String> lafs = new ArrayList<>();
+        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            System.out.println(info.getClassName());
+            lafs.add(info.getClassName());
+        }
+
         SwingUtilities.invokeAndWait(() -> {
 
             JComboBox combo = new JComboBox();
@@ -74,7 +84,7 @@ public class DisabledComboBoxFontTest {
             list2.setEnabled(false);
 
             JButton btn = new JButton("Enable/Disable");
-            ActionListener actionListener = event -> {
+            ActionListener actionListener1 = event -> {
                 combo.setEnabled(!combo.isEnabled());
                 customCombo.setEnabled(!customCombo.isEnabled());
                 list.setEnabled(!list.isEnabled());
@@ -82,7 +92,26 @@ public class DisabledComboBoxFontTest {
                 String str = event.getActionCommand();
                 System.out.println("Clicked = " + str + " " + customCombo.isEnabled());
             };
-            btn.addActionListener(actionListener);
+            btn.addActionListener(actionListener1);
+
+            JButton lafBtn = new JButton ("Cycle L&F");
+            ActionListener actionListener2 = event -> {
+                if (lafIndex[0] < lafs.size()) {
+                    try {
+                        System.out.println("Setting L&F to: " + lafs.get(lafIndex[0]));
+                        UIManager.setLookAndFeel(lafs.get(lafIndex[0]));
+                    }
+                    catch (Exception ex) {
+                        System.err.println("Failed to set L&F");
+                    }
+                    SwingUtilities.updateComponentTreeUI(frame);
+                    lafIndex[0]++;
+                    if (lafIndex[0] >= lafs.size()) {
+                        lafIndex[0] = 0;
+                    }
+                }
+            };
+            lafBtn.addActionListener(actionListener2);
 
             FlowLayout layout = new FlowLayout(FlowLayout.LEADING);
             JPanel panel = new JPanel(layout);
@@ -91,6 +120,7 @@ public class DisabledComboBoxFontTest {
             panel.add(list);
             panel.add(list2);
             panel.add(btn);
+            panel.add(lafBtn);
             System.out.println("RENDERER1: " + combo.getRenderer());
             System.out.println("RENDERER2: " + customCombo.getRenderer());
             System.out.println("RENDERER3: " + list.getCellRenderer());
