@@ -36,7 +36,7 @@ TEST_VM(PlaceholderTable, supername) {
   JavaThread* THREAD = JavaThread::current();
   JavaThread* T2 = THREAD;
   // the thread should be in vm to use locks
-  ThreadInVMfromNative ThreadInVMfromNative(THREAD);
+  ThreadInVMfromNative tivfn(THREAD);
 
   // Assert messages assume these symbols are unique, and the refcounts start at one.
   TempNewSymbol A = SymbolTable::new_symbol("abc2_8_2023_class");
