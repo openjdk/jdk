@@ -238,7 +238,7 @@ public class StringTemplateTest {
             import java.util.Locale;
 
             public class StringTemplateTest$ {
-                static final FormatProcessor FMT = new FormatProcessor(Locale.US);
+                static final FormatProcessor FMT = FormatProcessor.create(Locale.US);
                 static String STR = "this is static String";
                 static char C = 'c';
                 static Character CHAR = 'C';

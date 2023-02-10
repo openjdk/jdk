@@ -168,6 +168,9 @@ public interface StringTemplate {
      * as if invoking {@link String#valueOf(Object)}.
      *
      * @return interpolation of this {@link StringTemplate}
+     *
+     * @implSpec The default implementation returns the result of invoking
+     * {@code StringTemplate.interpolate(this.fragments(), this.values())}.
      */
     default String interpolate() {
         return StringTemplate.interpolate(fragments(), values());
@@ -194,7 +197,9 @@ public interface StringTemplate {
      * @throws E exception thrown by the template processor when validation fails
      * @throws NullPointerException if processor is null
      *
-     * @implNote The default implementation invokes {@code processor.process(this)}.
+     * @implSpec The default implementation returns the result of invoking
+     * {@code processor.process(this)}. If the invocation throws an exception that
+     * exception is forwarded to the caller.
      */
     default <R, E extends Throwable> R
     process(ValidatingProcessor<? extends R, ? extends E> processor) throws E {
@@ -308,7 +313,8 @@ public interface StringTemplate {
      *
      * @return combined {@link StringTemplate}
      *
-     * @throws NullPointerException if stringTemplates is null or if any of the elements are null
+     * @throws NullPointerException if stringTemplates is null or if any of the
+     * {@code stringTemplates} are null
      *
      * @implNote If zero {@link StringTemplate} arguments are provided then a
      * {@link StringTemplate} with an empty fragment and no values is returned, as if invoking
@@ -317,6 +323,36 @@ public interface StringTemplate {
      */
     static StringTemplate combine(StringTemplate... stringTemplates) {
         return TemplateSupport.combine(stringTemplates);
+    }
+
+    /**
+     * Combine a list of {@link StringTemplate StringTemplates} into a single
+     * {@link StringTemplate}.
+     * {@snippet :
+     * StringTemplate st = StringTemplate.combine(List.of(RAW."\{a}", RAW."\{b}", RAW."\{c}"));
+     * assert st.interpolate().equals(RAW."\{a}\{b}\{c}");
+     * }
+     * Fragment lists from each {@link StringTemplate} are merged such that the last fragment
+     * from the previous {@link StringTemplate} is concatenated with the first fragment of the next
+     * {@link StringTemplate}. Values lists are simply concatenated to produce a single values list.
+     * The result is a well-formed {@link StringTemplate} with n+1 fragments and n values, where
+     * n is the total of number of values across all the supplied
+     * {@link StringTemplate StringTemplates}.
+     *
+     * @param stringTemplates  list of {@link StringTemplate}
+     *
+     * @return combined {@link StringTemplate}
+     *
+     * @throws NullPointerException if stringTemplates is null or if any of the
+     * its elements are null
+     *
+     * @implNote If {@code stringTemplates.size() == 0} then a {@link StringTemplate} with
+     * an empty fragment and no values is returned, as if invoking
+     * <code>StringTemplate.of("")</code> . If only {@code stringTemplates.size() == 1}
+     * then that element is returned unchanged.
+     */
+    static StringTemplate combine(List<StringTemplate> stringTemplates) {
+        return TemplateSupport.combine(stringTemplates.toArray(new StringTemplate[0]));
     }
 
     /**

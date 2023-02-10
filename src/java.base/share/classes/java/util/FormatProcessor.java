@@ -43,7 +43,7 @@ import jdk.internal.javac.PreviewFeature;
  * <a href="../util/Formatter.html#syntax">format specifier</a>.
  * For example:
  * {@snippet :
- * FormatProcessor fmt = new FormatProcessor(Locale.ROOT);
+ * FormatProcessor fmt = FormatProcessor.create(Locale.ROOT);
  * int x = 10;
  * int y = 20;
  * String result = fmt."%05d\{x} + %05d\{y} = %05d\{x + y}";
@@ -53,7 +53,7 @@ import jdk.internal.javac.PreviewFeature;
  * Embedded expressions without a preceeding format specifier, use {@code %s}
  * by default.
  * {@snippet :
- * FormatProcessor fmt = new FormatProcessor(Locale.ROOT);
+ * FormatProcessor fmt = FormatProcessor.create(Locale.ROOT);
  * int x = 10;
  * int y = 20;
  * String result1 = fmt."\{x} + \{y} = \{x + y}";
@@ -74,7 +74,7 @@ import jdk.internal.javac.PreviewFeature;
  * {@link FormatProcessor} allows the use of different locales. For example:
  * {@snippet :
  * Locale locale = Locale.forLanguageTag("th-TH-u-nu-thai");
- * FormatProcessor thaiFMT = new FormatProcessor(locale);
+ * FormatProcessor thaiFMT = FormatProcessor.create(locale);
  * int x = 10;
  * int y = 20;
  * String result = thaiFMT."%d\{x} + %d\{y} = %d\{x + y}";
@@ -107,8 +107,22 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *
      * @param locale  {@link Locale} used to format
      */
-    public FormatProcessor(Locale locale) {
+    private FormatProcessor(Locale locale) {
         this.locale = locale;
+    }
+
+    /**
+     * Create a new {@link FormatProcessor} using the specified locale.
+     *
+     * @param locale {@link Locale} used to format
+     *
+     * @return a new instance of {@link FormatProcessor}
+     *
+     * @throws java.lang.NullPointerException if locale is null
+     */
+    public static FormatProcessor create(Locale locale) {
+        Objects.requireNonNull(locale);
+        return new FormatProcessor(locale);
     }
 
     /**
@@ -161,7 +175,7 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      * Other {@link FormatProcessor} can be specialized if stored as static final.
      * For example:
      * {@snippet :
-     * FormatProcessor THAI_FMT = new FormatProcessor(Locale.forLanguageTag("th-TH-u-nu-thai"));
+     * FormatProcessor THAI_FMT = FormatProcessor.create(Locale.forLanguageTag("th-TH-u-nu-thai"));
      * }
      * {@code THAI_FMT} will now produce specialized {@link MethodHandle MethodHandles} by way
      * of {@link FormatProcessor#linkage(List, MethodType)}.
@@ -265,6 +279,6 @@ public final class FormatProcessor implements StringProcessor, ProcessorLinkage 
      *
      * @see java.util.FormatProcessor
      */
-    public static final FormatProcessor FMT = new FormatProcessor(Locale.ROOT);
+    public static final FormatProcessor FMT = FormatProcessor.create(Locale.ROOT);
 
 }

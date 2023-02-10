@@ -41,7 +41,7 @@ public class FormatterBuilder {
         Locale.setDefault(Locale.US);
         suite(FMT);
         Locale thai = Locale.forLanguageTag("th-TH-u-nu-thai");
-        FormatProcessor thaiFormat = new FormatProcessor(thai);
+        FormatProcessor thaiFormat = FormatProcessor.create(thai);
         Locale.setDefault(thai);
         suite(thaiFormat);
     }

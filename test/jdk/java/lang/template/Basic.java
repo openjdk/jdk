@@ -423,6 +423,10 @@ public class Basic {
         ASSERT(tsValues.interpolate(), x + " + " + y + " = " + (x + y));
         ASSERT(StringTemplate.combine(src, src).interpolate(),
                 RAW."\{x} + \{y} = \{x + y}\{x} + \{y} = \{x + y}".interpolate());
+        ASSERT(StringTemplate.combine(src), src);
+        ASSERT(StringTemplate.combine().interpolate(), "");
+        ASSERT(StringTemplate.combine(List.of(src, src)).interpolate(),
+                RAW."\{x} + \{y} = \{x + y}\{x} + \{y} = \{x + y}".interpolate());
     }
 
     /*

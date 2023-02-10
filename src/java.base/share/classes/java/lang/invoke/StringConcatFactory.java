@@ -119,6 +119,7 @@ public final class StringConcatFactory {
      *
      * @since 21
      */
+    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
     public static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
