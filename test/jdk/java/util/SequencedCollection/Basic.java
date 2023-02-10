@@ -23,6 +23,7 @@
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -105,6 +106,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()), ORIGINAL },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
@@ -124,6 +126,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(), List.of() },
             new Object[] { "ArrayList", new ArrayList<>(), List.of() },
             new Object[] { "AsList", Arrays.asList(new String[0]), List.of() },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(), List.of() },
             new Object[] { "EmptyList", Collections.emptyList(), List.of() },
             new Object[] { "EmptyNavigableSet", Collections.emptyNavigableSet(), List.of() },
             new Object[] { "EmptySortedSet", Collections.emptySortedSet(), List.of() },
@@ -145,6 +148,7 @@ public class Basic {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
@@ -158,6 +162,7 @@ public class Basic {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "SetFromMap", setFromMap(ORIGINAL), ORIGINAL },
@@ -173,6 +178,7 @@ public class Basic {
         return Arrays.asList(
             new Object[] { "ArrayDeque", new ArrayDeque<>(), List.of() },
             new Object[] { "ArrayList", new ArrayList<>(), List.of() },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(), List.of() },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(), List.of() },
             new Object[] { "LinkedList", new LinkedList<>(), List.of() },
             new Object[] { "SetFromMap", setFromMap(List.of()), List.of() },
@@ -189,6 +195,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL), ORIGINAL },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()), ORIGINAL },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL), ORIGINAL },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL), ORIGINAL },
             new Object[] { "ListOf", ORIGINAL, ORIGINAL },
@@ -205,6 +212,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL).reversed() },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL).reversed() },
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()).reversed() },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL).reversed() },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL).reversed() },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL).reversed() },
             new Object[] { "ListOf", ORIGINAL.reversed() },
@@ -220,6 +228,7 @@ public class Basic {
             new Object[] { "ArrayDeque", new ArrayDeque<>(ORIGINAL) },
             new Object[] { "ArrayList", new ArrayList<>(ORIGINAL) },
             new Object[] { "AsList", Arrays.asList(ORIGINAL.toArray()) },
+            new Object[] { "COWAL", new CopyOnWriteArrayList<>(ORIGINAL) },
             new Object[] { "LinkedHashSet", new LinkedHashSet<>(ORIGINAL) },
             new Object[] { "LinkedList", new LinkedList<>(ORIGINAL) },
             new Object[] { "ListOf", ORIGINAL },
@@ -291,12 +300,42 @@ public class Basic {
         for (int mode = 0; mode < 4; mode++) {
             cases.addAll(Arrays.asList(
                 new Object[] { "ArrayList", mode, new ArrayList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "COWAL", mode, new CopyOnWriteArrayList<>(ORIGINAL), ORIGINAL },
                 new Object[] { "LinkedList", mode, new LinkedList<>(ORIGINAL), ORIGINAL },
                 new Object[] { "SimpleList", mode, new SimpleList<>(ORIGINAL), ORIGINAL }
             ));
         }
         return cases.iterator();
     }
+
+    @DataProvider(name="subListIteratorMods")
+    public Iterator<Object[]> subListIteratorMods() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 4; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "ArrayList", mode, new ArrayList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "LinkedList", mode, new LinkedList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleList", mode, new SimpleList<>(ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
+
+    @DataProvider(name="iteratorMods")
+    public Iterator<Object[]> iteratorMods() {
+        var cases = new ArrayList<Object[]>();
+        for (boolean rev : List.of(false, true)) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "ArrayList", rev, new ArrayList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "LinkedList", rev, new LinkedList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleList", rev, new SimpleList<>(ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
+
+    // subListIteratorMods
+
 
     // ========== Assertions ==========
 
@@ -699,55 +738,51 @@ public class Basic {
         checkContents(list, refList);
     }
 
-    // ListIterator modification tests.
-    // These non-subList ListIterator tests don't need all four reversed
-    // cases, but it's not worth it to set up a new provider just for them.
-
-    @Test(dataProvider="subListMods")
-    public void testListIteratorAdd(String label, int mode, List<String> list, List<String> base) {
+    @Test(dataProvider="iteratorMods")
+    public void testListIteratorAdd(String label, boolean rev, List<String> list, List<String> base) {
         var ref = new ArrayList<>(base);
-        var it = (reverseList(mode) ? list.reversed() : list).listIterator();
+        var it = (rev ? list.reversed() : list).listIterator();
 
-        ref.add(reverseList(mode) ? 5 : 2, "x");
+        ref.add(rev ? 5 : 2, "x");
         it.next();
         it.next();
         it.add("x");
 
-        assertEquals(it.next(), reverseList(mode) ? "e" : "c");
+        assertEquals(it.next(), rev ? "e" : "c");
         checkContents(list, ref);
     }
 
-    @Test(dataProvider="subListMods")
-    public void testListIteratorSet(String label, int mode, List<String> list, List<String> base) {
+    @Test(dataProvider="iteratorMods")
+    public void testListIteratorSet(String label, boolean rev, List<String> list, List<String> base) {
         var ref = new ArrayList<>(base);
-        var it = (reverseList(mode) ? list.reversed() : list).listIterator();
+        var it = (rev ? list.reversed() : list).listIterator();
 
-        ref.set(reverseList(mode) ? 5 : 1, "x");
+        ref.set(rev ? 5 : 1, "x");
         it.next();
         it.next();
         it.set("x");
 
-        assertEquals(it.next(), reverseList(mode) ? "e" : "c");
+        assertEquals(it.next(), rev ? "e" : "c");
         checkContents(list, ref);
     }
 
-    @Test(dataProvider="subListMods")
-    public void testListIteratorRemove(String label, int mode, List<String> list, List<String> base) {
+    @Test(dataProvider="iteratorMods")
+    public void testListIteratorRemove(String label, boolean rev, List<String> list, List<String> base) {
         var ref = new ArrayList<>(base);
-        var it = (reverseList(mode) ? list.reversed() : list).listIterator();
+        var it = (rev ? list.reversed() : list).listIterator();
 
-        ref.remove(reverseList(mode) ? 5 : 1);
+        ref.remove(rev ? 5 : 1);
         it.next();
         it.next();
         it.remove();
 
-        assertEquals(it.next(), reverseList(mode) ? "e" : "c");
+        assertEquals(it.next(), rev ? "e" : "c");
         checkContents(list, ref);
     }
 
     // SubList ListIterator modification tests.
 
-    @Test(dataProvider="subListMods")
+    @Test(dataProvider="subListIteratorMods")
     public void testSubListIteratorAdd(String label, int mode, List<String> list, List<String> base) {
         var refList = new ArrayList<>(base);
         var sub = applyMode(mode, list);
@@ -764,7 +799,7 @@ public class Basic {
         checkContents(list, refList);
     }
 
-    @Test(dataProvider="subListMods")
+    @Test(dataProvider="subListIteratorMods")
     public void testSubListIteratorSet(String label, int mode, List<String> list, List<String> base) {
         var refList = new ArrayList<>(base);
         var sub = applyMode(mode, list);
@@ -781,7 +816,7 @@ public class Basic {
         checkContents(list, refList);
     }
 
-    @Test(dataProvider="subListMods")
+    @Test(dataProvider="subListIteratorMods")
     public void testSubListIteratorRemove(String label, int mode, List<String> list, List<String> base) {
         var refList = new ArrayList<>(base);
         var sub = applyMode(mode, list);
