@@ -226,15 +226,15 @@ class InstanceKlass: public Klass {
   // _misc_flags right now.
   bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
-  ClassState      _init_state;              // state of class
+  volatile ClassState _init_state;          // state of class
 
   u1              _reference_type;          // reference type
 
   // State is set while executing, eventually atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*        _init_monitor;         // mutual exclusion to _init_state and _init_thread.
-  Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recursive initialization)
+  Monitor*             _init_monitor;           // mutual exclusion to _init_state and _init_thread.
+  JavaThread* volatile _init_thread;            // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
@@ -511,7 +511,7 @@ public:
   bool is_not_initialized() const          { return init_state() <  being_initialized; }
   bool is_being_initialized() const        { return init_state() == being_initialized; }
   bool is_in_error_state() const           { return init_state() == initialization_error; }
-  bool is_init_thread(Thread *thread)      { return thread == _init_thread; }
+  bool is_init_thread(JavaThread *thread)  { return thread == Atomic::load(&_init_thread); }
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
@@ -1077,9 +1077,10 @@ public:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags.set_rewritten(true); }
-  void set_init_thread(Thread *thread)  {
-    assert(thread == nullptr || _init_thread == nullptr, "Only one thread is allowed to own initialization");
-    _init_thread = thread;
+  void set_init_thread(JavaThread *thread)  {
+    assert((thread == JavaThread::current() && _init_thread == nullptr) ||
+           (thread == nullptr && _init_thread == JavaThread::current()), "Only one thread is allowed to own initialization");
+    Atomic::store(&_init_thread, thread);
   }
 
   // The RedefineClasses() API can cause new method idnums to be needed
