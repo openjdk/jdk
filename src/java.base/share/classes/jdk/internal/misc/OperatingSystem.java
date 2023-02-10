@@ -83,8 +83,7 @@ public enum OperatingSystem {
     private static final OperatingSystem currentOS = initOS();
 
     /**
-     * Name of the Operating system.
-     * Also used as the prefix of the os.name that identifies the Operating system.
+     * The operating system name as defined by the build system.
      */
     private final String name;
 
@@ -102,21 +101,21 @@ public enum OperatingSystem {
     }
 
     /**
-     * {@return {@code true} if the operating system is Linux}
+     * {@return {@code true} if the operating system is Mac OS X}
      */
     public static boolean isMacOS() {
         return PlatformProperties.TARGET_OS_IS_MACOS;
     }
 
     /**
-     * {@return {@code true} if the operating system is Linux}
+     * {@return {@code true} if the operating system is Windows}
      */
     public static boolean isWindows() {
         return PlatformProperties.TARGET_OS_IS_WINDOWS;
     }
 
     /**
-     * {@return {@code true} if the operating system is Linux}
+     * {@return {@code true} if the operating system is Aix}
      */
     public static boolean isAix() {
         return PlatformProperties.TARGET_OS_IS_AIX;
@@ -161,68 +160,10 @@ public enum OperatingSystem {
     }
 
     /**
-     * {@return the major version number of the current operating system, otherwise 0}
-     */
-    public int versionMajor() {
-        return isCurrent() ? parsedMajor() : 0;
-    }
-
-    /**
-     * {@return the minor version number of the current operating system, otherwise 0}
-     */
-    public int versionMinor() {
-        return isCurrent() ? parsedMinor() : 0;
-    }
-
-    /**
-     * {@return the name and if it is current, the version of the operating system}
+     * {@return the name of the operating system}
      */
     public String toString() {
-        if (isCurrent()) {
-            return name + ", version: " + StaticProperty.osVersion();
-        } else {
-            return name;
-        }
-    }
-
-    /**
-     * Private racy cache of parsed os.version into int[major, minor,...]
-     */
-    private static int[] currentVersion;
-
-    /**
-     * {@return the major version number of the current operating system}
-     */
-    private static int parsedMajor() {
-        var parsed = parsedOsVersion();
-        return parsed.length > 0 ? parsed[0] : 0;        }
-
-    /**
-     * {@return the minor version number of the current operating system}
-     */
-    private static int parsedMinor() {
-        var parsed = parsedOsVersion();
-        return parsed.length > 1 ? parsed[1] : 0;
-    }
-
-
-    // Parse os.version and return its components
-    private static int[] parsedOsVersion() {
-        int[] curr = currentVersion;
-        if (curr == null) {
-            String[] parts = StaticProperty.osVersion().split("\\.");
-            curr = new int[parts.length];
-            try {
-                for (int i = 0; i < parts.length; i++) {
-                    curr[i] = Integer.parseInt(parts[0]);
-                }
-            } catch (NumberFormatException nfe) {
-                // ignore and use 0 for missing/bad values
-            }
-            // Racy assignment is ok
-            currentVersion = curr;
-        }
-        return curr;
+        return name;
     }
 
     /**

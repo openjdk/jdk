@@ -112,7 +112,7 @@ final class ProcessImpl extends Process {
                         return lm; // All but VFORK are valid
                     }
                     break;
-                default:
+                case Windows:
                     // fall through to throw to Error
             }
         } catch (IllegalArgumentException e) {
@@ -400,7 +400,8 @@ final class ProcessImpl extends Process {
                 });
                 break;
 
-            default: throw new AssertionError("Unsupported platform: " + OperatingSystem.current());
+            case Windows: throw new AssertionError("Unsupported platform: " +
+                    OperatingSystem.current());
         }
     }
 

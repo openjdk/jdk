@@ -21,7 +21,6 @@
  * questions.
  */
 
-import jdk.internal.misc.Architecture;
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
@@ -57,23 +56,6 @@ public class PlatformTest {
             default    -> throw new RuntimeException("unknown OS kind: " + osName);
         };
         Assert.assertEquals(os, OperatingSystem.current(), "mismatch in OperatingSystem.current vs " + osName);
-    }
-
-
-    /**
-     * Test consistency of System property "os.arch" with Architecture.current().
-     */
-    @Test
-    void Test2() {
-        String archName = System.getProperty("os.arch");
-        Architecture arch = switch (archName) {
-            case "x86"             -> Architecture.X86;
-            case "amd64", "x86_64" -> Architecture.X64;
-            case "arm"             -> Architecture.ARM;
-            case "aarch64"         -> Architecture.AARCH64;
-            default                -> throw new RuntimeException("Unknown architecture: " + archName);
-        };
-        Assert.assertEquals(arch, Architecture.current(), "Mismatch in architecture");
     }
 
     @Test

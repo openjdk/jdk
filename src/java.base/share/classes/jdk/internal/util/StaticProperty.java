@@ -55,7 +55,6 @@ public final class StaticProperty {
     private static final String SUN_JNU_ENCODING;
     private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
     private static final String OS_NAME;
-    private static final String OS_VERSION;
     private static final String OS_ARCH;
 
     private StaticProperty() {}
@@ -77,7 +76,6 @@ public final class StaticProperty {
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
         JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
         OS_NAME = getProperty(props, "os.name");
-        OS_VERSION = getProperty(props, "os.version");
         OS_ARCH = getProperty(props, "os.arch");
     }
 
@@ -257,15 +255,6 @@ public final class StaticProperty {
       */
      public static String osName() {
          return OS_NAME;
-     }
-
-     /**
-      * {@return the {@code os.version} system property}
-      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
-      * in this method. This property is not considered security sensitive.</strong>
-      */
-     public static String osVersion() {
-         return OS_VERSION;
      }
 
      /**

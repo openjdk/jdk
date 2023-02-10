@@ -790,7 +790,7 @@ public final class LauncherHelper {
             try {
                 mainClass = Class.forName(cn, false, scl);
             } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
-                if (OperatingSystem.isLinux()
+                if (OperatingSystem.isMacOS()
                         && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
                     try {
                         // On Mac OS X since all names with diacritical marks are
