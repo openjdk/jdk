@@ -31,6 +31,7 @@ import java.rmi.UnmarshalException;
 import java.rmi.server.UnicastRemoteObject;
 
 import java.util.Objects;
+import java.lang.ref.Reference;
 
 import org.testng.Assert;
 import org.testng.annotations.DataProvider;
@@ -43,7 +44,6 @@ import org.testng.annotations.Test;
  */
 public class FilterUROTest {
 
-    private static RemoteImpl impl;
     /**
      * Data to test serialFilter call counts.
      * - name
@@ -71,12 +71,13 @@ public class FilterUROTest {
     @Test(dataProvider = "bindData")
     public void useExportObject(String name, Object obj, int expectedFilterCount) throws RemoteException {
         try {
-            impl = RemoteImpl.create();
+            RemoteImpl impl = RemoteImpl.create();
             Echo client = (Echo) UnicastRemoteObject
                     .exportObject(impl, 0, impl.checker);
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
+	    Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
@@ -98,12 +99,13 @@ public class FilterUROTest {
     @Test(dataProvider = "bindData")
     public void useExportObject2(String name, Object obj, int expectedFilterCount) throws RemoteException {
         try {
-            impl = RemoteImpl.create();
+            RemoteImpl impl = RemoteImpl.create();
             Echo client = (Echo) UnicastRemoteObject
                     .exportObject(impl, 0, null, null, impl.checker);
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
+	    Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
