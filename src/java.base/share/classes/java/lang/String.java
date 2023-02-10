@@ -51,6 +51,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -1272,8 +1273,7 @@ public final class String
     }
 
     private static void throwUnmappable(byte[] val) {
-        int dp = 0;
-        while (dp < val.length && val[dp] >=0) { dp++; }
+        int dp = StringCoding.countPositives(val, 0, val.length);
         throwUnmappable(dp);
     }
 
@@ -1870,23 +1870,17 @@ public final class String
         if (len != sb.length()) {
             return false;
         }
-        byte v1[] = value;
-        byte v2[] = sb.getValue();
+        byte[] v1 = value;
+        byte[] v2 = sb.getValue();
         byte coder = coder();
         if (coder == sb.getCoder()) {
-            int n = v1.length;
-            for (int i = 0; i < n; i++) {
-                if (v1[i] != v2[i]) {
-                    return false;
-                }
-            }
+            return v1.length <= v2.length && ArraysSupport.mismatch(v1, v2, v1.length) < 0;
         } else {
             if (coder != LATIN1) {  // utf16 str and latin1 abs can never be "equal"
                 return false;
             }
             return StringUTF16.contentEquals(v1, v2, len);
         }
-        return true;
     }
 
     /**
@@ -2024,8 +2018,8 @@ public final class String
      *          lexicographically greater than the string argument.
      */
     public int compareTo(String anotherString) {
-        byte v1[] = value;
-        byte v2[] = anotherString.value;
+        byte[] v1 = value;
+        byte[] v2 = anotherString.value;
         byte coder = coder();
         if (coder == anotherString.coder()) {
             return coder == LATIN1 ? StringLatin1.compareTo(v1, v2)
@@ -2060,8 +2054,8 @@ public final class String
         private static final long serialVersionUID = 8575799808933029326L;
 
         public int compare(String s1, String s2) {
-            byte v1[] = s1.value;
-            byte v2[] = s2.value;
+            byte[] v1 = s1.value;
+            byte[] v2 = s2.value;
             byte coder = s1.coder();
             if (coder == s2.coder()) {
                 return coder == LATIN1 ? StringLatin1.compareToCI(v1, v2)
@@ -2136,25 +2130,22 @@ public final class String
      *          {@code false} otherwise.
      */
     public boolean regionMatches(int toffset, String other, int ooffset, int len) {
-        byte tv[] = value;
-        byte ov[] = other.value;
         // Note: toffset, ooffset, or len might be near -1>>>1.
         if ((ooffset < 0) || (toffset < 0) ||
              (toffset > (long)length() - len) ||
              (ooffset > (long)other.length() - len)) {
             return false;
         }
+        byte[] tv = value;
+        byte[] ov = other.value;
         byte coder = coder();
         if (coder == other.coder()) {
-            if (!isLatin1() && (len > 0)) {
-                toffset = toffset << 1;
-                ooffset = ooffset << 1;
-                len = len << 1;
-            }
-            while (len-- > 0) {
-                if (tv[toffset++] != ov[ooffset++]) {
-                    return false;
-                }
+            if (coder == LATIN1) {
+                return ArraysSupport.mismatch(tv, toffset,
+                        ov, ooffset, len) < 0;
+            } else {
+                return ArraysSupport.mismatch(tv, toffset << UTF16,
+                        ov, ooffset << UTF16, len << UTF16) < 0;
             }
         } else {
             if (coder == LATIN1) {
@@ -2235,8 +2226,8 @@ public final class String
                 || (ooffset > (long)other.length() - len)) {
             return false;
         }
-        byte tv[] = value;
-        byte ov[] = other.value;
+        byte[] tv = value;
+        byte[] ov = other.value;
         byte coder = coder();
         if (coder == other.coder()) {
             return coder == LATIN1
@@ -2270,18 +2261,15 @@ public final class String
         if (toffset < 0 || toffset > length() - prefix.length()) {
             return false;
         }
-        byte ta[] = value;
-        byte pa[] = prefix.value;
+        byte[] ta = value;
+        byte[] pa = prefix.value;
         int po = 0;
         int pc = pa.length;
         byte coder = coder();
         if (coder == prefix.coder()) {
-            int to = (coder == LATIN1) ? toffset : toffset << 1;
-            while (po < pc) {
-                if (ta[to++] != pa[po++]) {
-                    return false;
-                }
-            }
+            toffset <<= coder;
+            return ArraysSupport.mismatch(ta, toffset,
+                    pa, 0, pc) < 0;
         } else {
             if (coder == LATIN1) {  // && pcoder == UTF16
                 return false;

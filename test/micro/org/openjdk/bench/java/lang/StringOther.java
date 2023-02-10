@@ -100,4 +100,11 @@ public class StringOther {
         bh.consume(str2.regionMatches(true, 16, str1UP, 0, 8));
         bh.consume(str3.regionMatches(true, 6, str4, 1, 2));
     }
+
+    @Benchmark
+    public void regionMatchesLatin1CaseSensitive(Blackhole bh) {
+        bh.consume(str1.regionMatches(false, 0, str2, 0, str1.length()));
+        bh.consume(str2.regionMatches(false, 16, str1UP, 0, 8));
+        bh.consume(str3.regionMatches(false, 6, str4, 1, 2));
+    }
 }
