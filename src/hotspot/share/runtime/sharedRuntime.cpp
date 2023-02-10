@@ -233,6 +233,7 @@ const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
 
+#ifndef X86
 JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
@@ -250,8 +251,9 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
   return ((jfloat)fmod((double)x,(double)y));
 #endif
 JRT_END
+#endif
 
-
+#ifndef X86
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
   union { jdouble d; julong l; } xbits, ybits;
@@ -267,6 +269,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
+#endif
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
