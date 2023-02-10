@@ -348,8 +348,8 @@ public interface StringTemplate {
      *
      * @implNote If {@code stringTemplates.size() == 0} then a {@link StringTemplate} with
      * an empty fragment and no values is returned, as if invoking
-     * <code>StringTemplate.of("")</code> . If only {@code stringTemplates.size() == 1}
-     * then that element is returned unchanged.
+     * <code>StringTemplate.of("")</code> . If {@code stringTemplates.size() == 1}
+     * then the first element of the list is returned unchanged.
      */
     static StringTemplate combine(List<StringTemplate> stringTemplates) {
         return TemplateSupport.combine(stringTemplates.toArray(new StringTemplate[0]));
