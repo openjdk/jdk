@@ -139,7 +139,7 @@ private:
   virtual bool reserve(uintptr_t addr, size_t size) {
     const uintptr_t res = ZMapper::reserve(addr, size);
 
-    assert(res == addr || res == reinterpret_cast<uintptr_t>(nullptr), "Should not reserve other memory than requested");
+    assert(res == addr || res == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
@@ -162,7 +162,7 @@ private:
   virtual bool reserve(uintptr_t addr, size_t size) {
     const uintptr_t res = ZMapper::reserve_for_shared_awe(ZAWESection, addr, size);
 
-    assert(res == addr || res == reinterpret_cast<uintptr_t>(nullptr), "Should not reserve other memory than requested");
+    assert(res == addr || res == 0, "Should not reserve other memory than requested");
     return res == addr;
   }
 
