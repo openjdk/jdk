@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -401,59 +401,59 @@ public:
 
   BitData* as_BitData() const {
     assert(is_BitData(), "wrong type");
-    return is_BitData()         ? (BitData*)        this : NULL;
+    return is_BitData()         ? (BitData*)        this : nullptr;
   }
   CounterData* as_CounterData() const {
     assert(is_CounterData(), "wrong type");
-    return is_CounterData()     ? (CounterData*)    this : NULL;
+    return is_CounterData()     ? (CounterData*)    this : nullptr;
   }
   JumpData* as_JumpData() const {
     assert(is_JumpData(), "wrong type");
-    return is_JumpData()        ? (JumpData*)       this : NULL;
+    return is_JumpData()        ? (JumpData*)       this : nullptr;
   }
   ReceiverTypeData* as_ReceiverTypeData() const {
     assert(is_ReceiverTypeData(), "wrong type");
-    return is_ReceiverTypeData() ? (ReceiverTypeData*)this : NULL;
+    return is_ReceiverTypeData() ? (ReceiverTypeData*)this : nullptr;
   }
   VirtualCallData* as_VirtualCallData() const {
     assert(is_VirtualCallData(), "wrong type");
-    return is_VirtualCallData() ? (VirtualCallData*)this : NULL;
+    return is_VirtualCallData() ? (VirtualCallData*)this : nullptr;
   }
   RetData* as_RetData() const {
     assert(is_RetData(), "wrong type");
-    return is_RetData()         ? (RetData*)        this : NULL;
+    return is_RetData()         ? (RetData*)        this : nullptr;
   }
   BranchData* as_BranchData() const {
     assert(is_BranchData(), "wrong type");
-    return is_BranchData()      ? (BranchData*)     this : NULL;
+    return is_BranchData()      ? (BranchData*)     this : nullptr;
   }
   ArrayData* as_ArrayData() const {
     assert(is_ArrayData(), "wrong type");
-    return is_ArrayData()       ? (ArrayData*)      this : NULL;
+    return is_ArrayData()       ? (ArrayData*)      this : nullptr;
   }
   MultiBranchData* as_MultiBranchData() const {
     assert(is_MultiBranchData(), "wrong type");
-    return is_MultiBranchData() ? (MultiBranchData*)this : NULL;
+    return is_MultiBranchData() ? (MultiBranchData*)this : nullptr;
   }
   ArgInfoData* as_ArgInfoData() const {
     assert(is_ArgInfoData(), "wrong type");
-    return is_ArgInfoData() ? (ArgInfoData*)this : NULL;
+    return is_ArgInfoData() ? (ArgInfoData*)this : nullptr;
   }
   CallTypeData* as_CallTypeData() const {
     assert(is_CallTypeData(), "wrong type");
-    return is_CallTypeData() ? (CallTypeData*)this : NULL;
+    return is_CallTypeData() ? (CallTypeData*)this : nullptr;
   }
   VirtualCallTypeData* as_VirtualCallTypeData() const {
     assert(is_VirtualCallTypeData(), "wrong type");
-    return is_VirtualCallTypeData() ? (VirtualCallTypeData*)this : NULL;
+    return is_VirtualCallTypeData() ? (VirtualCallTypeData*)this : nullptr;
   }
   ParametersTypeData* as_ParametersTypeData() const {
     assert(is_ParametersTypeData(), "wrong type");
-    return is_ParametersTypeData() ? (ParametersTypeData*)this : NULL;
+    return is_ParametersTypeData() ? (ParametersTypeData*)this : nullptr;
   }
   SpeculativeTrapData* as_SpeculativeTrapData() const {
     assert(is_SpeculativeTrapData(), "wrong type");
-    return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : NULL;
+    return is_SpeculativeTrapData() ? (SpeculativeTrapData*)this : nullptr;
   }
 
 
@@ -470,7 +470,7 @@ public:
   // translation here, and the required translators are in the ci subclasses.
   virtual void translate_from(const ProfileData* data) {}
 
-  virtual void print_data_on(outputStream* st, const char* extra = NULL) const {
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const {
     ShouldNotReachHere();
   }
 
@@ -533,7 +533,7 @@ public:
     return cell_offset(bit_cell_count);
   }
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // CounterData
@@ -583,7 +583,7 @@ public:
     set_int_at(count_off, count);
   }
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // JumpData
@@ -656,7 +656,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // Entries in a ProfileData object to record types: it can either be
@@ -714,10 +714,10 @@ public:
     if (!is_type_none(k) &&
         !is_type_unknown(k)) {
       Klass* res = (Klass*)klass_part(k);
-      assert(res != NULL, "invalid");
+      assert(res != nullptr, "invalid");
       return res;
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 
@@ -738,7 +738,7 @@ protected:
   const int _base_off;
 
   TypeEntries(int base_off)
-    : _pd(NULL), _base_off(base_off) {}
+    : _pd(nullptr), _base_off(base_off) {}
 
   void set_intptr_at(int index, intptr_t value) {
     _pd->set_intptr_at(index, value);
@@ -1074,7 +1074,7 @@ public:
     }
   }
 
-  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // ReceiverTypeData
@@ -1139,7 +1139,7 @@ public:
     assert(row < row_limit(), "oob");
 
     Klass* recv = (Klass*)intptr_at(receiver_cell_index(row));
-    assert(recv == NULL || recv->is_klass(), "wrong type");
+    assert(recv == nullptr || recv->is_klass(), "wrong type");
     return recv;
   }
 
@@ -1177,7 +1177,7 @@ public:
     // We do sorting a profiling info (ciCallProfile) for compilation.
     //
     set_count(0);
-    set_receiver(row, NULL);
+    set_receiver(row, nullptr);
     set_receiver_count(row, 0);
 #if INCLUDE_JVMCI
     if (!this->is_VirtualCallData()) {
@@ -1214,7 +1214,7 @@ public:
   virtual void clean_weak_klass_links(bool always_clean);
 
   void print_receiver_data_on(outputStream* st) const;
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // VirtualCallData
@@ -1246,7 +1246,7 @@ public:
   }
 
   void print_method_data_on(outputStream* st) const NOT_JVMCI_RETURN;
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // VirtualCallTypeData
@@ -1378,7 +1378,7 @@ public:
     }
   }
 
-  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // RetData
@@ -1470,7 +1470,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // BranchData
@@ -1534,7 +1534,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // ArrayData
@@ -1693,7 +1693,7 @@ public:
   // Specific initialization.
   void post_initialize(BytecodeStream* stream, MethodData* mdo);
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 class ArgInfoData : public ArrayData {
@@ -1718,7 +1718,7 @@ public:
     array_set_int_at(arg, val);
   }
 
-  void print_data_on(outputStream* st, const char* extra = NULL) const;
+  void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // ParametersTypeData
@@ -1777,7 +1777,7 @@ public:
     _parameters.clean_weak_klass_links(always_clean);
   }
 
-  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 
   static ByteSize stack_slot_offset(int i) {
     return cell_offset(stack_slot_local_offset(i));
@@ -1847,7 +1847,7 @@ public:
     return cell_offset(speculative_trap_method);
   }
 
-  virtual void print_data_on(outputStream* st, const char* extra = NULL) const;
+  virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
 // MethodData*
@@ -1883,7 +1883,7 @@ public:
 // interpretation, when a bytecode is encountered that has profile data
 // associated with it, the entry pointed to by mdp is updated, then the
 // mdp is adjusted to point to the next appropriate DataLayout.  If mdp
-// is NULL to begin with, the interpreter assumes that the current method
+// is null to begin with, the interpreter assumes that the current method
 // is not (yet) being profiled.
 //
 // In MethodData* parlance, "dp" is a "data pointer", the actual address
@@ -2132,7 +2132,7 @@ private:
   DataLayout* data_layout_before(int bci) {
     // avoid SEGV on this edge case
     if (data_size() == 0)
-      return NULL;
+      return nullptr;
     DataLayout* layout = data_layout_at(hint_di());
     if (layout->bci() <= bci)
       return layout;
@@ -2283,7 +2283,7 @@ public:
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
   uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
-                                                   assert(aid != NULL, "arg_info must be not null");
+                                                   assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
                                                    return aid->arg_modified(a); }
 
@@ -2292,7 +2292,7 @@ public:
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
   void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
-                                                   assert(aid != NULL, "arg_info must be not null");
+                                                   assert(aid != nullptr, "arg_info must be not null");
                                                    assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
                                                    aid->set_arg_modified(a, v); }
 
@@ -2308,7 +2308,7 @@ public:
 
   int parameters_size_in_bytes() const {
     ParametersTypeData* param = parameters_type_data();
-    return param == NULL ? 0 : param->size_in_bytes();
+    return param == nullptr ? 0 : param->size_in_bytes();
   }
 
   // Accessors
@@ -2321,8 +2321,8 @@ public:
   ProfileData* first_data() const { return data_at(first_di()); }
   ProfileData* next_data(ProfileData* current) const;
   DataLayout*  next_data_layout(DataLayout* current) const;
-  bool is_valid(ProfileData* current) const { return current != NULL; }
-  bool is_valid(DataLayout*  current) const { return current != NULL; }
+  bool is_valid(ProfileData* current) const { return current != nullptr; }
+  bool is_valid(DataLayout*  current) const { return current != nullptr; }
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) const {
@@ -2335,30 +2335,30 @@ public:
     return dp_to_di(bci_to_dp(bci));
   }
 
-  // Get the data at an arbitrary bci, or NULL if there is none.
+  // Get the data at an arbitrary bci, or null if there is none.
   ProfileData* bci_to_data(int bci);
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
-    ProfileData* data = NULL;
-    // If m not NULL, try to allocate a SpeculativeTrapData entry
-    if (m == NULL) {
+    ProfileData* data = nullptr;
+    // If m not null, try to allocate a SpeculativeTrapData entry
+    if (m == nullptr) {
       data = bci_to_data(bci);
     }
-    if (data != NULL) {
+    if (data != nullptr) {
       return data;
     }
     data = bci_to_extra_data(bci, m, true);
-    if (data != NULL) {
+    if (data != nullptr) {
       return data;
     }
     // If SpeculativeTrapData allocation fails try to allocate a
     // regular entry
     data = bci_to_data(bci);
-    if (data != NULL) {
+    if (data != nullptr) {
       return data;
     }
-    return bci_to_extra_data(bci, NULL, true);
+    return bci_to_extra_data(bci, nullptr, true);
   }
 
   // Add a handful of extra data records, for trap tracking.
@@ -2409,7 +2409,7 @@ public:
   // Return pointer to area dedicated to parameters in MDO
   ParametersTypeData* parameters_type_data() const {
     assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
-    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di)->data_in()->as_ParametersTypeData() : NULL;
+    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di)->data_in()->as_ParametersTypeData() : nullptr;
   }
 
   int parameters_type_data_di() const {
@@ -2449,8 +2449,9 @@ public:
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodDataType; }
 
-  // Deallocation support - no metaspace pointer fields to deallocate
-  void deallocate_contents(ClassLoaderData* loader_data) {}
+  // Deallocation support
+  void deallocate_contents(ClassLoaderData* loader_data);
+  void release_C_heap_structures();
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }

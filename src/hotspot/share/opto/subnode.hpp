@@ -153,6 +153,7 @@ public:
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
+  virtual const Type* Value(PhaseGVN* phase) const;
 };
 
 //------------------------------CmpUNode---------------------------------------

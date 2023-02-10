@@ -2872,11 +2872,11 @@ public class Check {
     /** Enter interface into into set.
      *  If it existed already, issue a "repeated interface" error.
      */
-    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Type> its) {
-        if (its.contains(it))
+    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Symbol> its) {
+        if (its.contains(it.tsym))
             log.error(pos, Errors.RepeatedInterface);
         else {
-            its.add(it);
+            its.add(it.tsym);
         }
     }
 
@@ -3005,6 +3005,16 @@ public class Check {
                     rc.appendAttributes(s.getRawAttributes().stream().filter(anno ->
                             Arrays.stream(getTargetNames(anno.type.tsym)).anyMatch(name -> name == names.RECORD_COMPONENT)
                     ).collect(List.collector()));
+
+                    JCVariableDecl fieldAST = (JCVariableDecl) declarationTree;
+                    for (JCAnnotation fieldAnnot : fieldAST.mods.annotations) {
+                        for (JCAnnotation rcAnnot : rc.declarationFor().mods.annotations) {
+                            if (rcAnnot.pos == fieldAnnot.pos) {
+                                rcAnnot.setType(fieldAnnot.type);
+                                break;
+                            }
+                        }
+                    }
 
                     /* At this point, we used to carry over any type annotations from the VARDEF to the record component, but
                      * that is problematic, since we get here only when *some* annotation is applied to the SE5 (declaration)
@@ -4346,73 +4356,106 @@ public class Check {
      * @param cases the cases that should be checked.
      */
     void checkSwitchCaseStructure(List<JCCase> cases) {
-        boolean wasConstant = false;          // Seen a constant in the same case label
-        boolean wasDefault = false;           // Seen a default in the same case label
-        boolean wasNullPattern = false;       // Seen a null pattern in the same case label,
-                                              //or fall through from a null pattern
-        boolean wasPattern = false;           // Seen a pattern in the same case label
-                                              //or fall through from a pattern
-        boolean wasTypePattern = false;       // Seen a pattern in the same case label
-                                              //or fall through from a type pattern
-        boolean wasNonEmptyFallThrough = false;
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
-            for (JCCaseLabel label : c.labels) {
-                if (label.hasTag(CONSTANTCASELABEL)) {
-                    JCExpression expr = ((JCConstantCaseLabel) label).expr;
-                    if (TreeInfo.isNull(expr)) {
-                        if (wasPattern && !wasTypePattern && !wasNonEmptyFallThrough) {
-                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
+            if (c.labels.head instanceof JCConstantCaseLabel constLabel) {
+                if (TreeInfo.isNull(constLabel.expr)) {
+                    if (c.labels.tail.nonEmpty()) {
+                        if (c.labels.tail.head instanceof JCDefaultCaseLabel defLabel) {
+                            if (c.labels.tail.tail.nonEmpty()) {
+                                log.error(c.labels.tail.tail.head.pos(), Errors.InvalidCaseLabelCombination);
+                            }
+                        } else {
+                            log.error(c.labels.tail.head.pos(), Errors.InvalidCaseLabelCombination);
                         }
-                        wasNullPattern = true;
-                    } else {
-                        if (wasPattern && !wasNonEmptyFallThrough) {
-                            log.error(label.pos(), Errors.FlowsThroughFromPattern);
-                        }
-                        wasConstant = true;
                     }
-                } else if (label.hasTag(DEFAULTCASELABEL)) {
-                    if (wasPattern && !wasNonEmptyFallThrough) {
-                        log.error(label.pos(), Errors.FlowsThroughFromPattern);
-                    }
-                    wasDefault = true;
                 } else {
-                    JCPattern pat = ((JCPatternCaseLabel) label).pat;
-                    while (pat instanceof JCParenthesizedPattern parenthesized) {
-                        pat = parenthesized.pattern;
+                    for (JCCaseLabel label : c.labels.tail) {
+                        if (!(label instanceof JCConstantCaseLabel) || TreeInfo.isNullCaseLabel(label)) {
+                            log.error(label.pos(), Errors.InvalidCaseLabelCombination);
+                            break;
+                        }
                     }
-                    boolean isTypePattern = pat.hasTag(BINDINGPATTERN);
-                    if (wasPattern || wasConstant || wasDefault ||
-                        (wasNullPattern && (!isTypePattern || wasNonEmptyFallThrough))) {
-                        log.error(label.pos(), Errors.FlowsThroughToPattern);
-                    }
-                    wasPattern = true;
-                    wasTypePattern = isTypePattern;
+                }
+            } else {
+                if (c.labels.tail.nonEmpty()) {
+                    log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
+        }
 
-            boolean completesNormally = c.caseKind == CaseTree.CaseKind.STATEMENT ? c.completesNormally
-                                                                                  : false;
+        boolean isCaseStatementGroup = cases.nonEmpty() &&
+                                       cases.head.caseKind == CaseTree.CaseKind.STATEMENT;
 
-            if (c.stats.nonEmpty()) {
-                wasConstant = false;
-                wasDefault = false;
-                wasNullPattern &= completesNormally;
-                wasPattern &= completesNormally;
-                wasTypePattern &= completesNormally;
+        if (isCaseStatementGroup) {
+            boolean previousCompletessNormally = false;
+            for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+                JCCase c = l.head;
+                if (previousCompletessNormally &&
+                    c.stats.nonEmpty() &&
+                    c.labels.head instanceof JCPatternCaseLabel patternLabel &&
+                    hasBindings(patternLabel.pat)) {
+                    log.error(c.labels.head.pos(), Errors.FlowsThroughToPattern);
+                } else if (c.stats.isEmpty() &&
+                           c.labels.head instanceof JCPatternCaseLabel patternLabel &&
+                           hasBindings(patternLabel.pat) &&
+                           hasStatements(l.tail)) {
+                    log.error(c.labels.head.pos(), Errors.FlowsThroughFromPattern);
+                }
+                previousCompletessNormally = c.completesNormally;
             }
-
-            wasNonEmptyFallThrough = c.stats.nonEmpty() && completesNormally;
         }
     }
 
+    boolean hasBindings(JCPattern p) {
+        boolean[] bindings = new boolean[1];
+
+        new TreeScanner() {
+            @Override
+            public void visitBindingPattern(JCBindingPattern tree) {
+                bindings[0] = true;
+                super.visitBindingPattern(tree);
+            }
+        }.scan(p);
+
+        return bindings[0];
+    }
+
+    boolean hasStatements(List<JCCase> cases) {
+        for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
+            if (l.head.stats.nonEmpty()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     void checkSwitchCaseLabelDominated(List<JCCase> cases) {
         List<JCCaseLabel> caseLabels = List.nil();
+        boolean seenDefault = false;
+        boolean seenDefaultLabel = false;
+        boolean warnDominatedByDefault = false;
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
             for (JCCaseLabel label : c.labels) {
-                if (label.hasTag(DEFAULTCASELABEL) || TreeInfo.isNullCaseLabel(label)) {
+                if (label.hasTag(DEFAULTCASELABEL)) {
+                    seenDefault = true;
+                    seenDefaultLabel |=
+                            TreeInfo.isNullCaseLabel(c.labels.head);
                     continue;
+                }
+                if (TreeInfo.isNullCaseLabel(label)) {
+                    if (seenDefault) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                    }
+                    continue;
+                }
+                if (seenDefault && !warnDominatedByDefault) {
+                    if (label.hasTag(PATTERNCASELABEL) ||
+                        (label instanceof JCConstantCaseLabel && seenDefaultLabel)) {
+                        log.error(label.pos(), Errors.PatternDominated);
+                        warnDominatedByDefault = true;
+                    }
                 }
                 Type currentType = labelType(label);
                 for (JCCaseLabel testCaseLabel : caseLabels) {

@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,14 +43,14 @@
 // Instances of java.lang.ClassLoader holds a pointer to a ClassLoaderData that
 // that represent the loader's "linking domain" in the JVM.
 //
-// The bootstrap loader (represented by NULL) also has a ClassLoaderData,
+// The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
@@ -67,9 +67,9 @@
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -80,11 +80,11 @@
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
-ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = NULL;
+ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = nullptr;
 
 void ClassLoaderData::init_null_class_loader_data() {
-  assert(_the_null_class_loader_data == NULL, "cannot initialize twice");
-  assert(ClassLoaderDataGraph::_head == NULL, "cannot initialize twice");
+  assert(_the_null_class_loader_data == nullptr, "cannot initialize twice");
+  assert(ClassLoaderDataGraph::_head == nullptr, "cannot initialize twice");
 
   _the_null_class_loader_data = new ClassLoaderData(Handle(), false);
   ClassLoaderDataGraph::_head = _the_null_class_loader_data;
@@ -110,10 +110,10 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
   // Obtain the class loader's name.  If the class loader's name was not
   // explicitly set during construction, the CLD's _name field will be null.
   oop cl_name = java_lang_ClassLoader::name(class_loader());
-  if (cl_name != NULL) {
+  if (cl_name != nullptr) {
     const char* cl_instance_name = java_lang_String::as_utf8_string(cl_name);
 
-    if (cl_instance_name != NULL && cl_instance_name[0] != '\0') {
+    if (cl_instance_name != nullptr && cl_instance_name[0] != '\0') {
       _name = SymbolTable::new_symbol(cl_instance_name);
     }
   }
@@ -127,14 +127,14 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
   // name.  Thus CLD's _name_and_id field should never have a null value.
   oop cl_name_and_id = java_lang_ClassLoader::nameAndId(class_loader());
   const char* cl_instance_name_and_id =
-                  (cl_name_and_id == NULL) ? _class_loader_klass->external_name() :
+                  (cl_name_and_id == nullptr) ? _class_loader_klass->external_name() :
                                              java_lang_String::as_utf8_string(cl_name_and_id);
-  assert(cl_instance_name_and_id != NULL && cl_instance_name_and_id[0] != '\0', "class loader has no name and id");
+  assert(cl_instance_name_and_id != nullptr && cl_instance_name_and_id[0] != '\0', "class loader has no name and id");
   _name_and_id = SymbolTable::new_symbol(cl_instance_name_and_id);
 }
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder) :
-  _metaspace(NULL),
+  _metaspace(nullptr),
   _metaspace_lock(new Mutex(Mutex::nosafepoint-2, "MetaspaceAllocation_lock")),
   _unloading(false), _has_class_mirror_holder(has_class_mirror_holder),
   _modified_oops(true),
@@ -144,11 +144,11 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   _keep_alive((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
   _claim(0),
   _handles(),
-  _klasses(NULL), _packages(NULL), _modules(NULL), _unnamed_module(NULL), _dictionary(NULL),
-  _jmethod_ids(NULL),
-  _deallocate_list(NULL),
-  _next(NULL),
-  _class_loader_klass(NULL), _name(NULL), _name_and_id(NULL) {
+  _klasses(nullptr), _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr), _dictionary(nullptr),
+  _jmethod_ids(nullptr),
+  _deallocate_list(nullptr),
+  _next(nullptr),
+  _class_loader_klass(nullptr), _name(nullptr), _name_and_id(nullptr) {
 
   if (!h_class_loader.is_null()) {
     _class_loader = _handles.add(h_class_loader());
@@ -181,7 +181,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
 
 ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
   Chunk* c = _head;
-  while (c != NULL) {
+  while (c != nullptr) {
     Chunk* next = c->_next;
     delete c;
     c = next;
@@ -189,7 +189,7 @@ ClassLoaderData::ChunkedHandleList::~ChunkedHandleList() {
 }
 
 OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
-  if (_head == NULL || _head->_size == Chunk::CAPACITY) {
+  if (_head == nullptr || _head->_size == Chunk::CAPACITY) {
     Chunk* next = new Chunk(_head);
     Atomic::release_store(&_head, next);
   }
@@ -202,7 +202,7 @@ OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
   Chunk* chunk = _head;
-  while (chunk != NULL) {
+  while (chunk != nullptr) {
     count += chunk->_size;
     chunk = chunk->_next;
   }
@@ -211,18 +211,16 @@ int ClassLoaderData::ChunkedHandleList::count() const {
 
 inline void ClassLoaderData::ChunkedHandleList::oops_do_chunk(OopClosure* f, Chunk* c, const juint size) {
   for (juint i = 0; i < size; i++) {
-    if (c->_data[i] != NULL) {
-      f->do_oop(&c->_data[i]);
-    }
+    f->do_oop(&c->_data[i]);
   }
 }
 
 void ClassLoaderData::ChunkedHandleList::oops_do(OopClosure* f) {
   Chunk* head = Atomic::load_acquire(&_head);
-  if (head != NULL) {
+  if (head != nullptr) {
     // Must be careful when reading size of head
     oops_do_chunk(f, head, Atomic::load_acquire(&head->_size));
-    for (Chunk* c = head->_next; c != NULL; c = c->_next) {
+    for (Chunk* c = head->_next; c != nullptr; c = c->_next) {
       oops_do_chunk(f, c, c->_size);
     }
   }
@@ -236,7 +234,7 @@ class VerifyContainsOopClosure : public OopClosure {
   VerifyContainsOopClosure(oop target) : _target(target), _found(false) {}
 
   void do_oop(oop* p) {
-    if (p != NULL && NativeAccess<AS_NO_KEEPALIVE>::oop_load(p) == _target) {
+    if (p != nullptr && NativeAccess<AS_NO_KEEPALIVE>::oop_load(p) == _target) {
       _found = true;
     }
   }
@@ -260,7 +258,7 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 #ifndef PRODUCT
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
   Chunk* chunk = _head;
-  while (chunk != NULL) {
+  while (chunk != nullptr) {
     if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
       return true;
     }
@@ -336,7 +334,7 @@ void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oop
 
 void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     klass_closure->do_klass(k);
     assert(k != k->next_link(), "no loops!");
   }
@@ -344,7 +342,7 @@ void ClassLoaderData::classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderData::classes_do(void f(Klass * const)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     f(k);
     assert(k != k->next_link(), "no loops!");
   }
@@ -352,7 +350,7 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
 
 void ClassLoaderData::methods_do(void f(Method*)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
@@ -364,7 +362,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
   assert_locked_or_safepoint(MultiArray_lock);
 
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     // Filter out InstanceKlasses (or their ObjArrayKlasses) that have not entered the
     // loaded state.
     if (k->is_instance_klass()) {
@@ -383,7 +381,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
 #ifdef ASSERT
     oop m = k->java_mirror();
-    assert(m != NULL, "NULL mirror");
+    assert(m != nullptr, "nullptr mirror");
     assert(m->is_a(vmClasses::Class_klass()), "invalid mirror");
 #endif
     klass_closure->do_klass(k);
@@ -392,7 +390,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k->is_instance_klass()) {
       f(InstanceKlass::cast(k));
     }
@@ -402,23 +400,23 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
 
 void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
-  if (_unnamed_module != NULL) {
+  if (_unnamed_module != nullptr) {
     f(_unnamed_module);
   }
-  if (_modules != NULL) {
+  if (_modules != nullptr) {
     _modules->modules_do(f);
   }
 }
 
 void ClassLoaderData::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
-  if (_packages != NULL) {
+  if (_packages != nullptr) {
     _packages->packages_do(f);
   }
 }
 
 void ClassLoaderData::record_dependency(const Klass* k) {
-  assert(k != NULL, "invariant");
+  assert(k != nullptr, "invariant");
 
   ClassLoaderData * const from_cld = this;
   ClassLoaderData * const to_cld = k->class_loader_data();
@@ -500,7 +498,7 @@ void ClassLoaderData::add_class(Klass* k, bool publicize /* true */) {
 }
 
 void ClassLoaderData::initialize_holder(Handle loader_or_mirror) {
-  if (loader_or_mirror() != NULL) {
+  if (loader_or_mirror() != nullptr) {
     assert(_holder.is_null(), "never replace holders");
     _holder = WeakHandle(Universe::vm_weak(), loader_or_mirror);
   }
@@ -514,10 +512,10 @@ void ClassLoaderData::remove_class(Klass* scratch_class) {
   // Adjust global class iterator.
   ClassLoaderDataGraph::adjust_saved_class(scratch_class);
 
-  Klass* prev = NULL;
-  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+  Klass* prev = nullptr;
+  for (Klass* k = _klasses; k != nullptr; k = k->next_link()) {
     if (k == scratch_class) {
-      if (prev == NULL) {
+      if (prev == nullptr) {
         _klasses = k->next_link();
       } else {
         Klass* next = k->next_link();
@@ -559,7 +557,7 @@ void ClassLoaderData::unload() {
   // after erroneous classes are released.
   classes_do(InstanceKlass::unload_class);
 
-  // Method::clear_jmethod_ids only sets the jmethod_ids to NULL without
+  // Method::clear_jmethod_ids only sets the jmethod_ids to null without
   // releasing the memory for related JNIMethodBlocks and JNIMethodBlockNodes.
   // This is done intentionally because native code (e.g. JVMTI agent) holding
   // jmethod_ids may access them after the associated classes and class loader
@@ -567,10 +565,10 @@ void ClassLoaderData::unload() {
   // does not prevent the VM from unloading the class from which the ID has
   // been derived. After the class is unloaded, the method or field ID becomes
   // invalid". In real world usages, the native code may rely on jmethod_ids
-  // being NULL after class unloading. Hence, it is unsafe to free the memory
+  // being null after class unloading. Hence, it is unsafe to free the memory
   // from the VM side without knowing when native code is going to stop using
   // them.
-  if (_jmethod_ids != NULL) {
+  if (_jmethod_ids != nullptr) {
     Method::clear_jmethod_ids(this);
   }
 
@@ -582,10 +580,10 @@ ModuleEntryTable* ClassLoaderData::modules() {
   // Lazily create the module entry table at first request.
   // Lock-free access requires load_acquire.
   ModuleEntryTable* modules = Atomic::load_acquire(&_modules);
-  if (modules == NULL) {
+  if (modules == nullptr) {
     MutexLocker m1(Module_lock);
     // Check if _modules got allocated while we were waiting for this lock.
-    if ((modules = _modules) == NULL) {
+    if ((modules = _modules) == nullptr) {
       modules = new ModuleEntryTable();
 
       {
@@ -604,7 +602,7 @@ const int _default_loader_dictionary_size = 107;
 Dictionary* ClassLoaderData::create_dictionary() {
   assert(!has_class_mirror_holder(), "class mirror holder cld does not have a dictionary");
   int size;
-  if (_the_null_class_loader_data == NULL) {
+  if (_the_null_class_loader_data == nullptr) {
     size = _boot_loader_dictionary_size;
   } else if (class_loader()->is_a(vmClasses::reflect_DelegatingClassLoader_klass())) {
     size = 1;  // there's only one class in relection class loader and no initiated classes
@@ -624,26 +622,26 @@ oop ClassLoaderData::holder() const {
   // or a reachable object making it alive again. The SATB part of G1 needs
   // to get notified about this potential resurrection, otherwise the marking
   // might not find the object.
-  if (!_holder.is_null()) {  // NULL class_loader
+  if (!_holder.is_null()) {  // null class_loader
     return _holder.resolve();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
 // Let the GC read the holder without keeping it alive.
 oop ClassLoaderData::holder_no_keepalive() const {
-  if (!_holder.is_null()) {  // NULL class_loader
+  if (!_holder.is_null()) {  // null class_loader
     return _holder.peek();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
 // Unloading support
 bool ClassLoaderData::is_alive() const {
   bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class.
-      || (_holder.peek() != NULL);  // and not cleaned by the GC weak handle processing.
+      || (_holder.peek() != nullptr);  // and not cleaned by the GC weak handle processing.
 
   return alive;
 }
@@ -681,35 +679,35 @@ ClassLoaderData::~ClassLoaderData() {
   _holder.release(Universe::vm_weak());
 
   // Release C heap allocated hashtable for all the packages.
-  if (_packages != NULL) {
+  if (_packages != nullptr) {
     // Destroy the table itself
     delete _packages;
-    _packages = NULL;
+    _packages = nullptr;
   }
 
   // Release C heap allocated hashtable for all the modules.
-  if (_modules != NULL) {
+  if (_modules != nullptr) {
     // Destroy the table itself
     delete _modules;
-    _modules = NULL;
+    _modules = nullptr;
   }
 
   // Release C heap allocated hashtable for the dictionary
-  if (_dictionary != NULL) {
+  if (_dictionary != nullptr) {
     // Destroy the table itself
     delete _dictionary;
-    _dictionary = NULL;
+    _dictionary = nullptr;
   }
 
-  if (_unnamed_module != NULL) {
+  if (_unnamed_module != nullptr) {
     delete _unnamed_module;
-    _unnamed_module = NULL;
+    _unnamed_module = nullptr;
   }
 
   // release the metaspace
   ClassLoaderMetaspace *m = _metaspace;
-  if (m != NULL) {
-    _metaspace = NULL;
+  if (m != nullptr) {
+    _metaspace = nullptr;
     delete m;
   }
 
@@ -717,15 +715,15 @@ ClassLoaderData::~ClassLoaderData() {
   delete _metaspace_lock;
 
   // Delete free list
-  if (_deallocate_list != NULL) {
+  if (_deallocate_list != nullptr) {
     delete _deallocate_list;
   }
 
   // Decrement refcounts of Symbols if created.
-  if (_name != NULL) {
+  if (_name != nullptr) {
     _name->decrement_refcount();
   }
-  if (_name_and_id != NULL) {
+  if (_name_and_id != nullptr) {
     _name_and_id->decrement_refcount();
   }
 }
@@ -768,12 +766,12 @@ ClassLoaderMetaspace* ClassLoaderData::metaspace_non_null() {
   // simply for delegating with no metadata of their own.
   // Lock-free access requires load_acquire.
   ClassLoaderMetaspace* metaspace = Atomic::load_acquire(&_metaspace);
-  if (metaspace == NULL) {
+  if (metaspace == nullptr) {
     MutexLocker ml(_metaspace_lock,  Mutex::_no_safepoint_check_flag);
     // Check if _metaspace got allocated while we were waiting for this lock.
-    if ((metaspace = _metaspace) == NULL) {
+    if ((metaspace = _metaspace) == nullptr) {
       if (this == the_null_class_loader_data()) {
-        assert (class_loader() == NULL, "Must be");
+        assert (class_loader() == nullptr, "Must be");
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::BootMetaspaceType);
       } else if (has_class_mirror_holder()) {
         metaspace = new ClassLoaderMetaspace(_metaspace_lock, Metaspace::ClassMirrorHolderMetaspaceType);
@@ -798,15 +796,15 @@ OopHandle ClassLoaderData::add_handle(Handle h) {
 void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
   oop* ptr = h.ptr_raw();
-  if (ptr != NULL) {
+  if (ptr != nullptr) {
     assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-    NativeAccess<>::oop_store(ptr, oop(NULL));
+    NativeAccess<>::oop_store(ptr, oop(nullptr));
   }
 }
 
 void ClassLoaderData::init_handle_locked(OopHandle& dest, Handle h) {
   MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-  if (dest.resolve() != NULL) {
+  if (dest.resolve() != nullptr) {
     return;
   } else {
     record_modified_oops();
@@ -820,10 +818,11 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
   // Metadata in shared region isn't deleted.
   if (!m->is_shared()) {
     MutexLocker ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
-    if (_deallocate_list == NULL) {
-      _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
+    if (_deallocate_list == nullptr) {
+      _deallocate_list = new (mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }
@@ -835,7 +834,7 @@ void ClassLoaderData::free_deallocate_list() {
   // safepoint cleanup time.
   assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   assert(!is_unloading(), "only called for ClassLoaderData that are not unloading");
-  if (_deallocate_list == NULL) {
+  if (_deallocate_list == nullptr) {
     return;
   }
   // Go backwards because this removes entries that are freed.
@@ -874,7 +873,7 @@ void ClassLoaderData::free_deallocate_list() {
 void ClassLoaderData::free_deallocate_list_C_heap_structures() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(is_unloading(), "only called for ClassLoaderData that are unloading");
-  if (_deallocate_list == NULL) {
+  if (_deallocate_list == nullptr) {
     return;
   }
   // Go backwards because this removes entries that are freed.
@@ -900,9 +899,9 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
 // If the class loader's _name has not been explicitly set, the class loader's
 // qualified class name is returned.
 const char* ClassLoaderData::loader_name() const {
-   if (_class_loader_klass == NULL) {
+   if (_class_loader_klass == nullptr) {
      return BOOTSTRAP_LOADER_NAME;
-   } else if (_name != NULL) {
+   } else if (_name != nullptr) {
      return _name->as_C_string();
    } else {
      return _class_loader_klass->external_name();
@@ -915,9 +914,9 @@ const char* ClassLoaderData::loader_name() const {
 //   If the defining loader has no name then <qualified-class-name> @<id>
 //   If built-in loader, then omit '@<id>' as there is only one instance.
 const char* ClassLoaderData::loader_name_and_id() const {
-  if (_class_loader_klass == NULL) {
+  if (_class_loader_klass == nullptr) {
     return "'" BOOTSTRAP_LOADER_NAME "'";
-  } else if (_name_and_id != NULL) {
+  } else if (_name_and_id != nullptr) {
     return _name_and_id->as_C_string();
   } else {
     // May be called in a race before _name_and_id is initialized.
@@ -926,7 +925,7 @@ const char* ClassLoaderData::loader_name_and_id() const {
 }
 
 void ClassLoaderData::print_value_on(outputStream* out) const {
-  if (!is_unloading() && class_loader() != NULL) {
+  if (!is_unloading() && class_loader() != nullptr) {
     out->print("loader data: " INTPTR_FORMAT " for instance ", p2i(this));
     class_loader()->print_value_on(out);  // includes loader_name_and_id() and address of class loader instance
   } else {
@@ -972,6 +971,8 @@ void ClassLoaderData::print_on(outputStream* out) const {
     case _claim_none:                       out->print_cr("none"); break;
     case _claim_finalizable:                out->print_cr("finalizable"); break;
     case _claim_strong:                     out->print_cr("strong"); break;
+    case _claim_stw_fullgc_mark:            out->print_cr("stw full gc mark"); break;
+    case _claim_stw_fullgc_adjust:          out->print_cr("stw full gc adjust"); break;
     case _claim_other:                      out->print_cr("other"); break;
     case _claim_other | _claim_finalizable: out->print_cr("other and finalizable"); break;
     case _claim_other | _claim_strong:      out->print_cr("other and strong"); break;
@@ -996,7 +997,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
   } else {
     out->print_cr(" - dictionary          " INTPTR_FORMAT, p2i(_dictionary));
   }
-  if (_jmethod_ids != NULL) {
+  if (_jmethod_ids != nullptr) {
     out->print   (" - jmethod count       ");
     Method::print_jmethod_ids_count(this, out);
     out->print_cr("");
@@ -1008,34 +1009,64 @@ void ClassLoaderData::print_on(outputStream* out) const {
 
 void ClassLoaderData::print() const { print_on(tty); }
 
+class VerifyHandleOops : public OopClosure {
+  VerifyOopClosure vc;
+ public:
+  virtual void do_oop(oop* p) {
+    if (p != nullptr && *p != nullptr) {
+      oop o = *p;
+      if (!java_lang_Class::is_instance(o)) {
+        // is_instance will assert for an invalid oop.
+        // Walk the resolved_references array and other assorted oops in the
+        // CLD::_handles field.  The mirror oops are followed by other heap roots.
+        o->oop_iterate(&vc);
+      }
+    }
+  }
+  virtual void do_oop(narrowOop* o) { ShouldNotReachHere(); }
+};
+
 void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
 
   guarantee(this == class_loader_data(cl) || has_class_mirror_holder(), "Must be the same");
-  guarantee(cl != NULL || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
+  guarantee(cl != nullptr || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
 
   // Verify the integrity of the allocated space.
 #ifdef ASSERT
-  if (metaspace_or_null() != NULL) {
+  if (metaspace_or_null() != nullptr) {
     metaspace_or_null()->verify();
   }
 #endif
 
-  for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
+  for (Klass* k = _klasses; k != nullptr; k = k->next_link()) {
     guarantee(k->class_loader_data() == this, "Must be the same");
     k->verify();
     assert(k != k->next_link(), "no loops!");
   }
 
-  if (_modules != NULL) {
+  if (_modules != nullptr) {
     _modules->verify();
   }
+
+  if (_deallocate_list != nullptr) {
+    for (int i = _deallocate_list->length() - 1; i >= 0; i--) {
+      Metadata* m = _deallocate_list->at(i);
+      if (m->is_klass()) {
+        ((Klass*)m)->verify();
+      }
+    }
+  }
+
+  // Check the oops in the handles area
+  VerifyHandleOops vho;
+  oops_do(&vho, _claim_none, false);
 }
 
 bool ClassLoaderData::contains_klass(Klass* klass) {
   // Lock-free access requires load_acquire
-  for (Klass* k = Atomic::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
+  for (Klass* k = Atomic::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k == klass) return true;
   }
   return false;

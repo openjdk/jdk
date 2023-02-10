@@ -63,20 +63,10 @@ import sun.security.util.DerOutputStream;
  * @author Anne Anderson
  * @since       1.4
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificatePoliciesExtension extends Extension
-implements CertAttrSet<String> {
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT = "x509.info.extensions.CertificatePolicies";
-    /**
-     * Attribute names.
-     */
+public class CertificatePoliciesExtension extends Extension {
+
     public static final String NAME = "CertificatePolicies";
-    public static final String POLICIES = "policies";
 
     /**
      * List of PolicyInformation for this object.
@@ -84,7 +74,7 @@ implements CertAttrSet<String> {
     private List<PolicyInformation> certPolicies;
 
     // Encode this extension value.
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (certPolicies == null || certPolicies.isEmpty()) {
             this.extensionValue = null;
         } else {
@@ -106,8 +96,7 @@ implements CertAttrSet<String> {
      *
      * @param certPolicies the List of PolicyInformation.
      */
-    public CertificatePoliciesExtension(List<PolicyInformation> certPolicies)
-    throws IOException {
+    public CertificatePoliciesExtension(List<PolicyInformation> certPolicies) {
         this(Boolean.FALSE, certPolicies);
     }
 
@@ -116,10 +105,14 @@ implements CertAttrSet<String> {
      * a List of PolicyInformation with specified criticality.
      *
      * @param critical true if the extension is to be treated as critical.
-     * @param certPolicies the List of PolicyInformation.
+     * @param certPolicies the List of PolicyInformation, cannot be null or empty.
      */
     public CertificatePoliciesExtension(Boolean critical,
-            List<PolicyInformation> certPolicies) throws IOException {
+            List<PolicyInformation> certPolicies) {
+        if (certPolicies == null || certPolicies.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "certificate policies cannot be null or empty");
+        }
         this.certPolicies = certPolicies;
         this.extensionId = PKIXExtensions.CertificatePolicies_Id;
         this.critical = critical.booleanValue();
@@ -174,10 +167,9 @@ implements CertAttrSet<String> {
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
           extensionId = PKIXExtensions.CertificatePolicies_Id;
           critical = false;
@@ -187,44 +179,19 @@ implements CertAttrSet<String> {
     }
 
     /**
-     * Set the attribute value.
+     * Get the PolicyInformation value.
      */
-    @SuppressWarnings("unchecked") // Checked with an instanceof check
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(POLICIES)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            certPolicies = (List<PolicyInformation>)obj;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:CertificatePoliciesExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public List<PolicyInformation> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(POLICIES)) {
-            //XXXX May want to consider cloning this
-            return certPolicies;
-        } else {
-          throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:CertificatePoliciesExtension.");
-        }
+    public List<PolicyInformation> getCertPolicies() {
+        return certPolicies;
     }
 
 
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
-        return (NAME);
+        return NAME;
     }
 }

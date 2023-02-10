@@ -50,6 +50,11 @@ public:
   }
 };
 
+G1YoungGCEvacFailureInjector::G1YoungGCEvacFailureInjector()
+  : _inject_evacuation_failure_for_current_gc(),
+    _last_collection_with_evacuation_failure(),
+    _evac_failure_regions(mtGC) {}
+
 void G1YoungGCEvacFailureInjector::select_evac_failure_regions() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _evac_failure_regions.reinitialize(g1h->max_reserved_regions());

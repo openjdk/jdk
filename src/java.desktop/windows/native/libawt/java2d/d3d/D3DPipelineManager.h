@@ -37,7 +37,7 @@ typedef struct D3DAdapter
     HWND fsFocusWindow;
 } D3DAdapter;
 
-class D3DPIPELINE_API D3DPipelineManager
+class D3DPipelineManager
 {
     friend class D3DInitializer;
 private:

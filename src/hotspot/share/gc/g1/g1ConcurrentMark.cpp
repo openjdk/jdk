@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -49,7 +50,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -57,7 +57,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
-#include "include/jvm.h"
+#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -387,12 +387,13 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _first_overflow_barrier_sync(),
   _second_overflow_barrier_sync(),
 
+  _completed_mark_cycles(0),
   _has_overflown(false),
   _concurrent(false),
   _has_aborted(false),
   _restart_for_overflow(false),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) G1OldTracer()),
+  _gc_timer_cm(new ConcurrentGCTimer()),
+  _gc_tracer_cm(new G1OldTracer()),
 
   // _verbose_level set below
 
@@ -790,7 +791,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
 
-  G1CollectedHeap::start_codecache_marking_cycle_if_inactive();
+  G1CollectedHeap::start_codecache_marking_cycle_if_inactive(true /* concurrent_mark_start */);
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
@@ -1009,10 +1010,18 @@ void G1ConcurrentMark::concurrent_cycle_start() {
   _g1h->trace_heap_before_gc(_gc_tracer_cm);
 }
 
-void G1ConcurrentMark::concurrent_cycle_end() {
+uint G1ConcurrentMark::completed_mark_cycles() const {
+  return Atomic::load(&_completed_mark_cycles);
+}
+
+void G1ConcurrentMark::concurrent_cycle_end(bool mark_cycle_completed) {
   _g1h->collector_state()->set_clearing_bitmap(false);
 
   _g1h->trace_heap_after_gc(_gc_tracer_cm);
+
+  if (mark_cycle_completed) {
+    Atomic::inc(&_completed_mark_cycles, memory_order_relaxed);
+  }
 
   if (has_aborted()) {
     log_info(gc, marking)("Concurrent Mark Abort");
@@ -1290,6 +1299,8 @@ void G1ConcurrentMark::remark() {
     assert(!restart_for_overflow(), "sanity");
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
+
+    G1CollectedHeap::finish_codecache_marking_cycle();
   } else {
     // We overflowed.  Restart concurrent marking.
     _restart_for_overflow = true;
@@ -1305,9 +1316,6 @@ void G1ConcurrentMark::remark() {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
     report_object_count(mark_finished);
   }
-
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 
   // Statistics
   double now = os::elapsedTime();
@@ -1771,28 +1779,24 @@ class G1RemarkThreadsClosure : public ThreadClosure {
   G1SATBMarkQueueSet& _qset;
   G1CMOopClosure _cm_cl;
   MarkingCodeBlobClosure _code_cl;
-  uintx _claim_token;
 
  public:
   G1RemarkThreadsClosure(G1CollectedHeap* g1h, G1CMTask* task) :
     _qset(G1BarrierSet::satb_mark_queue_set()),
     _cm_cl(g1h, task),
-    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */),
-    _claim_token(Threads::thread_claim_token()) {}
+    _code_cl(&_cm_cl, !CodeBlobToOopClosure::FixRelocations, true /* keepalive nmethods */) {}
 
   void do_thread(Thread* thread) {
-    if (thread->claim_threads_do(true, _claim_token)) {
-      // Transfer any partial buffer to the qset for completed buffer processing.
-      _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
-      if (thread->is_Java_thread()) {
-        // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
-        // however the liveness of oops reachable from nmethods have very complex lifecycles:
-        // * Alive if on the stack of an executing method
-        // * Weakly reachable otherwise
-        // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
-        // live by the SATB invariant but other oops recorded in nmethods may behave differently.
-        JavaThread::cast(thread)->nmethods_do(&_code_cl);
-      }
+    // Transfer any partial buffer to the qset for completed buffer processing.
+    _qset.flush_queue(G1ThreadLocalData::satb_mark_queue(thread));
+    if (thread->is_Java_thread()) {
+      // In theory it should not be necessary to explicitly walk the nmethods to find roots for concurrent marking
+      // however the liveness of oops reachable from nmethods have very complex lifecycles:
+      // * Alive if on the stack of an executing method
+      // * Weakly reachable otherwise
+      // Some objects reachable from nmethods, such as the class loader (or klass_holder) of the receiver should be
+      // live by the SATB invariant but other oops recorded in nmethods may behave differently.
+      JavaThread::cast(thread)->nmethods_do(&_code_cl);
     }
   }
 };
@@ -1807,7 +1811,7 @@ public:
       ResourceMark rm;
 
       G1RemarkThreadsClosure threads_f(G1CollectedHeap::heap(), task);
-      Threads::threads_do(&threads_f);
+      Threads::possibly_parallel_threads_do(true /* is_par */, &threads_f);
     }
 
     do {
@@ -2108,7 +2112,7 @@ static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h
 
 G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
                                G1CMTask* task)
-  : MetadataVisitingOopIterateClosure(get_cm_oop_closure_ref_processor(g1h)),
+  : ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_strong, get_cm_oop_closure_ref_processor(g1h)),
     _g1h(g1h), _task(task)
 { }
 
@@ -3051,8 +3055,10 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
     return;
   }
 
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  _total_remset_bytes += g1h->card_set_freelist_pool()->mem_size();
   // add static memory usages to remembered set sizes
-  _total_remset_bytes += G1CardSetFreePool::free_list_pool()->mem_size() + HeapRegionRemSet::static_mem_size();
+  _total_remset_bytes += HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

@@ -57,9 +57,18 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     }
 
     @Override
-    public void addSelectedNodes(Collection<InputNode> nodes) {
+    public void centerSelectedNodes() {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
-            editor.addSelectedNodes(nodes, false);
+            editor.centerSelectedNodes();
+            editor.requestActive();
+        }
+    }
+
+    @Override
+    public void addSelectedNodes(Collection<InputNode> nodes, boolean showIfHidden) {
+        if (editor != null && EditorTopComponent.isOpen(editor)) {
+            editor.addSelectedNodes(nodes, showIfHidden);
+            editor.requestActive();
         }
     }
 
@@ -67,6 +76,7 @@ public class EditorInputGraphProvider implements InputGraphProvider {
     public void clearSelectedNodes() {
         if (editor != null && EditorTopComponent.isOpen(editor)) {
             editor.clearSelectedNodes();
+            editor.requestActive();
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,6 +657,15 @@ final class Long512Vector extends LongVector {
             Objects.requireNonNull(mask);
             Long512Mask m = (Long512Mask)mask;
             return xor(m.not());
+        }
+
+        @Override
+        @ForceInline
+        /*package-private*/
+        Long512Mask indexPartiallyInUpperRange(long offset, long limit) {
+            return (Long512Mask) VectorSupport.indexPartiallyInUpperRange(
+                Long512Mask.class, long.class, VLENGTH, offset, limit,
+                (o, l) -> (Long512Mask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
         // Unary operations

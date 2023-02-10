@@ -8,7 +8,7 @@
 
 
 class Neg19 {
-    public static void main(String[] args) {
+    public static void meth() {
         new Neg19_01<Neg19>().foo(new Neg19_01<>()); // OK.
         new Neg19_01<Neg19>().foo(new Neg19_01<>() {}); // ERROR.
     }

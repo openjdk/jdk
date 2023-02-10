@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ bool ProtectionDomainCacheTable::equals(const WeakHandle& protection_domain1, co
 
 // WeakHandle is both the key and the value.  We need it as the key to compare the oops that each point to
 // for equality.  We need it as the value to return the one that already exists to link in the DictionaryEntry.
-ResourceHashtable<WeakHandle, WeakHandle, 1009, ResourceObj::C_HEAP, mtClass,
+ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
                   ProtectionDomainCacheTable::compute_hash,
                   ProtectionDomainCacheTable::equals> _pd_cache_table;
 
@@ -72,13 +72,13 @@ class CleanProtectionDomainEntries : public CLDClosure {
 
   void do_cld(ClassLoaderData* data) {
     Dictionary* dictionary = data->dictionary();
-    if (dictionary != NULL) {
+    if (dictionary != nullptr) {
       dictionary->clean_cached_protection_domains(_delete_list);
     }
   }
 };
 
-static GrowableArray<ProtectionDomainEntry*>* _delete_list = NULL;
+static GrowableArray<ProtectionDomainEntry*>* _delete_list = nullptr;
 
 class HandshakeForPD : public HandshakeClosure {
  public:
@@ -115,8 +115,8 @@ void ProtectionDomainCacheTable::unlink() {
   assert(java_lang_System::allow_security_manager(), "should not be called otherwise");
 
   // Create a list for holding deleted entries
-  if (_delete_list == NULL) {
-    _delete_list = new (ResourceObj::C_HEAP, mtClass)
+  if (_delete_list == nullptr) {
+    _delete_list = new (mtClass)
                        GrowableArray<ProtectionDomainEntry*>(20, mtClass);
   }
 

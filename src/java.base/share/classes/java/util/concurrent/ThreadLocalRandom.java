@@ -401,7 +401,7 @@ public final class ThreadLocalRandom extends Random {
         = new AtomicLong(RandomSupport.mixMurmur64(System.currentTimeMillis()) ^
                          RandomSupport.mixMurmur64(System.nanoTime()));
 
-    // used by ExtentLocal
+    // used by ScopedValue
     private static class Access {
         static {
             SharedSecrets.setJavaUtilConcurrentTLRAccess(
@@ -436,6 +436,10 @@ public final class ThreadLocalRandom extends Random {
 
         public long nextLong() {
             return ThreadLocalRandom.current().nextLong();
+        }
+
+        public double nextDouble() {
+            return ThreadLocalRandom.current().nextDouble();
         }
     }
 

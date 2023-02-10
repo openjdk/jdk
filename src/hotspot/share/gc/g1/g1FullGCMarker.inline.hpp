@@ -101,7 +101,7 @@ inline void G1FullGCMarker::push_objarray(oop obj, size_t index) {
 }
 
 inline void G1FullGCMarker::follow_array(objArrayOop array) {
-  follow_klass(array->klass());
+  mark_closure()->do_klass(array->klass());
   // Don't push empty arrays to avoid unnecessary work.
   if (array->length() > 0) {
     push_objarray(array, 0);
@@ -127,7 +127,7 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
     _verify_closure.set_containing_obj(array);
     array->oop_iterate_range(&_verify_closure, beg_index, end_index);
     if (_verify_closure.failures()) {
-      assert(false, "Failed");
+      fatal("there should not have been any failures");
     }
   }
 }
@@ -148,7 +148,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
       obj->oop_iterate(&_verify_closure);
       if (_verify_closure.failures()) {
         log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        assert(false, "Failed");
+        fatal("there should not have been any failures");
       }
     }
   }
@@ -191,15 +191,6 @@ void G1FullGCMarker::follow_marking_stacks() {
       follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!is_empty());
-}
-
-inline void G1FullGCMarker::follow_klass(Klass* k) {
-  oop op = k->class_loader_data()->holder_no_keepalive();
-  mark_and_push(&op);
-}
-
-inline void G1FullGCMarker::follow_cld(ClassLoaderData* cld) {
-  _cld_closure.do_cld(cld);
 }
 
 #endif // SHARE_GC_G1_G1FULLGCMARKER_INLINE_HPP

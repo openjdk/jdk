@@ -88,7 +88,7 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_blobType_single(outputStream *ast, u2 /* blobType */ type);
   static void print_count_single(outputStream *ast, unsigned short count);
   static void print_space_single(outputStream *ast, unsigned short space);
-  static void print_age_single(outputStream *ast, unsigned int age);
+  static void print_age_single(outputStream *ast, int age);
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static blobType get_cbType(CodeBlob* cb);
@@ -119,9 +119,9 @@ class CodeHeapState : public CHeapObj<mtCode> {
 class StatElement : public CHeapObj<mtCode> {
   public:
     // A note on ages: The compilation_id easily overflows unsigned short in large systems
-    unsigned int       t1_age;      // oldest compilation_id of tier1 nMethods.
-    unsigned int       t2_age;      // oldest compilation_id of tier2 nMethods.
-    unsigned int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
+    int       t1_age;      // oldest compilation_id of tier1 nMethods.
+    int       t2_age;      // oldest compilation_id of tier2 nMethods.
+    int       tx_age;      // oldest compilation_id of inactive/not entrant nMethods.
     unsigned short     t1_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     t2_space;    // in units of _segment_size to "prevent" overflow
     unsigned short     tx_space;    // in units of _segment_size to "prevent" overflow

@@ -1086,7 +1086,11 @@ public class TypeAnnotations {
                                         newPath, currentLambda,
                                         outer_type_index, location);
                 }
-
+                case DECONSTRUCTION_PATTERN: {
+                    // TODO: Treat case labels as full type contexts for complete type annotation support in Record Patterns
+                    //    https://bugs.openjdk.org/browse/JDK-8298154
+                    return TypeAnnotationPosition.unknown;
+                }
                 default:
                     throw new AssertionError("Unresolved frame: " + frame +
                                              " of kind: " + frame.getKind() +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,9 +138,11 @@ CodeBuffer::~CodeBuffer() {
     delete cb->_overflow_arena;
   }
 
-  NOT_PRODUCT(clear_strings());
+  if (_shared_trampoline_requests != nullptr) {
+    delete _shared_trampoline_requests;
+  }
 
-  assert(_default_oop_recorder.allocated_on_stack_or_embedded(), "should be embedded object");
+  NOT_PRODUCT(clear_strings());
 }
 
 void CodeBuffer::initialize_oop_recorder(OopRecorder* r) {
@@ -350,8 +352,8 @@ void CodeSection::relocate(address at, RelocationHolder const& spec, int format)
   // each carrying the largest possible offset, to advance the locs_point.
   while (offset >= relocInfo::offset_limit()) {
     assert(end < locs_limit(), "adjust previous paragraph of code");
-    *end++ = filler_relocInfo();
-    offset -= filler_relocInfo().addr_offset();
+    *end++ = relocInfo::filler_info();
+    offset -= relocInfo::filler_info().addr_offset();
   }
 
   // If it's a simple reloc with no data, we'll just write (rtype | offset).
@@ -598,6 +600,17 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
   return -1;
 }
 
+int CodeBuffer::total_skipped_instructions_size() const {
+  int total_skipped_size = 0;
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
+    const CodeSection* cur_cs = code_section(n);
+    if (!cur_cs->is_empty()) {
+      total_skipped_size += cur_cs->_skipped_instructions_size;
+    }
+  }
+  return total_skipped_size;
+}
+
 csize_t CodeBuffer::total_relocation_size() const {
   csize_t total = copy_relocations_to(NULL);  // dry run only
   return (csize_t) align_up(total, HeapWordSize);
@@ -636,7 +649,7 @@ csize_t CodeBuffer::copy_relocations_to(address buf, csize_t buf_limit, bool onl
            code_point_so_far < new_code_point;
            code_point_so_far += jump) {
         jump = new_code_point - code_point_so_far;
-        relocInfo filler = filler_relocInfo();
+        relocInfo filler = relocInfo::filler_info();
         if (jump >= filler.addr_offset()) {
           jump = filler.addr_offset();
         } else {  // else shrink the filler to fit

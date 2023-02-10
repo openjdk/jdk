@@ -271,7 +271,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collectionset_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
                                             collection_set()->optional_region_length());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -290,7 +290,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
     uint _worker_humongous_total;
     uint _worker_humongous_candidates;
 
-    G1SegmentedArrayMemoryStats _card_set_stats;
+    G1MonotonicArenaMemoryStats _card_set_stats;
 
     void sample_card_set_size(HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
@@ -404,7 +404,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       return false;
     }
 
-    G1SegmentedArrayMemoryStats card_set_stats() const {
+    G1MonotonicArenaMemoryStats card_set_stats() const {
       return _card_set_stats;
     }
   };
@@ -414,7 +414,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
-  G1SegmentedArrayMemoryStats _all_card_set_stats;
+  G1MonotonicArenaMemoryStats _all_card_set_stats;
 
 public:
   G1PrepareEvacuationTask(G1CollectedHeap* g1h) :
@@ -448,7 +448,7 @@ public:
     return _humongous_total;
   }
 
-  const G1SegmentedArrayMemoryStats all_card_set_stats() const {
+  const G1MonotonicArenaMemoryStats all_card_set_stats() const {
     return _all_card_set_stats;
   }
 };
@@ -467,35 +467,58 @@ void G1YoungCollector::set_young_collection_default_active_worker_threads(){
   log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->max_workers());
 }
 
-void G1YoungCollector::flush_dirty_card_queues() {
+void G1YoungCollector::retire_tlabs() {
+  Ticks start = Ticks::now();
+  _g1h->retire_tlabs();
+  double retire_time = (Ticks::now() - start).seconds() * MILLIUNITS;
+  phase_times()->record_prepare_tlab_time_ms(retire_time);
+}
+
+void G1YoungCollector::concatenate_dirty_card_logs_and_stats() {
   Ticks start = Ticks::now();
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
   size_t old_cards = qset.num_cards();
-  qset.concatenate_logs();
-  size_t added_cards = qset.num_cards() - old_cards;
-  Tickspan concat_time = Ticks::now() - start;
-  policy()->record_concatenate_dirty_card_logs(concat_time, added_cards);
+  qset.concatenate_logs_and_stats();
+  size_t pending_cards = qset.num_cards();
+  size_t thread_buffer_cards = pending_cards - old_cards;
+  policy()->record_concurrent_refinement_stats(pending_cards, thread_buffer_cards);
+  double concat_time = (Ticks::now() - start).seconds() * MILLIUNITS;
+  phase_times()->record_concatenate_dirty_card_logs_time_ms(concat_time);
 }
 
-void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+#ifdef ASSERT
+void G1YoungCollector::verify_empty_dirty_card_logs() const {
+  struct Verifier : public ThreadClosure {
+    size_t _buffer_size;
+    Verifier() : _buffer_size(G1BarrierSet::dirty_card_queue_set().buffer_size()) {}
+    void do_thread(Thread* t) override {
+      G1DirtyCardQueue& queue = G1ThreadLocalData::dirty_card_queue(t);
+      assert((queue.buffer() == nullptr) || (queue.index() == _buffer_size),
+             "non-empty dirty card queue for thread");
+    }
+  } verifier;
+  Threads::threads_do(&verifier);
+}
+#endif // ASSERT
+
+void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) {
+  // Flush early, so later phases don't need to account for per-thread stuff.
+  // Flushes deferred card marks, so must precede concatenating logs.
+  retire_tlabs();
+
+  // Flush early, so later phases don't need to account for per-thread stuff.
+  concatenate_dirty_card_logs_and_stats();
+
+  calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
+
   // Please see comment in g1CollectedHeap.hpp and
   // G1CollectedHeap::ref_processing_init() to see how
   // reference processing currently works in G1.
   ref_processor_stw()->start_discovery(false /* always_clear */);
 
-   _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
+  _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
-
-  {
-    Ticks start = Ticks::now();
-    _g1h->retire_tlabs();
-    phase_times()->record_prepare_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
-  }
-
-  // Flush dirty card queues to qset, so later phases don't need to account
-  // for partially filled per-thread queues and such.
-  flush_dirty_card_queues();
 
   hot_card_cache()->reset_hot_cache_claimed_index();
 
@@ -519,7 +542,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info, 
   }
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
-  per_thread_states->preserved_marks_set()->assert_empty();
+  verify_empty_dirty_card_logs();
 
 #if COMPILER2_OR_JVMCI
   DerivedPointerTable::clear();
@@ -997,12 +1020,9 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   _g1h->record_obj_copy_mem_stats();
 
-  evacuation_info->set_collectionset_used_before(collection_set()->bytes_used_before());
   evacuation_info->set_bytes_used(_g1h->bytes_used_during_gc());
 
-  _g1h->start_new_collection_set();
-
-  _g1h->prepare_tlabs_for_mutator();
+  _g1h->prepare_for_mutator_after_young_collection();
 
   _g1h->gc_epilogue(false);
 
@@ -1012,19 +1032,6 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 bool G1YoungCollector::evacuation_failed() const {
   return _evac_failure_regions.evacuation_failed();
 }
-
-class G1PreservedMarksSet : public PreservedMarksSet {
-public:
-
-  G1PreservedMarksSet(uint num_workers) : PreservedMarksSet(true /* in_c_heap */) {
-    init(num_workers);
-  }
-
-  virtual ~G1PreservedMarksSet() {
-    assert_empty();
-    reclaim();
-  }
-};
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :
   _g1h(G1CollectedHeap::heap()),
@@ -1046,9 +1053,8 @@ void G1YoungCollector::collect() {
   // JFR
   G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
   // JStat/MXBeans
-  G1MonitoringScope ms(monitoring_support(),
-                       false /* full_gc */,
-                       collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
+  G1YoungGCMonitoringScope ms(monitoring_support(),
+                              collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
   // Create the heap printer before internal pause timing to have
   // heap information printed as last part of detailed GC log.
   G1HeapPrinterMark hpm(_g1h);
@@ -1073,19 +1079,13 @@ void G1YoungCollector::collect() {
     // other trivial setup above).
     policy()->record_young_collection_start();
 
-    calculate_collection_set(jtm.evacuation_info(), policy()->max_pause_time_ms());
+    pre_evacuate_collection_set(jtm.evacuation_info());
 
-    G1RedirtyCardsQueueSet rdcqs(G1BarrierSet::dirty_card_queue_set().allocator());
-    G1PreservedMarksSet preserved_marks_set(workers()->active_workers());
     G1ParScanThreadStateSet per_thread_states(_g1h,
-                                              &rdcqs,
-                                              &preserved_marks_set,
                                               workers()->active_workers(),
                                               collection_set()->young_region_length(),
                                               collection_set()->optional_region_length(),
                                               &_evac_failure_regions);
-
-    pre_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
     bool may_do_optional_evacuation = collection_set()->optional_region_length() != 0;
     // Actually do the work...

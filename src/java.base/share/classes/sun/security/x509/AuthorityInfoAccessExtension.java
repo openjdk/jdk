@@ -59,24 +59,11 @@ import sun.security.util.DerValue;
  * </pre>
  *
  * @see Extension
- * @see CertAttrSet
  */
 
-public class AuthorityInfoAccessExtension extends Extension
-        implements CertAttrSet<String> {
+public class AuthorityInfoAccessExtension extends Extension {
 
-    /**
-     * Identifier for this attribute, to be used with the
-     * get, set, delete methods of Certificate, x509 type.
-     */
-    public static final String IDENT =
-                                "x509.info.extensions.AuthorityInfoAccess";
-
-    /**
-     * Attribute name.
-     */
     public static final String NAME = "AuthorityInfoAccess";
-    public static final String DESCRIPTIONS = "descriptions";
 
     /**
      * The List of AccessDescription objects.
@@ -87,11 +74,14 @@ public class AuthorityInfoAccessExtension extends Extension
      * Create an AuthorityInfoAccessExtension from a List of
      * AccessDescription; the criticality is set to false.
      *
-     * @param accessDescriptions the List of AccessDescription
-     * @throws IOException on error
+     * @param accessDescriptions the List of AccessDescription,
+     *                           cannot be null or empty.
      */
     public AuthorityInfoAccessExtension(
-            List<AccessDescription> accessDescriptions) throws IOException {
+            List<AccessDescription> accessDescriptions) {
+        if (accessDescriptions == null || accessDescriptions.isEmpty()) {
+            throw new IllegalArgumentException("accessDescriptions is null or empty");
+        }
         this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
         this.critical = false;
         this.accessDescriptions = accessDescriptions;
@@ -136,7 +126,7 @@ public class AuthorityInfoAccessExtension extends Extension
     }
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {
@@ -147,10 +137,9 @@ public class AuthorityInfoAccessExtension extends Extension
      * Write the extension to the DerOutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (this.extensionValue == null) {
             this.extensionId = PKIXExtensions.AuthInfoAccess_Id;
             this.critical = false;
@@ -159,41 +148,8 @@ public class AuthorityInfoAccessExtension extends Extension
         super.encode(out);
     }
 
-    /**
-     * Set the attribute value.
-     */
-    @SuppressWarnings("unchecked") // Checked with an instanceof check
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            if (!(obj instanceof List)) {
-                throw new IOException("Attribute value should be of type List.");
-            }
-            accessDescriptions = (List<AccessDescription>)obj;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-        encodeThis();
-    }
-
-    /**
-     * Get the attribute value.
-     */
-    public List<AccessDescription> get(String name) throws IOException {
-        if (name.equalsIgnoreCase(DESCRIPTIONS)) {
-            return accessDescriptions;
-        } else {
-            throw new IOException("Attribute name [" + name +
-                                "] not recognized by " +
-                                "CertAttrSet:AuthorityInfoAccessExtension.");
-        }
-    }
-
-
-
-     // Encode this extension value
-    private void encodeThis() throws IOException {
+    // Encode this extension value
+    private void encodeThis() {
         if (accessDescriptions.isEmpty()) {
             this.extensionValue = null;
         } else {

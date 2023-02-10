@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public:
   Iterator();
   ~Iterator();
 
-  bool end() const { return _current == NULL; }
+  bool end() const { return _current == nullptr; }
   NonJavaThread* current() const { return _current; }
   void step();
 };
@@ -91,7 +91,7 @@ class NamedThread: public NonJavaThread {
   // May only be called once per thread.
   void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   virtual bool is_Named_thread() const { return true; }
-  virtual const char* name() const { return _name == NULL ? "Unknown Thread" : _name; }
+  virtual const char* name() const { return _name == nullptr ? "Unknown Thread" : _name; }
   virtual const char* type_name() const { return "NamedThread"; }
   Thread *processed_thread() { return _processed_thread; }
   void set_processed_thread(Thread *thread) { _processed_thread = thread; }

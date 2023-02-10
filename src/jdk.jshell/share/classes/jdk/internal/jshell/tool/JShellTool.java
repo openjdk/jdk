@@ -3090,7 +3090,7 @@ public class JShellTool implements MessageHandler {
                         scanner = new Scanner(new FileReader(path.toString()));
                     } else if ((resource = getResource(filename)) != null) {
                         scanner = new Scanner(new StringReader(resource));
-                    } else {
+                    } else if (interactiveModeBegun) {
                         if (url == null) {
                             try {
                                 @SuppressWarnings("deprecation")
@@ -3100,6 +3100,8 @@ public class JShellTool implements MessageHandler {
                             }
                         }
                         scanner = new Scanner(url.openStream());
+                    } else {
+                        throw new FileNotFoundException(filename);
                     }
                 }
                 try (var scannerIOContext = new ScannerIOContext(scanner)) {

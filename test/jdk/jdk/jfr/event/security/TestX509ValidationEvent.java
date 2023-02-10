@@ -39,7 +39,7 @@ import jdk.test.lib.security.TestCertificate;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules jdk.jfr/jdk.jfr.events
+ * @modules jdk.jfr/jdk.jfr.events java.base/sun.security.x509 java.base/sun.security.tools.keytool
  * @run main/othervm jdk.jfr.event.security.TestX509ValidationEvent
  */
 public class TestX509ValidationEvent {
@@ -128,8 +128,9 @@ public class TestX509ValidationEvent {
             switch (pos) {
                 // use public key of cert provided in TrustAnchor
                 case 1:
-                    Asserts.assertEquals(e.getLong("certificateId"),
-                        Long.valueOf(TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode()));
+                    int hash = TestCertificate.ROOT_CA.certificate().getPublicKey().hashCode();
+                    Long id = Integer.toUnsignedLong(hash);
+                    Asserts.assertEquals(e.getLong("certificateId"), id);
                     break;
                 case 2:
                     Events.assertField(e, "certificateId")

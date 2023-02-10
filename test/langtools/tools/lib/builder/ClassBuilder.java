@@ -550,7 +550,7 @@ public class ClassBuilder extends AbstractBuilder {
         }
 
         /**
-         * Adds a parameter(s) to the method method builder.
+         * Adds a parameter(s) to the method builder.
          * @param params a pair consisting of type and parameter name.
          * @return this method builder.
          */
@@ -560,7 +560,7 @@ public class ClassBuilder extends AbstractBuilder {
         }
 
         /**
-         * Adds a parameter to the method method builder.
+         * Adds a parameter to the method builder.
          * @param type the type of parameter.
          * @param name the parameter name.
          * @return this method builder.

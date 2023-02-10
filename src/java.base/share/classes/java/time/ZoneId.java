@@ -174,6 +174,7 @@ import static java.util.Map.entry;
  * modelling offset-based IDs. This difference is visible in serialization.
  *
  * @since 1.8
+ * @sealedGraph
  */
 @jdk.internal.ValueBased
 public abstract sealed class ZoneId implements Serializable permits ZoneOffset, ZoneRegion {

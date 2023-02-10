@@ -7,7 +7,7 @@
 
 public class TwrAndLambda {
 
-    public static void main(String... args) {
+    public static void meth() {
 
         // Lambda expression
         AutoCloseable v1 = () -> {};

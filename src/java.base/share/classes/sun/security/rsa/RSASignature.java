@@ -193,8 +193,6 @@ abstract class RSASignature extends SignatureSpi {
             return RSACore.rsa(padded, privateKey, true);
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
-        } catch (IOException e) {
-            throw new SignatureException("Could not encode data", e);
         }
     }
 

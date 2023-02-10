@@ -115,7 +115,7 @@ public class SignerOrder {
 
     static void printSignerInfos(SignerInfo signerInfo) throws IOException {
         DerOutputStream strm = new DerOutputStream();
-        signerInfo.derEncode(strm);
+        signerInfo.encode(strm);
         System.out.println("SignerInfo, length: "
                 + strm.toByteArray().length);
         HexPrinter.simple().format(strm.toByteArray());
@@ -126,7 +126,7 @@ public class SignerOrder {
     static void printSignerInfos(SignerInfo[] signerInfos) throws IOException {
         DerOutputStream strm = new DerOutputStream();
         for (int i = 0; i < signerInfos.length; i++) {
-            signerInfos[i].derEncode(strm);
+            signerInfos[i].encode(strm);
             System.out.println("SignerInfo[" + i + "], length: "
                     + strm.toByteArray().length);
             HexPrinter.simple().format(strm.toByteArray());
@@ -245,20 +245,16 @@ class SimpleSigner {
 
         X509CertInfo info = new X509CertInfo();
         // Add all mandatory attributes
-        info.set(X509CertInfo.VERSION,
-                new CertificateVersion(CertificateVersion.V1));
-        info.set(X509CertInfo.SERIAL_NUMBER,
-                new CertificateSerialNumber(
+        info.setVersion(new CertificateVersion(CertificateVersion.V1));
+        info.setSerialNumber(new CertificateSerialNumber(
                         (int) (firstDate.getTime() / 1000)));
-        info.set(X509CertInfo.ALGORITHM_ID,
-                new CertificateAlgorithmId(algId));
-        info.set(X509CertInfo.SUBJECT, agent);
-        info.set(X509CertInfo.KEY, new CertificateX509Key(publicKey));
-        info.set(X509CertInfo.VALIDITY, interval);
-        info.set(X509CertInfo.ISSUER, agent);
+        info.setAlgorithmId(new CertificateAlgorithmId(algId));
+        info.setSubject(agent);
+        info.setKey(new CertificateX509Key(publicKey));
+        info.setValidity(interval);
+        info.setIssuer(agent);
 
-        certLocal = new X509CertImpl(info);
-        certLocal.sign(privateKey, algId.getName());
+        certLocal = X509CertImpl.newSigned(info, privateKey, algId.getName());
 
         return certLocal;
     }

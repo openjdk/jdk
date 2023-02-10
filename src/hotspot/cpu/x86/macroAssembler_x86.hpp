@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,8 +326,9 @@ class MacroAssembler: public Assembler {
   void reset_last_Java_frame(bool clear_fp);
 
   // jobjects
-  void clear_jweak_tag(Register possibly_jweak);
+  void clear_jobject_tag(Register possibly_non_local);
   void resolve_jobject(Register value, Register thread, Register tmp);
+  void resolve_global_jobject(Register value, Register thread, Register tmp);
 
   // C 'boolean' to Java boolean: x == 0 ? 0 : 1
   void c2bool(Register x);
@@ -729,6 +730,11 @@ public:
 
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { LP64_ONLY(andq(src1, src2)) NOT_LP64(andl(src1, src2)) ; }
+
+#ifdef _LP64
+  using Assembler::andq;
+  void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
+#endif
 
   void cmp8(AddressLiteral src1, int imm, Register rscratch = noreg);
 
@@ -1754,8 +1760,14 @@ public:
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src, int shift, bool merge, int vlen_enc);
   void evrord(BasicType type, XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vlen_enc);
 
-  void alltrue(Register dst, uint masklen, KRegister src1, KRegister src2, KRegister kscratch);
-  void anytrue(Register dst, uint masklen, KRegister src, KRegister kscratch);
+  using Assembler::evpandq;
+  void evpandq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::evporq;
+  void evporq(XMMRegister dst, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
+
+  using Assembler::vpternlogq;
+  void vpternlogq(XMMRegister dst, int imm8, XMMRegister src2, AddressLiteral src3, int vector_len, Register rscratch = noreg);
 
   void cmov32( Condition cc, Register dst, Address  src);
   void cmov32( Condition cc, Register dst, Register src);

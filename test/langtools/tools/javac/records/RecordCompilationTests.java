@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * RecordCompilationTests
  *
  * @test
- * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647
+ * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647 8294020
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @modules
@@ -149,7 +149,7 @@ public class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.expected", "record R();");
         assertFail("compiler.err.illegal.start.of.type", "record R(,) { }");
         assertFail("compiler.err.illegal.start.of.type", "record R((int x)) { }");
-        assertFail("compiler.err.record.header.expected", "record R { }");
+        assertFail("compiler.err.expected", "record R { }");
         assertFail("compiler.err.expected", "record R(foo) { }");
         assertFail("compiler.err.expected", "record R(int int) { }");
         assertFail("compiler.err.mod.not.allowed.here", "abstract record R(String foo) { }");
@@ -2028,7 +2028,7 @@ public class RecordCompilationTests extends CompilationTestCase {
     }
 
     public void testNoAssigmentInsideCompactRecord() {
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {
@@ -2037,7 +2037,7 @@ public class RecordCompilationTests extends CompilationTestCase {
                 }
                 """
         );
-        assertFail("compiler.err.cant.assign.val.to.final.var",
+        assertFail("compiler.err.cant.assign.val.to.var",
                 """
                 record R(int i) {
                     R {

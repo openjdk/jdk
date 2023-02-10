@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
-#include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -42,6 +41,8 @@
 bool ArchiveHeapLoader::_closed_regions_mapped = false;
 bool ArchiveHeapLoader::_open_regions_mapped = false;
 bool ArchiveHeapLoader::_is_loaded = false;
+
+bool    ArchiveHeapLoader::_narrow_oop_base_initialized = false;
 address ArchiveHeapLoader::_narrow_oop_base;
 int     ArchiveHeapLoader::_narrow_oop_shift;
 
@@ -59,10 +60,26 @@ intx ArchiveHeapLoader::_runtime_offset_2 = 0;
 intx ArchiveHeapLoader::_runtime_offset_3 = 0;
 bool ArchiveHeapLoader::_loading_failed = false;
 
-// Support for mapped heap (!UseCompressedOops only)
-ptrdiff_t ArchiveHeapLoader::_runtime_delta = 0;
+// Support for mapped heap.
+bool      ArchiveHeapLoader::_mapped_heap_relocation_initialized = false;
+ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
+
+// Every mapped region is offset by _mapped_heap_delta from its requested address.
+// See FileMapInfo::heap_region_requested_address().
+void ArchiveHeapLoader::init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift) {
+  assert(!_mapped_heap_relocation_initialized, "only once");
+  if (!UseCompressedOops) {
+    assert(dumptime_oop_shift == 0, "sanity");
+  }
+  assert(can_map(), "sanity");
+  init_narrow_oop_decoding(CompressedOops::base() + delta, dumptime_oop_shift);
+  _mapped_heap_delta = delta;
+  _mapped_heap_relocation_initialized = true;
+}
 
 void ArchiveHeapLoader::init_narrow_oop_decoding(address base, int shift) {
+  assert(!_narrow_oop_base_initialized, "only once");
+  _narrow_oop_base_initialized = true;
   _narrow_oop_base = base;
   _narrow_oop_shift = shift;
 }
@@ -96,8 +113,31 @@ class PatchCompressedEmbeddedPointers: public BitMapClosure {
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
-    oop o = ArchiveHeapLoader::decode_from_archive(v);
+    oop o = ArchiveHeapLoader::decode_from_mapped_archive(v);
     RawAccess<IS_NOT_NULL>::oop_store(p, o);
+    return true;
+  }
+};
+
+class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
+  narrowOop* _start;
+  uint32_t _delta;
+
+ public:
+  PatchCompressedEmbeddedPointersQuick(narrowOop* start, uint32_t delta) : _start(start), _delta(delta) {}
+
+  bool do_bit(size_t offset) {
+    narrowOop* p = _start + offset;
+    narrowOop v = *p;
+    assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
+    narrowOop new_v = CompressedOops::narrow_oop_cast(CompressedOops::narrow_oop_value(v) + _delta);
+    assert(!CompressedOops::is_null(new_v), "should never relocate to narrowOop(0)");
+#ifdef ASSERT
+    oop o1 = ArchiveHeapLoader::decode_from_mapped_archive(v);
+    oop o2 = CompressedOops::decode_not_null(new_v);
+    assert(o1 == o2, "quick delta must work");
+#endif
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_v);
     return true;
   }
 };
@@ -112,15 +152,44 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
     oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
-    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::runtime_delta();
+    intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
     RawAccess<IS_NOT_NULL>::oop_store(p, cast_to_oop(runtime_oop));
     return true;
   }
 };
 
+void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
+                                                  FileMapInfo* info,
+                                                  FileMapRegion* map_region,
+                                                  MemRegion region) {
+  narrowOop dt_encoded_bottom = info->encoded_heap_region_dumptime_address(map_region);
+  narrowOop rt_encoded_bottom = CompressedOops::encode_not_null(cast_to_oop(region.start()));
+  log_info(cds)("patching heap embedded pointers: narrowOop 0x%8x -> 0x%8x",
+                  (uint)dt_encoded_bottom, (uint)rt_encoded_bottom);
+
+  // Optimization: if dumptime shift is the same as runtime shift, we can perform a
+  // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
+  if (_narrow_oop_shift == CompressedOops::shift()) {
+    uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
+    log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
+    if (quick_delta == 0) {
+      log_info(cds)("CDS heap data relocation unnecessary, quick_delta = 0");
+    } else {
+      PatchCompressedEmbeddedPointersQuick patcher((narrowOop*)region.start(), quick_delta);
+      bm.iterate(&patcher);
+    }
+  } else {
+    log_info(cds)("CDS heap data quick relocation not possible");
+    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
+    bm.iterate(&patcher);
+  }
+}
+
 // Patch all the non-null pointers that are embedded in the archived heap objects
 // in this (mapped) region
-void ArchiveHeapLoader::patch_embedded_pointers(MemRegion region, address oopmap,
+void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
+                                                FileMapRegion* map_region,
+                                                MemRegion region, address oopmap,
                                                 size_t oopmap_size_in_bits) {
   BitMapView bm((BitMap::bm_word_t*)oopmap, oopmap_size_in_bits);
 
@@ -131,8 +200,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(MemRegion region, address oopmap
 #endif
 
   if (UseCompressedOops) {
-    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
-    bm.iterate(&patcher);
+    patch_compressed_embedded_pointers(bm, info, map_region, region);
   } else {
     PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
     bm.iterate(&patcher);
@@ -192,6 +260,10 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
+  if (!UseCompressedOops) {
+    // Pointer relocation for uncompressed oops is unimplemented.
+    return false;
+  }
   return Universe::heap()->can_load_archived_objects();
 }
 
@@ -227,12 +299,12 @@ class PatchLoadedRegionPointers: public BitMapClosure {
   }
 
   bool do_bit(size_t offset) {
+    assert(UseCompressedOops, "PatchLoadedRegionPointers for uncompressed oops is unimplemented");
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     uintptr_t o = cast_from_oop<uintptr_t>(ArchiveHeapLoader::decode_from_archive(v));
     assert(_base_0 <= o && o < _top, "must be");
-
 
     // We usually have only 2 regions for the default archive. Use template to avoid unnecessary comparisons.
     if (NUM_LOADED_REGIONS > 3 && o >= _base_3) {
@@ -256,7 +328,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
   int num_loaded_regions = 0;
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
-    FileMapRegion* r = mapinfo->space_at(i);
+    FileMapRegion* r = mapinfo->region_at(i);
     r->assert_is_heap_region();
     if (r->used() > 0) {
       assert(is_aligned(r->used(), HeapWordSize), "must be");
@@ -264,7 +336,7 @@ int ArchiveHeapLoader::init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHe
       LoadedArchiveHeapRegion* ri = &loaded_regions[num_loaded_regions++];
       ri->_region_index = i;
       ri->_region_size = r->used();
-      ri->_dumptime_base = (uintptr_t)mapinfo->start_address_as_decoded_from_archive(r);
+      ri->_dumptime_base = (uintptr_t)mapinfo->heap_region_dumptime_address(r);
     }
   }
 
@@ -309,7 +381,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
   uintptr_t load_address = buffer;
   for (int i = 0; i < num_loaded_regions; i++) {
     LoadedArchiveHeapRegion* ri = &loaded_regions[i];
-    FileMapRegion* r = mapinfo->space_at(ri->_region_index);
+    FileMapRegion* r = mapinfo->region_at(ri->_region_index);
 
     if (!mapinfo->read_region(ri->_region_index, (char*)load_address, r->used(), /* do_commit = */ false)) {
       // There's no easy way to free the buffer, so we will fill it with zero later
@@ -346,6 +418,7 @@ bool ArchiveHeapLoader::load_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegi
 }
 
 bool ArchiveHeapLoader::load_heap_regions(FileMapInfo* mapinfo) {
+  assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
   LoadedArchiveHeapRegion loaded_regions[MetaspaceShared::max_num_heap_regions];
@@ -376,7 +449,7 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
 
   virtual void do_oop(narrowOop* p) {
     // This should be called before the loaded regions are modified, so all the embedded pointers
-    // must be NULL, or must point to a valid object in the loaded regions.
+    // must be null, or must point to a valid object in the loaded regions.
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
       oop o = CompressedOops::decode_not_null(v);
@@ -386,7 +459,8 @@ class VerifyLoadedHeapEmbeddedPointers: public BasicOopIterateClosure {
     }
   }
   virtual void do_oop(oop* p) {
-    ShouldNotReachHere();
+    // Uncompressed oops are not supported by loaded heaps.
+    Unimplemented();
   }
 };
 
@@ -465,8 +539,8 @@ void ArchiveHeapLoader::patch_native_pointers() {
 
   for (int i = MetaspaceShared::first_archive_heap_region;
        i <= MetaspaceShared::last_archive_heap_region; i++) {
-    FileMapRegion* r = FileMapInfo::current_info()->space_at(i);
-    if (r->mapped_base() != NULL && r->has_ptrmap()) {
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(i);
+    if (r->mapped_base() != nullptr && r->has_ptrmap()) {
       log_info(cds, heap)("Patching native pointers in heap region %d", i);
       BitMapView bm = r->ptrmap_view();
       PatchNativePointers patcher((Metadata**)r->mapped_base());

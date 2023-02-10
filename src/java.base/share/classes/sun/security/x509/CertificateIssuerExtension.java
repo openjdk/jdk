@@ -56,23 +56,17 @@ import sun.security.util.DerOutputStream;
  * @author Sean Mullan
  * @since 1.5
  * @see Extension
- * @see CertAttrSet
  */
-public class CertificateIssuerExtension extends Extension
-    implements CertAttrSet<String> {
+public class CertificateIssuerExtension extends Extension {
 
-    /**
-     * Attribute names.
-     */
     public static final String NAME = "CertificateIssuer";
-    public static final String ISSUER = "issuer";
 
     private GeneralNames names;
 
     /**
      * Encode this extension
      */
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (names == null || names.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -86,10 +80,12 @@ public class CertificateIssuerExtension extends Extension
      * Create a CertificateIssuerExtension containing the specified issuer name.
      * Criticality is automatically set to true.
      *
-     * @param issuer the certificate issuer
-     * @throws IOException on error
+     * @param issuer the certificate issuer, cannot be null or empty.
      */
-    public CertificateIssuerExtension(GeneralNames issuer) throws IOException {
+    public CertificateIssuerExtension(GeneralNames issuer) {
+        if (issuer == null || issuer.isEmpty()) {
+            throw new IllegalArgumentException("issuer cannot be null or empty");
+        }
         this.extensionId = PKIXExtensions.CertificateIssuer_Id;
         this.critical = true;
         this.names = issuer;
@@ -115,39 +111,9 @@ public class CertificateIssuerExtension extends Extension
         this.names = new GeneralNames(val);
     }
 
-    /**
-     * Set the attribute value.
-     *
-     * @throws IOException on error
-     */
-    public void set(String name, Object obj) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER)) {
-            if (!(obj instanceof GeneralNames)) {
-                throw new IOException("Attribute value must be of type " +
-                    "GeneralNames");
-            }
-            this.names = (GeneralNames)obj;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:CertificateIssuer");
-        }
-        encodeThis();
+    public GeneralNames getNames() {
+        return names;
     }
-
-    /**
-     * Gets the attribute value.
-     *
-     * @throws IOException on error
-     */
-    public GeneralNames get(String name) throws IOException {
-        if (name.equalsIgnoreCase(ISSUER)) {
-            return names;
-        } else {
-            throw new IOException("Attribute name not recognized by " +
-                "CertAttrSet:CertificateIssuer");
-        }
-    }
-
 
     /**
      * Returns a printable representation of the certificate issuer.
@@ -161,10 +127,9 @@ public class CertificateIssuerExtension extends Extension
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to
-     * @exception IOException on encoding errors
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.CertificateIssuer_Id;
             critical = true;
@@ -175,7 +140,7 @@ public class CertificateIssuerExtension extends Extension
 
 
     /**
-     * Return the name of this attribute.
+     * Return the name of this extension.
      */
     @Override
     public String getName() {

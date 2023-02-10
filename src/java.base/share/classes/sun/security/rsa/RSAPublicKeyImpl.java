@@ -126,19 +126,14 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
         this.type = type;
         this.keyParams = keyParams;
 
-        try {
-            // generate the key encoding
-            DerOutputStream out = new DerOutputStream();
-            out.putInteger(n);
-            out.putInteger(e);
-            byte[] keyArray =
+        // generate the key encoding
+        DerOutputStream out = new DerOutputStream();
+        out.putInteger(n);
+        out.putInteger(e);
+        byte[] keyArray =
                 new DerValue(DerValue.tag_Sequence,
-                             out.toByteArray()).toByteArray();
-            setKey(new BitArray(keyArray.length*8, keyArray));
-        } catch (IOException exc) {
-            // should never occur
-            throw new InvalidKeyException(exc);
-        }
+                        out.toByteArray()).toByteArray();
+        setKey(new BitArray(keyArray.length * 8, keyArray));
     }
 
     /**
