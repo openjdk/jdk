@@ -81,7 +81,6 @@
 # include <errno.h>
 
 OSThread*         os::_starting_thread    = nullptr;
-address           os::_polling_page       = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
@@ -727,8 +726,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
-    MallocHeader* header = MallocTracker::malloc_header(memblock);
-    header->assert_block_integrity(); // Assert block hasn't been tampered with.
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
     const MallocHeader::FreeInfo free_info = header->free_info();
     header->mark_block_as_dead();
 

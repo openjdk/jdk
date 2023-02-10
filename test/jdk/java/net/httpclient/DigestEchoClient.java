@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
 import sun.net.NetProperties;
 import sun.net.www.HeaderParser;
@@ -64,16 +65,9 @@ import static java.lang.String.format;
  * @summary this test verifies that a client may provides authorization
  *          headers directly when connecting with a server.
  * @bug 8087112
- * @library /test/lib http2/server
- * @build jdk.test.lib.net.SimpleSSLContext HttpServerAdapters DigestEchoServer
- *        ReferenceTracker DigestEchoClient
- * @modules java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          java.base/sun.net.www.http
- *          java.base/sun.net.www
- *          java.base/sun.net
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ *        DigestEchoServer ReferenceTracker DigestEchoClient
  * @run main/othervm DigestEchoClient
  * @run main/othervm -Djdk.http.auth.proxying.disabledSchemes=
  *                   -Djdk.http.auth.tunneling.disabledSchemes=

@@ -340,10 +340,8 @@ bool Symbol::try_increment_refcount() {
 // this caller.
 void Symbol::increment_refcount() {
   if (!try_increment_refcount()) {
-#ifdef ASSERT
     print();
     fatal("refcount has gone to zero");
-#endif
   }
 #ifndef PRODUCT
   if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
@@ -363,10 +361,8 @@ void Symbol::decrement_refcount() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
@@ -386,10 +382,8 @@ void Symbol::make_permanent() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       int hash = extract_hash(old_value);
