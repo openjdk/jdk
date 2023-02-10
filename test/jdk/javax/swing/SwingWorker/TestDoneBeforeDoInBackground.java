@@ -87,7 +87,7 @@ public class TestDoneBeforeDoInBackground {
                     // SwingWorker notifies PropertyChangeListeners about the
                     // property change to StateValue.STARTED
                     if (doInBackgroundFinished.get()
-                        && worker.getState() == SwingWorker.StateValue.STARTED) {
+                          && worker.getState() == SwingWorker.StateValue.STARTED) {
                         throw new RuntimeException(
                                "PropertyChangeListeners called with " +
                                "state STARTED after doInBackground is invoked");
@@ -96,9 +96,9 @@ public class TestDoneBeforeDoInBackground {
                     // Ensure the STARTED state is notified
                     // before doInBackground started running
                     if (doInBackgroundStarted.get()
-                        && worker.getState() == SwingWorker.StateValue.STARTED) {
+                          && worker.getState() == SwingWorker.StateValue.STARTED) {
                         throw new RuntimeException(
-                               "PropertyChangeListeners called with " +
+                              "PropertyChangeListeners called with " +
                                "state STARTED before doInBackground is finished");
                     }
 
@@ -130,8 +130,8 @@ public class TestDoneBeforeDoInBackground {
         System.out.println("doInBackground " + doInBackgroundFinished.get() +
                            " getState " + worker.getState());
         if (worker.getState() != SwingWorker.StateValue.DONE
-            && doInBackgroundFinished.get()) {
-              throw new RuntimeException("doInBackground is finished " +
+              && doInBackgroundFinished.get()) {
+            throw new RuntimeException("doInBackground is finished " +
                                          "but State is not DONE");
         }
     }
