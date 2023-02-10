@@ -77,7 +77,7 @@ public class FilterUROTest {
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
-	    Reference.reachabilityFence(impl);
+            Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
@@ -105,7 +105,7 @@ public class FilterUROTest {
             int count = client.filterCount(obj);
             System.out.printf("count: %d, obj: %s%n", count, obj);
             Assert.assertEquals(count, expectedFilterCount, "wrong number of filter calls");
-	    Reference.reachabilityFence(impl);
+            Reference.reachabilityFence(impl);
         } catch (RemoteException rex) {
             if (expectedFilterCount == -1 &&
                     UnmarshalException.class.equals(rex.getCause().getClass()) &&
