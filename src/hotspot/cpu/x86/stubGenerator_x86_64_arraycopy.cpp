@@ -2295,7 +2295,7 @@ address StubGenerator::generate_generic_copy(const char *name,
   // (8) dst_pos + length must not exceed length of dst.
   //
 
-  //  if (src == null) return -1;
+  //  if (src == nullptr) return -1;
   __ testptr(src, src);         // src oop
   size_t j1off = __ offset();
   __ jccb(Assembler::zero, L_failed_0);
@@ -2304,7 +2304,7 @@ address StubGenerator::generate_generic_copy(const char *name,
   __ testl(src_pos, src_pos); // src_pos (32-bits)
   __ jccb(Assembler::negative, L_failed_0);
 
-  //  if (dst == null) return -1;
+  //  if (dst == nullptr) return -1;
   __ testptr(dst, dst);         // dst oop
   __ jccb(Assembler::zero, L_failed_0);
 
@@ -2332,7 +2332,7 @@ address StubGenerator::generate_generic_copy(const char *name,
 
   __ load_klass(r10_src_klass, src, rklass_tmp);
 #ifdef ASSERT
-  //  assert(src->klass() != null);
+  //  assert(src->klass() != nullptr);
   {
     BLOCK_COMMENT("assert klasses not null {");
     Label L1, L2;

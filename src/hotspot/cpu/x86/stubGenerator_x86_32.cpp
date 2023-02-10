@@ -1931,7 +1931,7 @@ class StubGenerator: public StubCodeGenerator {
     __ testl(src_pos, src_pos);
     __ jccb(Assembler::negative, L_failed_0);
 
-    //  if (dst == null) return -1;
+    //  if (dst == nullptr) return -1;
     __ movptr(dst, DST);      // dst oop
     __ testptr(dst, dst);
     __ jccb(Assembler::zero, L_failed_0);
@@ -1946,14 +1946,14 @@ class StubGenerator: public StubCodeGenerator {
     __ testl(length, length);
     __ jccb(Assembler::negative, L_failed_0);
 
-    //  if (src->klass() == null) return -1;
+    //  if (src->klass() == nullptr) return -1;
     Address src_klass_addr(src, oopDesc::klass_offset_in_bytes());
     Address dst_klass_addr(dst, oopDesc::klass_offset_in_bytes());
     const Register rcx_src_klass = rcx;    // array klass
     __ movptr(rcx_src_klass, Address(src, oopDesc::klass_offset_in_bytes()));
 
 #ifdef ASSERT
-    //  assert(src->klass() != null);
+    //  assert(src->klass() != nullptr);
     BLOCK_COMMENT("assert klasses not null");
     { Label L1, L2;
       __ testptr(rcx_src_klass, rcx_src_klass);

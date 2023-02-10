@@ -57,7 +57,7 @@ void InlineCacheBuffer::assemble_ic_buffer_code(address code_begin, void* cached
   // because
   // (1) the value is old (i.e., doesn't matter for scavenges)
   // (2) these ICStubs are removed *before* a GC happens, so the roots disappear
-  // assert(cached_value == null || cached_oop->is_perm(), "must be perm oop");
+  // assert(cached_value == nullptr || cached_oop->is_perm(), "must be perm oop");
   masm->lea(rax, AddressLiteral((address) cached_value, relocInfo::metadata_type));
   masm->jump(ExternalAddress(entry_point));
 }

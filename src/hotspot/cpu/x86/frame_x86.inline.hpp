@@ -160,7 +160,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // Then we could use the assert below. However this assert is of somewhat dubious
   // value.
   // UPDATE: this constructor is only used by trace_method_handle_stub() now.
-  // assert(_pc != null, "no pc?");
+  // assert(_pc != nullptr, "no pc?");
 
   _cb = CodeCache::find_blob(_pc);
   adjust_unextended_sp();
