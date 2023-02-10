@@ -67,6 +67,6 @@ public class TestInfLoopNearUsePlacement {
         thread.setDaemon(true);
         thread.start();
         // Give thread some time to trigger compilation
-        Thread.sleep(Utils.adjustTimeout(5000));
+        Thread.sleep(Utils.adjustTimeout(500));
     }
 }
