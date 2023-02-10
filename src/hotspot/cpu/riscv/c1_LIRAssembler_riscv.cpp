@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -450,7 +450,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
   switch (c->type()) {
     case T_INT:
       assert(patch_code == lir_patch_none, "no patching handled here");
-      __ mvw(dest->as_register(), c->as_jint());
+      __ mv(dest->as_register(), c->as_jint());
       break;
 
     case T_ADDRESS:
@@ -518,7 +518,7 @@ void LIR_Assembler::const2stack(LIR_Opr src, LIR_Opr dest) {
       if (c->as_jint_bits() == 0) {
         __ sw(zr, frame_map()->address_for_slot(dest->single_stack_ix()));
       } else {
-        __ mvw(t1, c->as_jint_bits());
+        __ mv(t1, c->as_jint_bits());
         __ sw(t1, frame_map()->address_for_slot(dest->single_stack_ix()));
       }
       break;
@@ -1001,7 +1001,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
     __ lbu(t0, Address(op->klass()->as_register(),
                        InstanceKlass::init_state_offset()));
-    __ mvw(t1, InstanceKlass::fully_initialized);
+    __ mv(t1, InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
   }
@@ -1924,7 +1924,7 @@ void LIR_Assembler::membar_loadstore() { __ membar(MacroAssembler::LoadStore); }
 void LIR_Assembler::membar_storeload() { __ membar(MacroAssembler::StoreLoad); }
 
 void LIR_Assembler::on_spin_wait() {
-  Unimplemented();
+  __ pause();
 }
 
 void LIR_Assembler::get_thread(LIR_Opr result_reg) {
@@ -1967,7 +1967,8 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
           __ encode_heap_oop(t0, obj);
           obj = t0;
         }
-        assert_different_registers(obj, addr.base(), tmp, dst);
+        assert_different_registers(obj, addr.base(), tmp);
+        assert_different_registers(dst, addr.base(), tmp);
         __ la(tmp, addr);
         (_masm->*xchg)(dst, obj, tmp);
         if (is_oop && UseCompressedOops) {

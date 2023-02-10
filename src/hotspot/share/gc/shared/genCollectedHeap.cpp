@@ -106,13 +106,6 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
 }
 
 jint GenCollectedHeap::initialize() {
-  // While there are no constraints in the GC code that HeapWordSize
-  // be any particular value, there are multiple other areas in the
-  // system which believe this to be true (e.g. oop->object_size in some
-  // cases incorrectly returns the size in wordSize units rather than
-  // HeapWordSize).
-  guarantee(HeapWordSize == wordSize, "HeapWordSize must equal wordSize");
-
   // Allocate space for the heap.
 
   ReservedHeapSpace heap_rs = allocate(HeapAlignment);
@@ -609,7 +602,6 @@ void GenCollectedHeap::do_collection(bool           full,
     }
 
     CodeCache::on_gc_marking_cycle_start();
-    CodeCache::arm_all_nmethods();
 
     collect_generation(_old_gen,
                        full,

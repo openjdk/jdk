@@ -28,6 +28,8 @@
 #include "gc/shared/oopStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#include <type_traits>
+
 //////////////////////////////////////////////////////////////////////////////
 // Support for parallel and optionally concurrent state iteration.
 //
@@ -167,9 +169,7 @@ template<bool concurrent, bool is_const>
 class OopStorage::ParState {
   BasicParState _basic_state;
 
-  typedef typename Conditional<is_const,
-                               const OopStorage*,
-                               OopStorage*>::type StoragePtr;
+  using StoragePtr = std::conditional_t<is_const, const OopStorage*, OopStorage*>;
 
 public:
   ParState(StoragePtr storage,

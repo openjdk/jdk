@@ -2876,11 +2876,11 @@ public class Check {
     /** Enter interface into into set.
      *  If it existed already, issue a "repeated interface" error.
      */
-    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Type> its) {
-        if (its.contains(it))
+    void checkNotRepeated(DiagnosticPosition pos, Type it, Set<Symbol> its) {
+        if (its.contains(it.tsym))
             log.error(pos, Errors.RepeatedInterface);
         else {
-            its.add(it);
+            its.add(it.tsym);
         }
     }
 

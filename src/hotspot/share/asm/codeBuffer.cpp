@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,10 @@ CodeBuffer::~CodeBuffer() {
     cb->free_blob();
     // free any overflow storage
     delete cb->_overflow_arena;
+  }
+
+  if (_shared_trampoline_requests != nullptr) {
+    delete _shared_trampoline_requests;
   }
 
   NOT_PRODUCT(clear_strings());
@@ -594,6 +598,17 @@ csize_t CodeBuffer::total_offset_of(const CodeSection* cs) const {
   }
   ShouldNotReachHere();
   return -1;
+}
+
+int CodeBuffer::total_skipped_instructions_size() const {
+  int total_skipped_size = 0;
+  for (int n = (int) SECT_FIRST; n < (int) SECT_LIMIT; n++) {
+    const CodeSection* cur_cs = code_section(n);
+    if (!cur_cs->is_empty()) {
+      total_skipped_size += cur_cs->_skipped_instructions_size;
+    }
+  }
+  return total_skipped_size;
 }
 
 csize_t CodeBuffer::total_relocation_size() const {

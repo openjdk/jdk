@@ -876,7 +876,7 @@ public class TypeEnter implements Completer {
 
             fillPermits(tree, baseEnv);
 
-            Set<Type> interfaceSet = new HashSet<>();
+            Set<Symbol> interfaceSet = new HashSet<>();
 
             for (JCExpression iface : tree.implementing) {
                 Type it = iface.type;

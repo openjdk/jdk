@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,8 +382,9 @@ void os::init_system_properties_values() {
     char path[MAX_PATH];
     char buf[2 * MAX_PATH + 2 * sizeof(EXT_DIR) + sizeof(PACKAGE_DIR) + 1];
     GetWindowsDirectory(path, MAX_PATH);
-    sprintf(buf, "%s%s;%s%s%s", Arguments::get_java_home(), EXT_DIR,
-            path, PACKAGE_DIR, EXT_DIR);
+    os::snprintf_checked(buf, sizeof(buf), "%s%s;%s%s%s",
+                         Arguments::get_java_home(), EXT_DIR,
+                         path, PACKAGE_DIR, EXT_DIR);
     Arguments::set_ext_dirs(buf);
   }
   #undef EXT_DIR
@@ -510,8 +511,10 @@ struct tm* os::gmtime_pd(const time_t* clock, struct tm* res) {
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-// Thread start routine for all newly created threads
-static unsigned __stdcall thread_native_entry(Thread* thread) {
+// Thread start routine for all newly created threads.
+// Called with the associated Thread* as the argument.
+unsigned __stdcall os::win32::thread_native_entry(void* t) {
+  Thread* thread = static_cast<Thread*>(t);
 
   thread->record_stack_base_and_size();
   thread->initialize_thread_current();
@@ -744,7 +747,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     thread_handle =
       (HANDLE)_beginthreadex(NULL,
                              (unsigned)stack_size,
-                             (unsigned (__stdcall *)(void*)) thread_native_entry,
+                             &os::win32::thread_native_entry,
                              thread,
                              initflag,
                              &thread_id);
@@ -1886,6 +1889,10 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
     status = RegQueryValueEx(key, "ProcessorNameString", NULL, NULL, (byte*)buf, &size);
     if (status != ERROR_SUCCESS) {
         strncpy(buf, "## __CPU__", buflen);
+    } else {
+      if (size < buflen) {
+        buf[size] = '\0';
+      }
     }
     RegCloseKey(key);
   } else {
@@ -1896,7 +1903,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 
 void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
-  st->print(" %dk page", os::vm_page_size()>>10);
+  st->print(" " SIZE_FORMAT "k page", os::vm_page_size()>>10);
 
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
@@ -2495,7 +2502,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     address addr = (address) exception_record->ExceptionInformation[1];
 
     if (exception_subcode == EXCEPTION_INFO_EXEC_VIOLATION) {
-      int page_size = os::vm_page_size();
+      size_t page_size = os::vm_page_size();
 
       // Make sure the pc and the faulting address are sane.
       //
@@ -3152,7 +3159,7 @@ void os::large_page_init() {
   }
 
   _large_page_size = large_page_init_decide_size();
-  const size_t default_page_size = (size_t) os::vm_page_size();
+  const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes.add(_large_page_size);
   }
@@ -3721,7 +3728,7 @@ int os::numa_get_group_id_for_address(const void* address) {
   return 0;
 }
 
-bool os::get_page_info(char *start, page_info* info) {
+bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, size_t count) {
   return false;
 }
 
@@ -5356,11 +5363,14 @@ void Parker::unpark() {
 // Platform Monitor implementation
 
 // Must already be locked
-int PlatformMonitor::wait(jlong millis) {
-  assert(millis >= 0, "negative timeout");
+int PlatformMonitor::wait(uint64_t millis) {
   int ret = OS_TIMEOUT;
+  // The timeout parameter for SleepConditionVariableCS is a DWORD
+  if (millis > UINT_MAX) {
+    millis = UINT_MAX;
+  }
   int status = SleepConditionVariableCS(&_cond, &_mutex,
-                                        millis == 0 ? INFINITE : millis);
+                                        millis == 0 ? INFINITE : (DWORD)millis);
   if (status != 0) {
     ret = OS_OK;
   }
