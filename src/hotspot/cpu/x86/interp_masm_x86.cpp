@@ -56,7 +56,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   testptr(obj, obj);
   jccb(Assembler::notZero, update);
   orptr(mdo_addr, TypeEntries::null_seen);
-  jmp(next);
+  jmpb(next);
 
   bind(update);
   load_klass(obj, obj, rscratch1);

@@ -2365,10 +2365,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
       __ PUSH(src, dst);
 
-      __ load_klass(tmp, src);
-      __ mov(src, tmp);
-      __ load_klass(tmp, dst);
-      __ mov(dst, tmp);
+      __ load_klass(src, src);
+      __ load_klass(dst, dst);
 
       __ check_klass_subtype_fast_path(src, dst, tmp, &cont, &slow, NULL);
 
@@ -2639,8 +2637,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
         }
       }
     } else {
-      __ load_klass(rscratch1, recv);
-      __ mov(recv, rscratch1);
+      __ load_klass(recv, recv);
       Label update_done;
       type_profile_helper(mdo, md, data, recv, &update_done);
       // Receiver did not match any saved receiver and there is no empty row for it.
@@ -2734,8 +2731,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #ifdef ASSERT
     if (exact_klass != NULL) {
       Label ok;
-      __ load_klass(rscratch1, tmp);
-      __ mov(tmp, rscratch1);
+      __ load_klass(tmp, tmp);
       __ mov_metadata(rscratch1, exact_klass->constant_encoding());
       __ eor(rscratch1, tmp, rscratch1);
       __ cbz(rscratch1, ok);
@@ -2748,8 +2744,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
         if (exact_klass != NULL) {
           __ mov_metadata(tmp, exact_klass->constant_encoding());
         } else {
-          __ load_klass(rscratch1, tmp);
-          __ mov(tmp, rscratch1);
+          __ load_klass(tmp, tmp);
         }
 
         __ ldr(rscratch2, mdo_addr);

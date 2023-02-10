@@ -99,7 +99,6 @@ class MacroAssembler: public Assembler {
   static const char* describe_klass_decode_mode(KlassDecodeMode mode);
 
  private:
-
   static KlassDecodeMode _klass_decode_mode;
 
  public:
@@ -875,7 +874,6 @@ public:
   void orptr(Address dst, int32_t imm32) { LP64_ONLY(orq(dst, imm32)) NOT_LP64(orl(dst, imm32)); }
 
   void testptr(Register src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
-  void testptr(Address  src, int32_t imm32) {  LP64_ONLY(testq(src, imm32)) NOT_LP64(testl(src, imm32)); }
   void testptr(Register src1, Address src2) { LP64_ONLY(testq(src1, src2)) NOT_LP64(testl(src1, src2)); }
   void testptr(Register src1, Register src2);
 

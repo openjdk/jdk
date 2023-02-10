@@ -1040,6 +1040,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       }
 
       break;
+
     case counter_overflow_id:
       {
         Register bci = rax, method = rbx;

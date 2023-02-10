@@ -106,7 +106,6 @@ class MacroAssembler: public Assembler {
   static const char* describe_klass_decode_mode(KlassDecodeMode mode);
 
  private:
-
   static KlassDecodeMode _klass_decode_mode;
 
  public:

@@ -173,3 +173,12 @@ vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription
 
 Lilliput temporary:
 compiler/c2/irTests/TestVectorizationNotRun.java 8301785 generic-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#x64-area-beyond-encoding-range-use-xor 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#x64-area-partly-within-encoding-range-use-add 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#x64-area-within-encoding-range-use-zero 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#x64-area-far-out-no-low-bits-use-xor 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#x64-area-far-out-with-low-bits-use-add 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-xor 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-1 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-2 8302094 windows-all,macosx-all
+runtime/CompressedOops/CompressedClassPointerEncoding.java#aarch64-movk-3 8302094 windows-all,macosx-all

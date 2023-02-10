@@ -1656,8 +1656,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
   b(next);
 
   bind(update);
-  load_klass(rscratch1, obj);
-  mov(obj, rscratch1);
+  load_klass(obj, obj);
 
   ldr(rscratch1, mdo_addr);
   eor(obj, obj, rscratch1);

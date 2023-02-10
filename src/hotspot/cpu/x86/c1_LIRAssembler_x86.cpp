@@ -3532,8 +3532,9 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   Register obj = op->obj()->as_pointer_register();
   Register result = op->result_opr()->as_pointer_register();
 
-  if (op->info() != NULL) {
-    add_debug_info_for_null_check_here(op->info());
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    add_debug_info_for_null_check_here(info);
   }
 #ifdef _LP64
   Register tmp = rscratch1;
@@ -3658,9 +3659,12 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ orptr(mdo_addr, TypeEntries::null_seen);
     }
     if (do_update) {
+#ifndef ASSERT
+      __ jmpb(next);
+    }
+#else
       __ jmp(next);
     }
-#ifdef ASSERT
   } else {
     __ testptr(tmp, tmp);
     __ jcc(Assembler::notZero, update);

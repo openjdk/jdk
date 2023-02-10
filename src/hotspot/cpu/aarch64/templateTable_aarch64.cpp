@@ -3662,8 +3662,7 @@ void TemplateTable::instanceof() {
   __ get_vm_result_2(r0, rthread);
   __ pop(r3); // restore receiver
   __ verify_oop(r3);
-  __ load_klass(rscratch1, r3);
-  __ mov(r3, rscratch1);
+  __ load_klass(r3, r3);
   __ b(resolved);
 
   // Get superklass in r0 and subklass in r3

@@ -504,9 +504,6 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
-#ifdef _LP64
-  address generate_load_nklass();
-#endif
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
