@@ -523,8 +523,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
-javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
-
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 ############################################################################
@@ -585,8 +583,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
-
-javax/net/ssl/SSLEngine/EngineCloseOnAlert.java                 8298868 generic-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
