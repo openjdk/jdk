@@ -4,7 +4,7 @@
 <pre>
 
     Apache Commons BCEL
-    Copyright 2004-2020 The Apache Software Foundation
+    Copyright 2004-2022 The Apache Software Foundation
 
     This product includes software developed at
     The Apache Software Foundation (https://www.apache.org/).
