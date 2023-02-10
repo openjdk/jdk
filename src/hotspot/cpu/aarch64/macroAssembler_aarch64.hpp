@@ -1428,9 +1428,15 @@ public:
   void kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+  void kernel_crc32c_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        Register tmp3);
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
+  void kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
+        Register len, Register tmp0, Register tmp1, Register tmp2,
+        size_t table_offset);
 
   void ghash_modmul (FloatRegister result,
                      FloatRegister result_lo, FloatRegister result_hi, FloatRegister b,
