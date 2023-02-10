@@ -1181,7 +1181,7 @@
     <Field type="boolean" name="dynamic" label="Dynamically Loaded"
       description="If the agent was loaded after startup using the attach mechanism" />
     <Field type="long" contentType="epochmillis" name="loadTime" label="Load Time"
-     description="Timestamp taken at JVM startup or when loaded by attach mechanism"/>
+     description="Timestamp taken at JVM startup or when agent is loaded by the attach mechanism"/>
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
