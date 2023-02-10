@@ -3653,11 +3653,8 @@ void MacroAssembler::kernel_crc32_using_crypto_pmull(Register crc, Register buf,
     kernel_crc32_common_fold_using_crypto_pmull(crc, buf, len, tmp0, tmp1, tmp2,
       4*256*sizeof(juint) + 8*sizeof(juint));
     mov(crc, 0);
-    crc32x(crc, crc, tmp2);
+    crc32x(crc, crc, tmp0);
     crc32x(crc, crc, tmp1);
-
-    add(len, len, 0x80);
-    add(buf, buf, 0x10);
 
     cbnz(len, CRC_less128);
 
@@ -3970,66 +3967,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     mvnw(crc, crc);
 }
 
-void MacroAssembler::kernel_crc32c_using_crypto_pmull(Register crc, Register buf,
-        Register len, Register tmp0, Register tmp1, Register tmp2, Register tmp3) {
-    Label CRC_by4_loop, CRC_by1_loop, CRC_less128, CRC_by128_pre, CRC_by32_loop, CRC_less32, L_exit;
-    assert_different_registers(crc, buf, len, tmp0, tmp1, tmp2);
-
-    subs(tmp0, len, 384);
-    br(Assembler::GE, CRC_by128_pre);
-  BIND(CRC_less128);
-    subs(len, len, 32);
-    br(Assembler::GE, CRC_by32_loop);
-  BIND(CRC_less32);
-    adds(len, len, 32 - 4);
-    br(Assembler::GE, CRC_by4_loop);
-    adds(len, len, 4);
-    br(Assembler::GT, CRC_by1_loop);
-    b(L_exit);
-
-  BIND(CRC_by32_loop);
-    ldp(tmp0, tmp1, Address(buf));
-    crc32cx(crc, crc, tmp0);
-    ldp(tmp2, tmp3, Address(buf, 16));
-    crc32cx(crc, crc, tmp1);
-    add(buf, buf, 32);
-    crc32cx(crc, crc, tmp2);
-    subs(len, len, 32);
-    crc32cx(crc, crc, tmp3);
-    br(Assembler::GE, CRC_by32_loop);
-    cmn(len, (u1)32);
-    br(Assembler::NE, CRC_less32);
-    b(L_exit);
-
-  BIND(CRC_by4_loop);
-    ldrw(tmp0, Address(post(buf, 4)));
-    subs(len, len, 4);
-    crc32cw(crc, crc, tmp0);
-    br(Assembler::GE, CRC_by4_loop);
-    adds(len, len, 4);
-    br(Assembler::LE, L_exit);
-  BIND(CRC_by1_loop);
-    ldrb(tmp0, Address(post(buf, 1)));
-    subs(len, len, 1);
-    crc32cb(crc, crc, tmp0);
-    br(Assembler::GT, CRC_by1_loop);
-    b(L_exit);
-
-  BIND(CRC_by128_pre);
-    kernel_crc32_common_fold_using_crypto_pmull(crc, buf, len, tmp0, tmp1, tmp2,
-      4*256*sizeof(juint) + 8*sizeof(juint) + 0x50);
-    mov(crc, 0);
-    crc32cx(crc, crc, tmp2);
-    crc32cx(crc, crc, tmp1);
-
-    add(len, len, 0x80);
-    add(buf, buf, 0x10);
-
-    cbnz(len, CRC_less128);
-
-  BIND(L_exit);
-}
-
 void MacroAssembler::kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3) {
@@ -4136,11 +4073,7 @@ void MacroAssembler::kernel_crc32c_using_crc32c(Register crc, Register buf,
 void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp, Register tmp2, Register tmp3) {
-  if (UseCryptoPmull) {
-    kernel_crc32c_using_crypto_pmull(crc, buf, len, table0, table1, table2, table3);
-  } else {
-    kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
-  }
+  kernel_crc32c_using_crc32c(crc, buf, len, table0, table1, table2, table3);
 }
 
 void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, Register buf,
@@ -4254,8 +4187,11 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     pmull2(v15, T1Q, v3, v7, T2D);
     eor3(v1, T16B, v4, v14, v15);
 
+    add(len, len, 0x80);
+    add(buf, buf, 0x10);
+
+    mov(tmp0, v1, D, 0);
     mov(tmp1, v1, D, 1);
-    mov(tmp2, v1, D, 0);
 }
 
 SkipIfEqual::SkipIfEqual(

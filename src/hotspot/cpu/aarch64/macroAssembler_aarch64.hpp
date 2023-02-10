@@ -1428,9 +1428,6 @@ public:
   void kernel_crc32_using_crc32(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
-  void kernel_crc32c_using_crypto_pmull(Register crc, Register buf,
-        Register len, Register tmp0, Register tmp1, Register tmp2,
-        Register tmp3);
   void kernel_crc32c_using_crc32c(Register crc, Register buf,
         Register len, Register tmp0, Register tmp1, Register tmp2,
         Register tmp3);
