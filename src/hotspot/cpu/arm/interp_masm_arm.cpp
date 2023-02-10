@@ -60,7 +60,7 @@ void InterpreterMacroAssembler::call_VM_helper(Register oop_result, address entr
   { Label L;
     ldr(Rtemp, Address(FP, frame::interpreter_frame_last_sp_offset * wordSize));
     cbz(Rtemp, L);
-    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != null");
+    stop("InterpreterMacroAssembler::call_VM_helper: last_sp != nullptr");
     bind(L);
   }
 #endif // ASSERT
