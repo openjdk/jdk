@@ -4924,6 +4924,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
+        if (preferredScale >= Integer.MIN_VALUE) {
+            return createAndStripZerosToMatchScaleFast(intVal, scale, preferredScale);
+        }
         BigInteger[] qr; // quotient-remainder pair
         while (intVal.compareMagnitude(BigInteger.TEN) >= 0
                && scale > preferredScale) {
@@ -4934,6 +4937,29 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 break; // non-0 remainder
             intVal = qr[0];
             scale = checkScale(intVal,(long) scale - 1); // could Overflow
+        }
+        return valueOf(intVal, scale, 0);
+    }
+
+    private static BigDecimal createAndStripZerosToMatchScaleFast(BigInteger intVal, int scale, long preferredScale) {
+        BigInteger qr[]; // quotient-remainder pair
+        int scaleStep;
+        while (intVal.compareMagnitude(BigInteger.TEN) >= 0
+                && scale > preferredScale) {
+            if (intVal.testBit(0))
+                break; // odd number cannot end in 0
+            scaleStep = checkScale(intVal, Math.max(((long)scale - preferredScale) / 2, 1));
+            qr = intVal.divideAndRemainder(bigTenToThe(scaleStep));
+            if (qr[1].signum() != 0) {
+                if (scaleStep == 1) {
+                    break;
+                } else {
+                    preferredScale = scale - scaleStep;
+                    continue;
+                }
+            }
+            intVal = qr[0];
+            scale = checkScale(intVal, (long) scale - scaleStep); // could Overflow
         }
         return valueOf(intVal, scale, 0);
     }
