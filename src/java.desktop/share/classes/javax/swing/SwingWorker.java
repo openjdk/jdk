@@ -301,7 +301,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                 new Callable<T>() {
                     public T call() throws Exception {
                         setState(StateValue.STARTED);
-			try {
+                        try {
                             return doInBackground();
                         } finally {
                             doneEDT();
