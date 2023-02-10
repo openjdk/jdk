@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,7 +383,7 @@ bool AdaptiveSizePolicy::print() const {
   }
 
   // Print goal for which action is needed.
-  char* action = NULL;
+  char* action = nullptr;
   bool change_for_pause = false;
   if ((change_old_gen_for_maj_pauses() ==
          decrease_old_gen_for_maj_pauses_true) ||
@@ -408,8 +408,8 @@ bool AdaptiveSizePolicy::print() const {
   // Pauses
   // Currently the size of the old gen is only adjusted to
   // change the major pause times.
-  char* young_gen_action = NULL;
-  char* tenured_gen_action = NULL;
+  char* young_gen_action = nullptr;
+  char* tenured_gen_action = nullptr;
 
   char* shrink_msg = (char*) "(attempted to shrink)";
   char* grow_msg = (char*) "(attempted to grow)";
