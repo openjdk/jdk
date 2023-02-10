@@ -1579,8 +1579,10 @@ public:
   void poly1305_multiply(const RegPair u[], Register s[], Register r[], Register RR2,
                        RegSetIterator<Register> scratch);
   void poly1305_reduce(const RegPair u[]);
+  void poly1305_fully_reduce(Register dest[], const RegPair u[]);
   void poly1305_step(Register s[], const RegPair u[], Register input_start);
-  void copy_3_regs(Register src[], Register dest[]);
+  void copy_3_regs(const Register dest[], const Register src[]);
+  void add_3_reg_pairs(const RegPair dest[], const RegPair src[]);
 
  private:
   // Check the current thread doesn't need a cross modify fence.

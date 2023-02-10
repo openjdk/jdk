@@ -8455,7 +8455,7 @@ typedef uint32_t u32;
 
     if (UsePoly1305Intrinsics) {
       if (getenv("FOO_BAR_BAZ") == NULL) {
-        StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks1();
+        StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks2();
       } else {
         StubRoutines::_poly1305_processBlocks= generate_poly1305_processBlocks();
       }

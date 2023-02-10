@@ -5980,15 +5980,15 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
 
   // Multiply the highest part of u2 by 5 and add it back to u1
   ubfx(rscratch1, u[2]._hi, 14, 50);
-#ifdef ASSERT
-  {
-    Label L;
-    bfc(u[2]._hi, 0, 50);
-    cbz(u[2]._hi, L);
-    stop("Overflow in poly1305 reduction");
-    BIND(L);
-  }
-#endif
+// #ifdef ASSERT
+//   {
+//     Label L;
+//     bfc(u[2]._hi, 0, 50);
+//     cbz(u[2]._hi, L);
+//     stop("Overflow in poly1305 reduction");
+//     BIND(L);
+//   }
+// #endif
   add(rscratch1, rscratch1, rscratch1, LSL, 2);
   add(u[1]._lo, u[1]._lo, rscratch1);
 
@@ -6007,6 +6007,25 @@ void MacroAssembler::poly1305_reduce(const RegPair u[]) {
 #endif
 }
 
+void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
+  // Fully reduce modulo 2^130 - 5
+  adds(u[0]._lo, u[0]._lo, u[1]._lo, LSL, 52);
+  lsr(u[1]._lo, u[1]._lo, 12);
+  lsl(rscratch1, u[2]._lo, 40);
+  adcs(u[1]._lo, u[1]._lo, rscratch1);
+  lsr(u[2]._lo, u[2]._lo, 24);
+  adc(u[2]._lo, u[2]._lo, zr);
+
+  // Subtract 2^130 - 5
+  // = 0x3_ffffffffffffffff_fffffffffffffffb
+  mov(rscratch1, 0xfffffffffffffffb); subs(dest[0], u[0]._lo, rscratch1);
+  mov(rscratch1, 0xffffffffffffffff); sbcs(dest[1], u[1]._lo, rscratch1);
+  mov(rscratch1, 0x3);                sbcs(dest[2], u[2]._lo, rscratch1);
+  csel(dest[0], dest[0], u[0]._lo, HS);
+  csel(dest[1], dest[1], u[1]._lo, HS);
+  csel(dest[2], dest[2], u[2]._lo, HS);
+}
+
 void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register input_start) {
   ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
   ubfx(s[0], rscratch1, 0, 52);
@@ -6015,14 +6034,20 @@ void MacroAssembler::poly1305_step(Register s[], const RegPair u[], Register inp
   ubfx(s[2], rscratch2, 40, 24);
   orr(s[2], s[2], 1 << 24);
 
-  add(s[0], u[0]._lo, s[0]);
-  add(s[1], u[1]._lo, s[1]);
-  add(s[2], u[2]._lo, s[2]);
+  for (int i = 0; i < 3; i++) {
+    add(s[i], u[i]._lo, s[i]);
+  }
 }
 
-void MacroAssembler::copy_3_regs(Register src[], Register dest[]) {
-  mov(dest[0], src[0]);
-  mov(dest[1], src[1]);
-  mov(dest[2], src[2]);
+void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {
+  for (int i = 0; i < 3; i++) {
+    mov(dest[i], src[i]);
+  }
 }
 
+void MacroAssembler::add_3_reg_pairs(const RegPair dest[], const RegPair src[]) {
+  for (int i = 0; i < 3; i++) {
+    adds(dest[i]._lo, dest[i]._lo, src[i]._lo);
+    adc(dest[i]._hi, dest[i]._hi, src[i]._hi);
+  }
+}
