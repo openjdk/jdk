@@ -44,7 +44,15 @@ class G1FullGCCompactionPoint : public CHeapObj<mtGC> {
   void switch_region();
   HeapRegion* next_region();
 
-  static int compare(const uint& hrm_index, HeapRegion* const& e);
+  static int compare(uint a, uint b) {
+    return a > b ? 1 : (a < b) ? -1 : 0;
+  }
+
+  static int compare_ptr(HeapRegion** hr1, HeapRegion** hr2) {
+    return compare(*hr1, *hr2);
+  }
+
+  static int compare(HeapRegion* const& hr, HeapRegion* const& e);
   int find_sorted(HeapRegion* hr);
 
 public:

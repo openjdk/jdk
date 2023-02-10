@@ -116,19 +116,17 @@ void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
 }
 
-int G1FullGCCompactionPoint::compare(const uint& hrm_index, HeapRegion* const& e) {
-  return static_cast<int>(hrm_index - e->hrm_index());
+int G1FullGCCompactionPoint::compare(HeapRegion* const& hr, HeapRegion* const& e) {
+  return compare(hr->hrm_index(), e->hrm_index());
 }
 
 void G1FullGCCompactionPoint::sort_regions(){
-  regions()->sort([](HeapRegion** a, HeapRegion** b) {
-    return static_cast<int>((*a)->hrm_index() - (*b)->hrm_index());
-  });
+  regions()->sort(compare_ptr);
 }
 
 int G1FullGCCompactionPoint::find_sorted(HeapRegion* hr) {
   bool found = false;
-  int pos = _compaction_regions->find_sorted<uint, compare>(hr->hrm_index(), found);
+  int pos = _compaction_regions->find_sorted<HeapRegion*, compare>(hr, found);
   if (found) {
     return pos;
   }

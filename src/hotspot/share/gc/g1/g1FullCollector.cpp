@@ -358,7 +358,8 @@ void G1FullCollector::add_regions_for_serial_compaction() {
   // For maximum compaction, we need to re-prepare all objects above the lowest
   // region among the current regions for all thread compaction points. It may
   // happen that due to the uneven distribution of objects to parallel threads, holes
-  // have been created as threads compact to different target regions.
+  // have been created as threads compact to different target regions between the
+  // lowest and the highest region in the tails of the compaction points.
   uint lowest_current_hr = (uint)-1;
   for (uint i = 0; i < workers(); i++) {
     G1FullGCCompactionPoint* cp = compaction_point(i);
@@ -377,7 +378,7 @@ void G1FullCollector::add_regions_for_serial_compaction() {
 
   // We use regions as compaction targets in the order they appear in the compaction
   // point. To get maximum compaction and reduce fragmentation, we sort the regions
-  // by hrm_idex so that we compact objects to one end of the heap.
+  // by hrm_index so that we compact objects to one end of the heap.
   serial_cp->sort_regions();
 }
 
