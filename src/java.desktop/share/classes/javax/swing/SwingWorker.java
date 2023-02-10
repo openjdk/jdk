@@ -310,7 +310,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
                     }
                 };
 
-        future = new FutureTask<T>(callable);
+       future = new FutureTask<T>(callable);
 
        state = StateValue.PENDING;
        propertyChangeSupport = new SwingWorkerPropertyChangeSupport(this);
