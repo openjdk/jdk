@@ -299,12 +299,12 @@ final class StringUTF16 {
 
     private static int compareValues(byte[] value, byte[] other, int len1, int len2) {
         int lim = Math.min(len1, len2);
-        for (int k = 0; k < lim; k++) {
+        int k = ArraysSupport.mismatch(value, other, lim << 1);
+        if (k >= 0) {
+            k >>= 1;
             char c1 = getChar(value, k);
             char c2 = getChar(other, k);
-            if (c1 != c2) {
-                return c1 - c2;
-            }
+            return c1 - c2;
         }
         return len1 - len2;
     }
