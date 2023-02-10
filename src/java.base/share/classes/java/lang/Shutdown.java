@@ -162,11 +162,13 @@ class Shutdown {
      * is logged.
      */
     static void exit(int status) {
+        // Locate the logger without holding the lock;
+        // the setup of the logger may be a heavyweight operation
+        System.Logger log = System.getLogger("java.lang.Runtime");
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
-            System.Logger log = System.getLogger("java.lang.Runtime");
             if (log.isLoggable(System.Logger.Level.DEBUG)) {
                 Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
                 log.log(System.Logger.Level.DEBUG, "Runtime.exit() called with status: " + status,
