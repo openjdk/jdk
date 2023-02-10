@@ -1,0 +1,3 @@
+- compiler.warn.source.no.system.modules.path: 20
+ExtraImportSemicolon.java:9:22: compiler.warn.extraneous.semicolon
+2 warnings
