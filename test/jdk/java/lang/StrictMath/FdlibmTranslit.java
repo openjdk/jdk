@@ -86,10 +86,6 @@ public class FdlibmTranslit {
         return Log1p.compute(x);
     }
 
-    public static double exp(double x) {
-        return Exp.compute(x);
-    }
-
     public static double expm1(double x) {
         return Expm1.compute(x);
     }

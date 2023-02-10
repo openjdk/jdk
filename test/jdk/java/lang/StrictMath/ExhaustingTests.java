@@ -27,8 +27,18 @@
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
- * @run main/manual ExhaustingTests
+ * @run main ExhaustingTests
  * @summary Compare StrictMath.foo and FdlibmTranslit.foo for many inputs.
+ */
+
+/*
+ * Note on usage: for more exhaustive testing to help validate changes
+ * to StrictMath, the DEFAULT_SHIFT setting should be set to 0. This
+ * will test all float values against the unary methods. Running all
+ * the float values for a single method takes on the order of a minute
+ * or two. The default setting is a shift of 10, meaning every 1024th
+ * float value is tested and the overall test runs within the typical
+ * time expectations of a tier 1 test.
  */
 
 import java.util.function.DoubleBinaryOperator;
@@ -48,41 +58,44 @@ public class ExhaustingTests {
         }
     }
 
+    private static final int DEFAULT_SHIFT = 10;
+
     /**
      * Test the unary (one-argument) StrictMath methods from FDLIBM.
      */
     private static long testUnaryMethods() {
         long failures = 0;
         UnaryTestCase[] testCases = {
-         // new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt),
-            new UnaryTestCase("cbrt",  FdlibmTranslit::cbrt,  StrictMath::cbrt),
+         // new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt,  DEFAULT_SHIFT),
+            new UnaryTestCase("cbrt",  FdlibmTranslit::cbrt,  StrictMath::cbrt,  DEFAULT_SHIFT),
 
-         // new UnaryTestCase("log",   FdlibmTranslit::log,   StrictMath::log),
-            new UnaryTestCase("log10", FdlibmTranslit::log10, StrictMath::log10),
-            new UnaryTestCase("log1p", FdlibmTranslit::log1p, StrictMath::log1p),
+         // new UnaryTestCase("log",   FdlibmTranslit::log,   StrictMath::log,   DEFAULT_SHIFT),
+            new UnaryTestCase("log10", FdlibmTranslit::log10, StrictMath::log10, DEFAULT_SHIFT),
+            new UnaryTestCase("log1p", FdlibmTranslit::log1p, StrictMath::log1p, DEFAULT_SHIFT),
 
-            new UnaryTestCase("exp",   FdlibmTranslit::exp,   StrictMath::exp),
-            new UnaryTestCase("expm1", FdlibmTranslit::expm1, StrictMath::expm1),
+         // new UnaryTestCase("exp",   FdlibmTranslit::exp,   StrictMath::exp,   DEFAULT_SHIFT),
+            new UnaryTestCase("expm1", FdlibmTranslit::expm1, StrictMath::expm1, DEFAULT_SHIFT),
 
-         // new UnaryTestCase("sinh",  FdlibmTranslit::sinh,  StrictMath::sinh),
-         // new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh),
-         // new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh),
+         // new UnaryTestCase("sinh",  FdlibmTranslit::sinh,  StrictMath::sinh,  DEFAULT_SHIFT),
+         // new UnaryTestCase("cosh",  FdlibmTranslit::cosh,  StrictMath::cosh,  DEFAULT_SHIFT),
+         // new UnaryTestCase("tanh",  FdlibmTranslit::tanh,  StrictMath::tanh,  DEFAULT_SHIFT),
 
-         // new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin),
-         // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos),
-         // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan),
+         // new UnaryTestCase("sin",   FdlibmTranslit::sin,   StrictMath::sin,   DEFAULT_SHIFT),
+         // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
+         // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
 
-         // new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin),
-         // new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos),
-         // new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan),
+         // new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
+         // new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
+         // new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {
             System.out.println("Testing " + testCase.name());
             System.out.flush();
             int i = Integer.MAX_VALUE; // overflow to Integer.MIN_VALUE at start of loop
+            int increment = 1 << testCase.shiftDistance;
             do {
-                i++;
+                i += increment;
                 double input = (double)Float.intBitsToFloat(i);
                 failures += Tests.test(testCase.name(),
                                        input,
@@ -95,7 +108,14 @@ public class ExhaustingTests {
 
     private static record UnaryTestCase(String name,
                                         DoubleUnaryOperator translit,
-                                        DoubleUnaryOperator strictMath) {}
+                                        DoubleUnaryOperator strictMath,
+                                        int shiftDistance) {
+        UnaryTestCase {
+            if (shiftDistance < 0 || shiftDistance >= 31) {
+                throw new IllegalArgumentException("Shift out of range");
+            }
+        }
+    }
 
     /**
      * Test the binary (two-argument) StrictMath methods from FDLIBM.
@@ -103,18 +123,25 @@ public class ExhaustingTests {
     private static long testBinaryMethods() {
         long failures = 0;
         // Note: pow does _not_ have translit a port
+
+        // Shift of 16 for a binary method gives comparable running
+        // time to exhaustive testing of a unary method (testing every
+        // 2^16 floating point values over two arguments is 2^32
+        // probes).
         BinaryTestCase[] testCases = {
-            new BinaryTestCase("hypot", FdlibmTranslit::hypot, StrictMath::hypot),
-         // new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2),
+            new BinaryTestCase("hypot", FdlibmTranslit::hypot, StrictMath::hypot, 20, 20),
+         // new BinaryTestCase("atan2", FdlibmTranslit::atan2, StrictMath::atan2, 20, 20),
         };
 
-        // to get 2^32 probes for a binary method, sample every 2^16 float values.
         for (var testCase : testCases) {
             System.out.println("Testing " + testCase.name());
             System.out.flush();
 
-            for (long i = Integer.MIN_VALUE; i <= Integer.MAX_VALUE; i += 65_536) {
-                for (long j = Integer.MIN_VALUE; j <= Integer.MAX_VALUE; j += 65_536) {
+            int iIncrement = 1 << testCase.xShift;
+            int jIncrement = 1 << testCase.yShift;
+
+            for (long i = Integer.MIN_VALUE; i <= Integer.MAX_VALUE; i += iIncrement) {
+                for (long j = Integer.MIN_VALUE; j <= Integer.MAX_VALUE; j += jIncrement) {
                     double input1 = (double)Float.intBitsToFloat((int)i);
                     double input2 = (double)Float.intBitsToFloat((int)j);
                     failures += Tests.test(testCase.name(),
@@ -129,5 +156,14 @@ public class ExhaustingTests {
 
     private static record BinaryTestCase(String name,
                                          DoubleBinaryOperator translit,
-                                         DoubleBinaryOperator strictMath) {}
+                                         DoubleBinaryOperator strictMath,
+                                         int xShift,
+                                         int yShift) {
+        BinaryTestCase {
+            if (xShift < 0 || xShift >= 31 ||
+                yShift < 0 || yShift >= 31 ) {
+                throw new IllegalArgumentException("Shift out of range");
+            }
+        }
+    }
 }
