@@ -113,6 +113,7 @@ public final class TestLoadedAgentEvent {
     private static void testJavaDynamic() throws Throwable {
         try (Recording r = new Recording()) {
             r.enable(EVENT_NAME);
+            long start = System.currentTimeMillis();
             r.start();
             long pid = ProcessHandle.current().pid();
             VirtualMachine vm = VirtualMachine.attach(Long.toString(pid));
@@ -126,6 +127,7 @@ public final class TestLoadedAgentEvent {
             vm.loadAgent(JAVA_AGENT_JAR, "=");
             vm.detach();
             r.stop();
+            long stop = System.currentTimeMillis();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
             Instant endTime = events.get(0).getEndTime();
@@ -137,11 +139,11 @@ public final class TestLoadedAgentEvent {
                 if (!e.getStartTime().equals(endTime)) {
                     throw new Exception("Expected start and end time to be the same");
                 }
-                Instant loadTime = e.getInstant("loadTime");
-                if (loadTime.isBefore(r.getStartTime())) {
+                long loadTime = e.getInstant("loadTime").toEpochMilli();
+                if (loadTime < start) {
                     throw new Exception("Expected agent to be loaded after recording start");
                 }
-                if (loadTime.isAfter(r.getStopTime())) {
+                if (loadTime > stop) {
                     throw new Exception("Expected agent to be loaded before recording stop");
                 }
                 Events.assertField(e, "name").equal(JAVA_AGENT_JAR);

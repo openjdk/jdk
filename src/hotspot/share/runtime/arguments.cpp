@@ -253,10 +253,8 @@ AgentLibrary::AgentLibrary(const char* name, const char* options,
 }
 
 void AgentLibrary::set_load_time() {
-  // Ticks not initialized, use os::javaTimeSystemUTC
-  jlong seconds, nanos;
-  os::javaTimeSystemUTC(seconds, nanos);
-  _load_time_epoch_ms = seconds * 1000 + nanos / 1000000;
+  // Using epoch millis since Ticks system is not initialized this early.
+  _load_time_epoch_ms = os::javaTimeMillis();
 }
 
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
