@@ -25,9 +25,9 @@
  * @test
  * @summary Verifies JVMTI GetStackTrace does not truncate virtual thread stack trace with agent attach
  * @requires vm.jvmti
- * @requires vm.continuations
  * @enablePreview
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualStackTraceTest
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualStackTraceTest
  */
 
 import com.sun.tools.attach.VirtualMachine;

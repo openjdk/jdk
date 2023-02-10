@@ -25,12 +25,16 @@
  * @test
  * @summary Verifies JVMTI can_support_virtual_threads works for agents loaded at startup and into running VM
  * @requires vm.jvmti
- * @requires vm.continuations
  * @enablePreview
  * @run main/othervm/native -agentlib:VirtualThreadStartTest VirtualThreadStartTest
  * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads VirtualThreadStartTest
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true VirtualThreadStartTest attach can_support_virtual_threads
+ *
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
+ * @run main/othervm/native -agentlib:VirtualThreadStartTest=can_support_virtual_threads -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest attach
+ * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations VirtualThreadStartTest attach can_support_virtual_threads
  */
 
 import com.sun.tools.attach.VirtualMachine;

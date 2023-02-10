@@ -435,6 +435,7 @@ JavaThread::JavaThread() :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
+  _is_bound_vthread(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -1648,6 +1649,13 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
          "must be initialized");
   set_threadOopHandles(thread_oop());
   java_lang_Thread::set_thread(thread_oop(), this);
+
+#if INCLUDE_JVMTI
+  if (thread_oop()->is_a(vmClasses::BoundVirtualThread_klass())) {
+    set_is_bound_vthread(true);
+    set_jvmti_vthread(thread_oop());
+  }
+#endif
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());

@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Test SuspendAllVirtualThreads/ResumeAllVirtualThreads
- * @requires vm.continuations
  * @library /test/lib
  * @compile --enable-preview -source ${jdk.version} SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
@@ -32,6 +31,13 @@
  *      --enable-preview
  *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -agentlib:SuspendResume2
+ *      SuspendResume2
+ * @run main/othervm/native
+ *      --enable-preview
+ *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *      -agentlib:SuspendResume2
+ *      -XX:+UnlockExperimentalVMOptions
+ *      -XX:-VMContinuations
  *      SuspendResume2
  */
 

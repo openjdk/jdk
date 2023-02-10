@@ -316,6 +316,7 @@ class JavaThread: public Thread {
   volatile bool         _carrier_thread_suspended;       // Carrier thread is externally suspended
   bool                  _is_in_VTMS_transition;          // thread is in virtual thread mount state transition
   bool                  _is_in_tmp_VTMS_transition;      // thread is in temporary virtual thread mount state transition
+  bool                  _is_bound_vthread;               // Cache of threadObj()->is_a(vmClasses::BoundVirtualThread_klass())
 #ifdef ASSERT
   bool                  _is_VTMS_transition_disabler;    // thread currently disabled VTMS transitions
 #endif
@@ -649,6 +650,9 @@ private:
 
   void set_is_in_VTMS_transition(bool val);
   void toggle_is_in_tmp_VTMS_transition()        { _is_in_tmp_VTMS_transition = !_is_in_tmp_VTMS_transition; };
+
+  bool is_bound_vthread()                        { return _is_bound_vthread; }
+  void set_is_bound_vthread(bool val)            { _is_bound_vthread = val; }
 
 #ifdef ASSERT
   bool is_VTMS_transition_disabler() const       { return _is_VTMS_transition_disabler; }
