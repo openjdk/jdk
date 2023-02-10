@@ -48,7 +48,7 @@ public class GB18030
     @SuppressWarnings("removal")
     private static final boolean IS_2000 = "2000".equals(
         AccessController.doPrivileged((PrivilegedAction<String>)
-            () -> System.getProperty("jdk.charsets.GB18030")));
+            () -> System.getProperty("jdk.charset.GB18030")));
 
     public GB18030() {
         super("GB18030", $ALIASES$);

@@ -27,7 +27,7 @@
  * @summary Check that registered charsets are actually registered
  * @modules jdk.charsets
  * @run main RegisteredCharsets
- * @run main/othervm -Djdk.charsets.GB18030=2000 RegisteredCharsets
+ * @run main/othervm -Djdk.charset.GB18030=2000 RegisteredCharsets
  */
 
 import java.nio.charset.*;
@@ -253,7 +253,7 @@ public class RegisteredCharsets {
                 });
 
         aliasCheck("GB18030",
-                "2000".equals(System.getProperty("jdk.charsets.GB18030")) ?
+                "2000".equals(System.getProperty("jdk.charset.GB18030")) ?
                 new String[] {
                     "gb18030-2000"
                 } :

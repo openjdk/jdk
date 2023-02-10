@@ -26,7 +26,7 @@
    @summary Test the supported New I/O coders
    @modules jdk.charsets
    @run main CoderTest
-   @run main/othervm -Djdk.charsets.GB18030=2000 CoderTest
+   @run main/othervm -Djdk.charset.GB18030=2000 CoderTest
  */
 
 import java.io.*;
@@ -59,7 +59,7 @@ public class CoderTest {
                          ".b2c-irreversible" };
 
     private static final boolean IS_2000 =
-            "2000".equals(System.getProperty("jdk.charsets.GB18030"));
+            "2000".equals(System.getProperty("jdk.charset.GB18030"));
 
 
     // Utilities

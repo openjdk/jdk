@@ -58,7 +58,7 @@ public class SPI {
                                 out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
                                 if (cs.csName.equals("GB18030")) {
                                     out.printf("                \"2000\".equals(AccessController.doPrivileged((PrivilegedAction<String>)%n" +
-                                               "                    () -> System.getProperty(\"jdk.charsets.GB18030\"))) ?%n" +
+                                               "                    () -> System.getProperty(\"jdk.charset.GB18030\"))) ?%n" +
                                                "                    new String[] {\"gb18030-2000\"} :%n" +
                                                "                    new String[] {\"gb18030-2022\"});%n%n");
                                 } else {

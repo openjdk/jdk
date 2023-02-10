@@ -26,7 +26,7 @@
  * @summary Check GB18030
  * @modules jdk.charsets
  * @run main TestGB18030
- * @run main/othervm -Djdk.charsets.GB18030=2000 TestGB18030
+ * @run main/othervm -Djdk.charset.GB18030=2000 TestGB18030
  */
 
 import java.nio.*;
@@ -79,7 +79,7 @@ public class TestGB18030 {
     }
 
     static void checkAlias() {
-        var IS_2000 = "2000".equals(System.getProperty("jdk.charsets.GB18030"));
+        var IS_2000 = "2000".equals(System.getProperty("jdk.charset.GB18030"));
         var expected = IS_2000 ? Set.of("gb18030-2000") : Set.of("gb18030-2022");
         var found = cs.aliases();
         System.out.printf("checkAlias(): IS_2000: %s, expected: %s, found: %s\n", IS_2000, expected, found);
