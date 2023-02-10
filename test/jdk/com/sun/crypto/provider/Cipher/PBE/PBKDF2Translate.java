@@ -34,7 +34,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @test
- * @bug 8041781
+ * @bug 8041781 7181214 8288050
  * @summary Verify if the SecretKeyFactory.translateKey() method works
  * @author Alexander Fomin
  * @run main PBKDF2Translate
@@ -47,7 +47,9 @@ public class PBKDF2Translate {
         "PBKDF2WithHmacSHA224",
         "PBKDF2WithHmacSHA256",
         "PBKDF2WithHmacSHA384",
-        "PBKDF2WithHmacSHA512"
+        "PBKDF2WithHmacSHA512",
+        "PBKDF2WithHmacSHA512/224",
+        "PBKDF2WithHmacSHA512/256",
     };
 
     private static final String PASS_PHRASE = "some hidden string";
