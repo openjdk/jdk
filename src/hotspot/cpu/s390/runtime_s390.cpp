@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -76,7 +76,6 @@ void OptoRuntime::generate_exception_blob() {
 
   Register handle_exception = Z_ARG5;
 
-  __ verify_thread();
   __ z_stg(Z_ARG1/*exception oop*/, Address(Z_thread, JavaThread::exception_oop_offset()));
   __ z_stg(Z_ARG2/*issuing pc*/,    Address(Z_thread, JavaThread::exception_pc_offset()));
 

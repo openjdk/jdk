@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 20223, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -111,7 +111,6 @@ void InterpreterMacroAssembler::dispatch_base(TosState state, address* table, bo
 #endif
 
   // TODO: Maybe implement +VerifyActivationFrameSize here.
-  // verify_thread(); // Too slow. We will just verify on method entry & exit.
   verify_oop(Z_tos, state);
 
   // Dispatch table to use.
@@ -954,7 +953,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   verify_oop(Z_tos, state);
-  verify_thread();
 
   pop_interpreter_frame(return_pc, Z_ARG2, Z_ARG3);
   BLOCK_COMMENT("} remove_activation");

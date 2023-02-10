@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -2304,8 +2304,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   bs->nmethod_entry_barrier(masm, r_temp_1);
 
   frame_done_pc = (intptr_t)__ pc();
-
-  __ verify_thread();
 
   // Native nmethod wrappers never take possession of the oop arguments.
   // So the caller will gc the arguments.
