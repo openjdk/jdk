@@ -1376,7 +1376,7 @@ public class JavacParser implements Parser {
                             return illegal();
                         }
                         int prevmode = mode;
-                        mode &= ~NOPARAMS;
+                        setMode(mode & ~NOPARAMS);
                         typeArgs = typeArgumentsOpt(EXPR);
                         setMode(prevmode);
                         if (isMode(EXPR)) {
@@ -2145,7 +2145,7 @@ public class JavacParser implements Parser {
         if (token.kind == LT) {
             nextToken();
             if (token.kind == GT && diamondAllowed) {
-                mode |= DIAMOND;
+                setMode(mode | DIAMOND);
                 nextToken();
                 return List.nil();
             } else {
