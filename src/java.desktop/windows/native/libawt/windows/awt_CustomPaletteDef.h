@@ -271,4 +271,4 @@ PALETTEENTRY AwtPalette::customPalette[] = {
     { 0xf8, 0xf8, 0xf8, PC_NOCOLLAPSE },
 };
 
-#endif _AWT_CUSTOMPALETTEDEF_H
+#endif // _AWT_CUSTOMPALETTEDEF_H

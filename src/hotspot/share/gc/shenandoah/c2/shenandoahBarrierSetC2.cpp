@@ -199,7 +199,6 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
   if (do_load) {
     // We need to generate the load of the previous value
-    assert(obj != nullptr, "must have a base");
     assert(adr != nullptr, "where are loading from?");
     assert(pre_val == nullptr, "loaded already?");
     assert(val_type != nullptr, "need a type");
@@ -499,10 +498,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
-  bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool on_heap = (decorators & IN_HEAP) != 0;
-
-  if (!access.is_oop() || (!on_heap && !anonymous)) {
+  if (!access.is_oop()) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 

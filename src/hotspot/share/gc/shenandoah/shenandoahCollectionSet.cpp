@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2016, 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedS
 
   MemTracker::record_virtual_memory_type(_map_space.base(), mtGC);
 
-  size_t page_size = (size_t)os::vm_page_size();
+  size_t page_size = os::vm_page_size();
 
   if (!_map_space.special()) {
     // Commit entire pages that cover the heap cset map.
