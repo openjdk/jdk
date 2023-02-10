@@ -21,12 +21,10 @@
  * questions.
  */
 
-// key: compiler.warn.extraneous.semicolon
-// key: compiler.warn.source.no.system.modules.path
-// options: --source 20
+// key: compiler.err.extraneous.semicolon
 
-import java.util.Map;;      // NOTE: extra semi-colon
+import java.util.Map;;      // NOTE: extra semicolon
 import java.util.Set;
 
-class ExtraneousSemiColonWarning {
+class ExtraImportSemicolonError {
 }
