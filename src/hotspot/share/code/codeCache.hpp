@@ -93,9 +93,9 @@ class CodeCache : AllStatic {
   static GrowableArray<CodeHeap*>* _nmethod_heaps;
   static GrowableArray<CodeHeap*>* _allocable_heaps;
 
-  static address _low_bound;                            // Lower bound of CodeHeap addresses
-  static address _high_bound;                           // Upper bound of CodeHeap addresses
-  static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
+  static address _low_bound;                                 // Lower bound of CodeHeap addresses
+  static address _high_bound;                                // Upper bound of CodeHeap addresses
+  static volatile int _number_of_nmethods_with_dependencies; // Total number of nmethods with dependencies
 
   static uint8_t           _unloading_cycle;          // Global state for recognizing old nmethods that need to be unloaded
   static uint64_t          _gc_epoch;                 // Global state for tracking when nmethods were found to be on-stack
@@ -323,8 +323,8 @@ class CodeCache : AllStatic {
   // Support for fullspeed debugging
   static void flush_dependents_on_method(const methodHandle& dependee);
 
-  // tells how many nmethods have dependencies
-  static int number_of_nmethods_with_dependencies();
+  // tells if there are nmethods with dependencies
+  static bool has_nmethods_with_dependencies();
 
   static int get_codemem_full_count(CodeBlobType code_blob_type) {
     CodeHeap* heap = get_code_heap(code_blob_type);
