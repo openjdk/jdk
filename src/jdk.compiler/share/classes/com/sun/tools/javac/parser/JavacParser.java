@@ -3836,8 +3836,12 @@ public class JavacParser implements Parser {
                     break;
             }
             if (firstTypeDecl && mods == null && token.kind == IMPORT) {
-                if (!semiList.isEmpty())
-                    reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                if (!semiList.isEmpty()) {
+                    if (source.compareTo(Source.JDK21) >= 0)
+                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                    else
+                        log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                }
                 seenImport = true;
                 defs.append(importDeclaration());
             } else {
@@ -3849,8 +3853,12 @@ public class JavacParser implements Parser {
                 if (mods != null || token.kind != SEMI)
                     mods = modifiersOpt(mods);
                 if (firstTypeDecl && token.kind == IDENTIFIER) {
-                    if (!semiList.isEmpty())
-                        reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                    if (!semiList.isEmpty()) {
+                        if (source.compareTo(Source.JDK21) >= 0)
+                            reportSyntaxError(semiList.first().pos, Errors.ExtraneousSemicolon);
+                        else
+                            log.warning(semiList.first().pos, Warnings.ExtraneousSemicolon);
+                    }
                     ModuleKind kind = ModuleKind.STRONG;
                     if (token.name() == names.open) {
                         kind = ModuleKind.OPEN;

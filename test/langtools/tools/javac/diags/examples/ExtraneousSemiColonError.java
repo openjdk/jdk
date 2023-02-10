@@ -26,5 +26,5 @@
 import java.util.Map;;      // NOTE: extra semi-colon
 import java.util.Set;
 
-class ExtraneousSemiColon {
+class ExtraneousSemiColonError {
 }
