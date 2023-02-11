@@ -259,7 +259,9 @@ public final class StrictMath {
      * @return  the value ln&nbsp;{@code a}, the natural logarithm of
      *          {@code a}.
      */
-    public static native double log(double a);
+    public static double log(double a) {
+        return FdLibm.Log.compute(a);
+    }
 
     /**
      * Returns the base 10 logarithm of a {@code double} value.
