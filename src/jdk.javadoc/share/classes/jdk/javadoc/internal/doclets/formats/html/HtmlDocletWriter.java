@@ -67,6 +67,7 @@ import com.sun.source.doctree.DocTree.Kind;
 import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
+import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
@@ -1335,6 +1336,12 @@ public class HtmlDocletWriter {
                                     Optional.of(Text.of(body))));
                         }
                     }
+                    return false;
+                }
+
+                @Override
+                public Boolean visitEscape(EscapeTree node, Content content) {
+                    result.add(node.getBody());
                     return false;
                 }
 

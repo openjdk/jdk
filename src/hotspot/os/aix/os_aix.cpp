@@ -1772,10 +1772,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   vmembk_t* const vmi = vmembk_find(addr);
@@ -1807,10 +1807,10 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   assert(is_aligned_to(addr, os::vm_page_size()),
-    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     p2i(addr), os::vm_page_size());
   assert(is_aligned_to(size, os::vm_page_size()),
-    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    "size " PTR_FORMAT " not aligned to vm_page_size (" SIZE_FORMAT ")",
     size, os::vm_page_size());
 
   // Dynamically do different things for mmap/shmat.
@@ -2215,7 +2215,7 @@ extern "C" {
   }
 }
 
-static void set_page_size(int page_size) {
+static void set_page_size(size_t page_size) {
   OSInfo::set_vm_page_size(page_size);
   OSInfo::set_vm_allocation_granularity(page_size);
 }

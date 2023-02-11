@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ protected:
   int find_covering_region_by_base(HeapWord* base);
 
   // Returns the leftmost end of a committed region corresponding to a
-  // covered region before covered region "ind", or else "NULL" if "ind" is
+  // covered region before covered region "ind", or else "null" if "ind" is
   // the first covered region.
   HeapWord* largest_prev_committed_end(int ind) const;
 

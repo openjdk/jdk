@@ -49,7 +49,6 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
   // Backing storage.
   G1PageBasedVirtualSpace _storage;
 
-  size_t _region_granularity;
   // Mapping management
   CHeapBitMap _region_commit_map;
 
