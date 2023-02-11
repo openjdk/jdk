@@ -69,7 +69,7 @@ public class ExhaustingTests {
          // new UnaryTestCase("sqrt",  FdlibmTranslit::sqrt,  StrictMath::sqrt,  DEFAULT_SHIFT),
             new UnaryTestCase("cbrt",  FdlibmTranslit::cbrt,  StrictMath::cbrt,  DEFAULT_SHIFT),
 
-         // new UnaryTestCase("log",   FdlibmTranslit::log,   StrictMath::log,   DEFAULT_SHIFT),
+            new UnaryTestCase("log",   FdlibmTranslit::log,   StrictMath::log,   DEFAULT_SHIFT),
             new UnaryTestCase("log10", FdlibmTranslit::log10, StrictMath::log10, DEFAULT_SHIFT),
             new UnaryTestCase("log1p", FdlibmTranslit::log1p, StrictMath::log1p, DEFAULT_SHIFT),
 
