@@ -83,7 +83,7 @@ public class AnonVmClassesDuringDump {
         // inspect the archive and make sure no anonymous class is in there
         TestCommon.run("-cp", appJar,
             "-XX:+UnlockDiagnosticVMOptions", cdsDiagnosticOption,
-            "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary", Hello.class.getName())
+            "-XX:+PrintSharedArchiveAndExit", Hello.class.getName())
             .assertNormalExit(dynamicMode ?
                 output -> output.shouldMatch(pattern) :
                 output -> output.shouldNotMatch(pattern));

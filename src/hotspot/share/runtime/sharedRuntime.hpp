@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "code/codeBlob.hpp"
 #include "code/vmreg.hpp"
-#include "interpreter/bytecodeTracer.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
@@ -129,9 +128,11 @@ class SharedRuntime: AllStatic {
   static jfloat  d2f (jdouble x);
   static jfloat  l2f (jlong   x);
   static jdouble l2d (jlong   x);
+  static jfloat  hf2f(jshort  x);
+  static jshort  f2hf(jfloat  x);
+  static jfloat  i2f (jint    x);
 
 #ifdef __SOFTFP__
-  static jfloat  i2f (jint    x);
   static jdouble i2d (jint    x);
   static jdouble f2d (jfloat  x);
 #endif // __SOFTFP__
@@ -215,17 +216,17 @@ class SharedRuntime: AllStatic {
   static address get_poll_stub(address pc);
 
   static address get_ic_miss_stub() {
-    assert(_ic_miss_blob!= NULL, "oops");
+    assert(_ic_miss_blob!= nullptr, "oops");
     return _ic_miss_blob->entry_point();
   }
 
   static address get_handle_wrong_method_stub() {
-    assert(_wrong_method_blob!= NULL, "oops");
+    assert(_wrong_method_blob!= nullptr, "oops");
     return _wrong_method_blob->entry_point();
   }
 
   static address get_handle_wrong_method_abstract_stub() {
-    assert(_wrong_method_abstract_blob!= NULL, "oops");
+    assert(_wrong_method_abstract_blob!= nullptr, "oops");
     return _wrong_method_abstract_blob->entry_point();
   }
 
@@ -235,15 +236,15 @@ class SharedRuntime: AllStatic {
 #endif // COMPILER2
 
   static address get_resolve_opt_virtual_call_stub() {
-    assert(_resolve_opt_virtual_call_blob != NULL, "oops");
+    assert(_resolve_opt_virtual_call_blob != nullptr, "oops");
     return _resolve_opt_virtual_call_blob->entry_point();
   }
   static address get_resolve_virtual_call_stub() {
-    assert(_resolve_virtual_call_blob != NULL, "oops");
+    assert(_resolve_virtual_call_blob != nullptr, "oops");
     return _resolve_virtual_call_blob->entry_point();
   }
   static address get_resolve_static_call_stub() {
-    assert(_resolve_static_call_blob != NULL, "oops");
+    assert(_resolve_static_call_blob != nullptr, "oops");
     return _resolve_static_call_blob->entry_point();
   }
 
@@ -263,15 +264,13 @@ class SharedRuntime: AllStatic {
 
   // Helper routine for full-speed JVMTI exception throwing support
   static void throw_and_post_jvmti_exception(JavaThread* current, Handle h_exception);
-  static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = NULL);
+  static void throw_and_post_jvmti_exception(JavaThread* current, Symbol* name, const char *message = nullptr);
 
   // RedefineClasses() tracing support for obsolete method entry
   static int rc_trace_method_entry(JavaThread* thread, Method* m);
 
   // To be used as the entry point for unresolved native methods.
   static address native_method_throw_unsatisfied_link_error_entry();
-
-  static oop retrieve_receiver(Symbol* sig, frame caller);
 
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
@@ -316,7 +315,7 @@ class SharedRuntime: AllStatic {
   // The caller (or one of it's callers) must use a ResourceMark
   // in order to correctly free the result.
   //
-  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name = NULL);
+  static char* generate_class_cast_message(Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name = nullptr);
 
   // Resolves a call site- may patch in the destination of the call into the
   // compiled code.
@@ -380,7 +379,7 @@ class SharedRuntime: AllStatic {
   // Some architectures require that an argument must be passed in a register
   // AND in a stack slot. These architectures provide a second VMRegPair array
   // to be filled by the c_calling_convention method. On other architectures,
-  // NULL is being passed as the second VMRegPair array, so arguments are either
+  // null is being passed as the second VMRegPair array, so arguments are either
   // passed in a register OR in a stack slot.
   static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
                                   int total_args_passed);
@@ -555,26 +554,20 @@ class SharedRuntime: AllStatic {
   // Statistics code
   // stats for "normal" compiled calls (non-interface)
   static int64_t _nof_normal_calls;               // total # of calls
-  static int64_t _nof_optimized_calls;            // total # of statically-bound calls
   static int64_t _nof_inlined_calls;              // total # of inlined normal calls
   static int64_t _nof_static_calls;               // total # of calls to static methods or super methods (invokespecial)
   static int64_t _nof_inlined_static_calls;       // total # of inlined static calls
   // stats for compiled interface calls
   static int64_t _nof_interface_calls;            // total # of compiled calls
-  static int64_t _nof_optimized_interface_calls;  // total # of statically-bound interface calls
   static int64_t _nof_inlined_interface_calls;    // total # of inlined interface calls
-  static int64_t _nof_megamorphic_interface_calls;// total # of megamorphic interface calls
 
  public: // for compiler
   static address nof_normal_calls_addr()                { return (address)&_nof_normal_calls; }
-  static address nof_optimized_calls_addr()             { return (address)&_nof_optimized_calls; }
   static address nof_inlined_calls_addr()               { return (address)&_nof_inlined_calls; }
   static address nof_static_calls_addr()                { return (address)&_nof_static_calls; }
   static address nof_inlined_static_calls_addr()        { return (address)&_nof_inlined_static_calls; }
   static address nof_interface_calls_addr()             { return (address)&_nof_interface_calls; }
-  static address nof_optimized_interface_calls_addr()   { return (address)&_nof_optimized_interface_calls; }
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
-  static address nof_megamorphic_interface_calls_addr() { return (address)&_nof_megamorphic_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_statistics();
   static void print_ic_miss_histogram();
@@ -693,7 +686,7 @@ class AdapterHandlerLibrary: public AllStatic {
                                         address i2c_entry,
                                         address c2i_entry,
                                         address c2i_unverified_entry,
-                                        address c2i_no_clinit_check_entry = NULL);
+                                        address c2i_no_clinit_check_entry = nullptr);
   static void create_native_wrapper(const methodHandle& method);
   static AdapterHandlerEntry* get_adapter(const methodHandle& method);
 

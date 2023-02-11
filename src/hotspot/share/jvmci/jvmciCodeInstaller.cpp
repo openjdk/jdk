@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/os.hpp" // malloc
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 
@@ -45,13 +45,13 @@
 // Allocate them with new so they are never destroyed (otherwise, a
 // forced exit could destroy these objects while they are still in
 // use).
-ConstantOopWriteValue* CodeInstaller::_oop_null_scope_value = new (ResourceObj::C_HEAP, mtJVMCI) ConstantOopWriteValue(NULL);
-ConstantIntValue*      CodeInstaller::_int_m1_scope_value = new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(-1);
-ConstantIntValue*      CodeInstaller::_int_0_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue((jint)0);
-ConstantIntValue*      CodeInstaller::_int_1_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(1);
-ConstantIntValue*      CodeInstaller::_int_2_scope_value =  new (ResourceObj::C_HEAP, mtJVMCI) ConstantIntValue(2);
-LocationValue*         CodeInstaller::_illegal_value = new (ResourceObj::C_HEAP, mtJVMCI) LocationValue(Location());
-MarkerValue*           CodeInstaller::_virtual_byte_array_marker = new (ResourceObj::C_HEAP, mtJVMCI) MarkerValue();
+ConstantOopWriteValue* CodeInstaller::_oop_null_scope_value = new (mtJVMCI) ConstantOopWriteValue(nullptr);
+ConstantIntValue*      CodeInstaller::_int_m1_scope_value = new (mtJVMCI) ConstantIntValue(-1);
+ConstantIntValue*      CodeInstaller::_int_0_scope_value =  new (mtJVMCI) ConstantIntValue((jint)0);
+ConstantIntValue*      CodeInstaller::_int_1_scope_value =  new (mtJVMCI) ConstantIntValue(1);
+ConstantIntValue*      CodeInstaller::_int_2_scope_value =  new (mtJVMCI) ConstantIntValue(2);
+LocationValue*         CodeInstaller::_illegal_value = new (mtJVMCI) LocationValue(Location());
+MarkerValue*           CodeInstaller::_virtual_byte_array_marker = new (mtJVMCI) MarkerValue();
 
 static bool is_set(u1 flags, u1 bit) {
   return flags & bit;
@@ -252,7 +252,7 @@ OopMap* CodeInstaller::create_oop_map(HotSpotCompiledCodeStream* stream, u1 debu
   assert(is_set(debug_info_flags, DI_HAS_REFERENCE_MAP), "must be");
   u2 max_register_size = stream->read_u2("maxRegisterSize");
   if (!_has_wide_vector && SharedRuntime::is_wide_vector(max_register_size)) {
-    if (SharedRuntime::polling_page_vectors_safepoint_handler_blob() == NULL) {
+    if (SharedRuntime::polling_page_vectors_safepoint_handler_blob() == nullptr) {
       JVMCI_ERROR_NULL("JVMCI is producing code using vectors larger than the runtime supports%s", stream->context());
     }
     _has_wide_vector = true;
@@ -377,7 +377,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
     JVMCI_ERROR_(Handle(), "unexpected oop tag: %d", tag)
   }
   if (obj == nullptr) {
-    JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly NULL", Handle());
+    JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
   } else {
     oopDesc::verify(obj);
   }
@@ -385,7 +385,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
 }
 
 ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1 tag, BasicType type, ScopeValue* &second, JVMCI_TRAPS) {
-  second = NULL;
+  second = nullptr;
   switch (tag) {
     case ILLEGAL: {
       if (type != T_ILLEGAL) {
@@ -484,7 +484,7 @@ void CodeInstaller::record_object_value(ObjectValue* sv, HotSpotCompiledCodeStre
 
   u2 length = stream->read_u2("values:length");
   for (jint i = 0; i < length; i++) {
-    ScopeValue* cur_second = NULL;
+    ScopeValue* cur_second = nullptr;
     BasicType type = (BasicType) stream->read_u1("basicType");
     ScopeValue* value;
     u1 tag = stream->read_u1("tag");
@@ -506,22 +506,22 @@ void CodeInstaller::record_object_value(ObjectValue* sv, HotSpotCompiledCodeStre
       value = get_scope_value(stream, tag, type, cur_second, JVMCI_CHECK);
     }
 
-    if (isLongArray && cur_second == NULL) {
+    if (isLongArray && cur_second == nullptr) {
       // we're trying to put ints into a long array... this isn't really valid, but it's used for some optimizations.
       // add an int 0 constant
       cur_second = _int_0_scope_value;
     }
 
-    if (isByteArray && cur_second != NULL && (type == T_DOUBLE || type == T_LONG)) {
+    if (isByteArray && cur_second != nullptr && (type == T_DOUBLE || type == T_LONG)) {
       // we are trying to write a long in a byte Array. We will need to count the illegals to restore the type of
       // the thing we put inside.
-      cur_second = NULL;
+      cur_second = nullptr;
     }
 
-    if (cur_second != NULL) {
+    if (cur_second != nullptr) {
       sv->field_values()->append(cur_second);
     }
-    assert(value != NULL, "missing value");
+    assert(value != nullptr, "missing value");
     sv->field_values()->append(value);
   }
 }
@@ -573,9 +573,9 @@ GrowableArray<MonitorValue*>* CodeInstaller::read_monitor_values(HotSpotCompiled
   GrowableArray<MonitorValue*>* monitors = new GrowableArray<MonitorValue*>(length);
   for (int i = 0; i < length; i++) {
     bool eliminated = stream->read_bool("isEliminated");
-    ScopeValue* second = NULL;
+    ScopeValue* second = nullptr;
     ScopeValue* owner_value = get_scope_value(stream, stream->read_u1("tag"), T_OBJECT, second, JVMCI_CHECK_NULL);
-    assert(second == NULL, "monitor cannot occupy two stack slots");
+    assert(second == nullptr, "monitor cannot occupy two stack slots");
 
     ScopeValue* lock_data_value = get_scope_value(stream, stream->read_u1("tag"), T_LONG, second, JVMCI_CHECK_NULL);
     assert(second == lock_data_value, "monitor is LONG value that occupies two stack slots");
@@ -589,9 +589,9 @@ GrowableArray<MonitorValue*>* CodeInstaller::read_monitor_values(HotSpotCompiled
 
 void CodeInstaller::initialize_dependencies(HotSpotCompiledCodeStream* stream, u1 code_flags, OopRecorder* oop_recorder, JVMCI_TRAPS) {
   JavaThread* thread = stream->thread();
-  CompilerThread* compilerThread = thread->is_Compiler_thread() ? CompilerThread::cast(thread) : NULL;
+  CompilerThread* compilerThread = thread->is_Compiler_thread() ? CompilerThread::cast(thread) : nullptr;
   _oop_recorder = oop_recorder;
-  _dependencies = new Dependencies(&_arena, _oop_recorder, compilerThread != NULL ? compilerThread->log() : NULL);
+  _dependencies = new Dependencies(&_arena, _oop_recorder, compilerThread != nullptr ? compilerThread->log() : nullptr);
   if (is_set(code_flags, HCC_HAS_ASSUMPTIONS)) {
     u2 length = stream->read_u2("assumptions:length");
     for (int i = 0; i < length; ++i) {
@@ -687,7 +687,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
   _instructions = buffer.insts();
   _constants = buffer.consts();
 
-  initialize_fields(stream, code_flags, method, JVMCI_CHECK_OK);
+  initialize_fields(stream, code_flags, method, buffer, JVMCI_CHECK_OK);
   JVMCI::CodeInstallResult result = initialize_buffer(compiled_code, buffer, stream, code_flags, JVMCI_CHECK_OK);
 
   u4 available = stream->available();
@@ -714,7 +714,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                        false);
     result = JVMCI::ok;
   } else {
-    if (compile_state != NULL) {
+    if (compile_state != nullptr) {
       jvmci_env()->set_compile_state(compile_state);
     }
 
@@ -728,7 +728,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
 
     JVMCIObject mirror = installed_code;
-    nmethod* nm = NULL; // nm is an out parameter of register_method
+    nmethod* nm = nullptr; // nm is an out parameter of register_method
     result = runtime()->register_method(jvmci_env(),
                                         method,
                                         nm,
@@ -754,7 +754,7 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
                                         speculations_len);
     if (result == JVMCI::ok) {
       cb = nm;
-      if (compile_state == NULL) {
+      if (compile_state == nullptr) {
         // This compile didn't come through the CompileBroker so perform the printing here
         DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
         nm->maybe_print_nmethod(directive);
@@ -763,14 +763,14 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
     }
   }
 
-  if (cb != NULL) {
+  if (cb != nullptr) {
     // Make sure the pre-calculated constants section size was correct.
     guarantee((cb->code_begin() - cb->content_begin()) >= _constants_size, "%d < %d", (int)(cb->code_begin() - cb->content_begin()), _constants_size);
   }
   return result;
 }
 
-void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, JVMCI_TRAPS) {
+void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code_flags, methodHandle& method, CodeBuffer& buffer, JVMCI_TRAPS) {
   if (!method.is_null()) {
     _parameter_count = method->size_of_parameters();
     JVMCI_event_2("installing code for %s", method->name_and_sig_as_C_string());
@@ -797,6 +797,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   // Pre-calculate the constants section size.  This is required for PC-relative addressing.
   u4 data_section_size = stream->read_u4("dataSectionSize");
   u1 data_section_alignment = stream->read_u1("dataSectionAlignment");
+  buffer.set_const_section_alignment(data_section_alignment);
   if ((_constants->alignment() % data_section_alignment) != 0) {
     JVMCI_ERROR("invalid data section alignment: %d [constants alignment: %d]%s",
         data_section_alignment, _constants->alignment(), stream->context());
@@ -851,8 +852,8 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_c
   assert((CodeBuffer::SECT_INSTS == CodeBuffer::SECT_STUBS - 1) &&
          (CodeBuffer::SECT_CONSTS == CodeBuffer::SECT_INSTS - 1), "sections order: consts, insts, stubs");
   // buffer content: [constants + code_align] + [code + stubs_align] + [stubs]
-  int total_size = align_up(_constants_size, CodeSection::alignment(CodeBuffer::SECT_INSTS)) +
-                   align_up(_code_size, CodeSection::alignment(CodeBuffer::SECT_STUBS)) +
+  int total_size = align_up(_constants_size, buffer.insts()->alignment()) +
+                   align_up(_code_size, buffer.stubs()->alignment()) +
                    stubs_size;
 
   if (total_size > JVMCINMethodSizeLimit) {
@@ -860,7 +861,7 @@ JVMCI::CodeInstallResult CodeInstaller::initialize_buffer(JVMCIObject compiled_c
   }
 
   buffer.initialize(total_size, locs_buffer_size);
-  if (buffer.blob() == NULL) {
+  if (buffer.blob() == nullptr) {
     return JVMCI::cache_full;
   }
   buffer.initialize_stubs_size(stubs_size);
@@ -1016,7 +1017,7 @@ void CodeInstaller::read_virtual_objects(HotSpotCompiledCodeStream* stream, JVMC
   if (length == 0) {
     return;
   }
-  GrowableArray<ScopeValue*> *objects = new GrowableArray<ScopeValue*>(length, length, NULL);
+  GrowableArray<ScopeValue*> *objects = new GrowableArray<ScopeValue*>(length, length, nullptr);
   stream->set_virtual_objects(objects);
   // Create the unique ObjectValues
   JavaThread* thread = stream->thread();
@@ -1075,9 +1076,9 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
       bool reexecute = false;
       bool rethrow_exception = false;
 
-      DebugToken* locals_token = NULL;
-      DebugToken* stack_token = NULL;
-      DebugToken* monitors_token = NULL;
+      DebugToken* locals_token = nullptr;
+      DebugToken* stack_token = nullptr;
+      DebugToken* monitors_token = nullptr;
 
       if (full_info) {
         u1 frame_flags = stream->read_u1("flags");
@@ -1099,7 +1100,7 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
       // has_ea_local_in_scope and arg_escape should be added to JVMCI
       const bool has_ea_local_in_scope = false;
       const bool arg_escape            = false;
-      _debug_recorder->describe_scope(pc_offset, method, NULL, bci, reexecute, rethrow_exception, is_mh_invoke, return_oop,
+      _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, is_mh_invoke, return_oop,
                                       has_ea_local_in_scope, arg_escape,
                                       locals_token, stack_token, monitors_token);
     }

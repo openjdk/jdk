@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@
 
 CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 {
-# define ADD_EXCL(...) { static const char* e[] = {__VA_ARGS__, NULL}; add_exclusion(e); }
+# define ADD_EXCL(...) { static const char* e[] = {__VA_ARGS__, nullptr}; add_exclusion(e); }
 
   // Unfortunately this needs to be manually maintained. If
   // test/hotspot/jtreg/runtime/cds/appcds/cacheObject/ArchivedEnumTest.java fails,
@@ -128,7 +128,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 
   // This just points to an empty Map
   ADD_EXCL("jdk/internal/reflect/Reflection",            "methodFilterMap");       // E
-  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING");         // C
+  ADD_EXCL("jdk/internal/util/StaticProperty",           "FILE_ENCODING",          // C
+                                                 "JAVA_LOCALE_USE_OLD_ISO_CODES"); // C
 
   // Integer for 0 and 1 are in java/lang/Integer$IntegerCache and are archived
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
@@ -165,10 +166,10 @@ public:
     }
 
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
-    if (static_obj_field != NULL) {
+    if (static_obj_field != nullptr) {
       Klass* klass = static_obj_field->klass();
-      if (_exclusions != NULL) {
-        for (const char** p = _exclusions; *p != NULL; p++) {
+      if (_exclusions != nullptr) {
+        for (const char** p = _exclusions; *p != nullptr; p++) {
           if (fd->name()->equals(*p)) {
             return;
           }
@@ -227,7 +228,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
   _archived_objs++;
 
   StaticFieldInfo* info = _table.get(orig_obj);
-  if (info != NULL) {
+  if (info != nullptr) {
     ResourceMark rm;
     LogStream ls(Log(cds, heap)::warning());
     ls.print_cr("Archive heap points to a static field that may be reinitialized at runtime:");
@@ -235,7 +236,7 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
     ls.print("Value: ");
     orig_obj->print_on(&ls);
     ls.print_cr("--- trace begin ---");
-    trace_to_root(orig_obj, NULL, &value);
+    trace_to_root(&ls, orig_obj, nullptr, &value);
     ls.print_cr("--- trace end ---");
     ls.cr();
     _problems ++;
@@ -247,63 +248,69 @@ inline bool CDSHeapVerifier::do_entry(oop& orig_obj, HeapShared::CachedOopInfo& 
 class CDSHeapVerifier::TraceFields : public FieldClosure {
   oop _orig_obj;
   oop _orig_field;
-  LogStream* _ls;
+  outputStream* _st;
 
 public:
-  TraceFields(oop orig_obj, oop orig_field, LogStream* ls)
-    : _orig_obj(orig_obj), _orig_field(orig_field), _ls(ls) {}
+  TraceFields(oop orig_obj, oop orig_field, outputStream* st)
+    : _orig_obj(orig_obj), _orig_field(orig_field), _st(st) {}
 
   void do_field(fieldDescriptor* fd) {
     if (fd->field_type() == T_OBJECT || fd->field_type() == T_ARRAY) {
       oop obj_field = _orig_obj->obj_field(fd->offset());
       if (obj_field == _orig_field) {
-        _ls->print("::%s (offset = %d)", fd->name()->as_C_string(), fd->offset());
+        _st->print("::%s (offset = %d)", fd->name()->as_C_string(), fd->offset());
       }
     }
   }
 };
 
-// Hint: to exercise this function, uncomment out one of the ADD_EXCL lines above.
-int CDSHeapVerifier::trace_to_root(oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* p) {
+// Call this function (from gdb, etc) if you want to know why an object is archived.
+void CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj) {
+  HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(orig_obj);
+  if (info != nullptr) {
+    trace_to_root(st, orig_obj, nullptr, info);
+  } else {
+    st->print_cr("Not an archived object??");
+  }
+}
+
+int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_field, HeapShared::CachedOopInfo* info) {
   int level = 0;
-  LogStream ls(Log(cds, heap)::warning());
-  if (p->_referrer != NULL) {
-    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(p->_referrer);
-    assert(ref != NULL, "sanity");
-    level = trace_to_root(p->_referrer, orig_obj, ref) + 1;
+  if (info->_referrer != nullptr) {
+    HeapShared::CachedOopInfo* ref = HeapShared::archived_object_cache()->get(info->_referrer);
+    assert(ref != nullptr, "sanity");
+    level = trace_to_root(st, info->_referrer, orig_obj, ref) + 1;
   } else if (java_lang_String::is_instance(orig_obj)) {
-    ls.print_cr("[%2d] (shared string table)", level++);
+    st->print_cr("[%2d] (shared string table)", level++);
   }
   Klass* k = orig_obj->klass();
   ResourceMark rm;
-  ls.print("[%2d] ", level);
-  orig_obj->print_address_on(&ls);
-  ls.print(" %s", k->internal_name());
-  if (orig_field != NULL) {
+  st->print("[%2d] ", level);
+  orig_obj->print_address_on(st);
+  st->print(" %s", k->internal_name());
+  if (orig_field != nullptr) {
     if (k->is_instance_klass()) {
-      TraceFields clo(orig_obj, orig_field, &ls);;
+      TraceFields clo(orig_obj, orig_field, st);
       InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
       assert(orig_obj->is_objArray(), "must be");
       objArrayOop array = (objArrayOop)orig_obj;
       for (int i = 0; i < array->length(); i++) {
         if (array->obj_at(i) == orig_field) {
-          ls.print(" @[%d]", i);
+          st->print(" @[%d]", i);
           break;
         }
       }
     }
   }
-  ls.cr();
+  st->cr();
 
   return level;
 }
 
-#ifdef ASSERT
 void CDSHeapVerifier::verify() {
   CDSHeapVerifier verf;
   HeapShared::archived_object_cache()->iterate(&verf);
 }
-#endif
 
 #endif // INCLUDE_CDS_JAVA_HEAP

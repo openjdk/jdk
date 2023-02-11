@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ bool Node::is_cloop_ind_var() const {
 // Dump special per-node info
 #ifndef PRODUCT
 void LoopNode::dump_spec(outputStream *st) const {
+  RegionNode::dump_spec(st);
   if (is_inner_loop()) st->print( "inner " );
   if (is_partial_peel_loop()) st->print( "partial_peel " );
   if (partial_peel_has_failed()) st->print( "partial_peel_failed " );
@@ -1394,7 +1395,7 @@ void PhaseIdealLoop::transform_long_range_checks(int stride_con, const Node_List
     set_ctrl(K, this->C->root());
     Node* scaled_iv = new MulINode(inner_phi, K);
     register_new_node(scaled_iv, c);
-    Node* scaled_iv_plus_offset = scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);
+    Node* scaled_iv_plus_offset = new AddINode(scaled_iv, L_2);
     register_new_node(scaled_iv_plus_offset, c);
 
     Node* new_rc_cmp = new CmpUNode(scaled_iv_plus_offset, R_2);
@@ -2547,7 +2548,8 @@ SafePointNode* CountedLoopNode::outer_safepoint() const {
 
 Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
     while (ctrl != NULL && ctrl->is_Proj() && ctrl->in(0) != NULL && ctrl->in(0)->is_If() &&
-            (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
+           !is_zero_trip_guard_if(ctrl->in(0)->as_If()) &&
+           (ctrl->in(0)->as_If()->proj_out_or_null(1-ctrl->as_Proj()->_con) == NULL ||
              (ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->outcnt() == 1 &&
               ctrl->in(0)->as_If()->proj_out(1-ctrl->as_Proj()->_con)->unique_out()->Opcode() == Op_Halt))) {
       ctrl = ctrl->in(0)->in(0);
@@ -2555,6 +2557,22 @@ Node* CountedLoopNode::skip_predicates_from_entry(Node* ctrl) {
 
     return ctrl;
   }
+
+bool CountedLoopNode::is_zero_trip_guard_if(const IfNode* iff) {
+  if (iff->in(1) == NULL || !iff->in(1)->is_Bool()) {
+    return false;
+  }
+  if (iff->in(1)->in(1) == NULL || iff->in(1)->in(1)->Opcode() != Op_CmpI) {
+    return false;
+  }
+  if (iff->in(1)->in(1)->in(1) != NULL && iff->in(1)->in(1)->in(1)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  if (iff->in(1)->in(1)->in(2) != NULL && iff->in(1)->in(1)->in(2)->Opcode() == Op_OpaqueZeroTripGuard) {
+    return true;
+  }
+  return false;
+}
 
 Node* CountedLoopNode::skip_predicates() {
   Node* ctrl = in(LoopNode::EntryControl);
@@ -3120,8 +3138,10 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
   uint i;
 
   // Make a new RegionNode to be the landing pad.
-  Node *landing_pad = new RegionNode( fall_in_cnt+1 );
+  RegionNode* landing_pad = new RegionNode(fall_in_cnt + 1);
   phase->set_loop(landing_pad,_parent);
+  // If _head was irreducible loop entry, landing_pad may now be too
+  landing_pad->set_loop_status(_head->as_Region()->loop_status());
   // Gather all the fall-in control paths into the landing pad
   uint icnt = fall_in_cnt;
   uint oreq = _head->req();
@@ -3615,6 +3635,17 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
             // Skip to head of inner loop
             assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
             n = nlpt->_head;
+            if (_head == n) {
+              // this and nlpt (inner loop) have the same loop head. This should not happen because
+              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+              // but then attached in the build_loop_tree afterwards, and so still have unmerged
+              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+              // since we have reached the loop head of this.
+              assert(_head->as_Region()->is_in_infinite_subgraph(),
+                     "only expect unmerged backedges in infinite loops");
+              break;
+            }
           }
         }
       }
@@ -3657,11 +3688,13 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT))
+  if (!cl->is_valid_counted_loop(T_INT)) {
     return;         // skip malformed counted loop
+  }
   Node *incr = cl->incr();
-  if (incr == NULL)
+  if (incr == NULL) {
     return;         // Dead loop?
+  }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
   int stride_con = cl->stride_con();
@@ -3670,25 +3703,33 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
     Node *out = cl->out(i);
     // Look for other phis (secondary IVs). Skip dead ones
-    if (!out->is_Phi() || out == phi || !has_node(out))
+    if (!out->is_Phi() || out == phi || !has_node(out)) {
       continue;
+    }
+
     PhiNode* phi2 = out->as_Phi();
-    Node *incr2 = phi2->in( LoopNode::LoopBackControl );
+    Node* incr2 = phi2->in(LoopNode::LoopBackControl);
     // Look for induction variables of the form:  X += constant
     if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         incr2->Opcode() != Op_AddI ||
-        !incr2->in(2)->is_Con())
+        !incr2->in(2)->is_Con()) {
       continue;
+    }
 
+    if (incr2->in(1)->is_ConstraintCast() &&
+        !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
+      // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
+      continue;
+    }
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
     // count-up array indices are common. We only RCE references off
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
-    Node *init2 = phi2->in( LoopNode::EntryControl );
+    Node* init2 = phi2->in(LoopNode::EntryControl);
     int stride_con2 = incr2->in(2)->get_int();
 
     // The ratio of the two strides cannot be represented as an int
@@ -3904,7 +3945,7 @@ uint IdealLoopTree::est_loop_flow_merge_sz() const {
 #ifndef PRODUCT
 //------------------------------dump_head--------------------------------------
 // Dump 1 liner for loop header info
-void IdealLoopTree::dump_head() const {
+void IdealLoopTree::dump_head() {
   tty->sp(2 * _nest);
   tty->print("Loop: N%d/N%d ", _head->_idx, _tail->_idx);
   if (_irreducible) tty->print(" IRREDUCIBLE");
@@ -3952,7 +3993,7 @@ void IdealLoopTree::dump_head() const {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_reduction_loop()) tty->print(" reduction");
     if (cl->is_vectorized_loop()) tty->print(" vector");
-    if (cl->range_checks_present()) tty->print(" rc ");
+    if (range_checks_present()) tty->print(" rc ");
     if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
@@ -3975,7 +4016,7 @@ void IdealLoopTree::dump_head() const {
 
 //------------------------------dump-------------------------------------------
 // Dump loops by loop tree
-void IdealLoopTree::dump() const {
+void IdealLoopTree::dump() {
   dump_head();
   if (_child) _child->dump();
   if (_next)  _next ->dump();
@@ -4180,25 +4221,18 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 }
 
 #ifdef ASSERT
+// Goes over all children of the root of the loop tree. Check if any of them have a path
+// down to Root, that does not go via a NeverBranch exit.
 bool PhaseIdealLoop::only_has_infinite_loops() {
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  // start traversal at all loop heads of first-level loops
   for (IdealLoopTree* l = _ltree_root->_child; l != NULL; l = l->_next) {
-    uint i = 1;
-    for (; i < C->root()->req(); i++) {
-      Node* in = C->root()->in(i);
-      if (in != NULL &&
-          in->Opcode() == Op_Halt &&
-          in->in(0)->is_Proj() &&
-          in->in(0)->in(0)->Opcode() == Op_NeverBranch &&
-          in->in(0)->in(0)->in(0) == l->_head) {
-        break;
-      }
-    }
-    if (i == C->root()->req()) {
-      return false;
-    }
+    Node* head = l->_head;
+    assert(head->is_Region(), "");
+    worklist.push(head);
   }
-
-  return true;
+  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
 }
 #endif
 
@@ -4212,6 +4246,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
+  bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
+
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -4281,8 +4317,8 @@ void PhaseIdealLoop::build_and_optimize() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only &&
-    !bs->is_gc_specific_loop_opts_pass(_mode);
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
+          !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes) {
@@ -4421,7 +4457,7 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  if (_mode == LoopOptsMaxUnroll) {
+  if (do_max_unroll) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_innermost() && lpt->_allow_optimizations && !lpt->_has_call && lpt->is_counted()) {
@@ -4567,8 +4603,7 @@ void PhaseIdealLoop::build_and_optimize() {
             IdealLoopTree *lpt_next = lpt->_next;
             if (lpt_next && lpt_next->is_counted()) {
               CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              has_range_checks(lpt_next);
-              if (cl->is_post_loop() && cl->range_checks_present()) {
+              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
                 if (!cl->is_multiversioned()) {
                   if (multi_version_post_loops(lpt, lpt_next) == false) {
                     // Cause the rce loop to be optimized away if we fail
@@ -4594,10 +4629,6 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
   }
-
-  // disable assert until issue with split_flow_path is resolved (6742111)
-  // assert(!_has_irreducible_loops || C->parsed_irreducible_loop() || C->is_osr_compilation(),
-  //        "shouldn't introduce irreducible loops");
 }
 
 #ifndef PRODUCT
@@ -5023,6 +5054,7 @@ void PhaseIdealLoop::build_loop_tree() {
       (void)bltstack.pop(); // Remove post-visited node from stack
     }
   }
+  DEBUG_ONLY(verify_regions_in_irreducible_loops();)
 }
 
 //------------------------------build_loop_tree_impl---------------------------
@@ -5117,21 +5149,34 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         set_loop(C->root(), _ltree_root);
       }
     }
-    // Weeny check for irreducible.  This child was already visited (this
-    // IS the post-work phase).  Is this child's loop header post-visited
-    // as well?  If so, then I found another entry into the loop.
-    if (!_verify_only) {
+    if (is_postvisited(l->_head)) {
+      // We are currently visiting l, but its head has already been post-visited.
+      // l is irreducible: we just found a second entry m.
+      _has_irreducible_loops = true;
+      RegionNode* secondary_entry = m->as_Region();
+      DEBUG_ONLY(secondary_entry->verify_can_be_irreducible_entry();)
+
+      // Walk up the loop-tree, mark all loops that are already post-visited as irreducible
+      // Since m is a secondary entry to them all.
       while( is_postvisited(l->_head) ) {
-        // found irreducible
         l->_irreducible = 1; // = true
+        RegionNode* head = l->_head->as_Region();
+        DEBUG_ONLY(head->verify_can_be_irreducible_entry();)
         l = l->_parent;
-        _has_irreducible_loops = true;
         // Check for bad CFG here to prevent crash, and bailout of compile
         if (l == NULL) {
+#ifndef PRODUCT
+          if (TraceLoopOpts) {
+            tty->print_cr("bailout: unhandled CFG: infinite irreducible loop");
+            m->dump();
+          }
+#endif
           C->record_method_not_compilable("unhandled CFG detected during loop optimization");
           return pre_order;
         }
       }
+    }
+    if (!_verify_only) {
       C->set_has_irreducible_loop(_has_irreducible_loops);
     }
 
@@ -5199,6 +5244,74 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   return pre_order;
 }
 
+#ifdef ASSERT
+//--------------------------verify_regions_in_irreducible_loops----------------
+// Iterate down from Root through CFG, verify for every region:
+// if it is in an irreducible loop it must be marked as such
+void PhaseIdealLoop::verify_regions_in_irreducible_loops() {
+  ResourceMark rm;
+  if (!_has_irreducible_loops) {
+    // last build_loop_tree has not found any irreducible loops
+    // hence no region has to be marked is_in_irreduible_loop
+    return;
+  }
+
+  RootNode* root = C->root();
+  Unique_Node_List worklist; // visit all nodes once
+  worklist.push(root);
+  bool failure = false;
+  for (uint i = 0; i < worklist.size(); i++) {
+    Node* n = worklist.at(i);
+    if (n->is_Region()) {
+      RegionNode* region = n->as_Region();
+      if (is_in_irreducible_loop(region) &&
+          region->loop_status() == RegionNode::LoopStatus::Reducible) {
+        failure = true;
+        tty->print("irreducible! ");
+        region->dump();
+      }
+    }
+    for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
+      Node* use = n->fast_out(j);
+      if (use->is_CFG()) {
+        worklist.push(use); // push if was not pushed before
+      }
+    }
+  }
+  assert(!failure, "region in irreducible loop was marked as reducible");
+}
+
+//---------------------------is_in_irreducible_loop-------------------------
+// Analogous to ciTypeFlow::Block::is_in_irreducible_loop
+bool PhaseIdealLoop::is_in_irreducible_loop(RegionNode* region) {
+  if (!_has_irreducible_loops) {
+    return false; // no irreducible loop in graph
+  }
+  IdealLoopTree* l = get_loop(region); // l: innermost loop that contains region
+  do {
+    if (l->_irreducible) {
+      return true; // found it
+    }
+    if (l == _ltree_root) {
+      return false; // reached root, terimnate
+    }
+    l = l->_parent;
+  } while (l != nullptr);
+  assert(region->is_in_infinite_subgraph(), "must be in infinite subgraph");
+  // We have "l->_parent == nullptr", which happens only for infinite loops,
+  // where no parent is attached to the loop. We did not find any irreducible
+  // loop from this block out to lp. Thus lp only has one entry, and no exit
+  // (it is infinite and reducible). We can always rewrite an infinite loop
+  // that is nested inside other loops:
+  // while(condition) { infinite_loop; }
+  // with an equivalent program where the infinite loop is an outermost loop
+  // that is not nested in any loop:
+  // while(condition) { break; } infinite_loop;
+  // Thus, we can understand lp as an outermost loop, and can terminate and
+  // conclude: this block is in no irreducible loop.
+  return false;
+}
+#endif
 
 //------------------------------build_loop_early-------------------------------
 // Put Data nodes into some loop nest, by setting the _nodes[]->loop mapping.
@@ -5431,7 +5544,7 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
     return NULL;
   }
   Node* iffm = ctrl->in(0);
-  if (iffm == NULL || !iffm->is_If()) {
+  if (iffm == NULL || iffm->Opcode() != Op_If) {
     return NULL;
   }
   Node* bolzm = iffm->in(1);
@@ -5447,12 +5560,12 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   if (input >= cmpzm->req() || cmpzm->in(input) == NULL) {
     return NULL;
   }
-  bool res = cmpzm->in(input)->Opcode() == Op_Opaque1;
+  bool res = cmpzm->in(input)->Opcode() == Op_OpaqueZeroTripGuard;
 #ifdef ASSERT
   bool found_opaque = false;
   for (uint i = 1; i < cmpzm->req(); i++) {
     Node* opnd = cmpzm->in(i);
-    if (opnd && opnd->Opcode() == Op_Opaque1) {
+    if (opnd && opnd->is_Opaque1()) {
       found_opaque = true;
       break;
     }
@@ -5795,6 +5908,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     case Op_StrIndexOf:
     case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_VectorizedHashCode:
     case Op_CountPositives:
       pinned = false;
     }
@@ -5891,6 +6005,11 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
         least = least_dom;
       }
     }
+  }
+  // Don't extend live ranges of raw oops
+  if (least != early && n->is_ConstraintCast() && n->in(1)->bottom_type()->isa_rawptr() &&
+      !n->bottom_type()->isa_rawptr()) {
+    least = early;
   }
 
 #ifdef ASSERT
@@ -5989,80 +6108,88 @@ void PhaseIdealLoop::dump_bad_graph(const char* msg, Node* n, Node* early, Node*
       }
     }
   }
-  tty->cr();
-  tty->print_cr("idoms of early %d:", early->_idx);
-  dump_idom(early);
-  tty->cr();
-  tty->print_cr("idoms of (wrong) LCA %d:", LCA->_idx);
-  dump_idom(LCA);
-  tty->cr();
-  dump_real_LCA(early, LCA);
+  dump_idoms(early, LCA);
   tty->cr();
 }
 
-// Find the real LCA of early and the wrongly assumed LCA.
-void PhaseIdealLoop::dump_real_LCA(Node* early, Node* wrong_lca) {
-  assert(!is_dominator(early, wrong_lca) && !is_dominator(early, wrong_lca),
-         "sanity check that one node does not dominate the other");
+// Class to compute the real LCA given an early node and a wrong LCA in a bad graph.
+class RealLCA {
+  const PhaseIdealLoop* _phase;
+  Node* _early;
+  Node* _wrong_lca;
+  uint _early_index;
+  int _wrong_lca_index;
+
+  // Given idom chains of early and wrong LCA: Walk through idoms starting at StartNode and find the first node which
+  // is different: Return the previously visited node which must be the real LCA.
+  // The node lists also contain _early and _wrong_lca, respectively.
+  Node* find_real_lca(Unique_Node_List& early_with_idoms, Unique_Node_List& wrong_lca_with_idoms) {
+    int early_index = early_with_idoms.size() - 1;
+    int wrong_lca_index = wrong_lca_with_idoms.size() - 1;
+    bool found_difference = false;
+    do {
+      if (early_with_idoms[early_index] != wrong_lca_with_idoms[wrong_lca_index]) {
+        // First time early and wrong LCA idoms differ. Real LCA must be at the previous index.
+        found_difference = true;
+        break;
+      }
+      early_index--;
+      wrong_lca_index--;
+    } while (wrong_lca_index >= 0);
+
+    assert(early_index >= 0, "must always find an LCA - cannot be early");
+    _early_index = early_index;
+    _wrong_lca_index = wrong_lca_index;
+    Node* real_lca = early_with_idoms[_early_index + 1]; // Plus one to skip _early.
+    assert(found_difference || real_lca == _wrong_lca, "wrong LCA dominates early and is therefore the real LCA");
+    return real_lca;
+  }
+
+  void dump(Node* real_lca) {
+    tty->cr();
+    tty->print_cr("idoms of early \"%d %s\":", _early->_idx, _early->Name());
+    _phase->dump_idom(_early, _early_index + 1);
+
+    tty->cr();
+    tty->print_cr("idoms of (wrong) LCA \"%d %s\":", _wrong_lca->_idx, _wrong_lca->Name());
+    _phase->dump_idom(_wrong_lca, _wrong_lca_index + 1);
+
+    tty->cr();
+    tty->print("Real LCA of early \"%d %s\" (idom[%d]) and wrong LCA \"%d %s\"",
+               _early->_idx, _early->Name(), _early_index, _wrong_lca->_idx, _wrong_lca->Name());
+    if (_wrong_lca_index >= 0) {
+      tty->print(" (idom[%d])", _wrong_lca_index);
+    }
+    tty->print_cr(":");
+    real_lca->dump();
+  }
+
+ public:
+  RealLCA(const PhaseIdealLoop* phase, Node* early, Node* wrong_lca)
+      : _phase(phase), _early(early), _wrong_lca(wrong_lca), _early_index(0), _wrong_lca_index(0) {
+    assert(!wrong_lca->is_Start(), "StartNode is always a common dominator");
+  }
+
+  void compute_and_dump() {
+    ResourceMark rm;
+    Unique_Node_List early_with_idoms;
+    Unique_Node_List wrong_lca_with_idoms;
+    early_with_idoms.push(_early);
+    wrong_lca_with_idoms.push(_wrong_lca);
+    _phase->get_idoms(_early, 10000, early_with_idoms);
+    _phase->get_idoms(_wrong_lca, 10000, wrong_lca_with_idoms);
+    Node* real_lca = find_real_lca(early_with_idoms, wrong_lca_with_idoms);
+    dump(real_lca);
+  }
+};
+
+// Dump the idom chain of early, of the wrong LCA and dump the real LCA of early and wrong LCA.
+void PhaseIdealLoop::dump_idoms(Node* early, Node* wrong_lca) {
+  assert(!is_dominator(early, wrong_lca), "sanity check that early does not dominate wrong lca");
   assert(!has_ctrl(early) && !has_ctrl(wrong_lca), "sanity check, no data nodes");
 
-  ResourceMark rm;
-  Node_List nodes_seen;
-  Node* real_LCA = NULL;
-  Node* n1 = wrong_lca;
-  Node* n2 = early;
-  uint count_1 = 0;
-  uint count_2 = 0;
-  // Add early and wrong_lca to simplify calculation of idom indices
-  nodes_seen.push(n1);
-  nodes_seen.push(n2);
-
-  // Walk the idom chain up from early and wrong_lca and stop when they intersect.
-  while (!n1->is_Start() && !n2->is_Start()) {
-    n1 = idom(n1);
-    n2 = idom(n2);
-    if (n1 == n2) {
-      // Both idom chains intersect at the same index
-      real_LCA = n1;
-      count_1 = nodes_seen.size() / 2;
-      count_2 = count_1;
-      break;
-    }
-    if (check_idom_chains_intersection(n1, count_1, count_2, &nodes_seen)) {
-      real_LCA = n1;
-      break;
-    }
-    if (check_idom_chains_intersection(n2, count_2, count_1, &nodes_seen)) {
-      real_LCA = n2;
-      break;
-    }
-    nodes_seen.push(n1);
-    nodes_seen.push(n2);
-  }
-
-  assert(real_LCA != NULL, "must always find an LCA");
-  tty->print_cr("Real LCA of early %d (idom[%d]) and (wrong) LCA %d (idom[%d]):", early->_idx, count_2, wrong_lca->_idx, count_1);
-  real_LCA->dump();
-}
-
-// Check if n is already on nodes_seen (i.e. idom chains of early and wrong_lca intersect at n). Determine the idom index of n
-// on both idom chains and return them in idom_idx_new and idom_idx_other, respectively.
-bool PhaseIdealLoop::check_idom_chains_intersection(const Node* n, uint& idom_idx_new, uint& idom_idx_other, const Node_List* nodes_seen) const {
-  if (nodes_seen->contains(n)) {
-    // The idom chain has just discovered n.
-    // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
-    idom_idx_new = nodes_seen->size() / 2;
-
-    // The other chain already contained n. Search the index.
-    for (uint i = 0; i < nodes_seen->size(); i++) {
-      if (nodes_seen->at(i) == n) {
-        // Divide by 2 because nodes_seen contains the same amount of nodes from both chains.
-        idom_idx_other = i / 2;
-      }
-    }
-    return true;
-  }
-  return false;
+  RealLCA real_lca(this, early, wrong_lca);
+  real_lca.compute_and_dump();
 }
 #endif // ASSERT
 
@@ -6135,16 +6262,38 @@ void PhaseIdealLoop::dump(IdealLoopTree* loop, uint idx, Node_List &rpo_list) co
   }
 }
 
-void PhaseIdealLoop::dump_idom(Node* n) const {
+void PhaseIdealLoop::dump_idom(Node* n, const uint count) const {
   if (has_ctrl(n)) {
     tty->print_cr("No idom for data nodes");
   } else {
-    for (int i = 0; i < 100 && !n->is_Start(); i++) {
-      tty->print("idom[%d] ", i);
-      n->dump();
-      n = idom(n);
-    }
+    ResourceMark rm;
+    Unique_Node_List idoms;
+    get_idoms(n, count, idoms);
+    dump_idoms_in_reverse(n, idoms);
   }
+}
+
+void PhaseIdealLoop::get_idoms(Node* n, const uint count, Unique_Node_List& idoms) const {
+  Node* next = n;
+  for (uint i = 0; !next->is_Start() && i < count; i++) {
+    next = idom(next);
+    assert(!idoms.member(next), "duplicated idom is not possible");
+    idoms.push(next);
+  }
+}
+
+void PhaseIdealLoop::dump_idoms_in_reverse(const Node* n, const Node_List& idom_list) const {
+  Node* next;
+  uint padding = 3;
+  uint node_index_padding_width = static_cast<int>(log10(static_cast<double>(C->unique()))) + 1;
+  for (int i = idom_list.size() - 1; i >= 0; i--) {
+    if (i == 9 || i == 99) {
+      padding++;
+    }
+    next = idom_list[i];
+    tty->print_cr("idom[%d]:%*c%*d  %s", i, padding, ' ', node_index_padding_width, next->_idx, next->Name());
+  }
+  tty->print_cr("n:      %*c%*d  %s", padding, ' ', node_index_padding_width, n->_idx, n->Name());
 }
 #endif // NOT PRODUCT
 

@@ -35,6 +35,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_MX">Èdè Sípáníìshì (orílɛ̀-èdè Mɛ́síkò)</language>
 			<language type="fr_CA">Èdè Faransé (orílɛ̀-èdè Kánádà)</language>
 			<language type="fr_CH">Èdè Faranshé (Súwísàlaǹdì)</language>
+			<language type="gez">Ede Gɛ́sì</language>
+			<language type="hi_Latn" alt="variant">Èdè Híńgílíshì</language>
 			<language type="id">Èdè Indonéshíà</language>
 			<language type="ii">Shíkuán Yì</language>
 			<language type="jmc">Máshámè</language>
@@ -196,6 +198,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TM">Tɔɔkimenisita</territory>
 			<territory type="TN">Tunishia</territory>
 			<territory type="TR">Tɔɔki</territory>
+			<territory type="TR" alt="variant">Èdè Tɔɔki</territory>
 			<territory type="UM">Àwɔn Erékùsù Kékèké Agbègbè US</territory>
 			<territory type="UN">Ìshɔ̀kan àgbáyé</territory>
 			<territory type="US">Amɛrikà</territory>
@@ -228,6 +231,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Kàlɛ́ńdà Gregory</type>
 			<type key="calendar" type="hebrew">Kàlɛ́ńdà Hébérù</type>
 			<type key="calendar" type="islamic">Kàlɛ́ńdà Lárúbáwá</type>
+			<type key="calendar" type="islamic-civil">Kàlɛ́ńdà ti Musulumi</type>
+			<type key="calendar" type="islamic-umalqura">Kàlɛ́ńdà Musulumi</type>
 			<type key="calendar" type="iso8601">Kàlɛ́ńdà ISO-8601</type>
 			<type key="calendar" type="japanese">Kàlɛ́ńdà ti Jàpánù</type>
 			<type key="calendar" type="persian">Kàlɛ́ńdà Pásíànù</type>
@@ -244,6 +249,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="armn">Àwɔn nɔ́ńbà Àmɛ́níà</type>
 			<type key="numbers" type="armnlow">Àwɔn Nɔ́ńbà Kékèké ti Amɛ́ríkà</type>
 			<type key="numbers" type="beng">Àwɔn díjíìtì Báńgílà</type>
+			<type key="numbers" type="cakm">Àwɔn díjíìtì Shakma</type>
 			<type key="numbers" type="deva">Àwɔn díjììtì Defanagárì</type>
 			<type key="numbers" type="ethi">Àwɔn nɔ́ńbà Ɛtiópíìkì</type>
 			<type key="numbers" type="fullwide">Àwɔn Díjíìtì Fífɛ̀-Ɛ̀kún</type>
@@ -258,6 +264,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="hant">Àwɔn nɔ́ńbà Ìbílɛ̀ Sháìnà</type>
 			<type key="numbers" type="hantfin">Àwɔn nɔ́ńbà Ìshúná Ìbílɛ̀ Sháìnà</type>
 			<type key="numbers" type="hebr">Àwɔn nɔ́ńbà Hébérù</type>
+			<type key="numbers" type="java">Àwɔn díjíìtì Jafaniisi</type>
 			<type key="numbers" type="jpan">Àwɔn nɔ́ńbà Jápànù</type>
 			<type key="numbers" type="jpanfin">Àwɔn nɔ́ńbà Ìshúná Jàpáànù</type>
 			<type key="numbers" type="khmr">Àwɔn díjíìtì Kɛ́mɛ̀</type>
@@ -265,7 +272,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="laoo">Àwɔn díjíìtì Láó</type>
 			<type key="numbers" type="latn">Díjíítì Ìwɔ̀ Oòrùn</type>
 			<type key="numbers" type="mlym">Àwɔn díjíìtì Málàyálámù</type>
+			<type key="numbers" type="mtei">Àwɔn díjíìtì Mete Mayeki</type>
 			<type key="numbers" type="mymr">Àwɔn díjíìtì Myánmarí</type>
+			<type key="numbers" type="olck">Àwɔn díjíìtì Shiki</type>
 			<type key="numbers" type="orya">Àwɔn díjíìtì Òdíà</type>
 			<type key="numbers" type="roman">Àwɔn díjíìtì Rómánù</type>
 			<type key="numbers" type="romanlow">Àwɔn díjíìtì Rómánù Kékeré</type>
@@ -274,6 +283,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="telu">Àwɔn díjíìtì Télúgù</type>
 			<type key="numbers" type="thai">Àwɔn díjíìtì Thai</type>
 			<type key="numbers" type="tibt">Àwɔn díjíìtì Tibetán</type>
+			<type key="numbers" type="vaii">Àwɔn díjíìtì Fai</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Mɛ́tíríìkì</measurementSystemName>
@@ -454,7 +464,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">Kɛr</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
+							<quarter type="1">Ìdámɛ́rin kíní</quarter>
+							<quarter type="2">Ìdámɛ́rin Kejì</quarter>
 							<quarter type="3">Ìdámɛ́rin Kɛta</quarter>
+							<quarter type="4">Ìdámɛ́rin Kɛrin</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -576,6 +589,125 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="sun-narrow">
 				<relativeTime type="future">
 					<relativeTimePattern count="other">Ɔjɔ́ Àíkú +{0}</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue">
+				<relative type="-1">Ìshɛ́gun tókɔ́já</relative>
+				<relative type="0">Ìshɛ́gun èyí</relative>
+				<relative type="1">Ìshɛ́gun tóńbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} àwɔn ìsɛ́gun</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} àwɔn Ìshɛ́gun tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-short">
+				<relative type="-1">Ìshɛ́ tókɔ́já</relative>
+				<relative type="0">Ìshɛ́ èyí</relative>
+				<relative type="1">Ìshɛ́ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ìshɛ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ishɛ́. tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="tue-narrow">
+				<relative type="-1">Ìshɛ́gun tɛ́lɛ̀</relative>
+				<relative type="0">Ìshɛ́gun yì</relative>
+				<relative type="1">Ìshɛ́gun tɔ́ńbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ìs tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed">
+				<relative type="-1">Ojɔ́rú àná</relative>
+				<relative type="0">Ojɔ́rú yì</relative>
+				<relative type="1">Ojɔ́rú tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Àwɔn Ojɔ́rú</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwɔn Ojɔ́rú tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-short">
+				<relative type="-1">Ojɔ́rú àná</relative>
+				<relative type="0">Ojɔ́rú yì</relative>
+				<relative type="1">Ojɔ́rú tóńbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ní {0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="wed-narrow">
+				<relative type="-1">O àná</relative>
+				<relative type="0">O yì</relative>
+				<relative type="1">O tóńbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} W tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu">
+				<relative type="-1">Ojɔ́bɔ̀ kɛyìn</relative>
+				<relative type="0">Ojɔ́bɔ̀ eyì</relative>
+				<relative type="1">Ojɔ́bɔ̀ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} Ojɔ́bɔ̀</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} Àwɔn Ojɔ́bɔ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-short">
+				<relative type="-1">Ojɔ́ sɛ́yìn</relative>
+				<relative type="0">Ojɔ́ èyí</relative>
+				<relative type="1">Ojɔ́ tónbɔ̀</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+ {0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ èyìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="thu-narrow">
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} Ojɔ́</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ojɔ́ sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-short">
+				<relative type="-1">Etì àná</relative>
+				<relative type="0">Etì yì</relative>
+				<relative type="1">Et tónbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Et sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="fri-narrow">
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} F tɛ́lɛ̀</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-short">
+				<relative type="-1">Aba tókojá</relative>
+				<relative type="0">Aba èyí</relative>
+				<relative type="1">Aba tónbɔ̀</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Aba. sɛ́yìn</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="sat-narrow">
+				<relative type="-1">Ab sɛ́yìn</relative>
+				<relative type="0">Ab èyí</relative>
+				<relative type="1">Ab tónbò</relative>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} Ab ɛ̀yí</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayperiod">
@@ -1412,6 +1544,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p7">
 				<unitPrefixPattern>sɛ́bì {0}</unitPrefixPattern>
 			</compoundUnit>
+			<unit type="concentr-item">
+				<displayName>àwɔ́n ohun</displayName>
+			</unit>
 			<unit type="concentr-permille">
 				<unitPattern count="other">{0} ìdákan nínú ɛgbɛ̀rún</unitPattern>
 			</unit>
@@ -1497,6 +1632,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ìsh àáy</unitPattern>
 				<perUnitPattern>{0}/ìsh àáy</perUnitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>àwɔ́n wákàtí kílówáàtì ní kìlómítà ɔgɔ́rùn</displayName>
+				<unitPattern count="other">{0} àwɔ́n wákàtí kílówáàtì ní kìlómítà ɔgɔ́rùn</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dɔ́ɔ̀tì</displayName>
 				<unitPattern count="other">{0} dɔ́ɔ̀tì</unitPattern>
@@ -1505,6 +1644,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìdinwɔ̀n ayé</displayName>
 				<unitPattern count="other">{0} ìdinwɔ̀n ayé</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>àwɔn fɔ́lɔ́ɔ̀ngì</displayName>
+				<unitPattern count="other">{0} àwɔn fɔ́lɔ́ɔ̀ngì</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátɔ́ɔ̀mu</displayName>
+				<unitPattern count="other">{0} fátɔ́ɔ̀mù</unitPattern>
+			</unit>
 			<unit type="light-candela">
 				<displayName>kandɛ́là</displayName>
 				<unitPattern count="other">{0} kandɛ́là</unitPattern>
@@ -1512,6 +1659,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="light-lumen">
 				<displayName>lumɛ́ɛ̀nì</displayName>
 				<unitPattern count="other">{0} lumɛ́ɛ̀nì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsɛ́ɛ̀li</displayName>
+				<unitPattern count="other">{0} búsɛ́ɛ̀li</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>àmì shíbí oúnjɛ́ kékeré</displayName>
@@ -1531,6 +1682,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="concentr-permillion">
+				<displayName>ara/milíɔ̀nù</displayName>
+			</unit>
 			<unit type="concentr-permille">
 				<displayName>ìdákan nínú ɛgbɛ̀rún</displayName>
 			</unit>
@@ -1575,6 +1729,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ìsh àáy</unitPattern>
 				<perUnitPattern>{0} ìsh àáy</perUnitPattern>
 			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>KWh lɔ́rí 100km</displayName>
+				<unitPattern count="other">{0} KWh lɔ́rí 100km</unitPattern>
+			</unit>
 			<unit type="graphics-dot">
 				<displayName>dɔ́ɔ̀tì</displayName>
 				<unitPattern count="other">{0} dɔ́ɔ̀tì</unitPattern>
@@ -1583,9 +1741,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>àmì ìdínwɔ̀n ayé</displayName>
 				<unitPattern count="other">{0} àmì ìdínwɔ̀n ayé</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fɔ́lɔ́ɔ̀ngì</displayName>
+				<unitPattern count="other">{0} fɔ́</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fátɔ́mù</displayName>
+			</unit>
 			<unit type="light-lumen">
 				<displayName>àmì lumɛ́ɛ̀nì</displayName>
 				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>Búsɛ́ɛ̀li</displayName>
 			</unit>
 			<unit type="volume-dessert-spoon">
 				<displayName>shíbí oúnjɛ́ kékeré</displayName>
@@ -1629,15 +1797,76 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ìsh àáy</displayName>
 				<unitPattern count="other">{0} ìsh àáy</unitPattern>
 			</unit>
+			<unit type="length-furlong">
+				<displayName>fɔ́lɔ́ɔ̀ngì</displayName>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>fatɔ́</displayName>
+			</unit>
+			<unit type="light-lux">
+				<displayName>lɔ́s</displayName>
+			</unit>
 			<unit type="light-lumen">
 				<unitPattern count="other">{0} Lúmɛ́nì</unitPattern>
 			</unit>
+			<unit type="volume-bushel">
+				<displayName>búsɛ́li</displayName>
+				<unitPattern count="other">{0}búsɛ́ɛ̀li</unitPattern>
+			</unit>
 		</unitLength>
 	</units>
+	<listPatterns>
+		<listPattern type="or">
+			<listPatternPart type="start">{0} pɛ̀lú {1}</listPatternPart>
+		</listPattern>
+	</listPatterns>
 	<posix>
 		<messages>
 			<yesstr>Bɛ́ɛ̀ni :N</yesstr>
 			<nostr>Bɛ́ɛ̀kɔ́:K</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="scripts">àwɔ́n ìwé - {0}</characterLabelPattern>
+		<characterLabel type="weather">ojú=ɔjɔ́</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="wdth">fífɛ̀ sí</axisName>
+		<styleName type="ital" subtype="1">kíkɔ́</styleName>
+		<styleName type="opsz" subtype="8">ɔ̀rɔ̀ àtúmɔ̀</styleName>
+		<styleName type="opsz" subtype="12">àtɛ̀jíshɛ́</styleName>
+		<styleName type="slnt" subtype="-12">sílántì ɛ̀yìn</styleName>
+		<styleName type="slnt" subtype="24">sílántì-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="50">kànpɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">tɛ̀pɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">papɔ̀ gidigidi</styleName>
+		<styleName type="wdth" subtype="62.5">kànpɔ̀ púpɔ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">tɛ̀pɔ̀ pupɔ̀</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">papɔ̀-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="75">kànpɔ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">tɛ̀pɔ̀</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">tɛ̀pɔ̀</styleName>
+		<styleName type="wdth" subtype="87.5">tɛ̀pɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">kànpɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">papɔ̀ díɛ̀</styleName>
+		<styleName type="wdth" subtype="112.5">tóbi díɛ̀</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">sánra díɛ̀</styleName>
+		<styleName type="wdth" subtype="150">tobi-púpɔ̀</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">sanra-pupɔ̀</styleName>
+		<styleName type="wght" subtype="200">fuyɛ́ púpɔ̀</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">fúyɛ́ gidigidi</styleName>
+		<styleName type="wght" subtype="300">fúyɛ́</styleName>
+		<styleName type="wght" subtype="350">fúyɛ́ díɛ̀</styleName>
+		<styleName type="wght" subtype="400">níwɔ́n</styleName>
+		<styleName type="wght" subtype="600">gbojú díɛ̀</styleName>
+		<styleName type="wght" subtype="950">dúdú-púpɔ̀</styleName>
+		<featureName type="dlig">ligasɔ̀ ti o fɛ́</featureName>
+	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="surnameFirst"/>
+		<sampleName item="full">
+			<nameField type="prefix">ɔ̀jɔ̀gbɔ́n. omɔ́wé</nameField>
+			<nameField type="surname-prefix">fanú dɛ́ni</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

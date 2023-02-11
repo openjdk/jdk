@@ -214,7 +214,7 @@ abstract class XRPaints {
             if (!(srcData instanceof XRSurfaceData)) {
                 srcData = dstData.getSourceSurfaceData(bi, SunGraphics2D.TRANSFORM_ISIDENT, CompositeType.SrcOver, null);
                 if (!(srcData instanceof XRSurfaceData)) {
-                    throw new InternalError("Surface not cachable");
+                    throw new InternalError("Surface not cacheable");
                 }
             }
 

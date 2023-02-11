@@ -30,6 +30,7 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Modifier;
 
@@ -390,6 +391,15 @@ public class Flags {
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols
 
+    /**
+     * Describe modifier flags as they migh appear in source code, i.e.,
+     * separated by spaces and in the order suggested by JLS 8.1.1.
+     */
+    public static String toSource(long flags) {
+        return asModifierSet(flags).stream()
+          .map(Modifier::toString)
+          .collect(Collectors.joining(" "));
+    }
 
     /** Modifier masks.
      */

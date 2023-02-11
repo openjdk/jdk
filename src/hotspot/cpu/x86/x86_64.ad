@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -305,10 +305,10 @@ reg_class int_rbx_reg(RBX);
 // Singleton class for RCX int register
 reg_class int_rcx_reg(RCX);
 
-// Singleton class for RCX int register
+// Singleton class for RDX int register
 reg_class int_rdx_reg(RDX);
 
-// Singleton class for RCX int register
+// Singleton class for RDI int register
 reg_class int_rdi_reg(RDI);
 
 // Singleton class for instruction pointer
@@ -319,6 +319,14 @@ reg_class int_rdi_reg(RDI);
 //----------SOURCE BLOCK-------------------------------------------------------
 // This is a block of C++ code which provides values, functions, and
 // definitions necessary in the rest of the architecture description
+
+source_hpp %{
+
+#include "peephole_x86_64.hpp"
+
+%}
+
+// Register masks
 source_hpp %{
 
 extern RegMask _ANY_REG_mask;
@@ -881,7 +889,7 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
   }
   if (C->stub_function() != NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
     st->print("\n\t");
-    st->print("cmpl    [r15_thread + #disarmed_offset], #disarmed_value\t");
+    st->print("cmpl    [r15_thread + #disarmed_guard_value_offset], #disarmed_guard_value\t");
     st->print("\n\t");
     st->print("je      fast_entry\t");
     st->print("\n\t");
@@ -961,8 +969,8 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   st->print_cr("popq    rbp");
   if (do_polling() && C->is_method_compilation()) {
     st->print("\t");
-    st->print_cr("cmpq     rsp, poll_offset[r15_thread] \n\t"
-                 "ja       #safepoint_stub\t"
+    st->print_cr("cmpq    rsp, poll_offset[r15_thread] \n\t"
+                 "ja      #safepoint_stub\t"
                  "# Safepoint: poll for GC");
   }
 }
@@ -1012,7 +1020,9 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
     Label dummy_label;
     Label* code_stub = &dummy_label;
     if (!C->output()->in_scratch_emit_size()) {
-      code_stub = &C->output()->safepoint_poll_table()->add_safepoint(__ offset());
+      C2SafepointPollStub* stub = new (C->comp_arena()) C2SafepointPollStub(__ offset());
+      C->output()->add_stub(stub);
+      code_stub = &stub->entry();
     }
     __ relocate(relocInfo::poll_return_type);
     __ safepoint_poll(*code_stub, r15_thread, true /* at_return */, true /* in_nmethod */);
@@ -2156,13 +2166,19 @@ encode %{
     // determine who we intended to call.
     MacroAssembler _masm(&cbuf);
     cbuf.set_insts_mark();
-    $$$emit8$primary;
 
     if (!_method) {
+      $$$emit8$primary;
       emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
+    } else if (_method->intrinsic_id() == vmIntrinsicID::_ensureMaterializedForStackWalk) {
+      // The NOP here is purely to ensure that eliding a call to
+      // JVM_EnsureMaterializedForStackWalk doesn't change the code size.
+      __ addr_nop_5();
+      __ block_comment("call JVM_EnsureMaterializedForStackWalk (elided)");
     } else {
+      $$$emit8$primary;
       int method_index = resolved_method_index(cbuf);
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
@@ -6064,6 +6080,7 @@ instruct storeL(memory mem, rRegL src)
 // Store Pointer
 instruct storeP(memory mem, any_RegP src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(125); // XXX
@@ -6076,7 +6093,7 @@ instruct storeP(memory mem, any_RegP src)
 
 instruct storeImmP0(memory mem, immP0 zero)
 %{
-  predicate(UseCompressedOops && (CompressedOops::base() == NULL));
+  predicate(UseCompressedOops && (CompressedOops::base() == NULL) && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem zero));
 
   ins_cost(125); // XXX
@@ -6090,6 +6107,7 @@ instruct storeImmP0(memory mem, immP0 zero)
 // Store NULL Pointer, mark word, or other simple pointer constant.
 instruct storeImmP(memory mem, immP31 src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreP mem src));
 
   ins_cost(150); // XXX
@@ -9001,6 +9019,19 @@ instruct umodL_rReg(rdx_RegL rdx, rax_RegL rax, no_rax_rdx_RegL div, rFlagsReg c
 %}
 
 // Integer Shift Instructions
+// Shift Left by one, two, three
+instruct salI_rReg_immI2(rRegI dst, immI2 shift, rFlagsReg cr)
+%{
+  match(Set dst (LShiftI dst shift));
+  effect(KILL cr);
+
+  format %{ "sall    $dst, $shift" %}
+  ins_encode %{
+    __ sall($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Shift Left by 8-bit immediate
 instruct salI_rReg_imm(rRegI dst, immI8 shift, rFlagsReg cr)
 %{
@@ -9235,6 +9266,19 @@ instruct shrI_mem_rReg(rRegI dst, memory src, rRegI shift)
 %}
 
 // Long Shift Instructions
+// Shift Left by one, two, three
+instruct salL_rReg_immI2(rRegL dst, immI2 shift, rFlagsReg cr)
+%{
+  match(Set dst (LShiftL dst shift));
+  effect(KILL cr);
+
+  format %{ "salq    $dst, $shift" %}
+  ins_encode %{
+    __ salq($dst$$Register, $shift$$constant);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 // Shift Left by 8-bit immediate
 instruct salL_rReg_imm(rRegL dst, immI8 shift, rFlagsReg cr)
 %{
@@ -12030,6 +12074,32 @@ instruct array_equalsC_evex(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
   ins_pipe( pipe_slow );
 %}
 
+instruct arrays_hashcode(rdi_RegP ary1, rdx_RegI cnt1, rbx_RegI result, immU8 basic_type,
+                         legRegD tmp_vec1, legRegD tmp_vec2, legRegD tmp_vec3, legRegD tmp_vec4,
+                         legRegD tmp_vec5, legRegD tmp_vec6, legRegD tmp_vec7, legRegD tmp_vec8,
+                         legRegD tmp_vec9, legRegD tmp_vec10, legRegD tmp_vec11, legRegD tmp_vec12,
+                         legRegD tmp_vec13, rRegI tmp1, rRegI tmp2, rRegI tmp3, rFlagsReg cr)
+%{
+  predicate(UseAVX >= 2);
+  match(Set result (VectorizedHashCode (Binary ary1 cnt1) (Binary result basic_type)));
+  effect(TEMP tmp_vec1, TEMP tmp_vec2, TEMP tmp_vec3, TEMP tmp_vec4, TEMP tmp_vec5, TEMP tmp_vec6,
+         TEMP tmp_vec7, TEMP tmp_vec8, TEMP tmp_vec9, TEMP tmp_vec10, TEMP tmp_vec11, TEMP tmp_vec12,
+         TEMP tmp_vec13, TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL ary1, USE_KILL cnt1,
+         USE basic_type, KILL cr);
+
+  format %{ "Array HashCode array[] $ary1,$cnt1,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode($ary1$$Register, $cnt1$$Register, $result$$Register,
+                       $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                       $tmp_vec1$$XMMRegister, $tmp_vec2$$XMMRegister, $tmp_vec3$$XMMRegister,
+                       $tmp_vec4$$XMMRegister, $tmp_vec5$$XMMRegister, $tmp_vec6$$XMMRegister,
+                       $tmp_vec7$$XMMRegister, $tmp_vec8$$XMMRegister, $tmp_vec9$$XMMRegister,
+                       $tmp_vec10$$XMMRegister, $tmp_vec11$$XMMRegister, $tmp_vec12$$XMMRegister,
+                       $tmp_vec13$$XMMRegister, (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct count_positives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
                          legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr,)
 %{
@@ -13299,15 +13369,15 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   ins_pipe(pipe_slow);
 %}
 
-instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr, rRegP cx1) %{
+instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
   predicate(!Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, USE_KILL box);
+  effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -13541,7 +13611,20 @@ instruct tlsLoadP(r15_RegP dst) %{
 // These must follow all instruction definitions as they use the names
 // defined in the instructions definitions.
 //
+// peeppredicate ( rule_predicate );
+// // the predicate unless which the peephole rule will be ignored
+//
 // peepmatch ( root_instr_name [preceding_instruction]* );
+//
+// peepprocedure ( procedure_name );
+// // provide a procedure name to perform the optimization, the procedure should
+// // reside in the architecture dependent peephole file, the method has the
+// // signature of MachNode* (Block*, int, PhaseRegAlloc*, (MachNode*)(*)(), int...)
+// // with the arguments being the basic block, the current node index inside the
+// // block, the register allocator, the functions upon invoked return a new node
+// // defined in peepreplace, and the rules of the nodes appearing in the
+// // corresponding peepmatch, the function return true if successful, else
+// // return false
 //
 // peepconstraint %{
 // (instruction_number.operand_name relational_op instruction_number.operand_name
@@ -13563,10 +13646,7 @@ instruct tlsLoadP(r15_RegP dst) %{
 //
 // ---------CURRENT LIMITATIONS----------------------------------------------
 //
-// Only match adjacent instructions in same basic block
-// Only equality constraints
-// Only constraints between operands, not (0.dest_reg == RAX_enc)
-// Only one replacement instruction
+// Only transformations inside a basic block (do we need more for peephole)
 //
 // ---------EXAMPLE----------------------------------------------------------
 //
@@ -13582,8 +13662,21 @@ instruct tlsLoadP(r15_RegP dst) %{
 //   effect(KILL cr);
 // %}
 //
+// instruct leaI_rReg_immI(rRegI dst, immI_1 src)
+// %{
+//   match(Set dst (AddI dst src));
+// %}
+//
+// 1. Simple replacement
+// - Only match adjacent instructions in same basic block
+// - Only equality constraints
+// - Only constraints between operands, not (0.dest_reg == RAX_enc)
+// - Only one replacement instruction
+//
 // // Change (inc mov) to lea
 // peephole %{
+//   // lea should only be emitted when beneficial
+//   peeppredicate( VM_Version::supports_fast_2op_lea() );
 //   // increment preceded by register-register move
 //   peepmatch ( incI_rReg movI );
 //   // require that the destination register of the increment
@@ -13594,83 +13687,199 @@ instruct tlsLoadP(r15_RegP dst) %{
 //   peepreplace ( leaI_rReg_immI( 0.dst 1.src 0.src ) );
 // %}
 //
-
-// Implementation no longer uses movX instructions since
-// machine-independent system no longer uses CopyX nodes.
+// 2. Procedural replacement
+// - More flexible finding relevent nodes
+// - More flexible constraints
+// - More flexible transformations
+// - May utilise architecture-dependent API more effectively
+// - Currently only one replacement instruction due to adlc parsing capabilities
 //
-// peephole
-// %{
-//   peepmatch (incI_rReg movI);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaI_rReg_immI(0.dst 1.src 0.src));
+// // Change (inc mov) to lea
+// peephole %{
+//   // lea should only be emitted when beneficial
+//   peeppredicate( VM_Version::supports_fast_2op_lea() );
+//   // the rule numbers of these nodes inside are passed into the function below
+//   peepmatch ( incI_rReg movI );
+//   // the method that takes the responsibility of transformation
+//   peepprocedure ( inc_mov_to_lea );
+//   // the replacement is a leaI_rReg_immI, a lambda upon invoked creating this
+//   // node is passed into the function above
+//   peepreplace ( leaI_rReg_immI() );
 // %}
 
-// peephole
-// %{
-//   peepmatch (decI_rReg movI);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaI_rReg_immI(0.dst 1.src 0.src));
-// %}
-
-// peephole
-// %{
-//   peepmatch (addI_rReg_imm movI);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaI_rReg_immI(0.dst 1.src 0.src));
-// %}
-
-// peephole
-// %{
-//   peepmatch (incL_rReg movL);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaL_rReg_immL(0.dst 1.src 0.src));
-// %}
-
-// peephole
-// %{
-//   peepmatch (decL_rReg movL);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaL_rReg_immL(0.dst 1.src 0.src));
-// %}
-
-// peephole
-// %{
-//   peepmatch (addL_rReg_imm movL);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaL_rReg_immL(0.dst 1.src 0.src));
-// %}
-
-// peephole
-// %{
-//   peepmatch (addP_rReg_imm movP);
-//   peepconstraint (0.dst == 1.dst);
-//   peepreplace (leaP_rReg_imm(0.dst 1.src 0.src));
-// %}
-
-// // Change load of spilled value to only a spill
-// instruct storeI(memory mem, rRegI src)
-// %{
-//   match(Set mem (StoreI mem src));
-// %}
-//
-// instruct loadI(rRegI dst, memory mem)
-// %{
-//   match(Set dst (LoadI mem));
-// %}
-//
-
-peephole
+// These instructions is not matched by the matcher but used by the peephole
+instruct leaI_rReg_rReg_peep(rRegI dst, rRegI src1, rRegI src2)
 %{
-  peepmatch (loadI storeI);
-  peepconstraint (1.src == 0.dst, 1.mem == 0.mem);
-  peepreplace (storeI(1.mem 1.mem 1.src));
+  predicate(false);
+  match(Set dst (AddI src1 src2));
+  format %{ "leal    $dst, [$src1 + $src2]" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    Register src1 = $src1$$Register;
+    Register src2 = $src2$$Register;
+    if (src1 != rbp && src1 != r13) {
+      __ leal(dst, Address(src1, src2, Address::times_1));
+    } else {
+      assert(src2 != rbp && src2 != r13, "");
+      __ leal(dst, Address(src2, src1, Address::times_1));
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaI_rReg_immI_peep(rRegI dst, rRegI src1, immI src2)
+%{
+  predicate(false);
+  match(Set dst (AddI src1 src2));
+  format %{ "leal    $dst, [$src1 + $src2]" %}
+  ins_encode %{
+    __ leal($dst$$Register, Address($src1$$Register, $src2$$constant));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaI_rReg_immI2_peep(rRegI dst, rRegI src, immI2 shift)
+%{
+  predicate(false);
+  match(Set dst (LShiftI src shift));
+  format %{ "leal    $dst, [$src << $shift]" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
+    Register src = $src$$Register;
+    if (scale == Address::times_2 && src != rbp && src != r13) {
+      __ leal($dst$$Register, Address(src, src, Address::times_1));
+    } else {
+      __ leal($dst$$Register, Address(noreg, src, scale));
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaL_rReg_rReg_peep(rRegL dst, rRegL src1, rRegL src2)
+%{
+  predicate(false);
+  match(Set dst (AddL src1 src2));
+  format %{ "leaq    $dst, [$src1 + $src2]" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    Register src1 = $src1$$Register;
+    Register src2 = $src2$$Register;
+    if (src1 != rbp && src1 != r13) {
+      __ leaq(dst, Address(src1, src2, Address::times_1));
+    } else {
+      assert(src2 != rbp && src2 != r13, "");
+      __ leaq(dst, Address(src2, src1, Address::times_1));
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaL_rReg_immL32_peep(rRegL dst, rRegL src1, immL32 src2)
+%{
+  predicate(false);
+  match(Set dst (AddL src1 src2));
+  format %{ "leaq    $dst, [$src1 + $src2]" %}
+  ins_encode %{
+    __ leaq($dst$$Register, Address($src1$$Register, $src2$$constant));
+  %}
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
+%{
+  predicate(false);
+  match(Set dst (LShiftL src shift));
+  format %{ "leaq    $dst, [$src << $shift]" %}
+  ins_encode %{
+    Address::ScaleFactor scale = static_cast<Address::ScaleFactor>($shift$$constant);
+    Register src = $src$$Register;
+    if (scale == Address::times_2 && src != rbp && src != r13) {
+      __ leaq($dst$$Register, Address(src, src, Address::times_1));
+    } else {
+      __ leaq($dst$$Register, Address(noreg, src, scale));
+    }
+  %}
+  ins_pipe(ialu_reg_reg);
 %}
 
 peephole
 %{
-  peepmatch (loadL storeL);
-  peepconstraint (1.src == 0.dst, 1.mem == 0.mem);
-  peepreplace (storeL(1.mem 1.mem 1.src));
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addI_rReg);
+  peepprocedure (lea_coalesce_reg);
+  peepreplace (leaI_rReg_rReg_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addI_rReg_imm);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (incI_rReg);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (decI_rReg);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaI_rReg_immI_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (salI_rReg_immI2);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaI_rReg_immI2_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addL_rReg);
+  peepprocedure (lea_coalesce_reg);
+  peepreplace (leaL_rReg_rReg_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (addL_rReg_imm);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaL_rReg_immL32_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (incL_rReg);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaL_rReg_immL32_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (decL_rReg);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaL_rReg_immL32_peep());
+%}
+
+peephole
+%{
+  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peepmatch (salL_rReg_immI2);
+  peepprocedure (lea_coalesce_imm);
+  peepreplace (leaL_rReg_immI2_peep());
 %}
 
 //----------SMARTSPILL RULES---------------------------------------------------

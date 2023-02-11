@@ -34,7 +34,7 @@ import org.openide.nodes.Node;
  */
 public class SelectBytecodesCookie implements Node.Cookie {
 
-    private Set<InputNode> nodes;
+    private final Set<InputNode> nodes;
 
     /** Creates a new instance of SelectBytecodesCookie */
     public SelectBytecodesCookie(Set<InputNode> nodes) {

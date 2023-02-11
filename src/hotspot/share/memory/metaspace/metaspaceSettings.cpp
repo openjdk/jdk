@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +47,7 @@ DEBUG_ONLY(bool Settings::_use_allocation_guard = false;)
 void Settings::ergo_initialize() {
   if (strcmp(MetaspaceReclaimPolicy, "none") == 0) {
     log_info(metaspace)("Initialized with strategy: no reclaim.");
-    _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 64 * K);
+    _commit_granule_bytes = MAX2(os::vm_page_size(), 64 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
     // In "none" reclamation mode, we do not uncommit, and we commit new chunks fully;
     // that very closely mimics the behaviour of old Metaspace.
@@ -57,13 +57,13 @@ void Settings::ergo_initialize() {
     log_info(metaspace)("Initialized with strategy: aggressive reclaim.");
     // Set the granule size rather small; may increase
     // mapping fragmentation but also increase chance to uncommit.
-    _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 16 * K);
+    _commit_granule_bytes = MAX2(os::vm_page_size(), 16 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
     _new_chunks_are_fully_committed = false;
     _uncommit_free_chunks = true;
   } else if (strcmp(MetaspaceReclaimPolicy, "balanced") == 0) {
     log_info(metaspace)("Initialized with strategy: balanced reclaim.");
-    _commit_granule_bytes = MAX2((size_t)os::vm_page_size(), 64 * K);
+    _commit_granule_bytes = MAX2(os::vm_page_size(), 64 * K);
     _commit_granule_words = _commit_granule_bytes / BytesPerWord;
     _new_chunks_are_fully_committed = false;
     _uncommit_free_chunks = true;

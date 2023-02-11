@@ -163,8 +163,8 @@ public final class RecordingFile implements Closeable {
     List<Type> readTypes() throws IOException  {
         ensureOpen();
         MetadataDescriptor previous = null;
-        List<Type> types = new ArrayList<>();
-        HashSet<Long> foundIds = new HashSet<>();
+        List<Type> types = new ArrayList<>(200);
+        HashSet<Long> foundIds = HashSet.newHashSet(types.size());
         try (RecordingInput ri = new RecordingInput(file, FileAccess.UNPRIVILEGED)) {
             ChunkHeader ch = new ChunkHeader(ri);
             ch.awaitFinished();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,7 @@ class CmpNode;
 class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
+class ConINode;
 class CompareAndSwapNode;
 class CompareAndExchangeNode;
 class CountedLoopNode;
@@ -411,7 +412,7 @@ protected:
 
 #ifdef ASSERT
   bool is_dead() const;
-#define is_not_dead(n) ((n) == NULL || !VerifyIterativeGVN || !((n)->is_dead()))
+  static bool is_not_dead(const Node* n);
   bool is_reachable_from_root() const;
 #endif
   // Check whether node has become unreachable
@@ -711,6 +712,9 @@ public:
         DEFINE_CLASS_ID(CompressV, Vector, 4)
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
+      DEFINE_CLASS_ID(Con, Type, 8)
+          DEFINE_CLASS_ID(ConI, Con, 0)
+
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -763,7 +767,7 @@ public:
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
 
-    _max_classes  = ClassMask_Move
+    _max_classes  = ClassMask_LShift
   };
   #undef DEFINE_CLASS_ID
 
@@ -862,6 +866,7 @@ public:
   DEFINE_CLASS_QUERY(CheckCastPP)
   DEFINE_CLASS_QUERY(CastII)
   DEFINE_CLASS_QUERY(CastLL)
+  DEFINE_CLASS_QUERY(ConI)
   DEFINE_CLASS_QUERY(ConstraintCast)
   DEFINE_CLASS_QUERY(ClearArray)
   DEFINE_CLASS_QUERY(CMove)
@@ -922,6 +927,7 @@ public:
   DEFINE_CLASS_QUERY(Mul)
   DEFINE_CLASS_QUERY(Multi)
   DEFINE_CLASS_QUERY(MultiBranch)
+  DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
@@ -1036,7 +1042,7 @@ public:
   // Return a node which is more "ideal" than the current node.
   // The invariants on this call are subtle.  If in doubt, read the
   // treatise in node.cpp above the default implementation AND TEST WITH
-  // +VerifyIterativeGVN!
+  // -XX:VerifyIterativeGVN=1
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 
   // Some nodes have specific Ideal subgraph transformations only if they are
@@ -1217,7 +1223,6 @@ public:
   // Print compact per-node info
   virtual void dump_compact_spec(outputStream *st) const { dump_spec(st); }
 
-  void verify_edges(Unique_Node_List &visited); // Verify bi-directional edges
   static void verify(int verify_depth, VectorSet& visited, Node_List& worklist);
 
   // This call defines a class-unique string used to identify class instances
@@ -1516,7 +1521,7 @@ class SimpleDUIterator : public StackObj {
 // Abstractly provides an infinite array of Node*'s, initialized to NULL.
 // Note that the constructor just zeros things, and since I use Arena
 // allocation I do not need a destructor to reclaim storage.
-class Node_Array : public ResourceObj {
+class Node_Array : public AnyObj {
   friend class VMStructs;
 protected:
   Arena* _a;                    // Arena to allocate in

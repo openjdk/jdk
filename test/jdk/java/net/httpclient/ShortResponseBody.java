@@ -34,7 +34,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -44,6 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -84,7 +84,10 @@ public abstract class ShortResponseBody {
 
     SSLContext sslContext;
     SSLParameters sslParameters;
+    HttpClient client;
+    int numberOfRequests;
 
+    static final int REQUESTS_PER_CLIENT = 10; // create new client every 10 requests
     static final long PAUSE_FOR_GC = 5; // 5ms to let gc work
     static final long PAUSE_FOR_PEER = 5; // 5ms to let server react
 
@@ -119,12 +122,18 @@ public abstract class ShortResponseBody {
 
     @BeforeMethod
     void beforeMethod(ITestContext context) {
-        System.gc();
-        try {
-            Thread.sleep(PAUSE_FOR_GC);
-        } catch (InterruptedException x) {
+        if (client == null || numberOfRequests == REQUESTS_PER_CLIENT) {
+            numberOfRequests = 0;
+            out.println("--- new client");
+            client = newHttpClient();
+            System.gc();
+            try {
+                Thread.sleep(PAUSE_FOR_GC);
+            } catch (InterruptedException x) {
 
+            }
         }
+        numberOfRequests++;
         if (context.getFailedTests().size() > 0) {
             if (skiptests.get() == null) {
                 SkipException skip = new SkipException("some tests failed");
@@ -168,7 +177,6 @@ public abstract class ShortResponseBody {
 
     @Test(dataProvider = "sanity")
     void sanity(String url) throws Exception {
-        HttpClient client = newHttpClient();
         url = uniqueURL(url);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
         out.println("Request: " + request);
@@ -192,7 +200,6 @@ public abstract class ShortResponseBody {
 
     @Test(dataProvider = "sanityBadRequest")
     void sanityBadRequest(String url) throws Exception {
-        HttpClient client = newHttpClient();
         url = uniqueURL(url);
         HttpRequest request = HttpRequest.newBuilder(URI.create(url)).build();
         out.println("Request: " + request);
@@ -268,17 +275,8 @@ public abstract class ShortResponseBody {
             return new Object[0][];
         }
 
-        List<Object[]> list = new ArrayList<>();
-        Arrays.asList(cases).stream()
-                .map(e -> new Object[] {e[0], e[1], true})  // reuse client
-                .forEach(list::add);
-        Arrays.asList(cases).stream()
-                .map(e -> new Object[] {e[0], e[1], false}) // do not reuse client
-                .forEach(list::add);
-        return list.stream().toArray(Object[][]::new);
+        return cases;
     }
-
-    static final int ITERATION_COUNT = 3;
 
     HttpClient newHttpClient() {
         return HttpClient.newBuilder()
@@ -287,18 +285,6 @@ public abstract class ShortResponseBody {
                 .sslParameters(sslParameters)
                 .executor(service)
                 .build();
-    }
-
-    HttpClient sharedClient = null;
-    HttpClient newHttpClient(boolean shared) {
-        if (shared) {
-            HttpClient sharedClient = this.sharedClient;
-            if (sharedClient == null) {
-                sharedClient = this.sharedClient = newHttpClient();
-            }
-            return sharedClient;
-        }
-        return newHttpClient();
     }
 
     // can be used to prolong request body publication
@@ -555,10 +541,8 @@ public abstract class ShortResponseBody {
         private static void writeResponse(Socket socket, String response, int len) throws IOException {
             OutputStream os = socket.getOutputStream();
             byte[] responseBytes = response.getBytes(US_ASCII);
-            for (int i = 0; i < len; ++i) {
-                os.write(responseBytes[i]);
-                os.flush();
-            }
+            os.write(responseBytes, 0, len);
+            os.flush();
         }
 
         static final byte[] requestEnd = new byte[] { '\r', '\n', '\r', '\n' };
@@ -703,7 +687,6 @@ public abstract class ShortResponseBody {
 
     @AfterTest
     public void teardown() throws Exception {
-        if (sharedClient != null) sharedClient = null;
         closeImmediatelyServer.close();
         closeImmediatelyHttpsServer.close();
         variableLengthServer.close();

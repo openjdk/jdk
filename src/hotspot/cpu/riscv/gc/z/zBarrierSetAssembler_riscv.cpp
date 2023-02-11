@@ -59,10 +59,10 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
                                    Register dst,
                                    Address src,
                                    Register tmp1,
-                                   Register tmp_thread) {
+                                   Register tmp2) {
   if (!ZBarrierSet::barrier_needed(decorators, type)) {
     // Barrier not needed
-    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp_thread);
+    BarrierSetAssembler::load_at(masm, decorators, type, dst, src, tmp1, tmp2);
     return;
   }
 
@@ -338,9 +338,13 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   {
     ZSaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
-    int32_t offset = 0;
-    __ la_patchable(t0, stub->slow_path(), offset);
-    __ jalr(x1, t0, offset);
+
+    Address target(stub->slow_path());
+    __ relocate(target.rspec(), [&] {
+      int32_t offset;
+      __ la_patchable(t0, target, offset);
+      __ jalr(x1, t0, offset);
+    });
   }
 
   // Stub exit

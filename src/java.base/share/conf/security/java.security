@@ -25,6 +25,9 @@
 #
 # If this properties file fails to load, the JDK implementation will throw
 # an unspecified error when initializing the java.security.Security class.
+# Properties in this file are typically parsed only once. If any of the
+# properties are modified, applications should be restarted to ensure the
+# changes are properly reflected.
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
@@ -745,8 +748,9 @@ http.auth.digest.disabledAlgorithms = MD5, SHA-1
 # Example:
 #   jdk.tls.disabledAlgorithms=MD5, SSLv3, DSA, RSA keySize < 2048, \
 #       rsa_pkcs1_sha1, secp224r1
-jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
-    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
+    MD5withRSA, DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+    ECDH
 
 #
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
@@ -939,10 +943,16 @@ crypto.policy=crypto.policydir-tbd
 
 #
 # The policy for the XML Signature secure validation mode. Validation of
-# XML Signatures that violate any of these constraints will fail. The
-# mode is enforced by default. The mode can be disabled by setting the
-# property "org.jcp.xml.dsig.secureValidation" to Boolean.FALSE with the
-# javax.xml.crypto.XMLCryptoContext.setProperty() method.
+# XML Signatures that violate any of these constraints will fail.
+# The mode can be enabled or disabled by setting the property
+# "org.jcp.xml.dsig.secureValidation" to Boolean.TRUE or Boolean.FALSE with
+# the javax.xml.crypto.XMLCryptoContext.setProperty() method, or by setting
+# the system property "org.jcp.xml.dsig.secureValidation" to "true" or
+# "false". Any other value for the system property is also treated as "false".
+# If the system property is set, it supersedes the XMLCryptoContext property
+# value.
+#
+# The secure validation mode is enabled by default.
 #
 #   Policy:
 #       Constraint {"," Constraint }
@@ -1376,17 +1386,18 @@ jdk.io.permissionsUseCanonicalPath=false
 jdk.tls.alpnCharset=ISO_8859_1
 
 #
-# JNDI Object Factories Filter
+# Global JNDI Object Factories Filter
 #
 # This filter is used by the JNDI runtime to control the set of object factory classes
 # which will be allowed to instantiate objects from object references returned by
 # naming/directory systems. The factory class named by the reference instance will be
 # matched against this filter. The filter property supports pattern-based filter syntax
-# with the same format as jdk.serialFilter.
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
 #
-# Each pattern is matched against the factory class name to allow or disallow it's
-# instantiation. The access to a factory class is allowed unless the filter returns
-# REJECTED.
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed if the filter returns
+# ALLOWED.
 #
 # Note: This property is currently used by the JDK Reference implementation.
 # It is not guaranteed to be examined and used by other implementations.
@@ -1397,6 +1408,58 @@ jdk.tls.alpnCharset=ISO_8859_1
 # The default pattern value allows any object factory class specified by the reference
 # instance to recreate the referenced object.
 #jdk.jndi.object.factoriesFilter=*
+
+#
+# Protocol Specific JNDI/LDAP Object Factories Filter
+#
+# This filter is used by the JNDI/LDAP provider implementation in the JDK to further control the
+# set of object factory classes which will be allowed to instantiate objects from object
+# references bound to LDAP contexts. The factory class named by the reference instance will
+# be matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
+#
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
+# or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
+# two filters returns ALLOWED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.ldap.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is
+# "java.naming/com.sun.jndi.ldap.**;!*".
+#
+# The default pattern value allows any object factory class defined in the java.naming module
+# to be specified by the reference instance, but rejects any other.
+#jdk.jndi.ldap.object.factoriesFilter=java.naming/com.sun.jndi.ldap.**;!*
+
+#
+# Protocol Specific JNDI/RMI Object Factories Filter
+#
+# This filter is used by the JNDI/RMI provider implementation in the JDK to further control the
+# set of object factory classes which will be allowed to instantiate objects from object
+# references bound to RMI names. The factory class named by the reference instance will
+# be matched against this filter. The filter property supports pattern-based filter syntax
+# with the same format as jdk.serialFilter. Limit patterns specified in the filter property
+# are unused.
+#
+# Each class name pattern is matched against the factory class name to allow or disallow its
+# instantiation. The access to a factory class is allowed only when it is not rejected by this filter
+# or by the global filter defined by "jdk.jndi.object.factoriesFilter", and at least one of these
+# two filters returns ALLOWED.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# If the system property jdk.jndi.rmi.object.factoriesFilter is also specified, it supersedes
+# the security property value defined here. The default value of the property is
+# "jdk.naming.rmi/com.sun.jndi.rmi.**;!*".
+#
+# The default pattern value allows any object factory class defined in the jdk.naming.rmi module
+# to be specified by the reference instance, but rejects any other.
+#jdk.jndi.rmi.object.factoriesFilter=jdk.naming.rmi/com.sun.jndi.rmi.**;!*
 
 #
 # Policy for non-forwardable service ticket in a S4U2proxy request

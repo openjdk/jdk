@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,19 @@
 
 /*
  * @test
- * @bug 8237470
+ * @bug 8237470 8299015
  * @summary Confirm HttpResponse.BodySubscribers#ofFile(Path)
  *          works with default and non-default file systems
  *          when SecurityManager is enabled
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          jdk.httpserver
- * @library /test/lib ../http2/server
- * @build Http2TestServer Http2TestServerConnection Http2TestExchange
- *        Http2Handler OutgoingPushPromise Queue
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build jdk.test.lib.Platform
- * @build jdk.test.lib.util.FileUtils
- * @compile ../HttpServerAdapters.java
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http2.Http2TestServerConnection
+ *        jdk.httpclient.test.lib.http2.Http2TestExchange
+ *        jdk.httpclient.test.lib.http2.Http2Handler
+ *        jdk.httpclient.test.lib.http2.OutgoingPushPromise
+ *        jdk.httpclient.test.lib.http2.Queue jdk.test.lib.net.SimpleSSLContext
+ *        jdk.test.lib.Platform jdk.test.lib.util.FileUtils
  * @run testng/othervm BodySubscriberOfFileTest
  * @run testng/othervm/java.security.policy=ofFile.policy BodySubscriberOfFileTest
  */
@@ -66,12 +63,22 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
-
+import java.util.concurrent.Flow;
+import java.util.stream.IntStream;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
+import jdk.httpclient.test.lib.http2.Http2TestExchange;
+import jdk.httpclient.test.lib.http2.Http2Handler;
+import jdk.httpclient.test.lib.http2.OutgoingPushPromise;
+import jdk.httpclient.test.lib.http2.Queue;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
@@ -197,6 +204,30 @@ public class BodySubscriberOfFileTest implements HttpServerAdapters {
             assertEquals(resp.statusCode(), 200);
             assertEquals(msg, expectedMsg);
         }
+    }
+
+    // A large enough number of buffers to gather from, in an attempt to provoke a partial
+    // write. Loosely based on the value of _SC_IOV_MAX, to trigger partial gathering write.
+    private static final int NUM_GATHERING_BUFFERS = 1024 + 1;
+
+    @Test
+    public void testSubscribersWritesAllBytes() throws Exception {
+        var buffers = IntStream.range(0, NUM_GATHERING_BUFFERS)
+                .mapToObj(i -> new byte[10])
+                .map(ByteBuffer::wrap).toList();
+        int expectedSize = buffers.stream().mapToInt(Buffer::remaining).sum();
+
+        var subscriber = BodySubscribers.ofFile(defaultFsPath);
+        subscriber.onSubscribe(new Flow.Subscription() {
+            @Override
+            public void request(long n) { }
+            @Override
+            public void cancel() { }
+        });
+        subscriber.onNext(buffers);
+        subscriber.onComplete();
+        buffers.forEach(b -> assertEquals(b.remaining(), 0) );
+        assertEquals(expectedSize, Files.size(defaultFsPath));
     }
 
     @BeforeTest

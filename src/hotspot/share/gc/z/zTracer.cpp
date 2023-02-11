@@ -92,7 +92,7 @@ ZTracer::ZTracer() :
 
 void ZTracer::initialize() {
   assert(_tracer == NULL, "Already initialized");
-  _tracer = new (ResourceObj::C_HEAP, mtGC) ZTracer();
+  _tracer = new ZTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }
 

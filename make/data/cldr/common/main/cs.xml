@@ -40,6 +40,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="am">amharština</language>
 			<language type="an">aragonština</language>
 			<language type="ang">staroangličtina</language>
+			<language type="ann">obolo</language>
 			<language type="anp">angika</language>
 			<language type="ar">arabština</language>
 			<language type="ar_001">arabština (moderní standardní)</language>
@@ -56,6 +57,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="asa">asu</language>
 			<language type="ase">znaková řeč (americká)</language>
 			<language type="ast">asturština</language>
+			<language type="atj">atikamekština</language>
 			<language type="av">avarština</language>
 			<language type="avk">kotava</language>
 			<language type="awa">awadhština</language>
@@ -121,14 +123,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="chr">čerokézština</language>
 			<language type="chy">čejenština</language>
 			<language type="ckb">kurdština (sorání)</language>
+			<language type="clc">čilkotinština</language>
 			<language type="co">korsičtina</language>
 			<language type="cop">koptština</language>
 			<language type="cps">kapiznonština</language>
 			<language type="cr">kríjština</language>
+			<language type="crg">mičif</language>
 			<language type="crh">tatarština (krymská)</language>
+			<language type="crj">kríjština (jihovýchodní)</language>
+			<language type="crk">kríjština (z plání)</language>
+			<language type="crl">kríjština (severovýchodní)</language>
+			<language type="crm">kríjština (Moose)</language>
+			<language type="crr">algonkinština (Karolína)</language>
 			<language type="crs">kreolština (seychelská)</language>
 			<language type="cs">čeština</language>
 			<language type="csb">kašubština</language>
+			<language type="csw">kríjština (z bažin)</language>
 			<language type="cu">staroslověnština</language>
 			<language type="cv">čuvaština</language>
 			<language type="cy">velština</language>
@@ -226,8 +236,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="hai">haidština</language>
 			<language type="hak">čínština (dialekty Hakka)</language>
 			<language type="haw">havajština</language>
+			<language type="hax">haidština (jižní)</language>
 			<language type="he">hebrejština</language>
 			<language type="hi">hindština</language>
+			<language type="hi_Latn" alt="variant">hingliš</language>
 			<language type="hif">hindština (Fidži)</language>
 			<language type="hil">hiligajnonština</language>
 			<language type="hit">chetitština</language>
@@ -239,6 +251,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ht">haitština</language>
 			<language type="hu">maďarština</language>
 			<language type="hup">hupa</language>
+			<language type="hur">halkomelem</language>
 			<language type="hy">arménština</language>
 			<language type="hz">hererština</language>
 			<language type="ia">interlingua</language>
@@ -249,6 +262,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ig">igboština</language>
 			<language type="ii">iština (sečuánská)</language>
 			<language type="ik">inupiakština</language>
+			<language type="ikt">inuktitutština (západokanadská)</language>
 			<language type="ilo">ilokánština</language>
 			<language type="inh">inguština</language>
 			<language type="io">ido</language>
@@ -315,6 +329,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kut">kutenajština</language>
 			<language type="kv">komijština</language>
 			<language type="kw">kornština</language>
+			<language type="kwk">kvakiutština</language>
 			<language type="ky">kyrgyzština</language>
 			<language type="la">latina</language>
 			<language type="lad">ladinština</language>
@@ -327,6 +342,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lg">gandština</language>
 			<language type="li">limburština</language>
 			<language type="lij">ligurština</language>
+			<language type="lil">lillooetština</language>
 			<language type="liv">livonština</language>
 			<language type="lkt">lakotština</language>
 			<language type="lmo">lombardština</language>
@@ -336,6 +352,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lou">kreolština (Louisiana)</language>
 			<language type="loz">lozština</language>
 			<language type="lrc">lúrština (severní)</language>
+			<language type="lsm">samia</language>
 			<language type="lt">litevština</language>
 			<language type="ltg">latgalština</language>
 			<language type="lu">lubu-katanžština</language>
@@ -374,6 +391,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="mn">mongolština</language>
 			<language type="mnc">mandžuština</language>
 			<language type="mni">manipurština</language>
+			<language type="moe">innu-aimun</language>
 			<language type="moh">mohawkština</language>
 			<language type="mos">mosi</language>
 			<language type="mr">maráthština</language>
@@ -426,6 +444,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="nzi">nzima</language>
 			<language type="oc">okcitánština</language>
 			<language type="oj">odžibvejština</language>
+			<language type="ojb">odžibvejština (severozápadní)</language>
+			<language type="ojc">odžibvejština (střední)</language>
+			<language type="ojs">odžibvejština (severní)</language>
+			<language type="ojw">odžibvejština (západní)</language>
+			<language type="oka">okanaganština</language>
 			<language type="om">oromština</language>
 			<language type="or">urijština</language>
 			<language type="os">osetština</language>
@@ -445,10 +468,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="pfl">falčtina</language>
 			<language type="phn">féničtina</language>
 			<language type="pi">pálí</language>
+			<language type="pis">pidžin (Šalomounovy ostrovy)</language>
 			<language type="pl">polština</language>
 			<language type="pms">piemonština</language>
 			<language type="pnt">pontština</language>
 			<language type="pon">pohnpeiština</language>
+			<language type="pqm">malesitština-passamaquoddština</language>
 			<language type="prg">pruština</language>
 			<language type="pro">provensálština</language>
 			<language type="ps">paštština</language>
@@ -509,6 +534,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="sid">sidamo</language>
 			<language type="sk">slovenština</language>
 			<language type="sl">slovinština</language>
+			<language type="slh">lushootseed (jižní)</language>
 			<language type="sli">němčina (slezská)</language>
 			<language type="sly">selajarština</language>
 			<language type="sm">samojština</language>
@@ -528,6 +554,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ssy">saho</language>
 			<language type="st">sotština (jižní)</language>
 			<language type="stq">fríština (saterlandská)</language>
+			<language type="str">saliština (z úžin)</language>
 			<language type="su">sundština</language>
 			<language type="suk">sukuma</language>
 			<language type="sus">susu</language>
@@ -540,6 +567,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="syr">syrština</language>
 			<language type="szl">slezština</language>
 			<language type="ta">tamilština</language>
+			<language type="tce">tutčonština (jižní)</language>
 			<language type="tcy">tuluština</language>
 			<language type="te">telugština</language>
 			<language type="tem">temne</language>
@@ -547,7 +575,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="ter">tereno</language>
 			<language type="tet">tetumština</language>
 			<language type="tg">tádžičtina</language>
+			<language type="tgx">tagiš</language>
 			<language type="th">thajština</language>
+			<language type="tht">tahltan</language>
 			<language type="ti">tigrinijština</language>
 			<language type="tig">tigrejština</language>
 			<language type="tiv">tivština</language>
@@ -562,6 +592,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tn">setswanština</language>
 			<language type="to">tongánština</language>
 			<language type="tog">tonžština (nyasa)</language>
+			<language type="tok">toki pona</language>
 			<language type="tpi">tok pisin</language>
 			<language type="tr">turečtina</language>
 			<language type="tru">turojština</language>
@@ -570,6 +601,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="tsd">tsakonština</language>
 			<language type="tsi">tsimšijské jazyky</language>
 			<language type="tt">tatarština</language>
+			<language type="ttm">tutčonština (severní)</language>
 			<language type="ttt">tatština</language>
 			<language type="tum">tumbukština</language>
 			<language type="tvl">tuvalština</language>
@@ -635,11 +667,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">adlam</script>
 			<script type="Afak">afaka</script>
 			<script type="Aghb">kavkazskoalbánské</script>
 			<script type="Arab">arabské</script>
 			<script type="Arab" alt="variant">persko-arabské</script>
-			<script type="Aran" draft="contributed">nastaliq</script>
+			<script type="Aran">nastalik</script>
 			<script type="Armi">aramejské (imperiální)</script>
 			<script type="Armn">arménské</script>
 			<script type="Avst">avestánské</script>
@@ -758,6 +791,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<script type="Prti">parthské klínové</script>
 			<script type="Qaag" draft="contributed">zawgyi</script>
 			<script type="Rjng">redžanské</script>
+			<script type="Rohg">hanifi</script>
 			<script type="Roro">rongorongo</script>
 			<script type="Runr">runové</script>
 			<script type="Samr">samařské</script>
@@ -1025,6 +1059,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="NR">Nauru</territory>
 			<territory type="NU">Niue</territory>
 			<territory type="NZ">Nový Zéland</territory>
+			<territory type="NZ" alt="variant">Aotearoa – Nový Zéland</territory>
 			<territory type="OM">Omán</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
@@ -1147,7 +1182,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="coptic">Koptský kalendář</type>
 			<type key="calendar" type="dangi">Korejský kalendář Dangi</type>
 			<type key="calendar" type="ethiopic">Etiopský kalendář</type>
-			<type key="calendar" type="ethiopic-amete-alem">Etiopský kalendář (Amete-Alem)</type>
+			<type key="calendar" type="ethiopic-amete-alem">Etiopský kalendář (amete alem)</type>
 			<type key="calendar" type="gregorian">Gregoriánský kalendář</type>
 			<type key="calendar" type="hebrew">Hebrejský kalendář</type>
 			<type key="calendar" type="indian">Indický národní kalendář</type>
@@ -1176,7 +1211,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="eor">Evropské řazení</type>
 			<type key="collation" type="gb2312han">Řazení pro zjednodušenou čínštinu – GB2312</type>
 			<type key="collation" type="phonebook">Řazení telefonního seznamu</type>
-			<type key="collation" type="phonetic" draft="contributed">Fonetické řazení</type>
+			<type key="collation" type="phonetic">Fonetické řazení</type>
 			<type key="collation" type="pinyin">Řazení podle pchin-jinu</type>
 			<type key="collation" type="reformed">Reformované řazení</type>
 			<type key="collation" type="search">Obecné hledání</type>
@@ -1185,7 +1220,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="stroke">Řazení podle tahů</type>
 			<type key="collation" type="traditional">Tradiční řazení</type>
 			<type key="collation" type="unihan">Řazení podle radikálů</type>
-			<type key="collation" type="zhuyin">Ču-jin</type>
+			<type key="collation" type="zhuyin">Řazení podle ču-jinu</type>
 			<type key="colNormalization" type="no" draft="contributed">Řadit bez normalizace</type>
 			<type key="colNormalization" type="yes">Řadit podle normalizovaného kódování Unicode</type>
 			<type key="colNumeric" type="no" draft="contributed">Řadit číslice jednotlivě</type>
@@ -1216,6 +1251,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="armnlow">Malé arménské číslice</type>
 			<type key="numbers" type="bali" draft="contributed">Balijské číslice</type>
 			<type key="numbers" type="beng">Bengálské číslice</type>
+			<type key="numbers" type="cakm">Čakmské číslice</type>
 			<type key="numbers" type="deva">Číslice písma dévanágarí</type>
 			<type key="numbers" type="ethi">Etiopské číslice</type>
 			<type key="numbers" type="finance">Finanční zápis čísel</type>
@@ -1231,7 +1267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="hant">Číslice tradiční čínštiny</type>
 			<type key="numbers" type="hantfin">Finanční číslice tradiční čínštiny</type>
 			<type key="numbers" type="hebr">Hebrejské číslice</type>
-			<type key="numbers" type="java" draft="contributed">Javánské číslice</type>
+			<type key="numbers" type="java">Javánské číslice</type>
 			<type key="numbers" type="jpan">Japonské číslice</type>
 			<type key="numbers" type="jpanfin">Japonské finanční číslice</type>
 			<type key="numbers" type="khmr">Khmerské číslice</type>
@@ -1240,8 +1276,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="numbers" type="latn">Západní číslice</type>
 			<type key="numbers" type="mlym">Malajálamské číslice</type>
 			<type key="numbers" type="mong">Mongolské číslice</type>
+			<type key="numbers" type="mtei">Manipurské číslice</type>
 			<type key="numbers" type="mymr">Myanmarské číslice</type>
-			<type key="numbers" type="native" draft="contributed">Nativní číslice</type>
+			<type key="numbers" type="native">Nativní číslice</type>
+			<type key="numbers" type="olck">Santálské číslice</type>
 			<type key="numbers" type="orya">Urijské číslice</type>
 			<type key="numbers" type="osma" draft="contributed">Somálské číslice</type>
 			<type key="numbers" type="roman">Římské číslice</type>
@@ -1296,7 +1334,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	<characters>
 		<exemplarCharacters>[a á b c č d ď e é ě f g h {ch} i í j k l m n ň o ó p q r ř s š t ť u ú ů v w x y ý z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī ľ ł ñ ò ŏ ô ö ø ō œ ŕ ù ŭ û ü ū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A B C Č D E F G H {CH} I J K L M N O P Q R Ř S Š T U V W X Y Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C Č D E F G H {CH} I J K L M N O P Q R Ř S Š T U V W X Y Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ‘ ‚ “ „ ( ) \[ \] § @ * / \&amp;]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
@@ -1407,41 +1445,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -1469,36 +1523,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -2420,41 +2474,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -2482,36 +2552,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -3492,41 +3562,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -3554,36 +3640,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -3620,19 +3706,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'v' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'v' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3645,9 +3743,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d. M. y GGGGG</dateFormatItem>
@@ -3656,11 +3754,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMEd">E d. M. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMEd">E d. MMMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d. M.</dateFormatItem>
@@ -3686,13 +3784,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -3700,74 +3798,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d. M. y – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="G">d. M. y GGGGG – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="M">d. M. y – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="d">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="G">d. M. y GGGGG – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="M">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d. M. y – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="G">E d. M. y GGGGG – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d. M. y – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d. M. y GGGGG – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">LLLL y G – LLLL y G</greatestDifference>
+							<greatestDifference id="G">LLLL y G – LLLL y G</greatestDifference>
 							<greatestDifference id="M">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
+							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
 							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
+							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
 							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -3795,36 +3909,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4157,7 +4271,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>H:mm:ss zzzz</pattern>
+							<pattern>H:mm:ss, zzzz</pattern>
 							<datetimeSkeleton>Hmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
@@ -4185,19 +4299,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'v' {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} 'v' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -4210,9 +4336,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
 						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d.</dateFormatItem>
-						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
-						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E H:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d. M. y GGGGG</dateFormatItem>
@@ -4221,16 +4347,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMEd">E d. M. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMd">d. MMMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMMEd">E d. MMMM y G</dateFormatItem>
-						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">H</dateFormatItem>
-						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H:mm</dateFormatItem>
-						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">H:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmsvvvv" draft="contributed">h:mm:ss a, vvvv</dateFormatItem>
+						<dateFormatItem id="Hmsvvvv" draft="contributed">H:mm:ss, vvvv</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">H:mm v</dateFormatItem>
+						<dateFormatItem id="hmvvvv" draft="contributed">h:mm a, vvvv</dateFormatItem>
+						<dateFormatItem id="Hmvvvv" draft="contributed">H:mm, vvvv</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d. M.</dateFormatItem>
 						<dateFormatItem id="MEd">E d. M.</dateFormatItem>
@@ -4265,13 +4395,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
-							<greatestDifference id="B">h B – h B</greatestDifference>
+							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
-							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
+							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm B</greatestDifference>
 						</intervalFormatItem>
@@ -4279,74 +4409,90 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="d">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
-							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="G">y G – y G</greatestDifference>
 							<greatestDifference id="y">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyM">
-							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
-							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
-							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="G">M/y GGGGG – M/y GGGGG</greatestDifference>
+							<greatestDifference id="M">M/y – M/y GGGGG</greatestDifference>
+							<greatestDifference id="y">M/y – M/y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMd">
-							<greatestDifference id="d">d. M. y – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="G">d. M. y GGGGG – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="M">d. M. y – d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="d">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="G">d. M. y GGGGG – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="M">d. M. y – d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMEd">
-							<greatestDifference id="d">E d. M. y – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="G">E d. M. y GGGGG – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="M">E d. M. y – E d. M. y GGGGG</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="d">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="G">E d. M. y GGGGG – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="M">E d. M. y – E d. M. y GGGGG</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y GGGGG</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMM">
-							<greatestDifference id="G">LLLL y G – LLLL y G</greatestDifference>
+							<greatestDifference id="G">LLLL y G – LLLL y G</greatestDifference>
 							<greatestDifference id="M">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMd">
 							<greatestDifference id="d">d.–d. M. y G</greatestDifference>
-							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
+							<greatestDifference id="G">d. M. y G – d. M. y G</greatestDifference>
 							<greatestDifference id="M">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="GyMMMEd">
 							<greatestDifference id="d">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
+							<greatestDifference id="G">E d. M. y G – E d. M. y G</greatestDifference>
 							<greatestDifference id="M">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="a">h a – h a</greatestDifference>
+							<greatestDifference id="h">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a v</greatestDifference>
+							<greatestDifference id="h">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -4360,7 +4506,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="M">E d. M. – E d. M.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM–MMM</greatestDifference>
+							<greatestDifference id="M">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">d.–d. M.</greatestDifference>
@@ -4374,36 +4520,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">M/y – M/y</greatestDifference>
-							<greatestDifference id="y">M/y – M/y</greatestDifference>
+							<greatestDifference id="M">M/y – M/y</greatestDifference>
+							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd.MM.y – dd.MM.y</greatestDifference>
-							<greatestDifference id="M">dd.MM.y – dd.MM.y</greatestDifference>
-							<greatestDifference id="y">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="d">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E dd.MM.y – E dd.MM.y</greatestDifference>
-							<greatestDifference id="M">E dd.MM.y – E dd.MM.y</greatestDifference>
-							<greatestDifference id="y">E dd.MM.y – E dd.MM.y</greatestDifference>
+							<greatestDifference id="d">E dd.MM.y – E dd.MM.y</greatestDifference>
+							<greatestDifference id="M">E dd.MM.y – E dd.MM.y</greatestDifference>
+							<greatestDifference id="y">E dd.MM.y – E dd.MM.y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M">MMM–MMM y</greatestDifference>
-							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d">d.–d. M. y</greatestDifference>
 							<greatestDifference id="M">d. M. – d. M. y</greatestDifference>
-							<greatestDifference id="y">d. M. y – d. M. y</greatestDifference>
+							<greatestDifference id="y">d. M. y – d. M. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d">E d. M. – E d. M. y</greatestDifference>
 							<greatestDifference id="M">E d. M. – E d. M. y</greatestDifference>
-							<greatestDifference id="y">E d. M. y – E d. M. y</greatestDifference>
+							<greatestDifference id="y">E d. M. y – E d. M. y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">LLLL–LLLL y</greatestDifference>
-							<greatestDifference id="y">LLLL y – LLLL y</greatestDifference>
+							<greatestDifference id="y">LLLL y – LLLL y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4602,41 +4748,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -4664,36 +4826,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -4880,41 +5042,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -4942,36 +5120,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -5158,41 +5336,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -5220,36 +5414,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -6051,41 +6245,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -6113,36 +6323,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -6329,41 +6539,57 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ" draft="contributed">QQQQ y G</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="contributed">d.–d.</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
-							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
 							<greatestDifference id="H" draft="contributed">H–H</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
 							<greatestDifference id="H" draft="contributed">H:mm–H:mm v</greatestDifference>
 							<greatestDifference id="m" draft="contributed">H:mm–H:mm v</greatestDifference>
 						</intervalFormatItem>
+						<intervalFormatItem id="hmvvvv">
+							<greatestDifference id="a" draft="contributed">h:mm a – h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">h:mm–h:mm a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hmvvvv">
+							<greatestDifference id="H" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+							<greatestDifference id="m" draft="contributed">H:mm–H:mm, vvvv</greatestDifference>
+						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
-							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
+							<greatestDifference id="a" draft="contributed">h a – h a v</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
 							<greatestDifference id="H" draft="contributed">H–H v</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="hvvvv">
+							<greatestDifference id="a" draft="contributed">h a – h a, vvvv</greatestDifference>
+							<greatestDifference id="h" draft="contributed">h–h a, vvvv</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="Hvvvv">
+							<greatestDifference id="H" draft="contributed">H–H, vvvv</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="contributed">M–M</greatestDifference>
@@ -6391,36 +6617,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="y" draft="contributed">y–y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">M/y – M/y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">dd.MM.y – dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="d" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="M" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E dd.MM.y – E dd.MM.y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
 							<greatestDifference id="M" draft="contributed">MMM–MMM y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">MMM y – MMM y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
 							<greatestDifference id="d" draft="contributed">d.–d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">d. M. – d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">d. M. y – d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
 							<greatestDifference id="d" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
 							<greatestDifference id="M" draft="contributed">E d. M. – E d. M. y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">E d. M. y – E d. M. y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M" draft="contributed">LLLL–LLLL y G</greatestDifference>
-							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
+							<greatestDifference id="y" draft="contributed">LLLL y – LLLL y G</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
@@ -7339,7 +7565,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<hourFormat>+H:mm;-H:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>Časové pásmo {0}</regionFormat>
+			<regionFormat>časové pásmo {0}</regionFormat>
 			<regionFormat type="daylight">{0} (+1)</regionFormat>
 			<regionFormat type="standard">{0} (+0)</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
@@ -7348,7 +7574,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Etc/UTC">
 				<long>
-					<standard>Koordinovaný světový čas</standard>
+					<standard>koordinovaný světový čas</standard>
 				</long>
 				<short>
 					<standard draft="contributed">UTC</standard>
@@ -7839,7 +8065,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/London">
 				<long>
-					<daylight>Britský letní čas</daylight>
+					<daylight>britský letní čas</daylight>
 				</long>
 				<exemplarCity>Londýn</exemplarCity>
 			</zone>
@@ -7932,7 +8158,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>Irský letní čas</daylight>
+					<daylight>irský letní čas</daylight>
 				</long>
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
@@ -8658,36 +8884,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Afghanistan">
 				<long>
-					<standard>Afghánský čas</standard>
+					<standard>afghánský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard>Středoafrický čas</standard>
+					<standard>středoafrický čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
-					<standard>Východoafrický čas</standard>
+					<standard>východoafrický čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>Jihoafrický čas</standard>
+					<standard>jihoafrický čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Západoafrický čas</generic>
-					<standard>Západoafrický standardní čas</standard>
-					<daylight>Západoafrický letní čas</daylight>
+					<generic>západoafrický čas</generic>
+					<standard>západoafrický standardní čas</standard>
+					<daylight>západoafrický letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>Aljašský čas</generic>
-					<standard>Aljašský standardní čas</standard>
-					<daylight>Aljašský letní čas</daylight>
+					<generic>aljašský čas</generic>
+					<standard>aljašský standardní čas</standard>
+					<daylight>aljašský letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">AKT</generic>
@@ -8704,16 +8930,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>Amazonský čas</generic>
-					<standard>Amazonský standardní čas</standard>
-					<daylight>Amazonský letní čas</daylight>
+					<generic>amazonský čas</generic>
+					<standard>amazonský standardní čas</standard>
+					<daylight>amazonský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>Severoamerický centrální čas</generic>
-					<standard>Severoamerický centrální standardní čas</standard>
-					<daylight>Severoamerický centrální letní čas</daylight>
+					<generic>severoamerický centrální čas</generic>
+					<standard>severoamerický centrální standardní čas</standard>
+					<daylight>severoamerický centrální letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">CT</generic>
@@ -8723,9 +8949,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>Severoamerický východní čas</generic>
-					<standard>Severoamerický východní standardní čas</standard>
-					<daylight>Severoamerický východní letní čas</daylight>
+					<generic>severoamerický východní čas</generic>
+					<standard>severoamerický východní standardní čas</standard>
+					<daylight>severoamerický východní letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">ET</generic>
@@ -8735,9 +8961,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Severoamerický horský čas</generic>
-					<standard>Severoamerický horský standardní čas</standard>
-					<daylight>Severoamerický horský letní čas</daylight>
+					<generic>severoamerický horský čas</generic>
+					<standard>severoamerický horský standardní čas</standard>
+					<daylight>severoamerický horský letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">MT</generic>
@@ -8747,9 +8973,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Severoamerický pacifický čas</generic>
-					<standard>Severoamerický pacifický standardní čas</standard>
-					<daylight>Severoamerický pacifický letní čas</daylight>
+					<generic>severoamerický pacifický čas</generic>
+					<standard>severoamerický pacifický standardní čas</standard>
+					<daylight>severoamerický pacifický letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">PT</generic>
@@ -8766,9 +8992,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>Apijský čas</generic>
-					<standard>Apijský standardní čas</standard>
-					<daylight>Apijský letní čas</daylight>
+					<generic>apijský čas</generic>
+					<standard>apijský standardní čas</standard>
+					<daylight>apijský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Aqtau">
@@ -8787,37 +9013,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Arabian">
 				<long>
-					<generic>Arabský čas</generic>
-					<standard>Arabský standardní čas</standard>
-					<daylight>Arabský letní čas</daylight>
+					<generic>arabský čas</generic>
+					<standard>arabský standardní čas</standard>
+					<daylight>arabský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina">
 				<long>
-					<generic>Argentinský čas</generic>
-					<standard>Argentinský standardní čas</standard>
-					<daylight>Argentinský letní čas</daylight>
+					<generic>argentinský čas</generic>
+					<standard>argentinský standardní čas</standard>
+					<daylight>argentinský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Argentina_Western">
 				<long>
-					<generic>Západoargentinský čas</generic>
-					<standard>Západoargentinský standardní čas</standard>
-					<daylight>Západoargentinský letní čas</daylight>
+					<generic>západoargentinský čas</generic>
+					<standard>západoargentinský standardní čas</standard>
+					<daylight>západoargentinský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Armenia">
 				<long>
-					<generic>Arménský čas</generic>
-					<standard>Arménský standardní čas</standard>
-					<daylight>Arménský letní čas</daylight>
+					<generic>arménský čas</generic>
+					<standard>arménský standardní čas</standard>
+					<daylight>arménský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Atlantický čas</generic>
-					<standard>Atlantický standardní čas</standard>
-					<daylight>Atlantický letní čas</daylight>
+					<generic>atlantický čas</generic>
+					<standard>atlantický standardní čas</standard>
+					<daylight>atlantický letní čas</daylight>
 				</long>
 				<short>
 					<generic draft="contributed">AT</generic>
@@ -8827,80 +9053,80 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>Středoaustralský čas</generic>
-					<standard>Středoaustralský standardní čas</standard>
-					<daylight>Středoaustralský letní čas</daylight>
+					<generic>středoaustralský čas</generic>
+					<standard>středoaustralský standardní čas</standard>
+					<daylight>středoaustralský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>Středozápadní australský čas</generic>
-					<standard>Středozápadní australský standardní čas</standard>
-					<daylight>Středozápadní australský letní čas</daylight>
+					<generic>středozápadní australský čas</generic>
+					<standard>středozápadní australský standardní čas</standard>
+					<daylight>středozápadní australský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>Východoaustralský čas</generic>
-					<standard>Východoaustralský standardní čas</standard>
-					<daylight>Východoaustralský letní čas</daylight>
+					<generic>východoaustralský čas</generic>
+					<standard>východoaustralský standardní čas</standard>
+					<daylight>východoaustralský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>Západoaustralský čas</generic>
-					<standard>Západoaustralský standardní čas</standard>
-					<daylight>Západoaustralský letní čas</daylight>
+					<generic>západoaustralský čas</generic>
+					<standard>západoaustralský standardní čas</standard>
+					<daylight>západoaustralský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
 				<long>
-					<generic>Ázerbájdžánský čas</generic>
-					<standard>Ázerbájdžánský standardní čas</standard>
-					<daylight>Ázerbájdžánský letní čas</daylight>
+					<generic>ázerbájdžánský čas</generic>
+					<standard>ázerbájdžánský standardní čas</standard>
+					<daylight>ázerbájdžánský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azores">
 				<long>
-					<generic>Azorský čas</generic>
-					<standard>Azorský standardní čas</standard>
-					<daylight>Azorský letní čas</daylight>
+					<generic>azorský čas</generic>
+					<standard>azorský standardní čas</standard>
+					<daylight>azorský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>Bangladéšský čas</generic>
-					<standard>Bangladéšský standardní čas</standard>
-					<daylight>Bangladéšský letní čas</daylight>
+					<generic>bangladéšský čas</generic>
+					<standard>bangladéšský standardní čas</standard>
+					<daylight>bangladéšský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
 				<long>
-					<standard>Bhútánský čas</standard>
+					<standard>bhútánský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
 				<long>
-					<standard>Bolivijský čas</standard>
+					<standard>bolivijský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Brasilia">
 				<long>
-					<generic>Brasilijský čas</generic>
-					<standard>Brasilijský standardní čas</standard>
-					<daylight>Brasilijský letní čas</daylight>
+					<generic>brasilijský čas</generic>
+					<standard>brasilijský standardní čas</standard>
+					<daylight>brasilijský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Brunei">
 				<long>
-					<standard>Brunejský čas</standard>
+					<standard>brunejský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Cape_Verde">
 				<long>
-					<generic>Kapverdský čas</generic>
-					<standard>Kapverdský standardní čas</standard>
-					<daylight>Kapverdský letní čas</daylight>
+					<generic>kapverdský čas</generic>
+					<standard>kapverdský standardní čas</standard>
+					<daylight>kapverdský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Casey">
@@ -8910,100 +9136,100 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Chamorro">
 				<long>
-					<standard>Chamorrský čas</standard>
+					<standard>chamorrský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Chatham">
 				<long>
-					<generic>Chathamský čas</generic>
-					<standard>Chathamský standardní čas</standard>
-					<daylight>Chathamský letní čas</daylight>
+					<generic>chathamský čas</generic>
+					<standard>chathamský standardní čas</standard>
+					<daylight>chathamský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
 				<long>
-					<generic>Chilský čas</generic>
-					<standard>Chilský standardní čas</standard>
-					<daylight>Chilský letní čas</daylight>
+					<generic>chilský čas</generic>
+					<standard>chilský standardní čas</standard>
+					<daylight>chilský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="China">
 				<long>
-					<generic>Čínský čas</generic>
-					<standard>Čínský standardní čas</standard>
-					<daylight>Čínský letní čas</daylight>
+					<generic>čínský čas</generic>
+					<standard>čínský standardní čas</standard>
+					<daylight>čínský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic>Čojbalsanský čas</generic>
-					<standard>Čojbalsanský standardní čas</standard>
-					<daylight>Čojbalsanský letní čas</daylight>
+					<generic>čojbalsanský čas</generic>
+					<standard>čojbalsanský standardní čas</standard>
+					<daylight>čojbalsanský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
 				<long>
-					<standard>Čas Vánočního ostrova</standard>
+					<standard>čas Vánočního ostrova</standard>
 				</long>
 			</metazone>
 			<metazone type="Cocos">
 				<long>
-					<standard>Čas Kokosových ostrovů</standard>
+					<standard>čas Kokosových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="Colombia">
 				<long>
-					<generic>Kolumbijský čas</generic>
-					<standard>Kolumbijský standardní čas</standard>
-					<daylight>Kolumbijský letní čas</daylight>
+					<generic>kolumbijský čas</generic>
+					<standard>kolumbijský standardní čas</standard>
+					<daylight>kolumbijský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cook">
 				<long>
-					<generic>Čas Cookových ostrovů</generic>
-					<standard>Standardní čas Cookových ostrovů</standard>
-					<daylight>Letní čas Cookových ostrovů</daylight>
+					<generic>čas Cookových ostrovů</generic>
+					<standard>standardní čas Cookových ostrovů</standard>
+					<daylight>letní čas Cookových ostrovů</daylight>
 				</long>
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>Kubánský čas</generic>
-					<standard>Kubánský standardní čas</standard>
-					<daylight>Kubánský letní čas</daylight>
+					<generic>kubánský čas</generic>
+					<standard>kubánský standardní čas</standard>
+					<daylight>kubánský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
 				<long>
-					<standard>Čas Davisovy stanice</standard>
+					<standard>čas Davisovy stanice</standard>
 				</long>
 			</metazone>
 			<metazone type="DumontDUrville">
 				<long>
-					<standard>Čas stanice Dumonta d’Urvilla</standard>
+					<standard>čas stanice Dumonta d’Urvilla</standard>
 				</long>
 			</metazone>
 			<metazone type="East_Timor">
 				<long>
-					<standard>Východotimorský čas</standard>
+					<standard>východotimorský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Easter">
 				<long>
-					<generic>Čas Velikonočního ostrova</generic>
-					<standard>Standardní čas Velikonočního ostrova</standard>
-					<daylight>Letní čas Velikonočního ostrova</daylight>
+					<generic>čas Velikonočního ostrova</generic>
+					<standard>standardní čas Velikonočního ostrova</standard>
+					<daylight>letní čas Velikonočního ostrova</daylight>
 				</long>
 			</metazone>
 			<metazone type="Ecuador">
 				<long>
-					<standard>Ekvádorský čas</standard>
+					<standard>ekvádorský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Středoevropský čas</generic>
-					<standard>Středoevropský standardní čas</standard>
-					<daylight>Středoevropský letní čas</daylight>
+					<generic>středoevropský čas</generic>
+					<standard>středoevropský standardní čas</standard>
+					<daylight>středoevropský letní čas</daylight>
 				</long>
 				<short>
 					<generic>SEČ</generic>
@@ -9013,86 +9239,86 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>Východoevropský čas</generic>
-					<standard>Východoevropský standardní čas</standard>
-					<daylight>Východoevropský letní čas</daylight>
+					<generic>východoevropský čas</generic>
+					<standard>východoevropský standardní čas</standard>
+					<daylight>východoevropský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>Dálněvýchodoevropský čas</standard>
+					<standard>dálněvýchodoevropský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>Západoevropský čas</generic>
-					<standard>Západoevropský standardní čas</standard>
-					<daylight>Západoevropský letní čas</daylight>
+					<generic>západoevropský čas</generic>
+					<standard>západoevropský standardní čas</standard>
+					<daylight>západoevropský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Falkland">
 				<long>
-					<generic>Falklandský čas</generic>
-					<standard>Falklandský standardní čas</standard>
-					<daylight>Falklandský letní čas</daylight>
+					<generic>falklandský čas</generic>
+					<standard>falklandský standardní čas</standard>
+					<daylight>falklandský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Fiji">
 				<long>
-					<generic>Fidžijský čas</generic>
-					<standard>Fidžijský standardní čas</standard>
-					<daylight>Fidžijský letní čas</daylight>
+					<generic>fidžijský čas</generic>
+					<standard>fidžijský standardní čas</standard>
+					<daylight>fidžijský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="French_Guiana">
 				<long>
-					<standard>Francouzskoguyanský čas</standard>
+					<standard>francouzskoguyanský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Čas Francouzských jižních a antarktických území</standard>
+					<standard>čas Francouzských jižních a antarktických území</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
 				<long>
-					<standard>Galapážský čas</standard>
+					<standard>galapážský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Gambier">
 				<long>
-					<standard>Gambierský čas</standard>
+					<standard>gambierský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
 				<long>
-					<generic>Gruzínský čas</generic>
-					<standard>Gruzínský standardní čas</standard>
-					<daylight>Gruzínský letní čas</daylight>
+					<generic>gruzínský čas</generic>
+					<standard>gruzínský standardní čas</standard>
+					<daylight>gruzínský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gilbert_Islands">
 				<long>
-					<standard>Čas Gilbertových ostrovů</standard>
+					<standard>čas Gilbertových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Greenwichský střední čas</standard>
+					<standard>greenwichský střední čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Východogrónský čas</generic>
-					<standard>Východogrónský standardní čas</standard>
-					<daylight>Východogrónský letní čas</daylight>
+					<generic>východogrónský čas</generic>
+					<standard>východogrónský standardní čas</standard>
+					<daylight>východogrónský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Západogrónský čas</generic>
-					<standard>Západogrónský standardní čas</standard>
-					<daylight>Západogrónský letní čas</daylight>
+					<generic>západogrónský čas</generic>
+					<standard>západogrónský standardní čas</standard>
+					<daylight>západogrónský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Guam">
@@ -9102,91 +9328,91 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Gulf">
 				<long>
-					<standard>Standardní čas Perského zálivu</standard>
+					<standard>standardní čas Perského zálivu</standard>
 				</long>
 			</metazone>
 			<metazone type="Guyana">
 				<long>
-					<standard>Guyanský čas</standard>
+					<standard>guyanský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>Havajsko-aleutský čas</generic>
-					<standard>Havajsko-aleutský standardní čas</standard>
-					<daylight>Havajsko-aleutský letní čas</daylight>
+					<generic>havajsko-aleutský čas</generic>
+					<standard>havajsko-aleutský standardní čas</standard>
+					<daylight>havajsko-aleutský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
 				<long>
-					<generic>Hongkongský čas</generic>
-					<standard>Hongkongský standardní čas</standard>
-					<daylight>Hongkongský letní čas</daylight>
+					<generic>hongkongský čas</generic>
+					<standard>hongkongský standardní čas</standard>
+					<daylight>hongkongský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Hovdský čas</generic>
-					<standard>Hovdský standardní čas</standard>
-					<daylight>Hovdský letní čas</daylight>
+					<generic>hovdský čas</generic>
+					<standard>hovdský standardní čas</standard>
+					<daylight>hovdský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>Indický čas</standard>
+					<standard>indický čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
-					<standard>Indickooceánský čas</standard>
+					<standard>indickooceánský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Indochina">
 				<long>
-					<standard>Indočínský čas</standard>
+					<standard>indočínský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard>Středoindonéský čas</standard>
+					<standard>středoindonéský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard>Východoindonéský čas</standard>
+					<standard>východoindonéský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
-					<standard>Západoindonéský čas</standard>
+					<standard>západoindonéský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>Íránský čas</generic>
-					<standard>Íránský standardní čas</standard>
-					<daylight>Íránský letní čas</daylight>
+					<generic>íránský čas</generic>
+					<standard>íránský standardní čas</standard>
+					<daylight>íránský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
-					<generic>Irkutský čas</generic>
-					<standard>Irkutský standardní čas</standard>
-					<daylight>Irkutský letní čas</daylight>
+					<generic>irkutský čas</generic>
+					<standard>irkutský standardní čas</standard>
+					<daylight>irkutský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
-					<generic>Izraelský čas</generic>
-					<standard>Izraelský standardní čas</standard>
-					<daylight>Izraelský letní čas</daylight>
+					<generic>izraelský čas</generic>
+					<standard>izraelský standardní čas</standard>
+					<daylight>izraelský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
 				<long>
-					<generic>Japonský čas</generic>
-					<standard>Japonský standardní čas</standard>
-					<daylight>Japonský letní čas</daylight>
+					<generic>japonský čas</generic>
+					<standard>japonský standardní čas</standard>
+					<daylight>japonský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kamchatka">
@@ -9198,36 +9424,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard>Východokazachstánský čas</standard>
+					<standard>východokazachstánský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard>Západokazachstánský čas</standard>
+					<standard>západokazachstánský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Korea">
 				<long>
-					<generic>Korejský čas</generic>
-					<standard>Korejský standardní čas</standard>
-					<daylight>Korejský letní čas</daylight>
+					<generic>korejský čas</generic>
+					<standard>korejský standardní čas</standard>
+					<daylight>korejský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kosrae">
 				<long>
-					<standard>Kosrajský čas</standard>
+					<standard>kosrajský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic>Krasnojarský čas</generic>
-					<standard>Krasnojarský standardní čas</standard>
-					<daylight>Krasnojarský letní čas</daylight>
+					<generic>krasnojarský čas</generic>
+					<standard>krasnojarský standardní čas</standard>
+					<daylight>krasnojarský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>Kyrgyzský čas</standard>
+					<standard>kyrgyzský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -9237,14 +9463,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Line_Islands">
 				<long>
-					<standard>Čas Rovníkových ostrovů</standard>
+					<standard>čas Rovníkových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
-					<generic>Čas ostrova lorda Howa</generic>
-					<standard>Standardní čas ostrova lorda Howa</standard>
-					<daylight>Letní čas ostrova lorda Howa</daylight>
+					<generic>čas ostrova lorda Howa</generic>
+					<standard>standardní čas ostrova lorda Howa</standard>
+					<daylight>letní čas ostrova lorda Howa</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macau">
@@ -9256,129 +9482,129 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Macquarie">
 				<long>
-					<standard>Čas ostrova Macquarie</standard>
+					<standard>čas ostrova Macquarie</standard>
 				</long>
 			</metazone>
 			<metazone type="Magadan">
 				<long>
-					<generic>Magadanský čas</generic>
-					<standard>Magadanský standardní čas</standard>
-					<daylight>Magadanský letní čas</daylight>
+					<generic>magadanský čas</generic>
+					<standard>magadanský standardní čas</standard>
+					<daylight>magadanský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
 				<long>
-					<standard>Malajský čas</standard>
+					<standard>malajský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>Maledivský čas</standard>
+					<standard>maledivský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Marquesas">
 				<long>
-					<standard>Markézský čas</standard>
+					<standard>markézský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
-					<standard>Čas Marshallových ostrovů</standard>
+					<standard>čas Marshallových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
 				<long>
-					<generic>Mauricijský čas</generic>
-					<standard>Mauricijský standardní čas</standard>
-					<daylight>Mauricijský letní čas</daylight>
+					<generic>mauricijský čas</generic>
+					<standard>mauricijský standardní čas</standard>
+					<daylight>mauricijský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mawson">
 				<long>
-					<standard>Čas Mawsonovy stanice</standard>
+					<standard>čas Mawsonovy stanice</standard>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
-					<generic>Severozápadní mexický čas</generic>
-					<standard>Severozápadní mexický standardní čas</standard>
-					<daylight>Severozápadní mexický letní čas</daylight>
+					<generic>severozápadní mexický čas</generic>
+					<standard>severozápadní mexický standardní čas</standard>
+					<daylight>severozápadní mexický letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>Mexický pacifický čas</generic>
-					<standard>Mexický pacifický standardní čas</standard>
-					<daylight>Mexický pacifický letní čas</daylight>
+					<generic>mexický pacifický čas</generic>
+					<standard>mexický pacifický standardní čas</standard>
+					<daylight>mexický pacifický letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
-					<generic>Ulánbátarský čas</generic>
-					<standard>Ulánbátarský standardní čas</standard>
-					<daylight>Ulánbátarský letní čas</daylight>
+					<generic>ulánbátarský čas</generic>
+					<standard>ulánbátarský standardní čas</standard>
+					<daylight>ulánbátarský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>Moskevský čas</generic>
-					<standard>Moskevský standardní čas</standard>
-					<daylight>Moskevský letní čas</daylight>
+					<generic>moskevský čas</generic>
+					<standard>moskevský standardní čas</standard>
+					<daylight>moskevský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
 				<long>
-					<standard>Myanmarský čas</standard>
+					<standard>myanmarský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Nauru">
 				<long>
-					<standard>Naurský čas</standard>
+					<standard>naurský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Nepal">
 				<long>
-					<standard>Nepálský čas</standard>
+					<standard>nepálský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>Novokaledonský čas</generic>
-					<standard>Novokaledonský standardní čas</standard>
-					<daylight>Novokaledonský letní čas</daylight>
+					<generic>novokaledonský čas</generic>
+					<standard>novokaledonský standardní čas</standard>
+					<daylight>novokaledonský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="New_Zealand">
 				<long>
-					<generic>Novozélandský čas</generic>
-					<standard>Novozélandský standardní čas</standard>
-					<daylight>Novozélandský letní čas</daylight>
+					<generic>novozélandský čas</generic>
+					<standard>novozélandský standardní čas</standard>
+					<daylight>novozélandský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>Newfoundlandský čas</generic>
-					<standard>Newfoundlandský standardní čas</standard>
-					<daylight>Newfoundlandský letní čas</daylight>
+					<generic>newfoundlandský čas</generic>
+					<standard>newfoundlandský standardní čas</standard>
+					<daylight>newfoundlandský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
 				<long>
-					<standard>Niuejský čas</standard>
+					<standard>niuejský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Norfolk">
 				<long>
-					<generic>Norfolkský čas</generic>
-					<standard>Norfolkský standardní čas</standard>
-					<daylight>Norfolkský letní čas</daylight>
+					<generic>norfolkský čas</generic>
+					<standard>norfolkský standardní čas</standard>
+					<daylight>norfolkský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Noronha">
 				<long>
-					<generic>Čas souostroví Fernando de Noronha</generic>
-					<standard>Standardní čas souostroví Fernando de Noronha</standard>
-					<daylight>Letní čas souostroví Fernando de Noronha</daylight>
+					<generic>čas souostroví Fernando de Noronha</generic>
+					<standard>standardní čas souostroví Fernando de Noronha</standard>
+					<daylight>letní čas souostroví Fernando de Noronha</daylight>
 				</long>
 			</metazone>
 			<metazone type="North_Mariana">
@@ -9388,81 +9614,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Novosibirsk">
 				<long>
-					<generic>Novosibirský čas</generic>
-					<standard>Novosibirský standardní čas</standard>
-					<daylight>Novosibirský letní čas</daylight>
+					<generic>novosibirský čas</generic>
+					<standard>novosibirský standardní čas</standard>
+					<daylight>novosibirský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
-					<generic>Omský čas</generic>
-					<standard>Omský standardní čas</standard>
-					<daylight>Omský letní čas</daylight>
+					<generic>omský čas</generic>
+					<standard>omský standardní čas</standard>
+					<daylight>omský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>Pákistánský čas</generic>
-					<standard>Pákistánský standardní čas</standard>
-					<daylight>Pákistánský letní čas</daylight>
+					<generic>pákistánský čas</generic>
+					<standard>pákistánský standardní čas</standard>
+					<daylight>pákistánský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
 				<long>
-					<standard>Palauský čas</standard>
+					<standard>palauský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Papua_New_Guinea">
 				<long>
-					<standard>Čas Papuy-Nové Guiney</standard>
+					<standard>čas Papuy-Nové Guiney</standard>
 				</long>
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>Paraguayský čas</generic>
-					<standard>Paraguayský standardní čas</standard>
-					<daylight>Paraguayský letní čas</daylight>
+					<generic>paraguayský čas</generic>
+					<standard>paraguayský standardní čas</standard>
+					<daylight>paraguayský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
 				<long>
-					<generic>Peruánský čas</generic>
-					<standard>Peruánský standardní čas</standard>
-					<daylight>Peruánský letní čas</daylight>
+					<generic>peruánský čas</generic>
+					<standard>peruánský standardní čas</standard>
+					<daylight>peruánský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Philippines">
 				<long>
-					<generic>Filipínský čas</generic>
-					<standard>Filipínský standardní čas</standard>
-					<daylight>Filipínský letní čas</daylight>
+					<generic>filipínský čas</generic>
+					<standard>filipínský standardní čas</standard>
+					<daylight>filipínský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Phoenix_Islands">
 				<long>
-					<standard>Čas Fénixových ostrovů</standard>
+					<standard>čas Fénixových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>Pierre-miquelonský čas</generic>
-					<standard>Pierre-miquelonský standardní čas</standard>
-					<daylight>Pierre-miquelonský letní čas</daylight>
+					<generic>pierre-miquelonský čas</generic>
+					<standard>pierre-miquelonský standardní čas</standard>
+					<daylight>pierre-miquelonský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>
-					<standard>Čas Pitcairnových ostrovů</standard>
+					<standard>čas Pitcairnových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>Ponapský čas</standard>
+					<standard>ponapský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Pyongyang">
 				<long>
-					<standard>Pchjongjangský čas</standard>
+					<standard>pchjongjangský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -9474,19 +9700,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>Réunionský čas</standard>
+					<standard>réunionský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Rothera">
 				<long>
-					<standard>Čas Rotherovy stanice</standard>
+					<standard>čas Rotherovy stanice</standard>
 				</long>
 			</metazone>
 			<metazone type="Sakhalin">
 				<long>
-					<generic>Sachalinský čas</generic>
-					<standard>Sachalinský standardní čas</standard>
-					<daylight>Sachalinský letní čas</daylight>
+					<generic>sachalinský čas</generic>
+					<standard>sachalinský standardní čas</standard>
+					<daylight>sachalinský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
@@ -9498,159 +9724,159 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Samoa">
 				<long>
-					<generic>Samojský čas</generic>
-					<standard>Samojský standardní čas</standard>
-					<daylight>Samojský letní čas</daylight>
+					<generic>samojský čas</generic>
+					<standard>samojský standardní čas</standard>
+					<daylight>samojský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Seychelles">
 				<long>
-					<standard>Seychelský čas</standard>
+					<standard>seychelský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Singapore">
 				<long>
-					<standard>Singapurský čas</standard>
+					<standard>singapurský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>Čas Šalamounových ostrovů</standard>
+					<standard>čas Šalamounových ostrovů</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
 				<long>
-					<standard>Čas Jižní Georgie</standard>
+					<standard>čas Jižní Georgie</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
 				<long>
-					<standard>Surinamský čas</standard>
+					<standard>surinamský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Syowa">
 				<long>
-					<standard>Čas stanice Šówa</standard>
+					<standard>čas stanice Šówa</standard>
 				</long>
 			</metazone>
 			<metazone type="Tahiti">
 				<long>
-					<standard>Tahitský čas</standard>
+					<standard>tahitský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Taipei">
 				<long>
-					<generic>Tchajpejský čas</generic>
-					<standard>Tchajpejský standardní čas</standard>
-					<daylight>Tchajpejský letní čas</daylight>
+					<generic>tchajpejský čas</generic>
+					<standard>tchajpejský standardní čas</standard>
+					<daylight>tchajpejský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tajikistan">
 				<long>
-					<standard>Tádžický čas</standard>
+					<standard>tádžický čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Tokelau">
 				<long>
-					<standard>Tokelauský čas</standard>
+					<standard>tokelauský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Tonga">
 				<long>
-					<generic>Tonžský čas</generic>
-					<standard>Tonžský standardní čas</standard>
-					<daylight>Tonžský letní čas</daylight>
+					<generic>tonžský čas</generic>
+					<standard>tonžský standardní čas</standard>
+					<daylight>tonžský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Truk">
 				<long>
-					<standard>Chuukský čas</standard>
+					<standard>chuukský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Turkmenistan">
 				<long>
-					<generic>Turkmenský čas</generic>
-					<standard>Turkmenský standardní čas</standard>
-					<daylight>Turkmenský letní čas</daylight>
+					<generic>turkmenský čas</generic>
+					<standard>turkmenský standardní čas</standard>
+					<daylight>turkmenský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Tuvalu">
 				<long>
-					<standard>Tuvalský čas</standard>
+					<standard>tuvalský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>Uruguayský čas</generic>
-					<standard>Uruguayský standardní čas</standard>
-					<daylight>Uruguayský letní čas</daylight>
+					<generic>uruguayský čas</generic>
+					<standard>uruguayský standardní čas</standard>
+					<daylight>uruguayský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>Uzbecký čas</generic>
-					<standard>Uzbecký standardní čas</standard>
-					<daylight>Uzbecký letní čas</daylight>
+					<generic>uzbecký čas</generic>
+					<standard>uzbecký standardní čas</standard>
+					<daylight>uzbecký letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
 				<long>
-					<generic>Vanuatský čas</generic>
-					<standard>Vanuatský standardní čas</standard>
-					<daylight>Vanuatský letní čas</daylight>
+					<generic>vanuatský čas</generic>
+					<standard>vanuatský standardní čas</standard>
+					<daylight>vanuatský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Venezuela">
 				<long>
-					<standard>Venezuelský čas</standard>
+					<standard>venezuelský čas</standard>
 				</long>
 			</metazone>
 			<metazone type="Vladivostok">
 				<long>
-					<generic>Vladivostocký čas</generic>
-					<standard>Vladivostocký standardní čas</standard>
-					<daylight>Vladivostocký letní čas</daylight>
+					<generic>vladivostocký čas</generic>
+					<standard>vladivostocký standardní čas</standard>
+					<daylight>vladivostocký letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
-					<generic>Volgogradský čas</generic>
-					<standard>Volgogradský standardní čas</standard>
-					<daylight>Volgogradský letní čas</daylight>
+					<generic>volgogradský čas</generic>
+					<standard>volgogradský standardní čas</standard>
+					<daylight>volgogradský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
 				<long>
-					<standard>Čas stanice Vostok</standard>
+					<standard>čas stanice Vostok</standard>
 				</long>
 			</metazone>
 			<metazone type="Wake">
 				<long>
-					<standard>Čas ostrova Wake</standard>
+					<standard>čas ostrova Wake</standard>
 				</long>
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>Čas ostrovů Wallis a Futuna</standard>
+					<standard>čas ostrovů Wallis a Futuna</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic>Jakutský čas</generic>
-					<standard>Jakutský standardní čas</standard>
-					<daylight>Jakutský letní čas</daylight>
+					<generic>jakutský čas</generic>
+					<standard>jakutský standardní čas</standard>
+					<daylight>jakutský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>Jekatěrinburský čas</generic>
-					<standard>Jekatěrinburský standardní čas</standard>
-					<daylight>Jekatěrinburský letní čas</daylight>
+					<generic>jekatěrinburský čas</generic>
+					<standard>jekatěrinburský standardní čas</standard>
+					<daylight>jekatěrinburský letní čas</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yukon">
 				<long>
-					<standard>Yukonský čas</standard>
+					<standard>yukonský čas</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -9951,9 +10177,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>#,##0.00 ¤</pattern>
+					<pattern alt="noCurrency">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -10008,6 +10236,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="100000000000000" count="other">000 bil'.' ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
 			<unitPattern count="one">{0} {1}</unitPattern>
 			<unitPattern count="few">{0} {1}</unitPattern>
 			<unitPattern count="many">{0} {1}</unitPattern>
@@ -13837,6 +14066,35 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} letech</unitPattern>
 				<perUnitPattern>{0} za rok</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<gender>neuter</gender>
+				<displayName>čtvrtletí</displayName>
+				<unitPattern count="one">{0} čtvrtletí</unitPattern>
+				<unitPattern count="one" case="accusative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="one" case="dative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="one" case="genitive">{0} čtvrtletí</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} čtvrtletím</unitPattern>
+				<unitPattern count="one" case="locative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="few">{0} čtvrtletí</unitPattern>
+				<unitPattern count="few" case="accusative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="few" case="dative">{0} čtvrtletím</unitPattern>
+				<unitPattern count="few" case="genitive">{0} čtvrtletí</unitPattern>
+				<unitPattern count="few" case="instrumental">{0} čtvrtletími</unitPattern>
+				<unitPattern count="few" case="locative">{0} čtvrtletích</unitPattern>
+				<unitPattern count="many">{0} čtvrtletí</unitPattern>
+				<unitPattern count="many" case="accusative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="many" case="dative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="many" case="genitive">{0} čtvrtletí</unitPattern>
+				<unitPattern count="many" case="instrumental">{0} čtvrtletí</unitPattern>
+				<unitPattern count="many" case="locative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="other">{0} čtvrtletí</unitPattern>
+				<unitPattern count="other" case="accusative">{0} čtvrtletí</unitPattern>
+				<unitPattern count="other" case="dative">{0} čtvrtletím</unitPattern>
+				<unitPattern count="other" case="genitive">{0} čtvrtletí</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} čtvrtletími</unitPattern>
+				<unitPattern count="other" case="locative">{0} čtvrtletích</unitPattern>
+				<perUnitPattern>{0} za čtvrtletí</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<gender>inanimate</gender>
 				<displayName>měsíce</displayName>
@@ -15127,7 +15385,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} zářivého výkonu Slunce</unitPattern>
 				<unitPattern count="other">{0} zářivých výkonů Slunce</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<gender>feminine</gender>
 				<displayName>tuny</displayName>
 				<unitPattern count="one">{0} tuna</unitPattern>
@@ -15499,8 +15757,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="accusative">{0} miliwattů</unitPattern>
 				<unitPattern count="other" case="dative">{0} miliwattům</unitPattern>
 				<unitPattern count="other" case="genitive">{0} miliwattů</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} miliwattů</unitPattern>
-				<unitPattern count="other" case="locative">{0} miliwattů</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} miliwatty</unitPattern>
+				<unitPattern count="other" case="locative">{0} miliwattech</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>koňská síla</displayName>
@@ -16821,7 +17079,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} roky</unitPattern>
 				<unitPattern count="many">{0} roku</unitPattern>
 				<unitPattern count="other">{0} let</unitPattern>
-				<perUnitPattern>{0}/r</perUnitPattern>
+				<perUnitPattern>{0}/rok</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>čtvrtl.</displayName>
+				<unitPattern count="one">{0} čtvrtl.</unitPattern>
+				<unitPattern count="few">{0} čtvrtl.</unitPattern>
+				<unitPattern count="many">{0} čtvrtl.</unitPattern>
+				<unitPattern count="other">{0} čtvrtl.</unitPattern>
+				<perUnitPattern>{0}/čtvrtl.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>měs.</displayName>
@@ -17275,7 +17541,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="few">{0} t</unitPattern>
@@ -18222,43 +18488,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} stol.</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName>desetil.</displayName>
-				<unitPattern count="one">{0} desetil.</unitPattern>
-				<unitPattern count="few">{0} desetil.</unitPattern>
-				<unitPattern count="many">{0} desetil.</unitPattern>
-				<unitPattern count="other">{0} desetil.</unitPattern>
+				<displayName>dek.</displayName>
+				<unitPattern count="one">{0} dek.</unitPattern>
+				<unitPattern count="few">{0} dek.</unitPattern>
+				<unitPattern count="many">{0} dek.</unitPattern>
+				<unitPattern count="other">{0} dek.</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>r</displayName>
-				<unitPattern count="one">{0} r</unitPattern>
-				<unitPattern count="few">{0} r</unitPattern>
-				<unitPattern count="many">{0} r</unitPattern>
-				<unitPattern count="other">{0} r</unitPattern>
-				<perUnitPattern>{0}/r</perUnitPattern>
+				<displayName>r.</displayName>
+				<unitPattern count="one">{0} r.</unitPattern>
+				<unitPattern count="few">{0} r.</unitPattern>
+				<unitPattern count="many">{0} r.</unitPattern>
+				<unitPattern count="other">{0} l.</unitPattern>
+				<perUnitPattern>{0}/r.</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>kv.</displayName>
+				<unitPattern count="one">{0} kv.</unitPattern>
+				<unitPattern count="few">{0} kv.</unitPattern>
+				<unitPattern count="many">{0} kv.</unitPattern>
+				<unitPattern count="other">{0} kv.</unitPattern>
+				<perUnitPattern>{0}/kv.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="few">{0} m</unitPattern>
-				<unitPattern count="many">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-				<perUnitPattern>{0}/měs.</perUnitPattern>
+				<displayName>m.</displayName>
+				<unitPattern count="one">{0} m.</unitPattern>
+				<unitPattern count="few">{0} m.</unitPattern>
+				<unitPattern count="many">{0} m.</unitPattern>
+				<unitPattern count="other">{0} m.</unitPattern>
+				<perUnitPattern>{0}/m.</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="few">{0} t</unitPattern>
-				<unitPattern count="many">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
-				<perUnitPattern>{0}/týd.</perUnitPattern>
+				<displayName>t.</displayName>
+				<unitPattern count="one">{0} t.</unitPattern>
+				<unitPattern count="few">{0} t.</unitPattern>
+				<unitPattern count="many">{0} t.</unitPattern>
+				<unitPattern count="other">{0} t.</unitPattern>
+				<perUnitPattern>{0}/t.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>d</displayName>
-				<unitPattern count="one">{0} d</unitPattern>
-				<unitPattern count="few">{0} d</unitPattern>
-				<unitPattern count="many">{0} d</unitPattern>
-				<unitPattern count="other">{0} d</unitPattern>
-				<perUnitPattern>{0}/d</perUnitPattern>
+				<displayName>d.</displayName>
+				<unitPattern count="one">{0} d.</unitPattern>
+				<unitPattern count="few">{0} d.</unitPattern>
+				<unitPattern count="many">{0} d.</unitPattern>
+				<unitPattern count="other">{0} d.</unitPattern>
+				<perUnitPattern>{0}/d.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>h</displayName>
@@ -18374,6 +18648,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} kWh</unitPattern>
 				<unitPattern count="many">{0} kWh</unitPattern>
 				<unitPattern count="other">{0} kWh</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>eV</displayName>
+				<unitPattern count="one">{0} eV</unitPattern>
+				<unitPattern count="few">{0} eV</unitPattern>
+				<unitPattern count="many">{0} eV</unitPattern>
+				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
@@ -18681,7 +18962,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} L☉</unitPattern>
 				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
-			<unit type="mass-metric-ton">
+			<unit type="mass-tonne">
 				<displayName>t</displayName>
 				<unitPattern count="one">{0} t</unitPattern>
 				<unitPattern count="few">{0} t</unitPattern>
@@ -18853,12 +19134,32 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0}″ Hg</unitPattern>
 				<unitPattern count="other">{0}″ Hg</unitPattern>
 			</unit>
+			<unit type="pressure-bar">
+				<unitPattern count="one">{0} bar</unitPattern>
+				<unitPattern count="few">{0} bar</unitPattern>
+				<unitPattern count="many">{0} bar</unitPattern>
+				<unitPattern count="other">{0} bar</unitPattern>
+			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mb</displayName>
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="few">{0} mb</unitPattern>
 				<unitPattern count="many">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="one">{0} atm</unitPattern>
+				<unitPattern count="few">{0} atm</unitPattern>
+				<unitPattern count="many">{0} atm</unitPattern>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Pa</displayName>
+				<unitPattern count="one">{0} Pa</unitPattern>
+				<unitPattern count="few">{0} Pa</unitPattern>
+				<unitPattern count="many">{0} Pa</unitPattern>
+				<unitPattern count="other">{0} Pa</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>hPa</displayName>
@@ -19138,12 +19439,33 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<unit type="volume-barrel">
+				<displayName>bbl</displayName>
+				<unitPattern count="one">{0} bbl</unitPattern>
+				<unitPattern count="few">{0} bbl</unitPattern>
+				<unitPattern count="many">{0} bbl</unitPattern>
+				<unitPattern count="other">{0} bbl</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>dstspn</displayName>
+				<unitPattern count="one">{0} dstspn</unitPattern>
+				<unitPattern count="few">{0} dstspn</unitPattern>
+				<unitPattern count="many">{0} dstspn</unitPattern>
+				<unitPattern count="other">{0} dstspn</unitPattern>
+			</unit>
 			<unit type="volume-dessert-spoon-imperial">
 				<displayName>dspIm</displayName>
 				<unitPattern count="one">{0} dspIm</unitPattern>
 				<unitPattern count="few">{0} dspIm</unitPattern>
 				<unitPattern count="many">{0} dspIm</unitPattern>
 				<unitPattern count="other">{0} dspIm</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>kapky</displayName>
+				<unitPattern count="one">{0} kapka</unitPattern>
+				<unitPattern count="few">{0} kapky</unitPattern>
+				<unitPattern count="many">{0} kapky</unitPattern>
+				<unitPattern count="other">{0} kapek</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<displayName>fl dr</displayName>
@@ -19195,8 +19517,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<listPattern>
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} a {1}</listPatternPart>
-			<listPatternPart type="2">{0} a {1}</listPatternPart>
+			<listPatternPart type="end">{0} a {1}</listPatternPart>
+			<listPatternPart type="2">{0} a {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -19217,20 +19539,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} nebo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} a {1}</listPatternPart>
-			<listPatternPart type="2">{0} a {1}</listPatternPart>
+			<listPatternPart type="end">{0} a {1}</listPatternPart>
+			<listPatternPart type="2">{0} a {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} a {1}</listPatternPart>
-			<listPatternPart type="2">{0} a {1}</listPatternPart>
+			<listPatternPart type="end">{0} a {1}</listPatternPart>
+			<listPatternPart type="2">{0} a {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
@@ -19241,7 +19565,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<listPattern type="unit-short">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} a {1}</listPatternPart>
+			<listPatternPart type="end">{0} a {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
@@ -19424,4 +19748,159 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<featureName type="tnum">tabulkové číslice</featureName>
 		<featureName type="zero">přeškrtnutá nula</featureName>
 	</typographicNames>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und cs</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
+		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
+		<initialPattern type="initial">{0}.</initialPattern>
+		<initialPattern type="initialSequence">{0} {1}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {surname2}, {suffix}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {given} {given2} {surname} {surname2}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{given-monogram}{given2-monogram}{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{prefix} {given} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{given-informal} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram}{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
+			<namePattern>{prefix} {surname} {surname2} {given} {given2}, {suffix}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname} {surname2} {given} {given2}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
+			<namePattern>{surname-core-monogram}{given-monogram}{given2-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-core-monogram}{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{prefix} {surname} {given}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-core-monogram}{given-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-core-monogram}{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{prefix} {surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{given-informal}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-core-monogram}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-informal-monogram}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2} {surname-prefix} ({prefix}, {suffix})</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given} {given2-initial} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname-core}, {given-informal} {surname-prefix}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname-core}, {given-initial} {given2-initial}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname-core}, {given-informal-initial}</namePattern>
+		</personName>
+		<sampleName item="givenOnly">
+			<nameField type="given">Jiří</nameField>
+		</sampleName>
+		<sampleName item="givenSurnameOnly">
+			<nameField type="given">Jana</nameField>
+			<nameField type="surname">Nováková</nameField>
+		</sampleName>
+		<sampleName item="given12Surname">
+			<nameField type="given">Josef</nameField>
+			<nameField type="given2">Václav</nameField>
+			<nameField type="surname">Svoboda</nameField>
+		</sampleName>
+		<sampleName item="full">
+			<nameField type="prefix">Mgr. Ing.</nameField>
+			<nameField type="given">Anna Jaroslava</nameField>
+			<nameField type="given-informal">Slávka</nameField>
+			<nameField type="given2">Eva Lucie</nameField>
+			<nameField type="surname-prefix">de la</nameField>
+			<nameField type="surname-core">Mancha</nameField>
+			<nameField type="surname2">Novotná Dvořáková</nameField>
+			<nameField type="suffix">CSc.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

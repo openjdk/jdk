@@ -152,7 +152,10 @@ static void do_oop_store(InterpreterMacroAssembler* _masm,
                          Register val,
                          DecoratorSet decorators = 0) {
   assert(val == noreg || val == rax, "parameter is just for looks");
-  __ store_heap_oop(dst, val, rdx, rbx, LP64_ONLY(r8) NOT_LP64(rsi), decorators);
+  __ store_heap_oop(dst, val,
+                    NOT_LP64(rdx) LP64_ONLY(rscratch2),
+                    NOT_LP64(rbx) LP64_ONLY(r9),
+                    NOT_LP64(rsi) LP64_ONLY(r8), decorators);
 }
 
 static void do_oop_load(InterpreterMacroAssembler* _masm,
@@ -350,12 +353,12 @@ void TemplateTable::sipush() {
   __ sarl(rax, 16);
 }
 
-void TemplateTable::ldc(bool wide) {
+void TemplateTable::ldc(LdcType type) {
   transition(vtos, vtos);
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
   Label call_ldc, notFloat, notClass, notInt, Done;
 
-  if (wide) {
+  if (is_ldc_wide(type)) {
     __ get_unsigned_2_byte_index_at_bcp(rbx, 1);
   } else {
     __ load_unsigned_byte(rbx, at_bcp(1));
@@ -383,7 +386,7 @@ void TemplateTable::ldc(bool wide) {
 
   __ bind(call_ldc);
 
-  __ movl(rarg, wide);
+  __ movl(rarg, is_ldc_wide(type) ? 1 : 0);
   call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::ldc), rarg);
 
   __ push(atos);
@@ -415,13 +418,13 @@ void TemplateTable::ldc(bool wide) {
 }
 
 // Fast path for caching oop constants.
-void TemplateTable::fast_aldc(bool wide) {
+void TemplateTable::fast_aldc(LdcType type) {
   transition(vtos, atos);
 
   Register result = rax;
   Register tmp = rdx;
   Register rarg = NOT_LP64(rcx) LP64_ONLY(c_rarg1);
-  int index_size = wide ? sizeof(u2) : sizeof(u1);
+  int index_size = is_ldc_wide(type) ? sizeof(u2) : sizeof(u1);
 
   Label resolved;
 

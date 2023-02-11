@@ -290,7 +290,6 @@ public final class EventInstrumentation {
                         String fieldName = field.getName();
                         if (!fieldSet.contains(fieldName)) {
                             Type fieldType = Type.getType(field.getType());
-                            String internalClassName = ASMToolkit.getInternalName(c.getName());
                             fieldInfos.add(new FieldInfo(fieldName, fieldType.getDescriptor()));
                             fieldSet.add(fieldName);
                         }
@@ -479,18 +478,20 @@ public final class EventInstrumentation {
                 methodVisitor.visitInsn(Opcodes.RETURN);
                 methodVisitor.visitLabel(l0);
                 methodVisitor.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
+                // long startTime = this.startTime
+                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LSTORE, 1);
                 // if (startTime == 0) {
                 // startTime = EventWriter.timestamp();
                 // } else {
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 methodVisitor.visitInsn(Opcodes.LCONST_0);
                 methodVisitor.visitInsn(Opcodes.LCMP);
                 Label durationalEvent = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, durationalEvent);
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                 methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LSTORE, 1);
                 Label commit = new Label();
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, commit);
                 // if (duration == 0) {
@@ -506,8 +507,7 @@ public final class EventInstrumentation {
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, commit);
                 methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                 methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, TYPE_EVENT_CONFIGURATION.getInternalName(), METHOD_TIME_STAMP.getName(), METHOD_TIME_STAMP.getDescriptor(), false);
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 methodVisitor.visitInsn(Opcodes.LSUB);
                 methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, getInternalClassName(), FIELD_DURATION, "J");
                 methodVisitor.visitLabel(commit);
@@ -532,9 +532,7 @@ public final class EventInstrumentation {
                 int fieldIndex = 0;
                 methodVisitor.visitInsn(Opcodes.DUP);
                 // stack: [EW] [EW]
-                methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-                // stack: [EW] [EW] [this]
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, getInternalClassName(), FIELD_START_TIME, "J");
+                methodVisitor.visitVarInsn(Opcodes.LLOAD, 1);
                 // stack: [EW] [EW] [long]
                 invokeVirtual(methodVisitor, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.asmMethod);
                 // stack: [EW]

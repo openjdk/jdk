@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -406,7 +407,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         defaultMediaIndex = -1;
         try {
             myURL =
-                new URL(uriStr.replaceFirst("ipp", "http"));
+                newURL(uriStr.replaceFirst("ipp", "http"));
         } catch (Exception e) {
             IPPPrintService.debug_println(debugPrefix+
                                           " IPPPrintService, myURL="+
@@ -1762,7 +1763,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
             if (isCupsPrinter) {
                 try {
                     urlConnection = getIPPConnection(
-                                             new URL(myURL+".ppd"));
+                                             newURL(myURL+".ppd"));
 
                    InputStream is = urlConnection.getInputStream();
                    if (is != null) {
@@ -2075,5 +2076,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
 
     public int hashCode() {
         return this.getClass().hashCode()+getName().hashCode();
+    }
+
+    @SuppressWarnings("deprecation")
+    private static URL newURL(String spec) throws MalformedURLException {
+        return new URL(spec);
     }
 }

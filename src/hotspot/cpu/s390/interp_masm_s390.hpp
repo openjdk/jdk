@@ -166,7 +166,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Accessors to the template interpreter state.
 
-  void asm_assert_ijava_state_magic(Register tmp) PRODUCT_RETURN;
+  void asm_assert_ijava_state_magic(Register tmp) NOT_DEBUG_RETURN;
 
   void save_bcp();
 

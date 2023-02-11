@@ -1775,7 +1775,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
     }
 
     /*
-     * Accrding to PNG spec, keywords are restricted to 1 to 79 bytes
+     * According to PNG spec, keywords are restricted to 1 to 79 bytes
      * in length. Keywords shall contain only printable Latin-1 characters
      * and spaces; To reduce the chances for human misreading of a keyword,
      * leading spaces, trailing spaces, and consecutive spaces are not

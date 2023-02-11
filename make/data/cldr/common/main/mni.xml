@@ -17,6 +17,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="ar">আরাবিক</language>
+			<language type="ar_001">মোর্দর্ন স্তেন্দর্দ আরাবিক</language>
+			<language type="bn">বাংলা</language>
 			<language type="de">জর্মন</language>
 			<language type="de_AT">ওষ্ট্রিয়ান জর্মন</language>
 			<language type="de_CH">স্বিজ হায় জর্মন</language>
@@ -34,13 +37,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fr">ফ্রেঞ্চ</language>
 			<language type="fr_CA">কানাদিয়ান ফ্রেঞ্চ</language>
 			<language type="fr_CH">স্বিজ ফ্রেঞ্চ</language>
+			<language type="hi">হিন্দী</language>
+			<language type="id">ইন্দোনেসিয়া</language>
 			<language type="it">ইটালিয়ন</language>
 			<language type="ja">জাপানিজ</language>
+			<language type="ko">কোরিয়ন</language>
 			<language type="mni">মৈতৈলোন্</language>
+			<language type="nl">দচ</language>
+			<language type="nl_BE">ফ্লেমিশ</language>
+			<language type="pl">পোলিশ</language>
 			<language type="pt">পোর্টুগিজ</language>
 			<language type="pt_BR">ব্রাজিলিয়ান পোর্টুগিজ</language>
 			<language type="pt_PT">য়ুরোপিয়ান পোর্টুগিজ</language>
 			<language type="ru">রুসিয়ান</language>
+			<language type="th">থাই</language>
+			<language type="tr">টর্কিশ</language>
 			<language type="und">মশকখংদবা লোল</language>
 			<language type="zh">চাইনিজ</language>
 			<language type="zh" alt="menu">চাইনিজ মন্দারিন</language>
@@ -57,12 +68,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hans" alt="stand-alone">লাইথোকহল্লবা চাইনিজ</script>
 			<script type="Hant">ত্রেদিস্নেল</script>
 			<script type="Hant" alt="stand-alone">ত্রেদিস্নেল চাইনিজ</script>
+			<script type="Jpan">জপানিজ</script>
+			<script type="Kore">কোরিয়ন</script>
 			<script type="Latn">লেটিন</script>
 			<script type="Mtei" draft="contributed">মেইটেই মায়েক</script>
 			<script type="Zxxx">ইদবা</script>
 			<script type="Zzzz">মশকখংদবা স্ক্রিপ্ট</script>
 		</scripts>
 		<territories>
+			<territory type="001">মালেম</territory>
+			<territory type="002">অফ্রিকা</territory>
+			<territory type="019">অমেরিকাশিং</territory>
+			<territory type="150">য়ুরোপ</territory>
 			<territory type="BR">ব্রাজিল</territory>
 			<territory type="CN">চিনা</territory>
 			<territory type="DE">জর্মনি</territory>
@@ -130,11 +147,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} গী {0} দা</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} গী {0} দা</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -395,11 +418,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} গী {0} দা</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern>{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} গী {0} দা</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -645,4 +674,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nostr>নো:n</nostr>
 		</messages>
 	</posix>
+	<personNames>
+		<nameOrderLocales order="givenFirst">und mni</nameOrderLocales>
+		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
+	</personNames>
 </ldml>

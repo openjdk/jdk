@@ -91,15 +91,18 @@ public class InvalidateInstalledCodeTest extends CodeInstallerTest {
 
         Asserts.assertTrue(nmethod.isValid(), testCase + " : code is not valid, i = " + nmethod);
         Asserts.assertTrue(nmethod.isAlive(), testCase + " : code is not alive, i = " + nmethod);
+        Asserts.assertNotEquals(nmethod.getStart(), 0L);
 
         // Make nmethod non-entrant but still alive
         CompilerToVMHelper.invalidateHotSpotNmethod(nmethod, false);
         Asserts.assertFalse(nmethod.isValid(), testCase + " : code is valid, i = " + nmethod);
         Asserts.assertTrue(nmethod.isAlive(), testCase + " : code is not alive, i = " + nmethod);
+        Asserts.assertEquals(nmethod.getStart(), 0L);
 
         // Deoptimize the nmethod and cut the link to it from the HotSpotNmethod
         CompilerToVMHelper.invalidateHotSpotNmethod(nmethod, true);
         Asserts.assertFalse(nmethod.isValid(), testCase + " : code is valid, i = " + nmethod);
         Asserts.assertFalse(nmethod.isAlive(), testCase + " : code is alive, i = " + nmethod);
+        Asserts.assertEquals(nmethod.getStart(), 0L);
     }
 }

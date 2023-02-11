@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,19 +249,16 @@ class java_lang_Class : AllStatic {
   static void compute_offsets();
 
   // Instance creation
+  static void allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
+                              Handle& mirror, Handle& comp_mirror, TRAPS); // returns mirror and comp_mirror
   static void create_mirror(Klass* k, Handle class_loader, Handle module,
                             Handle protection_domain, Handle classData, TRAPS);
   static void fixup_mirror(Klass* k, TRAPS);
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
-  static void update_archived_primitive_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
-  static void update_archived_mirror_native_pointers(oop archived_mirror) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Archiving
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
-  static void archive_basic_type_mirrors() NOT_CDS_JAVA_HEAP_RETURN;
-  static oop  archive_mirror(Klass* k) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
-  static oop  process_archived_mirror(Klass* k, oop mirror, oop archived_mirror)
-                                      NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static void create_scratch_mirror(Klass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool restore_archived_mirror(Klass *k, Handle class_loader, Handle module,
                                       Handle protection_domain,
                                       TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
@@ -271,7 +268,7 @@ class java_lang_Class : AllStatic {
   // Conversion
   static Klass* as_Klass(oop java_class);
   static void set_klass(oop java_class, Klass* klass);
-  static BasicType as_BasicType(oop java_class, Klass** reference_klass = NULL);
+  static BasicType as_BasicType(oop java_class, Klass** reference_klass = nullptr);
   static Symbol* as_signature(oop java_class, bool intern_if_not_found);
   static void print_signature(oop java_class, outputStream *st);
   static const char* as_external_name(oop java_class);
@@ -354,7 +351,7 @@ class java_lang_Thread : AllStatic {
   static int _tid_offset;
   static int _continuation_offset;
   static int _park_blocker_offset;
-  static int _extentLocalBindings_offset;
+  static int _scopedValueBindings_offset;
   JFR_ONLY(static int _jfr_epoch_offset;)
 
   static void compute_offsets();
@@ -400,8 +397,8 @@ class java_lang_Thread : AllStatic {
   static JvmtiThreadState* jvmti_thread_state(oop java_thread);
   static void set_jvmti_thread_state(oop java_thread, JvmtiThreadState* state);
 
-  // Clear all extent local bindings on error
-  static void clear_extentLocalBindings(oop java_thread);
+  // Clear all scoped value bindings on error
+  static void clear_scopedValueBindings(oop java_thread);
 
   // Blocker object responsible for thread parking
   static oop park_blocker(oop java_thread);
@@ -481,13 +478,7 @@ class java_lang_ThreadGroup : AllStatic {
   static int _maxPriority_offset;
   static int _daemon_offset;
 
-  static int _ngroups_offset;
-  static int _groups_offset;
-  static int _nweaks_offset;
-  static int _weaks_offset;
-
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -499,15 +490,6 @@ class java_lang_ThreadGroup : AllStatic {
   static ThreadPriority maxPriority(oop java_thread_group);
   // Daemon
   static bool is_daemon(oop java_thread_group);
-
-  // Number of strongly reachable thread groups
-  static int ngroups(oop java_thread_group);
-  // Strongly reachable thread groups
-  static objArrayOop groups(oop java_thread_group);
-  // Number of weakly reachable thread groups
-  static int nweaks(oop java_thread_group);
-  // Weakly reachable thread groups
-  static objArrayOop weaks(oop java_thread_group);
 
   // Debugging
   friend class JavaClasses;
@@ -929,7 +911,7 @@ class java_lang_boxing_object: AllStatic {
   static void compute_offsets();
   static oop initialize_and_allocate(BasicType type, TRAPS);
  public:
-  // Allocation. Returns a boxed value, or NULL for invalid type.
+  // Allocation. Returns a boxed value, or null for invalid type.
   static oop create(BasicType type, jvalue* value, TRAPS);
   // Accessors. Returns the basic type being boxed, or T_ILLEGAL for invalid oop.
   static BasicType get_value(oop box, jvalue* value);
@@ -969,6 +951,7 @@ class java_lang_ref_Reference: AllStatic {
   static inline oop phantom_referent_no_keepalive(oop ref);
   static inline oop unknown_referent_no_keepalive(oop ref);
   static inline void clear_referent(oop ref);
+  static inline void clear_referent_raw(oop ref);
   static inline HeapWord* referent_addr_raw(oop ref);
   static inline oop next(oop ref);
   static inline void set_next(oop ref, oop value);
@@ -1089,7 +1072,7 @@ class java_lang_invoke_LambdaForm: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::LambdaForm_klass() != NULL &&
+    return vmClasses::LambdaForm_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::LambdaForm_klass());
   }
   static bool is_instance(oop obj);
@@ -1119,7 +1102,7 @@ class jdk_internal_foreign_abi_NativeEntryPoint: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::NativeEntryPoint_klass() != NULL &&
+    return vmClasses::NativeEntryPoint_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::NativeEntryPoint_klass());
   }
   static bool is_instance(oop obj);
@@ -1138,8 +1121,8 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static int _volatileStorage_offset;
   static int _stackAlignment_offset;
   static int _shadowSpace_offset;
-  static int _targetAddrStorage_offset;
-  static int _retBufAddrStorage_offset;
+  static int _scratch1_offset;
+  static int _scratch2_offset;
 
   static void compute_offsets();
 
@@ -1152,12 +1135,12 @@ class jdk_internal_foreign_abi_ABIDescriptor: AllStatic {
   static objArrayOop volatileStorage(oop entry);
   static jint        stackAlignment(oop entry);
   static jint        shadowSpace(oop entry);
-  static oop         targetAddrStorage(oop entry);
-  static oop         retBufAddrStorage(oop entry);
+  static oop         scratch1(oop entry);
+  static oop         scratch2(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::ABIDescriptor_klass() != NULL &&
+    return vmClasses::ABIDescriptor_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::ABIDescriptor_klass());
   }
   static bool is_instance(oop obj);
@@ -1168,7 +1151,8 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
 
  private:
   static int _type_offset;
-  static int _index_offset;
+  static int _indexOrOffset_offset;
+  static int _segmentMaskOrSize_offset;
   static int _debugName_offset;
 
   static void compute_offsets();
@@ -1177,13 +1161,14 @@ class jdk_internal_foreign_abi_VMStorage: AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Accessors
-  static jint        type(oop entry);
-  static jint        index(oop entry);
-  static oop         debugName(oop entry);
+  static jbyte  type(oop entry);
+  static jint   index_or_offset(oop entry);
+  static jshort segment_mask_or_size(oop entry);
+  static oop    debugName(oop entry);
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::VMStorage_klass() != NULL &&
+    return vmClasses::VMStorage_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::VMStorage_klass());
   }
   static bool is_instance(oop obj);
@@ -1207,7 +1192,7 @@ class jdk_internal_foreign_abi_CallConv: AllStatic {
 
   // Testers
   static bool is_subclass(Klass* klass) {
-    return vmClasses::CallConv_klass() != NULL &&
+    return vmClasses::CallConv_klass() != nullptr &&
       klass->is_subclass_of(vmClasses::CallConv_klass());
   }
   static bool is_instance(oop obj);
@@ -1308,9 +1293,6 @@ class java_lang_invoke_MemberName: AllStatic {
     MN_TRUSTED_FINAL         = 0x00200000, // trusted final field
     MN_REFERENCE_KIND_SHIFT  = 24, // refKind
     MN_REFERENCE_KIND_MASK   = 0x0F000000 >> MN_REFERENCE_KIND_SHIFT,
-    // The SEARCH_* bits are not for MN.flags but for the matchFlags argument of MHN.getMembers:
-    MN_SEARCH_SUPERCLASSES   = 0x00100000, // walk super classes
-    MN_SEARCH_INTERFACES     = 0x00200000, // walk implemented interfaces
     MN_NESTMATE_CLASS        = 0x00000001,
     MN_HIDDEN_CLASS          = 0x00000002,
     MN_STRONG_LOADER_LINK    = 0x00000004,
@@ -1493,6 +1475,7 @@ class java_lang_ClassLoader : AllStatic {
   static void release_set_loader_data(oop loader, ClassLoaderData* new_data);
 
   static oop parent(oop loader);
+  static oop parent_no_keepalive(oop loader);
   static oop name(oop loader);
   static oop nameAndId(oop loader);
   static bool isAncestor(oop loader, oop cl);

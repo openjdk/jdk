@@ -668,7 +668,7 @@ void HandlePropertyActiveDescendentChange( long vmID, PropertyChangeEvent event,
                            (int)(sizeof(buffer) - strlen(buffer)) );
         strncat(buffer, "\r\n\r\n", sizeof(buffer));
     }
-#endif _notdef
+#endif // _notdef
 
     if (newActiveDescendent != (AccessibleContext) 0) {
         displayAccessiblePropertyChange(vmID, newActiveDescendent, buffer);

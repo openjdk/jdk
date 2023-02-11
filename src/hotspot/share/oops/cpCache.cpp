@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@
 void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(0 < index && index < 0x10000, "sanity check");
   _indices = index;
-  _f1 = NULL;
+  _f1 = nullptr;
   _f2 = _flags = 0;
   assert(constant_pool_index() == index, "");
 }
@@ -101,7 +101,7 @@ void ConstantPoolCacheEntry::set_bytecode_2(Bytecodes::Code code) {
 
 // Sets f1, ordering with previous writes.
 void ConstantPoolCacheEntry::release_set_f1(Metadata* f1) {
-  assert(f1 != NULL, "");
+  assert(f1 != nullptr, "");
   Atomic::release_store(&_f1, f1);
 }
 
@@ -158,12 +158,12 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
                                                        int vtable_index,
                                                        bool sender_is_interface) {
   bool is_vtable_call = (vtable_index >= 0);  // FIXME: split this method on this boolean
-  assert(method->interpreter_entry() != NULL, "should have been set at this point");
+  assert(method->interpreter_entry() != nullptr, "should have been set at this point");
   assert(!method->is_obsolete(),  "attempt to write obsolete method to cpCache");
 
   int byte_no = -1;
   bool change_to_virtual = false;
-  InstanceKlass* holder = NULL;  // have to declare this outside the switch
+  InstanceKlass* holder = nullptr;  // have to declare this outside the switch
   switch (invoke_code) {
     case Bytecodes::_invokeinterface:
       holder = method->method_holder();
@@ -396,7 +396,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
                    (                   1      << is_final_shift            ),
                    adapter->size_of_parameters());
 
-  LogStream* log_stream = NULL;
+  LogStream* log_stream = nullptr;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
   if (lsh_indy.is_enabled()) {
     ResourceMark rm;
@@ -432,10 +432,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   // Store appendix, if any.
   if (has_appendix) {
     const int appendix_index = f2_as_index();
-    objArrayOop resolved_references = cpool->resolved_references();
-    assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
-    resolved_references->obj_at_put(appendix_index, appendix());
+    oop old_oop = cpool->set_resolved_reference_at(appendix_index, appendix());
+    assert(old_oop == nullptr, "init just once");
   }
 
   release_set_f1(adapter);  // This must be the last one to set (see NOTE above)!
@@ -445,8 +443,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   set_bytecode_1(invoke_code);
   NOT_PRODUCT(verify(tty));
 
-  if (log_stream != NULL) {
-    this->print(log_stream, 0);
+  if (log_stream != nullptr) {
+    this->print(log_stream, 0, cpool->cache());
   }
 
   assert(has_appendix == this->has_appendix(), "proper storage of appendix flag");
@@ -480,12 +478,12 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
   return true;
 }
 
-Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) {
+Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) const {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
     Metadata* f1 = f1_ord();
-    if (f1 != NULL) {
+    if (f1 != nullptr) {
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:
         assert(f1->is_klass(), "");
@@ -523,16 +521,15 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       break;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
-oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) {
+oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) const {
   if (!has_appendix())
-    return NULL;
+    return nullptr;
   const int ref_index = f2_as_index();
-  objArrayOop resolved_references = cpool->resolved_references();
-  return resolved_references->obj_at(ref_index);
+  return cpool->resolved_reference_at(ref_index);
 }
 
 
@@ -566,7 +563,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
     return;
   }
 
-  assert (_f1 != NULL, "should not call with uninteresting entry");
+  assert (_f1 != nullptr, "should not call with uninteresting entry");
 
   if (!(_f1->is_method())) {
     // _f1 is a Klass* for an interface, _f2 is the method
@@ -584,7 +581,7 @@ void ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
   Method* m = get_interesting_method_entry();
   // return false if m refers to a non-deleted old or obsolete method
-  if (m != NULL) {
+  if (m != nullptr) {
     assert(m->is_valid() && m->is_method(), "m is a valid method");
     return !m->is_old() && !m->is_obsolete(); // old is always set for old and obsolete
   } else {
@@ -595,15 +592,15 @@ bool ConstantPoolCacheEntry::check_no_old_or_obsolete_entries() {
 Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
   if (!is_method_entry()) {
     // not a method entry so not interesting by default
-    return NULL;
+    return nullptr;
   }
-  Method* m = NULL;
+  Method* m = nullptr;
   if (is_vfinal()) {
     // virtual and final so _f2 contains method ptr instead of vtable index
     m = f2_as_vfinal_method();
   } else if (is_f1_null()) {
-    // NULL _f1 means this is a virtual entry so also not interesting
-    return NULL;
+    // null _f1 means this is a virtual entry so also not interesting
+    return nullptr;
   } else {
     if (!(_f1->is_method())) {
       // _f1 is a Klass* for an interface
@@ -612,24 +609,58 @@ Method* ConstantPoolCacheEntry::get_interesting_method_entry() {
       m = f1_as_method();
     }
   }
-  assert(m != NULL && m->is_method(), "sanity check");
-  if (m == NULL || !m->is_method()) {
-    return NULL;
+  assert(m != nullptr && m->is_method(), "sanity check");
+  if (m == nullptr || !m->is_method()) {
+    return nullptr;
   }
   return m;
 }
 #endif // INCLUDE_JVMTI
 
-void ConstantPoolCacheEntry::print(outputStream* st, int index) const {
+void ConstantPoolCacheEntry::print(outputStream* st, int index, const ConstantPoolCache* cache) const {
   // print separator
   if (index == 0) st->print_cr("                 -------------");
-  // print entry
-  st->print("%3d  (" PTR_FORMAT ")  ", index, (intptr_t)this);
-  st->print_cr("[%02x|%02x|%5d]", bytecode_2(), bytecode_1(),
-               constant_pool_index());
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f1);
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_f2);
-  st->print_cr("                 [   " PTR_FORMAT "]", (intptr_t)_flags);
+  // print universal entry info
+  st->print_cr("%3d", index);
+  st->print_cr(" - this: " PTR_FORMAT, p2i(this));
+  st->print_cr(" - bytecode 1: %s %02x", Bytecodes::name(bytecode_1()), bytecode_1());
+  st->print_cr(" - bytecode 2: %s %02x", Bytecodes::name(bytecode_2()), bytecode_2());
+  st->print_cr(" - cp index: %5d", constant_pool_index());
+  if (is_method_entry()) {
+    ResourceMark rm;
+    constantPoolHandle cph(Thread::current(), cache->constant_pool());
+    Method* m = method_if_resolved(cph);
+    st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
+    st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
+    st->print_cr(" - method: " INTPTR_FORMAT " %s", p2i(m), m != nullptr ? m->external_name() : nullptr);
+    st->print_cr(" - flag values: [%02x|0|0|%01x|%01x|%01x|%01x|0|%01x|%01x|00|00|%02x]",
+                 flag_state(), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
+    st->print_cr(" - tos: %s\n - local signature: %01x\n"
+                 " - has appendix: %01x\n - forced virtual: %01x\n"
+                 " - final: %01x\n - virtual final: %01x\n - resolution failed: %01x\n"
+                 " - num parameters: %02x",
+                 type2name(as_BasicType(flag_state())), has_local_signature(), has_appendix(),
+                 is_forced_virtual(), is_final(), is_vfinal(),
+                 indy_resolution_failed(), parameter_size());
+    if (bytecode_1() == Bytecodes::_invokehandle ||
+        bytecode_1() == Bytecodes::_invokedynamic) {
+      oop appendix = appendix_if_resolved(cph);
+      if (appendix != nullptr) {
+        st->print("  appendix: ");
+        appendix->print_on(st);
+      }
+    }
+  } else {
+    assert(is_field_entry(), "must be a field entry");
+    st->print_cr(" - F1:  [   " PTR_FORMAT "]", (intptr_t)_f1);
+    st->print_cr(" - F2:  [   " PTR_FORMAT "]", (intptr_t)_f2);
+    st->print_cr(" - flag values: [%02x|0|1|0|0|0|%01x|%01x|0|0|%04x]",
+                 flag_state(), is_final(), is_volatile(), field_index());
+    st->print_cr(" - tos: %s\n - final: %d\n - volatile: %d\n - field index: %04x",
+                 type2name(as_BasicType(flag_state())), is_final(), is_volatile(), field_index());
+  }
   st->print_cr("                 -------------");
 }
 
@@ -698,14 +729,14 @@ void ConstantPoolCache::remove_unshareable_info() {
   // <this> is the copy to be written into the archive. It's in the ArchiveBuilder's "buffer space".
   // However, this->_initial_entries was not copied/relocated by the ArchiveBuilder, so it's
   // still pointing to the array allocated inside save_for_archive().
-  assert(_initial_entries != NULL, "archived cpcache must have been initialized");
+  assert(_initial_entries != nullptr, "archived cpcache must have been initialized");
   assert(!ArchiveBuilder::current()->is_in_buffer_space(_initial_entries), "must be");
   for (int i=0; i<length(); i++) {
     // Restore each entry to the initial state -- just after Rewriter::make_constant_pool_cache()
     // has finished.
     *entry_at(i) = _initial_entries->at(i);
   }
-  _initial_entries = NULL;
+  _initial_entries = nullptr;
 }
 #endif // INCLUDE_CDS
 
@@ -714,12 +745,12 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   data->remove_handle(_resolved_references);
   set_resolved_references(OopHandle());
   MetadataFactory::free_array<u2>(data, _reference_map);
-  set_reference_map(NULL);
+  set_reference_map(nullptr);
 #if INCLUDE_CDS
-  if (_initial_entries != NULL) {
+  if (_initial_entries != nullptr) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    _initial_entries = NULL;
+    _initial_entries = nullptr;
   }
 #endif
 }
@@ -727,7 +758,7 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
 #if INCLUDE_CDS_JAVA_HEAP
 oop ConstantPoolCache::archived_references() {
   if (_archived_references_index < 0) {
-    return NULL;
+    return nullptr;
   }
   return HeapShared::get_root(_archived_references_index);
 }
@@ -739,9 +770,9 @@ void ConstantPoolCache::clear_archived_references() {
   }
 }
 
-void ConstantPoolCache::set_archived_references(oop o) {
+void ConstantPoolCache::set_archived_references(int root_index) {
   assert(DumpSharedSpaces, "called only during runtime");
-  _archived_references_index = HeapShared::append_root(o);
+  _archived_references_index = root_index;
 }
 #endif
 
@@ -753,7 +784,7 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
   for (int i = 0; i < length(); i++) {
     ConstantPoolCacheEntry* entry = entry_at(i);
     Method* old_method = entry->get_interesting_method_entry();
-    if (old_method == NULL || !old_method->is_old()) {
+    if (old_method == nullptr || !old_method->is_old()) {
       continue; // skip uninteresting entries
     }
     if (old_method->is_deleted()) {
@@ -771,7 +802,7 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
   ResourceMark rm;
   for (int i = 1; i < length(); i++) {
     Method* m = entry_at(i)->get_interesting_method_entry();
-    if (m != NULL && !entry_at(i)->check_no_old_or_obsolete_entries()) {
+    if (m != nullptr && !entry_at(i)->check_no_old_or_obsolete_entries()) {
       log_trace(redefine, class, update, constantpool)
         ("cpcache check found old method entry: class: %s, old: %d, obsolete: %d, method: %s",
          constant_pool()->pool_holder()->external_name(), m->is_old(), m->is_obsolete(), m->external_name());
@@ -783,8 +814,8 @@ bool ConstantPoolCache::check_no_old_or_obsolete_entries() {
 
 void ConstantPoolCache::dump_cache() {
   for (int i = 1; i < length(); i++) {
-    if (entry_at(i)->get_interesting_method_entry() != NULL) {
-      entry_at(i)->print(tty, i);
+    if (entry_at(i)->get_interesting_method_entry() != nullptr) {
+      entry_at(i)->print(tty, i, this);
     }
   }
 }
@@ -801,7 +832,7 @@ void ConstantPoolCache::metaspace_pointers_do(MetaspaceClosure* it) {
 void ConstantPoolCache::print_on(outputStream* st) const {
   st->print_cr("%s", internal_name());
   // print constant pool cache entries
-  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i);
+  for (int i = 0; i < length(); i++) entry_at(i)->print(st, i, this);
 }
 
 void ConstantPoolCache::print_value_on(outputStream* st) const {

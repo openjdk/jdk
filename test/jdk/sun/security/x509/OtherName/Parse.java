@@ -76,7 +76,7 @@ public class Parse {
         names.add(new GeneralName(
                 new OtherName(ObjectIdentifier.of("1.2.3.6"), d2)));
 
-        exts.set("x", new SubjectAlternativeNameExtension(names));
+        exts.setExtension("x", new SubjectAlternativeNameExtension(names));
         CertAndKeyGen g = new CertAndKeyGen("Ed25519", "Ed25519");
         g.generate(-1);
         X509Certificate x = g.getSelfCertificate(new X500Name("CN=ME"),

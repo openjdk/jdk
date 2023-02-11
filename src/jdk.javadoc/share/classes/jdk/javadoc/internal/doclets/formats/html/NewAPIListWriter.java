@@ -96,7 +96,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     @Override
-    protected void addTableTabs(Table table, String headingKey) {
+    protected void addTableTabs(Table<Element> table, String headingKey) {
         table.setGridStyle(HtmlStyle.threeColumnReleaseSummary);
         List<String> releases = builder.releases;
         if (releases.size() > 1) {

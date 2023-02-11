@@ -35,15 +35,13 @@ import java.awt.Point;
  */
 public class ClusterOutputSlotNode implements Vertex {
 
-    private final int SIZE = 0;
     private Point position;
-    private Port inputSlot;
-    private Port outputSlot;
-    private ClusterNode blockNode;
-    private boolean root;
+    private final Port inputSlot;
+    private final Port outputSlot;
+    private final ClusterNode blockNode;
     private Cluster cluster;
     private ClusterOutgoingConnection conn;
-    private String id;
+    private final String id;
 
     public void setOutgoingConnection(ClusterOutgoingConnection c) {
         this.conn = c;
@@ -79,7 +77,7 @@ public class ClusterOutputSlotNode implements Vertex {
 
             @Override
             public String toString() {
-                return "InPort of " + thisNode.toString();
+                return "InPort of " + thisNode;
             }
         };
 
@@ -88,7 +86,7 @@ public class ClusterOutputSlotNode implements Vertex {
             public Point getRelativePosition() {
                 Point p = new Point(thisNode.getPosition());
                 p.x += blockNode.getBorder();
-                p.y = 0;//thisBlockNode.getSize().height;
+                p.y = 0;
                 return p;
             }
 
@@ -98,13 +96,13 @@ public class ClusterOutputSlotNode implements Vertex {
 
             @Override
             public String toString() {
-                return "OutPort of " + thisNode.toString();
+                return "OutPort of " + thisNode;
             }
         };
     }
 
     public Dimension getSize() {
-        return new Dimension(SIZE, SIZE);
+        return new Dimension(0, 0);
     }
 
     public void setPosition(Point p) {
@@ -127,16 +125,12 @@ public class ClusterOutputSlotNode implements Vertex {
         cluster = c;
     }
 
-    public void setRoot(boolean b) {
-        root = b;
-    }
-
     public Cluster getCluster() {
         return cluster;
     }
 
     public boolean isRoot() {
-        return root;
+        return false;
     }
 
     public int compareTo(Vertex o) {

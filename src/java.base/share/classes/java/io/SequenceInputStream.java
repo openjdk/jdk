@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 
 package java.io;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.util.Vector;
 
 /**
  * A {@code SequenceInputStream} represents
@@ -39,12 +40,12 @@ import java.util.Vector;
  * and so on, until end of file is reached
  * on the last of the contained input streams.
  *
- * @author  Author van Hoff
+ * @author  Arthur van Hoff
  * @since   1.0
  */
 public class SequenceInputStream extends InputStream {
-    Enumeration<? extends InputStream> e;
-    InputStream in;
+    private final Enumeration<? extends InputStream> e;
+    private InputStream in;
 
     /**
      * Initializes a newly created {@code SequenceInputStream}
@@ -79,11 +80,7 @@ public class SequenceInputStream extends InputStream {
      * @param   s2   the second input stream to read.
      */
     public SequenceInputStream(InputStream s1, InputStream s2) {
-        Vector<InputStream> v = new Vector<>(2);
-        v.addElement(s1);
-        v.addElement(s2);
-        e = v.elements();
-        peekNextStream();
+        this(Collections.enumeration(Arrays.asList(s1, s2)));
     }
 
     /**
@@ -137,7 +134,7 @@ public class SequenceInputStream extends InputStream {
      * {@inheritDoc}
      * <p>
      * This method
-     * tries to read one character from the current substream. If it
+     * tries to read one byte from the current substream. If it
      * reaches the end of the stream, it calls the {@code close}
      * method of the current substream and begins reading from the next
      * substream.
@@ -166,7 +163,7 @@ public class SequenceInputStream extends InputStream {
      * <p>
      * The {@code read} method of {@code SequenceInputStream}
      * tries to read the data from the current substream. If it fails to
-     * read any characters because the substream has reached the end of
+     * read any bytes because the substream has reached the end of
      * the stream, it calls the {@code close} method of the current
      * substream and begins reading from the next substream.
      *
@@ -236,6 +233,21 @@ public class SequenceInputStream extends InputStream {
         }
         if (ioe != null) {
             throw ioe;
+        }
+    }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        Objects.requireNonNull(out, "out");
+        if (getClass() == SequenceInputStream.class) {
+            long c = 0;
+            while (in != null) {
+                c += in.transferTo(out);
+                nextStream();
+            }
+            return c;
+        } else {
+            return super.transferTo(out);
         }
     }
 }

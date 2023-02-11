@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/allocation.inline.hpp"
@@ -111,13 +110,12 @@ void ClearNoncleanCardWrapper::do_MemRegion(MemRegion mr) {
   }
 }
 
-void CardTableRS::younger_refs_in_space_iterate(Space* sp,
-                                                HeapWord* gen_boundary,
+void CardTableRS::younger_refs_in_space_iterate(TenuredSpace* sp,
                                                 OopIterateClosure* cl) {
   verify_used_region_at_save_marks(sp);
 
   const MemRegion urasm = sp->used_region_at_save_marks();
-  non_clean_card_iterate(sp, gen_boundary, urasm, cl, this);
+  non_clean_card_iterate(sp, urasm, cl, this);
 }
 
 #ifdef ASSERT
@@ -176,7 +174,7 @@ protected:
            "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
            p2i(jp), p2i(_begin), p2i(_end));
     oop obj = RawAccess<>::oop_load(p);
-    guarantee(obj == NULL || cast_from_oop<HeapWord*>(obj) >= _boundary,
+    guarantee(obj == nullptr || cast_from_oop<HeapWord*>(obj) >= _boundary,
               "pointer " PTR_FORMAT " at " PTR_FORMAT " on "
               "clean card crosses boundary" PTR_FORMAT,
               p2i(obj), p2i(jp), p2i(_boundary));
@@ -440,8 +438,7 @@ void CardTableRS::initialize() {
   CardTable::initialize();
 }
 
-void CardTableRS::non_clean_card_iterate(Space* sp,
-                                         HeapWord* gen_boundary,
+void CardTableRS::non_clean_card_iterate(TenuredSpace* sp,
                                          MemRegion mr,
                                          OopIterateClosure* cl,
                                          CardTableRS* ct)
@@ -451,8 +448,8 @@ void CardTableRS::non_clean_card_iterate(Space* sp,
   }
   // clear_cl finds contiguous dirty ranges of cards to process and clear.
 
-  DirtyCardToOopClosure* dcto_cl = sp->new_dcto_cl(cl, precision(), gen_boundary);
-  ClearNoncleanCardWrapper clear_cl(dcto_cl, ct);
+  DirtyCardToOopClosure dcto_cl{sp, cl};
+  ClearNoncleanCardWrapper clear_cl(&dcto_cl, ct);
 
   clear_cl.do_MemRegion(mr);
 }

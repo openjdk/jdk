@@ -75,7 +75,7 @@ public class RSLAPITest {
         if (ret != 0l) {
             System.err.printf(
                     "FAILED: surface.getNativeResource(%d) returned" +
-                    " 0x%s. It should have have returned 0L\n",
+                    " 0x%s. It should have returned 0L\n",
                     type, ret);
             failed = true;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import com.sun.tools.javac.tree.DCTree.DCDocType;
 import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
+import com.sun.tools.javac.tree.DCTree.DCEscape;
 import com.sun.tools.javac.tree.DCTree.DCHidden;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCIndex;
@@ -277,6 +278,13 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
+    public DCEscape newEscapeTree(char ch) {
+        DCEscape tree = new DCEscape(ch);
+        tree.pos = pos;
+        return tree;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public DCThrows newExceptionTree(ReferenceTree name, List<? extends DocTree> description) {
         // TODO: verify the reference is just to a type (not a field or method)
         DCThrows tree = new DCThrows(Kind.EXCEPTION, (DCReference) name, cast(description));
@@ -350,8 +358,8 @@ public class DocTreeMaker implements DocTreeFactory {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public DCReference newReferenceTree(String signature) {
         try {
-            ReferenceParser.Reference ref = referenceParser.parse(signature);
-            DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
+            ReferenceParser.Reference ref = referenceParser.parse(signature, ReferenceParser.Mode.MEMBER_OPTIONAL);
+            DCReference tree = newReferenceTree(signature, ref);
             tree.pos = pos;
             return tree;
         } catch (ReferenceParser.ParseException e) {
@@ -359,8 +367,8 @@ public class DocTreeMaker implements DocTreeFactory {
         }
     }
 
-    public DCReference newReferenceTree(String signature, JCTree.JCExpression moduleName, JCTree qualExpr, Name member, List<JCTree> paramTypes) {
-        DCReference tree = new DCReference(signature, moduleName, qualExpr, member, paramTypes);
+    public DCReference newReferenceTree(String signature, ReferenceParser.Reference ref) {
+        DCReference tree = new DCReference(signature, ref.moduleName, ref.qualExpr, ref.member, ref.paramTypes);
         tree.pos = pos;
         return tree;
     }

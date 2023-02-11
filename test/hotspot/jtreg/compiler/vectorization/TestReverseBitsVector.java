@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 8290034
  * @summary Auto-vectorization of Reverse bit operation.
  * @requires vm.compiler2.enabled
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx2.*") | os.arch == "aarch64"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestReverseBitsVector
  */
@@ -73,7 +73,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, counts = {"ReverseV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_V, "> 0"})
   public void test_reverse_long1(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(linp[i]);
@@ -89,7 +89,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, failOn = {"ReverseV" , "ReverseL"})
+  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_L})
   public void test_reverse_long2(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(Long.reverse(linp[i]));
@@ -105,7 +105,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, failOn = {"ReverseV" , "ReverseL"})
+  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_L})
   public void test_reverse_long3(long[] lout, long[] linp) {
       for (int i = 0; i < lout.length; i+=1) {
           lout[i] = Long.reverse(linp[i] ^ linp[i]);
@@ -121,7 +121,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, counts = {"ReverseV" , " > 0 "})
+  @IR(counts = {IRNode.REVERSE_V, "> 0"})
   public void test_reverse_int1(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(iinp[i]);
@@ -137,7 +137,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, failOn = {"ReverseV" , "ReverseI"})
+  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_I})
   public void test_reverse_int2(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(Integer.reverse(iinp[i]));
@@ -153,7 +153,7 @@ public class TestReverseBitsVector {
   }
 
   @Test
-  @IR(applyIfCPUFeature={"avx2", "true"}, failOn = {"ReverseV" , "ReverseI"})
+  @IR(failOn = {IRNode.REVERSE_V, IRNode.REVERSE_I})
   public void test_reverse_int3(int[] iout, int[] iinp) {
       for (int i = 0; i < iout.length; i+=1) {
           iout[i] = Integer.reverse(iinp[i] ^ iinp[i]);

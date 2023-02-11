@@ -110,13 +110,6 @@ public class RemoteExecutionControl extends DirectExecutionControl implements Ex
         // handled by JDI
     }
 
-    /**
-     * @throws ExecutionControl.UserException {@inheritDoc}
-     * @throws ExecutionControl.ResolutionException {@inheritDoc}
-     * @throws ExecutionControl.StoppedException {@inheritDoc}
-     * @throws ExecutionControl.EngineTerminationException {@inheritDoc}
-     * @throws ExecutionControl.NotImplementedException {@inheritDoc}
-     */
     // Overridden only so this stack frame is seen
     @Override
     protected String invoke(Method doitMethod) throws Exception {

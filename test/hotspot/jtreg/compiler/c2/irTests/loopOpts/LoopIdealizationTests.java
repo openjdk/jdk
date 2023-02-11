@@ -40,7 +40,7 @@ public class LoopIdealizationTests {
     private void blackhole() { }
 
     @Test
-    @IR(failOn = {IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.CALL})
+    @IR(failOn = {IRNode.MUL, IRNode.DIV, IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.CALL})
     // Checks that a for loop with 0 iterations is removed
     public void zeroIterForLoop() {
         for (int i = 0; i < 0; i++) {
@@ -49,7 +49,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.CALL})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.CALL})
     // Checks that a for loop with 1 iteration doesn't have CountedLoop nodes
     public void iterOneBreakForLoop() {
         for (int i = 0; i < 500; i++) {
@@ -58,7 +58,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.TRAP})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.TRAP})
     @IR(counts = {IRNode.CALL, "1"})
     // Checks that a for loop with 1 iteration is simplified to straight code
     public void oneIterForLoop() {
@@ -68,7 +68,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.TRAP})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.TRAP})
     @IR(counts = {IRNode.CALL, "1"})
     // Checks that a for loop with 1 iteration is simplified to straight code
     public void oneIterForLoop1() {
@@ -79,7 +79,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.TRAP})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.TRAP})
     @IR(counts = {IRNode.CALL, "1"})
     // Checks that a for loop with 1 iteration is simplified to straight code
     public void oneIterForLoop2() {
@@ -107,7 +107,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.TRAP})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.TRAP})
     @IR(counts = {IRNode.CALL, "1"})
     // Checks that a while loop with 1 iteration is simplified to straight code
     public void oneIterWhileLoop1() {
@@ -119,7 +119,7 @@ public class LoopIdealizationTests {
     }
 
     @Test
-    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTEDLOOP, IRNode.COUNTEDLOOP_MAIN, IRNode.TRAP})
+    @IR(failOn = {IRNode.ADD, IRNode.LOOP, IRNode.COUNTED_LOOP, IRNode.COUNTED_LOOP_MAIN, IRNode.TRAP})
     @IR(counts = {IRNode.CALL, "1"})
     // Checks that a while loop with 1 iteration is simplified to straight code
     public void oneIterWhileLoop2() {

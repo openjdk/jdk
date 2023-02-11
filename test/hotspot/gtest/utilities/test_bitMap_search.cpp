@@ -195,8 +195,8 @@ static void test_search_ranges(BitMap& test_ones,
 }
 
 TEST(BitMap, search) {
-  CHeapBitMap test_ones(BITMAP_SIZE);
-  CHeapBitMap test_zeros(BITMAP_SIZE);
+  CHeapBitMap test_ones(BITMAP_SIZE, mtTest);
+  CHeapBitMap test_zeros(BITMAP_SIZE, mtTest);
 
   // test_ones is used to test searching for 1s in a region of 0s.
   // test_zeros is used to test searching for 0s in a region of 1s.

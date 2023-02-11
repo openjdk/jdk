@@ -29,6 +29,124 @@
 // These tests of Atomic only verify functionality.  They don't verify atomicity.
 
 template<typename T>
+struct AtomicAddTestSupport {
+  volatile T _test_value;
+
+  AtomicAddTestSupport() : _test_value{} {}
+
+  void test_add() {
+    T zero = 0;
+    T five = 5;
+    Atomic::store(&_test_value, zero);
+    T value = Atomic::add(&_test_value, five);
+    EXPECT_EQ(five, value);
+    EXPECT_EQ(five, Atomic::load(&_test_value));
+  }
+
+  void test_fetch_add() {
+    T zero = 0;
+    T five = 5;
+    Atomic::store(&_test_value, zero);
+    T value = Atomic::fetch_and_add(&_test_value, five);
+    EXPECT_EQ(zero, value);
+    EXPECT_EQ(five, Atomic::load(&_test_value));
+  }
+};
+
+TEST(AtomicAddTest, int32) {
+  using Support = AtomicAddTestSupport<int32_t>;
+  Support().test_add();
+  Support().test_fetch_add();
+}
+
+// 64bit Atomic::add is only supported on 64bit platforms.
+#ifdef _LP64
+TEST(AtomicAddTest, int64) {
+  using Support = AtomicAddTestSupport<int64_t>;
+  Support().test_add();
+  Support().test_fetch_add();
+}
+#endif // _LP64
+
+TEST(AtomicAddTest, ptr) {
+  uint _test_values[10] = {};
+  uint* volatile _test_value{};
+
+  uint* zero = &_test_values[0];
+  uint* five = &_test_values[5];
+  uint* six  = &_test_values[6];
+
+  Atomic::store(&_test_value, zero);
+  uint* value = Atomic::add(&_test_value, 5);
+  EXPECT_EQ(five, value);
+  EXPECT_EQ(five, Atomic::load(&_test_value));
+
+  Atomic::store(&_test_value, zero);
+  value = Atomic::fetch_and_add(&_test_value, 6);
+  EXPECT_EQ(zero, value);
+  EXPECT_EQ(six, Atomic::load(&_test_value));
+};
+
+template<typename T>
+struct AtomicXchgTestSupport {
+  volatile T _test_value;
+
+  AtomicXchgTestSupport() : _test_value{} {}
+
+  void test() {
+    T zero = 0;
+    T five = 5;
+    Atomic::store(&_test_value, zero);
+    T res = Atomic::xchg(&_test_value, five);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(five, Atomic::load(&_test_value));
+  }
+};
+
+TEST(AtomicXchgTest, int32) {
+  using Support = AtomicXchgTestSupport<int32_t>;
+  Support().test();
+}
+
+// 64bit Atomic::xchg is only supported on 64bit platforms.
+#ifdef _LP64
+TEST(AtomicXchgTest, int64) {
+  using Support = AtomicXchgTestSupport<int64_t>;
+  Support().test();
+}
+#endif // _LP64
+
+template<typename T>
+struct AtomicCmpxchgTestSupport {
+  volatile T _test_value;
+
+  AtomicCmpxchgTestSupport() : _test_value{} {}
+
+  void test() {
+    T zero = 0;
+    T five = 5;
+    T ten = 10;
+    Atomic::store(&_test_value, zero);
+    T res = Atomic::cmpxchg(&_test_value, five, ten);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(zero, Atomic::load(&_test_value));
+    res = Atomic::cmpxchg(&_test_value, zero, ten);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(ten, Atomic::load(&_test_value));
+  }
+};
+
+TEST(AtomicCmpxchgTest, int32) {
+  using Support = AtomicCmpxchgTestSupport<int32_t>;
+  Support().test();
+}
+
+TEST(AtomicCmpxchgTest, int64) {
+  using Support = AtomicCmpxchgTestSupport<int64_t>;
+  Support().test();
+}
+
+template<typename T>
 struct AtomicEnumTestSupport {
   volatile T _test_value;
 
