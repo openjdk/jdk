@@ -41,6 +41,8 @@ import static org.testng.Assert.assertTrue;
  * @run     testng Basic
  */
 
+// TODO test that remove(obj) with duplicates removes the right element
+
 public class Basic {
 
     // ========== Data Providers ==========
@@ -308,19 +310,6 @@ public class Basic {
         return cases.iterator();
     }
 
-    @DataProvider(name="subListIteratorMods")
-    public Iterator<Object[]> subListIteratorMods() {
-        var cases = new ArrayList<Object[]>();
-        for (int mode = 0; mode < 4; mode++) {
-            cases.addAll(Arrays.asList(
-                new Object[] { "ArrayList", mode, new ArrayList<>(ORIGINAL), ORIGINAL },
-                new Object[] { "LinkedList", mode, new LinkedList<>(ORIGINAL), ORIGINAL },
-                new Object[] { "SimpleList", mode, new SimpleList<>(ORIGINAL), ORIGINAL }
-            ));
-        }
-        return cases.iterator();
-    }
-
     @DataProvider(name="iteratorMods")
     public Iterator<Object[]> iteratorMods() {
         var cases = new ArrayList<Object[]>();
@@ -334,8 +323,18 @@ public class Basic {
         return cases.iterator();
     }
 
-    // subListIteratorMods
-
+    @DataProvider(name="subListIteratorMods")
+    public Iterator<Object[]> subListIteratorMods() {
+        var cases = new ArrayList<Object[]>();
+        for (int mode = 0; mode < 4; mode++) {
+            cases.addAll(Arrays.asList(
+                new Object[] { "ArrayList", mode, new ArrayList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "LinkedList", mode, new LinkedList<>(ORIGINAL), ORIGINAL },
+                new Object[] { "SimpleList", mode, new SimpleList<>(ORIGINAL), ORIGINAL }
+            ));
+        }
+        return cases.iterator();
+    }
 
     // ========== Assertions ==========
 
