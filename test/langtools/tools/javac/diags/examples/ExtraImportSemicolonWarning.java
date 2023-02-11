@@ -22,8 +22,7 @@
  */
 
 // key: compiler.warn.extraneous.semicolon
-// key: compiler.warn.source.no.system.modules.path
-// options: --source 20
+// options: --release 20
 
 import java.util.Map;;      // NOTE: extra semicolon
 import java.util.Set;
