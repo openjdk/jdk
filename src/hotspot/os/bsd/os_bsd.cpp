@@ -1608,7 +1608,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::pd_commit_memory(addr, size, !ExecMem);
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
@@ -2263,9 +2263,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                           char *addr, size_t bytes, bool read_only,
                           bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
+  // same as pd_map_memory() on this OS
+  return os::pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only,
+                           allow_exec);
 }
 
 

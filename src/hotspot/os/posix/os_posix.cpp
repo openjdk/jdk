@@ -312,7 +312,7 @@ static int util_posix_fallocate(int fd, off_t offset, off_t len) {
 }
 
 // Map the given address range to the provided file descriptor.
-char* os::map_memory_to_file(char* base, size_t size, int fd) {
+char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   // allocate space for the file
@@ -346,7 +346,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   assert(fd != -1, "File descriptor is not valid");
   assert(base != NULL, "Base cannot be NULL");
 
-  return map_memory_to_file(base, size, fd);
+  return pd_map_memory_to_file(base, size, fd);
 }
 
 static size_t calculate_aligned_extra_size(size_t size, size_t alignment) {
@@ -388,7 +388,7 @@ static char* chop_extra_memory(size_t size, size_t alignment, char* extra_base, 
 // Multiple threads can race in this code, and can remap over each other with MAP_FIXED,
 // so on posix, unmap the section at the start and at the end of the chunk that we mapped
 // rather than unmapping and remapping the whole chunk to get requested alignment.
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::pd_reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   char* extra_base = os::reserve_memory(extra_size, exec);
   if (extra_base == NULL) {
@@ -397,7 +397,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
+char* os::pd_map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
   // - we later chop away parts of the mapping using os::release_memory and that could fail if the

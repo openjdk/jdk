@@ -1730,7 +1730,11 @@ void os::initialize_initial_active_processor_count() {
 }
 
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {
-  return os::pd_create_stack_guard_pages(addr, bytes);
+  bool res = os::pd_create_stack_guard_pages(addr, bytes);
+  if (res) {
+    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
+  }
+  return res;
 }
 
 char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
@@ -1861,7 +1865,7 @@ char* os::map_memory_to_file(size_t bytes, int file_desc) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
-  char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
+  char* result = os::pd_map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
   }
@@ -1889,8 +1893,12 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
                              char *addr, size_t bytes, bool read_only,
                              bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
+  char* res = pd_remap_memory(fd, file_name, file_offset, addr, bytes,
                     read_only, allow_exec);
+  if (res != nullptr) {
+    MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, CALLER_PC, mtNone);
+  }
+  return res;
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {

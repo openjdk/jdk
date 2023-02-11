@@ -191,6 +191,7 @@ class os: AllStatic {
   static PageSizes          _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
+  static char*  pd_reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
@@ -472,8 +473,8 @@ class os: AllStatic {
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
   static char* map_memory_to_file(size_t size, int fd);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
-  static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* pd_map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
+  static char* pd_map_memory_to_file(char* base, size_t size, int fd);
   static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);

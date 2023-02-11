@@ -2582,9 +2582,9 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
                           char *addr, size_t bytes, bool read_only,
                           bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
+  // same as pd_map_memory() on this OS
+  return os::pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only,
+                           allow_exec);
 }
 
 // Unmap a block of memory.

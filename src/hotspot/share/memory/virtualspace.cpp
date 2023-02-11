@@ -98,9 +98,9 @@ static char* map_or_reserve_memory(size_t size, int fd, bool executable) {
 // Helper method
 static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fd, bool executable) {
   if (fd != -1) {
-    return os::map_memory_to_file_aligned(size, alignment, fd);
+    return os::pd_map_memory_to_file_aligned(size, alignment, fd);
   }
-  return os::reserve_memory_aligned(size, alignment, executable);
+  return os::pd_reserve_memory_aligned(size, alignment, executable);
 }
 
 // Helper method

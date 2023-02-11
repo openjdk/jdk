@@ -3200,7 +3200,7 @@ int os::create_file_for_heap(const char* dir) {
 }
 
 // If 'base' is not NULL, function will return NULL if it cannot get 'base'
-char* os::map_memory_to_file(char* base, size_t size, int fd) {
+char* os::pd_map_memory_to_file(char* base, size_t size, int fd) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
@@ -3234,7 +3234,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
   assert(base != NULL, "Base address cannot be NULL");
 
   release_memory(base, size);
-  return map_memory_to_file(base, size, fd);
+  return pd_map_memory_to_file(base, size, fd);
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of
@@ -3252,16 +3252,16 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   static const int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == NULL; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc) :
-                                         os::reserve_memory(extra_size);
+    char* extra_base = file_desc != -1 ? os::pd_map_memory_to_file(extra_size, file_desc) :
+                                         os::pd_reserve_memory(extra_size);
     if (extra_base == NULL) {
       return NULL;
     }
     // Do manual alignment
     aligned_base = align_up(extra_base, alignment);
 
-    bool rc = (file_desc != -1) ? os::unmap_memory(extra_base, extra_size) :
-                                  os::release_memory(extra_base, extra_size);
+    bool rc = (file_desc != -1) ? os::pd_unmap_memory(extra_base, extra_size) :
+                                  os::pd_release_memory(extra_base, extra_size);
     assert(rc, "release failed");
     if (!rc) {
       return NULL;
@@ -3279,11 +3279,17 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 }
 
 char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+  char* ret = os::pd_reserve_memory_aligned(size_t, alignment, exec);
+  MemTracker::record_virtual_memory_reserve(ret, size, CALLER_PC);
+  return ret;
+}
+
+char* os::pd_reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   // exec can be ignored
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
+char* os::pd_map_memory_to_file_aligned(size_t size, size_t alignment, int fd) {
   return map_or_reserve_memory_aligned(size, alignment, fd);
 }
 
@@ -3326,7 +3332,7 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
-  return map_memory_to_file(requested_addr, bytes, file_desc);
+  return pd_map_memory_to_file(requested_addr, bytes, file_desc);
 }
 
 size_t os::large_page_size() {
@@ -3608,7 +3614,7 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  return os::pd_commit_memory(addr, size, !ExecMem);
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {
