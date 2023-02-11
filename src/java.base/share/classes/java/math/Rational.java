@@ -1,9 +1,12 @@
 
 package java.math;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
@@ -387,110 +390,131 @@ public class Rational extends Number implements Comparable<Rational> {
                     // frac.scale() > 0
                     // 10^n = 2^n * 5^n
                     int twoExp = frac.scale();
-                    final AtomicInteger fiveExp = new AtomicInteger(twoExp);
+                    final AtomicLong fiveExp = new AtomicLong(twoExp);
                     // simplify by two
                     final int shift = Math.min(twoExp, num.getLowestSetBit());
                     num = num.shiftRight(shift);
                     twoExp -= shift;
                     
                     numerator = removePowersOfFive(num, fiveExp); // simplify by five
-                    denominator = FIVE_POWERS_CACHE[0].pow(fiveExp.get()).shiftLeft(twoExp);
+                    denominator = bigFiveToThe((int) fiveExp.get()).shiftLeft(twoExp);
                 }
             }
         }
     }
     
     /**
-     * {@code FIVE_POWERS_CACHE[n] == 5^(2^n) if n < fivePowersCacheSize}
+     * {@code FIVE_POWERS_CACHE.get(n) == 5^(1 << n)}
      */
-    private static final BigInteger[] FIVE_POWERS_CACHE = new BigInteger[Integer.SIZE];
+    private static final ArrayList<BigInteger> FIVE_POWERS_CACHE = new ArrayList<>(Integer.SIZE);
     
     static {
-        FIVE_POWERS_CACHE[0] = BigInteger.valueOf(5);
+        FIVE_POWERS_CACHE.add(BigInteger.valueOf(5));
     }
-    
-    private static int fivePowersCacheSize = 1;
     
     /**
-     * Returns 5^(2^n)
+     * Returns {@code 5^n}. {@code n} is considered unsigned.
      */
-    private static BigInteger fiveRaisedTo2(int n) {
-        BigInteger pow;
+    private static BigInteger bigFiveToThe(int n) {
+        BigInteger acc = BigInteger.ONE;
+        final int nBits = Integer.SIZE - Integer.numberOfLeadingZeros(n);
         
-        if (n < FIVE_POWERS_CACHE.length && FIVE_POWERS_CACHE[n] != null) {
-            pow = FIVE_POWERS_CACHE[n];
-        } else {
-            int last = Math.min(n, FIVE_POWERS_CACHE.length - 1);
-            for (; fivePowersCacheSize <= last; fivePowersCacheSize++)
-                FIVE_POWERS_CACHE[fivePowersCacheSize] = FIVE_POWERS_CACHE[fivePowersCacheSize - 1].square();
+        final int end = Math.min(nBits, FIVE_POWERS_CACHE.size());
+        for (int i = 0; i < end; i++) {
+            if ((n & 1) == 1)
+                acc = acc.multiply(FIVE_POWERS_CACHE.get(i));
             
-            pow = FIVE_POWERS_CACHE[last];
-            for (int i = last + 1; i <= n; i++)
-                pow = pow.square();
+            n >>>= 1;
         }
         
-        return pow;
+        BigInteger pow = FIVE_POWERS_CACHE.get(FIVE_POWERS_CACHE.size() - 1);
+        while (FIVE_POWERS_CACHE.size() < nBits) {
+            pow = pow.square();
+            FIVE_POWERS_CACHE.add(pow);
+            
+            if ((n & 1) == 1)
+                acc = acc.multiply(pow);
+            
+            n >>>= 1;
+        }
+        
+        return acc;
     }
     
-    private static BigInteger removePowersOfFive(BigInteger val, AtomicInteger remaining) {
-        int remSign = 0, exp = 1, i = 0;
-        BigInteger divisor = fiveRaisedTo2(i);
+    /**
+     * If before calling this method {@code remaining.get() == r}, the method
+     * returns the least positive integer {@code n} such that
+     * {@code (val == n * 5^(r - remaining.get()) && 0 <= remaining.get() <= r)}
+     * will hold after calling this method. Assumes {@code val > 0 && r >= 0}.
+     */
+    private static BigInteger removePowersOfFive(BigInteger val, AtomicLong remaining) {
+        BigInteger divisor = FIVE_POWERS_CACHE.get(0);
+        int i = 0;
         
-        // divide and double the exponent of the divisor as much as possible
-        while (remSign == 0 && remaining.get() >= exp && divisor.compareTo(val) <= 0) {
+        // divide val and square the divisor as much as possible
+        boolean stop = false;
+        do {
             BigInteger[] divRem = val.divideAndRemainder(divisor);
-            remSign = divRem[1].signum;
-
-            if (remSign == 0) {
+            
+            if (divRem[1].signum != 0) {
+                stop = true;
+            } else { // no remainder
                 val = divRem[0];
-                remaining.set(remaining.get() - exp);
+                remaining.addAndGet(-(1L << i));
                 
-                if (remaining.get() >= exp << 1) {
-                    BigInteger nextPow = fiveRaisedTo2(i + 1);
-                    if (val.compareTo(nextPow) >= 0) {
-                        divisor = nextPow;
-                        exp <<= 1;
+                if (remaining.get() < 1L << i || divisor.compareTo(val) > 0) {
+                    stop = true;
+                } else if (i + 1 < Integer.SIZE && remaining.get() >= 1L << (i + 1)) {
+                    final BigInteger square;
+                    final int last = FIVE_POWERS_CACHE.size() - 1;
+                    
+                    // compute divisor^2
+                    if (i < last) {
+                        square = FIVE_POWERS_CACHE.get(i + 1);
+                    } else {
+                        square = FIVE_POWERS_CACHE.get(last).square();
+                        FIVE_POWERS_CACHE.add(square);
+                    }
+                    
+                    if (square.compareTo(val) <= 0) {
+                        // square the divisor
+                        divisor = square;
                         i++;
                     }
                 }
             }
-        }
-        i--;
+        } while (!stop);
+        i--; // by conditions for stop, val can no longer be divided by the divisor
         
-        // reduce the divisor progressively
-        while (remaining.get() > 0 && i >= 0) {
-            // find, if exists, the greatest power that is a divisor of val using binary search
-            int low = 0, high = i;
-            while (low <= high) {
-                final int mid = (low + high) >>> 1;
-                final BigInteger midPow = fiveRaisedTo2(mid);
-                final int cmp = midPow.compareTo(val);
-                
-                if (cmp > 0 || val.remainder(midPow).signum != 0) {
-                    high = mid - 1;
-                } else { // midPow <= val && val % midPow == 0
-                    low = mid + 1;
-                    
-                    if (cmp == 0) // end of loop
-                        high = mid;
-                }
+        while (i >= 0 && remaining.get() > 0) {
+            // find, if exists, the greatest non-negative n <= i
+            // s.t. (1 << n <= remaining.get() && 5^(1 << n) <= val) using binary search
+            final int highestBit = Math.min(i, Long.SIZE - 1 - Long.numberOfLeadingZeros(remaining.get()));
+            if (FIVE_POWERS_CACHE.get(highestBit).compareTo(val) <= 0) {
+                // easy case, no need to search for n
+                i = highestBit;
+            } else {
+                final int pos = Collections.binarySearch(FIVE_POWERS_CACHE.subList(0, highestBit), val);
+                i = pos >= 0 ? pos : -(pos + 1) - 1;
             }
-            i = high >= 0 ? high : 0;
-            divisor = fiveRaisedTo2(i);
-            exp = 1 << i;
+            // now i == n
             
-            // divide as much as possible
-            remSign = 0;
-            while (remSign == 0 && remaining.get() >= exp && divisor.compareTo(val) <= 0) {
-                BigInteger[] divRem = val.divideAndRemainder(divisor);
-                remSign = divRem[1].signum;
-                
-                if (remSign == 0) {
-                    val = divRem[0];
-                    remaining.set(remaining.get() - exp);
-                }
+            // divide val as much as possible
+            if (i >= 0) {
+                divisor = FIVE_POWERS_CACHE.get(i);
+                do {
+                    BigInteger[] divRem = val.divideAndRemainder(divisor);
+                    
+                    if (divRem[1].signum == 0) {
+                        val = divRem[0];
+                        remaining.addAndGet(-(1L << i));
+                    }
+                    
+                    i--; // by definition of n, val can no longer be divided by 5^(1 << i)
+                    if (i >= 0)
+                        divisor = FIVE_POWERS_CACHE.get(i);
+                } while (i >= 0 && remaining.get() >= 1L << i && divisor.compareTo(val) <= 0);
             }
-            i--;
         }
         
         return val;
@@ -916,10 +940,27 @@ public class Rational extends Number implements Comparable<Rational> {
      *            {@code val.denominator}
      */
     private BigInteger[] lcdNumerators(Rational val, BigInteger gcd) {
-        // lcm(a, b) == a * b / gcd(a, b) => n/a == n * (b / gcd(a, b)) / lcm(a, b)
+        return  lcdNumerators(numerator, denominator, val.numerator, val.denominator, gcd);
+    }
+    
+    /**
+     * Computes the numerators of the specified fractions {@code (num1/den1)} and
+     * {@code (num2/den2)}, relative to the least common denominator of {@code den1}
+     * and {@code den2}
+     * 
+     * @param num1 the numerator of the first fraction
+     * @param den1 the denominator of the first fraction
+     * @param num2 the numerator of the second fraction
+     * @param den2 the denominator of the second fraction
+     * @param gcd  the greatest common divisor of {@code den1} and {@code den2}
+     */
+    private static BigInteger[] lcdNumerators(BigInteger num1, BigInteger den1, BigInteger num2, BigInteger den2,
+            BigInteger gcd) {
+        // lcm(d1, d2) == d1 * d2 / gcd(d1, d2)
+        // => n1/d1 == n1 * (d2 / gcd(d1, d2)) / lcm(d1, d2)
+        // => n2/d2 == n2 * (d1 / gcd(d1, d2)) / lcm(d1, d2)
         // trying to pospone the overflow as as late as possible
-        return new BigInteger[] { val.denominator.divide(gcd).multiply(numerator),
-                denominator.divide(gcd).multiply(val.numerator) };
+        return new BigInteger[] { den2.divide(gcd).multiply(num1), den1.divide(gcd).multiply(num2) };
     }
 
     /**
@@ -974,6 +1015,9 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational multiply(Rational multiplicand) {
         if (signum == 0 || multiplicand.signum == 0)
             return ZERO;
+        
+        if (this == multiplicand)
+            return square();
 
         final BigInteger a = floor, b = multiplicand.floor;
         final BigInteger n = numerator, m = denominator;
@@ -1120,27 +1164,36 @@ public class Rational extends Number implements Comparable<Rational> {
      * @param n power to raise this {@code Rational} to.
      * @return <code>this<sup>n</sup></code>
      * @throws ArithmeticException if {@code (this == 0 && n < 0)}
+     * @throws ArithmeticException if {@code n == Integer.MIN_VALUE}
      */
     public Rational pow(int n) {
         if (n == 0)
             return ONE; // x**0 == 1
         
         int mag; // magnitude of n
+        // check the sign of n
         if (n < 0) {
             if (this.signum == 0)
                 throw new ArithmeticException("Attempted to raise zero to a negative exponent");
+            
+            if (n == Integer.MIN_VALUE)
+                throw new ArithmeticException("Exponent overflow");
             
             mag = -n;
         } else { // n > 0
             mag = n;
         }
         
+        // handle easy cases
         if (n == 1 || this.signum == 0 || this.equals(ONE))
             return this; // x**1 == x, 0**n == 0, 1**n == 1
         // At this point, this != 0
         
         if (n == -1)
             return invert();
+        
+        if (n == 2)
+            return square();
         
         if (numerator.signum == 0) { // integer base
             final int sign = (n & 1) == 1 ? signum : 1;
@@ -1157,21 +1210,19 @@ public class Rational extends Number implements Comparable<Rational> {
         // ready to carry out power calculation...
         Rational acc = ONE; // accumulator
         boolean seenbit = false; // set once we've seen a 1-bit
+        int nBits = Integer.SIZE - 1;
 
-        for (int i = 1; i < Integer.SIZE; i++) { // for each bit [least bit ignored]
+        for (int i = 1; i <= nBits; i++) { // for each bit [top bit ignored]
+            mag <<= 1; // shift left 1 bit
             if (mag < 0) { // top bit is set
                 seenbit = true; // OK, we're off
                 acc = acc.multiply(this); // acc=acc*x
             }
 
-            if (seenbit) // if (!seenbit) no point in squaring ONE
+            if (seenbit && i < nBits) // don't square at the least bit
                 acc = acc.square(); // acc=acc*acc [square]
-            
-            mag <<= 1; // shift left 1 bit
+            // if (!seenbit) no point in squaring ONE
         }
-        
-        if (mag < 0) // check the least bit
-            acc = acc.multiply(this); // acc=acc*x
         
         // if negative n, calculate the reciprocal
         return n >= 0 ? acc : acc.invert();
@@ -1209,11 +1260,11 @@ public class Rational extends Number implements Comparable<Rational> {
             return this; // x**2 == x if x == 0 || x == 1
 
         final RoundingMode targetRm = mc.getRoundingMode();
-        final int targetPrecision = mc.getPrecision();
+        final int originalPrec = mc.getPrecision();
         // If an exact value is requested, it must be a rational number
         // so compute sqrt(this) as sqrt((floor * den + num) / den)
         // == sqrt(floor * den + num) / sqrt(den)
-        if (targetRm == RoundingMode.UNNECESSARY || targetPrecision == 0) {
+        if (targetRm == RoundingMode.UNNECESSARY || originalPrec == 0) {
             // simplify the radicand to improve the sqrt algorithm performance
             BigInteger[] radicand = simplify(wholeNumerator(), denominator);
 
@@ -1227,9 +1278,9 @@ public class Rational extends Number implements Comparable<Rational> {
 
             Rational result = valueOf(1, sqrtRemNum[0], sqrtRemDen[0]);
 
-            if (targetPrecision != 0) {
+            if (originalPrec != 0) {
                 // => targetRm == UNNECESSARY, but user-specified number of digits
-                result = result.round(new MathContext(targetPrecision, RoundingMode.DOWN));
+                result = result.round(new MathContext(originalPrec, RoundingMode.DOWN));
 
                 // If result*result != this, the square root isn't exact
                 if (!result.square().equals(this))
@@ -1317,35 +1368,57 @@ public class Rational extends Number implements Comparable<Rational> {
         // known to be exact and the rounding mode had a
         // low-enough precision, the post-Newton rounding logic
         // could be applied directly.)
+        
+        int targetPrec = originalPrec;
+
+        /*
+         * To avoid the need for post-Newton fix-up logic, in
+         * the case of half-way rounding modes, double the
+         * target precision so that the "2p + 2" property can
+         * be relied on to accomplish the final rounding.
+         */
+        switch (targetRm) {
+        case HALF_UP:
+        case HALF_DOWN:
+        case HALF_EVEN:
+            targetPrec <<= 1;
+            if (targetPrec < 0) // Overflow
+                targetPrec = Integer.MAX_VALUE - 2;
+        }
 
         Rational approx = new Rational(Math.sqrt(working.doubleValue()));
-        int guessPrecision = 15;
-
+        int guessPrec = 15;
         do {
             // approx = 0.5 * (approx + working / approx)
             approx = working.divide(approx).add(approx).multiply(ONE_HALF);
-            guessPrecision <<= 1;
-        } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
-
-        // Scale the result back into the original range.
-        Rational result = approx.scaleByPowerOfTen(-expAdjust / 2);
-        // round with mc
-        BigDecimal decimalRes = result.toBigDecimal(mc);
-        result = new Rational(decimalRes);
+            guessPrec <<= 1;
+        } while (guessPrec < targetPrec + 2 && guessPrec > 0); // avoid overflow
+        // After the Newton iteration loop,
+        // the precision of approx exceeds the requested precision,
+        // so first discard the insignificant digits
+        // before rounding to the final destination precision,
+        // avoiding to incorrectly round the approx value.
+        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.HALF_EVEN);
+        // use BigDecimal instead of Rational for speed of computations
+        final BigDecimal approxRounded = approx.toBigDecimal(mcTmp);
+        
+        // Scale the result back into the original range and round to requested precision
+        BigDecimal decimalRes = approxRounded.scaleByPowerOfTen(-expAdjust / 2).round(mc);
         BigDecimal ulp = decimalRes.ulp();
+        Rational result = new Rational(decimalRes);
 
         switch (targetRm) {
         case DOWN:
         case FLOOR:
             // Check if too big
             if (result.square().compareTo(this) > 0) {
-                // Adjust increment down in case of 1 = 10^0
+                // Adjust increment down in case of 1.0 = 10^0
                 // since the next smaller number is only 1/10
                 // as far way as the next larger at exponent
-                // boundaries. Test approx and *not* result to
+                // boundaries. Test approxRounded and *not* result to
                 // avoid having to detect an arbitrary power
                 // of ten.
-                if (approx.equals(ONE))
+                if (approxRounded.compareTo(BigDecimal.ONE) == 0)
                     ulp = ulp.multiply(BigDecimal.ONE_TENTH);
 
                 result = result.subtract(new Rational(ulp));
@@ -1361,6 +1434,16 @@ public class Rational extends Number implements Comparable<Rational> {
                 decimalRes = decimalRes.add(ulp);
             }
             break;
+        // No additional work, rely on "2p + 2" property
+        // for correct rounding. Alternatively, could
+        // instead run the Newton iteration to around p
+        // digits and then do tests and fix-ups on the
+        // rounded value. One possible set of tests and
+        // fix-ups is given in the Hull and Abrham paper;
+        // however, additional half-way cases can occur
+        // for BigDecimal given the more varied
+        // combinations of input and output precisions
+        // supported.
         }
 
         // Test numerical properties
@@ -1395,6 +1478,7 @@ public class Rational extends Number implements Comparable<Rational> {
      *                             {@code (mc.getRoundingMode()==RoundingMode.UNNECESSARY})
      *                             and the exact result cannot fit in
      *                             {@code mc.getPrecision()} digits.
+     * @throws ArithmeticException if {@code n == Integer.MIN_VALUE}
      * @see BigDecimal#sqrt(MathContext)
      * @see BigInteger#sqrt()
      * @see BigInteger#root(int)
@@ -1410,6 +1494,10 @@ public class Rational extends Number implements Comparable<Rational> {
             // n < 0
             if (this.signum == 0) // radicand is zero
                 throw new ArithmeticException("Attempted negative degree root of zero");
+            
+            if (n == Integer.MIN_VALUE)
+                throw new ArithmeticException("Degree root overflow");
+            
             deg = -n;
         } else { // n > 0
             deg = n;
@@ -1419,11 +1507,18 @@ public class Rational extends Number implements Comparable<Rational> {
         if ((n & 1) == 0 && this.signum == -1)
             throw new ArithmeticException("Attempted " + n + "th root of negative Rational");
 
-        if (n == 1 || this.signum == 0 || this.equals(ONE))
-            return this; // x**1 == x, 0**n == 0, 1**n == 1
+        // handle easy cases
+        if (this.signum == 0 || this.equals(ONE))
+            return this; // 0**n == 0, 1**n == 1
+        
+        if (n == 1)
+            return this.round(mc); // x**1 == x, rounded according to mc
 
         if (n == -1)
-            return invert();
+            return invert().round(mc);
+        
+        if (n == 2)
+            return sqrt(mc);
 
         final RoundingMode targetRm = mc.getRoundingMode();
         final int targetPrecision = mc.getPrecision();
@@ -1473,17 +1568,17 @@ public class Rational extends Number implements Comparable<Rational> {
          * requested.
          *
          * The main steps of the algorithm below are as follows, first argument reduce
-         * the value to the numerical range [1, 2) using the following relations:
+         * the value to the numerical range [1, 10) using the following relations:
          *
-         * x = y * 2 ^ exp, root(x, deg) = root(y, deg) * 2^(exp / deg), if exp is a
+         * x = y * 10 ^ exp, root(x, deg) = root(y, deg) * 10^(exp / deg), if exp is a
          * multiple of deg
          * 
          * if exp is not a multiple of deg:
          * 
-         * sqrt(x) = root(y / 2^(exp % deg), deg) * 2^((exp - (exp % deg)) / deg), if
+         * sqrt(x) = root(y / 10^(exp % deg), deg) * 10^((exp - (exp % deg)) / deg), if
          * exp % deg <= deg/2
          * 
-         * sqrt(x) = root(y / 2^(deg - exp % deg), deg) * 2^((exp + (deg - exp % deg)) /
+         * sqrt(x) = root(y / 10^(deg - exp % deg), deg) * 10^((exp + (deg - exp % deg)) /
          * deg), if exp % deg > deg/2
          *
          * Then use Newton's iteration on the reduced value to compute the numerical
@@ -1502,37 +1597,33 @@ public class Rational extends Number implements Comparable<Rational> {
         final int expAdjust;
         Rational working = this.abs();
         if (floor.signum == 1) { // non-zero integer part
-            int exp = -floor.bitLength() + 1; // 1 <= abs(this) * 2^exp < 2
+            int exp = -new BigDecimal(floor).precision() + 1; // 1 <= abs(this) * 10^exp < 10
             // adjust exp to the nearest multiple of deg, round down in case of a tie
             int mod = -(exp % deg); // mod is non-negative
             expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
-
-            if (expAdjust != 0)
-                working = working.shiftRightImpl(-expAdjust);
         } else {
-            int exp = denominator.bitLength() - numerator.bitLength(); // 0.5 < abs(this) * 2^exp < 2
+            BigDecimal num = new BigDecimal(numerator), den = new BigDecimal(denominator);
+            int exp = den.precision() - num.precision(); // 0.1 < abs(this) * 10^exp < 10
 
             int mod = exp % deg;
             if (mod == 0)
                 expAdjust = exp;
             else {
-                if (numerator.shiftLeft(exp).compareTo(denominator) < 0) { // abs(this) * 2^exp < 1
+                if (num.scaleByPowerOfTen(exp).compareTo(den) < 0) { // abs(this) * 10^exp < 1
                     exp++;
                     mod = mod + 1 == deg ? 0 : mod + 1;
                 }
-                // now 1 < abs(this) * 2^exp < 2
+                // now 1 < abs(this) * 10^exp < 10
                 // adjust exp to the nearest multiple of deg, round down in case of a tie
                 expAdjust = mod <= deg - mod ? exp - mod : exp + (deg - mod);
             }
-
-            if (expAdjust != 0)
-                working = working.shiftLeftImpl(expAdjust);
         }
 
-        // Verify 1/2^ceil(deg/2) <= working < 2^floor(deg/2)
+        working = working.scaleByPowerOfTen(expAdjust);
+        // Verify 1/10^ceil(deg/2) <= working < 10^floor(deg/2)
         Rational inf = new Rational(1, BigInteger.ZERO, BigInteger.ONE,
-                BigInteger.ONE.shiftLeft((int) Math.ceil(deg / 2.0)));
-        Rational sup = new Rational(1, BigInteger.ONE.shiftLeft(deg / 2));
+                BigDecimal.bigTenToThe((int) Math.ceil(deg / 2.0)));
+        Rational sup = new Rational(1, BigDecimal.bigTenToThe(deg / 2));
         assert inf.compareTo(working) <= 0 && working.compareTo(sup) < 0;
 
         // Use good ole' Math.pow to get the initial guess for
@@ -1570,14 +1661,8 @@ public class Rational extends Number implements Comparable<Rational> {
             guessPrecision <<= 1;
         } while (guessPrecision < targetPrecision + 2 && guessPrecision > 0); // avoid overflow
 
-        Rational result = approx;
-
-        // Shift the result back into the original range.
-        if (expAdjust < 0) { // non-zero integer part
-            result = result.shiftLeftImpl(-expAdjust / n);
-        } else if (expAdjust > 0) {
-            result = result.shiftRightImpl(expAdjust / n);
-        }
+        // Scale the result back into the original range.
+        Rational result = approx.scaleByPowerOfTen(-expAdjust / n);
 
         if (n < 0)
             result = result.invert();
@@ -1749,8 +1834,8 @@ public class Rational extends Number implements Comparable<Rational> {
                 resDen = frac[1];
             }
         } else { // no fractional part
-            resNum = numerator;
-            resDen = denominator;
+            resNum = BigInteger.ZERO;
+            resDen = BigInteger.ONE;
         }
         
         return new Rational(signum, resFloor, resNum, resDen);
@@ -1836,8 +1921,8 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = rem.shiftRight(shift);
             resDen = unsignedShiftLeft(BigInteger.ONE, n - shift);
         } else {  // no fractional part, no remainder
-            resNum = numerator;
-            resDen = denominator;
+            resNum = BigInteger.ZERO;
+            resDen = BigInteger.ONE;
         }
         
         return new Rational(signum, resFloor, resNum, resDen);
@@ -1878,21 +1963,19 @@ public class Rational extends Number implements Comparable<Rational> {
     public Rational scaleByPowerOfTen(int n) {
         if (signum == 0 || n == 0)
             return this;
-        
-        return n > 0 ? leftScaleByPowerOfTen(n) : rightScaleByPowerOfTen(-(long) n);
+        // Possible int overflow in (-n) is not a trouble,
+        // because rightScaleByPowerOfTen considers its argument unsigned
+        return n > 0 ? leftScaleByPowerOfTen(n) : rightScaleByPowerOfTen(-n);
     }
     
     /**
-     * Returns a Rational whose value is equal to
-     * ({@code this} * 10<sup>n</sup>).
+     * Returns a Rational whose value is equal to ({@code this} * 10<sup>n</sup>).
      * Assumes {@code n > 0}.
      *
-     * @param n the exponent power of ten to scale by
-     * @return a Rational whose value is equal to
-     * ({@code this} * 10<sup>n</sup>)
+     * @param n the positive exponent power of ten to scale by
+     * @return a Rational whose value is equal to ({@code this} * 10<sup>n</sup>)
      */
-    private Rational leftScaleByPowerOfTen(int n) {
-        final BigInteger FIVE = FIVE_POWERS_CACHE[0];
+    private Rational leftScaleByPowerOfTen(final int n) {
         BigInteger resFloor, resNum, resDen;
         
         if (numerator.signum == 1) { // non-zero fractional part
@@ -1901,13 +1984,13 @@ public class Rational extends Number implements Comparable<Rational> {
             resNum = numerator.shiftLeft(n - shiftDen);
             resDen = denominator.shiftRight(shiftDen);
             // multiply fraction by 5^n
-            final AtomicInteger fiveExp = new AtomicInteger(n);
-            removePowersOfFive(resDen, fiveExp);
-            final BigInteger fivePow = FIVE.pow(fiveExp.get());
+            final AtomicLong fiveExp = new AtomicLong(n);
+            resDen = removePowersOfFive(resDen, fiveExp);
+            final BigInteger fivePow = bigFiveToThe((int) fiveExp.get());
             resNum = resNum.multiply(fivePow);
             
             // floor * 10^n == floor * 2^n * 5^n == (floor << n) * (5^fiveExp * 5^(n - fiveExp))
-            resFloor = floor.shiftLeft(n).multiply(fivePow).multiply(FIVE.pow(n - fiveExp.get()));
+            resFloor = floor.shiftLeft(n).multiply(fivePow).multiply(bigFiveToThe(n - (int) fiveExp.get()));
             
             if (resNum.compareTo(resDen) >= 0) {
                 BigInteger[] divRem = resNum.divideAndRemainder(resDen);
@@ -1918,33 +2001,55 @@ public class Rational extends Number implements Comparable<Rational> {
                 resDen = frac[1];
             }
         } else { // no fractional part
-            resFloor = floor.shiftLeft(n).multiply(FIVE.pow(n));
-            resNum = numerator;
-            resDen = denominator;
+            resFloor = floor.shiftLeft(n).multiply(bigFiveToThe(n));
+            resNum = BigInteger.ZERO;
+            resDen = BigInteger.ONE;
         }
         
         return new Rational(signum, resFloor, resNum, resDen);
     }
     
     /**
-     * Returns a Rational whose value is equal to
-     * ({@code this} * 10<sup>n</sup>).
-     * Assumes {@code (0 < n <= -Integer.MIN_VALUE)}.
+     * Returns a Rational whose value is equal to ({@code this} * 10<sup>-n</sup>).
+     * {@code n} is considered unsigned and non-zero.
      *
-     * @param n the exponent power of ten to scale by
-     * @return a Rational whose value is equal to
-     * ({@code this} * 10<sup>n</sup>)
+     * @param n a non-zero unsigned integer whose negative is the exponent power of ten to
+     *          scale by
+     * @return a Rational whose value is equal to ({@code this} * 10<sup>-n</sup>)
      */
-    private Rational rightScaleByPowerOfTen(long n) {
-        final BigInteger FIVE = BigInteger.valueOf(5);
-        final BigInteger fivePow;
-        int fiveExp;
-        BigInteger resFloor = BigInteger.ZERO, resNum, resDen;
+    private Rational rightScaleByPowerOfTen(final int n) {
+        final Rational shifted = shiftRightImpl(n); // this / 2^n
+        final BigInteger FIVE_TO_N = bigFiveToThe(n);
+        final BigInteger[] divRem = shifted.floor.divideAndRemainder(FIVE_TO_N);
+        final BigInteger rem = divRem[1];
         
-        // TODO
+        final BigInteger resFloor = divRem[0];
+        BigInteger resNum, resDen;
+        if (shifted.numerator.signum == 1) {  // non-zero fraction of shifted
+            if (rem.signum == 1) { // non-zero remainder
+                // divide fraction of shifted by 5^n and add rem/5^n
+                resNum = shifted.numerator.add(rem.multiply(shifted.denominator));
+                resDen = shifted.denominator.multiply(FIVE_TO_N);
+                BigInteger[] frac = simplify(resNum, resDen);
+                resNum = frac[0];
+                resDen = frac[1];
+            } else { // no remainder
+                // divide fraction of shifted by 5^n
+                AtomicLong fiveExp = new AtomicLong(n & BigInteger.LONG_MASK);
+                resNum = removePowersOfFive(shifted.numerator, fiveExp);
+                resDen = shifted.denominator.multiply(bigFiveToThe((int) fiveExp.get()));
+            }
+        } else if (rem.signum == 1) { // no fraction of shifted, non-zero remainder
+            // set result fraction to rem/5^n
+            AtomicLong fiveExp = new AtomicLong(n & BigInteger.LONG_MASK);
+            resNum = removePowersOfFive(rem, fiveExp);
+            resDen = bigFiveToThe((int) fiveExp.get());
+        } else { // no fraction of shifted, no remainder
+            resNum = BigInteger.ZERO;
+            resDen = BigInteger.ONE;
+        }
         
-        //return new Rational(signum, resFloor, resNum, resDen);
-        return null;
+        return new Rational(signum, resFloor, resNum, resDen);
     }
 
     /**
@@ -2087,26 +2192,39 @@ public class Rational extends Number implements Comparable<Rational> {
     }
     
     private static RoundingMode workRoundingMode(RoundingMode rm) {
-        if (rm == RoundingMode.UNNECESSARY)
-            throw new ArithmeticException("Rounding necessary");
-
         // ensure rounding up if last significand digit is 5
-        return rm == RoundingMode.HALF_EVEN ? RoundingMode.HALF_UP : rm;
+        return switch (rm) {
+        case UNNECESSARY -> throw new ArithmeticException("Rounding necessary");
+        case HALF_DOWN, HALF_EVEN -> RoundingMode.HALF_UP;
+        default -> rm;
+        };
     }
 
     private boolean roundUp(RoundingMode rm) {
-        return rm == RoundingMode.UP || signum != -1 && rm == RoundingMode.CEILING
-                || signum == -1 && rm == RoundingMode.FLOOR;
+        return switch (rm) {
+        case UP -> true;
+        case CEILING -> signum != -1;
+        case FLOOR-> signum != 1;
+        default -> false;
+        };
     }
 
     private boolean roundCeiling(RoundingMode rm) {
-        return rm == RoundingMode.CEILING || signum != -1 && rm == RoundingMode.UP
-                || signum == -1 && rm == RoundingMode.DOWN;
+        return switch (rm) {
+        case CEILING -> true;
+        case UP -> signum != -1;
+        case DOWN-> signum != 1;
+        default -> false;
+        };
     }
 
     private boolean roundFloor(RoundingMode rm) {
-        return rm == RoundingMode.FLOOR || signum != -1 && rm == RoundingMode.DOWN
-                || signum == -1 && rm == RoundingMode.UP;
+        return switch (rm) {
+        case FLOOR -> true;
+        case DOWN -> signum != -1;
+        case UP-> signum != 1;
+        default -> false;
+        };
     }
 
     /**
