@@ -127,7 +127,7 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
     _verify_closure.set_containing_obj(array);
     array->oop_iterate_range(&_verify_closure, beg_index, end_index);
     if (_verify_closure.failures()) {
-      assert(false, "Failed");
+      fatal("there should not have been any failures");
     }
   }
 }
@@ -148,7 +148,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
       obj->oop_iterate(&_verify_closure);
       if (_verify_closure.failures()) {
         log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
-        assert(false, "Failed");
+        fatal("there should not have been any failures");
       }
     }
   }
