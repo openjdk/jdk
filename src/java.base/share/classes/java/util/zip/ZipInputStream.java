@@ -575,37 +575,41 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         if ((flag & 8) == 8) {
             /* "Data Descriptor" present */
-            if (inf.getBytesWritten() > ZIP64_MAGICVAL ||
-                inf.getBytesRead() > ZIP64_MAGICVAL) {
-                // ZIP64 format
-                readFully(tmpbuf, 0, ZIP64_EXTHDR);
-                long sig = get32(tmpbuf, 0);
-                if (sig != EXTSIG) { // no EXTSIG present
-                    e.crc = sig;
-                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ - ZIP64_EXTCRC);
-                    e.size = get64(tmpbuf, ZIP64_EXTLEN - ZIP64_EXTCRC);
-                    ((PushbackInputStream)in).unread(
-                        tmpbuf, ZIP64_EXTHDR - ZIP64_EXTCRC, ZIP64_EXTCRC);
-                } else {
-                    e.crc = get32(tmpbuf, ZIP64_EXTCRC);
-                    e.csize = get64(tmpbuf, ZIP64_EXTSIZ);
-                    e.size = get64(tmpbuf, ZIP64_EXTLEN);
-                }
-            } else {
-                readFully(tmpbuf, 0, EXTHDR);
-                long sig = get32(tmpbuf, 0);
-                if (sig != EXTSIG) { // no EXTSIG present
-                    e.crc = sig;
-                    e.csize = get32(tmpbuf, EXTSIZ - EXTCRC);
-                    e.size = get32(tmpbuf, EXTLEN - EXTCRC);
-                    ((PushbackInputStream)in).unread(
-                                               tmpbuf, EXTHDR - EXTCRC, EXTCRC);
-                } else {
-                    e.crc = get32(tmpbuf, EXTCRC);
-                    e.csize = get32(tmpbuf, EXTSIZ);
-                    e.size = get32(tmpbuf, EXTLEN);
-                }
+
+            // The size of a data descriptor may vary, we need to
+            // look ahead until the next LOC or CEN signature.
+            int lookahead = ZIP64_EXTHDR + Integer.SIZE;
+            readFully(tmpbuf, 0, lookahead);
+
+            // Track position within the data descriptor
+            int pos = 0;
+
+            // If the descriptor starts with an EXTSIG, skip past it
+            if (isExtSig(tmpbuf, pos)) {
+                pos += Integer.BYTES;
             }
+
+            // Read the CRC
+            e.crc = get32(tmpbuf, pos);
+            pos += Integer.BYTES;
+
+            // If the entry has a ZIP64 extra field, sizes are 8 bytes
+            if (hasZip64Extra(e)) {
+                // ZIP64 format
+                e.csize = get64(tmpbuf, pos);
+                pos += Long.BYTES;
+                e.size = get64(tmpbuf, pos);
+                pos += Long.BYTES;
+            } else {
+                // Regular 4 byte sizes
+                e.csize = get32(tmpbuf, pos);
+                pos += Integer.BYTES;
+                e.size = get32(tmpbuf, pos);
+                pos += Integer.BYTES;
+            }
+            // Unread remaining lookahead
+            ((PushbackInputStream)in).unread(
+                    tmpbuf, pos, lookahead - pos);
         }
         if (e.size != inf.getBytesWritten()) {
             throw new ZipException(
@@ -622,6 +626,45 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 "invalid entry CRC (expected 0x" + Long.toHexString(e.crc) +
                 " but got 0x" + Long.toHexString(crc.getValue()) + ")");
         }
+    }
+    // Returns true if the ZipEntry has a ZIP64 extended information extra field
+    private boolean hasZip64Extra(ZipEntry e) {
+        byte[] extra = e.extra;
+        if (extra != null) {
+            for (int i = 0; i < extra.length;) {
+                int id = get16(extra, i);
+                if (id == ZIP64_EXTID) {
+                    return true;
+                }
+                int size = get16(extra, i + Short.BYTES);
+                i += size + (2 * Short.BYTES);
+            }
+        }
+        return false;
+    }
+
+    private boolean isExtSig(byte[] buf, int off) {
+        long sigOrCrc = get32(tmpbuf, off);
+
+        if (sigOrCrc != EXTSIG) {
+            return false; // Cannot be signature
+        }
+
+        // We should verify that this ata descriptor
+        // (ZIP64 or not) is followed by a LOC or CEN signature.
+        int sigOff64 = Integer.BYTES + Long.BYTES * 2 + Integer.BYTES;
+        int sigOff32 = Integer.BYTES + Integer.BYTES * 3;
+
+        if (isLocOrCenSig(buf, off + sigOff64)
+                || isLocOrCenSig(buf, off + sigOff32)) {
+            return true; // Yes, we found SIGEXT
+        }
+        return false; // False positive, CRC == SIGEXT;
+    }
+
+    private boolean isLocOrCenSig(byte[] buf, int off) {
+        long num = get32(buf, off);
+        return num == LOCSIG || num == CENSIG;
     }
 
     /*
