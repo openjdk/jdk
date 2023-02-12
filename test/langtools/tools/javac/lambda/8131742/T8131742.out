@@ -1,2 +1,4 @@
 T8131742.java:8:39: compiler.err.this.as.identifier
-1 error
+T8131742.java:8:32: compiler.err.expected: token.identifier
+T8131742.java:16:12: compiler.err.expected: token.identifier
+3 errors

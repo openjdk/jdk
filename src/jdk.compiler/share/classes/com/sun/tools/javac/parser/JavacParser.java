@@ -3723,6 +3723,10 @@ public class JavacParser implements Parser {
                 JCExpression pn = qualident(false);
                 if (pn.hasTag(Tag.IDENT) && ((JCIdent)pn).name != names._this) {
                     name = ((JCIdent)pn).name;
+                } else if (lambdaParameter) {
+                    // we have a lambda parameter that is not an identifier this is a syntax error
+                    name = names.empty;
+                    reportSyntaxError(pos, Errors.Expected(IDENTIFIER));
                 } else {
                     if (allowThisIdent) {
                         if ((mods.flags & Flags.VARARGS) != 0) {
