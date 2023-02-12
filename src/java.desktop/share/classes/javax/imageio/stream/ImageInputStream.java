@@ -994,6 +994,7 @@ public interface ImageInputStream extends DataInput, Closeable, AutoCloseable {
      * such as memory, disk space, or file descriptors.
      *
      * @throws IOException if an I/O error occurs.
+     * @since 21
      */
     void close() throws IOException;
 }
