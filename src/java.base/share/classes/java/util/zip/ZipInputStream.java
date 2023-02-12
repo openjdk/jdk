@@ -650,7 +650,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             return false; // Cannot be signature
         }
 
-        // We should verify that this ata descriptor
+        // We should verify that this data descriptor
         // (ZIP64 or not) is followed by a LOC or CEN signature.
         int sigOff64 = Integer.BYTES + Long.BYTES * 2 + Integer.BYTES;
         int sigOff32 = Integer.BYTES + Integer.BYTES * 3;
