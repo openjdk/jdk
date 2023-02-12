@@ -101,8 +101,19 @@ public class SPI {
                                  .filter(cs -> cs.pkgName.equals("sun.nio.cs"))
                                  .forEach( cs -> {
                              if (cs.aliases == null || cs.aliases.length == 0) {
-                                 out.printf("    static String[] aliases_%s() { return null; }%n%n",
-                                            cs.clzName);
+                                 if (cs.csName.equals("GB18030")) {
+                                     out.printf("    @SuppressWarnings(\"removal\")%n");
+                                     out.printf("    static String[] aliases_%s() { return new String[] {%n",
+                                             cs.clzName);
+                                     out.printf("        \"2000\".equals(AccessController.doPrivileged((PrivilegedAction<String>)%n" +
+                                             "               () -> System.getProperty(\"jdk.charset.GB18030\"))) ?%n" +
+                                             "               \"gb18030-2000\" : \"gb18030-2022\"%n");
+                                     out.printf("        };%n%n");
+                                     out.printf("    }%n%n");
+                                 } else {
+                                     out.printf("    static String[] aliases_%s() { return null; }%n%n",
+                                             cs.clzName);
+                                 }
                              } else {
                                  boolean methodEnd = true;
                                  // non-final for SJIS and MS932 to support sun.nio.cs.map
