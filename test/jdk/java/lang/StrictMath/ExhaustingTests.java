@@ -84,9 +84,9 @@ public class ExhaustingTests {
          // new UnaryTestCase("cos",   FdlibmTranslit::cos,   StrictMath::cos,   DEFAULT_SHIFT),
          // new UnaryTestCase("tan",   FdlibmTranslit::tan,   StrictMath::tan,   DEFAULT_SHIFT),
 
-         // new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
-         // new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
-         // new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
+            new UnaryTestCase("asin",  FdlibmTranslit::asin,  StrictMath::asin,  DEFAULT_SHIFT),
+            new UnaryTestCase("acos",  FdlibmTranslit::acos,  StrictMath::acos,  DEFAULT_SHIFT),
+            new UnaryTestCase("atan",  FdlibmTranslit::atan,  StrictMath::atan,  DEFAULT_SHIFT),
         };
 
         for (var testCase : testCases) {
