@@ -1392,12 +1392,14 @@ public class Rational extends Number implements Comparable<Rational> {
             // approx = 0.5 * (approx + working / approx)
             approx = working.divide(approx).add(approx).multiply(ONE_HALF);
             guessPrec <<= 1;
-        } while (guessPrec < targetPrec + 2 && guessPrec > 0); // avoid overflow
+            if(guessPrec < 0) // Overflow
+                guessPrec = Integer.MAX_VALUE;
+        } while (guessPrec < targetPrec + 2);
         // After the Newton iteration loop,
         // first discard the insignificant digits
         // before rounding to the final destination precision,
         // avoiding to incorrectly round the approx value.
-        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.DOWN);
+        MathContext mcTmp = new MathContext(guessPrec, RoundingMode.DOWN);
         // use BigDecimal instead of Rational for speed of computations
         final BigDecimal approxRounded = approx.toBigDecimal(mcTmp);
         
