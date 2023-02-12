@@ -1394,11 +1394,10 @@ public class Rational extends Number implements Comparable<Rational> {
             guessPrec <<= 1;
         } while (guessPrec < targetPrec + 2 && guessPrec > 0); // avoid overflow
         // After the Newton iteration loop,
-        // the precision of approx exceeds the requested precision,
-        // so first discard the insignificant digits
+        // first discard the insignificant digits
         // before rounding to the final destination precision,
         // avoiding to incorrectly round the approx value.
-        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.HALF_EVEN);
+        MathContext mcTmp = new MathContext(targetPrec + 2, RoundingMode.DOWN);
         // use BigDecimal instead of Rational for speed of computations
         final BigDecimal approxRounded = approx.toBigDecimal(mcTmp);
         
