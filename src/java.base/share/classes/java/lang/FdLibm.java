@@ -1351,7 +1351,7 @@ class FdLibm {
      *      only sinh(0)=0 is exact for finite x.
      */
     static final class Sinh {
-        private Sinh() {throw new UnsupportedOperationException();};
+        private Sinh() {throw new UnsupportedOperationException();}
 
         private static final double one = 1.0, shuge = 1.0e307;
 
@@ -1427,7 +1427,7 @@ class FdLibm {
      *      only cosh(0)=1 is exact for finite x.
      */
     static final class Cosh {
-        private Cosh() {throw new UnsupportedOperationException();};
+        private Cosh() {throw new UnsupportedOperationException();}
 
         private static final double one = 1.0, half=0.5, huge = 1.0e300;
         static double compute(double x) {
@@ -1503,7 +1503,7 @@ class FdLibm {
      *      only tanh(0)=0 is exact for finite argument.
      */
     static final class Tanh {
-        private Tanh() {throw new UnsupportedOperationException();};
+        private Tanh() {throw new UnsupportedOperationException();}
 
         private static final double one=1.0, two=2.0, tiny = 1.0e-300;
         static double compute(double x) {
