@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JCMD" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JCMD" "1" "2023" "JDK 21" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -773,6 +773,15 @@ Stops the remote management agent.
 .RS
 .PP
 Impact: Low --- no impact
+.RE
+.TP
+\f[V]System.native_heap_info\f[R] (Linux only)
+Prints information about native heap usage through malloc_info(3).
+.RS
+.PP
+Impact: Low
+.PP
+Permission: \f[V]java.lang.management.ManagementPermission(monitor)\f[R]
 .RE
 .TP
 \f[V]System.trim_native_heap\f[R] (Linux only)
