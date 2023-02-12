@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,22 +229,22 @@ public class Basic$Type$ extends Basic {
 #end[dec]
 #if[Byte]
     private static $type$ negate($type$ v) {
-        return new $type$((byte) -v.byteValue());
+        return (byte) -v.byteValue();
     }
 #end[Byte]
 #if[Short]
     private static $type$ negate($type$ v) {
-        return new $type$((short) -v.shortValue());
+        return (short) -v.shortValue();
     }
 #end[Short]
 #if[Integer]
     private static $type$ negate($type$ v) {
-        return new $type$(-v.intValue());
+        return -v.intValue();
     }
 #end[Integer]
 #if[Long]
     private static $type$ negate($type$ v) {
-        return new $type$(-v.longValue());
+        return -v.longValue();
     }
 #end[Long]
 
@@ -284,19 +284,19 @@ public class Basic$Type$ extends Basic {
 #end[float]
 #if[Float]
     private static $type$ create(double v) {
-        return new $type$(v);
+        return (float) v;
     }
 
     private static $type$ negate($type$ v) {
-        return new $type$(-v.floatValue());
+        return -v.floatValue();
     }
 
     private static $type$ mult($type$ v, double mul) {
-        return new $type$(v.floatValue() * (float) mul);
+        return v.floatValue() * (float) mul;
     }
 
     private static $type$ recip($type$ v) {
-        return new $type$(1.0f / v.floatValue());
+        return 1.0f / v.floatValue();
     }
 #end[Float]
 #if[double]
@@ -319,19 +319,19 @@ public class Basic$Type$ extends Basic {
 #end[double]
 #if[Double]
     private static $type$ create(double v) {
-        return new $type$(v);
+        return v;
     }
 
     private static $type$ negate($type$ v) {
-        return new $type$(-v.doubleValue());
+        return -v.doubleValue();
     }
 
     private static $type$ mult($type$ v, double mul) {
-        return new $type$(v.doubleValue() * mul);
+        return v.doubleValue() * mul;
     }
 
     private static $type$ recip($type$ v) {
-        return new $type$(1.0 / v.doubleValue());
+        return 1.0 / v.doubleValue();
     }
 #end[Double]
 
@@ -435,7 +435,7 @@ public class Basic$Type$ extends Basic {
         test("%-4c", "i   ", 'i');
         test("%4C",  "   I", 'i');
         test("%-4C", "I   ", 'i');
-        test("%c", "i", new Character('i'));
+        test("%c", "i", Character.valueOf('i'));
         test("%c", "H", (byte) 72);
         test("%c", "i", (short) 105);
         test("%c", "!", (int) 33);
@@ -493,7 +493,7 @@ public class Basic$Type$ extends Basic {
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, 0.5f);
         tryCatch("%#s", FormatFlagsConversionMismatchException.class, "hello");
-        tryCatch("%#s", FormatFlagsConversionMismatchException.class, null);
+        tryCatch("%#s", FormatFlagsConversionMismatchException.class, (Object)null);
 
         //---------------------------------------------------------------------
         // %h
@@ -521,11 +521,21 @@ public class Basic$Type$ extends Basic {
         tryCatch("%#g", FormatFlagsConversionMismatchException.class);
 
 #if[dec]
-
 #if[prim]
         $type$ minByte = Byte.MIN_VALUE;   // -128
 #else[prim]
-        $type$ minByte = new $type$(Byte.MIN_VALUE);
+#if[Short]
+        $type$ minByte = (short) Byte.MIN_VALUE;
+#end[Short]
+#if[Byte]
+        $type$ minByte = Byte.MIN_VALUE;
+#end[Byte]
+#if[Integer]
+        $type$ minByte = (int) Byte.MIN_VALUE;
+#end[Integer]
+#if[Long]
+        $type$ minByte = (long) Byte.MIN_VALUE;
+#end[Long]
 #end[prim]
 
         //---------------------------------------------------------------------
@@ -886,9 +896,9 @@ public class Basic$Type$ extends Basic {
         //---------------------------------------------------------------------
         // %s - Float
         //---------------------------------------------------------------------
-        $type$ one = new $type$(1.0f);
-        $type$ ten = new $type$(10.0f);
-        $type$ pi  = new $type$(Math.PI);
+        $type$ one = 1.0f;
+        $type$ ten = 10.0f;
+        $type$ pi  = (float) Math.PI;
 
         test("%s", "3.1415927", pi);
 #end[Float]
@@ -906,9 +916,9 @@ public class Basic$Type$ extends Basic {
         //---------------------------------------------------------------------
         // %s - Double
         //---------------------------------------------------------------------
-        $type$ one = new $type$(1.0);
-        $type$ ten = new $type$(10.0);
-        $type$ pi  = new $type$(Math.PI);
+        $type$ one = 1.0d;
+        $type$ ten = 10.0d;
+        $type$ pi  = (double) Math.PI;
 
         test("%s", "3.141592653589793", pi);
 #end[Double]
