@@ -72,7 +72,7 @@ public class StandardCharsets extends CharsetProvider {
             }
             var is2000 = "2000".equals(GB18030_2000);
             return csn.equals("gb18030-2022") && !is2000 ||
-                   csn.equals("gb18030-2000") && is2000 ? "gb18030" : null;
+                   csn.equals("gb18030-2000") && is2000 ? "gb18030" : csn;
         } else {
             String acn = aliasMap().get(csn);
             return (acn != null) ? acn : csn;
@@ -152,9 +152,6 @@ public class StandardCharsets extends CharsetProvider {
             return ISO_8859_1.INSTANCE;
         } else {
             csn = canonicalize(toLower(charsetName));
-            if (csn == null) { // could happen for GB18030 aliases
-                return null;
-            }
         }
 
         // Check cache first
