@@ -291,7 +291,7 @@ inline void G1VerifyLiveClosure::do_oop_work(T* p) {
   bool is_in_heap = _g1h->is_in(obj);
 
   if (!is_in_heap || _g1h->is_obj_dead_cond(obj, _vo)) {
-    MutexLocker x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
+    MutexLocker x(G1RareEvent_lock, Mutex::_no_safepoint_check_flag);
 
     if (!has_failures()) {
       log.error("----------");
