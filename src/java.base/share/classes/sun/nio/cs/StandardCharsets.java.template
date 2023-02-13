@@ -79,7 +79,6 @@ public class StandardCharsets extends CharsetProvider {
         }
     }
 
-    @SuppressWarnings("removal")
     private Map<String,String> aliasMap() {
         Map<String,String> map = aliasMap;
         if (map == null) {
