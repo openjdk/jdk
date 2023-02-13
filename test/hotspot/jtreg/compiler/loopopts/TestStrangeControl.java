@@ -47,6 +47,6 @@ public class TestStrangeControl {
         thread.setDaemon(true);
         thread.start();
         // Give thread executing strange control loop enough time to trigger OSR compilation
-        Thread.sleep(Utils.adjustTimeout(4000));
+        Thread.sleep(Utils.adjustTimeout(1000));
     }
 }

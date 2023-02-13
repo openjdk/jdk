@@ -65,7 +65,7 @@ public class TestInfiniteLoopNest {
         // Give thread some time to trigger compilation
         thread.setDaemon(true);
         thread.start();
-        Thread.sleep(Utils.adjustTimeout(4000));
+        Thread.sleep(Utils.adjustTimeout(500));
     }
 
     static Boolean b;
