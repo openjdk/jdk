@@ -32,13 +32,13 @@ import org.openide.util.actions.CookieAction;
  *
  * @author Thomas Wuerthinger
  */
-public final class CloneGraphAction extends CookieAction {
+public final class NewGraphTabAction extends CookieAction {
 
     @Override
     protected void performAction(Node[] activatedNodes) {
-        GraphCloneCookie c = activatedNodes[0].getCookie(GraphCloneCookie.class);
+        NewGraphTabCookie c = activatedNodes[0].getCookie(NewGraphTabCookie.class);
         assert c != null;
-        c.openClone();
+        c.openNewTab();
     }
 
     @Override
@@ -51,9 +51,9 @@ public final class CloneGraphAction extends CookieAction {
         boolean b = super.enable(activatedNodes);
         if (b) {
             assert activatedNodes.length == 1;
-            GraphCloneCookie c = activatedNodes[0].getCookie(GraphCloneCookie.class);
+            NewGraphTabCookie c = activatedNodes[0].getCookie(NewGraphTabCookie.class);
             assert c != null;
-            return true;
+            return c.isActive();
         }
 
         return false;
@@ -67,7 +67,7 @@ public final class CloneGraphAction extends CookieAction {
     @Override
     protected Class<?>[] cookieClasses() {
         return new Class<?>[]{
-            GraphCloneCookie.class
+                NewGraphTabCookie.class
         };
     }
 
