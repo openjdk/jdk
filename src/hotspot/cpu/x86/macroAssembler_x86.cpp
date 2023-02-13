@@ -2854,7 +2854,7 @@ void MacroAssembler::mulss(XMMRegister dst, AddressLiteral src, Register rscratc
 
 void MacroAssembler::null_check(Register reg, int offset) {
   if (needs_explicit_null_check(offset)) {
-    // provoke OS null exception if reg = null by
+    // provoke OS null exception if reg is null by
     // accessing M[reg] w/o changing any (non-CC) registers
     // NOTE: cmpl is plenty here to provoke a segv
     cmpptr(rax, Address(reg, 0));
@@ -2863,7 +2863,7 @@ void MacroAssembler::null_check(Register reg, int offset) {
     //       testl needs to be implemented first)
   } else {
     // nothing to do, (later) access of M[reg + offset]
-    // will provoke OS null exception if reg = null
+    // will provoke OS null exception if reg is null
   }
 }
 

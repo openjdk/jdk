@@ -1762,7 +1762,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                        stack_slots / VMRegImpl::slots_per_word,
                                        in_ByteSize(-1),
                                        in_ByteSize(-1),
-                                       (OopMapSet*)nullptr);
+                                       nullptr);
   }
   address native_func = method->native_function();
   assert(native_func != nullptr, "must have function");
