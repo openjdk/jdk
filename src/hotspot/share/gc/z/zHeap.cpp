@@ -78,6 +78,10 @@ ZHeap::ZHeap() :
     return;
   }
 
+  if (UseDynamicNumberOfGCThreads) {
+    log_info_p(gc, init)("GC Workers Max: %u (dynamic)", ConcGCThreads);
+  }
+
   // Update statistics
   _young.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
   _old.stat_heap()->at_initialize(_page_allocator.min_capacity(), _page_allocator.max_capacity());
