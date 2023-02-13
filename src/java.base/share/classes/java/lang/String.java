@@ -2140,13 +2140,13 @@ public final class String
         byte[] ov = other.value;
         byte coder = coder();
         if (coder == other.coder()) {
-            if (coder == LATIN1) {
-                return ArraysSupport.mismatch(tv, toffset,
-                        ov, ooffset, len) < 0;
-            } else {
-                return ArraysSupport.mismatch(tv, toffset << UTF16,
-                        ov, ooffset << UTF16, len << UTF16) < 0;
+            if (coder == UTF16) {
+                toffset <<= UTF16;
+                ooffset <<= UTF16;
+                len <<= UTF16;
             }
+            return ArraysSupport.mismatch(tv, toffset,
+                    ov, ooffset, len) < 0;
         } else {
             if (coder == LATIN1) {
                 while (len-- > 0) {

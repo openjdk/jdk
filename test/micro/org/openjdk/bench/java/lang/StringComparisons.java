@@ -46,9 +46,9 @@ public class StringComparisons {
 
     public String string;
     public String equalString;
-
     public String endsWithA;
     public String endsWithB;
+    public String startsWithA;
 
     @Setup
     public void setup() {
@@ -57,6 +57,7 @@ public class StringComparisons {
         equalString = c.repeat(size);
         endsWithA = c.repeat(size).concat("A");
         endsWithB = c.repeat(size).concat("B");
+        startsWithA = "A" + (c.repeat(size));
     }
 
     @Benchmark
@@ -65,8 +66,8 @@ public class StringComparisons {
     }
 
     @Benchmark
-    public int compareTo() {
-        return endsWithA.compareTo(endsWithB);
+    public boolean endsWith() {
+        return startsWithA.endsWith(string);
     }
 
     @Benchmark
@@ -75,7 +76,12 @@ public class StringComparisons {
     }
 
     @Benchmark
-    public boolean stringEquals() {
-        return endsWithA.equals(endsWithB);
+    public boolean regionMatchesRange() {
+        return startsWithA.regionMatches(1, endsWithB, 0, endsWithB.length() - 1);
+    }
+
+    @Benchmark
+    public boolean regionMatchesCI() {
+        return endsWithA.regionMatches(true, 0, endsWithB, 0, endsWithB.length());
     }
 }
