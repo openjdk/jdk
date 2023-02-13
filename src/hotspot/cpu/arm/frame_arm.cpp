@@ -64,7 +64,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  if (!thread->is_in_stack_range_incl(unextended_sp, sp)) {
+  if (!thread->is_in_usable_stack(unextended_sp)) {
     return false;
   }
 
