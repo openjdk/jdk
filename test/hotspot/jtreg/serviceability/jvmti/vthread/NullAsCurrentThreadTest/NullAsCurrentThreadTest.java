@@ -21,11 +21,17 @@
  * questions.
  */
 
-/**
- * @test
+/*
+ * @test id=default
  * @summary Verifies specific JVMTI functions work with current virtual thread passed as NULL.
  * @compile --enable-preview -source ${jdk.version} NullAsCurrentThreadTest.java
  * @run main/othervm/native --enable-preview -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport NullAsCurrentThreadTest
+ */
+
+/**
+ * @test id=no-vmcontinuations
+ * @requires vm.continuations
+ * @compile --enable-preview -source ${jdk.version} NullAsCurrentThreadTest.java
  * @run main/othervm/native --enable-preview -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations NullAsCurrentThreadTest
  */
 
