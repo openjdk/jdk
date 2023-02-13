@@ -132,7 +132,7 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
     return -1;
   for (; scan <= limit; scan++) {
     scan = (address) memchr(scan, first_char, (limit + 1 - scan));
-    if (scan == NULL)
+    if (scan == nullptr)
       return -1;  // not found
     assert(scan >= bytes+i && scan <= limit, "scan oob");
     if (substr_len <= 2
@@ -145,7 +145,7 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
 }
 
 bool Symbol::is_star_match(const char* pattern) const {
-  if (strchr(pattern, '*') == NULL) {
+  if (strchr(pattern, '*') == nullptr) {
     return equals(pattern);
   } else {
     ResourceMark rm;
@@ -185,7 +185,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
     s = as_quoted_ascii();
     s = os::strdup(s);
   }
-  if (s == NULL) {
+  if (s == nullptr) {
     st->print("(null)");
   } else {
     st->print("%s", s);

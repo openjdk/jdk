@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,11 +89,11 @@ void DefNewYoungerGenClosure::barrier(T* p) {
 }
 
 inline DefNewScanClosure::DefNewScanClosure(DefNewGeneration* g) :
-    FastScanClosure<DefNewScanClosure>(g), _scanned_cld(NULL) {}
+    FastScanClosure<DefNewScanClosure>(g), _scanned_cld(nullptr) {}
 
 template <class T>
 void DefNewScanClosure::barrier(T* p) {
-  if (_scanned_cld != NULL && !_scanned_cld->has_modified_oops()) {
+  if (_scanned_cld != nullptr && !_scanned_cld->has_modified_oops()) {
     _scanned_cld->record_modified_oops();
   }
 }

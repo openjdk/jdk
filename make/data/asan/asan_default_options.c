@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,16 @@
 // used. You can override these options by setting the environment variable ASAN_OPTIONS.
 ATTRIBUTE_DEFAULT_VISIBILITY ATTRIBUTE_USED const char* __asan_default_options() {
   return
-#ifndef LEAK_SANITIZER
+#ifdef LEAK_SANITIZER
+    "leak_check_at_exit=0,"
+#else
+    // ASan bundles LSan, however we only support LSan when it is explicitly requested during
+    // configuration. Thus we disable it to match if it was not requested.
     "detect_leaks=0,"
 #endif
-    "handle_segv=0";
+    "print_suppressions=0,"
+    "handle_segv=0,"
+    // See https://github.com/google/sanitizers/issues/1322. Hopefully this is resolved
+    // at some point and we can remove this option.
+    "intercept_tls_get_addr=0";
 }
