@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1866,7 +1866,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("assert primitive array {");
       Label L;
-      __ mv(t1, Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift);
+      __ mv(t1, (int32_t)(Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift));
       __ bge(lh, t1, L);
       __ stop("must be a primitive array");
       __ bind(L);
@@ -3895,7 +3895,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // If we want, we can templatize thaw by kind, and have three different entries
-    __ mv(c_rarg1, (uint32_t)kind);
+    __ mv(c_rarg1, kind);
 
     __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
     __ mv(t1, x10); // x10 is the sp of the yielding frame

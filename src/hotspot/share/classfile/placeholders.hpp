@@ -25,10 +25,11 @@
 #ifndef SHARE_CLASSFILE_PLACEHOLDERS_HPP
 #define SHARE_CLASSFILE_PLACEHOLDERS_HPP
 
+#include "oops/symbol.hpp"
+
 class PlaceholderEntry;
 class Thread;
 class ClassLoaderData;
-class Symbol;
 
 // Placeholder objects. These represent classes currently
 // being loaded, as well as arrays of primitives.

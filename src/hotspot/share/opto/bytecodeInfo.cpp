@@ -114,7 +114,7 @@ static bool is_unboxing_method(ciMethod* callee_method, Compile* C) {
 
 // positive filter: should callee be inlined?
 bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
-                               int caller_bci, NOT_PRODUCT_ARG(bool& should_delay) ciCallProfile& profile) {
+                               int caller_bci, bool& should_delay, ciCallProfile& profile) {
   // Allows targeted inlining
   if (C->directive()->should_inline(callee_method)) {
     set_msg("force inline by CompileCommand");
@@ -128,7 +128,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     return true;
   }
 
-#ifndef PRODUCT
   int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
@@ -139,7 +138,6 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
     _forced_inline = true;
     return true;
   }
-#endif
 
   int size = callee_method->code_size_for_inlining();
 
@@ -199,7 +197,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
 
 // negative filter: should callee NOT be inlined?
 bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_method,
-                                   int caller_bci, NOT_PRODUCT_ARG(bool& should_delay) ciCallProfile& profile) {
+                                   int caller_bci, bool& should_delay, ciCallProfile& profile) {
   const char* fail_msg = NULL;
 
   // First check all inlining restrictions which are required for correctness
@@ -243,7 +241,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     return true;
   }
 
-#ifndef PRODUCT
   int inline_depth = inline_level() + 1;
   if (ciReplay::should_inline(C->replay_inline_data(), callee_method, caller_bci, inline_depth, should_delay)) {
     if (should_delay) {
@@ -263,7 +260,6 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     set_msg("disallowed by ciReplay");
     return true;
   }
-#endif
 
   if (callee_method->force_inline()) {
     set_msg("force inline by annotation");
@@ -379,11 +375,11 @@ bool InlineTree::try_to_inline(ciMethod* callee_method, ciMethod* caller_method,
   _forced_inline = false; // Reset
 
   // 'should_delay' can be overridden during replay compilation
-  if (!should_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
+  if (!should_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
   // 'should_delay' can be overridden during replay compilation
-  if (should_not_inline(callee_method, caller_method, caller_bci, NOT_PRODUCT_ARG(should_delay) profile)) {
+  if (should_not_inline(callee_method, caller_method, caller_bci, should_delay, profile)) {
     return false;
   }
 
