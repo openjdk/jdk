@@ -1186,7 +1186,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
 
-  if (thread_oop != nullptr && thread_oop->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // No support for virtual threads (yet).
     return JVMTI_ERROR_UNSUPPORTED_OPERATION;
   }
@@ -1556,7 +1556,7 @@ JvmtiEnv::RunAgentThread(jthread thread, jvmtiStartFunction proc, const void* ar
     // We have a valid thread_oop.
   }
 
-  if (thread_oop->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // No support for virtual threads.
     return JVMTI_ERROR_UNSUPPORTED_OPERATION;
   }
@@ -1880,7 +1880,7 @@ JvmtiEnv::PopFrame(jthread thread) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
     // No support for virtual threads (yet).
     return JVMTI_ERROR_OPAQUE_FRAME;
   }
@@ -3920,7 +3920,7 @@ JvmtiEnv::GetThreadCpuTime(jthread thread, jlong* nanos_ptr) {
 
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_oop);
 
-  if (thread_oop != nullptr && thread_oop->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // No support for virtual threads (yet).
     return JVMTI_ERROR_UNSUPPORTED_OPERATION;
   }

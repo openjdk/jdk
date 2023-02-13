@@ -1509,7 +1509,7 @@ JvmtiEnvBase::check_thread_list(jint count, const jthread* list) {
   for (int i = 0; i < count; i++) {
     jthread thread = list[i];
     oop thread_oop = JNIHandles::resolve_external_guard(thread);
-    if (thread_oop == nullptr || !thread_oop->is_a(vmClasses::BasicVirtualThread_klass())) {
+    if (thread_oop == nullptr || !thread_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
       return JVMTI_ERROR_INVALID_THREAD;
     }
   }
@@ -1584,7 +1584,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
   // and it will be actually suspended at virtual thread unmount transition.
   if (!is_passive_cthread) {
     assert(thread_h() != nullptr, "sanity check");
-    assert(single_suspend || thread_h()->is_a(vmClasses::BasicVirtualThread_klass()), "SuspendAllVirtualThreads should never suspend non-virtual threads");
+    assert(single_suspend || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()), "SuspendAllVirtualThreads should never suspend non-virtual threads");
     // Case of mounted virtual or attached carrier thread.
     if (!JvmtiSuspendControl::suspend(java_thread)) {
       // Thread is already suspended or in process of exiting.
@@ -1645,7 +1645,7 @@ JvmtiEnvBase::resume_thread(oop thread_oop, JavaThread* java_thread, bool single
 
   if (!is_passive_cthread) {
     assert(thread_h() != nullptr, "sanity check");
-    assert(single_resume || thread_h()->is_a(vmClasses::BasicVirtualThread_klass()), "ResumeAllVirtualThreads should never resume non-virtual threads");
+    assert(single_resume || thread_h()->is_a(vmClasses::BaseVirtualThread_klass()), "ResumeAllVirtualThreads should never resume non-virtual threads");
     if (java_thread->is_suspended()) {
       if (!JvmtiSuspendControl::resume(java_thread)) {
         return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
@@ -1922,7 +1922,7 @@ JvmtiEnvBase::force_early_return(jthread thread, jvalue value, TosState tos) {
   oop thread_obj = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
 
-  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass())) {
     // No support for virtual threads (yet).
     return JVMTI_ERROR_OPAQUE_FRAME;
   }

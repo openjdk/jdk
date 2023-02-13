@@ -372,7 +372,7 @@ void ThreadService::reset_contention_time_stat(JavaThread* thread) {
 
 bool ThreadService::is_virtual_or_carrier_thread(JavaThread* jt) {
   oop threadObj = jt->threadObj();
-  if (threadObj != nullptr && threadObj->is_a(vmClasses::BasicVirtualThread_klass())) {
+  if (threadObj != nullptr && threadObj->is_a(vmClasses::BaseVirtualThread_klass())) {
     // a virtual thread backed by JavaThread
     return true;
   }
