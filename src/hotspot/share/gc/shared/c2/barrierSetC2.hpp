@@ -116,7 +116,7 @@ public:
     _type(type),
     _base(base),
     _addr(addr),
-    _raw_access(NULL),
+    _raw_access(nullptr),
     _barrier_data(0)
   {}
 
@@ -173,7 +173,7 @@ public:
   C2AtomicParseAccess(GraphKit* kit, DecoratorSet decorators, BasicType type,
                  Node* base, C2AccessValuePtr& addr, uint alias_idx) :
     C2ParseAccess(kit, decorators, type, base, addr),
-    _memory(NULL),
+    _memory(nullptr),
     _alias_idx(alias_idx) {}
 
   // Set the memory node based on the current memory slice.
@@ -242,7 +242,7 @@ public:
                              Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
                              intx prefetch_lines) const;
 
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return NULL; }
+  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const { return nullptr; }
 
   // These are general helper methods used by C2
   enum ArrayCopyPhase {
@@ -270,7 +270,7 @@ public:
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
-  virtual void* create_barrier_state(Arena* comp_arena) const { return NULL; }
+  virtual void* create_barrier_state(Arena* comp_arena) const { return nullptr; }
   // If the BarrierSetC2 state has barrier nodes in its compilation
   // unit state to be expanded later, then now is the time to do so.
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const { return false; }

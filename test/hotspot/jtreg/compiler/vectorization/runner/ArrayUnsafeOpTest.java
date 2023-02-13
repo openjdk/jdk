@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Arm Limited. All rights reserved.
+ * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,13 +40,15 @@
 
 package compiler.vectorization.runner;
 
+import compiler.lib.ir_framework.*;
+
 import java.lang.reflect.Field;
 
 import sun.misc.Unsafe;
 
 public class ArrayUnsafeOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 2345;
+    private static final int SIZE = 543;
 
     private static Unsafe unsafe;
 
@@ -92,6 +94,7 @@ public class ArrayUnsafeOpTest extends VectorizationTestRunner {
     // Note that this case cannot be vectorized since data dependence
     // exists between adjacent iterations. (The memory address storing
     // an int array is not increased by 4 per iteration.)
+    @IR(failOn = {IRNode.STORE_VECTOR})
     public int[] arrayUnsafeFillAddrIncrMismatch() {
         int[] res = new int[SIZE];
         for (int i = 0; i < 500; i++) {
@@ -100,4 +103,3 @@ public class ArrayUnsafeOpTest extends VectorizationTestRunner {
         return res;
     }
 }
-

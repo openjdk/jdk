@@ -88,7 +88,7 @@ class MutableNUMASpace : public MutableSpace {
     char* last_page_scanned()            { return _last_page_scanned; }
     void set_last_page_scanned(char* p)  { _last_page_scanned = p;    }
    public:
-    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(NULL) {
+    LGRPSpace(int l, size_t alignment) : _lgrp_id(l), _allocation_failed(false), _last_page_scanned(nullptr) {
       _space = new MutableSpace(alignment);
       _alloc_rate = new AdaptiveWeightedAverage(NUMAChunkResizeWeight);
     }
@@ -159,9 +159,6 @@ class MutableNUMASpace : public MutableSpace {
   void set_base_space_size(size_t v)                 { _base_space_size = v;      }
   size_t base_space_size() const                     { return _base_space_size;   }
 
-  // Check if the NUMA topology has changed. Add and remove spaces if needed.
-  // The update can be forced by setting the force parameter equal to true.
-  bool update_layout(bool force);
   // Bias region towards the lgrp.
   void bias_region(MemRegion mr, int lgrp_id);
   // Free pages in a given region.
@@ -198,7 +195,7 @@ class MutableNUMASpace : public MutableSpace {
                           bool clear_space,
                           bool mangle_space,
                           bool setup_pages = SetupPages,
-                          WorkerThreads* pretouch_workers = NULL);
+                          WorkerThreads* pretouch_workers = nullptr);
   // Update space layout if necessary. Do all adaptive resizing job.
   virtual void update();
   // Update allocation rate averages.
@@ -218,12 +215,12 @@ class MutableNUMASpace : public MutableSpace {
   virtual size_t free_in_words() const;
 
   using MutableSpace::capacity_in_words;
-  virtual size_t capacity_in_words(Thread* thr) const;
+
   virtual size_t tlab_capacity(Thread* thr) const;
   virtual size_t tlab_used(Thread* thr) const;
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const;
 
-  // Allocation (return NULL if full)
+  // Allocation (return null if full)
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging

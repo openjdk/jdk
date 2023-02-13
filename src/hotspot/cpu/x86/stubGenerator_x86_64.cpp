@@ -1093,26 +1093,8 @@ address StubGenerator::generate_verify_oop() {
   __ testptr(rax, rax);
   __ jcc(Assembler::zero, exit); // if obj is NULL it is OK
 
-#if INCLUDE_ZGC
-  if (UseZGC) {
-    // Check if metadata bits indicate a bad oop
-    __ testptr(rax, Address(r15_thread, ZThreadLocalData::address_bad_mask_offset()));
-    __ jcc(Assembler::notZero, error);
-  }
-#endif
-
-  // Check if the oop is in the right area of memory
-  __ movptr(c_rarg2, rax);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(c_rarg2, c_rarg3);
-  __ movptr(c_rarg3, (intptr_t) Universe::verify_oop_bits());
-  __ cmpptr(c_rarg2, c_rarg3);
-  __ jcc(Assembler::notZero, error);
-
-  // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(rax, rax, rscratch1);  // get klass
-  __ testptr(rax, rax);
-  __ jcc(Assembler::zero, error); // if klass is NULL it is broken
+   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+   bs_asm->check_oop(_masm, rax, c_rarg2, c_rarg3, error);
 
   // return if everything seems ok
   __ bind(exit);
@@ -2760,26 +2742,38 @@ address StubGenerator::generate_updateBytesCRC32C(bool is_pclmulqdq_supported) {
 
   BLOCK_COMMENT("Entry:");
   __ enter(); // required for proper stackwalking of RuntimeStub frame
+  Label L_continue;
+
   if (VM_Version::supports_sse4_1() && VM_Version::supports_avx512_vpclmulqdq() &&
       VM_Version::supports_avx512bw() &&
       VM_Version::supports_avx512vl()) {
+    Label L_doSmall;
+
+    __ cmpl(len, 384);
+    __ jcc(Assembler::lessEqual, L_doSmall);
+
     __ lea(j, ExternalAddress(StubRoutines::x86::crc32c_table_avx512_addr()));
     __ kernel_crc32_avx512(crc, buf, len, j, l, k);
-  } else {
-#ifdef _WIN64
-    __ push(y);
-    __ push(z);
-#endif
-    __ crc32c_ipl_alg2_alt2(crc, buf, len,
-                            a, j, k,
-                            l, y, z,
-                            c_farg0, c_farg1, c_farg2,
-                            is_pclmulqdq_supported);
-#ifdef _WIN64
-    __ pop(z);
-    __ pop(y);
-#endif
+
+    __ jmp(L_continue);
+
+    __ bind(L_doSmall);
   }
+#ifdef _WIN64
+  __ push(y);
+  __ push(z);
+#endif
+  __ crc32c_ipl_alg2_alt2(crc, buf, len,
+                          a, j, k,
+                          l, y, z,
+                          c_farg0, c_farg1, c_farg2,
+                          is_pclmulqdq_supported);
+#ifdef _WIN64
+  __ pop(z);
+  __ pop(y);
+#endif
+
+  __ bind(L_continue);
   __ movl(rax, crc);
   __ vzeroupper();
   __ leave(); // required for proper stackwalking of RuntimeStub frame

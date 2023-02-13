@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -426,7 +426,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # ASan is simply incompatible with gcc -Wstringop-truncation. See
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -DADDRESS_SANITIZER"
+        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
@@ -437,8 +437,40 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $ASAN_LDFLAGS"
         LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $ASAN_LDFLAGS"
       ])
-
   AC_SUBST(ASAN_ENABLED)
+])
+
+###############################################################################
+#
+# LeakSanitizer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
+[
+  UTIL_ARG_ENABLE(NAME: lsan, DEFAULT: false, RESULT: LSAN_ENABLED,
+      DESC: [enable LeakSanitizer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if LeakSanitizer (lsan) is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
+            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        LSAN_CFLAGS="-fsanitize=leak -fno-omit-frame-pointer -DLEAK_SANITIZER"
+        LSAN_LDFLAGS="-fsanitize=leak"
+        JVM_CFLAGS="$JVM_CFLAGS $LSAN_CFLAGS"
+        JVM_LDFLAGS="$JVM_LDFLAGS $LSAN_LDFLAGS"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $LSAN_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $LSAN_CFLAGS"
+        CXXFLAGS_JDKLIB="$CXXFLAGS_JDKLIB $LSAN_CFLAGS"
+        CXXFLAGS_JDKEXE="$CXXFLAGS_JDKEXE $LSAN_CFLAGS"
+        LDFLAGS_JDKLIB="$LDFLAGS_JDKLIB $LSAN_LDFLAGS"
+        LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE $LSAN_LDFLAGS"
+      ])
+  AC_SUBST(LSAN_ENABLED)
 ])
 
 ###############################################################################
@@ -780,7 +812,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
   $RM "$CODESIGN_TESTFILE"
   $TOUCH "$CODESIGN_TESTFILE"
   CODESIGN_SUCCESS=false
-  $CODESIGN $PARAMS "$CODESIGN_TESTFILE" 2>&AS_MESSAGE_LOG_FD \
+  eval \"$CODESIGN\" $PARAMS \"$CODESIGN_TESTFILE\" 2>&AS_MESSAGE_LOG_FD \
       >&AS_MESSAGE_LOG_FD && CODESIGN_SUCCESS=true
   $RM "$CODESIGN_TESTFILE"
   AC_MSG_CHECKING([$MESSAGE])
@@ -793,7 +825,7 @@ AC_DEFUN([JDKOPT_CHECK_CODESIGN_PARAMS],
 
 AC_DEFUN([JDKOPT_CHECK_CODESIGN_HARDENED],
 [
-  JDKOPT_CHECK_CODESIGN_PARAMS([-s "$MACOSX_CODESIGN_IDENTITY" --option runtime],
+  JDKOPT_CHECK_CODESIGN_PARAMS([-s \"$MACOSX_CODESIGN_IDENTITY\" --option runtime],
       [if codesign with hardened runtime is possible])
 ])
 
