@@ -389,6 +389,7 @@ public class ForkJoinPool19Test extends JSR166TestCase {
                 }
                 f.quietlyJoin();
                 checkCancelled(f);
+                Thread.interrupted();
             }};
         checkInvoke(a);
         a.reinitialize();

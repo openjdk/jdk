@@ -724,13 +724,13 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      *                 processed.
      */
     public final void helpComplete(int maxTasks) {
-        ForkJoinPool.WorkQueue q; Thread t; boolean owned;
-        if (owned = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
+        ForkJoinPool.WorkQueue q; Thread t; boolean internal;
+        if (internal = (t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
             q = ForkJoinPool.commonQueue();
         if (q != null && maxTasks > 0)
-            q.helpComplete(this, owned, maxTasks);
+            q.helpComplete(this, internal, maxTasks);
     }
     // ForkJoinTask overrides
 
@@ -776,6 +776,17 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
      */
     @Override
     protected void setRawResult(T t) { }
+
+    /**
+     * Overrride default recursive helping to instead help along
+     * completion chains.
+     */
+    @Override
+    final int tryHelpJoin(ForkJoinPool p, ForkJoinPool.WorkQueue q,
+                          boolean internal, int how) {
+        return ((q == null || p == null) ? 0 :
+                p.helpComplete(this, q, internal, (how & TIMED) != 0));
+    }
 
     /*
      * This class uses jdk-internal Unsafe for atomics and special
