@@ -57,8 +57,7 @@ public class SPI {
                             .forEach( cs -> {
                                 out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
                                 if (cs.csName.equals("GB18030")) {
-                                    out.printf("                \"2000\".equals(AccessController.doPrivileged((PrivilegedAction<String>)%n" +
-                                               "                    () -> System.getProperty(\"jdk.charset.GB18030\"))) ?%n" +
+                                    out.printf("                IS_GB18030_2000 ?%n" +
                                                "                    new String[] {\"gb18030-2000\"} :%n" +
                                                "                    new String[] {\"gb18030-2022\"});%n%n");
                                 } else {
@@ -102,12 +101,10 @@ public class SPI {
                                  .forEach( cs -> {
                              if (cs.aliases == null || cs.aliases.length == 0) {
                                  if (cs.csName.equals("GB18030")) {
-                                     out.printf("    @SuppressWarnings(\"removal\")%n");
                                      out.printf("    static String[] aliases_%s() { return new String[] {%n",
                                              cs.clzName);
-                                     out.printf("        \"2000\".equals(AccessController.doPrivileged((PrivilegedAction<String>)%n" +
-                                             "               () -> System.getProperty(\"jdk.charset.GB18030\"))) ?%n" +
-                                             "               \"gb18030-2000\" : \"gb18030-2022\"%n");
+                                     out.printf("        \"2000\".equals(GB18030_2000) ?%n" +
+                                                "               \"gb18030-2000\" : \"gb18030-2022\"%n");
                                      out.printf("        };%n%n");
                                      out.printf("    }%n%n");
                                  } else {

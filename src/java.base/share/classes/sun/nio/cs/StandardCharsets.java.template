@@ -40,6 +40,8 @@ import jdk.internal.vm.annotation.Stable;
 
 public class StandardCharsets extends CharsetProvider {
 
+    private static String GB18030_2000;
+
     _INCLUDE_ALIASES_TABLES_
     _INCLUDE_ALIASES_MAP_
     _INCLUDE_CLASSES_MAP_
@@ -60,10 +62,24 @@ public class StandardCharsets extends CharsetProvider {
     }
 
     private String canonicalize(String csn) {
-        String acn = aliasMap().get(csn);
-        return (acn != null) ? acn : csn;
+        if (csn.startsWith("gb18030-")) {
+            if (GB18030_2000 == null) {
+                // initialization delayed due to StandardCharsets
+                // being initialized during initPhase1
+                @SuppressWarnings("removal")
+                var unused = GB18030_2000 = AccessController.doPrivileged((PrivilegedAction<String>)
+                    () -> System.getProperty("jdk.charset.GB18030", ""));
+            }
+            var is2000 = "2000".equals(GB18030_2000);
+            return csn.equals("gb18030-2022") && !is2000 ||
+                   csn.equals("gb18030-2000") && is2000 ? "gb18030" : null;
+        } else {
+            String acn = aliasMap().get(csn);
+            return (acn != null) ? acn : csn;
+        }
     }
 
+    @SuppressWarnings("removal")
     private Map<String,String> aliasMap() {
         Map<String,String> map = aliasMap;
         if (map == null) {
@@ -136,6 +152,9 @@ public class StandardCharsets extends CharsetProvider {
             return ISO_8859_1.INSTANCE;
         } else {
             csn = canonicalize(toLower(charsetName));
+            if (csn == null) { // could happen for GB18030 aliases
+                return null;
+            }
         }
 
         // Check cache first

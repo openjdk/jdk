@@ -38,9 +38,13 @@ import java.security.PrivilegedAction;
 
 public class ExtendedCharsets extends AbstractCharsetProvider {
 
+    @SuppressWarnings("removal")
+    private static final boolean IS_GB18030_2000 =
+        "2000".equals(AccessController.doPrivileged((PrivilegedAction<String>)
+            () -> System.getProperty("jdk.charset.GB18030")));
+
     static volatile ExtendedCharsets instance = null;
 
-    @SuppressWarnings("removal")
     public ExtendedCharsets() {
 
         super("sun.nio.cs.ext");  // identify provider pkg name.
