@@ -477,19 +477,19 @@ class VerifyRemSetClosure : public G1VerificationClosure {
     HeapRegion* from = _g1h->heap_region_containing_or_null(p);
     HeapRegion* to = _g1h->heap_region_containing_or_null(obj);
     if (from != nullptr && to != nullptr &&
-      from != to &&
-      !to->is_pinned() &&
-      to->rem_set()->is_complete()) {
+        from != to &&
+        !to->is_pinned() &&
+        to->rem_set()->is_complete()) {
 
       jbyte cv_obj = *_ct->byte_for_const(_containing_obj);
       jbyte cv_field = *_ct->byte_for_const(p);
       const jbyte dirty = G1CardTable::dirty_card_val();
 
-      bool is_bad = !(from->is_young()
-        || to->rem_set()->contains_reference(p)
-        || (_containing_obj->is_objArray() ?
-              cv_field == dirty :
-              cv_obj == dirty || cv_field == dirty));
+      bool is_bad = !(from->is_young() ||
+                      to->rem_set()->contains_reference(p) ||
+                      (_containing_obj->is_objArray() ?
+                       cv_field == dirty :
+                       cv_obj == dirty || cv_field == dirty));
 
       if (is_bad) {
         ResourceMark rm;
