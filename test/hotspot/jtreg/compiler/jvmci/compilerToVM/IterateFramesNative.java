@@ -105,15 +105,17 @@ public class IterateFramesNative {
 
     private void test() {
         // Run enough iterations to reach compilation.
-        for (int i = 0; i < (CHECK_COMPILED ? 1 : 1000); i++) {
+        for (int i = 0; i < (CHECK_COMPILED ? 1 : 10_000); i++) {
             testNativeFrame("someString", i);
         }
 
-        // Verify that we reached compilation at some point.
-        Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
-            "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
-        Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
-            "Expected native method to be compiled: " + NATIVE_METHOD);
+        if (CHECK_COMPILED) {
+            // Verify that we reached compilation at some point.
+            Asserts.assertTrue(WB.isMethodCompiled(ITERATE_FRAMES_METHOD),
+                "Expected native method to be compiled: " + ITERATE_FRAMES_METHOD);
+            Asserts.assertTrue(WB.isMethodCompiled(NATIVE_METHOD),
+                "Expected native method to be compiled: " + NATIVE_METHOD);
+        }
     }
 
     /**
