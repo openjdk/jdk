@@ -69,6 +69,12 @@
 #define false 0
 #endif /*bool*/
 
+#ifdef LIBARCH_riscv64
+#define RISCV_ONLY(code) code
+#else
+#define RISCV_ONLY(code)
+#endif
+
 /* short names for stuff in hsdis.h */
 typedef decode_instructions_event_callback_ftype  event_callback_t;
 typedef decode_instructions_printf_callback_ftype printf_callback_t;
@@ -195,8 +201,11 @@ static void* decode(struct hsdis_app_data* app_data, const char* options) {
 
       int size = (*app_data->dfn)((bfd_vma) p, &app_data->dinfo);
 
-      if (size > 0)  p += size;
-      else           app_data->losing = true;
+      if (size <= 0 RISCV_ONLY(|| size == EIO)) {
+        app_data->losing = true;
+      } else {
+        p += size;
+      }
 
       if (!app_data->losing) {
         const char* insn_close = format_insn_close("/insn", &app_data->dinfo,
@@ -285,6 +294,14 @@ hsdis_print_address_func(bfd_vma vma, struct disassemble_info* dinfo) {
   }
 }
 
+static void
+hsdis_memory_error_func (int status, bfd_vma addr, disassemble_info *dinfo)
+{
+  DECL_APP_DATA(dinfo);
+  DECL_PRINTF_CALLBACK(app_data);
+  (*printf_callback)(printf_stream, ".4byte\t0x%08x\n", *(uint32_t*)addr);
+}
+
 
 /* configuration */
 
@@ -346,6 +363,9 @@ static void setup_app_data(struct hsdis_app_data* app_data,
                                native_bfd);
   app_data->dinfo.print_address_func = hsdis_print_address_func;
   app_data->dinfo.read_memory_func = hsdis_read_memory_func;
+#ifdef LIBARCH_riscv64
+  app_data->dinfo.memory_error_func = hsdis_memory_error_func;
+#endif
 
   if (app_data->dfn == NULL) {
     const char* bad = app_data->arch_name;
