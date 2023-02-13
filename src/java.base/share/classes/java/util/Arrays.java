@@ -26,7 +26,6 @@
 package java.util;
 
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -3579,6 +3578,13 @@ public class Arrays {
         return copy;
     }
 
+    @ForceInline
+    private static short[] copyOf(short[] original) {
+        short[] copy = new short[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
+        return copy;
+    }
+
     /**
      * Copies the specified array, truncating or padding with zeros (if necessary)
      * so the copy has the specified length.  For all indices that are
@@ -3900,13 +3906,13 @@ public class Arrays {
     public static byte[] copyOfRange(byte[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeByte(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static byte[] copyOfRangeGeneric(byte[] original, int from, int to) {
+    private static byte[] copyOfRangeByte(byte[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         byte[] copy = new byte[newLength];
@@ -3944,20 +3950,13 @@ public class Arrays {
     public static short[] copyOfRange(short[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeShort(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static short[] copyOf(short[] original) {
-        short[] copy = new short[original.length];
-        System.arraycopy(original, 0, copy, 0, original.length);
-        return copy;
-    }
-
-    @ForceInline
-    private static short[] copyOfRangeGeneric(short[] original, int from, int to) {
+    private static short[] copyOfRangeShort(short[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         short[] copy = new short[newLength];
@@ -3995,13 +3994,13 @@ public class Arrays {
     public static int[] copyOfRange(int[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeInt(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static int[] copyOfRangeGeneric(int[] original, int from, int to) {
+    private static int[] copyOfRangeInt(int[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         int[] copy = new int[newLength];
@@ -4039,13 +4038,13 @@ public class Arrays {
     public static long[] copyOfRange(long[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeLong(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static long[] copyOfRangeGeneric(long[] original, int from, int to) {
+    private static long[] copyOfRangeLong(long[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         long[] copy = new long[newLength];
@@ -4083,13 +4082,13 @@ public class Arrays {
     public static char[] copyOfRange(char[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeChar(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static char[] copyOfRangeGeneric(char[] original, int from, int to) {
+    private static char[] copyOfRangeChar(char[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         char[] copy = new char[newLength];
@@ -4127,13 +4126,13 @@ public class Arrays {
     public static float[] copyOfRange(float[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeFloat(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static float[] copyOfRangeGeneric(float[] original, int from, int to) {
+    private static float[] copyOfRangeFloat(float[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         float[] copy = new float[newLength];
@@ -4171,13 +4170,13 @@ public class Arrays {
     public static double[] copyOfRange(double[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeDouble(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static double[] copyOfRangeGeneric(double[] original, int from, int to) {
+    private static double[] copyOfRangeDouble(double[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         double[] copy = new double[newLength];
@@ -4215,13 +4214,13 @@ public class Arrays {
     public static boolean[] copyOfRange(boolean[] original, int from, int to) {
         // Tickle the JIT to fold special cases optimally
         if (from != 0 || to != original.length)
-            return copyOfRangeGeneric(original, from, to);
+            return copyOfRangeBoolean(original, from, to);
         else // from == 0 && to == original.length
             return copyOf(original);
     }
 
     @ForceInline
-    private static boolean[] copyOfRangeGeneric(boolean[] original, int from, int to) {
+    private static boolean[] copyOfRangeBoolean(boolean[] original, int from, int to) {
         checkLength(from, to);
         int newLength = to - from;
         boolean[] copy = new boolean[newLength];
