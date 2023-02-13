@@ -38,16 +38,16 @@ public class ErrorToleranceTest {
     public void allowsForIdenticalStacks() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -57,17 +57,17 @@ public class ErrorToleranceTest {
     public void signalsDifferentStacks() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at wrong.module/some.WrongObject.method(WrongObject.java:10)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at wrong.module/some.WrongObject.method(WrongObject.java:10)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -77,16 +77,16 @@ public class ErrorToleranceTest {
     public void skipsIntrinsicCandidateFrames() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
             //        ^^^^ An intrinsic candidate ^^^^
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -96,16 +96,16 @@ public class ErrorToleranceTest {
     public void doesNotSkipIntrinsicCandidateFramesInGold() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
             //        ^^^^ An intrinsic candidate ^^^^
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -115,16 +115,16 @@ public class ErrorToleranceTest {
     public void intrinsicCandidateDoesNotPreventChecks() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
             //        ^^^^ An intrinsic candidate ^^^^
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at erroneous.module/some.WrongClazz.wrongMethod(WrongClazz.java:13)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at erroneous.module/some.WrongClazz.wrongMethod(WrongClazz.java:13)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -134,16 +134,16 @@ public class ErrorToleranceTest {
     public void checksTheWholeStack1() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
-            "	at java.base/java.lang.StringConcatHelper.simpleConcat(StringConcatHelper.java:365)",
-            "	at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
+            "    at java.base/java.lang.StringConcatHelper.simpleConcat(StringConcatHelper.java:365)",
+            "    at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
@@ -153,16 +153,16 @@ public class ErrorToleranceTest {
     public void checksTheWholeStack2() {
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
-            "	at java.base/java.lang.StringConcatHelper.simpleConcat(StringConcatHelper.java:365)",
-            "	at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
+            "    at java.base/java.lang.StringConcatHelper.simpleConcat(StringConcatHelper.java:365)",
+            "    at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.SomeException: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(run), Arrays.stream(gold));
@@ -174,24 +174,24 @@ public class ErrorToleranceTest {
 
         String[] gold = new String[] {
             "Exception in thread \"main\" java.lang.OutOfMemoryError: Java heap space",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
-            "	at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
-            "	at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
-            "	at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)",
-            "	at java.base/java.lang.invoke.LambdaForm$MH/0x00000008000c9000.invoke(LambdaForm$MH)",
-            "	at java.base/java.lang.invoke.Invokers$Holder.linkToTargetMethod(Invokers$Holder)",
-            "	at Test_221.method_float_float_192(Test_221.java:1706)",
-            "	at Test_221.mainTest(Test_221.java:1952)",
-            "	at Test_221.main(Test_221.java:1968)"
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray0(Unsafe.java:1387)",
+            "    at java.base/jdk.internal.misc.Unsafe.allocateUninitializedArray(Unsafe.java:1380)",
+            "    at java.base/java.lang.StringConcatHelper.newArray(StringConcatHelper.java:441)",
+            "    at java.base/java.lang.invoke.DirectMethodHandle$Holder.invokeStatic(DirectMethodHandle$Holder)",
+            "    at java.base/java.lang.invoke.LambdaForm$MH/0x00000008000c9000.invoke(LambdaForm$MH)",
+            "    at java.base/java.lang.invoke.Invokers$Holder.linkToTargetMethod(Invokers$Holder)",
+            "    at Test_221.method_float_float_192(Test_221.java:1706)",
+            "    at Test_221.mainTest(Test_221.java:1952)",
+            "    at Test_221.main(Test_221.java:1968)"
         };
 
         String[] run = new String[] {
             "Exception in thread \"main\" java.lang.OutOfMemoryError: Overflow: String length out of range",
-            "	        at java.base/java.lang.StringConcatHelper.checkOverflow(StringConcatHelper.java:57)",
-            "	        at java.base/java.lang.StringConcatHelper.mix(StringConcatHelper.java:116)",
-            "	        at Test_221.method_float_float_192(Test_221.java:1706)",
-            "	        at Test_221.mainTest(Test_221.java:1952)",
-            "	        at Test_221.main(Test_221.java:1968)"
+            "    at java.base/java.lang.StringConcatHelper.checkOverflow(StringConcatHelper.java:57)",
+            "    at java.base/java.lang.StringConcatHelper.mix(StringConcatHelper.java:116)",
+            "    at Test_221.method_float_float_192(Test_221.java:1706)",
+            "    at Test_221.mainTest(Test_221.java:1952)",
+            "    at Test_221.main(Test_221.java:1968)"
         };
 
         ErrorTolerance.assertIsAcceptable("", Arrays.stream(run), Arrays.stream(gold));
