@@ -1313,6 +1313,15 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
     return true;
   }
 
+  // Check for tgt >= 0
+  Node* tgt_cmp = _gvn.transform(new CmpINode(tgt, intcon(0)));
+  Node* tgt_bol = _gvn.transform(new BoolNode(tgt_cmp, BoolTest::ge));
+  {
+    BuildCutout unless(this, tgt_bol, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
+  }
+
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
