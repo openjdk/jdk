@@ -54,7 +54,7 @@ public class InverseTrigTests {
      * From the spec for Math.asin:
      *
      * "Special cases:
-     * 
+     *
      * If the argument is NaN or its absolute value is greater than 1,
      * then the result is NaN.
      *
