@@ -2267,7 +2267,9 @@ public final class String
         int pc = pa.length;
         byte coder = coder();
         if (coder == prefix.coder()) {
-            toffset <<= coder;
+            if (coder == UTF16) {
+                toffset <<= UTF16;
+            }
             return ArraysSupport.mismatch(ta, toffset,
                     pa, 0, pc) < 0;
         } else {
