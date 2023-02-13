@@ -34,6 +34,7 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/task.hpp"
+#include "sanitizers/leak.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
@@ -293,6 +294,7 @@ void WatcherThread::run() {
   // Signal that it is terminated
   {
     MutexLocker mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
+    LSAN_IGNORE_OBJECT(_watcher_thread);
     _watcher_thread = nullptr;
     Terminator_lock->notify_all();
   }

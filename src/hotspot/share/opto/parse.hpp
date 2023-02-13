@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,6 +222,29 @@ class Parse : public GraphKit {
     int start_sp() const                   { return flow()->stack_size(); }
 
     bool is_loop_head() const              { return flow()->is_loop_head(); }
+    bool is_in_irreducible_loop() const {
+      return flow()->is_in_irreducible_loop();
+    }
+    bool is_irreducible_loop_entry() const {
+      return flow()->is_irreducible_loop_head() || flow()->is_irreducible_loop_secondary_entry();
+    }
+    void copy_irreducible_status_to(RegionNode* region, const JVMState* jvms) {
+      assert(!is_irreducible_loop_entry() || is_in_irreducible_loop(), "entry is part of irreducible loop");
+      if (is_in_irreducible_loop()) {
+        // The block is in an irreducible loop of this method, so it is possible that this
+        // region becomes an irreducible loop entry. (no guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::MaybeIrreducibleEntry);
+      } else if (jvms->caller() != nullptr) {
+        // The block is not in an irreducible loop of this method, hence it cannot ever
+        // be the entry of an irreducible loop. But it may be inside an irreducible loop
+        // of a caller of this inlined method. (limited guarantee)
+        assert(region->loop_status() == RegionNode::LoopStatus::NeverIrreducibleEntry, "status not changed");
+      } else {
+        // The block is not in an irreducible loop of this method, and there is no outer
+        // method. This region will never be in an irreducible loop (strong guarantee)
+        region->set_loop_status(RegionNode::LoopStatus::Reducible);
+      }
+    }
     bool is_SEL_head() const               { return flow()->is_single_entry_loop_head(); }
     bool is_SEL_backedge(Block* pred) const{ return is_SEL_head() && pred->rpo() >= rpo(); }
     bool is_invariant_local(uint i) const  {

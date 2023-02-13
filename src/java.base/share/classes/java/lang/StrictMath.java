@@ -2093,7 +2093,9 @@ public final class StrictMath {
      * @return  the value <i>e</i><sup>{@code x}</sup>&nbsp;-&nbsp;1.
      * @since 1.5
      */
-    public static native double expm1(double x);
+    public static double expm1(double x) {
+        return FdLibm.Expm1.compute(x);
+    }
 
     /**
      * Returns the natural logarithm of the sum of the argument and 1.
@@ -2124,7 +2126,9 @@ public final class StrictMath {
      * log of {@code x}&nbsp;+&nbsp;1
      * @since 1.5
      */
-    public static native double log1p(double x);
+    public static double log1p(double x) {
+        return FdLibm.Log1p.compute(x);
+    }
 
     /**
      * Returns the first floating-point argument with the sign of the
