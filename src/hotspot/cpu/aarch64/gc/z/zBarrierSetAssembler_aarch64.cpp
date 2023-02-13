@@ -447,3 +447,17 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
 #undef __
 
 #endif // COMPILER2
+
+#define __ masm->
+
+void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  // Check if mask is good.
+  // verifies that ZAddressBadMask & r0 == 0
+  __ ldr(tmp2, Address(rthread, ZThreadLocalData::address_bad_mask_offset()));
+  __ andr(tmp1, obj, tmp2);
+  __ cbnz(tmp1, error);
+
+  BarrierSetAssembler::check_oop(masm, obj, tmp1, tmp2, error);
+}
+
+#undef __

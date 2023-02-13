@@ -2243,23 +2243,20 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
                     }
                 }
             }
-            /* Activate a JInternalFrame if necessary. */
-            if (eventID == MouseEvent.MOUSE_PRESSED) {
-                Object object = ev.getSource();
-                if (!(object instanceof Component)) {
-                    return;
-                }
-                Component component = (Component)object;
-                if (component != null) {
-                    Component parent = component;
-                    while (parent != null && !(parent instanceof Window)) {
-                        if (parent instanceof JInternalFrame) {
+
+            // Activate a JInternalFrame if necessary.
+            if (eventID == MouseEvent.MOUSE_PRESSED
+                    && ev.getSource() instanceof Component parent) {
+                while (parent != null && !(parent instanceof Window)) {
+                    if (parent instanceof JInternalFrame internalFrame) {
+                        try {
                             // Activate the frame.
-                            try { ((JInternalFrame)parent).setSelected(true); }
-                            catch (PropertyVetoException e1) { }
+                            internalFrame.setSelected(true);
+                        } catch (PropertyVetoException ignored) {
                         }
-                        parent = parent.getParent();
                     }
+
+                    parent = parent.getParent();
                 }
             }
         }

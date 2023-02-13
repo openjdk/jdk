@@ -259,8 +259,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
         } else {
             // diagonal
             if (x1 > x2 && y1 > y2) {
-                // ^
-                //  \ case -> inverse
+                /* ^
+                    \ case -> inverse */
                 fx1 = (float)x2;
                 fy1 = (float)y2;
                 fx2 = (float)x1;
@@ -273,8 +273,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
                 fx2 = (float)x1;
                 fy2 = (float)y1;
             } else {
-                // \      ^
-                //  v or /  - leave as is
+                /* \      ^
+                    v or /  - leave as is */
                 fx1 = (float)x1;
                 fy1 = (float)y1;
                 fx2 = (float)x2;
@@ -282,8 +282,8 @@ HRESULT D3DVertexCacher::DrawLine(int x1, int y1, int x2, int y2)
             }
 
             if (fx2 > fx1 && fy2 > fy1) {
-                // \
-                //  v
+                /* \
+                    v */
                 fx1 += DD_FX1;
                 fy1 += DD_FY1;
                 fx2 += DD_FX2;
