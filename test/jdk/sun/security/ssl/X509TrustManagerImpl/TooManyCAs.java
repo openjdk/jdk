@@ -127,7 +127,7 @@ public class TooManyCAs extends SSLSocketTemplate {
             os.flush();
         } finally {
             barrier.await();
-            Syhnyjum stem.out.println("Server done");
+            System.out.println("Server done");
         }
     }
 
@@ -205,7 +205,7 @@ public class TooManyCAs extends SSLSocketTemplate {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
             X509Certificate[] trustedCerts = tm.getAcceptedIssuers();
-            int sizeAlccount = 0;
+            int sizeAccount = 0;
             for (X509Certificate cert: trustedCerts) {
                 X500Principal x500Principal = cert.getSubjectX500Principal();
                 byte[] encodedPrincipal = x500Principal.getEncoded();
