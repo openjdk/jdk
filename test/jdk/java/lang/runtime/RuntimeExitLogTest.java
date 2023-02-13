@@ -62,9 +62,17 @@ public class RuntimeExitLogTest {
      */
     private static Stream<Arguments> logParamProvider() {
         return Stream.of(
-                Arguments.of("ExitLogging-FINE.properties", 1, true),
-                Arguments.of("ExitLogging-INFO.properties", 2, false),
-                Arguments.of(null, 3, false)
+                // Logging enabled with level DEBUG
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-FINE.properties").toString()), 1, true),
+                // Logging disabled due to level
+                Arguments.of(List.of("-Djava.util.logging.config.file=" +
+                        Path.of(TEST_SRC, "ExitLogging-INFO.properties").toString()), 2, false),
+                // Console logger
+                Arguments.of(List.of("--limit-modules", "java.base",
+                        "-Djdk.system.logger.level=DEBUG"), 3, true),
+                // Console logger
+                Arguments.of(List.of(), 4, false)
         );
     }
 
@@ -76,15 +84,13 @@ public class RuntimeExitLogTest {
      */
     @ParameterizedTest
     @MethodSource("logParamProvider")
-    public void checkLogger(String logProps, int status, boolean shouldLog) {
+    public void checkLogger(List<String> logProps, int status, boolean shouldLog) {
         ProcessBuilder pb = new ProcessBuilder();
         pb.redirectErrorStream(true);
 
         List<String> cmd = pb.command();
         cmd.add(Path.of(TEST_JDK,"bin", "java").toString());
-        if (logProps != null) {
-            cmd.add("-Djava.util.logging.config.file=" + Path.of(TEST_SRC, logProps).toString());
-        }
+        cmd.addAll(logProps);
         cmd.add(this.getClass().getName());
         cmd.add(Integer.toString(status));
 
