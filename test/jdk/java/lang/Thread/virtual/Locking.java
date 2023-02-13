@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @summary Test virtual threads using java.util.concurrent locks
  * @library /test/lib
  * @enablePreview
- * @run testng Locking
+ * @run junit Locking
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -34,16 +34,16 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class Locking {
+class Locking {
 
     /**
      * Test lock/unlock.
      */
     @Test
-    public void testReentrantLock1() throws Exception {
+    void testReentrantLock1() throws Exception {
         VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
@@ -58,7 +58,7 @@ public class Locking {
      * Test tryLock/unlock.
      */
     @Test
-    public void testReentrantLock2() throws Exception {
+    void testReentrantLock2() throws Exception {
         VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
@@ -74,7 +74,7 @@ public class Locking {
      * Test lock/lock/unlock/unlock.
      */
     @Test
-    public void testReentrantLock3() throws Exception {
+    void testReentrantLock3() throws Exception {
         VThreadRunner.run(() -> {
             ReentrantLock lock = new ReentrantLock();
             assertFalse(lock.isHeldByCurrentThread());
@@ -98,7 +98,7 @@ public class Locking {
      * Test locked by platform thread, virtual thread tries to lock.
      */
     @Test
-    public void testReentrantLock4() throws Exception {
+    void testReentrantLock4() throws Exception {
         ReentrantLock lock = new ReentrantLock();
         var holdsLock = new AtomicBoolean();
 
@@ -136,7 +136,7 @@ public class Locking {
      * Test locked by virtual thread, platform thread tries to lock.
      */
     @Test
-    public void testReentrantLock5() throws Exception {
+    void testReentrantLock5() throws Exception {
         ReentrantLock lock = new ReentrantLock();
         var thread = Thread.ofVirtual().start(() -> {
             lock.lock();
@@ -170,7 +170,7 @@ public class Locking {
      * Test locked by virtual thread, another virtual thread tries to lock.
      */
     @Test
-    public void testReentrantLock6() throws Exception {
+    void testReentrantLock6() throws Exception {
         ReentrantLock lock = new ReentrantLock();
         var thread1 = Thread.ofVirtual().start(() -> {
             lock.lock();

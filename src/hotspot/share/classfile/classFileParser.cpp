@@ -1895,7 +1895,6 @@ const ClassFileParser::unsafe_u2* ClassFileParser::parse_localvariable_table(con
 
 static const u1* parse_stackmap_table(const ClassFileStream* const cfs,
                                       u4 code_attribute_length,
-                                      bool need_verify,
                                       TRAPS) {
   assert(cfs != nullptr, "invariant");
 
@@ -1906,12 +1905,9 @@ static const u1* parse_stackmap_table(const ClassFileStream* const cfs,
   const u1* const stackmap_table_start = cfs->current();
   assert(stackmap_table_start != nullptr, "null stackmap table");
 
-  // check code_attribute_length first
+  // check code_attribute_length
   cfs->skip_u1(code_attribute_length, CHECK_NULL);
 
-  if (!need_verify && !DumpSharedSpaces) {
-    return nullptr;
-  }
   return stackmap_table_start;
 }
 
@@ -2535,7 +2531,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
             classfile_parse_error("Multiple StackMapTable attributes in class file %s", THREAD);
             return nullptr;
           }
-          stackmap_data = parse_stackmap_table(cfs, code_attribute_length, _need_verify, CHECK_NULL);
+          stackmap_data = parse_stackmap_table(cfs, code_attribute_length, CHECK_NULL);
           stackmap_data_length = code_attribute_length;
           parsed_stackmap_attribute = true;
         } else {

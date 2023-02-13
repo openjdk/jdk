@@ -57,6 +57,7 @@
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -118,6 +119,32 @@ class G1RegionMappingChangedListener : public G1MappingChangedListener {
   void reset_from_card_cache(uint start_idx, size_t num_regions);
  public:
   void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
+};
+
+// Helper to claim contiguous sets of JavaThread for processing by multiple threads.
+class G1JavaThreadsListClaimer : public StackObj {
+  ThreadsListHandle _list;
+  uint _claim_step;
+
+  volatile uint _cur_claim;
+
+  // Attempts to claim _claim_step JavaThreads, returning an array of claimed
+  // JavaThread* with count elements. Returns null (and a zero count) if there
+  // are no more threads to claim.
+  JavaThread* const* claim(uint& count);
+
+public:
+  G1JavaThreadsListClaimer(uint claim_step) : _list(), _claim_step(claim_step), _cur_claim(0) {
+    assert(claim_step > 0, "must be");
+  }
+
+  // Executes the given closure on the elements of the JavaThread list, chunking the
+  // JavaThread set in claim_step chunks for each caller to reduce parallelization
+  // overhead.
+  void apply(ThreadClosure* cl);
+
+  // Total number of JavaThreads that can be claimed.
+  uint length() const { return _list.length(); }
 };
 
 class G1CollectedHeap : public CollectedHeap {
@@ -272,14 +299,6 @@ private:
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
   volatile uint _old_marking_cycles_completed;
-
-  // This is a non-product method that is helpful for testing. It is
-  // called at the end of a GC and artificially expands the heap by
-  // allocating a number of dead regions. This way we can induce very
-  // frequent marking cycles and stress the cleanup / concurrent
-  // cleanup code more (as all the regions that will be allocated by
-  // this method will be found dead by the marking cycle).
-  void allocate_dummy_regions() PRODUCT_RETURN;
 
   // Create a memory mapper for auxiliary data structures of the given size and
   // translation factor.
@@ -491,7 +510,7 @@ private:
   bool abort_concurrent_cycle();
   void verify_before_full_collection(bool explicit_gc);
   void prepare_heap_for_full_collection();
-  void prepare_heap_for_mutators();
+  void prepare_for_mutator_after_full_collection();
   void abort_refinement();
   void verify_after_full_collection();
   void print_heap_after_full_collection();
@@ -771,7 +790,7 @@ public:
   // Start a concurrent cycle.
   void start_concurrent_cycle(bool concurrent_operation_is_full_mark);
 
-  void prepare_tlabs_for_mutator();
+  void prepare_for_mutator_after_young_collection();
 
   void retire_tlabs();
 
@@ -933,7 +952,8 @@ public:
 
   void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) override;
 
-  static void start_codecache_marking_cycle_if_inactive();
+  static void start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start);
+  static void finish_codecache_marking_cycle();
 
   // Apply the given closure on all cards in the Hot Card Cache, emptying it.
   void iterate_hcc_closure(G1CardTableEntryClosure* cl, uint worker_id);
