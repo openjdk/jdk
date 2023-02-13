@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,10 @@ class Bytecode: public StackObj {
 
  public:
   Bytecode(Method* method, address bcp): _bcp(bcp), _code(Bytecodes::code_at(method, addr_at(0))) {
-    assert(method != NULL, "this form requires a valid Method*");
+    assert(method != nullptr, "this form requires a valid Method*");
   }
   // Defined in ciStreams.hpp
-  inline Bytecode(const ciBytecodeStream* stream, address bcp = NULL);
+  inline Bytecode(const ciBytecodeStream* stream, address bcp = nullptr);
 
   // Attributes
   address bcp() const                            { return _bcp; }
@@ -323,7 +323,7 @@ class Bytecode_loadconstant: public Bytecode {
   Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method()) { verify(); }
 
   void verify() const {
-    assert(_method != NULL, "must supply method");
+    assert(_method != nullptr, "must supply method");
     Bytecodes::Code stdc = Bytecodes::java_code(code());
     assert(stdc == Bytecodes::_ldc ||
            stdc == Bytecodes::_ldc_w ||

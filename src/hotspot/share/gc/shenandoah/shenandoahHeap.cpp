@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -177,9 +178,9 @@ jint ShenandoahHeap::initialize() {
 
   _committed = _initial_size;
 
-  size_t heap_page_size   = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
-  size_t bitmap_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
-  size_t region_page_size = UseLargePages ? (size_t)os::large_page_size() : (size_t)os::vm_page_size();
+  size_t heap_page_size   = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
+  size_t region_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
 
   //
   // Reserve and commit memory for heap
@@ -1916,9 +1917,8 @@ void ShenandoahHeap::unregister_nmethod(nmethod* nm) {
   ShenandoahCodeRoots::unregister_nmethod(nm);
 }
 
-oop ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
+void ShenandoahHeap::pin_object(JavaThread* thr, oop o) {
   heap_region_containing(o)->record_pin();
-  return o;
 }
 
 void ShenandoahHeap::unpin_object(JavaThread* thr, oop o) {

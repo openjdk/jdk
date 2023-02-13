@@ -114,7 +114,10 @@ class MallocHeader {
   uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
   void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
 
- public:
+  template<typename InTypeParam, typename OutTypeParam>
+  inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
+
+public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
@@ -140,10 +143,15 @@ class MallocHeader {
   // an option pointer to the corruption in p_corruption, and return false.
   // Return true if block is fine.
   inline bool check_block_integrity(char* msg, size_t msglen, address* p_corruption) const;
+  // Check correct alignment and placement of pointer, fill in short descriptive text and return false
+  // if this is not the case.
+  // Returns true if the memblock looks OK.
+  inline static bool is_valid_malloced_pointer(const void* payload, char* msg, size_t msglen);
 
   // If block is broken, print out a report to tty (optionally with
   // hex dump surrounding the broken block), then trigger a fatal error
-  inline void assert_block_integrity() const;
+  inline static const MallocHeader* resolve_checked(const void* memblock);
+  inline static MallocHeader* resolve_checked(void* memblock);
 };
 
 // This needs to be true on both 64-bit and 32-bit platforms

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,39 +26,33 @@
 AC_DEFUN([BPERF_CHECK_CORES],
 [
   AC_MSG_CHECKING([for number of cores])
-  NUM_CORES=1
-  FOUND_CORES=no
+  NUM_CORES=0
 
   if test -f /proc/cpuinfo; then
     # Looks like a Linux (or cygwin) system
-    NUM_CORES=`cat /proc/cpuinfo  | grep -c processor`
+    NUM_CORES=`cat /proc/cpuinfo  | grep -cw processor`
     if test "$NUM_CORES" -eq "0"; then
       NUM_CORES=`cat /proc/cpuinfo  | grep -c ^CPU`
-    fi
-    if test "$NUM_CORES" -ne "0"; then
-      FOUND_CORES=yes
     fi
   elif test -x /usr/sbin/sysctl; then
     # Looks like a MacOSX system
     NUM_CORES=`/usr/sbin/sysctl -n hw.ncpu`
-    FOUND_CORES=yes
   elif test "x$OPENJDK_BUILD_OS" = xaix ; then
     NUM_LCPU=`lparstat -m 2> /dev/null | $GREP -o "lcpu=[[0-9]]*" | $CUT -d "=" -f 2`
     if test -n "$NUM_LCPU"; then
       NUM_CORES=$NUM_LCPU
-      FOUND_CORES=yes
     fi
   elif test -n "$NUMBER_OF_PROCESSORS"; then
     # On windows, look in the env
     NUM_CORES=$NUMBER_OF_PROCESSORS
-    FOUND_CORES=yes
   fi
 
-  if test "x$FOUND_CORES" = xyes; then
-    AC_MSG_RESULT([$NUM_CORES])
-  else
+  if test "$NUM_CORES" -eq "0"; then
+    NUM_CORES=1
     AC_MSG_RESULT([could not detect number of cores, defaulting to 1])
     AC_MSG_WARN([This will disable all parallelism from build!])
+  else
+    AC_MSG_RESULT([$NUM_CORES])
   fi
 ])
 

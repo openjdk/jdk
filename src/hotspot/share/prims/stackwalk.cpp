@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@
 // setup and cleanup actions
 BaseFrameStream::BaseFrameStream(JavaThread* thread, Handle continuation)
   : _thread(thread), _continuation(continuation), _anchor(0L) {
-    assert(thread != NULL, "");
+    assert(thread != nullptr, "");
 }
 
 void BaseFrameStream::setup_magic_on_entry(objArrayHandle frames_array) {
@@ -67,7 +67,7 @@ bool BaseFrameStream::check_magic(objArrayHandle frames_array) {
 
 bool BaseFrameStream::cleanup_magic_on_exit(objArrayHandle frames_array) {
   bool ok = check_magic(frames_array);
-  frames_array->obj_at_put(magic_pos, NULL);
+  frames_array->obj_at_put(magic_pos, nullptr);
   _anchor = 0L;
   return ok;
 }
@@ -97,7 +97,7 @@ LiveFrameStream::LiveFrameStream(JavaThread* thread, RegisterMap* rm, Handle con
       _cont_entry = thread->last_continuation();
     } else {
       _jvf  = Continuation::last_java_vframe(cont, rm);
-      _cont_entry = NULL;
+      _cont_entry = nullptr;
     }
 }
 
@@ -108,13 +108,13 @@ void JavaFrameStream::next() {
 }
 
 void LiveFrameStream::next() {
-  assert(_cont_scope.is_null() || cont() != (oop)NULL, "must be");
+  assert(_cont_scope.is_null() || cont() != (oop)nullptr, "must be");
 
   oop cont = this->cont();
-  if (cont != (oop)NULL && Continuation::is_continuation_entry_frame(_jvf->fr(), _jvf->register_map())) {
+  if (cont != (oop)nullptr && Continuation::is_continuation_entry_frame(_jvf->fr(), _jvf->register_map())) {
     oop scope = jdk_internal_vm_Continuation::scope(cont);
     if (_cont_scope.not_null() && scope == _cont_scope()) {
-      _jvf = NULL;
+      _jvf = nullptr;
       return;
     }
     _cont_entry = _cont_entry->parent();
@@ -136,10 +136,10 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
                                                objArrayHandle frames_array)
 {
   oop m1 = frames_array->obj_at(magic_pos);
-  if (m1 != thread->threadObj()) return NULL;
-  if (magic == 0L)                    return NULL;
+  if (m1 != thread->threadObj()) return nullptr;
+  if (magic == 0L)                    return nullptr;
   BaseFrameStream* stream = (BaseFrameStream*) (intptr_t) magic;
-  if (!stream->is_valid_in(thread, frames_array))   return NULL;
+  if (!stream->is_valid_in(thread, frames_array))   return nullptr;
   return stream;
 }
 
@@ -173,10 +173,10 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
 
   int frames_decoded = 0;
   for (; !stream.at_end(); stream.next()) {
-    assert(stream.continuation() == NULL || stream.continuation() == stream.reg_map()->cont(), "");
+    assert(stream.continuation() == nullptr || stream.continuation() == stream.reg_map()->cont(), "");
     Method* method = stream.method();
 
-    if (method == NULL) continue;
+    if (method == nullptr) continue;
 
     // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
     // not set) and when StackWalker::getCallerClass is called
@@ -223,7 +223,7 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     frames_decoded++;
 
     // We end a batch on continuation bottom to let the Java side skip top frames of the next one
-    if (stream.continuation() != NULL && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
+    if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
 
     if (frames_decoded >= max_nframes)  break;
   }
@@ -262,7 +262,7 @@ oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values
 
   JavaValue result(T_OBJECT);
   JavaCallArguments args;
-  Symbol* signature = NULL;
+  Symbol* signature = nullptr;
 
   // ## TODO: type is only available in LocalVariable table, if present.
   // ## StackValue type is T_INT or T_OBJECT (or converted to T_LONG on 64-bit)
@@ -283,7 +283,7 @@ oop LiveFrameStream::create_primitive_slot_instance(StackValueCollection* values
     case T_SHORT:
     case T_CHAR:
     case T_BOOLEAN:
-      THROW_MSG_(vmSymbols::java_lang_InternalError(), "Unexpected StackValue type", NULL);
+      THROW_MSG_(vmSymbols::java_lang_InternalError(), "Unexpected StackValue type", nullptr);
 
     case T_OBJECT:
       return values->obj_at(i)();
@@ -329,7 +329,7 @@ objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* val
     }
 #endif
     oop obj = create_primitive_slot_instance(values, index, type, CHECK_(empty));
-    if (obj != NULL) {
+    if (obj != nullptr) {
       array_h->obj_at_put(i, obj);
     }
   }
@@ -357,7 +357,7 @@ void BaseFrameStream::fill_stackframe(Handle stackFrame, const methodHandle& met
 void LiveFrameStream::fill_live_stackframe(Handle stackFrame,
                                            const methodHandle& method, TRAPS) {
   fill_stackframe(stackFrame, method, CHECK);
-  if (_jvf != NULL) {
+  if (_jvf != nullptr) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
 
@@ -424,7 +424,7 @@ oop StackWalk::walk(Handle stackStream, jlong mode, int skip_frames, Handle cont
   }
 
   if (frames_array.is_null()) {
-    THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL", NULL);
+    THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is null", nullptr);
   }
 
   // Setup traversal onto my stack.
@@ -492,7 +492,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
                                frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
-      THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", NULL);
+      THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", nullptr);
     }
   }
 
@@ -520,7 +520,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   (void) (CHECK_NULL);
 
   if (!ok) {
-    THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers on exit", NULL);
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers on exit", nullptr);
   }
 
   // Return normally
@@ -546,12 +546,12 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
 {
   JavaThread* jt = THREAD;
   BaseFrameStream* existing_stream = BaseFrameStream::from_current(jt, magic, frames_array);
-  if (existing_stream == NULL) {
+  if (existing_stream == nullptr) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers", 0L);
   }
 
   if (frames_array.is_null()) {
-    THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL", 0L);
+    THROW_MSG_(vmSymbols::java_lang_NullPointerException(), "frames_array is null", 0L);
   }
 
   log_debug(stackwalk)("StackWalk::fetchNextBatch frame_count %d existing_stream "
@@ -589,11 +589,11 @@ void StackWalk::setContinuation(Handle stackStream, jlong magic, objArrayHandle 
   JavaThread* jt = JavaThread::cast(THREAD);
 
   if (frames_array.is_null()) {
-    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "frames_array is NULL");
+    THROW_MSG(vmSymbols::java_lang_NullPointerException(), "frames_array is null");
   }
 
   BaseFrameStream* existing_stream = BaseFrameStream::from_current(jt, magic, frames_array);
-  if (existing_stream == NULL) {
+  if (existing_stream == nullptr) {
     THROW_MSG(vmSymbols::java_lang_InternalError(), "doStackWalk: corrupted buffers");
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,14 @@ public abstract class LinkInfo {
     public Content label;
 
     /**
-     * True if we should exclude the type bounds for the type parameter.
+     * True if we should print the type bounds for the type parameter.
      */
-    public boolean excludeTypeBounds = false;
+    public boolean showTypeBounds = true;
 
     /**
-     * True if we should print the type parameters, but not link them.
+     * True if type parameters should be rendered as links.
      */
-    public boolean excludeTypeParameterLinks = false;
+    public boolean linkTypeParameters = true;
 
     /**
      * By default, the link can be to the page it's already on.  However,
@@ -86,6 +86,16 @@ public abstract class LinkInfo {
      * True iff the preview flags should be skipped for this link.
      */
     public boolean skipPreview;
+
+    /**
+     * True if type parameters should be separated by line breaks.
+     */
+    public boolean addLineBreaksInTypeParameters = false;
+
+    /**
+     * True if annotations on type parameters should be shown.
+     */
+    public boolean showTypeParameterAnnotations = false;
 
     /**
      * {@return a new instance of a content object}
@@ -102,12 +112,11 @@ public abstract class LinkInfo {
     public abstract boolean isLinkable();
 
     /**
-     * Returns true if links to declared types should include links to the
-     * type parameters.
+     * Returns true if links to declared types should include type parameters.
      *
      * @return true if type parameter links should be included
      */
-    public abstract boolean includeTypeParameterLinks();
+    public abstract boolean showTypeParameters();
 
     /**
      * Return the label for this class link.
@@ -140,8 +149,10 @@ public abstract class LinkInfo {
                 ", type=" + type +
                 ", isVarArg=" + isVarArg +
                 ", label=" + label +
-                ", excludeTypeBounds=" + excludeTypeBounds +
-                ", excludeTypeParameterLinks=" + excludeTypeParameterLinks +
-                ", linkToSelf=" + linkToSelf + '}';
+                ", showTypeBounds=" + showTypeBounds +
+                ", linkTypeParameters=" + linkTypeParameters +
+                ", linkToSelf=" + linkToSelf +
+                ", addLineBreaksInTypeParameters=" + addLineBreaksInTypeParameters +
+                ", showTypeParameterAnnotations=" + showTypeParameterAnnotations + '}';
     }
 }
