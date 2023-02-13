@@ -64,7 +64,7 @@ bool handle_safefetch(int sig, address ignored1, void* ignored2) {
 }
 
 template <class T>
-ATTRIBUTE_NO_SANITIZE_ADDRESS static bool _SafeFetchXX_internal(const T *adr, T* result) {
+ATTRIBUTE_NO_ASAN static bool _SafeFetchXX_internal(const T *adr, T* result) {
 
   T n = 0;
 

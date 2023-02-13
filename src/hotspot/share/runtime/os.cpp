@@ -941,8 +941,8 @@ bool os::print_function_and_library_name(outputStream* st,
   return have_function_name || have_library_name;
 }
 
-ATTRIBUTE_NO_SANITIZE_ADDRESS static void print_hex_readable_pointer(outputStream* st, address p,
-                                                                     int unitsize) {
+ATTRIBUTE_NO_ASAN static void print_hex_readable_pointer(outputStream* st, address p,
+                                                         int unitsize) {
   switch (unitsize) {
     case 1: st->print("%02x", *(u1*)p); break;
     case 2: st->print("%04x", *(u2*)p); break;

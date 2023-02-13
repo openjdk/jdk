@@ -32,7 +32,7 @@
 // On windows, we use structured exception handling to implement SafeFetch
 
 template <class T>
-ATTRIBUTE_NO_SANITIZE_ADDRESS inline T SafeFetchXX(const T* adr, T errValue) {
+ATTRIBUTE_NO_ASAN inline T SafeFetchXX(const T* adr, T errValue) {
   T v = 0;
   __try {
     v = *adr;
