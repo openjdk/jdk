@@ -55,7 +55,7 @@ class JvmtiTagMapKey : public CHeapObj<mtServiceability> {
   oop object_no_keepalive() const;
 
   static unsigned get_hash(const JvmtiTagMapKey& entry) {
-    assert(entry._obj != NULL, "must lookup obj to hash");
+    assert(entry._obj != nullptr, "must lookup obj to hash");
     return entry._obj->identity_hash();
   }
 

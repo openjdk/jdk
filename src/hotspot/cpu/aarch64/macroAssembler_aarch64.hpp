@@ -638,7 +638,9 @@ public:
     return false;
   }
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
+  static int max_trampoline_stub_size();
   void emit_static_call_stub();
+  static int static_call_stub_size();
 
   // The following 4 methods return the offset of the appropriate move instruction
 

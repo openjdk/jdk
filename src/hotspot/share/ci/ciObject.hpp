@@ -27,7 +27,9 @@
 
 #include "ci/ciBaseObject.hpp"
 #include "ci/ciClassList.hpp"
+#include "ci/ciConstant.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
 
 // ciObject
 //
@@ -56,6 +58,22 @@ private:
   // handle may, in a small set of cases, correctly be null.
   jobject  _handle;
   ciKlass* _klass;
+
+  // Cache constant value lookups to ensure that consistent values are observed during compilation.
+  class ConstantValue {
+    private:
+      ciConstant _value;
+      int _off;
+
+    public:
+      ConstantValue() : _value(ciConstant()), _off(0) { }
+      ConstantValue(int off, ciConstant value) : _value(value), _off(off) { }
+
+      int off() const { return _off; }
+      ciConstant value() const { return _value; }
+  };
+
+  GrowableArray<ConstantValue>* _constant_values = nullptr;
 
 protected:
   ciObject();
@@ -93,6 +111,10 @@ public:
   // Usage note: no address arithmetic allowed.  Oop must
   // be registered with the oopRecorder.
   jobject constant_encoding();
+
+  // Access to the constant value cache
+  ciConstant check_constant_value_cache(int off, BasicType bt);
+  void add_to_constant_value_cache(int off, ciConstant val);
 
   virtual bool is_object() const            { return true; }
 
