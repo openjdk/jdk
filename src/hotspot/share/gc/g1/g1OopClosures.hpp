@@ -238,7 +238,7 @@ class G1VerificationClosure : public BasicOopIterateClosure {
 protected:
   G1CollectedHeap* _g1h;
   oop _containing_obj;
-  uint _num_failures;
+  size_t _num_failures;
   VerifyOption _vo;
 
 public:
@@ -249,7 +249,7 @@ public:
   }
 
   bool has_failures() { return _num_failures != 0; }
-  uint num_failures() { return _num_failures; }
+  size_t num_failures() { return _num_failures; }
 
   void print_object(outputStream* out, oop obj);
 };

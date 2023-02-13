@@ -581,8 +581,7 @@ void HeapRegion::verify(VerifyOption vo,
             if (vr_cl.has_failures()) {
               *failures = true;
             }
-            if (G1MaxVerifyFailures > 0 &&
-              vr_cl.num_failures() >= G1MaxVerifyFailures) {
+            if (vr_cl.num_failures() >= G1MaxVerifyFailures) {
               return;
             }
           } else {
@@ -592,8 +591,7 @@ void HeapRegion::verify(VerifyOption vo,
           if (vl_cl.has_failures()) {
             *failures = true;
           }
-          if (G1MaxVerifyFailures > 0 &&
-            vl_cl.num_failures() >= G1MaxVerifyFailures) {
+          if (vl_cl.num_failures() >= G1MaxVerifyFailures) {
             return;
           }
         }
@@ -649,8 +647,7 @@ void HeapRegion::verify_rem_set(VerifyOption vo, bool* failures) const {
         if (vr_cl.has_failures()) {
           *failures = true;
         }
-        if (G1MaxVerifyFailures > 0 &&
-          vr_cl.num_failures() >= G1MaxVerifyFailures) {
+        if (vr_cl.num_failures() >= G1MaxVerifyFailures) {
           return;
         }
       } else {
