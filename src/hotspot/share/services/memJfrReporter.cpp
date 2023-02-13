@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,10 +85,10 @@ void MemJFRReporter::send_total_event() {
   event.commit();
 }
 
-void MemJFRReporter::send_type_event(const Ticks& starttime, const char* type, size_t reserved, size_t committed) {
+void MemJFRReporter::send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed) {
   EventNativeMemoryUsage event(UNTIMED);
   event.set_starttime(starttime);
-  event.set_type(type);
+  event.set_type(NMTUtil::flag_to_index(flag));
   event.set_reserved(reserved);
   event.set_committed(committed);
   event.commit();
@@ -108,6 +108,6 @@ void MemJFRReporter::send_type_events() {
       // Skip mtNone since it is not really used.
       continue;
     }
-    send_type_event(timestamp, NMTUtil::flag_to_name(flag), usage->reserved(flag), usage->committed(flag));
+    send_type_event(timestamp, flag, usage->reserved(flag), usage->committed(flag));
   }
 }
