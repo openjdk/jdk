@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@
 #include "gc/shared/gcBehaviours.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/gcLocker.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
@@ -1010,7 +1010,7 @@ void G1CollectedHeap::verify_before_full_collection(bool explicit_gc) {
   _verifier->verify_bitmap_clear(true /* above_tams_only */);
 }
 
-void G1CollectedHeap::prepare_heap_for_mutators() {
+void G1CollectedHeap::prepare_for_mutator_after_full_collection() {
   // Delete metaspaces for unloaded class loaders and clean up loader_data graph
   ClassLoaderDataGraph::purge(/*at_safepoint*/true);
   DEBUG_ONLY(MetaspaceUtils::verify();)
@@ -1025,12 +1025,7 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
   // Rebuild the code root lists for each region
   rebuild_code_roots();
 
-  // Purge code root memory
-  purge_code_root_memory();
-
-  // Start a new incremental collection set for the next pause
   start_new_collection_set();
-
   _allocator->init_mutator_alloc_regions();
 
   // Post collection state updates.
@@ -1855,12 +1850,7 @@ size_t G1CollectedHeap::recalculate_used() const {
 }
 
 bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause) {
-  switch (cause) {
-    case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
-    case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
-    case GCCause::_wb_conc_mark:                        return true;
-    default :                                           return false;
-  }
+  return GCCause::is_user_requested_gc(cause) && ExplicitGCInvokesConcurrent;
 }
 
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
@@ -1873,32 +1863,6 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
-
-#ifndef PRODUCT
-void G1CollectedHeap::allocate_dummy_regions() {
-  // Let's fill up most of the region
-  size_t word_size = HeapRegion::GrainWords - 1024;
-  // And as a result the region we'll allocate will be humongous.
-  guarantee(is_humongous(word_size), "sanity");
-
-  // _filler_array_max_size is set to humongous object threshold
-  // but temporarily change it to use CollectedHeap::fill_with_object().
-  AutoModifyRestore<size_t> temporarily(_filler_array_max_size, word_size);
-
-  for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
-    // Let's use the existing mechanism for the allocation
-    HeapWord* dummy_obj = humongous_obj_allocate(word_size);
-    if (dummy_obj != NULL) {
-      MemRegion mr(dummy_obj, word_size);
-      CollectedHeap::fill_with_object(mr);
-    } else {
-      // If we can't allocate once, we probably cannot allocate
-      // again. Let's get out of the loop.
-      break;
-    }
-  }
-}
-#endif // !PRODUCT
 
 void G1CollectedHeap::increment_old_marking_cycles_started() {
   assert(_old_marking_cycles_started == _old_marking_cycles_completed ||
@@ -2404,6 +2368,14 @@ bool G1CollectedHeap::is_obj_dead_cond(const oop obj,
   return false; // keep some compilers happy
 }
 
+void G1CollectedHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void G1CollectedHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
+}
+
 void G1CollectedHeap::print_heap_regions() const {
   LogTarget(Trace, gc, heap, region) lt;
   if (lt.is_enabled()) {
@@ -2482,55 +2454,6 @@ void G1CollectedHeap::print_tracing_info() const {
   rem_set()->print_summary_info();
   concurrent_mark()->print_summary_info();
 }
-
-#ifndef PRODUCT
-// Helpful for debugging RSet issues.
-
-class PrintRSetsClosure : public HeapRegionClosure {
-private:
-  const char* _msg;
-  size_t _occupied_sum;
-
-public:
-  bool do_heap_region(HeapRegion* r) {
-    HeapRegionRemSet* hrrs = r->rem_set();
-    size_t occupied = hrrs->occupied();
-    _occupied_sum += occupied;
-
-    tty->print_cr("Printing RSet for region " HR_FORMAT, HR_FORMAT_PARAMS(r));
-    if (occupied == 0) {
-      tty->print_cr("  RSet is empty");
-    } else {
-      tty->print_cr("hrrs " PTR_FORMAT, p2i(hrrs));
-    }
-    tty->print_cr("----------");
-    return false;
-  }
-
-  PrintRSetsClosure(const char* msg) : _msg(msg), _occupied_sum(0) {
-    tty->cr();
-    tty->print_cr("========================================");
-    tty->print_cr("%s", msg);
-    tty->cr();
-  }
-
-  ~PrintRSetsClosure() {
-    tty->print_cr("Occupied Sum: " SIZE_FORMAT, _occupied_sum);
-    tty->print_cr("========================================");
-    tty->cr();
-  }
-};
-
-void G1CollectedHeap::print_cset_rsets() {
-  PrintRSetsClosure cl("Printing CSet RSets");
-  collection_set_iterate_all(&cl);
-}
-
-void G1CollectedHeap::print_all_rsets() {
-  PrintRSetsClosure cl("Printing All RSets");;
-  heap_region_iterate(&cl);
-}
-#endif // PRODUCT
 
 bool G1CollectedHeap::print_location(outputStream* st, void* addr) const {
   return BlockLocationPrinter<G1CollectedHeap>::print_location(st, addr);
@@ -2691,8 +2614,6 @@ class VerifyRegionRemSetClosure : public HeapRegionClosure {
 };
 
 void G1CollectedHeap::start_new_collection_set() {
-  double start = os::elapsedTime();
-
   collection_set()->start_incremental_building();
 
   clear_region_attr();
@@ -2703,8 +2624,6 @@ void G1CollectedHeap::start_new_collection_set() {
   // We redo the verification but now wrt to the new CSet which
   // has just got initialized after the previous CSet was freed.
   _cm->verify_no_collection_set_oops();
-
-  phase_times()->record_start_new_cset_time_ms((os::elapsedTime() - start) * 1000.0);
 }
 
 G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
@@ -2814,19 +2733,17 @@ G1JFRTracerMark::~G1JFRTracerMark() {
   _tracer->report_gc_end(_timer->gc_end(), _timer->time_partitions());
 }
 
-void G1CollectedHeap::prepare_tlabs_for_mutator() {
+void G1CollectedHeap::prepare_for_mutator_after_young_collection() {
   Ticks start = Ticks::now();
 
   _survivor_evac_stats.adjust_desired_plab_size();
   _old_evac_stats.adjust_desired_plab_size();
 
-  allocate_dummy_regions();
-
+  // Start a new incremental collection set for the mutator phase.
+  start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
 
-  resize_all_tlabs();
-
-  phase_times()->record_resize_tlab_time_ms((Ticks::now() - start).seconds() * 1000.0);
+  phase_times()->record_prepare_for_mutator_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }
 
 void G1CollectedHeap::retire_tlabs() {
@@ -3368,10 +3285,6 @@ void G1CollectedHeap::reset_hot_card_cache() {
   _hot_card_cache->reset_hot_cache();
 }
 
-void G1CollectedHeap::purge_code_root_memory() {
-  G1CodeRootSet::purge();
-}
-
 class RebuildCodeRootClosure: public CodeBlobClosure {
   G1CollectedHeap* _g1h;
 
@@ -3413,15 +3326,23 @@ void G1CollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, boo
   region->fill_with_dummy_object(start, pointer_delta(end, start), zap);
 }
 
-void G1CollectedHeap::start_codecache_marking_cycle_if_inactive() {
+void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_mark_start) {
+  // We can reach here with an active code cache marking cycle either because the
+  // previous G1 concurrent marking cycle was undone (if heap occupancy after the
+  // concurrent start young collection was below the threshold) or aborted. See
+  // CodeCache::on_gc_marking_cycle_finish() why this is.  We must not start a new code
+  // cache cycle then. If we are about to start a new g1 concurrent marking cycle we
+  // still have to arm all nmethod entry barriers. They are needed for adding oop
+  // constants to the SATB snapshot. Full GC does not need nmethods to be armed.
   if (!CodeCache::is_gc_marking_cycle_active()) {
-    // This is the normal case when we do not call collect when a
-    // concurrent mark is ongoing. We then start a new code marking
-    // cycle. If, on the other hand, a concurrent mark is ongoing, we
-    // will be conservative and use the last code marking cycle. Code
-    // caches marked between the two concurrent marks will live a bit
-    // longer than needed.
     CodeCache::on_gc_marking_cycle_start();
+  }
+  if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
+}
+
+void G1CollectedHeap::finish_codecache_marking_cycle() {
+  CodeCache::on_gc_marking_cycle_finish();
+  CodeCache::arm_all_nmethods();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -151,7 +151,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");
-  assert(malloc_base != NULL, "precondition");
+  assert(malloc_base != nullptr, "precondition");
 
   MallocMemorySummary::record_malloc(size, flags);
   uint32_t mst_marker = 0;
@@ -170,10 +170,9 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 #ifdef ASSERT
   // Read back
   {
-    MallocHeader* const header2 = malloc_header(memblock);
+    const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
     assert(header2->flags() == flags, "Wrong flags");
-    header2->assert_block_integrity();
   }
 #endif
 
@@ -182,10 +181,9 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flag
 
 void* MallocTracker::record_free_block(void* memblock) {
   assert(MemTracker::enabled(), "Sanity");
-  assert(memblock != NULL, "precondition");
+  assert(memblock != nullptr, "precondition");
 
-  MallocHeader* const header = malloc_header(memblock);
-  header->assert_block_integrity();
+  MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   deaccount(header->free_info());
 

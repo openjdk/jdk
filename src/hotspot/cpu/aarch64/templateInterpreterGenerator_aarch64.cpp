@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -655,7 +655,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   const int overhead_size =
     -(frame::interpreter_frame_initial_sp_offset * wordSize) + entry_size;
 
-  const int page_size = os::vm_page_size();
+  const size_t page_size = os::vm_page_size();
 
   Label after_frame_check;
 
@@ -811,14 +811,17 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(zr, rmethod, Address(sp, 6 * wordSize));         // save Method* (no mdp)
   }
 
-  __ ldr(rcpool, Address(rmethod, Method::const_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
-  __ stp(rlocals, rcpool, Address(sp, 2 * wordSize));
-
   __ protect_return_address();
   __ stp(rfp, lr, Address(sp, 10 * wordSize));
   __ lea(rfp, Address(sp, 10 * wordSize));
+
+  __ ldr(rcpool, Address(rmethod, Method::const_offset()));
+  __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
+  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
+  __ sub(rscratch1, rlocals, rfp);
+  __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
+  // Store relativized rlocals, see frame::interpreter_frame_locals().
+  __ stp(rscratch1, rcpool, Address(sp, 2 * wordSize));
 
   // set sender sp
   // leave last_sp as null
@@ -836,9 +839,12 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ stp(r10, rscratch1, Address(sp, 4 * wordSize));
     // Move SP out of the way
     __ mov(sp, rscratch1);
-    } else {
-    __ mov(rscratch1, sp);
+  } else {
+    // Make sure there is room for the exception oop pushed in case method throws
+    // an exception (see TemplateInterpreterGenerator::generate_throw_exception())
+    __ sub(rscratch1, sp, 2 * wordSize);
     __ stp(zr, rscratch1, Address(sp, 4 * wordSize));
+    __ mov(sp, rscratch1);
   }
 }
 
@@ -1057,7 +1063,7 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // See more discussion in stackOverflow.hpp.
 
   const int shadow_zone_size = checked_cast<int>(StackOverflow::stack_shadow_zone_size());
-  const int page_size = os::vm_page_size();
+  const int page_size = (int)os::vm_page_size();
   const int n_shadow_pages = shadow_zone_size / page_size;
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -871,7 +871,7 @@ class vmSymbols: AllStatic {
 
   static Symbol* type_signature(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
-    assert(_type_signatures[t] != NULL, "domain check");
+    assert(_type_signatures[t] != nullptr, "domain check");
     return _type_signatures[t];
   }
 

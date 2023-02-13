@@ -46,7 +46,7 @@ import javadoc.tester.JavadocTester;
 public class TestPrivateClasses extends JavadocTester {
 
     public static void main(String... args) throws Exception {
-        TestPrivateClasses tester = new TestPrivateClasses();
+        var tester = new TestPrivateClasses();
         tester.runTests();
     }
 

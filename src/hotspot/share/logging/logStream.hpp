@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,11 +100,11 @@ public:
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
 
-  // Constructor to support creation from typed (likely NULL) pointer. Mostly used by the logging framework.
+  // Constructor to support creation from typed (likely nullptr) pointer. Mostly used by the logging framework.
   //
   // LogStream stream(log.debug());
   //  or
-  // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL);
+  // LogStream stream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)nullptr);
   template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
   LogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>* type_carrier)
     : LogStreamImpl(LogTargetHandle(level, LogTagSetMapping<T0, T1, T2, T3, T4>::tagset())) {}
@@ -133,7 +133,7 @@ template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTa
 class LogStreamTemplate : public LogStream {
 public:
   LogStreamTemplate()
-    : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)NULL) {}
+    : LogStream((LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>*)nullptr) {}
 };
 
 class LogMessageHandle {

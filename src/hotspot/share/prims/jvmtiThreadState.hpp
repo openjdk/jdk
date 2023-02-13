@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,11 +196,11 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   JvmtiThreadState *_next;
   JvmtiThreadState *_prev;
 
-  // holds the current dynamic code event collector, NULL if no event collector in use
+  // holds the current dynamic code event collector, null if no event collector in use
   JvmtiDynamicCodeEventCollector* _dynamic_code_event_collector;
-  // holds the current vm object alloc event collector, NULL if no event collector in use
+  // holds the current vm object alloc event collector, null if no event collector in use
   JvmtiVMObjectAllocEventCollector* _vm_object_alloc_event_collector;
-  // holds the current sampled object alloc event collector, NULL if no event collector in use
+  // holds the current sampled object alloc event collector, null if no event collector in use
   JvmtiSampledObjectAllocEventCollector* _sampled_object_alloc_event_collector;
 
   // Should only be created by factory methods
@@ -238,7 +238,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {
-    return _thread == NULL ?  _saved_interp_only_mode != 0 : _thread->is_interp_only_mode();
+    return _thread == nullptr ?  _saved_interp_only_mode != 0 : _thread->is_interp_only_mode();
   }
   void enter_interp_only_mode();
   void leave_interp_only_mode();
@@ -267,7 +267,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   int count_frames();
 
   inline JavaThread *get_thread()      { return _thread;              }
-  inline JavaThread *get_thread_or_saved(); // return _thread_saved if _thread is NULL
+  inline JavaThread *get_thread_or_saved(); // return _thread_saved if _thread is null
 
   // Needed for virtual threads as they can migrate to different JavaThread's.
   // Also used for carrier threads to clear/restore _thread.
@@ -332,7 +332,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   }
 
   inline void clear_class_being_redefined() {
-    _class_being_redefined = NULL;
+    _class_being_redefined = nullptr;
     _class_load_kind = jvmti_class_load_kind_load;
   }
 
@@ -385,13 +385,13 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
     _scratch_class_for_redefinition_verification = scratch_class;
   }
 
-  inline void clear_class_versions_map() { set_class_versions_map(NULL, NULL); }
+  inline void clear_class_versions_map() { set_class_versions_map(nullptr, nullptr); }
 
   static inline
   Klass* class_to_verify_considering_redefinition(Klass* klass,
                                                     JavaThread *thread) {
     JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != NULL && state->_the_class_for_redefinition_verification != NULL) {
+    if (state != nullptr && state->_the_class_for_redefinition_verification != nullptr) {
       if (state->_the_class_for_redefinition_verification == klass) {
         klass = state->_scratch_class_for_redefinition_verification;
       }
@@ -443,10 +443,10 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   void update_for_pop_top_frame();
 
   // already holding JvmtiThreadState_lock - retrieve or create JvmtiThreadState
-  // Can return NULL if JavaThread is exiting.
-  static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = NULL);
+  // Can return null if JavaThread is exiting.
+  static JvmtiThreadState *state_for_while_locked(JavaThread *thread, oop thread_oop = nullptr);
   // retrieve or create JvmtiThreadState
-  // Can return NULL if JavaThread is exiting.
+  // Can return null if JavaThread is exiting.
   static JvmtiThreadState *state_for(JavaThread *thread, Handle thread_handle = Handle());
 
   // JVMTI ForceEarlyReturn support

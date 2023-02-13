@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genMemoryPools.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
@@ -41,9 +42,9 @@ SerialHeap::SerialHeap() :
     GenCollectedHeap(Generation::DefNew,
                      Generation::MarkSweepCompact,
                      "Copy:MSC"),
-    _eden_pool(NULL),
-    _survivor_pool(NULL),
-    _old_pool(NULL) {
+    _eden_pool(nullptr),
+    _survivor_pool(nullptr),
+    _old_pool(nullptr) {
   _young_manager = new GCMemoryManager("Copy", "end of minor GC");
   _old_manager = new GCMemoryManager("MarkSweepCompact", "end of major GC");
 }
@@ -122,4 +123,12 @@ HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
   assert(old_gen()->used_region().contains(archive_space), "Archive space not contained in old gen");
   old_gen()->complete_loaded_archive_space(archive_space);
+}
+
+void SerialHeap::pin_object(JavaThread* thread, oop obj) {
+  GCLocker::lock_critical(thread);
+}
+
+void SerialHeap::unpin_object(JavaThread* thread, oop obj) {
+  GCLocker::unlock_critical(thread);
 }

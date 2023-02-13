@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@
 #include "services/lowMemoryDetector.hpp"
 #include "services/threadIdTable.hpp"
 
-DEBUG_ONLY(JavaThread* ServiceThread::_instance = NULL;)
-JvmtiDeferredEvent* ServiceThread::_jvmti_event = NULL;
+DEBUG_ONLY(JavaThread* ServiceThread::_instance = nullptr;)
+JvmtiDeferredEvent* ServiceThread::_jvmti_event = nullptr;
 // The service thread has it's own static deferred event queue.
 // Events can be posted before JVMTI vm_start, so it's too early to call JvmtiThreadState::state_for
 // to add this field to the per-JavaThread event queue.  TODO: fix this sometime later
@@ -151,7 +151,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (has_jvmti_events) {
       _jvmti_event->post();
-      _jvmti_event = NULL;  // reset
+      _jvmti_event = nullptr;  // reset
     }
 
     if (!UseNotificationThread) {
@@ -203,7 +203,7 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   // If you enqueue events before the service thread runs, gc
   // cannot keep the nmethod alive.  This could be restricted to compiled method
   // load and unload events, if we wanted to be picky.
-  assert(_instance != NULL, "cannot enqueue events before the service thread runs");
+  assert(_instance != nullptr, "cannot enqueue events before the service thread runs");
   _jvmti_service_queue.enqueue(*event);
   Service_lock->notify_all();
  }
@@ -212,7 +212,7 @@ void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
   JavaThread::oops_do_no_frames(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here
   // to keep them alive until they are processed.
-  if (_jvmti_event != NULL) {
+  if (_jvmti_event != nullptr) {
     _jvmti_event->oops_do(f, cf);
   }
   // Requires a lock, because threads can be adding to this queue.
@@ -222,8 +222,8 @@ void ServiceThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
 
 void ServiceThread::nmethods_do(CodeBlobClosure* cf) {
   JavaThread::nmethods_do(cf);
-  if (cf != NULL) {
-    if (_jvmti_event != NULL) {
+  if (cf != nullptr) {
+    if (_jvmti_event != nullptr) {
       _jvmti_event->nmethods_do(cf);
     }
     // Requires a lock, because threads can be adding to this queue.

@@ -46,8 +46,8 @@ import com.sun.management.GcInfo;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.Field;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.gc.GC;
-import gc.testlibrary.g1.MixedGCProvoker;
 
 public class GarbageCollectionNotificationContentTest {
     private static HashMap<String,GarbageCollectionNotificationInfo> listenerInvoked
@@ -106,7 +106,7 @@ public class GarbageCollectionNotificationContentTest {
         }
         // Trigger G1's concurrent mark
         if (GC.G1.isSelected()) {
-            MixedGCProvoker.provokeConcMarkCycle();
+            WhiteBox.getWhiteBox().g1RunConcurrentGC();
         }
         int wakeup = 0;
         synchronized(synchronizer) {

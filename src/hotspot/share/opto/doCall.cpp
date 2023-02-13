@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,7 +597,7 @@ void Parse::do_call() {
 
   if (receiver_constraint != NULL) {
     Node* receiver_node = stack(sp() - nargs);
-    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint));
+    Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = NULL;
     Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
     if (bad_type_ctrl != NULL) {
@@ -948,8 +948,7 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
         Node* k = _gvn.transform( LoadKlassNode::make(_gvn, NULL, immutable_memory(), p, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
         ex_klass_node->init_req( i, k );
       }
-      _gvn.set_type(ex_klass_node, TypeInstKlassPtr::OBJECT);
-
+      ex_klass_node = _gvn.transform(ex_klass_node);
     }
   }
 

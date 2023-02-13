@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -661,6 +662,47 @@ const Type *CmpINode::sub( const Type *t1, const Type *t2 ) const {
   return TypeInt::CC;           // else use worst case results
 }
 
+const Type* CmpINode::Value(PhaseGVN* phase) const {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  // If this test is the zero trip guard for a main or post loop, check whether, with the opaque node removed, the test
+  // would constant fold so the loop is never entered. If so return the type of the test without the opaque node removed:
+  // make the loop unreachable.
+  // The reason for this is that the iv phi captures the bounds of the loop and if the loop becomes unreachable, it can
+  // become top. In that case, the loop must be removed.
+  // This is safe because:
+  // - as optimizations proceed, the range of iterations executed by the main loop narrows. If no iterations remain, then
+  // we're done with optimizations for that loop.
+  // - the post loop is initially not reachable but as long as there's a main loop, the zero trip guard for the post
+  // loop takes a phi that merges the pre and main loop's iv and can't constant fold the zero trip guard. Once, the main
+  // loop is removed, there's no need to preserve the zero trip guard for the post loop anymore.
+  if (in1 != NULL && in2 != NULL) {
+    uint input = 0;
+    Node* cmp = NULL;
+    BoolTest::mask test;
+    if (in1->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in1) != Type::TOP) {
+      cmp = new CmpINode(in1->in(1), in2);
+      test = ((OpaqueZeroTripGuardNode*)in1)->_loop_entered_mask;
+    }
+    if (in2->Opcode() == Op_OpaqueZeroTripGuard && phase->type(in2) != Type::TOP) {
+      assert(cmp == NULL, "A cmp with 2 OpaqueZeroTripGuard inputs");
+      cmp = new CmpINode(in1, in2->in(1));
+      test = ((OpaqueZeroTripGuardNode*)in2)->_loop_entered_mask;
+    }
+    if (cmp != NULL) {
+      const Type* cmp_t = cmp->Value(phase);
+      const Type* t = BoolTest(test).cc2logical(cmp_t);
+      cmp->destruct(phase);
+      if (t == TypeInt::ZERO) {
+        return cmp_t;
+      }
+    }
+  }
+
+  return SubNode::Value(phase);
+}
+
+
 // Simplify a CmpU (compare 2 integers) node, based on local information.
 // If both inputs are constants, compare them.
 const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
@@ -737,6 +779,9 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
   if (t2 == TypeInt::INT) { // Compare to bottom?
     return bottom_type();
   }
+
+  const Type* t_sub = sub(t1, t2); // compare based on immediate inputs
+
   uint in1_op = in1->Opcode();
   if (in1_op == Op_AddI || in1_op == Op_SubI) {
     // The problem rise when result of AddI(SubI) may overflow
@@ -789,13 +834,15 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
         const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
         const TypeInt* cmp1 = sub(tr1, t2)->is_int();
         const TypeInt* cmp2 = sub(tr2, t2)->is_int();
-        // compute union, so that cmp handles all possible results from the two cases
-        return cmp1->meet(cmp2);
+        // Compute union, so that cmp handles all possible results from the two cases
+        const Type* t_cmp = cmp1->meet(cmp2);
+        // Pick narrowest type, based on overflow computation and on immediate inputs
+        return t_sub->filter(t_cmp);
       }
     }
   }
 
-  return sub(t1, t2);            // Local flavor of type subtraction
+  return t_sub;
 }
 
 bool CmpUNode::is_index_range_check() const {
@@ -1038,7 +1085,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
 
   // return the ConP(Foo.klass)
   assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass()));
+  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1144,7 +1191,7 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   }
 
   // Bypass the dependent load, and compare directly
-  this->set_req(1,ldk2);
+  this->set_req_X(1, ldk2, phase);
 
   return this;
 }
@@ -1467,7 +1514,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       (_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
       cmp1_op == Op_CMoveI && cmp2->find_int_con(1) == 0) {
     // 0 should be on the true branch
-    if (cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
+    if (cmp1->in(CMoveNode::Condition)->is_Bool() &&
+        cmp1->in(CMoveNode::IfTrue)->find_int_con(1) == 0 &&
         cmp1->in(CMoveNode::IfFalse)->find_int_con(0) != 0) {
       BoolNode* target = cmp1->in(CMoveNode::Condition)->as_Bool();
       return new BoolNode(target->in(1),
