@@ -474,9 +474,9 @@ class VerifyRemSetClosure : public G1VerificationClosure {
 
     oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
-    HeapRegion* from = _g1h->heap_region_containing_or_null(p);
+    HeapRegion* from = _g1h->heap_region_containing(p);
     HeapRegion* to = _g1h->heap_region_containing_or_null(obj);
-    if (from != nullptr && to != nullptr &&
+    if (to != nullptr &&
         from != to &&
         !to->is_pinned() &&
         to->rem_set()->is_complete()) {
