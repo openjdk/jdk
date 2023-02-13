@@ -37,8 +37,8 @@ class G1PreEvacuateCollectionSetBatchTask : public G1BatchedTask {
   size_t _old_pending_cards;
 
   // References to the tasks to retain access to statistics.
-  JavaThreadRetireTLABAndFlushLogs* _java_stats;
-  NonJavaThreadFlushLogs* _non_java_stats;
+  JavaThreadRetireTLABAndFlushLogs* _java_retire_task;
+  NonJavaThreadFlushLogs* _non_java_retire_task;
 
 public:
   G1PreEvacuateCollectionSetBatchTask();

@@ -69,9 +69,7 @@ inline void G1BarrierSet::write_ref_field_pre(T* field) {
 }
 
 inline void G1BarrierSet::invalidate(MemRegion mr) {
-  Thread* thread = Thread::current();
-  assert(thread->is_Java_thread(), "must be");
-  invalidate((JavaThread*)thread, mr);
+  invalidate(JavaThread::current(), mr);
 }
 
 inline void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {

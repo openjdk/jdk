@@ -78,7 +78,10 @@ public:
   }
 
   ~JavaThreadRetireTLABAndFlushLogs() {
+    STATIC_ASSERT(std::is_trivially_destructible<G1ConcurrentRefineStats>::value);
     FREE_C_HEAP_ARRAY(G1ConcurrentRefineStats, _local_refinement_stats);
+
+    STATIC_ASSERT(std::is_trivially_destructible<ThreadLocalAllocStats>::value);
     FREE_C_HEAP_ARRAY(ThreadLocalAllocStats, _local_tlab_stats);
   }
 
@@ -100,8 +103,8 @@ public:
     _local_refinement_stats = NEW_C_HEAP_ARRAY(G1ConcurrentRefineStats, _num_workers, mtGC);
 
     for (uint i = 0; i < _num_workers; i++) {
-      _local_tlab_stats[i].reset();
-      _local_refinement_stats[i].reset();
+      ::new (&_local_tlab_stats[i]) ThreadLocalAllocStats();
+      ::new (&_local_refinement_stats[i]) G1ConcurrentRefineStats();
     }
   }
 
@@ -115,7 +118,7 @@ public:
 
   G1ConcurrentRefineStats refinement_stats() const {
     G1ConcurrentRefineStats result;
-        for (uint i = 0; i < _num_workers; i++) {
+    for (uint i = 0; i < _num_workers; i++) {
       result += _local_refinement_stats[i];
     }
     return result;
@@ -143,14 +146,14 @@ public:
 G1PreEvacuateCollectionSetBatchTask::G1PreEvacuateCollectionSetBatchTask() :
   G1BatchedTask("Pre Evacuate Prepare", G1CollectedHeap::heap()->phase_times()),
   _old_pending_cards(G1BarrierSet::dirty_card_queue_set().num_cards()),
-  _java_stats(new JavaThreadRetireTLABAndFlushLogs()),
-  _non_java_stats(new NonJavaThreadFlushLogs()) {
+  _java_retire_task(new JavaThreadRetireTLABAndFlushLogs()),
+  _non_java_retire_task(new NonJavaThreadFlushLogs()) {
 
   // Disable mutator refinement until concurrent refinement decides otherwise.
   G1BarrierSet::dirty_card_queue_set().set_mutator_refinement_threshold(SIZE_MAX);
 
-  add_serial_task(_non_java_stats);
-  add_parallel_task(_java_stats);
+  add_serial_task(_non_java_retire_task);
+  add_parallel_task(_java_retire_task);
 }
 
 static void verify_empty_dirty_card_logs() {
@@ -172,15 +175,15 @@ static void verify_empty_dirty_card_logs() {
 
 G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {
   ThreadLocalAllocStats total_tlab_stats;
-  total_tlab_stats.update(_java_stats->tlab_stats());
-  total_tlab_stats.update(_non_java_stats->tlab_stats());
+  total_tlab_stats.update(_java_retire_task->tlab_stats());
+  total_tlab_stats.update(_non_java_retire_task->tlab_stats());
   total_tlab_stats.publish();
 
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
 
   G1ConcurrentRefineStats total_refinement_stats;
-  total_refinement_stats += _java_stats->refinement_stats();
-  total_refinement_stats += _non_java_stats->refinement_stats();
+  total_refinement_stats += _java_retire_task->refinement_stats();
+  total_refinement_stats += _non_java_retire_task->refinement_stats();
   qset.update_refinement_stats(total_refinement_stats);
 
   verify_empty_dirty_card_logs();
