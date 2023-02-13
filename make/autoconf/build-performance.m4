@@ -26,7 +26,6 @@
 AC_DEFUN([BPERF_CHECK_CORES],
 [
   AC_MSG_CHECKING([for number of cores])
-  NUM_CORES=0
 
   if test -f /proc/cpuinfo; then
     # Looks like a Linux (or cygwin) system
