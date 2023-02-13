@@ -30,8 +30,11 @@
  *
  * @build p.*
  * @run main/othervm compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
- * @run main/othervm -Xint compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
- * @run main/othervm -Xcomp compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xint
+ *                   compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
+ * @run main/othervm -Xcomp
+ *                   -XX:CompileCommand=compileonly,*::test
+ *                   compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
  */
 
 // Since this test was written the specification for interface method selection has been
