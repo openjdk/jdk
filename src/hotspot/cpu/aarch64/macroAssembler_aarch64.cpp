@@ -3774,7 +3774,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   Label L_by16, L_by16_loop, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   if (UseCRC32) {
-      if (UseCryptoPmull) {
+      if (UseCryptoPmullForCRC32) {
         kernel_crc32_using_crypto_pmull(crc, buf, len, table0, table1, table2, table3);
       } else {
         kernel_crc32_using_crc32(crc, buf, len, table0, table1, table2, table3);
