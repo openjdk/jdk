@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@
  * @build jdk.test.whitebox.WhiteBox
  * @compile p2/c2.java MyDiffClassLoader.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI ConstantPoolDependsTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -Xcomp -XX:+WhiteBoxAPI ConstantPoolDependsTest
  */
 
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
 
+import java.lang.ref.Reference;
 public class ConstantPoolDependsTest {
     public static WhiteBox wb = WhiteBox.getWhiteBox();
     public static final String MY_TEST = "ConstantPoolDependsTest$c1c";
@@ -71,8 +72,8 @@ public class ConstantPoolDependsTest {
         ClassUnloadCommon.triggerUnloading();  // should not unload anything
         ClassUnloadCommon.failIf(!wb.isClassAlive(MY_TEST), "should not be unloaded");
         ClassUnloadCommon.failIf(!wb.isClassAlive("p2.c2"), "should not be unloaded");
-        // Unless MyTest_class is referenced here, the compiler can unload it.
-        System.out.println("Should not unload anything before here because " + MyTest_class + " is still alive.");
+        // Should not unload anything before here because MyTest_class is kept alive by the following fence.
+        Reference.reachabilityFence(MyTest_class);
     }
 
     public static void main(String args[]) throws Throwable {
