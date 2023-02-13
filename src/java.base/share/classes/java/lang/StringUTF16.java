@@ -33,8 +33,6 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.vm.annotation.DontInline;
-import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
@@ -360,6 +358,9 @@ final class StringUTF16 {
 
     // Case insensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
+        if (latin1EqualsIgnoreCase(cp1, cp2)) {
+            return 0;
+        }
         // try converting both characters to uppercase.
         // If the results match, then the comparison scan should
         // continue.
@@ -377,6 +378,24 @@ final class StringUTF16 {
             }
         }
         return 0;
+    }
+    /**
+     *  Version of {@link StringLatin1#isLatinEqualIC(byte, byte)} for comparing
+     *  unicode code points. See the StringLatin1 version for a more extensive explanation.
+     *
+     * @param cp1 a unicode code point
+     * @param cp2 another unicode code point
+     * @return true if the two code points are considered equals ignoring case in ISO/IEC 8859-1.
+     */
+    static boolean latin1EqualsIgnoreCase(int cp1, int cp2) {
+        if (cp1 > 0xDE || cp2 > 0xDE) {
+            return false; // Quicly reject high points
+        }
+        int A = cp1 & 0xDF; // Oldest ASCII trick in the book
+        return ( (A >= 'A' && A <= 'Z') // In range A-Z
+                || (A >= 0xC0)) // ..or Agrave-Thorn
+                && A != 0xD7 // But not multiply
+                && A == (cp2 & 0xDF); // b has same uppercase
     }
 
     // Returns a code point from the code unit pointed by "index". If it is

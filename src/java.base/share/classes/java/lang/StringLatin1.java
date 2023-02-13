@@ -388,14 +388,21 @@ final class StringLatin1 {
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
-            char c1 = (char)(value[toffset++] & 0xff);
-            char c2 = (char)(other[ooffset++] & 0xff);
-            if (c1 == c2) {
-                continue;
+            byte b1 = value[toffset++];
+            byte b2 = other[ooffset++];
+            if (b1 != b2 && !latin1EqualsIgnoreCase(b1, b2)) {
+                return false;
             }
-            int u1 = CharacterDataLatin1.instance.toUpperCase(c1);
-            int u2 = CharacterDataLatin1.instance.toUpperCase(c2);
-            if (u1 == u2) {
+        }
+        return true;
+    }
+    public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
+                                                byte[] other, int ooffset, int len) {
+        int last = toffset + len;
+        while (toffset < last) {
+            char c1 = (char)(value[toffset++] & 0xff);
+            char c2 = StringUTF16.getChar(other, ooffset++);
+            if (c1 == c2 || StringUTF16.latin1EqualsIgnoreCase(c1, c2) || turkicIEqualsIgnoreCase(c1, c2)) {
                 continue;
             }
             return false;
@@ -403,26 +410,65 @@ final class StringLatin1 {
         return true;
     }
 
-    public static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
-                                                byte[] other, int ooffset, int len) {
-        int last = toffset + len;
-        while (toffset < last) {
-            char c1 = (char)(value[toffset++] & 0xff);
-            char c2 = StringUTF16.getChar(other, ooffset++);
-            if (c1 == c2) {
-                continue;
-            }
-            char u1 = (char) CharacterDataLatin1.instance.toUpperCase(c1);
-            char u2 = Character.toUpperCase(c2);
-            if (u1 == u2) {
-                continue;
-            }
-            if (Character.toLowerCase(u1) == Character.toLowerCase(u2)) {
-                continue;
-            }
-            return false;
-        }
-        return true;
+    /**
+     * In ISO/IEC 8859-1, the case-folding letters are found in the
+     * following three code point range pairs:
+     *
+     * 0x41-0x5A: Uppercase ASCII letters (A-Z)
+     * 0x61-0x71: Lowercase ASCII letters (a-z)
+     *
+     * 0xC0-0xD6: Uppercase non-ASCII letters, range 1 (A-GRAVE - O with Diaeresis)
+     * 0xE0-0xF6: Lowercase non-ASCII letters, range 1 (a-grave - o with Diaeresis)
+     *
+     * 0xD8-0xDE: Uppercase non-ASCII letters, range 2 (O with slash - Thorn)
+     * 0xF0-0xFE: Lowercase non-ASCII letters, range 2 (o with slash - thorn)
+     *
+     * While both ASCII letter ranges are contiguous, the non-ASCII letters are not:
+     *
+     * The non-ASCII uppercase range is split in two by the multiplication sign 0xD7.
+     * The non-ASCII lowercase range is split in two by the division sign 0xF7.
+     *
+     * The relative distance between each lowercase and uppercase case-folding letter
+     * is always 32 (0x20), where the uppercase code point is always lowest. The division
+     * and multiplication code points have the same relationship.
+     *
+     * Since 0x20 is a single bit, we can apply the 'oldest ASCII trick in the book':
+     *
+     * 'C' | 0x20 == 'c'
+     *
+     * The reverse is also true:
+     *
+     * 'c' & 0xDF = 'C'
+     *
+     * @param a byte encoded in ISO/IEC 8859-1
+     * @param b another byte encoded in ISO/IEC 8859-1
+     * @return true if the two bytes are considered equals ignoring case in ISO/IEC 8859-1.
+     */
+    private static boolean latin1EqualsIgnoreCase(byte a, byte b) {
+        int A = a & 0xDF; // uppercase a
+        return ( (A >= 'A' && A <= 'Z') // A in range A-Z
+                || (A >= 0xC0 && A <= 0xDE)) // ..or Agrave-Thorn
+                && A != 0xD7 // But not multiply
+                && A == (b & 0xDF); // b has same uppercase
+    }
+
+    /**
+     * Latin1 includeds two 'i' code points, the uppercase 0x49 'capital I without dot',
+     * and the lowercase 0x69 'lowercase i with dot'.
+     *
+     * Unicode has two additional 'i' code points: 0x130 (LATIN CAPITAL LETTER I WITH DOT ABOVE)
+     * and 0x131 (LATIN SMALL LETTER DOTLESS I).
+     *
+     * These four code points should be considered equals ignoring case.
+     *
+     * @param lat a latin1 code point
+     * @param uc a unicode code point
+     * @return true if the latin code point is either 'i' or 'I'
+     * and the unicode code point is either 0x130 or 0x131
+      */
+    private static boolean turkicIEqualsIgnoreCase(char lat, char uc) {
+        return (uc == 0x130 || uc == 0x131)  // Turkic  'I' with dot, 'i' without dot
+                && (lat == 'i' || lat == 'I');
     }
 
     public static String toLowerCase(String str, byte[] value, Locale locale) {
