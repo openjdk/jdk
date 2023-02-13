@@ -239,6 +239,9 @@ class Arguments : AllStatic {
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
   friend class LargeOptionsTest;
+
+  class PreprocessedImpl;
+
  public:
   // Operation modi
   enum Mode {
@@ -275,23 +278,20 @@ class Arguments : AllStatic {
    private:
     friend class Arguments;
 
-    void* _impl = nullptr;
+    // Actual implementation defined in source file instead of the header.
+    PreprocessedImpl* _impl = nullptr;
 
    public:
     Preprocessed() = default;
 
     ~Preprocessed();
 
-    Preprocessed(const Preprocessed&) = delete;
-    Preprocessed(Preprocessed&&) = delete;
-    Preprocessed& operator=(const Preprocessed&) = delete;
-    Preprocessed& operator=(Preprocessed&&) = delete;
+    NONCOPYABLE(Preprocessed);
 
     // Future changes will allow retrieving NativeMemoryTracking and MallocLimit.
   };
 
  private:
-
   // a pointer to the flags file name if it is specified
   static char*  _jvm_flags_file;
   // an array containing all flags specified in the .hotspotrc file
