@@ -1350,6 +1350,8 @@ public class DatagramSocket implements java.io.Closeable {
         delegate().leaveGroup(mcastaddr, netIf);
     }
 
+    private static final SocketAddress NO_DELEGATE = new SocketAddress() {};
+
     /**
      * Best effort to convert an {@link IOException}
      * into a {@link SocketException}.
@@ -1382,12 +1384,15 @@ public class DatagramSocket implements java.io.Closeable {
      * @param <T>      The target type for which the delegate is created.
      *                 This is either {@code java.net.DatagramSocket} or
      *                 {@code java.net.MulticastSocket}.
-     * @return         returns a delegate for the requested {@code type}.
+     * @return {@code null} if {@code bindaddr == NO_DELEGATE}, otherwise returns a
+     * delegate for the requested {@code type}.
      * @throws SocketException if an exception occurs while creating or binding
      *                         the delegate.
      */
     static <T extends DatagramSocket> T createDelegate(SocketAddress bindaddr, Class<T> type)
             throws SocketException {
+
+        if (bindaddr == NO_DELEGATE) return null;
 
         assert type == DatagramSocket.class || type == MulticastSocket.class;
         boolean multicast = (type == MulticastSocket.class);
