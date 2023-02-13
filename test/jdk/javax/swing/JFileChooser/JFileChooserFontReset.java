@@ -66,10 +66,10 @@ public class JFileChooserFontReset {
                     SwingUtilities.updateComponentTreeUI(fc);
                     Font curFont = fc.getFont();
                     System.out.println("current font " + curFont);
-                    if ((curFont != null && !curFont.equals(origFont)) ||
-                        (origFont != null && !origFont.equals(curFont))) {
-                          throw new RuntimeException(
-                           "JFileChooser font is not reset after Look & Feel change");
+                    if (curFont != origFont
+                        && (curFont != null && !curFont.equals(origFont))) {
+                        throw new RuntimeException(
+                         "JFileChooser font is not reset after Look & Feel change");
                     }
                 }
                 System.out.println("");
