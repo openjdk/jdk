@@ -29,9 +29,6 @@
 
 package sun.nio.cs.ext;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-
 /**
  * Provider for extended charsets.
  */
