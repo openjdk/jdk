@@ -118,8 +118,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
           (old_cp->signature_ref_at(index_old) != new_cp->signature_ref_at(index_new)))
         return false;
 
-    int cpi_old = old_cp->cache()->resolved_indy_entry_at(indy_index_old)->cpool_index();
-    int cpi_new = new_cp->cache()->resolved_indy_entry_at(indy_index_new)->cpool_index();
+    int cpi_old = old_cp->cache()->resolved_indy_entry_at(indy_index_old)->constant_pool_index();
+    int cpi_new = new_cp->cache()->resolved_indy_entry_at(indy_index_new)->constant_pool_index();
     if ((old_cp->uncached_name_ref_at(cpi_old) != new_cp->uncached_name_ref_at(cpi_new)) ||
         (old_cp->uncached_signature_ref_at(cpi_old) != new_cp->uncached_signature_ref_at(cpi_new)))
       return false;

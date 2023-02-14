@@ -636,8 +636,8 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   // Get the indy entry based on CP index
   int indy_index = -1;
   for (int i = 0; i < cp->resolved_indy_entries_length(); i++) {
-    tty->print_cr("Index: %d", cp->resolved_indy_entry_at(i)->cpool_index());
-    if (cp->resolved_indy_entry_at(i)->cpool_index() == index) {
+    tty->print_cr("Index: %d", cp->resolved_indy_entry_at(i)->constant_pool_index());
+    if (cp->resolved_indy_entry_at(i)->constant_pool_index() == index) {
       indy_index = i;
     }
   }

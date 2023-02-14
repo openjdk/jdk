@@ -343,10 +343,6 @@ void ConstantPoolCacheEntry::set_method_handle(const constantPoolHandle& cpool, 
   set_method_handle_common(cpool, Bytecodes::_invokehandle, call_info);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(const constantPoolHandle& cpool, const CallInfo &call_info) {
-  set_method_handle_common(cpool, Bytecodes::_invokedynamic, call_info);
-}
-
 void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& cpool,
                                                       Bytecodes::Code invoke_code,
                                                       const CallInfo &call_info) {
@@ -451,33 +447,6 @@ void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& 
   assert(this->has_local_signature(), "proper storage of signature flag");
 }
 
-bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
-  const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS) {
-
-  assert(HAS_PENDING_EXCEPTION, "No exception got thrown!");
-  assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
-         "No LinkageError exception");
-
-  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
-
-  // if f1 is not null or the indy_resolution_failed flag is set then another
-  // thread either succeeded in resolving the method or got a LinkageError
-  // exception, before this thread was able to record its failure.  So, clear
-  // this thread's exception and return false so caller can use the earlier
-  // thread's result.
-  if (!is_f1_null() || indy_resolution_failed()) {
-    CLEAR_PENDING_EXCEPTION;
-    return false;
-  }
-
-  Symbol* error = PENDING_EXCEPTION->klass()->name();
-  Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
-
-  SystemDictionary::add_resolution_error(cpool, index, error, message);
-  set_indy_resolution_failed();
-  return true;
-}
-
 Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) const {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
@@ -492,9 +461,10 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       case Bytecodes::_invokespecial:
         assert(!has_appendix(), "");
       case Bytecodes::_invokehandle:
-      case Bytecodes::_invokedynamic:
         assert(f1->is_method(), "");
         return (Method*)f1;
+      case Bytecodes::_invokedynamic:
+        ShouldNotReachHere();
       default:
         break;
       }
@@ -939,10 +909,8 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   }
 
   // Populate entry with resolved information
-  if (resolved_indy_entries() != nullptr) {
-    assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
-    resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
-  }
+  assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
+  resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
 
   if (log_stream != NULL) {
     resolved_indy_entry_at(index)->print_on(log_stream);

@@ -55,7 +55,7 @@ BootstrapInfo::BootstrapInfo(const constantPoolHandle& pool, int bss_index, int 
 {
   _is_resolved = false;
   assert(pool->tag_at(bss_index).has_bootstrap(), "");
-  assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->cpool_index() == bss_index, "invalid bootstrap specifier index");
+  assert(indy_index == -1 || pool->resolved_indy_entry_at(indy_index)->constant_pool_index() == bss_index, "invalid bootstrap specifier index");
 }
 
 // If there is evidence this call site was already linked, set the

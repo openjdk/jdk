@@ -1880,7 +1880,7 @@ WB_ENTRY(jint, WB_getIndyCPIndex(JNIEnv* env, jobject wb, jclass klass, jint ind
   if (cp->cache() == NULL) {
       return -1;
   }
-  return cp->resolved_indy_entry_at(index)->cpool_index();
+  return cp->resolved_indy_entry_at(index)->constant_pool_index();
 WB_END
 
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))

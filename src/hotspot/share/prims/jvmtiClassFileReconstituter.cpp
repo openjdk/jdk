@@ -1041,7 +1041,7 @@ void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
         int pool_index;
         if (is_invokedynamic) {
           cpci = Bytes::get_native_u4(bcp+1);
-          pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->cpool_index();
+          pool_index = mh->constants()->resolved_indy_entry_at(mh->constants()->decode_invokedynamic_index(cpci))->constant_pool_index();
         } else {
         // cache cannot be pre-fetched since some classes won't have it yet
           entry = mh->constants()->cache()->entry_at(cpci);

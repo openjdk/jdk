@@ -571,7 +571,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
     for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
-      int pool_index = cpcache->resolved_indy_entry_at(indy_index)->cpool_index();
+      int pool_index = cpcache->resolved_indy_entry_at(indy_index)->constant_pool_index();
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);

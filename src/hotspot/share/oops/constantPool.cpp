@@ -684,7 +684,7 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   int i = which;
   if (!uncached && cache() != NULL) {
     if (ConstantPool::is_invokedynamic_index(which)) {
-      // Invokedynamic index is index into the constant pool cache
+      // Invokedynamic index is index into the resolved indy array in the constant pool cache
       int pool_index = invokedynamic_bootstrap_ref_index_at(which);
       pool_index = bootstrap_name_and_type_ref_index_at(pool_index);
       assert(tag_at(pool_index).is_name_and_type(), "");

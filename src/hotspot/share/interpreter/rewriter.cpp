@@ -289,7 +289,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // We will reverse the bytecode rewriting _after_ adjusting them.
     // Adjust the cache index by offset to the invokedynamic entries in the
     // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
-    int cp_index = _initialized_indy_entries.at(cache_index).cpool_index();
+    int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
     Bytes::put_Java_u4(p, 0);

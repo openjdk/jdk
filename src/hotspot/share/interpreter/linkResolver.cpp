@@ -1764,7 +1764,7 @@ void LinkResolver::resolve_handle_call(CallInfo& result,
 
 void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int indy_index, TRAPS) {
   int index = pool->decode_invokedynamic_index(indy_index);
-  int pool_index = pool->resolved_indy_entry_at(index)->cpool_index();
+  int pool_index = pool->resolved_indy_entry_at(index)->constant_pool_index();
 
   // Resolve the bootstrap specifier (BSM + optional arguments).
   BootstrapInfo bootstrap_specifier(pool, pool_index, index);
@@ -1779,8 +1779,8 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // reference to a method handle which will be the bootstrap method for a dynamic
   // call site.  If resolution for the java.lang.invoke.MethodHandle for the bootstrap
   // method fails, then a MethodHandleInError is stored at the corresponding bootstrap
-  // method's CP index for the CONSTANT_MethodHandle_info.  So, there is no need to
-  // set the indy_rf flag since any subsequent invokedynamic instruction which shares
+  // method's CP index for the CONSTANT_MethodHandle_info.
+  // Any subsequent invokedynamic instruction which shares
   // this bootstrap method will encounter the resolution of MethodHandleInError.
 
   resolve_dynamic_call(result, bootstrap_specifier, CHECK);
@@ -1793,10 +1793,10 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
 
   // The returned linkage result is provisional up to the moment
   // the interpreter or runtime performs a serialized check of
-  // the relevant CPCE::f1 field.  This is done by the caller
-  // of this method, via CPCE::set_dynamic_call, which uses
+  // the relevant ResolvedIndyEntry::method field.  This is done by the caller
+  // of this method, via CPC::set_dynamic_call, which uses
   // a lock to do the final serialization of updates
-  // to CPCE state, including f1.
+  // to ResolvedIndyEntry state, including method.
 
   // Log dynamic info to CDS classlist.
   ArchiveUtils::log_to_classlist(&bootstrap_specifier, CHECK);

@@ -53,7 +53,7 @@ void ResolvedIndyEntry::print_on(outputStream* st) const {
         st->print_cr(" - Method: null");
     }
     st->print_cr(" - Resolved References Index: %d", resolved_references_index());
-    st->print_cr(" - CP Index: %d", cpool_index());
+    st->print_cr(" - CP Index: %d", constant_pool_index());
     st->print_cr(" - Num Parameters: %d", num_parameters());
     st->print_cr(" - Return type: %s", type2name(as_BasicType((TosState)return_type())));
     st->print_cr(" - Has Appendix: %d", has_appendix());

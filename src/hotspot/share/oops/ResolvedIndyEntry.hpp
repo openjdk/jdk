@@ -25,24 +25,28 @@
 #ifndef SHARE_OOPS_ResolvedIndyEntry_HPP
 #define SHARE_OOPS_ResolvedIndyEntry_HPP
 
+/* ResolvedIndyEntry contains the resolution information for invokedynamic bytecodes.
+A member of this class can be initialized with the resolved references index and
+constant pool index before any resolution is done, where "resolution" refers to finding the boostrap
+method and its relevant information, like number of parameters and return type. These entries are contained
+within the ConstantPoolCache and are accessed with indices added to the invokedynamic bytecode after
+rewriting. ResolvedIndyEntry is meant to replace some of the functionality of ConstantPoolCacheEntry
+although it must currently coexist with it.
+
+The invokedynamic bytecode starts with an Constant Pool index as its operand which is then rewritten
+to become an "indy index", an index into the array of ResolvedIndyEntry.
+*/
+
 class Method;
 class ResolvedIndyEntry {
     friend class VMStructs;
 
-    Method* _method;
-    u2 _resolved_references_index;
-    u2 _cpool_index;
-    u2 _number_of_parameters;
-    u1 _return_type;
-    u1 _flags;
-    /*
-    _method:                    Adapter method for indy call
-    _resolved_references_index: Index of resolved references array that holds the appendix oop
-    _cpool_index:               Constant pool index. this is the initial operand for invokedynamic before rewriting
-    _number_of_parameters:      Number of arguments for adapter method
-    _return_type:               Adapter method return type
-    _flags:                     [0000|00|has_appendix|resolution_failed]
-    */
+    Method* _method;               // Adapter method for indy call
+    u2 _resolved_references_index; // Index of resolved references array that holds the appendix oop
+    u2 _cpool_index;               // Constant pool index
+    u2 _number_of_parameters;      // Number of arguments for adapter method
+    u1 _return_type;               // Adapter method return type
+    u1 _flags;                     // Flags: [0000|00|has_appendix|resolution_failed]
 
 public:
     ResolvedIndyEntry() :
@@ -69,7 +73,7 @@ public:
     // Getters
     Method* method()               const { return _method;                    }
     u2 resolved_references_index() const { return _resolved_references_index; }
-    u2 cpool_index()               const { return _cpool_index;               }
+    u2 constant_pool_index()       const { return _cpool_index;               }
     u2 num_parameters()            const { return _number_of_parameters;      }
     u1 return_type()               const { return _return_type;               }
     bool is_resolved()             const { return _method != nullptr;         }

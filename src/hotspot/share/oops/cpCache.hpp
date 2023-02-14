@@ -257,11 +257,6 @@ class ConstantPoolCacheEntry {
     const CallInfo &call_info                    // Call link information
   );
 
-  void set_dynamic_call(
-    const constantPoolHandle& cpool,             // holding constant pool (required for locking)
-    const CallInfo &call_info                    // Call link information
-  );
-
   // Common code for invokedynamic and MH invocations.
 
   // The "appendix" is an optional call-site-specific parameter which is
@@ -282,13 +277,6 @@ class ConstantPoolCacheEntry {
     Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
     const CallInfo &call_info                    // Call link information
   );
-
-  // Return TRUE if resolution failed and this thread got to record the failure
-  // status.  Return FALSE if another thread succeeded or failed in resolving
-  // the method and recorded the success or failure before this thread had a
-  // chance to record its failure.
-  bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index,
-                               int index, constantTag tag, TRAPS);
 
   // invokedynamic and invokehandle call sites have an "appendix" item in the
   // resolved references array.
@@ -525,9 +513,11 @@ class ConstantPoolCache: public MetaspaceObj {
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
 
-  bool save_and_throw_indy_exc(const constantPoolHandle& cpool,
-                                                  int cpool_index, int index,
-                                                  constantTag tag, TRAPS);
+  // Return TRUE if resolution failed and this thread got to record the failure
+  // status.  Return FALSE if another thread succeeded or failed in resolving
+  // the method and recorded the success or failure before this thread had a
+  // chance to record its failure.
+  bool save_and_throw_indy_exc(const constantPoolHandle& cpool, int cpool_index, int index, constantTag tag, TRAPS);
   oop set_dynamic_call(const CallInfo &call_info, int index);
 
   // Printing

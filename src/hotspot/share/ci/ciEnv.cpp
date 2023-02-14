@@ -879,11 +879,13 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
     // Jump through a patchable call site, which is initially a deopt routine.
     // Patch the call site to the nmethod entry point of the static compiled lambda form.
     // As with other two-component call sites, both values must be independently verified.
-    if (cpool->decode_invokedynamic_index(index) < cpool->cache()->resolved_indy_entries_length()) {
-      Method* adapter = cpool->resolved_indy_entry_at(cpool->decode_invokedynamic_index(index))->method();
-      if (adapter != nullptr) {
-        return get_method(adapter);
-      }
+    int indy_index = cpool->decode_invokedynamic_index(index);
+    assert (indy_index >= 0, "should be");
+    assert(indy_index < cpool->cache()->resolved_indy_entries_length(), "impossible");
+    Method* adapter = cpool->resolved_indy_entry_at(indy_index)->method();
+    // Resolved if the adapter is non null.
+    if (adapter != nullptr) {
+      return get_method(adapter);
     }
 
     // Fake a method that is equivalent to a declared method.
@@ -1532,7 +1534,7 @@ void ciEnv::process_invokedynamic(const constantPoolHandle &cp, int indy_index, 
       record_call_site_obj(thread, appendix);
     }
     // process the BSM
-    int pool_index = indy_info->cpool_index();
+    int pool_index = indy_info->constant_pool_index();
     BootstrapInfo bootstrap_specifier(cp, pool_index, index);
     oop bsm = cp->resolve_possibly_cached_constant_at(bootstrap_specifier.bsm_index(), thread);
     {
