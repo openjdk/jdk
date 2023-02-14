@@ -42,9 +42,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.testng.Assert.*;
 
 /**
  * This test augments {@link TestTooManyEntries}. It creates sparse ZIPs where the
@@ -64,11 +62,11 @@ public class EndOfCenValidation {
     private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ENDHDR -1;
 
     // Expected message when CEN size does not match file size
-    private static final String INVALID_CEN_BAD_SIZE = "invalid END header \\(bad central directory size\\)";
+    private static final String INVALID_CEN_BAD_SIZE = "invalid END header (bad central directory size)";
     // Expected message when CEN offset is too large
-    private static final String INVALID_CEN_BAD_OFFSET = "invalid END header \\(bad central directory offset\\)";
+    private static final String INVALID_CEN_BAD_OFFSET = "invalid END header (bad central directory offset)";
     // Expected message when CEN size is too large
-    private static final String INVALID_CEN_SIZE_TOO_LARGE = "invalid END header \\(central directory size too large\\)";
+    private static final String INVALID_CEN_SIZE_TOO_LARGE = "invalid END header (central directory size too large)";
 
     // A valid ZIP file, used as a template
     private byte[] zipBytes;
@@ -85,31 +83,35 @@ public class EndOfCenValidation {
      * Validates that an end of central directory record with
      * a CEN length exceeding {@link #MAX_CEN_SIZE} limit is rejected
      */
-    @Test(expectedExceptions = ZipException.class,
-            expectedExceptionsMessageRegExp = INVALID_CEN_SIZE_TOO_LARGE)
+    @Test
     public void shouldRejectTooLargeCenSize() throws IOException {
         int size = MAX_CEN_SIZE +1;
 
         Path zip = zipWithModifiedEndRecord(size, true, 0, "cen-size-too-large.zip");
 
-        try (ZipFile zf = new ZipFile(zip.toFile())) {
-        }
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            openZip(zip);
+        });
+
+        assertEquals(ex.getMessage(), INVALID_CEN_SIZE_TOO_LARGE);
     }
 
     /**
      * Validate that an end of central directory record with a
      * CEN size which exceeds the position of the EOC record is rejected.
      */
-    @Test(expectedExceptions = ZipException.class,
-            expectedExceptionsMessageRegExp = INVALID_CEN_BAD_SIZE)
+    @Test
     public void shouldRejectInvalidCenSize() throws IOException {
 
         int size = MAX_CEN_SIZE;
 
         Path zip = zipWithModifiedEndRecord(size, false, 0, "invalid-zen-size.zip");
 
-        try (ZipFile zf = new ZipFile(zip.toFile())) {
-        }
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            openZip(zip);
+        });
+
+        assertEquals(ex.getMessage(), INVALID_CEN_BAD_SIZE);
     }
 
     /**
@@ -117,16 +119,18 @@ public class EndOfCenValidation {
      * is larger than the EOC position minus the CEN size is rejected
      * @throws IOException
      */
-    @Test(expectedExceptions = ZipException.class,
-            expectedExceptionsMessageRegExp = INVALID_CEN_BAD_OFFSET)
+    @Test
     public void shouldRejectInvalidCenOffset() throws IOException {
 
         int size = MAX_CEN_SIZE;
 
         Path zip = zipWithModifiedEndRecord(size, true, 100, "bad-cen-offset.zip");
 
-        try (ZipFile zf = new ZipFile(zip.toFile())) {
-        }
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            openZip(zip);
+        });
+
+        assertEquals(ex.getMessage(), INVALID_CEN_BAD_OFFSET);
     }
 
     /**
@@ -196,5 +200,9 @@ public class EndOfCenValidation {
         }
         byte[] zipBytes = bout.toByteArray();
         return zipBytes;
+    }
+    private static void openZip(Path zip) throws IOException {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
+        }
     }
 }
