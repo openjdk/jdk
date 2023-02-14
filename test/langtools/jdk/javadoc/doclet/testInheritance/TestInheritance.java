@@ -62,7 +62,7 @@ public class TestInheritance extends JavadocTester {
                      * @param <O> param O
                      * @param <P> param P
                      */
-                    public class B<O, P>  extends A<O, P> { private B() { } }
+                    public class B<O, P> extends A<O, P> { private B() { } }
                     """,
                 """
                     package pkg;
