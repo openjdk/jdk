@@ -446,6 +446,39 @@ public final class StringBuilder
         return this;
     }
 
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuilder repeat(char c, int times) {
+        super.repeat(c, times);
+        return this;
+    }
+
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuilder repeat(String str, int times) {
+        super.repeat(str, times);
+        return this;
+    }
+
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuilder repeat(CharSequence cs, int times) {
+        super.repeat(cs, times);
+        return this;
+    }
+
     @Override
     @IntrinsicCandidate
     public String toString() {

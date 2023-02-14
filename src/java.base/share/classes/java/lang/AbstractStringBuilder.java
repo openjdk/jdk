@@ -1821,4 +1821,159 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         }
         count += end - off;
     }
+
+    /**
+     * Appends {@code times} copies of the character {@code c} to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code times}.
+     *
+     * @param c      character to append
+     * @param times  number of times to repeat
+     *
+     * @return  a reference to this object.
+     *
+     * @since 21
+     * @throws IllegalArgumentException  if {@code times} is less than zero
+     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
+     * if the result overflows the buffer
+     */
+    public AbstractStringBuilder repeat(char c, int times) {
+        if (times < 0) {
+            throw new IllegalArgumentException("times is less than zero: " + times);
+        }
+        if (times == 0) {
+            return this;
+        }
+        ensureCapacityInternal(count + times);
+        if (isLatin1() && StringLatin1.canEncode(c)) {
+            int index = count;
+            while (times-- != 0) {
+                value[index++] = (byte) c;
+            }
+            count = index;
+        } else {
+            if (isLatin1()) {
+                inflate();
+            }
+            int index = count;
+            while (times-- != 0) {
+                StringUTF16.putCharSB(value, index++, c);
+            }
+            count = index;
+        }
+        return this;
+    }
+
+    private AbstractStringBuilder repeatNull(int times) {
+        if (times < 0) {
+            throw new IllegalArgumentException("times is less than zero: " + times);
+        } else if (times == 0) {
+            return this;
+        }
+        int offset = count;
+        appendNull();
+        int length = count - offset;
+        int valueLength = length << coder;
+        if ((Integer.MAX_VALUE - offset) / times < valueLength) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        int limit = times * length;
+        ensureCapacityInternal(offset + limit);
+        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
+        count = offset + limit;
+        return this;
+    }
+
+    /**
+     * Appends {@code times} copies of the specified string {@code str} to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code times} times the string length.
+     *
+     * @param str    a string
+     * @param times  number of times to repeat
+     *
+     * @return  a reference to this object.
+     *
+     * @since 21
+     * @throws IllegalArgumentException  if {@code times} is less than zero
+     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
+     * if the result overflows the buffer
+     */
+    public AbstractStringBuilder repeat(String str, int times) {
+        if (str == null) {
+            return repeatNull(times);
+        } else if (times < 0) {
+            throw new IllegalArgumentException("times is less than zero: " + times);
+        } else if (times == 0) {
+            return this;
+        } else if (times == 1) {
+            return append(str);
+        }
+        int length = str.length();
+        if (length == 1) {
+            return repeat(str.charAt(0), times);
+        }
+        int valueLength = length << str.coder();
+        if ((Integer.MAX_VALUE - count) / times < valueLength) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        int limit = times * length;
+        int offset = count;
+        ensureCapacityInternal(offset + limit);
+        putStringAt(offset, str);
+        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
+        count = offset + limit;
+        return this;
+    }
+
+    /**
+     * Appends {@code count} copies of the specified {@code CharSequence} {@code cs}
+     * to this sequence.
+     * <p>
+     * The length of this sequence increases by {@code times} times the
+     * {@code CharSequence} length.
+     *
+     * @param cs    a {@code CharSequence}
+     * @param times  number of times to repeat
+     *
+     * @return  a reference to this object.
+     *
+     * @since 21
+     * @throws IllegalArgumentException  if {@code times} is less than zero
+     * @throws StringIndexOutOfBoundsException  if the offset is invalid or
+     * if the result overflows the buffer
+     */
+    public AbstractStringBuilder repeat(CharSequence cs, int times) {
+        if (cs == null) {
+            return repeatNull(times);
+        } else if (times < 0) {
+            throw new IllegalArgumentException("times is less than zero: " + times);
+        } else if (times == 0) {
+            return this;
+        } else if (times == 1) {
+            return append(cs);
+        }
+
+        int length = cs.length();
+        if (length == 1) {
+            return repeat(cs.charAt(0), times);
+        }
+        int valueLength = length << UTF16;
+        if ((Integer.MAX_VALUE - count) / times < valueLength) {
+            throw new OutOfMemoryError("Required length exceeds implementation limit");
+        }
+        int limit = times * length;
+        int offset = count;
+        ensureCapacityInternal(offset + limit);
+        if (cs instanceof String str) {
+            putStringAt(offset, str);
+        } else  if (cs instanceof AbstractStringBuilder asb) {
+            append(asb);
+        } else {
+            appendChars(cs, 0, length);
+        }
+        String.repeatCopyRest(value, offset << coder, limit << coder, length << coder);
+        count = offset + limit;
+        return this;
+    }
 }

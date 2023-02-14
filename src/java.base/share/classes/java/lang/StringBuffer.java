@@ -708,6 +708,39 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
         return this;
     }
 
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuffer repeat(char c, int times) {
+        super.repeat(c, times);
+        return this;
+    }
+
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuffer repeat(String str, int times) {
+        super.repeat(str, times);
+        return this;
+    }
+
+    /**
+     * @since 21
+     * @throws IllegalArgumentException {@inheritDoc}
+     * @throws StringIndexOutOfBoundsException {@inheritDoc}
+     */
+    @Override
+    public StringBuffer repeat(CharSequence cs, int times) {
+        super.repeat(cs, times);
+        return this;
+    }
+
     @Override
     @IntrinsicCandidate
     public synchronized String toString() {
