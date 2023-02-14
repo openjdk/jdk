@@ -2385,7 +2385,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
   Label L_process256, L_process64, L_process64Loop, L_exit, L_processdata, L_loadURL;
   Label L_continue, L_finalBit, L_padding, L_donePadding, L_bruteForce;
-  Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero;
+  Label L_forceLoop, L_bottomLoop, L_checkMIME, L_exit_no_vzero, L_lastChunk;
 
   // calculate length from offsets
   __ movl(length, end_offset);
@@ -2396,10 +2396,10 @@ address StubGenerator::generate_base64_decodeBlock() {
   if(VM_Version::supports_avx512_vbmi() &&
      VM_Version::supports_avx512bw()) {
     __ cmpl(length, 31);     // 32-bytes is break-even for AVX-512
-    __ jcc(Assembler::lessEqual, L_bruteForce);
+    __ jcc(Assembler::lessEqual, L_lastChunk);
 
     __ cmpl(isMIME, 0);
-    __ jcc(Assembler::notEqual, L_bruteForce);
+    __ jcc(Assembler::notEqual, L_lastChunk);
 
     // Load lookup tables based on isURL
     __ cmpl(isURL, 0);
@@ -2653,12 +2653,12 @@ address StubGenerator::generate_base64_decodeBlock() {
   if (VM_Version::supports_avx2()) {
     Label L_tailProc, L_topLoop, L_enterLoop;
 
+    __ cmpl(isMIME, 0);
+    __ jcc(Assembler::notEqual, L_lastChunk);
+
     // Check for buffer too small (for algorithm)
     __ subl(length, 0x2c);
     __ jcc(Assembler::lessEqual, L_tailProc);
-
-    __ cmpl(isMIME, 0);
-    __ jcc(Assembler::notEqual, L_tailProc);
 
     __ shll(isURL, 2);
 
@@ -2762,6 +2762,8 @@ address StubGenerator::generate_base64_decodeBlock() {
   const Register byte2 = r15;
   const Register byte3 = WIN64_ONLY(r8) NOT_WIN64(rdx);
   const Register byte4 = WIN64_ONLY(r10) NOT_WIN64(r9);
+
+  __ bind(L_lastChunk);
 
   __ shrl(length, 2);    // Multiple of 4 bytes only - length is # 4-byte chunks
   __ cmpl(length, 0);
