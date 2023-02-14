@@ -88,8 +88,8 @@ ALL_FLAGS(DEFINE_FLAG_MEMBER_SETTER,
                                        FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::COMMAND_LINE))
 #define FLAG_SET_MGMT(name, value)    (FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::MANAGEMENT))
 
-// FLAG_SET_ERGO must be always be called with a valid value. You cannot pass in a unvalidated
-// value and expect a return code for success/failure.
+// FLAG_SET_ERGO must be always be called with a valid value. If an invalid value
+// is detected then the VM will exit.
 #define FLAG_SET_ERGO(name, value)     (void)(FLAG_MEMBER_SETTER(name)((value), JVMFlagOrigin::ERGONOMIC))
 
 #define FLAG_SET_ERGO_IF_DEFAULT(name, value) \
