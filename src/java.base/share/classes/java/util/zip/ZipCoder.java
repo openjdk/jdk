@@ -224,7 +224,7 @@ class ZipCoder {
      *
      * If the lookup name is exactly equal to the encoded string, return
      * {@link Comparison#EXACT_MATCH}.
-     * 
+     *
      * If the parameter {@code matchDirectory} is {@code true} and the
      * two strings differ only by the encoded string having an extra
      * trailing '/' character, then return {@link Comparison#DIRECTORY_MATCH}.
