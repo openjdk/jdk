@@ -79,8 +79,7 @@ import static jdk.internal.net.http.common.Utils.charsetFrom;
  *
  * {@snippet :
  *     HttpResponse<String> response = client
- *     .send(request, BodyHandlers.ofString());
- * }
+ *     .send(request, BodyHandlers.ofString()); }
  *
  * <p> The class {@link BodyHandlers BodyHandlers} provides implementations
  * of many common response handlers. Alternatively, a custom {@code BodyHandler}
@@ -220,8 +219,7 @@ public interface HttpResponse<T> {
      *
      *  client.sendAsync(request, BodyHandlers.ofFile(Paths.get("/tmp/f")))
      *        .thenApply(HttpResponse::body)
-     *        .thenAccept(System.out::println);
-     * }
+     *        .thenAccept(System.out::println); }
      *
      * Note, that even though the pre-defined handlers do not examine the
      * response code, the response code and headers are always retrievable from
@@ -237,8 +235,7 @@ public interface HttpResponse<T> {
      *                      : BodySubscribers.replacing(Paths.get("/NULL"));
      *  client.sendAsync(request, bodyHandler)
      *        .thenApply(HttpResponse::body)
-     *        .thenAccept(System.out::println);
-     * }
+     *        .thenAccept(System.out::println); }
      *
      * @param <T> the response body type
      * @see BodyHandlers
@@ -278,7 +275,8 @@ public interface HttpResponse<T> {
      * <p>The following are examples of using the predefined body handlers to
      * convert a flow of response body data into common high-level Java objects:
      *
-     * {@snippet :    // Receives the response body as a String
+     * {@snippet :
+     *   // Receives the response body as a String
      *   HttpResponse<String> response = client
      *     .send(request, BodyHandlers.ofString());
      *
@@ -292,8 +290,7 @@ public interface HttpResponse<T> {
      *
      *   // Discards the response body
      *   HttpResponse<Void> response = client
-     *     .send(request, BodyHandlers.discarding());
-     * }
+     *     .send(request, BodyHandlers.discarding()); }
      *
      * @since 11
      */
@@ -349,7 +346,7 @@ public interface HttpResponse<T> {
          *
          * <p> For example:
          * {@snippet :
-         * TextSubscriber subscriber = ...;  // accumulates bytes and transforms them into a String
+         *  TextSubscriber subscriber = ...;  // accumulates bytes and transforms them into a String
          *  HttpResponse<String> response = client.sendAsync(request,
          *      BodyHandlers.fromSubscriber(subscriber, TextSubscriber::getTextResult)).join();
          *  String text = response.body(); }
@@ -931,8 +928,7 @@ public interface HttpResponse<T> {
      *   // Accumulates the response body as a String then maps it to its bytes
      *   HttpResponse<byte[]> response = client
      *     .send(request, responseInfo ->
-     *        BodySubscribers.mapping(BodySubscribers.ofString(UTF_8), String::getBytes));
-     * }
+     *        BodySubscribers.mapping(BodySubscribers.ofString(UTF_8), String::getBytes)); }
      *
      * @since 11
      */
@@ -1001,7 +997,7 @@ public interface HttpResponse<T> {
          * BodySubscriber} and {@code Flow.Subscriber}.
          *
          * @implNote This is equivalent to calling {@snippet :
-         *      fromLineSubscriber(subscriber, s -> null, StandardCharsets.UTF_8, null)}
+         *      fromLineSubscriber(subscriber, s -> null, StandardCharsets.UTF_8, null) }
          *
          * @param subscriber the subscriber
          * @return a body subscriber

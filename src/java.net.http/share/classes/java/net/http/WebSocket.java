@@ -279,7 +279,7 @@ public interface WebSocket {
      *            }
      *            return accumulatedMessage;
      *        }
-     *    };}
+     *    }; }
      *
      * @since 11
      */
@@ -292,7 +292,7 @@ public interface WebSocket {
          * typically used to make a request for more invocations.
          *
          * @implSpec The default implementation is equivalent to:
-         * {@snippet :     webSocket.request(1); }
+         * {@snippet : webSocket.request(1);}
          *
          * @param webSocket
          *         the WebSocket that has been connected
@@ -660,11 +660,12 @@ public interface WebSocket {
      * @apiNote Use the provided integer constant {@link #NORMAL_CLOSURE} as a
      * status code and an empty string as a reason in a typical case:
      * {@snippet :
-     *      CompletableFuture<WebSocket> webSocket = //...
+     *      CompletableFuture<WebSocket> webSocket = ...
      *      webSocket.thenCompose(ws -> ws.sendText("Hello, ", false))
      *             .thenCompose(ws -> ws.sendText("world!", true))
      *             .thenCompose(ws -> ws.sendClose(WebSocket.NORMAL_CLOSURE, ""))
-     *             .join(); }
+     *             .join();
+     * }
      *
      * The {@code sendClose} method does not close this WebSocket's input. It
      * merely closes this WebSocket's output by sending a Close message. To
@@ -680,17 +681,16 @@ public interface WebSocket {
      *                                         CharSequence data,
      *                                         boolean last) {
      *            alarm.snooze();
-     *            // ...
+     *            ...
      *        }
-     *        // ...
+     *        ...
      *    };
-     *    // ...
+     *    ...
      *    Runnable startTimer = () -> {
      *        MyTimer idleTimer = new MyTimer();
      *        idleTimer.add(alarm, 30, TimeUnit.SECONDS);
      *    };
-     *    webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok").thenRun(startTimer);
-     * } </pre>
+     *    webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "ok").thenRun(startTimer); }
      *
      * @param statusCode
      *         the status code

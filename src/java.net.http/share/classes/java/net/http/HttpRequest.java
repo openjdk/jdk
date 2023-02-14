@@ -76,8 +76,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *   client.sendAsync(request, BodyHandlers.ofString())
  *         .thenApply(HttpResponse::body)
  *         .thenAccept(System.out::println)
- *         .join();
- *   }
+ *         .join(); }
  *
  * <p>The class {@link BodyPublishers BodyPublishers} provides implementations
  * of many common publishers. Alternatively, a custom {@code BodyPublisher}
@@ -565,7 +564,8 @@ public abstract class HttpRequest {
      * convert common high-level Java objects into a flow of data suitable for
      * sending as a request body:
      *
-     * {@snippet :    // Request body from a String
+     * {@snippet :
+     *   // Request body from a String
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .header("Content-Type", "text/plain; charset=UTF-8")
@@ -583,8 +583,7 @@ public abstract class HttpRequest {
      *   HttpRequest request = HttpRequest.newBuilder()
      *        .uri(URI.create("https://foo.com/"))
      *        .POST(BodyPublishers.ofByteArray(new byte[] { ... }))
-     *        .build();
-     * }
+     *        .build(); }
      *
      * @since 11
      */
