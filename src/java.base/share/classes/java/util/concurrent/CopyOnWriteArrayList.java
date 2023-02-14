@@ -551,7 +551,7 @@ public class CopyOnWriteArrayList<E>
      */
     public E removeLast() {
         synchronized (lock) {
-           int size = getArray().length;
+            int size = getArray().length;
             if (size == 0)
                 throw new NoSuchElementException();
             else
