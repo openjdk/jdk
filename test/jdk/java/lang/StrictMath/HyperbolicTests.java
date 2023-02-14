@@ -21,6 +21,8 @@
  * questions.
  */
 import jdk.test.lib.RandomFactory;
+import java.util.function.DoubleUnaryOperator;
+
 
 /*
  * @test
@@ -38,7 +40,7 @@ import jdk.test.lib.RandomFactory;
 /**
  * The tests in ../Math/HyperbolicTests.java test properties that
  * should hold for any implementation of the hyperbolic functions
- * sinh, cos, and tanh, including the FDLIBM-based ones required by
+ * sinh, cosh, and tanh, including the FDLIBM-based ones required by
  * the StrictMath class.  Therefore, the test cases in
  * ../Math/HyperbolicTests.java are run against both the Math and
  * StrictMath versions of the hyperbolic methods.  The role of this
@@ -52,6 +54,8 @@ public class HyperbolicTests {
 
     public static void main(String... args) {
         int failures = 0;
+
+        failures += testAgainstTranslitCommon();
 
         failures += testAgainstTranslitSinh();
         failures += testAgainstTranslitCosh();
@@ -68,8 +72,48 @@ public class HyperbolicTests {
         }
     }
 
+    /**
+     * Bundle together groups of testing methods.
+     */
+    private static enum HyperbolicTest {
+        SINH(HyperbolicTests::testSinhCase, FdlibmTranslit::sinh),
+        COSH(HyperbolicTests::testCoshCase, FdlibmTranslit::cosh),
+        TANH(HyperbolicTests::testTanhCase, FdlibmTranslit::tanh);
+
+        private DoubleDoubleToInt testCase;
+        private DoubleUnaryOperator transliteration;
+
+        HyperbolicTest(DoubleDoubleToInt testCase, DoubleUnaryOperator transliteration) {
+            this.testCase = testCase;
+            this.transliteration = transliteration;
+        }
+
+        public DoubleDoubleToInt testCase() {return testCase;}
+        public DoubleUnaryOperator transliteration() {return transliteration;}
+    }
+
     // Initialize shared random number generator
     private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test against shared points of interest.
+     */
+    private static int testAgainstTranslitCommon() {
+        int failures = 0;
+        double[] pointsOfInterest = {
+            Double.MIN_NORMAL,
+            1.0,
+            Tests.createRandomDouble(random),
+        };
+
+        for (var testMethods : HyperbolicTest.values()) {
+            for (double testPoint : pointsOfInterest) {
+                failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, testMethods);
+            }
+        }
+
+        return failures;
+    }
 
     /**
      * Test StrictMath.sinh against transliteration port of sinh.
@@ -78,51 +122,30 @@ public class HyperbolicTests {
         int failures = 0;
         double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeSinh(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+            0.0,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeSinh(x, -Math.ulp(x), 1000);
+             22.0,
+            -22.0,
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointSinh(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+             0x1.0p-28,
+            -0x1.0p-28,
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.0,
+            // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+             0x1.62e42fefa39efp9,
+            -0x1.62e42fefa39efp9,
 
-               22.0,
-              -22.0,
+            // Largest argument with finite sinh, 710.4758600739439
+             0x1.633ce8fb9f87dp9,
+            -0x1.633ce8fb9f87dp9,
+        };
 
-               0x1.0p-28,
-              -0x1.0p-28,
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.SINH);
+        }
 
-               // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
-               0x1.62e42fefa39efp9,
-              -0x1.62e42fefa39efp9,
-
-               // Largest argument with finite sinh, 710.4758600739439
-               0x1.633ce8fb9f87dp9,
-              -0x1.633ce8fb9f87dp9,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointSinh(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeSinh(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
     /**
@@ -132,55 +155,34 @@ public class HyperbolicTests {
         int failures = 0;
         double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeCosh(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+            0.0,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeCosh(x, -Math.ulp(x), 1000);
+             22.0,
+            -22.0,
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointCosh(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+            // StrictMath.log(2)/2 ~= 0.34657359027997264
+             0x1.62e42fefa39efp-2,
+            -0x1.62e42fefa39efp-2,
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.0,
+             0x1.0p-28,
+            -0x1.0p-28,
 
-               22.0,
-              -22.0,
+            // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
+             0x1.62e42fefa39efp9,
+            -0x1.62e42fefa39efp9,
 
-               // StrictMath.log(2)/2 ~= 0.34657359027997264
-               0x1.62e42fefa39efp-2,
-              -0x1.62e42fefa39efp-2,
+            // Largest argument with finite cosh, 710.4758600739439
+             0x1.633ce8fb9f87dp9,
+            -0x1.633ce8fb9f87dp9,
+        };
 
-               0x1.0p-28,
-              -0x1.0p-28,
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.COSH);
+        }
 
-               // StrictMath.log(Double.MAX_VALUE) ~= 709.782712893384
-               0x1.62e42fefa39efp9,
-              -0x1.62e42fefa39efp9,
-
-               // Largest argument with finite cosh, 710.4758600739439
-               0x1.633ce8fb9f87dp9,
-              -0x1.633ce8fb9f87dp9,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointCosh(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeCosh(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
     /**
@@ -190,119 +192,68 @@ public class HyperbolicTests {
         int failures = 0;
         double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeTanh(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             0.0,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeTanh(x, -Math.ulp(x), 1000);
+             0x1.0p-55,
+            -0x1.0p-55,
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointTanh(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+             1.0,
+            -1.0,
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.0,
+             22.0,
+        };
 
-               0x1.0p-55,
-              -0x1.0p-55,
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, HyperbolicTest.COSH);
+        }
 
-               1.0,
-              -1.0,
-
-               22.0,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointTanh(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeTanh(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
-    private static int testRangeSinh(double start, double increment, int count) {
+    private interface DoubleDoubleToInt {
+        int apply(double x, double y);
+    }
+
+    private static int testRange(double start, double increment, int count,
+                                 HyperbolicTest testMethods) {
         int failures = 0;
         double x = start;
         for (int i = 0; i < count; i++, x += increment) {
-            failures += testSinhCase(x, FdlibmTranslit.sinh(x));
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
         }
         return failures;
     }
 
-    private static int testRangeCosh(double start, double increment, int count) {
-        int failures = 0;
-        double x = start;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testCoshCase(x, FdlibmTranslit.cosh(x));
-        }
-        return failures;
-    }
-
-    private static int testRangeTanh(double start, double increment, int count) {
-        int failures = 0;
-        double x = start;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testTanhCase(x, FdlibmTranslit.tanh(x));
-        }
-        return failures;
-    }
-
-
-    private static int testRangeMidpointSinh(double midpoint, double increment, int count) {
+    private static int testRangeMidpoint(double midpoint, double increment, int count,
+                                         HyperbolicTest testMethods) {
         int failures = 0;
         double x = midpoint - increment*(count / 2) ;
         for (int i = 0; i < count; i++, x += increment) {
-            failures += testSinhCase(x, FdlibmTranslit.sinh(x));
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
         }
         return failures;
     }
 
-    private static int testRangeMidpointCosh(double midpoint, double increment, int count) {
-        int failures = 0;
-        double x = midpoint - increment*(count / 2) ;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testCoshCase(x, FdlibmTranslit.cosh(x));
-        }
-        return failures;
-    }
-
-    private static int testRangeMidpointTanh(double midpoint, double increment, int count) {
-        int failures = 0;
-        double x = midpoint - increment*(count / 2) ;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testTanhCase(x, FdlibmTranslit.tanh(x));
-        }
-        return failures;
-    }
-
-
-    static int testSinhCase(double input, double expected) {
+    private static int testSinhCase(double input, double expected) {
         return Tests.test("StrictMath.sinh(double)", input,
                           StrictMath::sinh, expected);
     }
 
-    static int testCoshCase(double input, double expected) {
+    private static int testCoshCase(double input, double expected) {
         return Tests.test("StrictMath.cosh(double)", input,
                           StrictMath::cosh, expected);
     }
 
-    static int testTanhCase(double input, double expected) {
+    private static int testTanhCase(double input, double expected) {
         return Tests.test("StrictMath.tanh(double)", input,
                           StrictMath::tanh, expected);
     }
 
-    static int testSinh() {
+    private static int testSinh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.5798ee2308c3ap-27,     0x1.5798ee2308c3bp-27},
@@ -392,12 +343,12 @@ public class HyperbolicTests {
         };
 
         for (double[] testCase: testCases)
-            failures+=testSinhCase(testCase[0], testCase[1]);
+            failures += testSinhCase(testCase[0], testCase[1]);
 
         return failures;
     }
 
-    static int testCosh() {
+    private static int testCosh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.fffffffffb49fp-8,      0x1.00020000aaaabp0},
@@ -433,12 +384,12 @@ public class HyperbolicTests {
         };
 
         for (double[] testCase: testCases)
-            failures+=testCoshCase(testCase[0], testCase[1]);
+            failures += testCoshCase(testCase[0], testCase[1]);
 
         return failures;
     }
 
-    static int testTanh() {
+    private static int testTanh() {
         int failures = 0;
         double [][] testCases = {
             {0x1.5798ee2308c36p-27,     0x1.5798ee2308c36p-27},
@@ -502,7 +453,7 @@ public class HyperbolicTests {
         };
 
         for (double[] testCase: testCases)
-            failures+=testTanhCase(testCase[0], testCase[1]);
+            failures += testTanhCase(testCase[0], testCase[1]);
 
         return failures;
     }
