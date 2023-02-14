@@ -928,6 +928,8 @@ JvmtiEnv::GetAllThreads(jint* threads_count_ptr, jthread** threads_ptr) {
 jvmtiError
 JvmtiEnv::SuspendThread(jthread thread) {
   JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle self_tobj = Handle(current, nullptr);
 
   jvmtiError err;
   JavaThread* java_thread = nullptr;
@@ -946,9 +948,11 @@ JvmtiEnv::SuspendThread(jthread thread) {
       err = suspend_thread(thread_oop, java_thread, /* single_suspend */ true, nullptr);
       return err;
     }
+    // protect thread_oop as a safepoint can be reached in disabler destructor
+    self_tobj = Handle(current, thread_oop);
   }
   // Do self suspend for current JavaThread.
-  err = suspend_thread(thread_oop, current, /* single_suspend */ true, nullptr);
+  err = suspend_thread(self_tobj(), current, /* single_suspend */ true, nullptr);
   return err;
 } /* end SuspendThread */
 
