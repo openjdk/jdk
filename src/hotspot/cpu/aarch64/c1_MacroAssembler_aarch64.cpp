@@ -87,7 +87,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     fast_lock(obj, hdr, rscratch1, rscratch2, slow_case, false);
   } else {
     // and mark it as unlocked
-    orr(hdr, hdr, markWord::unlocked_value);
+     orr(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
     str(hdr, Address(disp_hdr, 0));
     // test if object header is still the same (i.e. unlocked), and if so, store the
@@ -111,7 +111,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // significant 2 bits cleared and page_size is a power of 2
     mov(rscratch1, sp);
     sub(hdr, hdr, rscratch1);
-    ands(hdr, hdr, aligned_mask - os::vm_page_size());
+    ands(hdr, hdr, aligned_mask - (int)os::vm_page_size());
     // for recursive locking, the result is zero => save it in the displaced header
     // location (NULL in the displaced hdr location indicates recursive locking)
     str(hdr, Address(disp_hdr, 0));

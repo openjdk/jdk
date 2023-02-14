@@ -731,7 +731,10 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
             __ verify_coop(from_reg->as_register(), FILE_AND_LINE);
           } else {
             __ std(from_reg->as_register(), offset, base);
-            __ verify_oop(from_reg->as_register(), FILE_AND_LINE);
+            if (VerifyOops) {
+              BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+              bs->check_oop(_masm, from_reg->as_register(), FILE_AND_LINE); // kills R0
+            }
           }
           break;
         }
@@ -772,7 +775,10 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, Register disp, BasicTy
           __ verify_coop(from_reg->as_register(), FILE_AND_LINE); // kills R0
         } else {
           __ stdx(from_reg->as_register(), base, disp);
-          __ verify_oop(from_reg->as_register(), FILE_AND_LINE); // kills R0
+          if (VerifyOops) {
+            BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+            bs->check_oop(_masm, from_reg->as_register(), FILE_AND_LINE); // kills R0
+          }
         }
         break;
       }
@@ -813,7 +819,10 @@ int LIR_Assembler::load(Register base, int offset, LIR_Opr to_reg, BasicType typ
           } else {
             __ ld(to_reg->as_register(), offset, base);
           }
-          __ verify_oop(to_reg->as_register(), FILE_AND_LINE);
+          if (VerifyOops) {
+            BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+            bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
+          }
           break;
         }
       case T_FLOAT:  __ lfs(to_reg->as_float_reg(), offset, base); break;
@@ -844,7 +853,10 @@ int LIR_Assembler::load(Register base, Register disp, LIR_Opr to_reg, BasicType 
         } else {
           __ ldx(to_reg->as_register(), base, disp);
         }
-        __ verify_oop(to_reg->as_register(), FILE_AND_LINE);
+        if (VerifyOops) {
+          BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+          bs->check_oop(_masm, to_reg->as_register(), FILE_AND_LINE); // kills R0
+        }
         break;
       }
     case T_FLOAT:  __ lfsx(to_reg->as_float_reg() , base, disp); break;
@@ -3019,8 +3031,13 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       __ lwarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stwcx_(Rco, Rptr);
     } else {
-      const Register Robj = data->as_register();
-      assert_different_registers(Rptr, Rold, Robj);
+      Register Robj = data->as_register();
+      assert_different_registers(Rptr, Rold, Rtmp);
+      assert_different_registers(Rptr, Robj, Rtmp);
+      if (Robj == Rold) { // May happen with ZGC.
+        __ mr(Rtmp, Robj);
+        Robj = Rtmp;
+      }
       __ ldarx(Rold, Rptr, MacroAssembler::cmpxchgx_hint_atomic_update());
       __ stdcx_(Robj, Rptr);
     }

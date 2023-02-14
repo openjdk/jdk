@@ -380,12 +380,6 @@
      static_field(CompressedKlassPointers,     _narrow_klass._base,                           address)                               \
      static_field(CompressedKlassPointers,     _narrow_klass._shift,                          int)                                   \
                                                                                                                                      \
-  /******/                                                                                                                           \
-  /* os */                                                                                                                           \
-  /******/                                                                                                                           \
-                                                                                                                                     \
-     static_field(os,                          _polling_page,                                 address)                               \
-                                                                                                                                     \
   /**********/                                                                                                                       \
   /* Memory */                                                                                                                       \
   /**********/                                                                                                                       \

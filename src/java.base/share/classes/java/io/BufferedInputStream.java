@@ -96,7 +96,7 @@ public class BufferedInputStream extends FilterInputStream {
 
     /**
      * The current position in the buffer. This is the index of the next
-     * character to be read from the {@code buf} array.
+     * byte to be read from the {@code buf} array.
      * <p>
      * This value is always in the range {@code 0}
      * through {@code count}. If it is less
@@ -297,7 +297,7 @@ public class BufferedInputStream extends FilterInputStream {
     }
 
     /**
-     * Read characters into a portion of an array, reading from the underlying
+     * Read bytes into a portion of an array, reading from the underlying
      * stream at most once if necessary.
      */
     private int read1(byte[] b, int off, int len) throws IOException {

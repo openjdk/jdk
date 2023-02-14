@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,12 +110,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
-  // Pushes onto the marking stack.  If the marking stack is full,
-  // pushes onto the overflow stack.
-  void stack_push(oop obj);
-  // Do not implement an equivalent stack_pop.  Deal with the
-  // marking stack and overflow stack directly.
-
  public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
@@ -133,8 +127,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   void push_deferred_object(HeapWord* addr);
 
   void reset_bitmap_query_cache() {
-    _last_query_beg = NULL;
-    _last_query_obj = NULL;
+    _last_query_beg = nullptr;
+    _last_query_obj = nullptr;
     _last_query_ret = 0;
   }
 

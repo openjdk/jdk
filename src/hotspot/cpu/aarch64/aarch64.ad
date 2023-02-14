@@ -2313,6 +2313,12 @@ const bool Matcher::match_rule_supported(int opcode) {
         ret_value = false;
       }
       break;
+    case Op_ExpandBits:
+    case Op_CompressBits:
+      if (!(UseSVE > 1 && VM_Version::supports_svebitperm())) {
+        ret_value = false;
+      }
+      break;
   }
 
   return ret_value; // Per default match rules are supported.
@@ -14102,6 +14108,31 @@ instruct maxI_immM1_reg(iRegINoSp dst, immI_M1 imm, iRegIorL2I src)
   %}
 %}
 
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bits_reverse_I(iRegINoSp dst, iRegIorL2I src)
+%{
+  match(Set dst (ReverseI src));
+  ins_cost(INSN_COST);
+  format %{ "rbitw  $dst, $src" %}
+  ins_encode %{
+    __ rbitw($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// This pattern is automatically generated from aarch64_ad.m4
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
+%{
+  match(Set dst (ReverseL src));
+  ins_cost(INSN_COST);
+  format %{ "rbit  $dst, $src" %}
+  ins_encode %{
+    __ rbit($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
 
 
 // END This section of the file is automatically generated. Do not edit --------------
@@ -17369,6 +17400,157 @@ instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
                         $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
   %}
   ins_pipe(pipe_class_memory);
+%}
+
+//----------------------------- CompressBits/ExpandBits ------------------------
+
+instruct compressBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ S, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
+    __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bext($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
+                           vRegD tdst, vRegD tsrc, vRegD tmask) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
+    __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL_memcon(iRegLNoSp dst, memory8 mem, immL mask,
+                           vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (CompressBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bext   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bext($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsI_reg(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ S, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ S, 0, $mask$$Register);
+    __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsI_memcon(iRegINoSp dst, memory4 mem, immI mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadI mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrs   $tsrc, $mem\n\t"
+            "ldrs   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrs, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 4);
+    __ ldrs($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bdep($tdst$$FloatRegister, __ S, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ S, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsL_reg(iRegLNoSp dst, iRegL src, iRegL mask,
+                         vRegD tdst, vRegD tsrc, vRegD tmask) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "mov    $tsrc, $src\n\t"
+            "mov    $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    __ mov($tsrc$$FloatRegister, __ D, 0, $src$$Register);
+    __ mov($tmask$$FloatRegister, __ D, 0, $mask$$Register);
+    __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+
+instruct expandBitsL_memcon(iRegINoSp dst, memory8 mem, immL mask,
+                         vRegF tdst, vRegF tsrc, vRegF tmask) %{
+  match(Set dst (ExpandBits (LoadL mem) mask));
+  effect(TEMP tdst, TEMP tsrc, TEMP tmask);
+  format %{ "ldrd   $tsrc, $mem\n\t"
+            "ldrd   $tmask, $mask\n\t"
+            "bdep   $tdst, $tsrc, $tmask\n\t"
+            "mov    $dst, $tdst"
+          %}
+  ins_encode %{
+    loadStore(C2_MacroAssembler(&cbuf), &MacroAssembler::ldrd, $tsrc$$FloatRegister, $mem->opcode(),
+              as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 8);
+    __ ldrd($tmask$$FloatRegister, $constantaddress($mask));
+    __ sve_bdep($tdst$$FloatRegister, __ D, $tsrc$$FloatRegister, $tmask$$FloatRegister);
+    __ mov($dst$$Register, $tdst$$FloatRegister, __ D, 0);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================

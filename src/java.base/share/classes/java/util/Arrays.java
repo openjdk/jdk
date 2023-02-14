@@ -25,8 +25,8 @@
 
 package java.util;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
@@ -2507,7 +2507,7 @@ public class Arrays {
      * @param a2 the other array to be tested for equality
      * @return {@code true} if the two arrays are equal
      */
-    public static boolean equals(short[] a, short a2[]) {
+    public static boolean equals(short[] a, short[] a2) {
         if (a==a2)
             return true;
         if (a==null || a2==null)
@@ -3535,9 +3535,19 @@ public class Arrays {
      * @since 1.6
      */
     public static byte[] copyOf(byte[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         byte[] copy = new byte[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static byte[] copyOf(byte[] original) {
+        byte[] copy = new byte[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3559,9 +3569,19 @@ public class Arrays {
      * @since 1.6
      */
     public static short[] copyOf(short[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         short[] copy = new short[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static short[] copyOf(short[] original) {
+        short[] copy = new short[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3583,9 +3603,19 @@ public class Arrays {
      * @since 1.6
      */
     public static int[] copyOf(int[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         int[] copy = new int[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static int[] copyOf(int[] original) {
+        int[] copy = new int[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3607,9 +3637,19 @@ public class Arrays {
      * @since 1.6
      */
     public static long[] copyOf(long[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         long[] copy = new long[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static long[] copyOf(long[] original) {
+        long[] copy = new long[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3631,9 +3671,19 @@ public class Arrays {
      * @since 1.6
      */
     public static char[] copyOf(char[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         char[] copy = new char[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static char[] copyOf(char[] original) {
+        char[] copy = new char[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3655,9 +3705,19 @@ public class Arrays {
      * @since 1.6
      */
     public static float[] copyOf(float[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         float[] copy = new float[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static float[] copyOf(float[] original) {
+        float[] copy = new float[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3679,9 +3739,19 @@ public class Arrays {
      * @since 1.6
      */
     public static double[] copyOf(double[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         double[] copy = new double[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static double[] copyOf(double[] original) {
+        double[] copy = new double[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3703,9 +3773,19 @@ public class Arrays {
      * @since 1.6
      */
     public static boolean[] copyOf(boolean[] original, int newLength) {
+        if (newLength == original.length) {
+            return copyOf(original);
+        }
         boolean[] copy = new boolean[newLength];
         System.arraycopy(original, 0, copy, 0,
                          Math.min(original.length, newLength));
+        return copy;
+    }
+
+    @ForceInline
+    private static boolean[] copyOf(boolean[] original) {
+        boolean[] copy = new boolean[original.length];
+        System.arraycopy(original, 0, copy, 0, original.length);
         return copy;
     }
 
@@ -3790,6 +3870,13 @@ public class Arrays {
         return copy;
     }
 
+    @ForceInline
+    private static void checkLength(int from, int to) {
+        if (to < from) {
+            throw new IllegalArgumentException(from + " > " + to);
+        }
+    }
+
     /**
      * Copies the specified range of the specified array into a new array.
      * The initial index of the range ({@code from}) must lie between zero
@@ -3817,9 +3904,17 @@ public class Arrays {
      * @since 1.6
      */
     public static byte[] copyOfRange(byte[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeByte(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static byte[] copyOfRangeByte(byte[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         byte[] copy = new byte[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -3853,9 +3948,17 @@ public class Arrays {
      * @since 1.6
      */
     public static short[] copyOfRange(short[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeShort(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static short[] copyOfRangeShort(short[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         short[] copy = new short[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -3889,9 +3992,17 @@ public class Arrays {
      * @since 1.6
      */
     public static int[] copyOfRange(int[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeInt(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static int[] copyOfRangeInt(int[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         int[] copy = new int[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -3925,9 +4036,17 @@ public class Arrays {
      * @since 1.6
      */
     public static long[] copyOfRange(long[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeLong(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static long[] copyOfRangeLong(long[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         long[] copy = new long[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -3961,9 +4080,17 @@ public class Arrays {
      * @since 1.6
      */
     public static char[] copyOfRange(char[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeChar(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static char[] copyOfRangeChar(char[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         char[] copy = new char[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -3997,9 +4124,17 @@ public class Arrays {
      * @since 1.6
      */
     public static float[] copyOfRange(float[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeFloat(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static float[] copyOfRangeFloat(float[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         float[] copy = new float[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -4033,9 +4168,17 @@ public class Arrays {
      * @since 1.6
      */
     public static double[] copyOfRange(double[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeDouble(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static double[] copyOfRangeDouble(double[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         double[] copy = new double[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -4069,9 +4212,17 @@ public class Arrays {
      * @since 1.6
      */
     public static boolean[] copyOfRange(boolean[] original, int from, int to) {
+        // Tickle the JIT to fold special cases optimally
+        if (from != 0 || to != original.length)
+            return copyOfRangeBoolean(original, from, to);
+        else // from == 0 && to == original.length
+            return copyOf(original);
+    }
+
+    @ForceInline
+    private static boolean[] copyOfRangeBoolean(boolean[] original, int from, int to) {
+        checkLength(from, to);
         int newLength = to - from;
-        if (newLength < 0)
-            throw new IllegalArgumentException(from + " > " + to);
         boolean[] copy = new boolean[newLength];
         System.arraycopy(original, from, copy, 0,
                          Math.min(original.length - from, newLength));
@@ -5615,8 +5766,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(boolean[], int, int, boolean[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -5750,8 +5901,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(byte[], int, int, byte[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6005,8 +6156,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(short[], int, int, short[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6259,8 +6410,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(char[], int, int, char[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6394,8 +6545,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(int[], int, int, int[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6648,8 +6799,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(long[], int, int, long[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -6902,8 +7053,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(float[], int, int, float[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7037,8 +7188,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(double[], int, int, double[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7196,8 +7347,8 @@ public class Arrays {
      * <p>The comparison is consistent with
      * {@link #equals(Object[], int, int, Object[], int, int) equals}, more
      * specifically the following holds for arrays {@code a} and {@code b} with
-     * specified ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively:
+     * specified ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively:
      * <pre>{@code
      *     Arrays.equals(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) ==
      *         (Arrays.compare(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex) == 0)
@@ -7479,8 +7630,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7492,8 +7643,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7606,8 +7757,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7619,8 +7770,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7733,8 +7884,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7746,8 +7897,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7860,8 +8011,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -7873,8 +8024,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -7987,8 +8138,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8000,8 +8151,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8114,8 +8265,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8127,8 +8278,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8241,8 +8392,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8254,8 +8405,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8368,8 +8519,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8381,8 +8532,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8499,8 +8650,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8512,8 +8663,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
@@ -8645,8 +8796,8 @@ public class Arrays {
      * Otherwise, there is no mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a common
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a common
      * prefix of length {@code pl} if the following expression is true:
      * <pre>{@code
      *     pl >= 0 &&
@@ -8658,8 +8809,8 @@ public class Arrays {
      * elements from each array mismatch.
      *
      * <p>Two non-{@code null} arrays, {@code a} and {@code b} with specified
-     * ranges [{@code aFromIndex}, {@code atoIndex}) and
-     * [{@code bFromIndex}, {@code btoIndex}) respectively, share a proper
+     * ranges [{@code aFromIndex}, {@code aToIndex}) and
+     * [{@code bFromIndex}, {@code bToIndex}) respectively, share a proper
      * prefix if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&

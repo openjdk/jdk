@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 #endif
     fast_lock_impl(obj, hdr, thread, tmp, slow_case, LP64_ONLY(false) NOT_LP64(true));
   } else {
-    Label done;
-    // mark header as unlocked
+    // and mark it as unlocked
     orptr(hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
     movptr(Address(disp_hdr, 0), hdr);
@@ -97,15 +96,15 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     // assuming both the stack pointer and page_size have their least
     // significant 2 bits cleared and page_size is a power of 2
     subptr(hdr, rsp);
-    andptr(hdr, aligned_mask - os::vm_page_size());
+    andptr(hdr, aligned_mask - (int)os::vm_page_size());
     // for recursive locking, the result is zero => save it in the displaced header
     // location (NULL in the displaced hdr location indicates recursive locking)
     movptr(Address(disp_hdr, 0), hdr);
     // otherwise we don't care about the result and handle locking via runtime call
     jcc(Assembler::notZero, slow_case);
-    // done
-    bind(done);
   }
+  // done
+  bind(done);
 
   inc_held_monitor_count();
 

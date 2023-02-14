@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,14 +50,14 @@ void CodeBlobToOopClosure::do_nmethod(nmethod* nm) {
 
 void CodeBlobToOopClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     do_nmethod(nm);
   }
 }
 
 void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL && nm->oops_do_try_claim()) {
+  if (nm != nullptr && nm->oops_do_try_claim()) {
     // Process the oops in the nmethod
     nm->oops_do(_cl);
 
@@ -66,7 +66,7 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
       nm->mark_as_maybe_on_stack();
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      if (bs_nm != NULL) {
+      if (bs_nm != nullptr) {
         bs_nm->disarm(nm);
       }
     }
@@ -79,7 +79,7 @@ void MarkingCodeBlobClosure::do_code_blob(CodeBlob* cb) {
 
 void CodeBlobToNMethodClosure::do_code_blob(CodeBlob* cb) {
   nmethod* nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     _nm_cl->do_nmethod(nm);
   }
 }

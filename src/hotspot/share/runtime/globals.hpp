@@ -1109,7 +1109,7 @@ const int ObjectAlignmentInBytes = 8;
   product_pd(bool, CompactStrings,                                          \
           "Enable Strings to use single byte chars in backing store")       \
                                                                             \
-  product_pd(uintx, TypeProfileLevel,                                       \
+  product_pd(uint, TypeProfileLevel,                                        \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
                      "X: Type profiling of parameters to methods; "         \
