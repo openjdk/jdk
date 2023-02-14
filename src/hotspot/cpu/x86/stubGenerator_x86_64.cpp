@@ -2658,7 +2658,7 @@ address StubGenerator::generate_base64_decodeBlock() {
 
     // Check for buffer too small (for algorithm)
     __ subl(length, 0x2c);
-    __ jcc(Assembler::lessEqual, L_tailProc);
+    __ jcc(Assembler::less, L_tailProc);
 
     __ shll(isURL, 2);
 
@@ -2696,7 +2696,7 @@ address StubGenerator::generate_base64_decodeBlock() {
     __ addptr(source, 0x20);
     __ addptr(dest, 0x18);
     __ subl(length, 0x20);
-    __ jcc(Assembler::lessEqual, L_tailProc);
+    __ jcc(Assembler::less, L_tailProc);
 
     __ bind(L_enterLoop);
 
