@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1276,7 +1276,7 @@ class ExtractNode : public Node {
   virtual int Opcode() const;
   uint  pos() const { return in(2)->get_int(); }
 
-  static Node* make(Node* v, uint position, BasicType bt);
+  static Node* make(Node* v, ConINode* pos, BasicType bt);
   static int opcode(BasicType bt);
 };
 

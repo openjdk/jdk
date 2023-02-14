@@ -209,6 +209,7 @@ void MacroAssembler::post_call_nop() {
     return;
   }
   relocate(post_call_nop_Relocation::spec(), [&] {
+    InlineSkippedInstructionsCounter skipCounter(this);
     nop();
     li32(zr, 0);
   });
@@ -713,33 +714,6 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Reg
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
 }
 
-void MacroAssembler::baseOffset32(Register Rd, const Address &adr, int32_t &offset) {
-  assert(Rd != noreg, "Rd must not be empty register!");
-  guarantee(Rd != adr.base(), "should use different registers!");
-  if (is_offset_in_range(adr.offset(), 32)) {
-    int32_t imm = adr.offset();
-    int32_t upper = imm, lower = imm;
-    lower = (imm << 20) >> 20;
-    upper -= lower;
-    lui(Rd, upper);
-    offset = lower;
-  } else {
-    offset = ((int32_t)adr.offset() << 20) >> 20;
-    li(Rd, adr.offset() - offset);
-  }
-  add(Rd, Rd, adr.base());
-}
-
-void MacroAssembler::baseOffset(Register Rd, const Address &adr, int32_t &offset) {
-  if (is_offset_in_range(adr.offset(), 12)) {
-    assert(Rd != noreg, "Rd must not be empty register!");
-    addi(Rd, adr.base(), adr.offset());
-    offset = 0;
-  } else {
-    baseOffset32(Rd, adr, offset);
-  }
-}
-
 void MacroAssembler::la(Register Rd, const address dest) {
   int64_t offset = dest - pc();
   if (is_offset_in_range(offset, 32)) {
@@ -764,9 +738,10 @@ void MacroAssembler::la(Register Rd, const Address &adr) {
       break;
     }
     case Address::base_plus_offset: {
-      int32_t offset = 0;
-      baseOffset(Rd, adr, offset);
-      addi(Rd, Rd, offset);
+      Address new_adr = legitimize_address(Rd, adr);
+      if (!(new_adr.base() == Rd && new_adr.offset() == 0)) {
+        addi(Rd, new_adr.base(), new_adr.offset());
+      }
       break;
     }
     default:
@@ -863,7 +838,7 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
     if (is_imm_in_range(distance, 20, 1)) {                        \
       Assembler::jal(REGISTER, distance);                          \
     } else {                                                       \
-      assert(temp != noreg, "temp must not be empty register!");   \
+      assert(temp != noreg, "expecting a register");               \
       int32_t offset = 0;                                          \
       movptr(temp, dest, offset);                                  \
       Assembler::jalr(REGISTER, temp, offset);                     \
@@ -885,8 +860,8 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
         break;                                                     \
       }                                                            \
       case Address::base_plus_offset: {                            \
-        int32_t offset = 0;                                        \
-        baseOffset(temp, adr, offset);                             \
+        int32_t offset = ((int32_t)adr.offset() << 20) >> 20;      \
+        la(temp, Address(adr.base(), adr.offset() - offset));      \
         Assembler::jalr(REGISTER, temp, offset);                   \
         break;                                                     \
       }                                                            \
@@ -2195,7 +2170,7 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
   }
 }
 
-void  MacroAssembler::decode_heap_oop_not_null(Register r) {
+void MacroAssembler::decode_heap_oop_not_null(Register r) {
   decode_heap_oop_not_null(r, r);
 }
 
@@ -2411,10 +2386,12 @@ void MacroAssembler::membar(uint32_t order_constraint) {
 // actually be used: you must use the Address that is returned. It
 // is up to you to ensure that the shift provided matches the size
 // of your data.
-Address MacroAssembler::form_address(Register Rd, Register base, long byte_offset) {
+Address MacroAssembler::form_address(Register Rd, Register base, int64_t byte_offset) {
   if (is_offset_in_range(byte_offset, 12)) { // 12: imm in range 2^12
     return Address(base, byte_offset);
   }
+
+  assert_different_registers(Rd, base, noreg);
 
   // Do it the hard way
   mv(Rd, byte_offset);
@@ -3165,8 +3142,8 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
 
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
-  address stub = start_a_stub(NativeInstruction::instruction_size
-                            + NativeCallTrampolineStub::instruction_size);
+  // Max stub size: alignment nop, TrampolineStub.
+  address stub = start_a_stub(max_trampoline_stub_size());
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
@@ -3204,6 +3181,16 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
 
   end_a_stub();
   return stub_start_addr;
+}
+
+int MacroAssembler::max_trampoline_stub_size() {
+  // Max stub size: alignment nop, TrampolineStub.
+  return NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size;
+}
+
+int MacroAssembler::static_call_stub_size() {
+  // (lui, addi, slli, addi, slli, addi) + (lui, addi, slli, addi, slli) + jalr
+  return 12 * NativeInstruction::instruction_size;
 }
 
 Address MacroAssembler::add_memory_helper(const Address dst, Register tmp) {
