@@ -1596,9 +1596,6 @@ bool FileMapRegion::check_region_crc() const {
   // This function should be called after the region has been properly
   // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
   // I.e., this->mapped_base() must be valid.
-  if (!VerifySharedSpaces) {
-    return true;
-  }
   size_t sz = used();
   if (sz == 0) {
     return true;
@@ -1942,7 +1939,7 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
   r->set_mapped_from_file(false);
   r->set_mapped_base(base);
 
-  if (!r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc()) {
     return false;
   }
 
@@ -2000,7 +1997,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     r->set_mapped_base(requested_addr);
   }
 
-  if (!r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc()) {
     return MAP_ARCHIVE_OTHER_FAILURE;
   }
 
@@ -2023,7 +2020,7 @@ char* FileMapInfo::map_bitmap_region() {
   }
 
   r->set_mapped_base(bitmap_base);
-  if (!r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc()) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -2449,7 +2446,7 @@ bool FileMapInfo::map_heap_regions(int first, int max,  bool is_open_archive,
     }
 
     r->set_mapped_base(base);
-    if (!r->check_region_crc()) {
+    if (VerifySharedSpaces && !r->check_region_crc()) {
       // dealloc the regions from java heap
       dealloc_heap_regions(regions, num_regions);
       log_info(cds)("UseSharedSpaces: mapped heap regions are corrupt");
