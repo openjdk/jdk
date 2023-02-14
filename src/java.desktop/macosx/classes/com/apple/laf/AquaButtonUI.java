@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -340,7 +340,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         // performs icon and text rect calculations
         final String text;
         final View v = (View)c.getClientProperty(BasicHTML.propertyKey);
-        if (v != null && ((AbstractButton) c).getText().contains("<img ")) {
+        if (v != null && ((AbstractButton) c).getIcon() == null) {
             // use zero insets for view when HTML contains an image
             // since layout only handles text calculations
             text = layoutAndGetText(g, b, aquaBorder, new Insets(0,0,0,0),
