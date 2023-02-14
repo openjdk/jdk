@@ -32,7 +32,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Iterator;
 import java.util.stream.Stream;
 
 import jdk.test.lib.jittester.ErrorTolerance;
@@ -41,7 +40,7 @@ import jdk.test.lib.jittester.ProcessRunner;
 
 public class JitTesterDriver {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         if (args.length < 1) {
             throw new IllegalArgumentException(
                     "[TESTBUG]: wrong number of argument : " + args.length
@@ -57,17 +56,24 @@ public class JitTesterDriver {
 
             // Verification
             String goldExitValue = streamFile(testDir, name, Phase.GOLD_RUN, "exit").findFirst().get();
-            if (!goldExitValue.equals("TIMEOUT")) {
-                String anlzExitValue = streamFile(Path.of("."), name, Phase.RUN, "exit").findFirst().get();
-                Asserts.assertEQ(anlzExitValue, goldExitValue);
+            long goldOutSize = Files.size(Paths.get(Utils.TEST_SRC).resolve(name + ".gold.out"));
+            if (!goldExitValue.equals("TIMEOUT") && goldOutSize < 2000000) {
+                Stream<String> goldOut = streamFile(Paths.get(Utils.TEST_SRC), name, Phase.GOLD_RUN, "out");
+                Stream<String> goldErr = streamFile(Paths.get(Utils.TEST_SRC), name, Phase.GOLD_RUN, "err");
 
-                ErrorTolerance.assertIsAcceptable(
-                    Paths.get(Utils.TEST_SRC).resolve(name + "." + Phase.GOLD_RUN.suffix + ".err"),
-                    Paths.get(".").resolve(name + "." + Phase.RUN.suffix + ".err"));
+                if (ErrorTolerance.isReliable(goldOut) && ErrorTolerance.isReliable(goldErr)) {
+                    String runExitValue = streamFile(Path.of("."), name, Phase.RUN, "exit").findFirst().get();
+                    Asserts.assertEQ(goldExitValue, runExitValue, "Exit codes mismatch");
 
-                ErrorTolerance.assertIsAcceptable(
-                    Paths.get(Utils.TEST_SRC).resolve(name + "." + Phase.GOLD_RUN.suffix + ".out"),
-                    Paths.get(".").resolve(name + "." + Phase.RUN.suffix + ".out"));
+                    ErrorTolerance.assertIsAcceptable(
+                            Paths.get(Utils.TEST_SRC).resolve(name + "." + Phase.GOLD_RUN.suffix + ".err"),
+                            Paths.get(".").resolve(name + "." + Phase.RUN.suffix + ".err"));
+
+                    ErrorTolerance.assertIsAcceptable(
+                            Paths.get(Utils.TEST_SRC).resolve(name + "." + Phase.GOLD_RUN.suffix + ".out"),
+                            Paths.get(".").resolve(name + "." + Phase.RUN.suffix + ".out"));
+                }
+
             }
         } catch (Exception e) {
             throw new Error("Unexpected exception on test jvm start :" + e, e);

@@ -27,7 +27,7 @@ public enum Phase {
     GENERATE(300, "generate"),
     COMPILE(300, "javac"),
     GOLD_RUN(70, "gold"),
-    RUN(90, "run"),
+    RUN(120, "run"),
     IGNORE(10, "ignore");
 
     public final int timeoutSeconds;

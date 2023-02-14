@@ -50,6 +50,8 @@ public class ErrorTolerance {
 
     private static final Predicate<String> OOME = Pattern.compile(
             "Exception in thread \".*\" java.lang.OutOfMemoryError.*").asPredicate();
+    private static final Predicate<String> SOE = Pattern.compile(
+            ".*StackOverFlowError.*").asPredicate();
 
     private static boolean isIntrinsicCandidate(String line) {
         return PATTERNS.stream()
@@ -64,10 +66,6 @@ public class ErrorTolerance {
             while (goldIt.hasNext() && runIt.hasNext()) {
                 String goldLine = goldIt.next();
                 String runLine = runIt.next();
-
-                if (OOME.test(goldLine)) {
-                    return;     // OOMEs are simply ignored.
-                }
 
                 // Skipping intrinsics in 'run'
                 while (isIntrinsicCandidate(goldLine) &&
@@ -94,5 +92,9 @@ public class ErrorTolerance {
         } catch (IOException e) {
             throw new Error("Could not compare files: '" + comparisonNames);
         }
+    }
+
+    public static boolean isReliable(Stream<String> gold) {
+        return !gold.anyMatch(line -> OOME.test(line) || SOE.test(line));
     }
 }

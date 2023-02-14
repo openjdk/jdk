@@ -211,7 +211,62 @@ public class ErrorToleranceTest {
             "Correct line 2"
         };
 
-        ErrorTolerance.assertIsAcceptable("", Arrays.stream(run), Arrays.stream(gold));
+        ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
+    }
+
+    @Test
+    public void goldHaveStackOverflowWhileRunDoesnt() {
+        String[] gold = new String[] {
+            "[Fuzzer] End of execution.",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] StackOverFlowError caught.",
+            "[Fuzzer] Field traceCount: 2238",
+        };
+
+        String[] run = new String[] {
+            "[Fuzzer] traceID27",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 7919",
+            "[Fuzzer] traceID2",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 15838",
+            "[Fuzzer] traceID0",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 23757",
+            "[Fuzzer] traceID28",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 31676",
+            "[Fuzzer] traceID27",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 39595",
+            "[Fuzzer] traceID2",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 47514",
+            "[Fuzzer] traceID0",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 55433",
+            "[Fuzzer] traceID28",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 63352",
+            "[Fuzzer] traceID27",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 71271",
+            "[Fuzzer] traceID2",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 79190",
+            "[Fuzzer] traceID0",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 87109",
+            "[Fuzzer] traceID28",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 95028",
+            "[Fuzzer] traceID27",
+            "[Fuzzer] Field field_0: 0",
+            "[Fuzzer] Field traceCount: 102947",
+            "[Fuzzer] trace max reached, exit.",
+        };
+
+        ErrorTolerance.assertIsAcceptable("", Arrays.stream(gold), Arrays.stream(run));
     }
 
 }

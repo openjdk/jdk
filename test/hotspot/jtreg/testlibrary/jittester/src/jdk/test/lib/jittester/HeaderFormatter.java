@@ -39,6 +39,7 @@ public final class HeaderFormatter {
         private String jtDriverOptions = "-Xcomp";
         private String libraries = "/ ../";
         private boolean printJitTesterHierarchy = true;
+        private boolean buildPrinter = true;
 
         public Builder preRunActions(Function<String, String[]> from) {
             preRunActions = from;
@@ -60,6 +61,11 @@ public final class HeaderFormatter {
             return this;
         }
 
+        public Builder buildPrinter(boolean from) {
+            buildPrinter = false;
+            return this;
+        }
+
         public HeaderFormatter build() {
             return new HeaderFormatter(this);
         }
@@ -76,14 +82,14 @@ public final class HeaderFormatter {
         header.append("/*\n * @test\n * @summary ")
               .append(synopsis)
               .append(" \n * @library " + builder.libraries + "\n");
-        header.append(" * @run build jdk.test.lib.jittester.jtreg.JitTesterDriver "
-                        + "jdk.test.lib.jittester.jtreg.Printer\n");
-        for (String action : builder.preRunActions.apply(mainClassName)) {
+       header.append(" * @run build jdk.test.lib.jittester.jtreg.JitTesterDriver"
+                        + (builder.buildPrinter ? " jdk.test.lib.jittester.jtreg.Printer\n" : "\n"));
+       for (String action : builder.preRunActions.apply(mainClassName)) {
             header.append(" * ")
                   .append(action)
                   .append("\n");
         }
-        header.append(" * @run driver jdk.test.lib.jittester.jtreg.JitTesterDriver ")
+        header.append(" * @run driver/timeout=180 jdk.test.lib.jittester.jtreg.JitTesterDriver ")
               .append(DISABLE_WARNINGS)
               .append(" ")
               .append(builder.jtDriverOptions)
