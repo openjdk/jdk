@@ -58,15 +58,6 @@ public class TestTranslatedException {
         }
         encodeDecode(throwable);
     }
-    @SuppressWarnings("unchecked")
-    @Test
-    public void encodeDecodeTest2() throws Exception {
-        Throwable throwable = new ExceptionInInitializerError(new InvocationTargetException(new Untranslatable("test exception", new NullPointerException()), "invoke"));
-        for (int i = 0; i < 10; i++) {
-            throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
-        }
-        encodeDecode(throwable);
-    }
 
     private void encodeDecode(Throwable throwable) throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();

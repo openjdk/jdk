@@ -29,6 +29,7 @@ import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 
+import jdk.internal.misc.Unsafe;
 import jdk.vm.ci.code.BytecodeFrame;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -48,6 +49,12 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * Calls from Java into HotSpot. The behavior of all the methods in this class that take a native
  * pointer as an argument (e.g., {@link #getSymbol(long)}) is undefined if the argument does not
  * denote a valid native object.
+ *
+ * Note also that some calls pass a raw VM value to avoid a JNI upcall. For example,
+ * {@link #getBytecode(HotSpotResolvedJavaMethodImpl, long)} needs the raw {@code Method*} value
+ * (stored in {@link HotSpotResolvedJavaMethodImpl#methodHandle}) in the C++ implementation. The
+ * {@link HotSpotResolvedJavaMethodImpl} wrapper is still passed as well as it may be the last
+ * reference keeping the raw value alive.
  */
 final class CompilerToVM {
     /**
@@ -1296,4 +1303,78 @@ final class CompilerToVM {
 
     native void notifyCompilerInliningEvent(int compileId, HotSpotResolvedJavaMethodImpl caller, long callerPointer,
                     HotSpotResolvedJavaMethodImpl callee, long calleePointer, boolean succeeded, String message, int bci);
+
+    /**
+     * Gets the serialized annotation info for {@code type} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedClassAnnotationData(type, type.getKlassPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedClassAnnotationData(HotSpotResolvedObjectTypeImpl type, long klassPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for {@code method} by calling
+     * {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedExecutableAnnotationData(method, method.getMethodPointer(),
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedExecutableAnnotationData(HotSpotResolvedJavaMethodImpl method, long methodPointer,
+                    Object filter, int filterLength, long filterKlassPointers);
+
+    /**
+     * Gets the serialized annotation info for the field denoted by {@code holder} and
+     * {@code fieldIndex} by calling {@code VMSupport.encodeAnnotations} in the HotSpot heap.
+     */
+    byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, int fieldIndex, ResolvedJavaType[] filter) {
+        try (KlassPointers a = new KlassPointers(filter)) {
+            return getEncodedFieldAnnotationData(holder, holder.getKlassPointer(), fieldIndex,
+                            a.types, a.types.length, a.buffer());
+        }
+    }
+
+    native byte[] getEncodedFieldAnnotationData(HotSpotResolvedObjectTypeImpl holder, long klassPointer, int fieldIndex,
+                    Object filterTypes, int filterLength, long filterKlassPointers);
+
+    /**
+     * Helper for passing an array of {@Klass*} values in a native buffer to native code.
+     */
+    static final class KlassPointers implements AutoCloseable {
+        final ResolvedJavaType[] types;
+        final long pointers;
+        final Unsafe unsafe = UnsafeAccess.UNSAFE;
+
+        KlassPointers(ResolvedJavaType[] types) {
+            int length = types.length;
+            this.types = types;
+            pointers = unsafe.allocateMemory(length * Long.BYTES);
+        }
+
+        // Separate from constructor so that deallocation is ensured
+        // in the context of a ClassCastException from the cast below
+        long buffer() {
+            long pos = pointers;
+            for (int i = 0; i < types.length; i++) {
+                HotSpotResolvedObjectTypeImpl hsType = (HotSpotResolvedObjectTypeImpl) types[i];
+                unsafe.putLong(pos, hsType.getKlassPointer());
+                pos += Long.BYTES;
+            }
+            return pointers;
+        }
+
+        @Override
+        public void close() {
+            unsafe.freeMemory(pointers);
+        }
+    }
 }

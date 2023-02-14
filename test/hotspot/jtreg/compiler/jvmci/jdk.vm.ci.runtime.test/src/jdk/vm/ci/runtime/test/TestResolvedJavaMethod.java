@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,32 @@
  * @test
  * @requires vm.jvmci
  * @library ../../../../../
+ * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/AnnotationTestInput.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/MemberTypeChanged.java
+ *          TestResolvedJavaType.java
+ * @clean jdk.internal.vm.test.AnnotationTestInput$Missing
+ * @compile ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberDeleted.java
+ *          ../../../../../../../../../../../jdk/jdk/internal/vm/AnnotationEncodingDecoding/alt/MemberTypeChanged.java
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.common
+ *          java.base/jdk.internal.reflect
  *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.vm
+ *          java.base/sun.reflect.annotation
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.runtime.test.TestResolvedJavaMethod
  */
 
 package jdk.vm.ci.runtime.test;
 
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.ALL_NUMBERS;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE.Eins;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersDE.Zwei;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersEN.One;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersEN.Two;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersUA.Dva;
+import static jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.NumbersUA.Odyn;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -61,11 +79,15 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 
+import jdk.internal.vm.test.AnnotationTestInput;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.ExceptionHandler;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaMethod.Parameter;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation1;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation2;
+import jdk.vm.ci.runtime.test.TestResolvedJavaMethod.AnnotationDataTest.Annotation3;
 
 /**
  * Tests for {@link ResolvedJavaMethod}.
@@ -472,6 +494,96 @@ public class TestResolvedJavaMethod extends MethodUniverse {
                 }
             }
         }
+    }
+
+    /**
+     * Encapsulates input for {@link TestResolvedJavaMethod#getAnnotationDataTest}.
+     */
+    static class AnnotationDataTest {
+
+        public enum NumbersEN {
+            One,
+            Two;
+
+            NumbersEN() {
+                ALL_NUMBERS.add(this);
+            }
+        }
+
+        public enum NumbersDE {
+            Eins,
+            Zwei;
+
+            NumbersDE() {
+                ALL_NUMBERS.add(this);
+            }
+        }
+
+        public enum NumbersUA {
+            Odyn,
+            Dva;
+
+            NumbersUA() {
+                ALL_NUMBERS.add(this);
+            }
+        }
+
+        static final Set<Object> ALL_NUMBERS = new HashSet<>();
+
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface Annotation1 {
+            NumbersEN value() default NumbersEN.One;
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface Annotation2 {
+            NumbersDE value() default NumbersDE.Eins;
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        public @interface Annotation3 {
+            NumbersUA value() default NumbersUA.Odyn;
+        }
+
+        @Annotation1
+        @Annotation2
+        @Annotation3(NumbersUA.Dva)
+        static void methodWithThreeAnnotations() {
+
+        }
+    }
+
+    @Test
+    public void getAnnotationDataTest() throws Exception {
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("annotatedMethod"));
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("missingAnnotation"));
+        try {
+            TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("missingNestedAnnotation"));
+            throw new AssertionError("expected " + NoClassDefFoundError.class.getName());
+        } catch (NoClassDefFoundError e) {
+            Assert.assertEquals("jdk/internal/vm/test/AnnotationTestInput$Missing", e.getMessage());
+        }
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("missingTypeOfClassMember"));
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("missingMember"));
+        TestResolvedJavaType.getAnnotationDataTest(AnnotationTestInput.class.getDeclaredMethod("changeTypeOfMember"));
+
+        for (Method m : methods.keySet()) {
+            TestResolvedJavaType.getAnnotationDataTest(m);
+        }
+
+        ResolvedJavaMethod m = metaAccess.lookupJavaMethod(AnnotationDataTest.class.getDeclaredMethod("methodWithThreeAnnotations"));
+        ResolvedJavaType a1 = metaAccess.lookupJavaType(Annotation1.class);
+        ResolvedJavaType a2 = metaAccess.lookupJavaType(Annotation2.class);
+        ResolvedJavaType a3 = metaAccess.lookupJavaType(Annotation3.class);
+        ResolvedJavaType a4 = metaAccess.lookupJavaType(AnnotationDataTest.class);
+
+        // Ensure NumbersDE is not initialized before Annotation2 is requested
+        Assert.assertEquals(2, m.getAnnotationData(a1, a3).length);
+        Assert.assertEquals(ALL_NUMBERS, Set.of(One, Two, Odyn, Dva));
+
+        // Ensure NumbersDE is initialized after Annotation2 is requested
+        Assert.assertEquals(1, m.getAnnotationData(a2).length);
+        Assert.assertEquals(ALL_NUMBERS, Set.of(One, Two, Odyn, Dva, Eins, Zwei));
     }
 
     private Method findTestMethod(Method apiMethod) {

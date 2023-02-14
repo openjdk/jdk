@@ -37,8 +37,11 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Objects;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.Option;
+import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
@@ -523,7 +526,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[] getAnnotations() {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodAnnotations(this);
@@ -531,7 +534,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return new Annotation[0];
         }
         return runtime().reflection.getMethodDeclaredAnnotations(this);
@@ -539,10 +542,17 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if ((getConstMethodFlags() & config().constMethodHasMethodAnnotations) == 0 || isClassInitializer()) {
+        if (!hasAnnotations()) {
             return null;
         }
         return runtime().reflection.getMethodAnnotation(this, annotationClass);
+    }
+
+    /**
+     * Returns whether this method has annotations.
+     */
+    private boolean hasAnnotations() {
+        return (getConstMethodFlags() & config().constMethodHasMethodAnnotations) != 0 && !isClassInitializer();
     }
 
     @Override
@@ -751,5 +761,14 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     @Override
     public int methodIdnum() {
         return UNSAFE.getChar(getConstMethod() + config().constMethodMethodIdnumOffset);
+    }
+
+    @Override
+    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
+        if (filter.length == 0 || !hasAnnotations()) {
+            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+        }
+        byte[] encoded = compilerToVM().getEncodedExecutableAnnotationData(this, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
     }
 }

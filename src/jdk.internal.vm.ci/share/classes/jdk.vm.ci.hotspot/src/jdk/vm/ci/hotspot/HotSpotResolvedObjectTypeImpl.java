@@ -38,7 +38,10 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import jdk.internal.vm.VMSupport;
 import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
 import jdk.vm.ci.meta.Assumptions.ConcreteMethod;
 import jdk.vm.ci.meta.Assumptions.ConcreteSubtype;
@@ -871,18 +874,42 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return getConstantPool().getSourceFileName();
     }
 
+    private boolean hasAnnotations() {
+        if (isArray()) {
+            return false;
+        }
+        HotSpotVMConfig config = config();
+        final long metaspaceAnnotations = UNSAFE.getAddress(getKlassPointer() + config.instanceKlassAnnotationsOffset);
+        if (metaspaceAnnotations != 0) {
+            long classAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsClassAnnotationsOffset);
+            return classAnnotations != 0;
+        }
+        return false;
+    }
+
+    private static final Annotation[] NO_ANNOTATIONS = {};
+
     @Override
     public Annotation[] getAnnotations() {
+        if (!hasAnnotations()) {
+            return NO_ANNOTATIONS;
+        }
         return runtime().reflection.getAnnotations(this);
     }
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
+        if (!hasAnnotations()) {
+            return NO_ANNOTATIONS;
+        }
         return runtime().reflection.getDeclaredAnnotations(this);
     }
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+        if (!hasAnnotations()) {
+            return null;
+        }
         return runtime().reflection.getAnnotation(this, annotationClass);
     }
 
@@ -1061,5 +1088,14 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
     @Override
     public boolean isCloneableWithAllocation() {
         return (getAccessFlags() & config().jvmAccIsCloneableFast) != 0;
+    }
+
+    @Override
+    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
+        if (!hasAnnotations()) {
+            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+        }
+        byte[] encoded = compilerToVM().getEncodedClassAnnotationData(this, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
     }
 }

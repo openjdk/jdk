@@ -23,6 +23,7 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
@@ -31,6 +32,9 @@ import java.lang.annotation.Annotation;
 
 import jdk.internal.vm.annotation.Stable;
 
+import jdk.internal.vm.VMSupport;
+import jdk.vm.ci.meta.AnnotationData;
+import jdk.vm.ci.meta.AnnotationDataDecoder;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -220,5 +224,14 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     @Override
     public JavaConstant getConstantValue() {
         return holder.createFieldInfo(index).getConstantValue();
+    }
+
+    @Override
+    public AnnotationData[] getAnnotationData(ResolvedJavaType... filter) {
+        if (!hasAnnotations()) {
+            return AnnotationDataDecoder.NO_ANNOTATION_DATA;
+        }
+        byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
+        return VMSupport.decodeAnnotations(encoded, new AnnotationDataDecoder());
     }
 }

@@ -83,14 +83,14 @@ public class AnnotationParser {
      * Like {@link #parseAnnotations(byte[], sun.reflect.ConstantPool, Class)}
      * with an additional parameter {@code selectAnnotationClasses} which selects the
      * annotation types to parse (other than selected are quickly skipped).<p>
-     * This method is only used to parse select meta annotations in the construction
+     * This method is used to parse select meta annotations in the construction
      * phase of {@link AnnotationType} instances to prevent infinite recursion.
      *
      * @param selectAnnotationClasses an array of annotation types to select when parsing
      */
     @SafeVarargs
     @SuppressWarnings("varargs") // selectAnnotationClasses is used safely
-    static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
+    public static Map<Class<? extends Annotation>, Annotation> parseSelectAnnotations(
                 byte[] rawAnnotations,
                 ConstantPool constPool,
                 Class<?> container,
