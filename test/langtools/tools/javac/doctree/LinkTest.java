@@ -163,7 +163,7 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:1, abc_]
     Link[LINK, pos:5
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String...#substring(int,_int)]
+        Reference[REFERENCE, pos:12, java.lang.String#substring(int,_int)]
       body: 1
         Text[TEXT, pos:49, desc]
     ]

@@ -2154,8 +2154,8 @@ void AwtToolkit::PreloadAction::Clean(bool reInit) {
 // PreloadThread implementation
 AwtToolkit::PreloadThread::PreloadThread()
     : status(None), wrongThread(false), threadId(0),
-    pActionChain(NULL), pLastProcessedAction(NULL),
-    execFunc(NULL), execParam(NULL)
+    execFunc(NULL), execParam(NULL),
+    pActionChain(NULL), pLastProcessedAction(NULL)
 {
     hFinished = ::CreateEvent(NULL, TRUE, FALSE, NULL);
     hAwake = ::CreateEvent(NULL, FALSE, FALSE, NULL);

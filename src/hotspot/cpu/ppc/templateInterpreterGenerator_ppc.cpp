@@ -1162,8 +1162,8 @@ void TemplateInterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // Bang each page in the shadow zone. We can't assume it's been done for
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
-  const int page_size = os::vm_page_size();
-  const int n_shadow_pages = ((int)StackOverflow::stack_shadow_zone_size()) / page_size;
+  const size_t page_size = os::vm_page_size();
+  const int n_shadow_pages = StackOverflow::stack_shadow_zone_size() / page_size;
   const int start_page = native_call ? n_shadow_pages : 1;
   BLOCK_COMMENT("bang_stack_shadow_pages:");
   for (int pages = start_page; pages <= n_shadow_pages; pages++) {

@@ -2729,7 +2729,8 @@ bool LibraryCallKit::inline_vector_extract() {
     return false;
   }
 
-  Node* operation = gvn().transform(ExtractNode::make(opd, idx->get_con(), elem_bt));
+  ConINode* idx_con = gvn().intcon(idx->get_con())->as_ConI();
+  Node* operation = gvn().transform(ExtractNode::make(opd, idx_con, elem_bt));
 
   Node* bits = NULL;
   switch (elem_bt) {

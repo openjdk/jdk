@@ -200,7 +200,6 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
   if (do_load) {
     // We need to generate the load of the previous value
-    assert(obj != NULL, "must have a base");
     assert(adr != NULL, "where are loading from?");
     assert(pre_val == NULL, "loaded already?");
     assert(val_type != NULL, "need a type");
@@ -592,10 +591,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   const TypePtr* adr_type = access.addr().type();
   Node* adr = access.addr().node();
 
-  bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool on_heap = (decorators & IN_HEAP) != 0;
-
-  if (!access.is_oop() || (!on_heap && !anonymous)) {
+  if (!access.is_oop()) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 
@@ -612,6 +608,8 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
                                  static_cast<const TypeOopPtr*>(val.type()), NULL /* pre_val */, access.type());
 
     Node* result = BarrierSetC2::store_at_resolved(access, val);
+
+    bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
     bool is_array = (decorators & IS_ARRAY) != 0;
     bool use_precise = is_array || anonymous;
     post_barrier(kit, kit->control(), access.raw_access(), access.base(), adr, adr_idx, val.node(), access.type(), use_precise);
