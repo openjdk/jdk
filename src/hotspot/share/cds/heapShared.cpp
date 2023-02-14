@@ -454,6 +454,7 @@ void HeapShared::check_enum_obj(int level,
                                 KlassSubGraphInfo* subgraph_info,
                                 oop orig_obj,
                                 bool is_closed_archive) {
+  assert(level > 1, "must never be called at the first (outermost) level");
   Klass* k = orig_obj->klass();
   Klass* buffered_k = ArchiveBuilder::get_buffered_klass(k);
   if (!k->is_instance_klass()) {
@@ -482,6 +483,7 @@ void HeapShared::check_enum_obj(int level,
                     ik->external_name(), fd.name()->as_C_string());
         }
         bool success = archive_reachable_objects_from(level, subgraph_info, oop_field, is_closed_archive);
+        assert(success, "VM should have exited with unarchivable objects for _level > 1");
         int root_index = append_root(oop_field);
         log_info(cds, heap)("Archived enum obj @%d %s::%s (" INTPTR_FORMAT ")",
                             root_index, ik->external_name(), fd.name()->as_C_string(),
