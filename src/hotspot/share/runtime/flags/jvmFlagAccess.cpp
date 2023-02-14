@@ -61,6 +61,7 @@ class TypedFlagAccessImpl : public FlagAccessImpl {
 
 public:
   JVMFlag::Error check_constraint_and_set(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin, bool verbose) const {
+    verbose |= (origin == JVMFlagOrigin::ERGONOMIC);
     T value = *((T*)value_addr);
     const JVMTypedFlagLimit<T>* constraint = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_constraint(flag);
     if (constraint != nullptr && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
