@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,30 @@
 
 /*
  * @test
- * @summary Stack guard pages should be installed correctly and removed when thread is detached
+ * @summary Stack guard pages should be installed correctly and removed when thread is detached for native threads
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires os.family == "linux"
  * @compile DoOverflow.java
- * @run main/native TestStackGuardPages
+ * @run main/native TestStackGuardPagesNative
  */
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 
-public class TestStackGuardPages {
+public class TestStackGuardPagesNative {
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("invoke",
-                                                                        "test_java_overflow");
+
+        ProcessBuilder pb = ProcessTools.createNativeTestProcessBuilder("invoke", "test_native_overflow");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createNativeTestProcessBuilder("invoke",
-                                                         "test_java_overflow_initial");
+        pb = ProcessTools.createNativeTestProcessBuilder("invoke", "test_native_overflow_initial");
         pb.environment().put("CLASSPATH", Utils.TEST_CLASS_PATH);
         output = ProcessTools.executeProcess(pb);
         output.shouldHaveExitValue(0);
+
     }
 }
-
