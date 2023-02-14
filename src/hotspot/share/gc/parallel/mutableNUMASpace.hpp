@@ -159,9 +159,6 @@ class MutableNUMASpace : public MutableSpace {
   void set_base_space_size(size_t v)                 { _base_space_size = v;      }
   size_t base_space_size() const                     { return _base_space_size;   }
 
-  // Check if the NUMA topology has changed. Add and remove spaces if needed.
-  // The update can be forced by setting the force parameter equal to true.
-  bool update_layout(bool force);
   // Bias region towards the lgrp.
   void bias_region(MemRegion mr, int lgrp_id);
   // Free pages in a given region.

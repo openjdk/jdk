@@ -75,6 +75,7 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timerTrace.hpp"
+#include "sanitizers/leak.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/align.hpp"
 #include "utilities/autoRestore.hpp"
@@ -751,7 +752,11 @@ bool Universe::contains_non_oop_word(void* p) {
 }
 
 static void initialize_global_behaviours() {
-  CompiledICProtectionBehaviour::set_current(new DefaultICProtectionBehaviour());
+  DefaultICProtectionBehaviour* protection_behavior = new DefaultICProtectionBehaviour();
+  // Ignore leak of DefaultICProtectionBehaviour. It is overriden by some GC implementations and the
+  // pointer is leaked once.
+  LSAN_IGNORE_OBJECT(protection_behavior);
+  CompiledICProtectionBehaviour::set_current(protection_behavior);
 }
 
 jint universe_init() {
