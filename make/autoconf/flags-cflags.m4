@@ -298,13 +298,10 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_DEBUG_JVM=""
     C_O_FLAG_NONE="-qnoopt"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # -O2 is a combination of optimizations that favors speed over size. -Ob3 was introduced
-    # starting in Visual Studio 2019 and is an even more aggressive inling hint than -Ob2 which is
-    # the default for -O1 and -O2.
-    C_O_FLAG_HIGHEST_JVM="-O2 -Ob3"
-    C_O_FLAG_HIGHEST="-O2 -Ob3"
-    C_O_FLAG_HI="-O2 -Ob3"
     # -O2 is a combination of optimizations that favors speed over size.
+    C_O_FLAG_HIGHEST_JVM="-O2"
+    C_O_FLAG_HIGHEST="-O2"
+    C_O_FLAG_HI="-O2"
     C_O_FLAG_NORM="-O2"
     # -Od disables optimizations.
     C_O_FLAG_DEBUG="-Od"
