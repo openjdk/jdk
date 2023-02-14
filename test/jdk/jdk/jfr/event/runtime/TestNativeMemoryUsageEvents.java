@@ -134,12 +134,12 @@ public class TestNativeMemoryUsageEvents {
         for (String type : UsageEventTypes) {
             assertTrue(uniqueEventTypes.contains(type), "Events should include: " + type);
         }
-        // Verify all events have the same timestamp
+        // Verify that events only have two timestamps
         List<Instant> timestamps = events.stream()
                 .map(e -> e.getStartTime())
                 .distinct()
                 .toList();
-        assertEquals(timestamps.size(), 2, "Expected two timestamp: " + timestamps);
+        assertEquals(timestamps.size(), 2, "Expected two timestamps: " + timestamps);
     }
 
     private static void verifyHeapGrowth(List<RecordedEvent> events) throws Exception {
