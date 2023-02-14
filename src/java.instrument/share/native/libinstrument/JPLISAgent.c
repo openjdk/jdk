@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,6 +448,7 @@ startJavaAgent( JPLISAgent *    agent,
                                                optionsString,
                                                &classNameObject,
                                                &optionsStringObject);
+    jplis_assert_msg(success, "commandStringIntoJavaStrings failed");
 
     if (success) {
         success = invokeJavaAgentMainMethod(   jnienv,
@@ -455,6 +456,7 @@ startJavaAgent( JPLISAgent *    agent,
                                                agentMainMethod,
                                                classNameObject,
                                                optionsStringObject);
+        jplis_assert_msg(success, "invokeJavaAgentMainMethod failed");
     }
 
     return success;
@@ -614,6 +616,7 @@ invokeJavaAgentMainMethod( JNIEnv *    jnienv,
         errorOutstanding = checkForThrowable(jnienv);
         if ( errorOutstanding ) {
             logThrowable(jnienv);
+            jplis_assert_msg(!errorOutstanding, "Outstanding error when calling method in invokeJavaAgentMainMethod");
         }
         checkForAndClearThrowable(jnienv);
     }
