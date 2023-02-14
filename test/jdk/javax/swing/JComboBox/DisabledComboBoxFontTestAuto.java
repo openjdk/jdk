@@ -99,9 +99,6 @@ public class DisabledComboBoxFontTestAuto {
                 + "/" + lafName + "DisabledDLCR.png"));
         System.out.println("DIR: " + testDir);
 
-        BufferedImage failImage = new BufferedImage(COMBO_WIDTH, COMBO_HEIGHT, TYPE_INT_ARGB);
-        Graphics2D graphics2D = failImage.createGraphics();
-
         boolean isIdentical = true;
         Color eColor1, eColor2, dColor1, dColor2;
 
@@ -109,8 +106,6 @@ public class DisabledComboBoxFontTestAuto {
         int y = 10;
         for (int x = (enabledImage.getWidth() / 2) - 20;
              x < (enabledImage.getWidth() / 2) + 20; x++) {
-            failImage.setRGB(x, y, Color.RED.getRGB());
-
             // Nimbus has a pixel offset in coordinates since Nimbus is 2px
             // smaller in width than other L&F's
             if (lafName.equals("Nimbus")) {
@@ -130,13 +125,9 @@ public class DisabledComboBoxFontTestAuto {
             }
         }
 
-        graphics2D.dispose();
-
         if (isIdentical) {
             System.out.println("PASSED");
         } else {
-            ImageIO.write(failImage, "png", new File(testDir
-                    + "/" + lafName + "Fail.png"));
             throw new RuntimeException("FAIL: " +
                     "Enabled and disabled ComboBox matches");
         }
