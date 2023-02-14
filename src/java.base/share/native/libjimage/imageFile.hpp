@@ -216,8 +216,8 @@ public:
 // Notes:
 //  - Even though ATTRIBUTE_END (which might be encoded with a zero byte) is used to
 //      mark the end of the attribute stream, streams will contain zero byte values
-//      in non-header portion of the attribute data. Thus, detecting a zero byte is
-//      not sufficient to detect the end of an attribute stream.
+//      in the non-header portion of the attribute data. Thus, detecting a zero byte
+//      is not sufficient to detect the end of an attribute stream.
 //  - ATTRIBUTE_OFFSET represents the number of bytes from the beginning of the region
 //      storing the resources.  Thus, in an image this represents the number of bytes
 //      after the index.
