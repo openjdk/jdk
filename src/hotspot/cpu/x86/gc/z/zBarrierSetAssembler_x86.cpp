@@ -61,10 +61,17 @@ ZBarrierSetAssembler::ZBarrierSetAssembler()
     _store_good_relocations() {
 }
 
+enum class ZXMMSpillMode {
+  none,
+  avx128,
+  avx256
+};
+
 // Helper for saving and restoring registers across a runtime call that does
 // not have any live vector registers.
 class ZRuntimeCallSpill {
 private:
+  const ZXMMSpillMode _xmm_spill_mode;
   const int _xmm_size;
   const int _xmm_spill_size;
   MacroAssembler* _masm;
@@ -84,28 +91,52 @@ private:
 
     if (_xmm_spill_size != 0) {
       __ subptr(rsp, _xmm_spill_size);
-      __ movdqu(Address(rsp, _xmm_size * 7), xmm7);
-      __ movdqu(Address(rsp, _xmm_size * 6), xmm6);
-      __ movdqu(Address(rsp, _xmm_size * 5), xmm5);
-      __ movdqu(Address(rsp, _xmm_size * 4), xmm4);
-      __ movdqu(Address(rsp, _xmm_size * 3), xmm3);
-      __ movdqu(Address(rsp, _xmm_size * 2), xmm2);
-      __ movdqu(Address(rsp, _xmm_size * 1), xmm1);
-      __ movdqu(Address(rsp, _xmm_size * 0), xmm0);
+      if (_xmm_spill_mode == ZXMMSpillMode::avx128) {
+        __ movdqu(Address(rsp, _xmm_size * 7), xmm7);
+        __ movdqu(Address(rsp, _xmm_size * 6), xmm6);
+        __ movdqu(Address(rsp, _xmm_size * 5), xmm5);
+        __ movdqu(Address(rsp, _xmm_size * 4), xmm4);
+        __ movdqu(Address(rsp, _xmm_size * 3), xmm3);
+        __ movdqu(Address(rsp, _xmm_size * 2), xmm2);
+        __ movdqu(Address(rsp, _xmm_size * 1), xmm1);
+        __ movdqu(Address(rsp, _xmm_size * 0), xmm0);
+      } else {
+        assert(_xmm_spill_mode == ZXMMSpillMode::avx256, "AVX support ends at avx256");
+        __ vmovdqu(Address(rsp, _xmm_size * 7), xmm7);
+        __ vmovdqu(Address(rsp, _xmm_size * 6), xmm6);
+        __ vmovdqu(Address(rsp, _xmm_size * 5), xmm5);
+        __ vmovdqu(Address(rsp, _xmm_size * 4), xmm4);
+        __ vmovdqu(Address(rsp, _xmm_size * 3), xmm3);
+        __ vmovdqu(Address(rsp, _xmm_size * 2), xmm2);
+        __ vmovdqu(Address(rsp, _xmm_size * 1), xmm1);
+        __ vmovdqu(Address(rsp, _xmm_size * 0), xmm0);
+      }
     }
   }
 
   void restore() {
     MacroAssembler* masm = _masm;
     if (_xmm_spill_size != 0) {
-      __ movdqu(xmm0, Address(rsp, _xmm_size * 0));
-      __ movdqu(xmm1, Address(rsp, _xmm_size * 1));
-      __ movdqu(xmm2, Address(rsp, _xmm_size * 2));
-      __ movdqu(xmm3, Address(rsp, _xmm_size * 3));
-      __ movdqu(xmm4, Address(rsp, _xmm_size * 4));
-      __ movdqu(xmm5, Address(rsp, _xmm_size * 5));
-      __ movdqu(xmm6, Address(rsp, _xmm_size * 6));
-      __ movdqu(xmm7, Address(rsp, _xmm_size * 7));
+      if (_xmm_spill_mode == ZXMMSpillMode::avx128) {
+        __ movdqu(xmm0, Address(rsp, _xmm_size * 0));
+        __ movdqu(xmm1, Address(rsp, _xmm_size * 1));
+        __ movdqu(xmm2, Address(rsp, _xmm_size * 2));
+        __ movdqu(xmm3, Address(rsp, _xmm_size * 3));
+        __ movdqu(xmm4, Address(rsp, _xmm_size * 4));
+        __ movdqu(xmm5, Address(rsp, _xmm_size * 5));
+        __ movdqu(xmm6, Address(rsp, _xmm_size * 6));
+        __ movdqu(xmm7, Address(rsp, _xmm_size * 7));
+      } else {
+        assert(_xmm_spill_mode == ZXMMSpillMode::avx256, "AVX support ends at avx256");
+        __ vmovdqu(xmm0, Address(rsp, _xmm_size * 0));
+        __ vmovdqu(xmm1, Address(rsp, _xmm_size * 1));
+        __ vmovdqu(xmm2, Address(rsp, _xmm_size * 2));
+        __ vmovdqu(xmm3, Address(rsp, _xmm_size * 3));
+        __ vmovdqu(xmm4, Address(rsp, _xmm_size * 4));
+        __ vmovdqu(xmm5, Address(rsp, _xmm_size * 5));
+        __ vmovdqu(xmm6, Address(rsp, _xmm_size * 6));
+        __ vmovdqu(xmm7, Address(rsp, _xmm_size * 7));
+      }
       __ addptr(rsp, _xmm_spill_size);
     }
 
@@ -127,10 +158,25 @@ private:
     }
   }
 
+  static int compute_xmm_size(ZXMMSpillMode spill_mode) {
+    switch (spill_mode) {
+      case ZXMMSpillMode::none:
+        return 0;
+      case ZXMMSpillMode::avx128:
+        return wordSize * 2;
+      case ZXMMSpillMode::avx256:
+        return wordSize * 4;
+      default:
+        ShouldNotReachHere();
+        return 0;
+    }
+  }
+
 public:
-  ZRuntimeCallSpill(MacroAssembler* masm, Register result, bool spill_xmm)
-    : _xmm_size(wordSize * 2),
-      _xmm_spill_size(spill_xmm ? (_xmm_size * Argument::n_float_register_parameters_j) : 0),
+  ZRuntimeCallSpill(MacroAssembler* masm, Register result, ZXMMSpillMode spill_mode)
+    : _xmm_spill_mode(spill_mode),
+      _xmm_size(compute_xmm_size(spill_mode)),
+      _xmm_spill_size(_xmm_size * Argument::n_float_register_parameters_j),
       _masm(masm),
       _result(result) {
     // We may end up here from generate_native_wrapper, then the method may have
@@ -226,7 +272,7 @@ void ZBarrierSetAssembler::load_at(MacroAssembler* masm,
 
   {
     // Call VM
-    ZRuntimeCallSpill rcs(masm, dst, true /* spill_xmm */);
+    ZRuntimeCallSpill rcs(masm, dst, ZXMMSpillMode::avx128);
     call_vm(masm, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr(decorators), dst, scratch);
   }
 
@@ -513,7 +559,7 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
       __ bind(slow);
       {
         // Call VM
-        ZRuntimeCallSpill rcs(masm, noreg, true /* spill_xmm */);
+        ZRuntimeCallSpill rcs(masm, noreg, ZXMMSpillMode::avx128);
         __ leaq(c_rarg0, dst);
         __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), c_rarg0);
       }
@@ -529,6 +575,10 @@ void ZBarrierSetAssembler::store_at(MacroAssembler* masm,
   }
 
   BLOCK_COMMENT("} ZBarrierSetAssembler::store_at");
+}
+
+bool ZBarrierSetAssembler::supports_avx3_masked_arraycopy() {
+  return false;
 }
 
 static void load_arraycopy_masks(MacroAssembler* masm) {
@@ -552,39 +602,72 @@ static void load_arraycopy_masks(MacroAssembler* masm) {
   }
 }
 
-void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
-                                   DecoratorSet decorators,
-                                   BasicType type,
-                                   size_t bytes,
-                                   Address dst,
-                                   Address src,
-                                   Register tmp1,
-                                   Register tmp2) {
+static ZXMMSpillMode compute_arraycopy_spill_mode() {
+  if (UseAVX >= 2) {
+    return ZXMMSpillMode::avx256;
+  } else {
+    return ZXMMSpillMode::avx128;
+  }
+}
+
+void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Register dst,
+                                        Address src,
+                                        Register tmp) {
   if (!is_reference_type(type)) {
-    BarrierSetAssembler::copy_at(masm, decorators, type, bytes, dst, src, tmp1, tmp2);
+    BarrierSetAssembler::copy_load_at(masm, decorators, type, bytes, dst, src, tmp);
     return;
   }
-
-  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   Label load_done;
 
   // Load oop at address
-  __ movptr(tmp1, src);
+  __ movptr(dst, src);
 
   // Test address bad mask
-  __ Assembler::testl(tmp1, (int32_t)(uint32_t)ZPointerLoadBadMask);
+  __ Assembler::testl(dst, (int32_t)(uint32_t)ZPointerLoadBadMask);
   _load_bad_relocations.append(__ code_section()->end());
   __ jcc(Assembler::zero, load_done);
 
   {
     // Call VM
-    ZRuntimeCallSpill rcs(masm, tmp1, false /* spill_xmm */);
+    ZRuntimeCallSpill rcs(masm, dst, compute_arraycopy_spill_mode());
     __ leaq(c_rarg1, src);
-    call_vm(masm, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good_addr(), tmp1, c_rarg1);
+    call_vm(masm, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good_addr(), dst, c_rarg1);
   }
 
   __ bind(load_done);
+
+  // Remove metadata bits so that the store side (vectorized or non-vectorized) can
+  // inject the store-good color with an or instruction.
+  __ andq(dst, _zpointer_address_mask);
+
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
+    // The checkcast arraycopy needs to be able to dereference the oops in order to perform a typechecks.
+    assert(tmp != rcx, "Surprising choice of temp register");
+    __ movptr(tmp, rcx);
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ shrq(dst);
+    __ movptr(rcx, tmp);
+  }
+}
+
+void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                         DecoratorSet decorators,
+                                         BasicType type,
+                                         size_t bytes,
+                                         Address dst,
+                                         Register src,
+                                         Register tmp) {
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::copy_store_at(masm, decorators, type, bytes, dst, src, tmp);
+    return;
+  }
+
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
 
   if (!dest_uninitialized) {
     Label store;
@@ -593,13 +676,13 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
     _store_bad_relocations.append(__ code_section()->end());
     __ jcc(Assembler::zero, store);
 
-    store_barrier_buffer_add(masm, dst, tmp2, store_bad);
+    store_barrier_buffer_add(masm, dst, tmp, store_bad);
     __ jmp(store);
 
     __ bind(store_bad);
     {
       // Call VM
-      ZRuntimeCallSpill rcs(masm, noreg, false /* spill_xmm */);
+      ZRuntimeCallSpill rcs(masm, noreg, compute_arraycopy_spill_mode());
       __ leaq(c_rarg0, dst);
       __ MacroAssembler::call_VM_leaf(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr(), c_rarg0);
     }
@@ -607,38 +690,128 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
     __ bind(store);
   }
 
-  // Uncolor
-  __ andq(tmp1, _zpointer_address_mask);
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
+    assert(tmp != rcx, "Surprising choice of temp register");
+    __ movptr(tmp, rcx);
+    __ movptr(rcx, ExternalAddress((address)&ZPointerLoadShift));
+    __ shlq(src);
+    __ movptr(rcx, tmp);
+  }
+
   // Color
-  __ orq_imm32(tmp1, (int32_t)(uint32_t)ZPointerStoreGoodMask);
+  __ orq_imm32(src, (int32_t)(uint32_t)ZPointerStoreGoodMask);
   _store_good_relocations.append(__ code_section()->end());
 
   // Store value
-  __ movptr(dst, tmp1);
+  __ movptr(dst, src);
 }
 
-void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
-                                   DecoratorSet decorators,
-                                   BasicType type,
-                                   size_t bytes,
-                                   Address dst,
-                                   Address src,
-                                   Register tmp1,
-                                   Register tmp2,
-                                   XMMRegister xmm_tmp1,
-                                   XMMRegister xmm_tmp2,
-                                   bool forward) {
+void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        XMMRegister dst,
+                                        Address src,
+                                        Register tmp,
+                                        XMMRegister xmm_tmp) {
   if (!is_reference_type(type)) {
-    BarrierSetAssembler::copy_at(masm, decorators, type, bytes, dst, src, tmp1, tmp2, xmm_tmp1, xmm_tmp2, forward);
+    BarrierSetAssembler::copy_load_at(masm, decorators, type, bytes, dst, src, tmp, xmm_tmp);
     return;
   }
   Address src0(src.base(), src.index(), src.scale(), src.disp() + 0);
-  Address dst0(dst.base(), dst.index(), dst.scale(), dst.disp() + 0);
   Address src1(src.base(), src.index(), src.scale(), src.disp() + 8);
-  Address dst1(dst.base(), dst.index(), dst.scale(), dst.disp() + 8);
   Address src2(src.base(), src.index(), src.scale(), src.disp() + 16);
-  Address dst2(dst.base(), dst.index(), dst.scale(), dst.disp() + 16);
   Address src3(src.base(), src.index(), src.scale(), src.disp() + 24);
+
+  // Registers set up in the prologue:
+  // xmm2: load_bad_mask
+  // xmm3: store_bad_mask
+  // xmm4: store_good_mask
+
+  if (bytes == 16) {
+    Label done;
+    Label fallback;
+
+    if (UseAVX >= 1) {
+      // Load source vector
+      __ movdqu(dst, src);
+      // Check source load-good
+      __ movdqu(xmm_tmp, dst);
+      __ ptest(xmm_tmp, xmm2);
+      __ jcc(Assembler::notZero, fallback);
+
+      // Remove bad metadata bits
+      __ vpandn(dst, xmm3, dst, Assembler::AVX_128bit);
+      __ jmp(done);
+    }
+
+    __ bind(fallback);
+
+    __ subptr(rsp, wordSize * 2);
+
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src0, noreg);
+    __ movq(Address(rsp, 0), tmp);
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src1, noreg);
+    __ movq(Address(rsp, 8), tmp);
+
+    __ movdqu(dst, Address(rsp, 0));
+    __ addptr(rsp, wordSize * 2);
+
+    __ bind(done);
+  } else if (bytes == 32) {
+    Label done;
+    Label fallback;
+    assert(UseAVX >= 2, "Assume that UseAVX >= 2");
+
+    // Load source vector
+    __ vmovdqu(dst, src);
+    // Check source load-good
+    __ vmovdqu(xmm_tmp, dst);
+    __ vptest(xmm_tmp, xmm2, Assembler::AVX_256bit);
+    __ jcc(Assembler::notZero, fallback);
+
+    // Remove bad metadata bits so that the store can colour the pointers with an or instruction.
+    // This makes the fast path and slow path formats look the same, in the sense that they don't
+    // have any of the store bad bits.
+    __ vpandn(dst, xmm3, dst, Assembler::AVX_256bit);
+    __ jmp(done);
+
+    __ bind(fallback);
+
+    __ subptr(rsp, wordSize * 4);
+
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src0, noreg);
+    __ movq(Address(rsp, 0), tmp);
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src1, noreg);
+    __ movq(Address(rsp, 8), tmp);
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src2, noreg);
+    __ movq(Address(rsp, 16), tmp);
+    ZBarrierSetAssembler::copy_load_at(masm, decorators, type, 8, tmp, src3, noreg);
+    __ movq(Address(rsp, 24), tmp);
+
+    __ vmovdqu(dst, Address(rsp, 0));
+    __ addptr(rsp, wordSize * 4);
+
+    __ bind(done);
+  }
+}
+
+void ZBarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                         DecoratorSet decorators,
+                                         BasicType type,
+                                         size_t bytes,
+                                         Address dst,
+                                         XMMRegister src,
+                                         Register tmp1,
+                                         Register tmp2,
+                                         XMMRegister xmm_tmp) {
+  if (!is_reference_type(type)) {
+    BarrierSetAssembler::copy_store_at(masm, decorators, type, bytes, dst, src, tmp1, tmp2, xmm_tmp);
+    return;
+  }
+  Address dst0(dst.base(), dst.index(), dst.scale(), dst.disp() + 0);
+  Address dst1(dst.base(), dst.index(), dst.scale(), dst.disp() + 8);
+  Address dst2(dst.base(), dst.index(), dst.scale(), dst.disp() + 16);
   Address dst3(dst.base(), dst.index(), dst.scale(), dst.disp() + 24);
 
   bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
@@ -653,96 +826,71 @@ void ZBarrierSetAssembler::copy_at(MacroAssembler* masm,
     Label fallback;
 
     if (UseAVX >= 1) {
-      // Load source vector
-      __ movdqu(xmm_tmp1, src);
-      // Check source load-good
-      __ movdqu(xmm_tmp2, xmm_tmp1);
-      __ ptest(xmm_tmp2, xmm2);
-      __ jcc(Assembler::notZero, fallback);
-
       if (!dest_uninitialized) {
         // Load destination vector
-        __ movdqu(xmm_tmp2, dst);
+        __ movdqu(xmm_tmp, dst);
         // Check destination store-good
-        __ ptest(xmm_tmp2, xmm3);
+        __ ptest(xmm_tmp, xmm3);
         __ jcc(Assembler::notZero, fallback);
       }
 
-      // Uncolor source
-      __ movdqu(xmm_tmp2, xmm3);
-      __ pandn(xmm_tmp2, xmm_tmp1);
       // Color source
-      __ por(xmm_tmp2, xmm4);
+      __ por(src, xmm4);
       // Store source in destination
-      __ movdqu(dst, xmm_tmp2);
+      __ movdqu(dst, src);
       __ jmp(done);
-
-      __ bind(fallback);
-
     }
 
-    if (forward) {
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst0, src0, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst1, src1, tmp1, tmp2);
-    } else {
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst1, src1, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst0, src0, tmp1, tmp2);
-    }
+    __ bind(fallback);
 
-    if (UseAVX >= 1) {
-      // Reload the masks; they may get clobbered by slowpath calls to the VM
-      load_arraycopy_masks(masm);
-      __ bind(done);
-    }
+    __ subptr(rsp, wordSize * 2);
+    __ movdqu(Address(rsp, 0), src);
+
+    __ movq(tmp1, Address(rsp, 0));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst0, tmp1, tmp2);
+    __ movq(tmp1, Address(rsp, 8));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst1, tmp1, tmp2);
+
+    __ addptr(rsp, wordSize * 2);
+
+    __ bind(done);
   } else if (bytes == 32) {
     Label done;
     Label fallback;
+    assert(UseAVX >= 2, "Assume UseAVX >= 2");
 
-    if (UseAVX >= 2) {
-      // Load source vector
-      __ vmovdqu(xmm_tmp1, src);
-      // Check source load-good
-      __ vmovdqu(xmm_tmp2, xmm_tmp1);
-      __ vptest(xmm_tmp2, xmm2, Assembler::AVX_256bit);
+    if (!dest_uninitialized) {
+      // Load destination vector
+      __ vmovdqu(xmm_tmp, dst);
+      // Check destination store-good
+      __ vptest(xmm_tmp, xmm3, Assembler::AVX_256bit);
       __ jcc(Assembler::notZero, fallback);
-
-      if (!dest_uninitialized) {
-        // Load destination vector
-        __ vmovdqu(xmm_tmp2, dst);
-        // Check destination store-good
-        __ vptest(xmm_tmp2, xmm3, Assembler::AVX_256bit);
-        __ jcc(Assembler::notZero, fallback);
-      }
-
-      // Uncolor source
-      __ vpandn(xmm_tmp1, xmm3, xmm_tmp1, Assembler::AVX_256bit);
-      // Color source
-      __ vpor(xmm_tmp1, xmm_tmp1, xmm4, Assembler::AVX_256bit);
-
-      // Store colored source in destination
-      __ vmovdqu(dst, xmm_tmp1);
-      __ jmp(done);
-
-      __ bind(fallback);
     }
 
-    if (forward) {
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst0, src0, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst1, src1, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst2, src2, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst3, src3, tmp1, tmp2);
-    } else {
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst3, src3, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst2, src2, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst1, src1, tmp1, tmp2);
-      ZBarrierSetAssembler::copy_at(masm, decorators, type, 8, dst0, src0, tmp1, tmp2);
-    }
+    // Color source
+    __ vpor(src, src, xmm4, Assembler::AVX_256bit);
 
-    if (UseAVX >= 2) {
-      // Reload the masks; they may get clobbered by slowpath calls to the VM
-      load_arraycopy_masks(masm);
-      __ bind(done);
-    }
+    // Store colored source in destination
+    __ vmovdqu(dst, src);
+    __ jmp(done);
+
+    __ bind(fallback);
+
+    __ subptr(rsp, wordSize * 4);
+    __ vmovdqu(Address(rsp, 0), src);
+
+    __ movq(tmp1, Address(rsp, 0));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst0, tmp1, tmp2);
+    __ movq(tmp1, Address(rsp, 8));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst1, tmp1, tmp2);
+    __ movq(tmp1, Address(rsp, 16));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst2, tmp1, tmp2);
+    __ movq(tmp1, Address(rsp, 24));
+    ZBarrierSetAssembler::copy_store_at(masm, decorators, type, 8, dst3, tmp1, tmp2);
+
+    __ addptr(rsp, wordSize * 4);
+
+    __ bind(done);
   }
 }
 

@@ -195,38 +195,92 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
-void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2) {
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       Register dst,
+                                       Address src,
+                                       Register tmp) {
   assert(bytes <= 8, "can only deal with non-vector registers");
   if (bytes == 1) {
-    __ movb(tmp1, src);
-    __ movb(dst, tmp1);
+    __ movb(dst, src);
   } else if (bytes == 2) {
-    __ movw(tmp1, src);
-    __ movw(dst, tmp1);
+    __ movw(dst, src);
   } else if (bytes == 4) {
-    __ movl(tmp1, src);
-    __ movl(dst, tmp1);
+    __ movl(dst, src);
   } else if (bytes == 8) {
 #ifdef _LP64
-    __ movq(tmp1, src);
-    __ movq(dst, tmp1);
+    __ movq(dst, src);
+#else
+    fatal("No support for 8 bytes copy");
+#endif
+  }
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ decode_heap_oop(dst);
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        Register src,
+                                        Register tmp) {
+  if ((decorators & ARRAYCOPY_CHECKCAST) != 0 && UseCompressedOops) {
+    __ encode_heap_oop(src);
+  }
+  assert(bytes <= 8, "can only deal with non-vector registers");
+  if (bytes == 1) {
+    __ movb(dst, src);
+  } else if (bytes == 2) {
+    __ movw(dst, src);
+  } else if (bytes == 4) {
+    __ movl(dst, src);
+  } else if (bytes == 8) {
+#ifdef _LP64
+    __ movq(dst, src);
 #else
     fatal("No support for 8 bytes copy");
 #endif
   }
 }
 
-void BarrierSetAssembler::copy_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                                  size_t bytes, Address dst, Address src, Register tmp1, Register tmp2,
-                                  XMMRegister xmm_tmp1, XMMRegister xmm_tmp2, bool forward) {
+void BarrierSetAssembler::copy_load_at(MacroAssembler* masm,
+                                       DecoratorSet decorators,
+                                       BasicType type,
+                                       size_t bytes,
+                                       XMMRegister dst,
+                                       Address src,
+                                       Register tmp,
+                                       XMMRegister xmm_tmp) {
   assert(bytes > 8, "can only deal with vector registers");
   if (bytes == 16) {
-    __ movdqu(xmm_tmp1, src);
-    __ movdqu(dst, xmm_tmp1);
+    __ movdqu(dst, src);
   } else if (bytes == 32) {
-    __ vmovdqu(xmm_tmp1, src);
-    __ vmovdqu(dst, xmm_tmp1);
+    __ vmovdqu(dst, src);
+  } else {
+    fatal("No support for >32 bytes copy");
+  }
+}
+
+void BarrierSetAssembler::copy_store_at(MacroAssembler* masm,
+                                        DecoratorSet decorators,
+                                        BasicType type,
+                                        size_t bytes,
+                                        Address dst,
+                                        XMMRegister src,
+                                        Register tmp1,
+                                        Register tmp2,
+                                        XMMRegister xmm_tmp) {
+  assert(bytes > 8, "can only deal with vector registers");
+  if (bytes == 16) {
+    __ movdqu(dst, src);
+  } else if (bytes == 32) {
+    __ vmovdqu(dst, src);
+  } else {
+    fatal("No support for >32 bytes copy");
   }
 }
 

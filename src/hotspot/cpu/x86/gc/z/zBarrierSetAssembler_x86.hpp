@@ -85,26 +85,42 @@ public:
                         Register tmp2,
                         Register tmp3);
 
-  virtual void copy_at(MacroAssembler* masm,
-                       DecoratorSet decorators,
-                       BasicType type,
-                       size_t bytes,
-                       Address dst,
-                       Address src,
-                       Register tmp1,
-                       Register tmp2);
+  virtual bool supports_avx3_masked_arraycopy();
 
-  virtual void copy_at(MacroAssembler* masm,
-                       DecoratorSet decorators,
-                       BasicType type,
-                       size_t bytes,
-                       Address dst,
-                       Address src,
-                       Register tmp1,
-                       Register tmp2,
-                       XMMRegister xmm_tmp1,
-                       XMMRegister xmm_tmp2,
-                       bool forward);
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            Register dst,
+                            Address src,
+                            Register tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             Register src,
+                             Register tmp);
+
+  virtual void copy_load_at(MacroAssembler* masm,
+                            DecoratorSet decorators,
+                            BasicType type,
+                            size_t bytes,
+                            XMMRegister dst,
+                            Address src,
+                            Register tmp,
+                            XMMRegister xmm_tmp);
+
+  virtual void copy_store_at(MacroAssembler* masm,
+                             DecoratorSet decorators,
+                             BasicType type,
+                             size_t bytes,
+                             Address dst,
+                             XMMRegister src,
+                             Register tmp1,
+                             Register tmp2,
+                             XMMRegister xmm_tmp);
 
   virtual void arraycopy_prologue(MacroAssembler* masm,
                                   DecoratorSet decorators,
