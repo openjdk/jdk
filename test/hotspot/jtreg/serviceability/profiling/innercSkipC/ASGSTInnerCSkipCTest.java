@@ -52,7 +52,7 @@ public class ASGSTInnerCSkipCTest {
 
   public static void main(String[] args) throws Exception {
     if (!checkNativeChain()) {
-      throw new RuntimeException("AsyncGetCallTrace with Java and native frames intermingled ");
+      throw new RuntimeException("AsyncGetStackTrace with Java and native frames intermingled ");
     }
   }
 }

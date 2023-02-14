@@ -326,10 +326,11 @@ void printASGCTFrames(FILE* stream, ASGCT_CallFrame *frames, int length) {
 }
 
 void printASGCTTrace(FILE* stream, ASGCT_CallTrace trace) {
-  fprintf(stream, "Trace length: %d\n", trace.num_frames);
+  fprintf(stream, "ASGCT Trace length: %d\n", trace.num_frames);
   if (trace.num_frames > 0) {
     printASGCTFrames(stream, trace.frames, trace.num_frames);
   }
+  fprintf(stream, "ASGCT Trace end\n");
 }
 
 void printTraces(ASGST_CallTrace* trace, ASGCT_CallTrace* asgct_trace) {
@@ -350,11 +351,11 @@ void initASGCT() {
 
 JNIEnv* env;
 
-template<int max_depth> void printASGCT(void* ucontext) {
+template<int max_depth> void printASGCT(void* ucontext, JNIEnv* oenv = nullptr) {
   ASGCT_CallTrace asgct_trace;
   static ASGCT_CallFrame asgct_frames[max_depth];
   asgct_trace.frames = asgct_frames;
-  asgct_trace.env_id = env;
+  asgct_trace.env_id = oenv == nullptr ? env : oenv;
   asgct_trace.num_frames = 0;
 
   asgct(&asgct_trace, max_depth, ucontext, false);

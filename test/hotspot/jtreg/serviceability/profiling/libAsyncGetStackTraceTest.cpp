@@ -22,7 +22,7 @@
  * questions.
  */
 
-#if defined(BSD) || defined(LINUX)
+#if defined(__APPLE__) || defined(LINUX)
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 600
@@ -344,14 +344,35 @@ bool checkWithSkippedCFrames() {
 
 JNIEXPORT jboolean JNICALL
 Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jclass cls) {
-  const int MAX_DEPTH = 16;
+  const int MAX_DEPTH = 20;
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[MAX_DEPTH];
   trace.frames = frames;
   trace.frame_info = NULL;
   trace.num_frames = 0;
 
-  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, ASGST_INCLUDE_C_FRAMES);
+    initASGCT();
+  printASGCT<MAX_DEPTH>(NULL, env);
+
+  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, 0);
+
+
+
+  jthread thread;
+  jvmti->GetCurrentThread(&thread);
+  jvmtiFrameInfo frames2[MAX_DEPTH];
+  jint count = 0;
+
+  jvmti->GetStackTrace(thread, 0, MAX_DEPTH, frames2, &count);
+
+  for (int i = 0; i < count; i++) {
+    printf("GST Frame %d: ", i);
+    printMethod(stdout, frames2[i].method);
+    printf("\n");
+  }
+
+  fprintf(stderr, "JNICALL: The number of frames must be 4: %d\n", trace.num_frames);
+
 
   if (trace.num_frames <= 0) {
     fprintf(stderr, "JNICALL: The num_frames must be positive: %d\n", trace.num_frames);
@@ -372,6 +393,8 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
     fprintf(stderr, "JNICALL: The first frame must have a method_id: %p\n", first_frame.method_id);
     return false;
   }
+
+  printTrace(stderr, trace);
 
   if (trace.num_frames != 3) {
     fprintf(stderr, "JNICALL: The number of frames must be 3: %d\n", trace.num_frames);
@@ -397,4 +420,4 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
   return checkForNonJavaFromThread() && checkWithSkippedCFrames();
 }
 }
-#endif // defined(BSD) || defined(LINUX)
+#endif // defined(__APPLE__) || defined(LINUX)
