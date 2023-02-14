@@ -114,6 +114,9 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     char * pids_max_val();
 
     jlong read_mem_swappiness();
+    jlong read_limit_checked(const char* log_line, const char* file_path, julong upper_bound);
+    jlong read_limit_match_checked(const char* log_line, const char* file_path,
+                                   const char* match_line, julong upper_bound);
 
   public:
     CgroupV1Subsystem(CgroupV1Controller* cpuset,
