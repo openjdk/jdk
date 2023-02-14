@@ -2331,15 +2331,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
 
   Label resolved;
 
-  // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
-  // Get address of invokedynamic array
-  __ ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ mov(appendix, sizeof(ResolvedIndyEntry)); // use appendix as temp
-  __ mul(index, index, appendix);
-  __ add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
-  __ lea(cache, Address(cache, index));
+  __ load_resolved_indy_entry(cache, index, appendix);
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
   // Compare the method to zero
@@ -2353,14 +2345,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ mov(method, code); // this is essentially Bytecodes::_invokedynamic
   __ call_VM(noreg, entry, method); // Example uses temp = rbx. In this case rbx is method
   // Update registers with resolved info
-  __ get_cache_index_at_bcp(index, 1, sizeof(u4));
-  // Get address of invokedynamic array
-  __ ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
-  __ mov(appendix, sizeof(ResolvedIndyEntry)); // use appendix as temp
-  __ mul(index, index, appendix);
-  __ add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
-  __ lea(cache, Address(cache, index));
+  __ load_resolved_indy_entry(cache, index, appendix);
   __ ldr(method, Address(cache, in_bytes(ResolvedIndyEntry::method_offset())));
 
 #ifdef ASSERT
