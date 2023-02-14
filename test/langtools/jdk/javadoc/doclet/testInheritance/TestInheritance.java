@@ -79,7 +79,7 @@ public class TestInheritance extends JavadocTester {
                      * @param <R> param R
                      * @param <S> param S
                      */
-                    public class D<R, S>  extends B<S, B>{ private D() { } }
+                    public class D<R, S> extends B<S, B> { private D() { } }
                     """);
         javadoc("-d", base.resolve("docs").toString(),
                 "-sourcepath", src.toString(),
