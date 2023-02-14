@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_SERVICES_MEMJFRREPORTER_HPP
-#define SHARE_SERVICES_MEMJFRREPORTER_HPP
+#ifndef SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
+#define SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 
 #include "memory/allocation.hpp"
 #include "services/nmtUsage.hpp"
@@ -33,12 +33,12 @@
 // MemJFRReporter is only used by threads sending periodic JFR
 // events. These threads are synchronized at a higher level,
 // so no more synchronization is needed.
-class MemJFRReporter : public AllStatic {
+class JfrNativeMemoryEvent : public AllStatic {
 private:
   static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
  public:
-  static void send_total_event();
-  static void send_type_events();
+  static void send_total_event(const Ticks& timestamp);
+  static void send_type_events(const Ticks& timestamp);
 };
 
-#endif //SHARE_SERVICES_MEMJFRREPORTER_HPP
+#endif //SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
