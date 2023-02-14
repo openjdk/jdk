@@ -40,8 +40,6 @@ import jdk.internal.vm.annotation.Stable;
 
 public class StandardCharsets extends CharsetProvider {
 
-    private static String GB18030_2000;
-
     _INCLUDE_ALIASES_TABLES_
     _INCLUDE_ALIASES_MAP_
     _INCLUDE_CLASSES_MAP_
@@ -63,14 +61,7 @@ public class StandardCharsets extends CharsetProvider {
 
     private String canonicalize(String csn) {
         if (csn.startsWith("gb18030-")) {
-            if (GB18030_2000 == null) {
-                // initialization delayed due to StandardCharsets
-                // being initialized during initPhase1
-                @SuppressWarnings("removal")
-                var unused = GB18030_2000 = AccessController.doPrivileged((PrivilegedAction<String>)
-                    () -> System.getProperty("jdk.charset.GB18030", ""));
-            }
-            var is2000 = "2000".equals(GB18030_2000);
+            var is2000 = isGB18030_2000();
             return csn.equals("gb18030-2022") && !is2000 ||
                    csn.equals("gb18030-2000") && is2000 ? "gb18030" : csn;
         } else {
@@ -214,5 +205,19 @@ public class StandardCharsets extends CharsetProvider {
                 }
 
             };
+    }
+
+    // Lazily initialized system property value
+    private static String GB18030_2000;
+
+    @SuppressWarnings("removal")
+    static boolean isGB18030_2000() {
+        if (GB18030_2000 == null) {
+            // initialization delayed due to StandardCharsets
+            // being initialized during initPhase1
+            GB18030_2000 = AccessController.doPrivileged((PrivilegedAction<String>)
+                () -> System.getProperty("jdk.charset.GB18030", ""));
+        }
+        return "2000".equals(GB18030_2000);
     }
 }

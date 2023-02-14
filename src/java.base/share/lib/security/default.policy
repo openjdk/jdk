@@ -119,7 +119,6 @@ grant codeBase "jrt:/jdk.charsets" {
     permission java.lang.RuntimePermission
                    "accessClassInPackage.jdk.internal.misc";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.cs";
-    permission java.util.PropertyPermission "jdk.charset.GB18030", "read";
 };
 
 grant codeBase "jrt:/jdk.crypto.ec" {

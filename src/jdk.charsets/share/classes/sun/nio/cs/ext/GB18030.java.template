@@ -45,10 +45,7 @@ public class GB18030
     private static final int GB18030_DOUBLE_BYTE = 2;
     private static final int GB18030_FOUR_BYTE = 3;
 
-    @SuppressWarnings("removal")
-    private static final boolean IS_2000 = "2000".equals(
-        AccessController.doPrivileged((PrivilegedAction<String>)
-            () -> System.getProperty("jdk.charset.GB18030")));
+    private static final boolean IS_2000 = StandardCharsets.isGB18030_2000();
 
     public GB18030() {
         super("GB18030", $ALIASES$);

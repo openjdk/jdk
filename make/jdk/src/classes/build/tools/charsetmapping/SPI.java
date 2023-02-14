@@ -56,18 +56,12 @@ public class SPI {
                                           (cs.os == null || cs.os.equals(os)))
                             .forEach( cs -> {
                                 out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
-                                if (cs.csName.equals("GB18030")) {
-                                    out.printf("                IS_GB18030_2000 ?%n" +
-                                               "                    new String[] {\"gb18030-2000\"} :%n" +
-                                               "                    new String[] {\"gb18030-2022\"});%n%n");
-                                } else {
-                                    out.printf("                new String[] {%n");
-                                    for (String alias : cs.aliases) {
-                                        out.printf("                    \"%s\",%n",
-                                                alias);
-                                    }
-                                    out.printf("                });%n%n");
+                                out.printf("                new String[] {%n");
+                                for (String alias : cs.aliases) {
+                                    out.printf("                    \"%s\",%n",
+                                            alias);
                                 }
+                                out.printf("                });%n%n");
                         });
                     }
                 }
@@ -103,8 +97,7 @@ public class SPI {
                                  if (cs.csName.equals("GB18030")) {
                                      out.printf("    static String[] aliases_%s() { return new String[] {%n",
                                              cs.clzName);
-                                     out.printf("        \"2000\".equals(GB18030_2000) ?%n" +
-                                                "               \"gb18030-2000\" : \"gb18030-2022\"%n");
+                                     out.printf("            isGB18030_2000() ? \"gb18030-2000\" : \"gb18030-2022\"%n");
                                      out.printf("        };%n%n");
                                      out.printf("    }%n%n");
                                  } else {
