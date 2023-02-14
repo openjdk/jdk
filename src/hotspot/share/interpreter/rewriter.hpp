@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/constantPool.hpp"
-#include "oops/ResolvedIndyEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "utilities/growableArray.hpp"
 
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices

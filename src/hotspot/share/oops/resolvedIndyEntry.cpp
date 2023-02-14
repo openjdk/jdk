@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "code/compressedStream.hpp"
 #include "oops/method.hpp"
-#include "oops/ResolvedIndyEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 
 bool ResolvedIndyEntry::check_no_old_or_obsolete_entry() {
   // return false if m refers to a non-deleted old or obsolete method

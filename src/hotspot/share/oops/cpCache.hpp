@@ -29,7 +29,7 @@
 #include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/oopHandle.hpp"
-#include "oops/ResolvedIndyEntry.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/align.hpp"
 #include "utilities/constantTag.hpp"

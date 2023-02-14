@@ -35,7 +35,7 @@
 // The invokedynamic bytecode starts with an Constant Pool index as its operand which is then rewritten
 // to become an "indy index", an index into the array of ResolvedIndyEntry. The method here is an adapter method
 // which will be something like linkToTargetMethod. When an indy call is resolved, we no longer need to invoke
-// the bootstrap method (BSM) and we can get the target method (the method actually doing stuff like a string concat)
+// the bootstrap method (BSM) and we can get the target method (the method actually doing stuff, i.e. a string concat)
 // from the CallSite. The CallSite is generated when the BSM is invoked and it simply contains a MethodHandle for
 // the target method. The adapter will propagate information to and from the target method and the JVM.
 
