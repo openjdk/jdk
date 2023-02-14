@@ -66,6 +66,9 @@ public:
     if (constraint != nullptr && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
       JVMFlag::Error err = typed_check_constraint(constraint->constraint_func(), value, verbose);
       if (err != JVMFlag::SUCCESS) {
+        if (origin == JVMFlagOrigin::ERGONOMIC) {
+          fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+        }
         return err;
       }
     }
@@ -104,12 +107,15 @@ class RangedFlagAccessImpl : public TypedFlagAccessImpl<T, EVENT> {
 public:
   virtual JVMFlag::Error set_impl(JVMFlag* flag, void* value_addr, JVMFlagOrigin origin) const {
     T value = *((T*)value_addr);
-    bool verbose = JVMFlagLimit::verbose_checks_needed();
+    bool verbose = JVMFlagLimit::verbose_checks_needed() | (origin == JVMFlagOrigin::ERGONOMIC);
 
     const JVMTypedFlagLimit<T>* range = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_range(flag);
     if (range != nullptr) {
       if ((value < range->min()) || (value > range->max())) {
         range_error(flag->name(), value, range->min(), range->max(), verbose);
+        if (origin == JVMFlagOrigin::ERGONOMIC) {
+          fatal("FLAG_SET_ERGO cannot be used to set an invalid value for %s", flag->name());
+        }
         return JVMFlag::OUT_OF_BOUNDS;
       }
     }
