@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
+import jtreg.SkippedException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
@@ -59,11 +60,8 @@ import static java.net.StandardSocketOptions.IP_MULTICAST_TTL;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static jdk.test.lib.NetworkConfiguration.isSameInterface;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DatagramSocketMulticasting {
@@ -72,7 +70,7 @@ public class DatagramSocketMulticasting {
 
     @Test
     public void main() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+        assumeTrue(IPSupport.currentConfigurationIsValid(), "Invalid networking configuration");
 
         // IPv4 and IPv6 interfaces that support multicasting
         NetworkConfiguration config = NetworkConfiguration.probe();
@@ -143,13 +141,13 @@ public class DatagramSocketMulticasting {
         System.out.format("testJoinGroup2: local socket address: %s%n", s.getLocalSocketAddress());
 
         // check network interface not set
-        assertEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // join on default interface
         s.joinGroup(new InetSocketAddress(group, 0), null);
 
         // join should not change the outgoing multicast interface
-        assertEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // already a member (exception not specified)
         assertThrows(SocketException.class,
@@ -166,7 +164,7 @@ public class DatagramSocketMulticasting {
         s.joinGroup(new InetSocketAddress(group, 0), ni);
 
         // join should not change the outgoing multicast interface
-        assertEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // already a member (exception not specified)
         assertThrows(SocketException.class,
@@ -243,7 +241,7 @@ public class DatagramSocketMulticasting {
     static void testNetworkInterface(DatagramSocket s,
                                      NetworkInterface ni) throws IOException {
         // default value
-        assertEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNull(s.getOption(IP_MULTICAST_IF));
 
         // setOption(IP_MULTICAST_IF)
         s.setOption(IP_MULTICAST_IF, ni);
@@ -309,7 +307,7 @@ public class DatagramSocketMulticasting {
         System.out.println("testSendReceive");
 
         // outgoing multicast interface needs to be set
-        assertNotEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNotNull(s.getOption(IP_MULTICAST_IF));
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
         byte[] message = "testSendReceive".getBytes("UTF-8");
@@ -343,7 +341,7 @@ public class DatagramSocketMulticasting {
         System.out.println("testSendNoReceive");
 
         // outgoing multicast interface needs to be set
-        assertNotEquals(s.getOption(IP_MULTICAST_IF), null);
+        assertNotNull(s.getOption(IP_MULTICAST_IF));
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
         long nano = System.nanoTime();
