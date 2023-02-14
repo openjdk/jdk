@@ -319,7 +319,7 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
             if (whichtm == Specializer.TN_COPY_NO_EXTEND) {
                 return factory();
             } else if (whichtm < ARG_TYPE_LIMIT) {
-                return extendWith((byte) whichtm).factory();
+                return extendWith(BasicType.basicType((byte) whichtm)).factory();
             } else {
                 throw newInternalError("bad transform");
             }
@@ -353,14 +353,6 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         }
 
         /*non-public*/
-        SpeciesData extendWith(byte typeNum) {
-            SpeciesData sd = extensions[typeNum];
-            if (sd != null)  return sd;
-            sd = SPECIALIZER.findSpecies(key() + BasicType.basicType(typeNum).basicTypeChar());
-            extensions[typeNum] = sd;
-            return sd;
-        }
-
         SpeciesData extendWith(BasicType basicType) {
             int typeNum = basicType.ordinal();
             SpeciesData sd = extensions[typeNum];
