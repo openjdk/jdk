@@ -351,8 +351,6 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   __ j(*stub->continuation());
 }
 
-#undef __
-
 #endif // COMPILER2
 
 #ifdef COMPILER1
