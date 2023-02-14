@@ -156,6 +156,11 @@ public class Runtime {
      * <p> The {@link System#exit(int) System.exit} method is the
      * conventional and convenient means of invoking this method.
      *
+     * @implNote
+     * If the {@link System.Logger#getLogger(String) System.Logger.getLogger("java.lang.Runtime")}
+     * is enabled for logging level {@link System.Logger.Level#DEBUG Level.DEBUG} the stack trace
+     * of the call to {@code Runtime.exit()} is logged.
+     *
      * @param  status
      *         Termination status.  By convention, a nonzero status code
      *         indicates abnormal termination.

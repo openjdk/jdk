@@ -155,26 +155,14 @@ class Shutdown {
     /* Invoked by Runtime.exit, which does all the security checks.
      * Also invoked by handlers for system-provided termination events,
      * which should pass a nonzero status code.
-     * <p>
-     * If the system logger {@code java.lang.Runtime} is enabled for logging level DEBUG/FINE
-     * the stack trace of the call to {@code Runtime.exit()} or {@code System.exit()}
-     * is logged.
      */
     static void exit(int status) {
-        System.Logger log = null;
-        try {
-            // Locate the logger without holding the lock;
-            // the setup of the logger may be a heavyweight operation
-            log = System.getLogger("java.lang.Runtime");
-        } catch (Throwable throwable) {
-            // Exceptions from locating the Logger are printed but do not prevent exit
-            System.err.println("Runtime.exit() log finder failed with: " + throwable.getMessage());
-        }
+        System.Logger log = getRuntimeExitLogger(); // Locate the logger without holding the lock;
         synchronized (Shutdown.class) {
             /* Synchronize on the class object, causing any other thread
              * that attempts to initiate shutdown to stall indefinitely
              */
-            if (log != null && log.isLoggable(System.Logger.Level.DEBUG)) {
+            if (log != null) {
                 Throwable throwable = new Throwable("Runtime.exit(" + status + ")");
                 log.log(System.Logger.Level.DEBUG, "Runtime.exit() called with status: " + status,
                         throwable);
@@ -183,6 +171,19 @@ class Shutdown {
             runHooks();
             halt(status);
         }
+    }
+
+    // Locate and return the logger for Shutdown.exit, if it is functional and DEBUG enabled.
+    // Exceptions should not prevent System.exit; the exception is printed and otherwise ignored.
+    private static System.Logger getRuntimeExitLogger() {
+        try {
+            System.Logger log = System.getLogger("java.lang.Runtime");
+            return (log.isLoggable(System.Logger.Level.DEBUG)) ? log : null;
+        } catch (Throwable throwable) {
+            // Exceptions from locating the Logger are printed but do not prevent exit
+            System.err.println("Runtime.exit() log finder failed with: " + throwable.getMessage());
+        }
+        return null;
     }
 
 
