@@ -36,7 +36,6 @@
 #include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/g1HotCardCache.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
@@ -200,10 +199,6 @@ G1Policy* G1YoungCollector::policy() const {
 
 G1GCPhaseTimes* G1YoungCollector::phase_times() const {
   return _g1h->phase_times();
-}
-
-G1HotCardCache* G1YoungCollector::hot_card_cache() const {
-  return _g1h->hot_card_cache();
 }
 
 G1HRPrinter* G1YoungCollector::hr_printer() const {
@@ -519,8 +514,6 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   _evac_failure_regions.pre_collection(_g1h->max_reserved_regions());
 
   _g1h->gc_prologue(false);
-
-  hot_card_cache()->reset_hot_cache_claimed_index();
 
   // Initialize the GC alloc regions.
   allocator()->init_gc_alloc_regions(evacuation_info);
