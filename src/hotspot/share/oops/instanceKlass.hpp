@@ -233,8 +233,8 @@ class InstanceKlass: public Klass {
   // State is set while executing, eventually atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*             _init_monitor;           // mutual exclusion to _init_state and _init_thread.
-  JavaThread* volatile _init_thread;            // Pointer to current thread doing initialization (to handle recursive initialization)
+  Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
+  JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
