@@ -133,7 +133,7 @@ class arrayOopDesc : public oopDesc {
     *length_addr_impl(mem) = length;
   }
 
-  // Return the maximum length (num elements) of an array of BasicType.  The length can passed
+  // Return the maximum number of elements of an array of BasicType.  The length can passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
