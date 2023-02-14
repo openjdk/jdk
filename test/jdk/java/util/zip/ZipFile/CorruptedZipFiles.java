@@ -113,7 +113,6 @@ public class CorruptedZipFiles {
     public void corruptedCENFLG() {
         bad[cenpos+CENFLG] |= 1;
         checkZipException(bad, ".*encrypted entry.*");
-
     }
 
     @Test
@@ -126,7 +125,6 @@ public class CorruptedZipFiles {
     public void corruptedCENNAM2() {
         bad[cenpos+CENNAM]--;
         checkZipException(bad, ".*bad header size.*");
-
     }
     @Test
     public void corruptedCENNAM3() {
@@ -184,12 +182,12 @@ public class CorruptedZipFiles {
                     "Unexpected ZipException message: " + ex.getMessage());
 
         } catch (IOException e) {
-            fail("Unexcpected IOEception writing test ZIP", e);
+            fail("Unexcpected IOException writing test ZIP", e);
         } finally {
             try {
                 Files.delete(zip);
             } catch (IOException e) {
-                fail("Unexcpected exception deleting test ZIP", e);
+ı                fail("Unexcpected IOException deleting test ZIP", e);
             }
         }
     }
