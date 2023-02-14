@@ -377,10 +377,6 @@ public class Utils {
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
     }
 
-    public boolean isNoType(TypeMirror t) {
-        return t.getKind() == NONE;
-    }
-
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
         return (isPackagePrivate(enclosingTypeElement) || isPrivate(enclosingTypeElement)
                     || hasHiddenTag(enclosingTypeElement))
