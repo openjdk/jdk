@@ -35,9 +35,15 @@ source_hpp %{
 source %{
 
   static void loadStore(C2_MacroAssembler masm, bool is_store,
-                        VectorRegister reg, BasicType bt, Register base) {
+                        VectorRegister reg, BasicType bt, Register base, int length_in_bytes) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
-    masm.vsetvli(t0, x0, sew);
+    if (length_in_bytes != MaxVectorSize) {
+      masm.mv(t0, length_in_bytes / type2aelembytes(bt));
+      masm.vsetvli(t0, t0, sew);
+    } else {
+      masm.vsetvli(t0, x0, sew);
+    }
+
     if (is_store) {
       masm.vsex_v(reg, base, sew);
     } else {
@@ -101,11 +107,11 @@ definitions %{
 instruct loadV(vReg dst, vmemA mem) %{
   match(Set dst (LoadVector mem));
   ins_cost(VEC_COST);
-  format %{ "vle $dst, $mem\t#@loadV" %}
+  format %{ "loadV $dst, $mem\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister dst_reg = as_VectorRegister($dst$$reg);
     loadStore(C2_MacroAssembler(&cbuf), false, dst_reg,
-              Matcher::vector_element_basic_type(this), as_Register($mem$$base));
+              Matcher::vector_element_basic_type(this), as_Register($mem$$base), Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -113,11 +119,11 @@ instruct loadV(vReg dst, vmemA mem) %{
 instruct storeV(vReg src, vmemA mem) %{
   match(Set mem (StoreVector mem src));
   ins_cost(VEC_COST);
-  format %{ "vse $src, $mem\t#@storeV" %}
+  format %{ "storeV $mem, $src\t# vector (rvv)" %}
   ins_encode %{
     VectorRegister src_reg = as_VectorRegister($src$$reg);
     loadStore(C2_MacroAssembler(&cbuf), true, src_reg,
-              Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base));
+              Matcher::vector_element_basic_type(this, $src), as_Register($mem$$base), Matcher::vector_length_in_bytes(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}

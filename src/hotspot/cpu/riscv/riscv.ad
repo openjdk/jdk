@@ -1922,7 +1922,12 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
   if (UseRVV) {
     // The MaxVectorSize should have been set by detecting RVV max vector register size when check UseRVV.
     // MaxVectorSize == VM_Version::_initial_vector_length
-    return MaxVectorSize;
+    int size = MaxVectorSize;
+    // Minimum 2 values in vector
+    if (size < 2 * type2aelembytes(bt)) size = 0;
+    // But never < 4
+    if (size < 4) size = 0;
+    return size;
   }
   return 0;
 }
@@ -1932,7 +1937,18 @@ const int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt) / type2aelembytes(bt);
 }
 const int Matcher::min_vector_size(const BasicType bt) {
-  return max_vector_size(bt);
+  int max_size = max_vector_size(bt);
+  // Limit the min vector size to 8 bytes.
+  int size = 8 / type2aelembytes(bt);
+  if (bt == T_BYTE) {
+    // To support vector api shuffle/rearrange.
+    size = 4;
+  } else if (bt == T_BOOLEAN) {
+    // To support vector api load/store mask.
+    size = 2;
+  }
+  if (size < 2) size = 2;
+  return MIN2(size, max_size);
 }
 
 // Vector ideal reg.
