@@ -982,13 +982,14 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   JavaThread* THREAD = current;
   Handle cause = java_lang_Throwable::get_cause_with_stack_trace(exception, THREAD);
   if (HAS_PENDING_EXCEPTION || cause.is_null()) {
+    // Retry with the simple method
+    cause = java_lang_Throwable::get_cause_simple(exception, THREAD);
     CLEAR_PENDING_EXCEPTION;
-    return;
   }
 
   MutexLocker ml(THREAD, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), cause());
-  bool created = false;
+  bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   ResourceMark rm(THREAD);

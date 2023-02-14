@@ -2780,6 +2780,27 @@ Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) 
   return h_cause;
 }
 
+Handle java_lang_Throwable::get_cause_simple(Handle throwable, TRAPS) {
+  // Same as get_cause_with_stack_trace, but without calling a JVM.
+  assert(throwable.not_null(), "shouldn't be");
+
+  // Now create the message with the original exception and thread name.
+  Symbol* message = java_lang_Throwable::detail_message(throwable());
+  ResourceMark rm(THREAD);
+  stringStream st;
+  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
+             message == nullptr ? "" : ":");
+  if (message == NULL) {
+    st.print("[in thread \"%s\"]", THREAD->name());
+  } else {
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
+  }
+
+  Symbol* exception_name =  throwable()->klass()->name();
+  CLEAR_PENDING_EXCEPTION;
+  return Exceptions::new_exception(THREAD, exception_name, st.as_string());
+}
+
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
   JavaThread* current = JavaThread::current();
   objArrayHandle result(current, objArrayOop(backtrace(throwable)));
