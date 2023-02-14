@@ -70,7 +70,7 @@ public class TestInheritance extends JavadocTester {
                      * Second subclass
                      * @param <Q> param Q
                      */
-                    public class C<Q>  extends B<String, Q>{ private C() { } }
+                    public class C<Q> extends B<String, Q> { private C() { } }
                     """,
                 """
                     package pkg;
