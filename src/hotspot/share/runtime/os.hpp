@@ -188,7 +188,6 @@ class os: AllStatic {
 
  private:
   static OSThread*          _starting_thread;
-  static address            _polling_page;
   static PageSizes          _page_sizes;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
@@ -371,7 +370,7 @@ class os: AllStatic {
   // OS interface to Virtual Memory
 
   // Return the default page size.
-  static int vm_page_size() { return OSInfo::vm_page_size(); }
+  static size_t vm_page_size() { return OSInfo::vm_page_size(); }
 
   // The set of page sizes which the VM is allowed to use (may be a subset of
   //  the page sizes actually available on the platform).
@@ -412,7 +411,7 @@ class os: AllStatic {
                                                   const char* base,
                                                   const size_t size);
 
-  static int vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
+  static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
   inline static size_t cds_core_region_alignment();
 

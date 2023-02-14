@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,43 @@ public class ForceGC {
 
     /**
      * Causes the current thread to wait until the {@code booleanSupplier}
-     * returns true, or a specific waiting time elapses.  The waiting time
-     * is 1 second scaled with the jtreg testing timeout factor.
+     * returns true, or the waiting time elapses.  The waiting time
+     * is 1 second scaled with the jtreg testing timeout factor. This method
+     * is equivalent to calling {@link #waitFor(BooleanSupplier, long)
+     * waitFor(booleanSupplier, Math.round(1000L * JTREG_TIMEOUT_FACTOR)}
+     * where {@code JTREG_TIMEOUT_FACTOR} is the value of
+     * "test.timeout.factor" system property.
+     *
+     * @apiNote If the given {@code booleanSupplier} is expected to never
+     * return true, for example to check if an object that is expected
+     * to be strongly reachable is still alive,
+     * {@link #waitFor(BooleanSupplier, long)} can be used to specify
+     * the timeout for the wait method to return.
      *
      * @param booleanSupplier boolean supplier
      * @return true if the {@code booleanSupplier} returns true, or false
-     *     if did not complete after the specific waiting time.
+     *     if did not complete after the waiting time.
+
      */
     public static boolean wait(BooleanSupplier booleanSupplier) {
+        return waitFor(booleanSupplier, Math.round(1000L * TIMEOUT_FACTOR));
+    }
+
+    /**
+     * Causes the current thread to wait until the {@code booleanSupplier}
+     * returns true, or the specified waiting time elapses.
+     *
+     * @apiNote If the given {@code booleanSupplier} is expected to never
+     * return true, for example to check if an object that is expected
+     * to be strongly reachable is still alive, this method can be used
+     * to specify the timeout independent of the jtreg timeout factor.
+     *
+     * @param booleanSupplier boolean supplier
+     * @param timeout the maximum time to wait, in milliseconds
+     * @return true if the {@code booleanSupplier} returns true, or false
+     *     if did not complete after the specified waiting time.
+     */
+    public static boolean waitFor(BooleanSupplier booleanSupplier, long timeout) {
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
@@ -53,7 +82,7 @@ public class ForceGC {
         Reference.reachabilityFence(obj);
         Reference.reachabilityFence(ref);
 
-        int retries = (int)(Math.round(1000L * TIMEOUT_FACTOR) / 200);
+        int retries = (int)(timeout / 200);
         for (; retries >= 0; retries--) {
             if (booleanSupplier.getAsBoolean()) {
                 return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules jdk.incubator.concurrent
  * @library /test/lib
  * @key randomness
- * @run testng ManyBindings
+ * @run junit ManyBindings
  */
 
 import jdk.incubator.concurrent.ScopedValue;
@@ -40,11 +40,10 @@ import java.util.Random;
 import jdk.test.lib.RandomFactory;
 import jdk.test.lib.thread.VThreadRunner;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
-public class ManyBindings {
+class ManyBindings {
     private static final Random RND = RandomFactory.getRandom();
 
     // number of scoped values to create
@@ -56,14 +55,16 @@ public class ManyBindings {
     /**
      * Stress test bindings on platform thread.
      */
-    public void testPlatformThread() {
+    @Test
+    void testPlatformThread() {
         test();
     }
 
     /**
      * Stress test bindings on virtual thread.
      */
-    public void testVirtualThread() throws Exception {
+    @Test
+    void testVirtualThread() throws Exception {
         VThreadRunner.run(() -> test());
     }
 
@@ -143,7 +144,7 @@ public class ManyBindings {
             if (value == null) {
                 assertFalse(key.isBound());
             } else {
-                assertEquals(key.get(), value);
+                assertEquals(value, key.get());
             }
         }
     }
@@ -157,7 +158,7 @@ public class ManyBindings {
             Integer value = array[index].value;
             if (value != null) {
                 ScopedValue<Integer> key = array[index].key;
-                assertEquals(key.get(), value);
+                assertEquals(value, key.get());
             }
         }
     }
