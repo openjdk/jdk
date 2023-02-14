@@ -299,16 +299,16 @@ AC_DEFUN([FLAGS_SETUP_OPTIMIZATION],
     C_O_FLAG_NONE="-qnoopt"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # -O2 is a combination of optimizations that favors speed over size.
-    C_O_FLAG_HIGHEST_JVM="-O2"
-    C_O_FLAG_HIGHEST="-O2"
-    C_O_FLAG_HI="-O2"
-    C_O_FLAG_NORM="-O2"
+    C_O_FLAG_HIGHEST_JVM="-O2 -Oy-"
+    C_O_FLAG_HIGHEST="-O2 -Oy-"
+    C_O_FLAG_HI="-O2 -Oy-"
+    C_O_FLAG_NORM="-O2 -Oy-"
     # -Od disables optimizations.
     C_O_FLAG_DEBUG="-Od"
     C_O_FLAG_DEBUG_JVM="-Od"
     C_O_FLAG_NONE="-Od"
     # -O1 is a combination of optimizations that favors size over speed.
-    C_O_FLAG_SIZE="-O1"
+    C_O_FLAG_SIZE="-O1 -Oy-"
   fi
 
   # Now copy to C++ flags
