@@ -232,6 +232,7 @@ class AgentLibraryList {
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
 class ScopedVMInitArgs;
+class PreprocessedArguments;
 
 class Arguments : AllStatic {
   friend class VMStructs;
@@ -239,8 +240,6 @@ class Arguments : AllStatic {
   friend class CodeCacheExtensions;
   friend class ArgumentsTest;
   friend class LargeOptionsTest;
-
-  class PreprocessedImpl;
 
  public:
   // Operation modi
@@ -279,7 +278,7 @@ class Arguments : AllStatic {
     friend class Arguments;
 
     // Actual implementation defined in source file instead of the header.
-    PreprocessedImpl* _impl = nullptr;
+    PreprocessedArguments* _impl = nullptr;
 
    public:
     Preprocessed() = default;

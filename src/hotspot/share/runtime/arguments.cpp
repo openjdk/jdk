@@ -3785,17 +3785,17 @@ static void apply_debugger_ergo() {
 
 static const char* const hotspotrc = ".hotspotrc";
 
-class Arguments::PreprocessedImpl final : public CHeapObj<mtArguments> {
+class PreprocessedArguments final : public CHeapObj<mtArguments> {
  public:
-  PreprocessedImpl() : initial_vm_options_args(""),
-                       initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
-                       initial_java_options_args("env_var='_JAVA_OPTIONS'"),
-                       mod_cmd_args("cmd_line_args"),
-                       mod_vm_options_args("vm_options_args"),
-                       mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
-                       mod_java_options_args("env_var='_JAVA_OPTIONS'") {}
+  PreprocessedArguments() : initial_vm_options_args(""),
+                            initial_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
+                            initial_java_options_args("env_var='_JAVA_OPTIONS'"),
+                            mod_cmd_args("cmd_line_args"),
+                            mod_vm_options_args("vm_options_args"),
+                            mod_java_tool_options_args("env_var='JAVA_TOOL_OPTIONS'"),
+                            mod_java_options_args("env_var='_JAVA_OPTIONS'") {}
 
-  NONCOPYABLE(PreprocessedImpl);
+  NONCOPYABLE(PreprocessedArguments);
 
   ScopedVMInitArgs initial_vm_options_args;
   ScopedVMInitArgs initial_java_tool_options_args;
@@ -3832,7 +3832,7 @@ jint Arguments::preprocess(const JavaVMInitArgs* args, Preprocessed* preproc_arg
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
 
-  PreprocessedImpl* result = new PreprocessedImpl();
+  PreprocessedArguments* result = new PreprocessedArguments();
   // preproc_args will perform any required cleanup.
   preproc_args->_impl = result;
 
@@ -3925,7 +3925,7 @@ jint Arguments::preprocess(const JavaVMInitArgs* args, Preprocessed* preproc_arg
 }
 
 jint Arguments::parse(const Preprocessed& preproc_args) {
-  const PreprocessedImpl* args = preproc_args._impl;
+  const PreprocessedArguments* args = preproc_args._impl;
   assert(args != nullptr, "Arguments::parse called before successful Arguments::preprocess");
 
   // Parse JavaVMInitArgs structure passed in, as well as JAVA_TOOL_OPTIONS and _JAVA_OPTIONS
