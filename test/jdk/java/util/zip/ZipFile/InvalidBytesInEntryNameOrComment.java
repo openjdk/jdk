@@ -39,6 +39,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.expectThrows;
 
 /**
  * @test
@@ -59,7 +60,7 @@ public class InvalidBytesInEntryNameOrComment {
     private static final byte[] INVALID_UTF8_BYTE_SEQUENCE = {(byte) 0xF0, (byte) 0xA4, (byte) 0xAD};
 
     // Expected ZipException regex
-    private static final String BAD_ENTRY_NAME_OR_COMMENT = "invalid CEN header \\(bad entry name or comment\\)";
+    private static final String BAD_ENTRY_NAME_OR_COMMENT = "invalid CEN header (bad entry name or comment)";
 
     // ZIP file with invalid name field
     private Path invalidName;
@@ -84,12 +85,12 @@ public class InvalidBytesInEntryNameOrComment {
      * the name field of a CEN file header should throw a
      * ZipException with "bad entry name or comment"
      */
-    @Test(expectedExceptions = ZipException.class,
-            expectedExceptionsMessageRegExp = BAD_ENTRY_NAME_OR_COMMENT)
+    @Test
     public void shouldRejectInvalidName() throws IOException {
-        try (ZipFile zf = new ZipFile(invalidName.toFile())) {
-            // Should throw ZipException
-        }
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            openZipFile(invalidName);
+        });
+        assertEquals(ex.getMessage(), BAD_ENTRY_NAME_OR_COMMENT);
     }
 
     /**
@@ -97,11 +98,16 @@ public class InvalidBytesInEntryNameOrComment {
      * the comment field of a CEN file header should throw a
      * ZipException with "bad entry name or comment"
      */
-    @Test(expectedExceptions = ZipException.class,
-            expectedExceptionsMessageRegExp = BAD_ENTRY_NAME_OR_COMMENT)
-    public void shouldIgnoreInvalidComment() throws IOException {
-        try (ZipFile zf = new ZipFile(invalidComment.toFile())) {
-            // Should throw ZipException
+    @Test
+    public void shouldRejectInvalidComment() throws IOException {
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            openZipFile(invalidComment);
+        });
+        assertEquals(ex.getMessage(), BAD_ENTRY_NAME_OR_COMMENT);
+    }
+
+    private void openZipFile(Path zip) throws IOException {
+        try (ZipFile zf = new ZipFile(zip.toFile())) {
         }
     }
 
