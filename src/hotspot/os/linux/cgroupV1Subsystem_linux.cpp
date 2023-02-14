@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
  */
 void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
   stringStream ss;
-  if (_root != NULL && cgroup_path != NULL) {
+  if (_root != nullptr && cgroup_path != nullptr) {
     if (strcmp(_root, "/") == 0) {
       ss.print_raw(_mount_point);
       if (strcmp(cgroup_path,"/") != 0) {
@@ -52,7 +52,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         _path = os::strdup(ss.base());
       } else {
         char *p = strstr(cgroup_path, _root);
-        if (p != NULL && p == _root) {
+        if (p != nullptr && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
             ss.print_raw(_mount_point);
             const char* cg_path_sub = cgroup_path + strlen(_root);
@@ -302,7 +302,7 @@ char* CgroupV1Subsystem::pids_max_val() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1Subsystem::pids_max() {
-  if (_pids == NULL) return OSCONTAINER_ERROR;
+  if (_pids == nullptr) return OSCONTAINER_ERROR;
   char * pidsmax_str = pids_max_val();
   return limit_from_str(pidsmax_str);
 }
@@ -316,7 +316,7 @@ jlong CgroupV1Subsystem::pids_max() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupV1Subsystem::pids_current() {
-  if (_pids == NULL) return OSCONTAINER_ERROR;
+  if (_pids == nullptr) return OSCONTAINER_ERROR;
   GET_CONTAINER_INFO(jlong, _pids, "/pids.current",
                      "Current number of tasks is: " JLONG_FORMAT, JLONG_FORMAT, pids_current);
   return pids_current;

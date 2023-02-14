@@ -146,7 +146,7 @@ public class TestAdler32 {
         if (adler0.getValue() != adler1.getValue()) {
             System.err.printf("ERROR: adler0 = %08x, adler1 = %08x\n",
                               adler0.getValue(), adler1.getValue());
-            return false;
+            throw new AssertionError("TEST FAILED", null);
         }
         return true;
     }

@@ -172,14 +172,10 @@ final class LCMSImageLayout {
                  * has to be supported.
                  */
                 ColorModel cm = image.getColorModel();
-                /* todo
-                 * Our generic code for rasters does not support alpha channels,
-                 * but it would be good to improve it when it is used from here.
-                 * See "createImageLayout(image.getRaster())" below.
-                 */
-                if (!cm.hasAlpha() && cm instanceof ComponentColorModel) {
-                    ComponentColorModel ccm = (ComponentColorModel) cm;
-
+                // lcms as of now does not support pre-alpha
+                if (!cm.isAlphaPremultiplied()
+                        && cm instanceof ComponentColorModel ccm)
+                {
                     // verify whether the component size is fine
                     int[] cs = ccm.getComponentSize();
                     for (int s : cs) {
@@ -187,9 +183,7 @@ final class LCMSImageLayout {
                             return null;
                         }
                     }
-
-                    return createImageLayout(image.getRaster());
-
+                    return createImageLayout(image.getRaster(), cm.hasAlpha());
                 }
                 return null;
         }
@@ -326,7 +320,7 @@ final class LCMSImageLayout {
         return checkIndex(res, Integer.MAX_VALUE);
     }
 
-    static LCMSImageLayout createImageLayout(Raster r) {
+    static LCMSImageLayout createImageLayout(Raster r, boolean hasAlpha) {
         LCMSImageLayout l = new LCMSImageLayout();
         if (r instanceof ByteComponentRaster &&
                 r.getSampleModel() instanceof ComponentSampleModel) {
@@ -335,7 +329,8 @@ final class LCMSImageLayout {
             ComponentSampleModel csm = (ComponentSampleModel)r.getSampleModel();
 
             int numBands = br.getNumBands();
-            l.pixelType = CHANNELS_SH(numBands) | BYTES_SH(1);
+            l.pixelType = (hasAlpha ? CHANNELS_SH(numBands - 1) | EXTRA_SH(1)
+                                    : CHANNELS_SH(numBands)) | BYTES_SH(1);
 
             int[] bandOffsets = csm.getBandOffsets();
             BandOrder order = BandOrder.getBandOrder(bandOffsets);
