@@ -126,38 +126,68 @@ static uintx hash_shared_symbol(const char* s, int len) {
 #endif
 
 class SymbolTableConfig : public AllStatic {
-private:
+
 public:
-  typedef Symbol* Value;  // value of the Node in the hashtable
+  typedef Symbol Value;  // value of the Node in the hashtable
 
   static uintx get_hash(Value const& value, bool* is_dead) {
-    *is_dead = (value->refcount() == 0);
+    *is_dead = (value.refcount() == 0);
     if (*is_dead) {
       return 0;
     } else {
-      return hash_symbol((const char*)value->bytes(), value->utf8_length(), _alt_hash);
+      return hash_symbol((const char*)value.bytes(), value.utf8_length(), _alt_hash);
     }
   }
   // We use default allocation/deallocation but counted
   static void* allocate_node(void* context, size_t size, Value const& value) {
     SymbolTable::item_added();
-    return AllocateHeap(size, mtSymbol);
+    return allocate_node_impl(size, value);
   }
-  static void free_node(void* context, void* memory, Value const& value) {
+  static void free_node(void* context, void* memory, Value & value) {
     // We get here because #1 some threads lost a race to insert a newly created Symbol
     // or #2 we're cleaning up unused symbol.
     // If #1, then the symbol can be either permanent,
     // or regular newly created one (refcount==1)
     // If #2, then the symbol is dead (refcount==0)
-    assert(value->is_permanent() || (value->refcount() == 1) || (value->refcount() == 0),
-           "refcount %d", value->refcount());
-    if (value->refcount() == 1) {
-      value->decrement_refcount();
-      assert(value->refcount() == 0, "expected dead symbol");
+    assert(value.is_permanent() || (value.refcount() == 1) || (value.refcount() == 0),
+           "refcount %d", value.refcount());
+    if (value.refcount() == 1) {
+      value.decrement_refcount();
+      assert(value.refcount() == 0, "expected dead symbol");
     }
-    SymbolTable::delete_symbol(value);
-    FreeHeap(memory);
-    SymbolTable::item_removed();
+    if (value.refcount() != PERM_REFCOUNT) {
+      FreeHeap(memory);
+      SymbolTable::item_removed();
+    }
+  }
+
+private:
+  static void* allocate_node_impl(size_t size, Value const& value) {
+    size_t alloc_size = size + value.byte_size() + value.effective_length();
+#if INCLUDE_CDS
+    if (DumpSharedSpaces) {
+      MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
+      // To get deterministic output from -Xshare:dump, we ensure that Symbols are allocated in
+      // increasing addresses. When the symbols are copied into the archive, we preserve their
+      // relative address order (sorted, see ArchiveBuilder::gather_klasses_and_symbols).
+      //
+      // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
+      // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
+      // sometimes be higher. This would cause non-deterministic contents in the archive.
+      DEBUG_ONLY(static void* last = 0);
+      void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
+      assert(p > last, "must increase monotonically");
+      DEBUG_ONLY(last = p);
+      return p;
+    }
+#endif
+    if (value.refcount() != PERM_REFCOUNT) {
+      return AllocateHeap(alloc_size, mtSymbol);
+    } else {
+      // Allocate to global arena
+      MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
+      return SymbolTable::arena()->Amalloc(alloc_size);
+    }
   }
 };
 
@@ -173,20 +203,6 @@ void SymbolTable::create_table ()  {
     _arena = new (mtSymbol) Arena(mtSymbol);
   } else {
     _arena = new (mtSymbol) Arena(mtSymbol, symbol_alloc_arena_size);
-  }
-}
-
-void SymbolTable::delete_symbol(Symbol* sym) {
-  if (sym->is_permanent()) {
-    MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
-    // Deleting permanent symbol should not occur very often (insert race condition),
-    // so log it.
-    log_trace_symboltable_helper(sym, "Freeing permanent symbol");
-    if (!arena()->Afree(sym, sym->size())) {
-      log_trace_symboltable_helper(sym, "Leaked permanent symbol");
-    }
-  } else {
-    delete sym;
   }
 }
 
@@ -217,39 +233,13 @@ void SymbolTable::trigger_cleanup() {
   Service_lock->notify_all();
 }
 
-Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap) {
-  assert (len <= Symbol::max_length(), "should be checked by caller");
-
-  Symbol* sym;
-  if (DumpSharedSpaces) {
-    // TODO: Special handling of Symbol allocation for DumpSharedSpaces will be removed
-    // in JDK-8250989
-    c_heap = false;
-  }
-  if (c_heap) {
-    // refcount starts as 1
-    sym = new (len) Symbol((const u1*)name, len, 1);
-    assert(sym != nullptr, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
-  } else if (DumpSharedSpaces) {
-    // See comments inside Symbol::operator new(size_t, int)
-    sym = new (len) Symbol((const u1*)name, len, PERM_REFCOUNT);
-    assert(sym != nullptr, "new should call vm_exit_out_of_memory if failed to allocate symbol during DumpSharedSpaces");
-  } else {
-    // Allocate to global arena
-    MutexLocker ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
-    sym = new (len, arena()) Symbol((const u1*)name, len, PERM_REFCOUNT);
-  }
-  return sym;
-}
-
 class SymbolsDo : StackObj {
   SymbolClosure *_cl;
 public:
   SymbolsDo(SymbolClosure *cl) : _cl(cl) {}
-  bool operator()(Symbol** value) {
+  bool operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    _cl->do_symbol(value);
+    _cl->do_symbol(&value);
     return true;
   };
 };
@@ -365,10 +355,9 @@ public:
   uintx get_hash() const {
     return _hash;
   }
-  bool equals(Symbol** value, bool* is_dead) {
+  bool equals(Symbol* value, bool* is_dead) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    Symbol *sym = *value;
+    Symbol *sym = value;
     if (sym->equals(_str, _len)) {
       if (sym->try_increment_refcount()) {
         // something is referencing this symbol now.
@@ -389,10 +378,9 @@ class SymbolTableGet : public StackObj {
   Symbol* _return;
 public:
   SymbolTableGet() : _return(nullptr) {}
-  void operator()(Symbol** value) {
+  void operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    _return = *value;
+    _return = value;
   }
   Symbol* get_res_sym() const {
     return _return;
@@ -472,18 +460,31 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
   SymbolTableGet stg;
   bool clean_hint = false;
   bool rehash_warning = false;
-  Symbol* sym = nullptr;
   Thread* current = Thread::current();
+  Symbol* sym;
+
+  ResourceMark rm(current);
+  const int alloc_size = Symbol::byte_size(len);
+  u1* u1_buf = NEW_RESOURCE_ARRAY(u1, alloc_size);
+  Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len, (heap && !DumpSharedSpaces) ? 1 : PERM_REFCOUNT);
 
   do {
-    // Callers have looked up the symbol once, insert the symbol.
-    sym = allocate_symbol(name, len, heap);
-    if (_local_table->insert(current, lookup, sym, &rehash_warning, &clean_hint)) {
-      break;
+    if (_local_table->insert(current, lookup, *tmp, &rehash_warning, &clean_hint)) {
+      if (_local_table->get(current, lookup, stg, &rehash_warning)) {
+        sym = stg.get_res_sym();
+        // The get adds one to ref count, but we inserted with our ref already included.
+        // Therefore decrement with one.
+        if (sym->refcount() != PERM_REFCOUNT) {
+          sym->decrement_refcount();
+        }
+        break;
+      }
     }
+
     // In case another thread did a concurrent add, return value already in the table.
     // This could fail if the symbol got deleted concurrently, so loop back until success.
     if (_local_table->get(current, lookup, stg, &rehash_warning)) {
+      // The lookup added a refcount, which is ours.
       sym = stg.get_res_sym();
       break;
     }
@@ -515,10 +516,9 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
 }
 
 struct SizeFunc : StackObj {
-  size_t operator()(Symbol** value) {
+  size_t operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    return (*value)->size() * HeapWordSize;
+    return (value)->size() * HeapWordSize;
   };
 };
 
@@ -545,10 +545,9 @@ void SymbolTable::print_table_statistics(outputStream* st) {
 // Verification
 class VerifySymbols : StackObj {
 public:
-  bool operator()(Symbol** value) {
+  bool operator()(Symbol* value) {
     guarantee(value != nullptr, "expected valid value");
-    guarantee(*value != nullptr, "value should point to a symbol");
-    Symbol* sym = *value;
+    Symbol* sym = value;
     guarantee(sym->equals((const char*)sym->bytes(), sym->utf8_length()),
               "symbol must be internally consistent");
     return true;
@@ -577,10 +576,9 @@ class DumpSymbol : StackObj {
   outputStream* _st;
 public:
   DumpSymbol(Thread* thr, outputStream* st) : _thr(thr), _st(st) {}
-  bool operator()(Symbol** value) {
+  bool operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    print_symbol(_st, *value);
+    print_symbol(_st, value);
     return true;
   };
 };
@@ -695,10 +693,9 @@ void SymbolTable::grow(JavaThread* jt) {
 struct SymbolTableDoDelete : StackObj {
   size_t _deleted;
   SymbolTableDoDelete() : _deleted(0) {}
-  void operator()(Symbol** value) {
+  void operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    Symbol *sym = *value;
+    Symbol *sym = value;
     assert(sym->refcount() == 0, "refcount");
     _deleted++;
   }
@@ -707,11 +704,10 @@ struct SymbolTableDoDelete : StackObj {
 struct SymbolTableDeleteCheck : StackObj {
   size_t _processed;
   SymbolTableDeleteCheck() : _processed(0) {}
-  bool operator()(Symbol** value) {
+  bool operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
     _processed++;
-    Symbol *sym = *value;
+    Symbol *sym = value;
     return (sym->refcount() == 0);
   }
 };
@@ -849,10 +845,9 @@ public:
       sizes[i] = 0;
     }
   }
-  bool operator()(Symbol** value) {
+  bool operator()(Symbol* value) {
     assert(value != nullptr, "expected valid value");
-    assert(*value != nullptr, "value should point to a symbol");
-    Symbol* sym = *value;
+    Symbol* sym = value;
     size_t size = sym->size();
     size_t len = sym->utf8_length();
     if (len < results_length) {

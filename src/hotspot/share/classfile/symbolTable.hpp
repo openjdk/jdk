@@ -59,7 +59,6 @@ class SymbolTable : public AllStatic {
   // Set if one bucket is out of balance due to hash algorithm deficiency
   static volatile bool _needs_rehashing;
 
-  static void delete_symbol(Symbol* sym);
   static void grow(JavaThread* jt);
   static void clean_dead_entries(JavaThread* jt);
 
