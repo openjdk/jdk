@@ -134,21 +134,8 @@ public interface ClassConstants
     // True if klass supports the Clonable interface
     public static final long JVM_ACC_IS_CLONEABLE             = 0x80000000;
 
-    // Klass* and Method* flags
+    // Method* flags
     public static final long JVM_ACC_HAS_LOCAL_VARIABLE_TABLE = 0x00200000;
-    // flags promoted from methods to the holding klass
-    public static final long JVM_ACC_PROMOTED_FLAGS           = 0x00200000;
-
-    // field flags
-    // Note: these flags must be defined in the low order 16 bits because
-    // InstanceKlass only stores a ushort worth of information from the
-    // AccessFlags value.
-    // field access is watched by JVMTI
-    public static final long JVM_ACC_FIELD_ACCESS_WATCHED         = 0x00002000;
-    // field modification is watched by JVMTI
-    public static final long JVM_ACC_FIELD_MODIFICATION_WATCHED   = 0x00008000;
-    // field has generic signature
-    public static final long JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE  = 0x00000800;
 
     // flags accepted by set_field_flags
     public static final long JVM_ACC_FIELD_FLAGS = 0x00008000 | JVM_ACC_WRITTEN_FLAGS;

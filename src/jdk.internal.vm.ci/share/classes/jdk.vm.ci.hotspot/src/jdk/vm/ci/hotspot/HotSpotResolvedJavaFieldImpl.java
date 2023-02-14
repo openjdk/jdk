@@ -101,6 +101,11 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
+    public int getInternalModifiers() {
+        return internalModifiers;
+    }
+
+    @Override
     public boolean isInternal() {
         return (internalModifiers & (1 << config().jvmFieldFlagInternalShift)) != 0;
     }

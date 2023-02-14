@@ -1,5 +1,9 @@
 /*
+<<<<<<< HEAD
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+=======
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+>>>>>>> upstream/master
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,10 +76,8 @@ enum {
   JVM_ACC_IS_BEING_REDEFINED      = 0x00100000,     // True if the klass is being redefined.
   JVM_ACC_HAS_RESOLVED_METHODS    = 0x00200000,     // True if the klass has resolved methods
 
-  // Klass* and Method* flags
+  // Method* flags
   JVM_ACC_HAS_LOCAL_VARIABLE_TABLE= 0x00400000,
-
-  JVM_ACC_PROMOTED_FLAGS          = 0x00400000     // flags promoted from methods to the holding klass
 };
 
 
@@ -132,7 +134,7 @@ class AccessFlags {
   bool is_hidden_class         () const { return (_flags & JVM_ACC_IS_HIDDEN_CLASS        ) != 0; }
   bool is_value_based_class    () const { return (_flags & JVM_ACC_IS_VALUE_BASED_CLASS   ) != 0; }
 
-  // Klass* and Method* flags
+  // Method* flags
   bool has_localvariable_table () const { return (_flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE) != 0; }
   void set_has_localvariable_table()    { atomic_set_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
   void clear_has_localvariable_table()  { atomic_clear_bits(JVM_ACC_HAS_LOCAL_VARIABLE_TABLE); }
@@ -150,7 +152,6 @@ class AccessFlags {
   jint get_flags               () const { return (_flags & JVM_ACC_WRITTEN_FLAGS); }
 
   // Initialization
-  void add_promoted_flags(jint flags)   { _flags |= (flags & JVM_ACC_PROMOTED_FLAGS); }
   void set_field_flags(jint flags)      {
     assert((flags & JVM_RECOGNIZED_FIELD_MODIFIERS) == flags, "only recognized flags");
     _flags = (flags & JVM_RECOGNIZED_FIELD_MODIFIERS);

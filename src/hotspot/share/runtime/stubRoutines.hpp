@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class UnsafeCopyMemory : public CHeapObj<mtCode> {
   static UnsafeCopyMemory* _table;
   static int               _table_length;
   static int               _table_max_length;
-  UnsafeCopyMemory() : _start_pc(NULL), _end_pc(NULL), _error_exit_pc(NULL) {}
+  UnsafeCopyMemory() : _start_pc(nullptr), _end_pc(nullptr), _error_exit_pc(nullptr) {}
   void    set_start_pc(address pc)      { _start_pc = pc; }
   void    set_end_pc(address pc)        { _end_pc = pc; }
   void    set_error_exit_pc(address pc) { _error_exit_pc = pc; }
@@ -117,7 +117,7 @@ class UnsafeCopyMemoryMark : public StackObj {
   UnsafeCopyMemory*  _ucm_entry;
   StubCodeGenerator* _cgen;
  public:
-  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = NULL);
+  UnsafeCopyMemoryMark(StubCodeGenerator* cgen, bool add_entry, bool continue_at_scope_end, address error_exit_pc = nullptr);
   ~UnsafeCopyMemoryMark();
 };
 
@@ -143,13 +143,9 @@ class StubRoutines: AllStatic {
   static address _throw_delayed_StackOverflowError_entry;
 
   static address _atomic_xchg_entry;
-  static address _atomic_xchg_long_entry;
-  static address _atomic_store_entry;
   static address _atomic_cmpxchg_entry;
-  static address _atomic_cmpxchg_byte_entry;
   static address _atomic_cmpxchg_long_entry;
   static address _atomic_add_entry;
-  static address _atomic_add_long_entry;
   static address _fence_entry;
 
   static BufferBlob* _code1;                               // code buffer for initial routines
@@ -209,6 +205,7 @@ class StubRoutines: AllStatic {
   static address _counterMode_AESCrypt;
   static address _galoisCounterMode_AESCrypt;
   static address _ghash_processBlocks;
+  static address _chacha20Block;
   static address _base64_encodeBlock;
   static address _base64_decodeBlock;
   static address _poly1305_processBlocks;
@@ -273,8 +270,8 @@ class StubRoutines: AllStatic {
 
   static bool contains(address addr) {
     return
-      (_code1 != NULL && _code1->blob_contains(addr)) ||
-      (_code2 != NULL && _code2->blob_contains(addr)) ;
+      (_code1 != nullptr && _code1->blob_contains(addr)) ||
+      (_code2 != nullptr && _code2->blob_contains(addr)) ;
   }
 
   static RuntimeBlob* code1() { return _code1; }
@@ -313,13 +310,9 @@ class StubRoutines: AllStatic {
   static address throw_delayed_StackOverflowError_entry()  { return _throw_delayed_StackOverflowError_entry; }
 
   static address atomic_xchg_entry()                       { return _atomic_xchg_entry; }
-  static address atomic_xchg_long_entry()                  { return _atomic_xchg_long_entry; }
-  static address atomic_store_entry()                      { return _atomic_store_entry; }
   static address atomic_cmpxchg_entry()                    { return _atomic_cmpxchg_entry; }
-  static address atomic_cmpxchg_byte_entry()               { return _atomic_cmpxchg_byte_entry; }
   static address atomic_cmpxchg_long_entry()               { return _atomic_cmpxchg_long_entry; }
   static address atomic_add_entry()                        { return _atomic_add_entry; }
-  static address atomic_add_long_entry()                   { return _atomic_add_long_entry; }
   static address fence_entry()                             { return _fence_entry; }
 
   static address select_arraycopy_function(BasicType t, bool aligned, bool disjoint, const char* &name, bool dest_uninitialized);
@@ -388,6 +381,7 @@ class StubRoutines: AllStatic {
   static address poly1305_processBlocks()               { return _poly1305_processBlocks; }
   static address counterMode_AESCrypt()  { return _counterMode_AESCrypt; }
   static address ghash_processBlocks()   { return _ghash_processBlocks; }
+  static address chacha20Block()         { return _chacha20Block; }
   static address base64_encodeBlock()    { return _base64_encodeBlock; }
   static address base64_decodeBlock()    { return _base64_decodeBlock; }
   static address md5_implCompress()      { return _md5_implCompress; }

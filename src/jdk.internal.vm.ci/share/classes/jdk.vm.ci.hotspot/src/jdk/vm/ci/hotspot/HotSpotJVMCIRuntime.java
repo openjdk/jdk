@@ -206,46 +206,6 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return result;
     }
 
-    /**
-     * Decodes the exception encoded in {@code buffer} and throws it.
-     *
-     * @param buffer a native byte buffer containing an exception encoded by
-     *            {@link #encodeThrowable}
-     */
-    @VMEntryPoint
-    static void decodeAndThrowThrowable(long buffer) throws Throwable {
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        int encodingLength = unsafe.getInt(buffer);
-        byte[] encoding = new byte[encodingLength];
-        unsafe.copyMemory(null, buffer + 4, encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, encodingLength);
-        throw TranslatedException.decodeThrowable(encoding);
-    }
-
-    /**
-     * If {@code bufferSize} is large enough, encodes {@code throwable} into a byte array and writes
-     * it to {@code buffer}. The encoding in {@code buffer} can be decoded by
-     * {@link #decodeAndThrowThrowable}.
-     *
-     * @param throwable the exception to encode
-     * @param buffer a native byte buffer
-     * @param bufferSize the size of {@code buffer} in bytes
-     * @return the number of bytes written into {@code buffer} if {@code bufferSize} is large
-     *         enough, otherwise {@code -N} where {@code N} is the value {@code bufferSize} needs to
-     *         be to fit the encoding
-     */
-    @VMEntryPoint
-    static int encodeThrowable(Throwable throwable, long buffer, int bufferSize) throws Throwable {
-        byte[] encoding = TranslatedException.encodeThrowable(throwable);
-        int requiredSize = 4 + encoding.length;
-        if (bufferSize < requiredSize) {
-            return -requiredSize;
-        }
-        Unsafe unsafe = UnsafeAccess.UNSAFE;
-        unsafe.putInt(buffer, encoding.length);
-        unsafe.copyMemory(encoding, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, encoding.length);
-        return requiredSize;
-    }
-
     @VMEntryPoint
     static String callToString(Object o) {
         return o.toString();
@@ -1312,7 +1272,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         for (String filter : filters) {
             Matcher m = FORCE_TRANSLATE_FAILURE_FILTER_RE.matcher(filter);
             if (!m.matches()) {
-                throw new JVMCIError(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
+                throw new IllegalArgumentException(Option.ForceTranslateFailure + " filter does not match " + FORCE_TRANSLATE_FAILURE_FILTER_RE + ": " + filter);
             }
             String typeSelector = m.group(1);
             String substring = m.group(2);
@@ -1332,7 +1292,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 continue;
             }
             if (toMatch.contains(substring)) {
-                throw new JVMCIError("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
+                throw new RuntimeException("translation of " + translatedObject + " failed due to matching " + Option.ForceTranslateFailure + " filter \"" + filter + "\"");
             }
         }
     }

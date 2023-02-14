@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1849,7 +1849,7 @@ class StubGenerator: public StubCodeGenerator {
     // Handle objArrays completely differently...
     const jint objArray_lh = Klass::array_layout_helper(T_OBJECT);
     __ lw(lh, Address(scratch_src_klass, lh_offset));
-    __ mvw(t0, objArray_lh);
+    __ mv(t0, objArray_lh);
     __ beq(lh, t0, L_objArray);
 
     // if [src->klass() != dst->klass()] then return -1
@@ -1866,7 +1866,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       BLOCK_COMMENT("assert primitive array {");
       Label L;
-      __ mvw(t1, Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift);
+      __ mv(t1, (int32_t)(Klass::_lh_array_tag_type_value << Klass::_lh_array_tag_shift));
       __ bge(lh, t1, L);
       __ stop("must be a primitive array");
       __ bind(L);
@@ -1939,7 +1939,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L;
       __ andi(lh, lh, Klass::_lh_log2_element_size_mask); // lh -> x22_elsize
       __ addw(lh, lh, zr);
-      __ mvw(t0, LogBytesPerLong);
+      __ mv(t0, LogBytesPerLong);
       __ beq(x22_elsize, t0, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
@@ -1977,7 +1977,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       // Before looking at dst.length, make sure dst is also an objArray.
       __ lwu(t0, Address(t2, lh_offset));
-      __ mvw(t1, objArray_lh);
+      __ mv(t1, objArray_lh);
       __ bne(t0, t1, L_failed);
 
       // It is safe to examine both src.length and dst.length.
@@ -2461,7 +2461,7 @@ class StubGenerator: public StubCodeGenerator {
 
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
-      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_offset()) + 4);
+      Address thread_epoch_addr(xthread, in_bytes(bs_nm->thread_disarmed_guard_value_offset()) + 4);
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
@@ -3855,7 +3855,7 @@ class StubGenerator: public StubCodeGenerator {
       __ sd(x10, Address(sp, 1 * wordSize));
     }
 
-    __ mvw(c_rarg1, (return_barrier ? 1 : 0));
+    __ mv(c_rarg1, (return_barrier ? 1 : 0));
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
     __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
 
@@ -3895,7 +3895,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // If we want, we can templatize thaw by kind, and have three different entries
-    __ mvw(c_rarg1, (uint32_t)kind);
+    __ mv(c_rarg1, kind);
 
     __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
     __ mv(t1, x10); // x10 is the sp of the yielding frame
@@ -3979,14 +3979,8 @@ class StubGenerator: public StubCodeGenerator {
 
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    Label null_jobject;
-    __ beqz(x10, null_jobject);
-    DecoratorSet decorators = ACCESS_READ | IN_NATIVE;
-    BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    bs->load_at(_masm, decorators, T_OBJECT, x10, Address(x10, 0), t0, t1);
-    __ bind(null_jobject);
+    __ resolve_global_jobject(x10, t0, t1);
   }
-
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
   // The handle is dereferenced and the return value is the event writer oop.
@@ -4012,6 +4006,7 @@ class StubGenerator: public StubCodeGenerator {
     address the_pc = __ pc();
     jfr_prologue(the_pc, _masm, xthread);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+
     jfr_epilogue(_masm);
     __ leave();
     __ ret();

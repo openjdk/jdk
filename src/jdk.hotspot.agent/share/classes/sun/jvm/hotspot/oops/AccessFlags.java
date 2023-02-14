@@ -78,11 +78,6 @@ public class AccessFlags implements /* imports */ ClassConstants {
   // Klass* and Method* flags
   public boolean hasLocalVariableTable() { return (flags & JVM_ACC_HAS_LOCAL_VARIABLE_TABLE ) != 0; }
 
-  // field flags
-  public boolean fieldAccessWatched () { return (flags & JVM_ACC_FIELD_ACCESS_WATCHED) != 0; }
-  public boolean fieldModificationWatched() { return (flags & JVM_ACC_FIELD_MODIFICATION_WATCHED) != 0; }
-  public boolean fieldHasGenericSignature() { return (flags & JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)!= 0; }
-
   public void printOn(PrintStream tty) {
     // prints only .class flags and not the hotspot internal flags
     if (isPublic      ()) tty.print("public "      );

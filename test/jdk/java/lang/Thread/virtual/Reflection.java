@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @summary Test virtual threads using core reflection
  * @modules java.base/java.lang:+open
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} Reflection.java
- * @run testng/othervm --enable-preview Reflection
+ * @enablePreview
+ * @run junit Reflection
  */
 
 import java.lang.reflect.Constructor;
@@ -39,17 +39,17 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.thread.VThreadRunner;
-import org.testng.SkipException;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
-public class Reflection {
+class Reflection {
 
     /**
      * Test invoking static method.
      */
     @Test
-    public void testInvokeStatic1() throws Exception {
+    void testInvokeStatic1() throws Exception {
         VThreadRunner.run(() -> {
             int result = (int) divideMethod().invoke(null, 20, 2);
             assertTrue(result == 10);
@@ -61,7 +61,7 @@ public class Reflection {
      * exception.
      */
     @Test
-    public void testInvokeStatic2() throws Exception {
+    void testInvokeStatic2() throws Exception {
         VThreadRunner.run(() -> {
             try {
                 divideMethod().invoke(null, 20, 0);
@@ -77,7 +77,7 @@ public class Reflection {
      * method with bad parameters.
      */
     @Test
-    public void testInvokeStatic3() throws Exception {
+    void testInvokeStatic3() throws Exception {
         VThreadRunner.run(() -> {
             assertThrows(IllegalArgumentException.class,
                     () -> divideMethod().invoke(null));
@@ -99,7 +99,7 @@ public class Reflection {
      * method triggers its class to be initialized and it fails with exception.
      */
     @Test
-    public void testInvokeStatic4() throws Exception {
+    void testInvokeStatic4() throws Exception {
         VThreadRunner.run(() -> {
             Method foo = BadClass1.class.getDeclaredMethod("foo");
             try {
@@ -123,7 +123,7 @@ public class Reflection {
      * class to be initialized and it fails with an error.
      */
     @Test
-    public void testInvokeStatic5() throws Exception {
+    void testInvokeStatic5() throws Exception {
         VThreadRunner.run(() -> {
             Method foo = BadClass2.class.getDeclaredMethod("foo");
             assertThrows(AbstractMethodError.class, () -> foo.invoke(null));
@@ -141,9 +141,8 @@ public class Reflection {
      * Test that invoking a static method does not pin the carrier thread.
      */
     @Test
-    public void testInvokeStatic6() throws Exception {
-        if (!ThreadBuilders.supportsCustomScheduler())
-            throw new SkipException("No support for custom schedulers");
+    void testInvokeStatic6() throws Exception {
+        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
         Method parkMethod = Parker.class.getDeclaredMethod("park");
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
             Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
@@ -172,7 +171,7 @@ public class Reflection {
      * Test invoking instance method.
      */
     @Test
-    public void testInvokeInstance1() throws Exception {
+    void testInvokeInstance1() throws Exception {
         VThreadRunner.run(() -> {
             var adder = new Adder();
             Adder.addMethod().invoke(adder, 5);
@@ -185,7 +184,7 @@ public class Reflection {
      * exception.
      */
     @Test
-    public void testInvokeInstance2() throws Exception {
+    void testInvokeInstance2() throws Exception {
         VThreadRunner.run(() -> {
             var adder = new Adder();
             try {
@@ -202,7 +201,7 @@ public class Reflection {
      * trying to invoke an instance method with null or bad parameters.
      */
     @Test
-    public void testInvokeInstance3() throws Exception {
+    void testInvokeInstance3() throws Exception {
         VThreadRunner.run(() -> {
             var adder = new Adder();
             Method addMethod = Adder.addMethod();
@@ -223,7 +222,7 @@ public class Reflection {
      * Test invoking newInstance to create an object.
      */
     @Test
-    public void testNewInstance1() throws Exception {
+    void testNewInstance1() throws Exception {
         VThreadRunner.run(() -> {
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             Adder adder = (Adder) ctor.newInstance(10);
@@ -236,7 +235,7 @@ public class Reflection {
      * exception.
      */
     @Test
-    public void testNewInstance2() throws Exception {
+    void testNewInstance2() throws Exception {
         VThreadRunner.run(() -> {
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
             try {
@@ -253,7 +252,7 @@ public class Reflection {
      * with bad parameters.
      */
     @Test
-    public void testNewInstance3() throws Exception {
+    void testNewInstance3() throws Exception {
         VThreadRunner.run(() -> {
             var adder = new Adder();
             Constructor<?> ctor = Adder.class.getDeclaredConstructor(long.class);
@@ -275,7 +274,7 @@ public class Reflection {
      * triggers the class to be initialized and it fails with exception.
      */
     @Test
-    public void testNewInstance4() throws Exception {
+    void testNewInstance4() throws Exception {
         VThreadRunner.run(() -> {
             Constructor<?> ctor = BadClass3.class.getDeclaredConstructor();
             try {
@@ -299,7 +298,7 @@ public class Reflection {
      * to be initialized and it fails with an error.
      */
     @Test
-    public void testNewInstance5() throws Exception {
+    void testNewInstance5() throws Exception {
         VThreadRunner.run(() -> {
             Constructor<?> ctor = BadClass4.class.getDeclaredConstructor();
             assertThrows(AbstractMethodError.class, () -> ctor.newInstance((Object[])null));
@@ -317,9 +316,8 @@ public class Reflection {
      * Test that newInstance does not pin the carrier thread
      */
     @Test
-    public void testNewInstance6() throws Exception {
-        if (!ThreadBuilders.supportsCustomScheduler())
-            throw new SkipException("No support for custom schedulers");
+    void testNewInstance6() throws Exception {
+        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
         Constructor<?> ctor = Parker.class.getDeclaredConstructor();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
             Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);

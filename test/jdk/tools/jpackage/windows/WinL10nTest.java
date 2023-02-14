@@ -48,7 +48,7 @@ import static jdk.jpackage.test.WindowsHelper.getTempDirectory;
  * @requires (os.family == "windows")
  * @modules jdk.jpackage/jdk.jpackage.internal
  * @compile WinL10nTest.java
- * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=WinL10nTest
  */
 

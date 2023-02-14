@@ -56,7 +56,7 @@ public class PolicyMappingsExtension extends Extension {
     private List<CertificatePolicyMap> maps;
 
     // Encode this extension value
-    private void encodeThis() throws IOException {
+    private void encodeThis() {
         if (maps == null || maps.isEmpty()) {
             this.extensionValue = null;
             return;
@@ -77,8 +77,7 @@ public class PolicyMappingsExtension extends Extension {
      *
      * @param maps the List of CertificatePolicyMap, cannot be null or empty.
      */
-    public PolicyMappingsExtension(List<CertificatePolicyMap> maps)
-            throws IOException {
+    public PolicyMappingsExtension(List<CertificatePolicyMap> maps) {
         if (maps == null || maps.isEmpty()) {
             throw new IllegalArgumentException("maps cannot be null or empty");
         }
@@ -129,10 +128,9 @@ public class PolicyMappingsExtension extends Extension {
      * Write the extension to the OutputStream.
      *
      * @param out the DerOutputStream to write the extension to.
-     * @exception IOException on encoding errors.
      */
     @Override
-    public void encode(DerOutputStream out) throws IOException {
+    public void encode(DerOutputStream out) {
         if (extensionValue == null) {
             extensionId = PKIXExtensions.PolicyMappings_Id;
             critical = true;

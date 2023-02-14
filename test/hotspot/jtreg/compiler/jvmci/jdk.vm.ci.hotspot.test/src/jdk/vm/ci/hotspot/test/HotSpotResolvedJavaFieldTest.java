@@ -47,7 +47,15 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
 
 /**
- * Tests {@link HotSpotResolvedJavaField} functionality.
+ *
+ * @test
+ * @requires vm.jvmci
+ * @summary Tests HotSpotResolvedJavaField functionality
+ * @library ../../../../../
+ * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
+ *          jdk.internal.vm.ci/jdk.vm.ci.runtime
+ *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
+ * @run junit/othervm --add-opens=jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:-UseJVMCICompiler jdk.vm.ci.hotspot.test.HotSpotResolvedJavaFieldTest
  */
 public class HotSpotResolvedJavaFieldTest {
 
@@ -61,7 +69,7 @@ public class HotSpotResolvedJavaFieldTest {
         Field f = null;
         try {
             Class<?> typeImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl");
-            m = typeImpl.getDeclaredMethod("createField", JavaType.class, long.class, int.class, int.class);
+            m = typeImpl.getDeclaredMethod("createField", JavaType.class, int.class, int.class, int.class, int.class);
             m.setAccessible(true);
             Class<?> fieldImpl = Class.forName("jdk.vm.ci.hotspot.HotSpotResolvedJavaFieldImpl");
             f = fieldImpl.getDeclaredField("index");
@@ -128,7 +136,7 @@ public class HotSpotResolvedJavaFieldTest {
                 if (field.isInternal()) {
                     HotSpotResolvedJavaField expected = (HotSpotResolvedJavaField) field;
                     int index = indexField.getInt(expected);
-                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), index);
+                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), expected.getInternalModifiers(), index);
                     Assert.assertEquals(expected, actual);
                 }
             }

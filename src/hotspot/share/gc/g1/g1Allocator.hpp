@@ -117,10 +117,6 @@ public:
                                       size_t desired_word_size,
                                       size_t* actual_word_size);
 
-  // Attempt allocation, retiring the current region and allocating a new one. It is
-  // assumed that attempt_allocation() has been tried and failed already first.
-  inline HeapWord* attempt_allocation_using_new_region(size_t word_size);
-
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.
   inline HeapWord* attempt_allocation_locked(size_t word_size);

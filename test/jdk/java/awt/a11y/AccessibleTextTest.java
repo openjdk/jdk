@@ -58,8 +58,8 @@ public class AccessibleTextTest extends AccessibleComponentTest {
                 + "Check a11y of JLabel.\n\n"
                 + "Turn screen reader on.\n"
                 + "On MacOS, use the VO navigation keys to read the label text;\n"
-                + "ON Windows with JAWS, use window virtualization (insert+alt+w and arrows) to read the label text;\n"
-                + "ON Windows with NVDA, use the browse cursor (insert+num4 or insert+num6) to read the label text;\n\n"
+                + "On Windows with JAWS, use JAWS cursor (num_minus and arrows) to read the label text;\n"
+                + "On Windows with NVDA, use the object navigation (insert+num4 or insert+num6) to read the label text;\n\n"
                 + "If you can hear text from label tab further and press PASS, otherwise press FAIL.";
 
         JLabel label = new JLabel("this is a label");

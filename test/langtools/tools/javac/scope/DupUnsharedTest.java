@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8064362
  * @summary WriteableScope.dupUnshared not working properly for shared Scopes.
  * @modules jdk.compiler/com.sun.tools.javac.code:+open
  *          jdk.compiler/com.sun.tools.javac.file
@@ -125,7 +126,7 @@ public class DupUnsharedTest {
     }
 
     /**
-     * This tests tests the following situation.
+     * This tests the following situation.
      * - consider empty Scope S1
      * - a Symbol with name 'A' is added into S1
      * - S1 is dupped into S2

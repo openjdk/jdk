@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/fieldInfo.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -45,6 +46,9 @@ inline int InstanceKlass::itable_offset_in_words() const { return start_of_itabl
 
 inline oop InstanceKlass::static_field_base_raw() { return java_mirror(); }
 
+inline int InstanceKlass::java_fields_count() const { return FieldInfoStream::num_java_fields(fieldinfo_stream()); }
+inline int InstanceKlass::total_fields_count() const { return FieldInfoStream::num_total_fields(fieldinfo_stream()); }
+
 inline OopMapBlock* InstanceKlass::start_of_nonstatic_oop_maps() const {
   return (OopMapBlock*)(start_of_itable() + itable_length());
 }
@@ -58,7 +62,7 @@ inline InstanceKlass* volatile* InstanceKlass::adr_implementor() const {
   if (is_interface()) {
     return (InstanceKlass* volatile*)end_of_nonstatic_oop_maps();
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -187,9 +191,9 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType
 
 inline instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
   Klass* k = java_lang_Class::as_Klass(java_class);
-  if (k == NULL) {
+  if (k == nullptr) {
     ResourceMark rm(THREAD);
-    THROW_(vmSymbols::java_lang_InstantiationException(), NULL);
+    THROW_(vmSymbols::java_lang_InstantiationException(), nullptr);
   }
   InstanceKlass* ik = cast(k);
   ik->check_valid_for_instantiation(false, CHECK_NULL);

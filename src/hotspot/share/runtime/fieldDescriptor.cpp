@@ -35,14 +35,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
-
-oop fieldDescriptor::loader() const {
-  return _cp->pool_holder()->class_loader();
-}
-
 Symbol* fieldDescriptor::generic_signature() const {
   if (!has_generic_signature()) {
-    return NULL;
+    return nullptr;
   }
   return _cp->symbol_at(_fieldinfo.generic_signature_index());
 }
@@ -55,16 +50,16 @@ bool fieldDescriptor::is_trusted_final() const {
 AnnotationArray* fieldDescriptor::annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* md = ik->fields_annotations();
-  if (md == NULL)
-    return NULL;
+  if (md == nullptr)
+    return nullptr;
   return md->at(index());
 }
 
 AnnotationArray* fieldDescriptor::type_annotations() const {
   InstanceKlass* ik = field_holder();
   Array<AnnotationArray*>* type_annos = ik->fields_type_annotations();
-  if (type_annos == NULL)
-    return NULL;
+  if (type_annos == nullptr)
+    return nullptr;
   return type_annos->at(index());
 }
 
@@ -96,7 +91,9 @@ void fieldDescriptor::reinitialize(InstanceKlass* ik, int index) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
-    assert(field_holder() == ik, "must be already initialized to this class");
+    // If the class is a scratch class, the constant pool points to the original class,
+    // but that's ok because of constant pool merging.
+    assert(field_holder() == ik || ik->is_scratch_class(), "must be already initialized to this class");
   }
   _fieldinfo= ik->field(index);
   assert((int)_fieldinfo.index() == index, "just checking");
@@ -161,17 +158,17 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       st->print("%s", obj->bool_field(offset()) ? "true" : "false");
       break;
     case T_ARRAY:
-      if (obj->obj_field(offset()) != NULL) {
+      if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("nullptr");
       }
       break;
     case T_OBJECT:
-      if (obj->obj_field(offset()) != NULL) {
+      if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
-        st->print("NULL");
+        st->print("nullptr");
       }
       break;
     default:

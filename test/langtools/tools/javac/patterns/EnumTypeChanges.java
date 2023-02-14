@@ -56,7 +56,7 @@ public class EnumTypeChanges {
         try {
             c.apply(EnumTypeChangesEnum.valueOf("C"));
             throw new AssertionError();
-        } catch (IncompatibleClassChangeError e) {
+        } catch (MatchException e) {
             //expected
         }
     }

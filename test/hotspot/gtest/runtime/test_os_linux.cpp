@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,18 @@
 
 #ifdef LINUX
 
-#include <sys/mman.h>
-
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
-#include "concurrentTestRunner.inline.hpp"
 #include "os_linux.hpp"
 #include "prims/jniCheck.hpp"
-#include "unittest.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/decoder.hpp"
-
+#include "concurrentTestRunner.inline.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
+
+#include <sys/mman.h>
+
 
 namespace {
   static void small_page_write(void* addr, size_t size) {

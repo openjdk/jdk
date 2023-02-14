@@ -28,6 +28,8 @@ package jdk.internal.event;
 /**
  * Base class for events, to be subclassed in order to define events and their
  * fields.
+ *
+ * @hidden
  */
 public abstract class Event {
     /**

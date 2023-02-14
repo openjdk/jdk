@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
@@ -80,7 +81,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
-
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -756,6 +756,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       record_method_not_compilable("cannot parse method");
       return;
     }
+
+    gvn.set_type(root(), root()->bottom_type());
+
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == NULL) {
       if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
@@ -977,6 +980,12 @@ void Compile::Init(bool aliasing) {
 
   _immutable_memory = NULL; // filled in at first inquiry
 
+#ifdef ASSERT
+  _phase_optimize_finished = false;
+  _exception_backedge = false;
+  _type_verify = NULL;
+#endif
+
   // Globally visible Nodes
   // First set TOP to NULL to give safe behavior during creation of RootNode
   set_cached_top_node(NULL);
@@ -1070,12 +1079,6 @@ void Compile::Init(bool aliasing) {
   Copy::zero_to_bytes(_alias_cache, sizeof(_alias_cache));
   // A NULL adr_type hits in the cache right away.  Preload the right answer.
   probe_alias_cache(NULL)->_index = AliasIdxTop;
-
-#ifdef ASSERT
-  _type_verify_symmetry = true;
-  _phase_optimize_finished = false;
-  _exception_backedge = false;
-#endif
 }
 
 //---------------------------init_start----------------------------------------
@@ -3161,7 +3164,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque2:              // Remove Opaque Nodes before matching
   case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
@@ -4361,8 +4363,8 @@ Compile::TracePhase::~TracePhase() {
 // (1) subklass is already limited to a subtype of superklass => always ok
 // (2) subklass does not overlap with superklass => always fail
 // (3) superklass has NO subtypes and we can check with a simple compare.
-Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk) {
-  if (StressReflectiveCode) {
+Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* superk, const TypeKlassPtr* subk, bool skip) {
+  if (skip) {
     return SSC_full_test;       // Let caller generate the general case.
   }
 

@@ -494,7 +494,7 @@ public final class URLPermission extends Permission {
             auth = authpath.substring(0, delim);
             this.path = authpath.substring(delim);
         }
-        this.authority = new Authority(scheme, auth);
+        this.authority = new Authority(scheme, auth.toLowerCase(Locale.ROOT));
     }
 
     private String actions() {

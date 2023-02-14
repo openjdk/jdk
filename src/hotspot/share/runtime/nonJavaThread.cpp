@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/task.hpp"
+#include "sanitizers/leak.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
-
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -48,7 +48,7 @@ public:
   NonJavaThread* volatile _head;
   SingleWriterSynchronizer _protect;
 
-  List() : _head(NULL), _protect() {}
+  List() : _head(nullptr), _protect() {}
 };
 
 NonJavaThread::List NonJavaThread::_the_list;
@@ -67,8 +67,8 @@ void NonJavaThread::Iterator::step() {
   _current = Atomic::load_acquire(&_current->_next);
 }
 
-NonJavaThread::NonJavaThread() : Thread(), _next(NULL) {
-  assert(BarrierSet::barrier_set() != NULL, "NonJavaThread created too soon!");
+NonJavaThread::NonJavaThread() : Thread(), _next(nullptr) {
+  assert(BarrierSet::barrier_set() != nullptr, "NonJavaThread created too soon!");
 }
 
 NonJavaThread::~NonJavaThread() { }
@@ -87,7 +87,7 @@ void NonJavaThread::remove_from_the_list() {
     // Cleanup BarrierSet-related data before removing from list.
     BarrierSet::barrier_set()->on_thread_detach(this);
     NonJavaThread* volatile* p = &_the_list._head;
-    for (NonJavaThread* t = *p; t != NULL; p = &t->_next, t = *p) {
+    for (NonJavaThread* t = *p; t != nullptr; p = &t->_next, t = *p) {
       if (t == this) {
         *p = _next;
         break;
@@ -99,7 +99,7 @@ void NonJavaThread::remove_from_the_list() {
   // from NJTList_lock in case an iteration attempts to lock it.
   MutexLocker ml(NonJavaThreadsListSync_lock, Mutex::_no_safepoint_check_flag);
   _the_list._protect.synchronize();
-  _next = NULL;                 // Safe to drop the link now.
+  _next = nullptr;                 // Safe to drop the link now.
 }
 
 void NonJavaThread::pre_run() {
@@ -107,7 +107,7 @@ void NonJavaThread::pre_run() {
 
   // This is slightly odd in that NamedThread is a subclass, but
   // in fact name() is defined in Thread
-  assert(this->name() != NULL, "thread name was not set before it was started");
+  assert(this->name() != nullptr, "thread name was not set before it was started");
   this->set_native_thread_name(this->name());
 }
 
@@ -124,8 +124,8 @@ void NonJavaThread::post_run() {
 // uniquely named instances should derive from this.
 NamedThread::NamedThread() :
   NonJavaThread(),
-  _name(NULL),
-  _processed_thread(NULL),
+  _name(nullptr),
+  _processed_thread(nullptr),
   _gc_id(GCId::undefined())
 {}
 
@@ -134,7 +134,7 @@ NamedThread::~NamedThread() {
 }
 
 void NamedThread::set_name(const char* format, ...) {
-  guarantee(_name == NULL, "Only get to set name once.");
+  guarantee(_name == nullptr, "Only get to set name once.");
   _name = NEW_C_HEAP_ARRAY(char, max_name_len, mtThread);
   va_list ap;
   va_start(ap, format);
@@ -155,12 +155,12 @@ void NamedThread::print_on(outputStream* st) const {
 // be replaced by an abstraction over whatever native support for
 // timer interrupts exists on the platform.
 
-WatcherThread* WatcherThread::_watcher_thread   = NULL;
+WatcherThread* WatcherThread::_watcher_thread   = nullptr;
 bool WatcherThread::_startable = false;
 volatile bool  WatcherThread::_should_terminate = false;
 
 WatcherThread::WatcherThread() : NonJavaThread() {
-  assert(watcher_thread() == NULL, "we can only allocate one WatcherThread");
+  assert(watcher_thread() == nullptr, "we can only allocate one WatcherThread");
   if (os::create_thread(this, os::watcher_thread)) {
     _watcher_thread = this;
 
@@ -286,7 +286,8 @@ void WatcherThread::run() {
   // Signal that it is terminated
   {
     MutexLocker mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
-    _watcher_thread = NULL;
+    LSAN_IGNORE_OBJECT(_watcher_thread);
+    _watcher_thread = nullptr;
     Terminator_lock->notify_all();
   }
 }
@@ -294,7 +295,7 @@ void WatcherThread::run() {
 void WatcherThread::start() {
   assert(PeriodicTask_lock->owned_by_self(), "PeriodicTask_lock required");
 
-  if (watcher_thread() == NULL && _startable) {
+  if (watcher_thread() == nullptr && _startable) {
     _should_terminate = false;
     // Create the single instance of WatcherThread
     new WatcherThread();
@@ -314,7 +315,7 @@ void WatcherThread::stop() {
     _should_terminate = true;
 
     WatcherThread* watcher = watcher_thread();
-    if (watcher != NULL) {
+    if (watcher != nullptr) {
       // unpark the WatcherThread so it can see that it should terminate
       watcher->unpark();
     }
@@ -322,7 +323,7 @@ void WatcherThread::stop() {
 
   MonitorLocker mu(Terminator_lock);
 
-  while (watcher_thread() != NULL) {
+  while (watcher_thread() != nullptr) {
     // This wait should make safepoint checks and wait without a timeout.
     mu.wait(0);
   }

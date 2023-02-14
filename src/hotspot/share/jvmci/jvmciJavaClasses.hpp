@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,8 +199,6 @@
     objectarray_field(HotSpotJVMCIRuntime, excludeFromJVMCICompilation, "[Ljava/lang/Module;")                \
     jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, compileMethod, compileMethod_signature, (JVMCIObject runtime, JVMCIObject method, int entry_bci, jlong env, int id)) \
     jvmci_method(CallNonvirtualObjectMethod, GetMethodID, call_special, JVMCIObject, HotSpotJVMCIRuntime, isGCSupported, int_bool_signature, (JVMCIObject runtime, int gcIdentifier)) \
-    jvmci_method(CallStaticBooleanMethod, GetStaticMethodID, call_static, bool, HotSpotJVMCIRuntime, encodeThrowable, encodeThrowable_signature, (JVMCIObject throwable, jlong buffer, int buffer_size)) \
-    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, HotSpotJVMCIRuntime, decodeAndThrowThrowable, long_void_signature, (jlong buffer)) \
     jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, bootstrapFinished, void_method_signature, (JVMCIObject runtime, JVMCI_TRAPS)) \
     jvmci_method(CallNonvirtualVoidMethod, GetMethodID, call_special, void, HotSpotJVMCIRuntime, shutdown, void_method_signature, (JVMCIObject runtime)) \
     jvmci_method(CallStaticObjectMethod, GetStaticMethodID, call_static, JVMCIObject, HotSpotJVMCIRuntime, runtime, runtime_signature, (JVMCI_TRAPS)) \
@@ -223,6 +221,10 @@
   end_class                                                                                                   \
   start_class(Class, java_lang_Class)                                                                         \
     jvmci_method(CallObjectMethod, GetMethodID, call_virtual, JVMCIObject, Class, getName, void_string_signature, (JVMCI_TRAPS)) \
+  end_class                                                                                                   \
+  start_class(VMSupport, jdk_internal_vm_VMSupport)                                                           \
+    jvmci_method(CallStaticIntMethod, GetStaticMethodID, call_static, int, VMSupport, encodeThrowable, encodeThrowable_signature, (JVMCIObject throwable, jlong buffer, int buffer_size)) \
+    jvmci_method(CallStaticVoidMethod, GetStaticMethodID, call_static, void, VMSupport, decodeAndThrowThrowable, long_void_signature, (jlong buffer)) \
   end_class                                                                                                   \
   start_class(ArrayIndexOutOfBoundsException, java_lang_ArrayIndexOutOfBoundsException)                       \
     jvmci_constructor(ArrayIndexOutOfBoundsException, "(Ljava/lang/String;)V")                                \
@@ -290,14 +292,14 @@ class JVMCIEnv;
 #define STATIC_OBJECT_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObject, oop)
 #define STATIC_OBJECTARRAY_FIELD(simpleClassName, name, signature) STATIC_OOPISH_FIELD(simpleClassName, name, JVMCIObjectArray, objArrayOop)
 
-#define HS_START_CLASS(simpleClassName, fullClassName)                               \
-  START_CLASS(simpleClassName, fullClassName)                                        \
-  friend class HotSpotJVMCI;                                                         \
- private:                                                                            \
-  static void check(oop obj, const char* field_name, int offset);                    \
-  static InstanceKlass* _klass;                                                      \
- public:                                                                             \
-  static InstanceKlass* klass() { assert(_klass != NULL, "uninit"); return _klass; } \
+#define HS_START_CLASS(simpleClassName, fullClassName)                                  \
+  START_CLASS(simpleClassName, fullClassName)                                           \
+  friend class HotSpotJVMCI;                                                            \
+ private:                                                                               \
+  static void check(oop obj, const char* field_name, int offset);                       \
+  static InstanceKlass* _klass;                                                         \
+ public:                                                                                \
+  static InstanceKlass* klass() { assert(_klass != nullptr, "uninit"); return _klass; } \
   static Symbol* symbol() { return vmSymbols::fullClassName(); }
 
 #define FIELD(simpleClassName, name, type)                                                                   \
@@ -390,15 +392,15 @@ class HotSpotJVMCI {
 
 #undef HS_START_CLASS
 
-#define JNI_START_CLASS(simpleClassName, fullClassName)                                             \
-  START_CLASS(simpleClassName, fullClassName)                                                       \
-  friend class JNIJVMCI;                                                                            \
-  private:                                                                                          \
-  static void check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset);  \
-  static jclass _class;                                                                             \
-public:                                                                                             \
- static jclass clazz() { assert(_class != NULL, #fullClassName " uninitialized"); return _class; }  \
- static jclass fullClassName ##_class()  { assert(_class != NULL, "uninit"); return _class; }
+#define JNI_START_CLASS(simpleClassName, fullClassName)                                                \
+  START_CLASS(simpleClassName, fullClassName)                                                          \
+  friend class JNIJVMCI;                                                                               \
+  private:                                                                                             \
+  static void check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset);     \
+  static jclass _class;                                                                                \
+public:                                                                                                \
+ static jclass clazz() { assert(_class != nullptr, #fullClassName " uninitialized"); return _class; }  \
+ static jclass fullClassName ##_class()  { assert(_class != nullptr, "uninit"); return _class; }
 
 #undef METHOD
 #undef CONSTRUCTOR
@@ -479,16 +481,16 @@ class JNIJVMCI {
  public:
   static jmethodID Class_getName_method() { return _Class_getName_method; }
 
-  static jclass    byte_array()           { assert(_byte_array != NULL, "uninit");      return _byte_array; }
+  static jclass    byte_array()           { assert(_byte_array != nullptr, "uninit");      return _byte_array; }
 
-  static jclass    box_class(BasicType type)       { assert(_box_classes[type]!= NULL, "uninit");      return _box_classes[type]; }
-  static jfieldID  box_field(BasicType type)       { assert(_box_fields[type]!= NULL, "uninit");       return _box_fields[type]; }
-  static jmethodID box_constructor(BasicType type) { assert(_box_constructors[type]!= NULL, "uninit"); return _box_constructors[type]; }
+  static jclass    box_class(BasicType type)       { assert(_box_classes[type]!= nullptr, "uninit");      return _box_classes[type]; }
+  static jfieldID  box_field(BasicType type)       { assert(_box_fields[type]!= nullptr, "uninit");       return _box_fields[type]; }
+  static jmethodID box_constructor(BasicType type) { assert(_box_constructors[type]!= nullptr, "uninit"); return _box_constructors[type]; }
 
-  static jmethodID HotSpotResolvedJavaMethodImpl_fromMetaspace_method()     { assert(_HotSpotResolvedJavaMethodImpl_fromMetaspace_method     != NULL, "uninit"); return _HotSpotResolvedJavaMethodImpl_fromMetaspace_method; }
-  static jmethodID HotSpotConstantPool_fromMetaspace_method()           { assert(_HotSpotConstantPool_fromMetaspace_method           != NULL, "uninit"); return _HotSpotConstantPool_fromMetaspace_method; }
-  static jmethodID HotSpotResolvedObjectTypeImpl_fromMetaspace_method() { assert(_HotSpotResolvedObjectTypeImpl_fromMetaspace_method != NULL, "uninit"); return _HotSpotResolvedObjectTypeImpl_fromMetaspace_method; }
-  static jmethodID HotSpotResolvedPrimitiveType_fromMetaspace_method()  { assert(_HotSpotResolvedPrimitiveType_fromMetaspace_method  != NULL, "uninit"); return _HotSpotResolvedPrimitiveType_fromMetaspace_method; }
+  static jmethodID HotSpotResolvedJavaMethodImpl_fromMetaspace_method()     { assert(_HotSpotResolvedJavaMethodImpl_fromMetaspace_method     != nullptr, "uninit"); return _HotSpotResolvedJavaMethodImpl_fromMetaspace_method; }
+  static jmethodID HotSpotConstantPool_fromMetaspace_method()           { assert(_HotSpotConstantPool_fromMetaspace_method           != nullptr, "uninit"); return _HotSpotConstantPool_fromMetaspace_method; }
+  static jmethodID HotSpotResolvedObjectTypeImpl_fromMetaspace_method() { assert(_HotSpotResolvedObjectTypeImpl_fromMetaspace_method != nullptr, "uninit"); return _HotSpotResolvedObjectTypeImpl_fromMetaspace_method; }
+  static jmethodID HotSpotResolvedPrimitiveType_fromMetaspace_method()  { assert(_HotSpotResolvedPrimitiveType_fromMetaspace_method  != nullptr, "uninit"); return _HotSpotResolvedPrimitiveType_fromMetaspace_method; }
 
   static void initialize_ids(JNIEnv* env);
   static void initialize_field_id(JNIEnv* env, jfieldID &dest_offset, jclass klass, const char* klass_name, const char* name, const char* signature, bool static_field);

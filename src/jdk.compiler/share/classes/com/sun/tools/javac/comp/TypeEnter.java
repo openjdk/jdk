@@ -845,7 +845,7 @@ public class TypeEnter implements Completer {
 
             fillPermits(tree, baseEnv);
 
-            Set<Type> interfaceSet = new HashSet<>();
+            Set<Symbol> interfaceSet = new HashSet<>();
 
             for (JCExpression iface : tree.implementing) {
                 Type it = iface.type;
@@ -996,10 +996,8 @@ public class TypeEnter implements Completer {
 
                     memberEnter.memberEnter(field, env);
 
-                    sym.createRecordComponent(rc, field,
-                            field.mods.annotations.isEmpty() ?
-                                    List.nil() :
-                                    new TreeCopier<JCTree>(make.at(field.pos)).copy(field.mods.annotations));
+                    JCVariableDecl rcDecl = new TreeCopier<JCTree>(make.at(field.pos)).copy(field);
+                    sym.createRecordComponent(rc, rcDecl, field.sym);
                 }
 
                 enterThisAndSuper(sym, env);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 #ifndef SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
+#include "cds/filemap.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "runtime/globals.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/macros.hpp"
 
 class  FileMapInfo;
@@ -73,9 +75,10 @@ public:
     return is_loaded() || is_mapped();
   }
 
-  static ptrdiff_t runtime_delta() {
-    assert(!UseCompressedOops, "must be");
-    CDS_JAVA_HEAP_ONLY(return _runtime_delta;)
+  static ptrdiff_t mapped_heap_delta() {
+    CDS_JAVA_HEAP_ONLY(assert(!is_loaded(), "must be"));
+    CDS_JAVA_HEAP_ONLY(assert(_mapped_heap_relocation_initialized, "must be"));
+    CDS_JAVA_HEAP_ONLY(return _mapped_heap_delta;)
     NOT_CDS_JAVA_HEAP_RETURN_(0L);
   }
 
@@ -100,16 +103,25 @@ public:
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_regions_impl.
   // To decode them, do not use CompressedOops::decode_not_null. Use this
   // function instead.
-  inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
-  static void init_narrow_oop_decoding(address base, int shift) NOT_CDS_JAVA_HEAP_RETURN;
+  // More efficient version, but works only when ArchiveHeap is mapped.
+  inline static oop decode_from_mapped_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
 
-  static void patch_embedded_pointers(MemRegion region, address oopmap,
-                                      size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
+  static void patch_compressed_embedded_pointers(BitMapView bm,
+                                                 FileMapInfo* info,
+                                                 FileMapRegion* map_region,
+                                                 MemRegion region) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void patch_embedded_pointers(FileMapInfo* info,
+                                      FileMapRegion* map_region,
+                                      MemRegion region, address oopmap,
+                                      size_t oopmap_size_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
 
   static void fixup_regions() NOT_CDS_JAVA_HEAP_RETURN;
 
 #if INCLUDE_CDS_JAVA_HEAP
+  static void init_mapped_heap_relocation(ptrdiff_t delta, int dumptime_oop_shift);
 private:
   static bool _closed_regions_mapped;
   static bool _open_regions_mapped;
@@ -132,12 +144,16 @@ private:
   static bool _loading_failed;
 
   // UseCompressedOops only: Used by decode_from_archive
+  static bool    _narrow_oop_base_initialized;
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
 
-  // !UseCompressedOops only: used to relocate pointers to the archived objects
-  static ptrdiff_t _runtime_delta;
+  // is_mapped() only: the mapped address of each region is offset by this amount from
+  // their requested address.
+  static ptrdiff_t _mapped_heap_delta;
+  static bool      _mapped_heap_relocation_initialized;
 
+  static void init_narrow_oop_decoding(address base, int shift);
   static int init_loaded_regions(FileMapInfo* mapinfo, LoadedArchiveHeapRegion* loaded_regions,
                                  MemRegion& archive_space);
   static void sort_loaded_regions(LoadedArchiveHeapRegion* loaded_regions, int num_loaded_regions,
@@ -155,16 +171,14 @@ private:
     return (_loaded_heap_bottom <= o && o < _loaded_heap_top);
   }
 
+  template<bool IS_MAPPED>
+  inline static oop decode_from_archive_impl(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+
 public:
 
   static bool load_heap_regions(FileMapInfo* mapinfo);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");
-  }
-
-  static void set_runtime_delta(ptrdiff_t delta) {
-    assert(!UseCompressedOops, "must be");
-    _runtime_delta = delta;
   }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

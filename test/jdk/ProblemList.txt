@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,9 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
+java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
+java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
@@ -185,6 +187,7 @@ java/awt/Focus/6981400/Test1.java 8029675 windows-all,macosx-all
 java/awt/Focus/6981400/Test3.java 8173264 generic-all
 java/awt/event/KeyEvent/ExtendedKeyCode/ExtendedKeyCodeTest.java 8169476 windows-all,macosx-all
 java/awt/event/KeyEvent/KeyChar/KeyCharTest.java 8169474,8224055 macosx-all,windows-all
+java/awt/event/KeyEvent/KeyTyped/CtrlASCII.java 8298910 linux-all
 
 java/awt/dnd/URIListToFileListBetweenJVMsTest/URIListToFileListBetweenJVMsTest.java 8194947 generic-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
@@ -219,7 +222,6 @@ java/awt/image/DrawImage/IncorrectAlphaSurface2SW.java 8056077 linux-all
 java/awt/print/Headless/HeadlessPrinterJob.java 8196088 windows-all
 sun/awt/datatransfer/SuplementaryCharactersTransferTest.java 8011371 generic-all
 sun/awt/shell/ShellFolderMemoryLeak.java 8197794 windows-all
-sun/java2d/DirectX/MultiPaintEventTest/MultiPaintEventTest.java 8284825 windows-all
 sun/java2d/DirectX/OverriddenInsetsTest/OverriddenInsetsTest.java 8196102 generic-all
 sun/java2d/DirectX/RenderingToCachedGraphicsTest/RenderingToCachedGraphicsTest.java 8196180 windows-all,macosx-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
@@ -415,7 +417,6 @@ java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
 java/awt/JAWT/JAWT.sh 8197798 windows-all,linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.java 8202882 linux-all
-java/awt/Choice/ChoicePopupLocation/ChoicePopupLocation.java 8202931 macosx-all,linux-all
 java/awt/Focus/NonFocusableBlockedOwnerTest/NonFocusableBlockedOwnerTest.java 7124275 macosx-all
 java/awt/Focus/TranserFocusToWindow/TranserFocusToWindow.java 6848810 macosx-all,linux-all
 java/awt/FileDialog/ModalFocus/FileDialogModalFocusTest.java 8194751 linux-all
@@ -424,7 +425,6 @@ java/awt/SplashScreen/MultiResolutionSplash/unix/UnixMultiResolutionSplashTest.j
 java/awt/Robot/AcceptExtraMouseButtons/AcceptExtraMouseButtons.java 7107528 linux-all,macosx-all
 java/awt/Mouse/MouseDragEvent/MouseDraggedTest.java 8080676 linux-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersInKeyEvent.java 8157147 linux-all,windows-all,macosx-all
-java/awt/Toolkit/DesktopProperties/rfe4758438.java 8193547 linux-all
 java/awt/Toolkit/ToolkitPropertyTest/ToolkitPropertyTest_Enable.java 6847163
 java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
@@ -473,8 +473,8 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 # jdk_foreign
 
-java/foreign/TestUpcallStack.java 8275584 macosx-aarch64
-java/foreign/TestDowncallStack.java 8275584 macosx-aarch64
+java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
+java/foreign/TestLargeSegmentCopy.java generic-x86
 
 ############################################################################
 
@@ -485,7 +485,6 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
-jdk/internal/misc/TerminatingThreadLocal/TestTerminatingThreadLocal.java 8292051 generic-all
 
 ############################################################################
 
@@ -524,8 +523,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            8030957 aix-all
 
 javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-all
 
-javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 generic-all
-
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 ############################################################################
@@ -551,7 +548,7 @@ java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc6
 
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 
-java/nio/channels/FileChannel/FileExtensionAndMap.java          8297292 generic-all
+jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
 ############################################################################
 
@@ -586,10 +583,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-
 
 sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
-javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
-
-sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
@@ -607,7 +600,6 @@ com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
-sun/security/provider/PolicyParser/ExtDirsChange.java           8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
 sun/security/tools/keytool/NssTest.java                         8295343 linux-all
@@ -616,6 +608,8 @@ sun/security/pkcs11/rsa/TestSignatures.java                     8295343 linux-al
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               8295343 linux-all
 sun/security/pkcs11/rsa/TestKeyFactory.java                     8295343 linux-all
 sun/security/pkcs11/KeyStore/Basic.java                         8295343 linux-all
+
+sun/security/provider/certpath/OCSP/OCSPNoContentLength.java    8300939 generic-all
 
 ############################################################################
 
@@ -649,27 +643,27 @@ javax/swing/JWindow/ShapedAndTranslucentWindows/TranslucentJComboBox.java 802462
 # The next test below is an intermittent failure
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 7105441 macosx-all
-javax/swing/JSpinner/4788637/bug4788637.java 8296084 linux-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/JFileChooser/6396844/TwentyThousandTest.java 8198003 generic-all
 javax/swing/JPopupMenu/6800513/bug6800513.java 7184956 macosx-all
 javax/swing/JTabbedPane/8007563/Test8007563.java 8051591 generic-all
 javax/swing/JTabbedPane/4624207/bug4624207.java 8064922 macosx-all
 javax/swing/SwingUtilities/TestBadBreak/TestBadBreak.java 8160720 generic-all
-javax/swing/text/DefaultCaret/HidingSelection/HidingSelectionTest.java 8194048 windows-all
-javax/swing/text/DefaultCaret/HidingSelection/MultiSelectionTest.java 8213562 linux-all
 javax/swing/JFileChooser/6798062/bug6798062.java 8146446 windows-all
 javax/swing/JPopupMenu/4870644/bug4870644.java 8194130 macosx-all,linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/JEditorPane/6917744/bug6917744.java 8213124 macosx-all
-javax/swing/JRadioButton/4314194/bug4314194.java 8295006 linux-all
+javax/swing/JRadioButton/4314194/bug4314194.java 8298153 linux-all
 
 # Several tests which fail on some hidpi systems/macosx12-aarch64 system
 java/awt/Window/8159168/SetShapeTest.java 8274106 macosx-aarch64
 java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 macosx-aarch64
 javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 
-java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8297296 macosx-all
+java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
+java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
+java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
+java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
 
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
@@ -690,7 +684,6 @@ sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 ############################################################################
 
 # core_svc
-tools/launcher/TestXcheckJNIWarnings.java#jdwp-agent   8296936 generic-all
 
 ############################################################################
 
@@ -712,6 +705,8 @@ com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-al
 
 java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x64
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
+java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
+java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
 
 ############################################################################
 
@@ -720,8 +715,6 @@ sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x
 ############################################################################
 
 # svc_tools
-
-sun/tools/jhsdb/BasicLauncherTest.java                          8228649 linux-ppc64,linux-ppc64le
 
 sun/tools/jstatd/TestJstatdDefaults.java                        8081569,8226420 windows-all
 sun/tools/jstatd/TestJstatdRmiPort.java                         8226420,8251259,8293577 generic-all
@@ -752,7 +745,6 @@ jdk/jfr/startupargs/TestStartName.java                          8214685 windows-
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
 jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64
-jdk/jfr/api/consumer/TestRecordingFileWrite.java                8287699 generic-all
 
 ############################################################################
 

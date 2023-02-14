@@ -25,7 +25,7 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_HPP
 #define SHARE_OOPS_FIELDSTREAMS_HPP
 
-#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlass.inline.hpp"
 #include "oops/fieldInfo.hpp"
 #include "runtime/fieldDescriptor.hpp"
 
@@ -100,7 +100,7 @@ class FieldStreamBase : public StackObj {
     if (field()->field_flags().is_generic()) {
       return _constants->symbol_at(field()->generic_signature_index());
     } else {
-      return NULL;
+      return nullptr;
     }
   }
 

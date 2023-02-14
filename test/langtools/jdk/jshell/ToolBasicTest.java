@@ -67,8 +67,6 @@ import static org.testng.Assert.fail;
 @Test
 public class ToolBasicTest extends ReplToolTesting {
 
-    private static final String NL = System.getProperty("line.separator");
-
     public void elideStartUpFromList() {
         test(
                 (a) -> assertCommandOutputContains(a, "123", "==> 123"),
@@ -545,7 +543,7 @@ public class ToolBasicTest extends ReplToolTesting {
                 );
             }
             test(new String[] {urlAddress},
-                 "File '" + urlAddress + "' for 'jshell' is not found." + NL);
+                 "File '" + urlAddress + "' for 'jshell' is not found.\n");
         } finally {
             httpServer.stop(0);
         }

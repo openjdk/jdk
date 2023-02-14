@@ -306,7 +306,7 @@ class UNSIGNED5 : AllStatic {
     // The %d formats are for the number of printed items and
     // their length in bytes, if you want to see that also.
     void print_on(outputStream* st, int count = -1,
-                  const char* left = NULL, const char* right = NULL);
+                  const char* left = nullptr, const char* right = nullptr);
   };
 
   // Writer example use
@@ -323,8 +323,8 @@ class UNSIGNED5 : AllStatic {
     OFF _position;
   public:
     Writer(const ARR& array)
-      : _array(const_cast<ARR&>(array)), _limit_ptr(NULL), _position(0) {
-      // Note: if _limit_ptr is NULL, the ARR& is never reassigned,
+      : _array(const_cast<ARR&>(array)), _limit_ptr(nullptr), _position(0) {
+      // Note: if _limit_ptr is nullptr, the ARR& is never reassigned,
       // because has_limit is false.  So the const_cast here is safe.
       assert(!has_limit(), "this writer cannot be growable");
     }
@@ -363,7 +363,7 @@ class UNSIGNED5 : AllStatic {
     ARR array() { return _array; }
     OFF position() { return _position; }
     void set_position(OFF position) { _position = position; }
-    bool has_limit() { return _limit_ptr != NULL; }
+    bool has_limit() { return _limit_ptr != nullptr; }
     OFF limit() { assert(has_limit(), "needs limit"); return *_limit_ptr; }
     OFF remaining() { return limit() - position(); }
   };

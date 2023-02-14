@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,21 @@ Node* ConstraintCastNode::Identity(PhaseGVN* phase) {
 // Take 'join' of input and cast-up type
 const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   if (in(0) && phase->type(in(0)) == Type::TOP) return Type::TOP;
-  const Type* ft = phase->type(in(1))->filter_speculative(_type);
+
+  const Type* in_type = phase->type(in(1));
+  const Type* ft = in_type->filter_speculative(_type);
+
+  // Check if both _type and in_type had a speculative type, but for the just
+  // computed ft the speculative type was dropped.
+  if (ft->speculative() == nullptr &&
+      _type->speculative() != nullptr &&
+      in_type->speculative() != nullptr) {
+    // Speculative type may have disagreed between cast and input, and was
+    // dropped in filtering. Recompute so that ft can take speculative type
+    // of in_type. If we did not do it now, a subsequent ::Value call would
+    // do it, and violate idempotence of ::Value.
+    ft = in_type->filter_speculative(ft);
+  }
 
 #ifdef ASSERT
   // Previous versions of this function had some special case logic,
@@ -58,17 +72,21 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   switch (Opcode()) {
     case Op_CastII:
     {
-      const Type* t1 = phase->type(in(1));
-      if( t1 == Type::TOP )  assert(ft == Type::TOP, "special case #1");
-      const Type* rt = t1->join_speculative(_type);
-      if (rt->empty())       assert(ft == Type::TOP, "special case #2");
+      if (in_type == Type::TOP) {
+        assert(ft == Type::TOP, "special case #1");
+      }
+      const Type* rt = in_type->join_speculative(_type);
+      if (rt->empty()) {
+        assert(ft == Type::TOP, "special case #2");
+      }
       break;
     }
     case Op_CastPP:
-    if (phase->type(in(1)) == TypePtr::NULL_PTR &&
-        _type->isa_ptr() && _type->is_ptr()->_ptr == TypePtr::NotNull)
-    assert(ft == Type::TOP, "special case #3");
-    break;
+    if (in_type == TypePtr::NULL_PTR &&
+        _type->isa_ptr() && _type->is_ptr()->_ptr == TypePtr::NotNull) {
+      assert(ft == Type::TOP, "special case #3");
+      break;
+    }
   }
 #endif //ASSERT
 
@@ -210,9 +228,23 @@ const Type* CastIINode::Value(PhaseGVN* phase) const {
     res = widen_type(phase, res, T_INT);
   }
 
-  // Try to improve the type of the CastII if we recognize a CmpI/If
-  // pattern.
-  if (_dependency != RegularDependency) {
+  // Try to improve the type of the CastII if we recognize a CmpI/If pattern.
+  //
+  // in1  in2
+  //  |    |
+  //  +--- | --+
+  //  |    |   |
+  // CmpINode  |
+  //    |      |
+  // BoolNode  |
+  //    |      |
+  //  IfNode   |
+  //    |      |
+  //  IfProj   |
+  //    |      |
+  //   CastIINode
+  //
+  if (carry_dependency()) {
     if (in(0) != NULL && in(0)->in(0) != NULL && in(0)->in(0)->is_If()) {
       assert(in(0)->is_IfFalse() || in(0)->is_IfTrue(), "should be If proj");
       Node* proj = in(0);
@@ -344,7 +376,7 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (progress != NULL) {
     return progress;
   }
-  if (can_reshape && !phase->C->post_loop_opts_phase()) {
+  if (!phase->C->post_loop_opts_phase()) {
     // makes sure we run ::Value to potentially remove type assertion after loop opts
     phase->C->record_for_post_loop_opts_igvn(this);
   }
@@ -371,30 +403,6 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return optimize_integer_cast(phase, T_LONG);
 }
 
-//=============================================================================
-//------------------------------Identity---------------------------------------
-// If input is already higher or equal to cast type, then this is an identity.
-Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
-  Node* dom = dominating_cast(phase, phase);
-  if (dom != NULL) {
-    return dom;
-  }
-  if (_dependency != RegularDependency) {
-    return this;
-  }
-  const Type* t = phase->type(in(1));
-  if (EnableVectorReboxing && in(1)->Opcode() == Op_VectorBox) {
-    if (t->higher_equal_speculative(phase->type(this))) {
-      return in(1);
-    }
-  } else if (t == phase->type(this)) {
-    // Toned down to rescue meeting at a Phi 3 different oops all implementing
-    // the same interface.
-    return in(1);
-  }
-  return this;
-}
-
 //------------------------------Value------------------------------------------
 // Take 'join' of input and cast-up type, unless working with an Interface
 const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
@@ -414,7 +422,7 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
       result = in_type;
-    } else {
+    } else if (in_ptr != TypePtr::Constant) {
       result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
     }
   }

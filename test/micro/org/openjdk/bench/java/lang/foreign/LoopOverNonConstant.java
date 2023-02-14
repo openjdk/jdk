@@ -22,8 +22,9 @@
  */
 package org.openjdk.bench.java.lang.foreign;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.MemorySession;
+
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -40,7 +41,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.concurrent.TimeUnit;
 
-import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -55,6 +56,8 @@ public class LoopOverNonConstant extends JavaLayouts {
     static final int ELEM_SIZE = 1_000_000;
     static final int CARRIER_SIZE = (int)JAVA_INT.byteSize();
     static final int ALLOC_SIZE = ELEM_SIZE * CARRIER_SIZE;
+
+    Arena arena;
     MemorySegment segment;
     long unsafe_addr;
 
@@ -66,7 +69,8 @@ public class LoopOverNonConstant extends JavaLayouts {
         for (int i = 0; i < ELEM_SIZE; i++) {
             unsafe.putInt(unsafe_addr + (i * CARRIER_SIZE) , i);
         }
-        segment = MemorySegment.allocateNative(ALLOC_SIZE, MemorySession.openConfined());
+        arena = Arena.openConfined();
+        segment = MemorySegment.allocateNative(ALLOC_SIZE, arena.scope());
         for (int i = 0; i < ELEM_SIZE; i++) {
             VH_INT.set(segment, (long) i, i);
         }
@@ -78,7 +82,7 @@ public class LoopOverNonConstant extends JavaLayouts {
 
     @TearDown
     public void tearDown() {
-        segment.session().close();
+        arena.close();
         unsafe.invokeCleaner(byteBuffer);
         unsafe.freeMemory(unsafe_addr);
     }
@@ -155,24 +159,6 @@ public class LoopOverNonConstant extends JavaLayouts {
             res += segment.get(JAVA_INT_UNALIGNED, i * CARRIER_SIZE);
         }
         return res;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().get(JAVA_INT, i * CARRIER_SIZE);
-        }
-        return sum;
-    }
-
-    @Benchmark
-    public int segment_loop_instance_address_index() {
-        int sum = 0;
-        for (int i = 0; i < ELEM_SIZE; i++) {
-            sum += segment.address().getAtIndex(JAVA_INT, i);
-        }
-        return sum;
     }
 
     @Benchmark

@@ -188,9 +188,9 @@ class FieldLayout : public ResourceObj {
   LayoutRawBlock* last_block() { return _last; }
 
   LayoutRawBlock* first_field_block();
-  void add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = NULL);
-  void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = NULL);
-  void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = NULL);
+  void add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
+  void add_field_at_offset(LayoutRawBlock* blocks, int offset, LayoutRawBlock* start = nullptr);
+  void add_contiguously(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start = nullptr);
   LayoutRawBlock* insert_field_block(LayoutRawBlock* slot, LayoutRawBlock* block);
   bool reconstruct_layout(const InstanceKlass* ik);
   void fill_holes(const InstanceKlass* ik);
