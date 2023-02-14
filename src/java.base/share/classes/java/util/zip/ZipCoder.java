@@ -56,11 +56,28 @@ class ZipCoder {
     }
 
     /**
-     * Return values for {@link #compare(String, byte[], int, int, boolean)}
+     * This enum represents the three possible return values for
+     * {@link #compare(String, byte[], int, int, boolean)} when
+     * this method compares a lookup name to a string encoded in a
+     * byte array range.
      */
     enum Comparison {
+        /**
+         * The lookup string is exactly equal to
+         * the string encoded in the byte array.
+          */
         EXACT_MATCH,
-        SLASH_MATCH,
+        /**
+         * The lookup string and the string encoded in
+         * the byte array differs only by the
+         * latter having a trailing '/' character.
+         */
+        DIRECTORY_MATCH,
+        /**
+         * The lookup string and the string encoded in
+         * the byte array do not match. (They are
+         * neither an exact match or a directory match).
+         */
         NO_MATCH
     }
 
@@ -194,28 +211,47 @@ class ZipCoder {
     }
 
     /**
-     * Compares a string with a second string which is encoded in a given
-     * byte array range, as if the second string was first decoded from
-     * bytes using this ZipCoder's charset.
+     * This method is used by ZipFile.Source.getEntryPos when comparing the
+     * name being looked up to candidate names encoded in the CEN byte
+     * array.
      *
-     * If the two strings match exactly, return {@link Comparison#EXACT_MATCH}.
-     * If addSlash is true and the two strings only differ by the second string
-     * having a trailing '/', then return {@link Comparison#SLASH_MATCH}.
+     * Since ZipCode.getEntry supports looking up a "dir/" entry by
+     * the name "dir", this method can optionally distinguish an
+     * exact match from a partial "directory match" (where names only
+     * differ by the encoded name having an additional trailing '/')
+     *
+     * The return values of this method are as follows:
+     *
+     * If the lookup name is exactly equal to the encoded string, return
+     * {@link Comparison#EXACT_MATCH}.
+     * 
+     * If the parameter {@code matchDirectory} is {@code true} and the
+     * two strings differ only by the encoded string having an extra
+     * trailing '/' character, then return {@link Comparison#DIRECTORY_MATCH}.
+     *
      * Otherwise, return {@link Comparison#NO_MATCH}
      *
      * While a general implementation will need to decode bytes into a
      * String for comparison, this can be avoided if the String coder
-     * is known and matches the charset of this ZipCoder.
+     * and this ZipCoder are known to encode strings to the same bytes.
+     *
+     * @param str The lookup string to compare with the encoded string.
+     * @param b The byte array holding the encoded string
+     * @param off The offset into the array where the encoded string starts
+     * @param len The length of the encoded string in bytes
+     * @param matchDirectory If {@code true} and the strings do not match exactly,
+     *                      a directory match will also be tested
+     *
      */
-    Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
+    Comparison compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
         String decoded = toString(b, off, len);
         if (decoded.startsWith(str)) {
             if (decoded.length() == str.length()) {
                 return Comparison.EXACT_MATCH;
-            } else if (addSlash
+            } else if (matchDirectory
                 && decoded.length() == str.length() + 1
                 && decoded.endsWith("/") ) {
-                return Comparison.SLASH_MATCH;
+                return Comparison.DIRECTORY_MATCH;
             }
         }
         return Comparison.NO_MATCH;
@@ -270,14 +306,14 @@ class ZipCoder {
         }
 
         @Override
-        Comparison compare(String str, byte[] b, int off, int len, boolean addSlash) {
+        Comparison compare(String str, byte[] b, int off, int len, boolean matchDirectory) {
             try {
                 byte[] encoded = JLA.getBytesNoRepl(str, UTF_8.INSTANCE);
                 int mismatch = Arrays.mismatch(encoded, 0, encoded.length, b, off, off+len);
                 if (mismatch == -1) {
                     return Comparison.EXACT_MATCH;
-                } else if (addSlash && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
-                    return Comparison.SLASH_MATCH;
+                } else if (matchDirectory && len == mismatch + 1 && hasTrailingSlash(b, off + len)) {
+                    return Comparison.DIRECTORY_MATCH;
                 } else {
                     return Comparison.NO_MATCH;
                 }

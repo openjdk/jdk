@@ -1633,13 +1633,12 @@ public class ZipFile implements ZipConstants, Closeable {
             int hsh = ZipCoder.hash(name);
             int idx = table[(hsh & 0x7fffffff) % tablelen];
 
-            int slashMatch = -1; // Position of secondary match "name/"
+            int dirPos = -1; // Position of secondary match "name/"
 
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
             while (idx != ZIP_ENDCHAIN) {
                 if (getEntryHash(idx) == hsh) {
-                    // Compare the lookup name with the name encoded in the CEN
 
                     int pos = getEntryPos(idx);
                     int noff = pos + CENHDR;
@@ -1647,22 +1646,29 @@ public class ZipFile implements ZipConstants, Closeable {
 
                     ZipCoder zc = zipCoderForPos(pos);
 
+                    // Compare the lookup name with the name encoded in the CEN
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
                         case EXACT_MATCH:
-                            // Exact match for "name"
+                            // We found an exact match for "name"
                             return pos;
-                        case SLASH_MATCH:
-                            // Match for "name/", take note
-                            slashMatch = pos;
+                        case DIRECTORY_MATCH:
+                            // We found the directory "name/"
+                            // Track its position, then continue the search for "name"
+                            dirPos = pos;
                             break;
                         case NO_MATCH:
-                            // Hash collision, continue search
+                            // Hash collision, continue searching
                     }
                 }
                 idx = getEntryNext(idx);
             }
-            // No exact match found, will return either slashMatch or -1
-            return slashMatch;
+            // Reaching this point means we did not find "name".
+            // Return the position of "name/" if we found it
+            if (dirPos != -1) {
+                return dirPos;
+            }
+            // No entry found
+            return -1;
         }
 
         private ZipCoder zipCoderForPos(int pos) {

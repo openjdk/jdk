@@ -124,6 +124,15 @@ public class TestZipFileEncodings {
         test(70000, 10, true, Charset.forName(charsetName));
     }
 
+    /**
+     * This test was added to catch a regression where UTFZipCoder incorrectly
+     * treated latin1-encoded Strings as UTF8-compatible, while this actually only
+     * holds for ASCII strings.
+     *
+     * The implementation of UTFZipCoder.compare was later changed to not depend on
+     * the String's coder. Let's keep this test around anyway, since it provokes
+     * a corner case which could be easily missed.
+     */
     @Test
     public void latin1NotAscii() throws IOException {
 
@@ -140,17 +149,30 @@ public class TestZipFileEncodings {
             assertNotNull(z.getEntry(entryName));
         }
     }
+    /**
+     * This test was added to catch a regression where ZipCoder.compare did not
+     * properly verify that the lookup name is a prefix of the entry name. Because of
+     * this regression, any candidate name with identical lengths and a trailing
+     * '/' would be incorrectly considered a "directory match".
+     *
+     * Since this regression depends on both a hash collision and that the length of names
+     * are equal, it is rarely found in the wild. Let's keep this test around
+     * since it explicity provokes this rare condition.
+     *
+     */
     @Test(dataProvider = "all-charsets")
     public void sameHashAndLengthDirLookup(String charsetName) throws IOException {
         // Two directory names with colliding hash codes and same length
+        // (found in a brute force search)
         String one = "_____1637461950/";
         String two = "_____-408231241/";
 
-        // Create a ZIP with the two entries
+        // Create a ZIP containing the two directories
         Charset charset = Charset.forName(charsetName);
         Path zip = Path.of("hash-collision-slashmatch-utf16.zip");
         try (ZipOutputStream z = new ZipOutputStream(Files.newOutputStream(zip), charset)) {
 
+            // Give the names different comments so they we can distinguish them
             ZipEntry first = new ZipEntry(one);
             first.setComment("Entry one");
             z.putNextEntry(first);
@@ -160,14 +182,14 @@ public class TestZipFileEncodings {
             z.putNextEntry(second);
         }
 
-        // Assert that "slashless" lookups returns correct entry,
-        // even when when hashes collide and lengths are equal
+        // Assert that "slashless" lookups returns the correct entry even
+        // when the directory names have colliding hash codes and equal lengths
         try (ZipFile z = new ZipFile(zip.toFile(), charset)) {
 
-            ZipEntry second = z.getEntry(two.substring(0, two.length() - 1));
+            ZipEntry second = z.getEntry("_____-408231241");
             assertEquals(second.getComment(), "Entry two");
 
-            ZipEntry first = z.getEntry(one.substring(0, one.length() - 1));
+            ZipEntry first = z.getEntry("_____1637461950");
             assertEquals(first.getComment(), "Entry one");
         }
     }
@@ -304,7 +326,7 @@ public class TestZipFileEncodings {
                 crc.update(data);
                 ze.setCrc(crc.getValue());
             }
-            ze.setTime(1675862371399L);
+            ze.setTime(System.currentTimeMillis());
             ze.setComment(ze.getName());
             zos.putNextEntry(ze);
             zos.write(data);
