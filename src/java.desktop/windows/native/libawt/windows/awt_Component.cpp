@@ -1334,7 +1334,7 @@ void SpyWinMessage(HWND hwnd, UINT message, LPCTSTR szComment) {
         WIN_MSG(WM_AWT_CREATE_PRINTED_PIXELS)
         WIN_MSG(WM_AWT_OBJECTLISTCLEANUP)
         default:
-            sprintf(szBuf, "0x%8.8x(%s):Unknown message 0x%8.8x\n",
+            snprintf(szBuf, sizeof(szBuf), "0x%8.8x(%s):Unknown message 0x%8.8x\n",
                 hwnd, szComment, message);
             break;
     }
