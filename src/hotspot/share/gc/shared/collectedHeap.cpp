@@ -254,7 +254,7 @@ CollectedHeap::CollectedHeap() :
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   int base_offset_in_ints = arrayOopDesc::base_offset_in_ints(T_INT);
-  assert((uint32_t)base_offset_in_ints <= max_jint - max_len, "must not overflow signed int");
+  assert((uint32_t)base_offset_in_ints <= SIZE_MAX - max_len, "must not overflow signed int: base_offset_in_ints: %d, max_len: " SIZE_FORMAT, base_offset_in_ints, max_len);
   _filler_array_max_size = align_object_size((base_offset_in_ints + max_len) / elements_per_word);
 
   NOT_PRODUCT(_promotion_failure_alot_count = 0;)
