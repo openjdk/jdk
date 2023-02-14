@@ -888,7 +888,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
         UTIL_REQUIRE_PROGS(BUILD_CXX, clang++)
       else
         UTIL_REQUIRE_PROGS(BUILD_CC, cc gcc)
-        UTIL_REQUIRE_PROGS(BUILD_CXX, CC g++)
+        UTIL_REQUIRE_PROGS(BUILD_CXX, c++ g++)
       fi
       UTIL_LOOKUP_PROGS(BUILD_NM, nm gcc-nm)
       UTIL_LOOKUP_PROGS(BUILD_AR, ar gcc-ar lib)
