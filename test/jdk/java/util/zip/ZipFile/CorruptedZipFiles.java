@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,148 +25,172 @@
  * @bug 4770745 6218846 6218848 6237956
  * @summary test for correct detection and reporting of corrupted zip files
  * @author Martin Buchholz
+ * @run testng CorruptedZipFiles
  */
 
-import java.util.*;
-import java.util.zip.*;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
+
 import java.io.*;
-import static java.lang.System.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
+
 import static java.util.zip.ZipFile.*;
+import static org.testng.Assert.*;
 
 public class CorruptedZipFiles {
-    static int passed = 0, failed = 0;
 
-    static void fail(String msg) {
-        failed++;
-        err.println(msg);
-    }
+    // Golden ZIP
+    private byte[] good;
+    // Copy of the template for modification in tests
+    private byte[] bad;
+    // Some well-known locations in the golden ZIP
+    private int endpos, cenpos, locpos;
 
-    static void unexpected(Throwable t) {
-        failed++;
-        t.printStackTrace();
-    }
-
-    public static void main(String[] args) throws Exception {
-        try (FileOutputStream fos = new FileOutputStream("x.zip");
-             ZipOutputStream zos = new ZipOutputStream(fos))
-        {
+    @BeforeTest
+    public void setup() throws IOException {
+        // Make a ZIP with a single entry
+        Path zip = Path.of("x.zip");
+        try (ZipOutputStream zos = new ZipOutputStream(
+                Files.newOutputStream(zip))) {
             ZipEntry e = new ZipEntry("x");
             zos.putNextEntry(e);
             zos.write((int)'x');
         }
 
-        int len = (int)(new File("x.zip").length());
-        byte[] good = new byte[len];
-        try (FileInputStream fis = new FileInputStream("x.zip")) {
-            fis.read(good);
-        }
-        new File("x.zip").delete();
+        // Read the contents of the file
+        good = Files.readAllBytes(zip);
+        Files.delete(zip);
 
-        int endpos = len - ENDHDR;
-        int cenpos = u16(good, endpos+ENDOFF);
-        int locpos = u16(good, cenpos+CENOFF);
-        if (u32(good, endpos) != ENDSIG) fail("Where's ENDSIG?");
-        if (u32(good, cenpos) != CENSIG) fail("Where's CENSIG?");
-        if (u32(good, locpos) != LOCSIG) fail("Where's LOCSIG?");
-        if (u16(good, locpos+LOCNAM) != u16(good,cenpos+CENNAM))
-            fail("Name field length mismatch");
-        if (u16(good, locpos+LOCEXT) != u16(good,cenpos+CENEXT))
-            fail("Extra field length mismatch");
+        // Set up some well-known offsets
+        endpos = good.length - ENDHDR;
+        cenpos = u16(good, endpos+ENDOFF);
+        locpos = u16(good, cenpos + CENOFF);
 
-        byte[] bad;
+        // Run some sanity checks:
+        assertEquals(u32(good, endpos), ENDSIG, "Where's ENDSIG?");
+        assertEquals(u32(good, cenpos), CENSIG, "Where's CENSIG?");
+        assertEquals(u32(good, locpos), LOCSIG, "Where's LOCSIG?");
+        assertEquals(u16(good, locpos+LOCNAM), u16(good,cenpos+CENNAM),
+            "Name field length mismatch");
+        assertEquals(u16(good, locpos+LOCEXT), u16(good,cenpos+CENEXT),
+            "Extra field length mismatch");
+    }
 
-        err.println("corrupted ENDSIZ");
-        bad = good.clone();
+    /**
+     * Make a copy safe to modify by each test
+     */
+    @BeforeMethod
+    public void setUp() {
+        bad = Arrays.copyOf(good, good.length);
+    }
+
+    @Test
+    public void corruptedENDSIZ() {
         bad[endpos+ENDSIZ]=(byte)0xff;
         checkZipException(bad, ".*bad central directory size.*");
+    }
 
-        err.println("corrupted ENDOFF");
-        bad = good.clone();
+    @Test
+    public void corruptedENDOFF() {
         bad[endpos+ENDOFF]=(byte)0xff;
         checkZipException(bad, ".*bad central directory offset.*");
+    }
 
-        err.println("corrupted CENSIG");
-        bad = good.clone();
+    @Test
+    public void corruptedCENSIG() {
         bad[cenpos]++;
         checkZipException(bad, ".*bad signature.*");
+    }
 
-        err.println("corrupted CENFLG");
-        bad = good.clone();
+    @Test
+    public void corruptedCENFLG() {
         bad[cenpos+CENFLG] |= 1;
         checkZipException(bad, ".*encrypted entry.*");
 
-        err.println("corrupted CENNAM 1");
-        bad = good.clone();
+    }
+
+    @Test
+    public void corruptedCENNAM1() {
         bad[cenpos+CENNAM]++;
         checkZipException(bad, ".*bad header size.*");
+    }
 
-        err.println("corrupted CENNAM 2");
-        bad = good.clone();
+    @Test
+    public void corruptedCENNAM2() {
         bad[cenpos+CENNAM]--;
         checkZipException(bad, ".*bad header size.*");
 
-        err.println("corrupted CENNAM 3");
-        bad = good.clone();
+    }
+    @Test
+    public void corruptedCENNAM3() {
         bad[cenpos+CENNAM]   = (byte)0xfd;
         bad[cenpos+CENNAM+1] = (byte)0xfd;
         checkZipException(bad, ".*bad header size.*");
-
-        err.println("corrupted CENEXT 1");
-        bad = good.clone();
+    }
+    @Test
+    public void corruptedCENEXT1() {
         bad[cenpos+CENEXT]++;
         checkZipException(bad, ".*bad header size.*");
-
-        err.println("corrupted CENEXT 2");
-        bad = good.clone();
+    }
+    @Test
+    public void corruptedCENEXT2() {
         bad[cenpos+CENEXT]   = (byte)0xfd;
         bad[cenpos+CENEXT+1] = (byte)0xfd;
         checkZipException(bad, ".*bad header size.*");
-
-        err.println("corrupted CENCOM");
-        bad = good.clone();
-        bad[cenpos+CENCOM]++;
-        checkZipException(bad, ".*bad header size.*");
-
-        err.println("corrupted CENHOW");
-        bad = good.clone();
-        bad[cenpos+CENHOW] = 2;
-        checkZipException(bad, ".*bad compression method.*");
-
-        err.println("corrupted LOCSIG");
-        bad = good.clone();
-        bad[locpos]++;
-        checkZipExceptionInGetInputStream(bad, ".*bad signature.*");
-
-        out.printf("passed = %d, failed = %d%n", passed, failed);
-        if (failed > 0) throw new Exception("Some tests failed");
     }
 
+    @Test
+    public void corruptedCENCOM() {
+        bad[cenpos+CENCOM]++;
+        checkZipException(bad, ".*bad header size.*");
+    }
+    @Test
+    public void corruptedCENHOW() {
+        bad[cenpos+CENHOW] = 2;
+        checkZipException(bad, ".*bad compression method.*");
+    }
+
+    @Test
+    public void corruptedLOCSIG() {
+        bad[locpos]++;
+        checkZipExceptionInGetInputStream(bad, ".*bad signature.*");
+    }
     static int uniquifier = 432;
 
     static void checkZipExceptionImpl(byte[] data,
                                       String msgPattern,
                                       boolean getInputStream) {
-        String zipName = "bad" + (uniquifier++) + ".zip";
+        Path zip = Path.of("bad" + (uniquifier++) + ".zip");
         try {
-            try (FileOutputStream fos = new FileOutputStream(zipName)) {
-                fos.write(data);
-            }
-            try (ZipFile zf = new ZipFile(zipName)) {
-                if (getInputStream) {
-                    InputStream is = zf.getInputStream(new ZipEntry("x"));
-                    is.read();
+            Files.write(zip, data);
+
+            ZipException ex = expectThrows(ZipException.class, () -> {
+                try (ZipFile zf = new ZipFile(zip.toFile())) {
+                    if (getInputStream) {
+                        try (InputStream is = zf.getInputStream(new ZipEntry("x"))) {
+                            is.read();
+                        }
+                    }
                 }
-            }
-            fail("Failed to throw expected ZipException");
-        } catch (ZipException e) {
-            if (e.getMessage().matches(msgPattern))
-                passed++;
-            else
-                unexpected(e);
-        } catch (Throwable t) {
-            unexpected(t);
+            });
+            assertTrue(ex.getMessage().matches(msgPattern),
+                    "Unexpected ZipException message: " + ex.getMessage());
+
+        } catch (IOException e) {
+            fail("Unexcpected IOEception writing test ZIP", e);
         } finally {
-            new File(zipName).delete();
+            try {
+                Files.delete(zip);
+            } catch (IOException e) {
+                fail("Unexcpected exception deleting test ZIP", e);
+            }
         }
     }
 
@@ -189,48 +213,4 @@ public class CorruptedZipFiles {
     static int u32(byte[] data, int offset) {
         return u16(data,offset) + (u16(data,offset+2)<<16);
     }
-
-    // The following can be deleted once this bug is fixed:
-    // 6225935: "import static" accessibility rules for symbols different for no reason
-    static final long LOCSIG = ZipFile.LOCSIG;
-    static final long EXTSIG = ZipFile.EXTSIG;
-    static final long CENSIG = ZipFile.CENSIG;
-    static final long ENDSIG = ZipFile.ENDSIG;
-
-    static final int LOCHDR = ZipFile.LOCHDR;
-    static final int EXTHDR = ZipFile.EXTHDR;
-    static final int CENHDR = ZipFile.CENHDR;
-    static final int ENDHDR = ZipFile.ENDHDR;
-
-    static final int LOCVER = ZipFile.LOCVER;
-    static final int LOCFLG = ZipFile.LOCFLG;
-    static final int LOCHOW = ZipFile.LOCHOW;
-    static final int LOCTIM = ZipFile.LOCTIM;
-    static final int LOCCRC = ZipFile.LOCCRC;
-    static final int LOCSIZ = ZipFile.LOCSIZ;
-    static final int LOCLEN = ZipFile.LOCLEN;
-    static final int LOCNAM = ZipFile.LOCNAM;
-    static final int LOCEXT = ZipFile.LOCEXT;
-
-    static final int CENVEM = ZipFile.CENVEM;
-    static final int CENVER = ZipFile.CENVER;
-    static final int CENFLG = ZipFile.CENFLG;
-    static final int CENHOW = ZipFile.CENHOW;
-    static final int CENTIM = ZipFile.CENTIM;
-    static final int CENCRC = ZipFile.CENCRC;
-    static final int CENSIZ = ZipFile.CENSIZ;
-    static final int CENLEN = ZipFile.CENLEN;
-    static final int CENNAM = ZipFile.CENNAM;
-    static final int CENEXT = ZipFile.CENEXT;
-    static final int CENCOM = ZipFile.CENCOM;
-    static final int CENDSK = ZipFile.CENDSK;
-    static final int CENATT = ZipFile.CENATT;
-    static final int CENATX = ZipFile.CENATX;
-    static final int CENOFF = ZipFile.CENOFF;
-
-    static final int ENDSUB = ZipFile.ENDSUB;
-    static final int ENDTOT = ZipFile.ENDTOT;
-    static final int ENDSIZ = ZipFile.ENDSIZ;
-    static final int ENDOFF = ZipFile.ENDOFF;
-    static final int ENDCOM = ZipFile.ENDCOM;
 }
