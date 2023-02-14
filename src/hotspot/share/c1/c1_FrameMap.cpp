@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,7 +162,7 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
   assert(monitors >= 0, "not set");
   _num_monitors = monitors;
   assert(reserved_argument_area_size >= 0, "not set");
-  _reserved_argument_area_size = MAX2(4, reserved_argument_area_size) * BytesPerWord;
+  _reserved_argument_area_size = reserved_argument_area_size * BytesPerWord;
 
   _argcount = method->arg_size();
   _argument_locations = new intArray(_argcount, _argcount, -1);

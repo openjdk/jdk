@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2241,14 +2241,14 @@ void LIR_Assembler::logic_op_imm(Register dst, Register left, int right, LIR_Cod
 void LIR_Assembler::store_parameter(Register r, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ sd(r, Address(sp, offset_from_rsp_in_bytes));
 }
 
 void LIR_Assembler::store_parameter(jint c, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ mv(t0, c);
   __ sd(t0, Address(sp, offset_from_rsp_in_bytes));
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3025,7 +3025,7 @@ void LIR_Assembler::shift_op(LIR_Code code, LIR_Opr left, jint count, LIR_Opr de
 void LIR_Assembler::store_parameter(Register r, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ movptr (Address(rsp, offset_from_rsp_in_bytes), r);
 }
 
@@ -3033,7 +3033,7 @@ void LIR_Assembler::store_parameter(Register r, int offset_from_rsp_in_words) {
 void LIR_Assembler::store_parameter(jint c,     int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ movptr (Address(rsp, offset_from_rsp_in_bytes), c);
 }
 
@@ -3041,7 +3041,7 @@ void LIR_Assembler::store_parameter(jint c,     int offset_from_rsp_in_words) {
 void LIR_Assembler::store_parameter(jobject o, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ movoop(Address(rsp, offset_from_rsp_in_bytes), o, rscratch1);
 }
 
@@ -3049,7 +3049,7 @@ void LIR_Assembler::store_parameter(jobject o, int offset_from_rsp_in_words) {
 void LIR_Assembler::store_parameter(Metadata* m, int offset_from_rsp_in_words) {
   assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
   int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
-  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  assert(offset_from_rsp_in_bytes <= frame_map()->reserved_argument_area_size(), "invalid offset");
   __ mov_metadata(Address(rsp, offset_from_rsp_in_bytes), m, rscratch1);
 }
 
