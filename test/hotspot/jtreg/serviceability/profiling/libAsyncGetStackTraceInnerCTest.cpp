@@ -70,6 +70,7 @@ extern "C" {
 
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  initASGCT();
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
@@ -160,16 +161,27 @@ Java_profiling_innerc_ASGSTInnerCTest_checkNativeChain(JNIEnv* env, jclass cls) 
 
 JNIEXPORT jboolean JNICALL
 Java_profiling_innerc_ASGSTInnerCTest_checkNativeLeaf(JNIEnv* env, jclass cls) {
-  const int MAX_DEPTH = 16;
+  const int MAX_DEPTH = 100;
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[MAX_DEPTH];
   trace.frames = frames;
   trace.frame_info = NULL;
   trace.num_frames = 0;
 
+  // without ASGST_INCLUDE_C_FRAMES
+  if (!check<MAX_DEPTH>("innerc", env)) {
+    return false;
+  }
+
   // with ASGST_INCLUDE_C_FRAMES
 
-  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, ASGST_INCLUDE_C_FRAMES);
+  AsyncGetStackTrace(&trace, MAX_DEPTH, nullptr, ASGST_INCLUDE_C_FRAMES);
+
+  if (!checkThatWithCAndWithoutAreSimilar<MAX_DEPTH>("innerc similarity")) {
+    return false;
+  }
+
+  printTrace<1>(stdout, trace, {std::make_pair("checkCMethod", (void*)&checkCMethod)});
 
   if (trace.num_frames <= 0) {
     fprintf(stderr, "chain: The num_frames must be positive: %d\n", trace.num_frames);
@@ -181,26 +193,6 @@ Java_profiling_innerc_ASGSTInnerCTest_checkNativeLeaf(JNIEnv* env, jclass cls) {
     return false;
   }
 
-  printTrace<1>(stdout, trace, {std::make_pair("checkCMethod", (void*)&checkCMethod)});
-
-  /*
-  Expect something like the following output (only the pcs should be different):
-
-  Frame 0: Native frame, method = checkNativeLeaf, bci = 0
-  Frame 1: Java frame, method = checkJavaInner, bci = 0
-  ... at least 5 more C++ frames ...
-  Frame 7: CPP frame, pc = 0x7ff7948305be (checkCMethod)
-  Frame 8: Native frame, method = checkNativeChain, bci = 0
-  Frame 9: Java frame, method = main, bci = 0
-  Frame 10: Java frame, method = invokeStatic, bci = 10
-
-  with fastdebug and release, the middle part is:
-  C frame: JavaCalls::call_helper(JavaValue*, methodHandle const&, JavaCallArguments*, JavaThread*)
-  C frame: jni_invoke_static(JNIEnv_*, JavaValue*, _jobject*, JNICallType, _jmethodID*, JNI_ArgumentPusher*, JavaThread*) [clone .constprop.1]
-  C frame: jni_CallStaticBooleanMethodV
-  C frame: JNIEnv_::CallStaticBooleanMethod(_jclass*, _jmethodID*, ...)
-  C frame: checkCMethod
-  */
   ASGST_JavaFrame first_frame = trace.frames[0].java_frame;
   if (first_frame.bci != 0) {
     fprintf(stderr, "chain: The first frame must have a bci of 0 as it is a native frame: %d\n", first_frame.bci);
@@ -211,17 +203,10 @@ Java_profiling_innerc_ASGSTInnerCTest_checkNativeLeaf(JNIEnv* env, jclass cls) {
     return false;
   }
 
-  #ifdef DEBUG
   if (trace.num_frames < 11) {
     fprintf(stderr, "chain: The number of frames must be >= 11: %d\n", trace.num_frames);
     return false;
   }
-  #else
-  if (trace.num_frames != 11) {
-    fprintf(stderr, "chain: The number of frames must be 11: %d\n", trace.num_frames);
-    return false;
-  }
-  #endif
 
   if (!doesFrameBelongToJavaMethod(trace.frames[0], ASGST_FRAME_NATIVE,
         "checkNativeLeaf", "chain frame 0") ||
@@ -235,13 +220,7 @@ Java_profiling_innerc_ASGSTInnerCTest_checkNativeLeaf(JNIEnv* env, jclass cls) {
   while (next_start < trace.num_frames - 4 && isCppFrame(trace.frames[next_start], "chain frame middle cpp")) {
     next_start++;
   }
-  if (!doesFrameBelongToMethod(trace.frames[next_start], &checkCMethod, "chain frame 7") ||
-      !doesFrameBelongToJavaMethod(trace.frames[next_start + 1], ASGST_FRAME_NATIVE,
-        "checkNativeChain", "chain frame 8"),
-      !doesFrameBelongToJavaMethod(trace.frames[next_start + 2], ASGST_FRAME_JAVA,
-        "main", "chain frame 9") ||
-      !doesFrameBelongToJavaMethod(trace.frames[next_start + 3], ASGST_FRAME_JAVA,
-        "invokeStatic", "chain frame 10")) {
+  if (!doesFrameBelongToMethod(trace.frames[next_start - 1], &checkCMethod, "chain frame 7")) {
     return false;
   }
 

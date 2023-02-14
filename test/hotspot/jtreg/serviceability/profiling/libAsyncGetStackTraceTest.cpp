@@ -320,7 +320,7 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
     return false;
   }
 
-  return check<MAX_DEPTH>("basic", env) && checkForNonJavaFromThread();
+  return check<MAX_DEPTH>("basic", env) && checkThatWithCAndWithoutAreSimilar("basic with C") && checkForNonJavaFromThread();
 }
 }
 #endif // defined(__APPLE__) || defined(LINUX)

@@ -398,6 +398,20 @@ template<int max_depth> void printGST() {
   printGSTTrace(stderr, gstFrames, gstCount);
 }
 
+/** asgst, asgct, gst */
+template <int max_depth = 100> void printSyncTraces(JNIEnv* oenv = nullptr) {
+  assert(env != nullptr || oenv != nullptr);
+  ucontext_t context;
+  getcontext(&context);
+  ASGST_CallTrace trace;
+  ASGST_CallFrame frames[max_depth];
+  trace.frames = frames;
+  AsyncGetStackTrace(&trace, max_depth, &context, 0);
+  printTrace(stderr, trace);
+  printASGCT<max_depth>(&context, oenv);
+  printGST<max_depth>();
+}
+
 /**
  * Test that the ASGST trace conforms to the oracles
  *
@@ -408,7 +422,7 @@ template<int max_depth> void printGST() {
  * @param use_asgct whether to use the ASGCT trace, requires the env and that initASGCT has been called before
  * @param use_gct whether to use the GST trace, cannot be used in a signal handler
  */
-template<int max_depth> bool check(const char* prefix, JNIEnv* oenv = nullptr, bool use_asgct = true, bool use_gct = true) {
+template<int max_depth = 100> bool check(const char* prefix, JNIEnv* oenv = nullptr, bool use_asgct = true, bool use_gct = true) {
   assert(env != nullptr || oenv != nullptr || !use_asgct);
   JNIEnv *environ = oenv == nullptr ? env : oenv;
   ucontext_t ucontext;
@@ -423,7 +437,7 @@ template<int max_depth> bool check(const char* prefix, JNIEnv* oenv = nullptr, b
   ASGST_CallTrace trace;
   ASGST_CallFrame frames[max_depth];
   trace.frames = frames;
-  AsyncGetStackTrace(&trace, max_depth, NULL, 0);
+  AsyncGetStackTrace(&trace, max_depth, &ucontext, 0);
   int asgst_count = std::max(0, trace.num_frames);
 
   auto printAll = [&](){
@@ -536,6 +550,73 @@ template<int max_depth> bool check(const char* prefix, JNIEnv* oenv = nullptr, b
         }
       }
     }
+  }
+  return true;
+}
+
+/**
+ * Checks that all frames that appear in the ASGST trace without C frames also appear in the ASGST trace with C frames.
+ */
+template <int max_depth = 100> bool checkThatWithCAndWithoutAreSimilar(const char* prefix) {
+  ucontext_t ucontext;
+  int err = getcontext(&ucontext);
+  if (err != 0) {
+    fprintf(stderr, "Error: getcontext failed: %d", errno);
+  }
+
+
+
+  // obtain the ASGST trace
+  ASGST_CallTrace trace;
+  ASGST_CallFrame frames[max_depth];
+  trace.frames = frames;
+  AsyncGetStackTrace(&trace, max_depth, &ucontext, 0);
+  int asgst_count = std::max(0, trace.num_frames);
+
+  ASGST_CallTrace traceWithC;
+  ASGST_CallFrame framesWithC[max_depth * 10];
+  traceWithC.frames = framesWithC;
+  AsyncGetStackTrace(&traceWithC, max_depth, &ucontext, ASGST_INCLUDE_C_FRAMES);
+  int asgstWithC_count = std::max(0, traceWithC.num_frames);
+
+  auto printAll = [&]() {
+    printTrace(stderr, trace);
+    printTrace(stderr, traceWithC);
+  };
+
+  if ((asgst_count == 0) != (asgstWithC_count == 0)) {
+    fprintf(stderr, "Error in %s: ASGST trace length %d does not match ASGST with C %d in non-null lengthness\n", prefix, asgst_count, asgstWithC_count);
+    printAll();
+    return false;
+  }
+
+  if (asgst_count == 0) {
+    return true;
+  }
+
+  int c_frame_count = 0;
+
+  for (int i = 0; i < asgst_count; i++) {
+    ASGST_CallFrame asgst_frame = trace.frames[i];
+    while (traceWithC.frames[c_frame_count].type == ASGST_FRAME_CPP || traceWithC.frames[c_frame_count].type == ASGST_FRAME_STUB) {
+      c_frame_count++;
+    }
+    ASGST_CallFrame asgstWithC_frame = traceWithC.frames[c_frame_count];
+    ASGST_JavaFrame asgst_java_frame = asgst_frame.java_frame;
+    ASGST_JavaFrame asgstWithC_java_frame = asgstWithC_frame.java_frame;
+
+    if (asgst_java_frame.method_id != asgstWithC_java_frame.method_id) {
+      fprintf(stderr, "Error in %s: ASGST frame %d method %p does not match ASGST with C frame %d method %p\n", prefix, i, asgst_java_frame.method_id, c_frame_count, asgstWithC_java_frame.method_id);
+      printAll();
+      return false;
+    }
+
+    if (asgst_java_frame.bci != asgstWithC_java_frame.bci) {
+      fprintf(stderr, "Error in %s: ASGST frame %d location %p does not match ASGST with C frame %d location %p\n", prefix, i, asgst_java_frame.bci, c_frame_count, asgstWithC_java_frame.bci);
+      printAll();
+      return false;
+    }
+    c_frame_count++;
   }
   return true;
 }
