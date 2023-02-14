@@ -272,8 +272,8 @@ public:
   }
 };
 
-static bool stack_overflow_check(JavaThread* thread, int size, address sp) {
-  const int page_size = os::vm_page_size();
+static bool stack_overflow_check(JavaThread* thread, size_t size, address sp) {
+  const size_t page_size = os::vm_page_size();
   if (size > page_size) {
     if (sp - size < thread->stack_overflow_state()->shadow_zone_safe_limit()) {
       return false;

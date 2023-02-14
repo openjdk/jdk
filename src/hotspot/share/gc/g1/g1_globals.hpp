@@ -178,14 +178,6 @@
           "Control whether concurrent refinement is performed. "            \
           "Disabling effectively ignores G1RSetUpdatingPauseTimePercent")   \
                                                                             \
-  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
-          "Log base 2 of the length of conc RS hot-card cache.")            \
-          range(0, 27)                                                      \
-                                                                            \
-  product(uintx, G1ConcRSHotCardLimit, 4,                                   \
-          "The threshold that defines (>=) a hot card.")                    \
-          range(0, max_jubyte)                                              \
-                                                                            \
   develop(uint, G1RemSetArrayOfCardsEntriesBase, 8,                         \
           "Maximum number of entries per region in the Array of Cards "     \
           "card set container per MB of a heap region.")                    \
@@ -243,11 +235,6 @@
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
-                                                                            \
-  develop(uintx, G1DummyRegionsPerGC, 0,                                    \
-          "The number of dummy regions G1 will allocate at the end of "     \
-          "each evacuation pause in order to artificially fill up the "     \
-          "heap and stress the marking implementation.")                    \
                                                                             \
   develop(bool, G1ExitOnExpansionFailure, false,                            \
           "Raise a fatal VM exit out of memory failure in the event "       \

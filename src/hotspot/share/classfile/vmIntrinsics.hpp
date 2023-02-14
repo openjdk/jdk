@@ -1211,6 +1211,16 @@ class methodHandle;
                                        "Ljdk/internal/vm/vector/VectorSupport$Vector;")                                                        \
     do_name(index_vector_op_name, "indexVector")                                                                                               \
                                                                                                                                                \
+  do_intrinsic(_IndexPartiallyInUpperRange, jdk_internal_vm_vector_VectorSupport, index_partially_in_upper_range_name, index_partially_in_upper_range_sig, F_S)\
+    do_signature(index_partially_in_upper_range_sig, "(Ljava/lang/Class;"                                                                                      \
+                                                     "Ljava/lang/Class;"                                                                                       \
+                                                     "I"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "J"                                                                                                       \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$IndexPartiallyInUpperRangeOperation;)"                             \
+                                                     "Ljdk/internal/vm/vector/VectorSupport$VectorMask;")                                                      \
+    do_name(index_partially_in_upper_range_name, "indexPartiallyInUpperRange")                                                                                 \
+                                                                                                                               \
    /* (2) Bytecode intrinsics                                                                        */                        \
                                                                                                                                \
   do_intrinsic(_park,                     jdk_internal_misc_Unsafe,     park_name, park_signature,                     F_RN)   \
@@ -1319,7 +1329,7 @@ enum class vmIntrinsicID : int {
                    __IGNORE_CLASS, __IGNORE_NAME, __IGNORE_SIGNATURE, __IGNORE_ALIAS)
 
   ID_LIMIT,
-  LAST_COMPILER_INLINE = _IndexVector,
+  LAST_COMPILER_INLINE = _IndexPartiallyInUpperRange,
   FIRST_MH_SIG_POLY    = _invokeGeneric,
   FIRST_MH_STATIC      = _linkToVirtual,
   LAST_MH_SIG_POLY     = _linkToNative,
