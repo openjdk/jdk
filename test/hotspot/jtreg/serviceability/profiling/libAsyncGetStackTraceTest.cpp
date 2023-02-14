@@ -79,6 +79,7 @@ extern "C" {
 
 static
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+  initASGCT();
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION);
   if (res != JNI_OK || jvmti == NULL) {
     fprintf(stderr, "Error: wrong result of a valid call to GetEnv!\n");
@@ -285,63 +286,7 @@ static bool checkForNonJavaFromThread() {
   return result == &success;
 }
 
-
-bool checkWithSkippedCFrames() {
-  const int MAX_DEPTH = 16;
-  ASGST_CallTrace trace;
-  ASGST_CallFrame frames[MAX_DEPTH];
-  trace.frames = frames;
-  trace.frame_info = NULL;
-  trace.num_frames = 0;
-
-  AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, 0);
-
-  // For now, just check that the first frame is (-3, checkAsyncGetStackTraceCall).
-  if (trace.num_frames <= 0) {
-    fprintf(stderr, "JNICALL: The num_frames must be positive: %d\n", trace.num_frames);
-    return false;
-  }
-
-  if (trace.frames[0].type != ASGST_FRAME_NATIVE) {
-    fprintf(stderr, "JNICALL: The first frame must be a Java frame: %d\n", trace.frames[0].type);
-    return false;
-  }
-
-  ASGST_JavaFrame first_frame = trace.frames[0].java_frame;
-  if (first_frame.bci != 0) {
-    fprintf(stderr, "JNICALL: The first frame must have a bci of 0 as it is a native frame: %d\n", first_frame.bci);
-    return false;
-  }
-  if (first_frame.method_id == NULL) {
-    fprintf(stderr, "JNICALL: The first frame must have a method_id: %p\n", first_frame.method_id);
-    return false;
-  }
-
-  if (trace.num_frames != 3) {
-    fprintf(stderr, "JNICALL: The number of frames must be 4: %d\n", trace.num_frames);
-    return false;
-  }
-
-  if (!doesFrameBelongToJavaMethod(trace.frames[0], ASGST_FRAME_NATIVE,
-        "checkAsyncGetStackTraceCall", "JNICALL frame 0") ||
-      !doesFrameBelongToJavaMethod(trace.frames[1], ASGST_FRAME_JAVA,
-        "main", "JNICALL frame 1") ||
-      !doesFrameBelongToJavaMethod(trace.frames[2], ASGST_FRAME_JAVA,
-        "invokeStatic", "JNICALL frame 2")) {
-    return false;
-  }
-
-
-  ASGST_CallFrame frame = trace.frames[0];
-  if (frame.type != ASGST_FRAME_NATIVE) {
-    fprintf(stderr, "Native frame is expected to have type %u but instead it is %u\n", ASGST_FRAME_NATIVE, frame.type);
-    return false;
-  }
-
-  return checkForNonJavaFromThread();
-}
-
-
+// this also checks that ASGST and ASGCT behave the same
 JNIEXPORT jboolean JNICALL
 Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jclass cls) {
   const int MAX_DEPTH = 20;
@@ -351,53 +296,18 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
   trace.frame_info = NULL;
   trace.num_frames = 0;
 
-    initASGCT();
-  printASGCT<MAX_DEPTH>(NULL, env);
-
   AsyncGetStackTrace(&trace, MAX_DEPTH, NULL, 0);
 
-
-
-  jthread thread;
-  jvmti->GetCurrentThread(&thread);
-  jvmtiFrameInfo frames2[MAX_DEPTH];
-  jint count = 0;
-
-  jvmti->GetStackTrace(thread, 0, MAX_DEPTH, frames2, &count);
-
-  for (int i = 0; i < count; i++) {
-    printf("GST Frame %d: ", i);
-    printMethod(stdout, frames2[i].method);
-    printf("\n");
-  }
-
-  fprintf(stderr, "JNICALL: The number of frames must be 4: %d\n", trace.num_frames);
-
-
   if (trace.num_frames <= 0) {
-    fprintf(stderr, "JNICALL: The num_frames must be positive: %d\n", trace.num_frames);
+    fprintf(stderr, "basic: The num_frames must be positive: %d\n", trace.num_frames);
     return false;
   }
 
-  if (trace.frames[0].type != ASGST_FRAME_NATIVE) {
-    fprintf(stderr, "JNICALL: The first frame must be a Java frame: %d\n", trace.frames[0].type);
-    return false;
-  }
-
-  ASGST_JavaFrame first_frame = trace.frames[0].java_frame;
-  if (first_frame.bci != 0) {
-    fprintf(stderr, "JNICALL: The first frame must have a bci of 0 as it is a native frame: %d\n", first_frame.bci);
-    return false;
-  }
-  if (first_frame.method_id == NULL) {
-    fprintf(stderr, "JNICALL: The first frame must have a method_id: %p\n", first_frame.method_id);
-    return false;
-  }
-
-  printTrace(stderr, trace);
-
-  if (trace.num_frames != 3) {
-    fprintf(stderr, "JNICALL: The number of frames must be 3: %d\n", trace.num_frames);
+  if (trace.num_frames < 3) {
+    // there should be atleast the 3 frames that we're checking for
+    // but there may be more, we cover this by comparing it with the result of GetStackTrace (our oracle)
+    // using the check method
+    fprintf(stderr, "basic: The number of frames must be >= 3: %d\n", trace.num_frames);
     return false;
   }
 
@@ -410,14 +320,7 @@ Java_profiling_sanity_ASGSTBaseTest_checkAsyncGetStackTraceCall(JNIEnv* env, jcl
     return false;
   }
 
-
-  ASGST_CallFrame frame = trace.frames[0];
-  if (frame.type != ASGST_FRAME_NATIVE) {
-    fprintf(stderr, "Native frame is expected to have type %u but instead it is %u\n", ASGST_FRAME_NATIVE, frame.type);
-    return false;
-  }
-
-  return checkForNonJavaFromThread() && checkWithSkippedCFrames();
+  return check<MAX_DEPTH>("basic", env) && checkForNonJavaFromThread();
 }
 }
 #endif // defined(__APPLE__) || defined(LINUX)

@@ -28,8 +28,8 @@
 #endif
 
 #include <array>
-#include <assert.h>
 #include <chrono>
+#include <cerrno>
 #include <signal.h>
 #include <stdio.h>
 #include <stddef.h>
@@ -333,6 +333,28 @@ void printASGCTTrace(FILE* stream, ASGCT_CallTrace trace) {
   fprintf(stream, "ASGCT Trace end\n");
 }
 
+void printGSTFrame(FILE* stream, jvmtiFrameInfo frame) {
+  if (frame.location == -1) {
+    fprintf(stream, "Native frame");
+    printMethod(stream, frame.method);
+  } else {
+    fprintf(stream, "Java frame   ");
+    printMethod(stream, frame.method);
+    fprintf(stream, ": %d", frame.location);
+  }
+}
+
+
+void printGSTTrace(FILE* stream, jvmtiFrameInfo* frames, int length) {
+  fprintf(stream, "GST Trace length: %d\n", length);
+  for (int i = 0; i < length; i++) {
+    fprintf(stream, "Frame %d: ", i);
+    printGSTFrame(stream, frames[i]);
+    fprintf(stream, "\n");
+  }
+  fprintf(stream, "GST Trace end\n");
+}
+
 void printTraces(ASGST_CallTrace* trace, ASGCT_CallTrace* asgct_trace) {
   fprintf(stderr, "=== asgst trace ===\n");
   printTrace(stderr, *trace);
@@ -340,7 +362,11 @@ void printTraces(ASGST_CallTrace* trace, ASGCT_CallTrace* asgct_trace) {
   printASGCTTrace(stderr, *asgct_trace);
 }
 
+/** should be called in the agent load method*/
 void initASGCT() {
+  if (asgct != nullptr) {
+    return;
+  }
   void *mptr = dlsym(RTLD_DEFAULT, "AsyncGetCallTrace");
   if (mptr == nullptr) {
     fprintf(stderr, "Error: could not find AsyncGetCallTrace!\n");
@@ -352,6 +378,7 @@ void initASGCT() {
 JNIEnv* env;
 
 template<int max_depth> void printASGCT(void* ucontext, JNIEnv* oenv = nullptr) {
+  assert(env != nullptr || oenv != nullptr);
   ASGCT_CallTrace asgct_trace;
   static ASGCT_CallFrame asgct_frames[max_depth];
   asgct_trace.frames = asgct_frames;
@@ -360,4 +387,155 @@ template<int max_depth> void printASGCT(void* ucontext, JNIEnv* oenv = nullptr) 
 
   asgct(&asgct_trace, max_depth, ucontext, false);
   printASGCTTrace(stderr, asgct_trace);
+}
+
+template<int max_depth> void printGST() {
+  jthread thread;
+  jvmti->GetCurrentThread(&thread);
+  jvmtiFrameInfo gstFrames[max_depth];
+  jint gstCount = 0;
+  jvmti->GetStackTrace(thread, 0, max_depth, gstFrames, &gstCount);
+  printGSTTrace(stderr, gstFrames, gstCount);
+}
+
+/**
+ * Test that the ASGST trace conforms to the oracles
+ *
+ * prints the traces on stderr on error and returns false
+ *
+ * @param prefix a prefix to identify the error message later
+ * @param oenv the env to use for the ASGCT trace (or nullptr to use the global env which the caller set before)
+ * @param use_asgct whether to use the ASGCT trace, requires the env and that initASGCT has been called before
+ * @param use_gct whether to use the GST trace, cannot be used in a signal handler
+ */
+template<int max_depth> bool check(const char* prefix, JNIEnv* oenv = nullptr, bool use_asgct = true, bool use_gct = true) {
+  assert(env != nullptr || oenv != nullptr || !use_asgct);
+  JNIEnv *environ = oenv == nullptr ? env : oenv;
+  ucontext_t ucontext;
+  int err = getcontext(&ucontext);
+  if (err != 0) {
+    fprintf(stderr, "Error: getcontext failed: %d", errno);
+  }
+
+
+
+  // obtain the ASGST trace
+  ASGST_CallTrace trace;
+  ASGST_CallFrame frames[max_depth];
+  trace.frames = frames;
+  AsyncGetStackTrace(&trace, max_depth, NULL, 0);
+  int asgst_count = std::max(0, trace.num_frames);
+
+  auto printAll = [&](){
+    printTrace(stderr, trace);
+    if (use_asgct) {
+      printASGCT<max_depth>(&ucontext, oenv);
+    }
+    if (use_gct) {
+      printGST<max_depth>();
+    }
+  };
+
+  // obtain the GCT trace
+  jvmtiFrameInfo gst_frames[max_depth];
+  jint gst_count = 0;
+  if (use_gct){
+    jthread thread;
+    jvmti->GetCurrentThread(&thread);
+    jvmti->GetStackTrace(thread, 0, max_depth, gst_frames, &gst_count);
+  }
+
+  // obtain the ASGCT trace
+  ASGCT_CallTrace asgct_trace;
+  ASGCT_CallFrame asgct_frames[max_depth];
+  asgct_trace.frames = asgct_frames;
+  asgct_trace.env_id = environ;
+  if (use_asgct) {
+    asgct(&asgct_trace, max_depth, &ucontext, false);
+  }
+  int asgct_count = std::max(0, asgct_trace.num_frames);
+
+  // check that the ASGST trace conforms to the oracles
+
+  // check first that the lengths are the same
+  // we don't care about the error codes
+
+  if (use_gct && asgct_count != gst_count) {
+    fprintf(stderr, "Error in %s: ASGST trace length %d does not match GST trace length %d\n", prefix, asgst_count, gst_count);
+    printAll();
+    return false;
+  }
+
+  if (use_asgct && asgst_count != asgct_count) {
+    fprintf(stderr, "Error in %s: ASGST trace length %d does not match ASGCT trace length %d\n", prefix, asgst_count, asgct_count);
+    printAll();
+    return false;
+  }
+
+  // now check that the frames have the same method ids
+  for (int i = 0; i < asgst_count; i++) {
+    ASGST_CallFrame asgst_frame = trace.frames[i];
+    assert(asgst_frame.type != ASGST_FRAME_STUB);
+
+    ASGST_JavaFrame asgst_java_frame = asgst_frame.java_frame;
+
+    if (use_gct) {
+      jvmtiFrameInfo gst_frame = gst_frames[i];
+      if (gst_frame.method != asgst_java_frame.method_id) {
+        fprintf(stderr, "Error in %s: ASGST frame %d method %p does not match GST frame %d method %p\n", prefix, i, asgst_java_frame.method_id, i, gst_frame.method);
+        printAll();
+        return false;
+      }
+    }
+    if (use_asgct) {
+      ASGCT_CallFrame asgct_frame = asgct_trace.frames[i];
+      if (asgct_frame.method_id != asgst_java_frame.method_id) {
+        fprintf(stderr, "Error in %s: ASGST frame %d method %p does not match ASGCT frame %d method %p\n", prefix, i, asgst_java_frame.method_id, i, asgct_frame.method_id);
+        printAll();
+        return false;
+      }
+    }
+  }
+
+  // now check that the frames have the same locations
+
+  for (int i = 0; i < asgst_count; i++) {
+    ASGST_CallFrame asgst_frame = trace.frames[i];
+
+    ASGST_JavaFrame asgst_java_frame = asgst_frame.java_frame;
+
+    if (use_gct) {
+      jvmtiFrameInfo gst_frame = gst_frames[i];
+      if (gst_frame.location < 0) {
+        if (asgst_java_frame.type != ASGST_FRAME_NATIVE) {
+          fprintf(stderr, "Error in %s: ASGST frame %d is not native but GST frame %d is", prefix, i, i);
+          printAll();
+          return false;
+        }
+      } else {
+        if (gst_frame.location != asgst_java_frame.bci) {
+          fprintf(stderr, "Error in %s: ASGST frame %d location %p does not match GST frame %d location %p\n", prefix, i, asgst_java_frame.bci, i, gst_frame.location);
+          printAll();
+          return false;
+        }
+      }
+    }
+    if (use_asgct) {
+      ASGCT_CallFrame asgct_frame = asgct_trace.frames[i];
+      if (asgct_frame.lineno < 0) {
+        if (asgst_java_frame.type != ASGST_FRAME_NATIVE) {
+          fprintf(stderr, "Error in %s: ASGST frame %d is not native but ASGCT frame %d is", prefix, i, i);
+          printAll();
+          return false;
+        }
+      } else {
+        if (asgct_frame.lineno != asgst_java_frame.bci) {
+          fprintf(stderr, "Error in %s: ASGST frame %d location %p does not match ASGCT frame %d location %p\n", prefix, i, asgst_java_frame.bci, i, asgct_frame.lineno);
+          printAll();
+          return false;
+        }
+      }
+    }
+  }
+  return true;
 }
