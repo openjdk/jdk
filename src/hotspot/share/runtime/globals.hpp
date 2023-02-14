@@ -1421,7 +1421,7 @@ const int ObjectAlignmentInBytes = 8;
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
   product(ccstr, MetaspaceReclaimPolicy, "balanced", DIAGNOSTIC,            \
-          "options: balanced, aggressive, none")                            \
+          "options: balanced, aggressive")                                  \
                                                                             \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
