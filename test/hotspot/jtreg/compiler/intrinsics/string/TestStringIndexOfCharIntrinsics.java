@@ -33,10 +33,8 @@
  *                   -XX:-TieredCompilation
  *                   -XX:CompileCommand=compileonly,compiler.intrinsics.string.TestStringIndexOfCharIntrinsics::testIndexOfChar*
  *                   -XX:CompileCommand=inline,java.lang.String*::indexOf*
- *                   -XX:+UnlockExperimentalVMOptions
  *                   -XX:PerBytecodeTrapLimit=20000
  *                   -XX:PerMethodTrapLimit=20000
- *                   -XX:PerMethodSpecTrapLimit=20000
  *                   compiler.intrinsics.string.TestStringIndexOfCharIntrinsics
  */
 
