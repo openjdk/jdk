@@ -35,6 +35,9 @@ import java.util.function.Function;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ModuleEntry;
+import jdk.internal.classfile.jdktypes.ModuleDesc;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
@@ -186,6 +189,14 @@ public class Util {
         var result = new Object[list.size()]; // null check
         for (int i = 0; i < result.length; i++) {
             result[i] = TemporaryConstantPool.INSTANCE.classEntry(TemporaryConstantPool.INSTANCE.utf8Entry(toInternalName(list.get(i))));
+        }
+        return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
+    }
+
+    public static List<ModuleEntry> moduleEntryList(List<? extends ModuleDesc> list) {
+        var result = new Object[list.size()]; // null check
+        for (int i = 0; i < result.length; i++) {
+            result[i] = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(list.get(i).moduleName()));
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArrayNullsAllowed(result);
     }
