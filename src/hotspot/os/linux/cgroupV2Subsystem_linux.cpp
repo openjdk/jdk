@@ -158,9 +158,7 @@ jlong CgroupV2Subsystem::memory_and_swap_limit_in_bytes() {
     assert(memory_limit >= 0, "swap limit without memory limit?");
     return memory_limit + swap_limit;
   }
-  if (log_is_enabled(Trace, os, container)) {
-    log_trace(os, container)("Memory and Swap Limit is: " JLONG_FORMAT, swap_limit);
-  }
+  log_trace(os, container)("Memory and Swap Limit is: " JLONG_FORMAT, swap_limit);
   return swap_limit;
 }
 
