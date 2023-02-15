@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,18 @@
  * @run main/manual PmemTest
  * @requires (os.family == "linux")
  * @requires (os.arch == "x86_64")
+ */
+
+/* @test
+ * @summary Testing NVRAM mapped byte buffer support
+ * @run main/manual PmemTest
+ * @requires (os.family == "linux")
+ * @requires ((os.arch == "amd64")|(os.arch == "aarch64")|(os.arch == "ppc64le"))
+ * @ignore The test described here is currently disabled on systems that are not
+ * x64-based and lack an external NVRAM memory device. In order to re-enable the
+ * test, you will need to mount the NVRAM device, which will typically appear as
+ * /dev/pmem0, to the directory /mnt/pmem. Once that is done, you can follow the
+ * instructions above to create a test directory and remove the ignore tag.
  */
 
 import java.io.File;
