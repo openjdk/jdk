@@ -828,7 +828,8 @@ instruct reduce_andI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -844,7 +845,8 @@ instruct reduce_andL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -864,7 +866,8 @@ instruct reduce_orI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -880,7 +883,8 @@ instruct reduce_orL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -900,7 +904,8 @@ instruct reduce_xorI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -916,7 +921,8 @@ instruct reduce_xorL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -936,7 +942,8 @@ instruct reduce_addI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -952,7 +959,8 @@ instruct reduce_addL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -965,7 +973,13 @@ instruct reduce_addF(fRegF src1_dst, vReg src2, vReg tmp) %{
             "vfredosum.vs $tmp, $src2, $tmp\n\t"
             "vfmv.f.s $src1_dst, $tmp" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e32);
+    int length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
+    if (length_in_bytes != MaxVectorSize) {
+      __ mv(t0, length_in_bytes / type2aelembytes(T_FLOAT));
+      __ vsetvli(t0, t0, Assembler::e32);
+    } else {
+      __ vsetvli(t0, x0, Assembler::e32);
+    }
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));
@@ -982,7 +996,13 @@ instruct reduce_addD(fRegD src1_dst, vReg src2, vReg tmp) %{
             "vfredosum.vs $tmp, $src2, $tmp\n\t"
             "vfmv.f.s $src1_dst, $tmp" %}
   ins_encode %{
-    __ vsetvli(t0, x0, Assembler::e64);
+    int length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
+    if (length_in_bytes != MaxVectorSize) {
+      __ mv(t0, length_in_bytes / type2aelembytes(T_DOUBLE));
+      __ vsetvli(t0, t0, Assembler::e64);
+    } else {
+      __ vsetvli(t0, x0, Assembler::e64);
+    }
     __ vfmv_s_f(as_VectorRegister($tmp$$reg), $src1_dst$$FloatRegister);
     __ vfredosum_vs(as_VectorRegister($tmp$$reg), as_VectorRegister($src2$$reg),
                     as_VectorRegister($tmp$$reg));
@@ -1004,7 +1024,8 @@ instruct vreduce_maxI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1018,7 +1039,8 @@ instruct vreduce_maxL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1036,7 +1058,8 @@ instruct vreduce_minI(iRegINoSp dst, iRegIorL2I src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1050,7 +1073,8 @@ instruct vreduce_minL(iRegLNoSp dst, iRegL src1, vReg src2, vReg tmp) %{
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src2);
     __ rvv_reduce_integral($dst$$Register, as_VectorRegister($tmp$$reg),
-                           $src1$$Register, as_VectorRegister($src2$$reg), bt, this->ideal_Opcode());
+                           $src1$$Register, as_VectorRegister($src2$$reg), bt,
+                           this->ideal_Opcode(), Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1067,7 +1091,7 @@ instruct vreduce_maxF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
     __ reduce_minmax_FD_v($dst$$FloatRegister,
                           $src1$$FloatRegister, as_VectorRegister($src2$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          false /* is_double */, false /* is_min */);
+                          false /* is_double */, false /* is_min */, Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1082,7 +1106,7 @@ instruct vreduce_maxD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
     __ reduce_minmax_FD_v($dst$$FloatRegister,
                           $src1$$FloatRegister, as_VectorRegister($src2$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          true /* is_double */, false /* is_min */);
+                          true /* is_double */, false /* is_min */, Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1099,7 +1123,7 @@ instruct vreduce_minF(fRegF dst, fRegF src1, vReg src2, vReg tmp1, vReg tmp2) %{
     __ reduce_minmax_FD_v($dst$$FloatRegister,
                           $src1$$FloatRegister, as_VectorRegister($src2$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          false /* is_double */, true /* is_min */);
+                          false /* is_double */, true /* is_min */, Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
@@ -1114,7 +1138,7 @@ instruct vreduce_minD(fRegD dst, fRegD src1, vReg src2, vReg tmp1, vReg tmp2) %{
     __ reduce_minmax_FD_v($dst$$FloatRegister,
                           $src1$$FloatRegister, as_VectorRegister($src2$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          true /* is_double */, true /* is_min */);
+                          true /* is_double */, true /* is_min */, Matcher::vector_length_in_bytes(this, $src2));
   %}
   ins_pipe(pipe_slow);
 %}
