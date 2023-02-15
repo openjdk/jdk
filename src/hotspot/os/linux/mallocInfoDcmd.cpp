@@ -57,6 +57,6 @@ void MallocInfoDcmd::execute(DCmdSource source, TRAPS) {
   ALLOW_C_FUNCTION(::fclose, ::fclose(stream);)
   ALLOW_C_FUNCTION(::free, ::free(buf);)
 #else
-  _output->print(malloc_info_unavailable);
+  _output->print_cr(malloc_info_unavailable);
 #endif // __GLIBC__
 }
