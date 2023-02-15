@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 1234567
+ * @bug 8302491
+ * @requires vm.compMode != "Xint"
  * @summary Test that StackOverflowError is correctly reporting in stack trace
  *          as underlying cause of NoClassDefFoundError
  * @run main/othervm -Xcomp -Xss256k TestNoClassDefFoundCause
@@ -75,11 +76,13 @@ public class TestNoClassDefFoundCause {
     public static void main(String args[]) throws Exception{
         try {
             CrashWithSOE b = new CrashWithSOE();
-            throw new RuntimeException("Error: Expected exception wasn't thrown.");
-        }catch (Throwable t){
+            throw new RuntimeException("Error: Any expected exception wasn't thrown");
+        }catch (NoClassDefFoundError t){
             System.err.println("Check results:");
             verify_stack(t, "Caused by: java.lang.StackOverflowError");
             System.err.println("Exception stack trace for " + t.toString() + " is ok");
+        } catch (Throwable t) {
+            System.err.println("Exception NoClassDefFoundError wasn't thrown");
         }
     }
 }
