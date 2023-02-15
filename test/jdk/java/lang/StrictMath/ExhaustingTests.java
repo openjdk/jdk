@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8301833
+ * @bug 8301833 8302026
  * @build Tests
  * @build FdlibmTranslit
  * @build ExhaustingTests
