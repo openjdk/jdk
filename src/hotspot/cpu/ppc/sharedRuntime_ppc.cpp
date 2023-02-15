@@ -3091,7 +3091,8 @@ void SharedRuntime::generate_deopt_blob() {
   // stack: (caller_of_deoptee, ...).
 
   // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
-  // Otherwise the loaded value will be equal to the current SP (see frame::initial_deoptimization_info())
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
   Register caller_sp = R23_tmp3;
   __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
   __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
@@ -3232,7 +3233,8 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #endif
 
   // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
-  // Otherwise the loaded value will be equal to the current SP (see frame::initial_deoptimization_info())
+  // If not compiled the loaded value is equal to the current SP (see frame::initial_deoptimization_info())
+  // and the frame is effectively not resized.
   Register caller_sp = R23_tmp3;
   __ ld_ptr(caller_sp, Deoptimization::UnrollBlock::initial_info_offset_in_bytes(), unroll_block_reg);
   __ resize_frame_absolute(caller_sp, R24_tmp4, R25_tmp5);
