@@ -55,14 +55,4 @@ public sealed interface MemberRefEntry extends PoolEntry
     default Utf8Entry type() {
         return nameAndType().type();
     }
-
-    /**
-     * {@return whether this member is a method}
-     */
-    boolean isMethod();
-
-    /**
-     * {@return whether this member is an interface method}
-     */
-    boolean isInterface();
 }

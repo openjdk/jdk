@@ -707,16 +707,6 @@ public abstract sealed class ConcreteEntry {
         public FieldRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.fieldRefEntry(ref1, ref2);
         }
-
-        @Override
-        public boolean isMethod() {
-            return false;
-        }
-
-        @Override
-        public boolean isInterface() {
-            return false;
-        }
     }
 
     public static final class ConcreteMethodRefEntry extends MemberRefEntry implements MethodRefEntry {
@@ -730,16 +720,6 @@ public abstract sealed class ConcreteEntry {
         public MethodRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.methodRefEntry(ref1, ref2);
         }
-
-        @Override
-        public boolean isInterface() {
-            return false;
-        }
-
-        @Override
-        public boolean isMethod() {
-            return true;
-        }
     }
 
     public static final class ConcreteInterfaceMethodRefEntry extends MemberRefEntry implements InterfaceMethodRefEntry {
@@ -752,16 +732,6 @@ public abstract sealed class ConcreteEntry {
         @Override
         public InterfaceMethodRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.interfaceMethodRefEntry(ref1, ref2);
-        }
-
-        @Override
-        public boolean isInterface() {
-            return true;
-        }
-
-        @Override
-        public boolean isMethod() {
-            return true;
         }
     }
 
@@ -919,7 +889,7 @@ public abstract sealed class ConcreteEntry {
         @Override
         public DirectMethodHandleDesc asSymbol() {
             return MethodHandleDesc.of(
-                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference().isInterface()),
+                    DirectMethodHandleDesc.Kind.valueOf(kind(), reference() instanceof InterfaceMethodRefEntry),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).owner().asSymbol(),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).nameAndType().name().stringValue(),
                     ((jdk.internal.classfile.constantpool.MemberRefEntry) reference()).nameAndType().type().stringValue());
