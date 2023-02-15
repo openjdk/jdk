@@ -173,8 +173,10 @@ void ClassLoaderMetaspace::usage_numbers(size_t* p_used_words, size_t* p_committ
                                          size_t* p_capacity_words) const {
   size_t used_nc, comm_nc, cap_nc;
   usage_numbers(Metaspace::MetadataType::NonClassType, &used_nc, &comm_nc, &cap_nc);
-  size_t used_c, comm_c, cap_c;
-  usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
+  size_t used_c = 0, comm_c = 0, cap_c = 0;
+  if (Metaspace::using_class_space()) {
+    usage_numbers(Metaspace::MetadataType::ClassType, &used_c, &comm_c, &cap_c);
+  }
   if (p_used_words != nullptr) {
     (*p_used_words) = used_nc + used_c;
   }

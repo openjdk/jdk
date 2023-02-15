@@ -32,6 +32,17 @@
  * @run testng/othervm --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
  */
 
+/*
+ * @test
+ * @summary Test of diagnostic command VM.classloader_stats (-UseCCP)
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.compiler
+ *          java.management
+ *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @run testng/othervm -XX:-UseCompressedClassPointers --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED --add-exports=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED ClassLoaderStatsTest
+ */
+
 import org.testng.annotations.Test;
 import org.testng.Assert;
 
