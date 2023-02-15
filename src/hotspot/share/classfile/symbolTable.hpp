@@ -76,7 +76,7 @@ class SymbolTable : public AllStatic {
 
   static Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
   static Symbol* do_lookup(const char* name, int len, uintx hash);
-  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool heap);
+  static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent);
 
   // lookup only, won't add. Also calculate hash. Used by the ClassfileParser.
   static Symbol* lookup_only(const char* name, int len, unsigned int& hash);

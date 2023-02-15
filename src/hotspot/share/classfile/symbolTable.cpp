@@ -324,7 +324,7 @@ Symbol* SymbolTable::new_symbol(const char* name, int len) {
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
   if (sym == nullptr) {
-    sym = do_add_if_needed(name, len, hash, true);
+    sym = do_add_if_needed(name, len, hash, /* is_permanent */ false);
   }
   assert(sym->refcount() != 0, "lookup should have incremented the count");
   assert(sym->equals(name, len), "symbol must be properly initialized");
@@ -339,7 +339,7 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* found = lookup_common(name, len, hash);
   if (found == nullptr) {
-    found = do_add_if_needed(name, len, hash, true);
+    found = do_add_if_needed(name, len, hash, /* is_permanent */ false);
   }
   return found;
 }
@@ -441,21 +441,21 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
 void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHandle& cp,
                               int names_count, const char** names, int* lengths,
                               int* cp_indices, unsigned int* hashValues) {
-  // Note that c_heap will be true for non-strong hidden classes.
+  // Note that is_permanent will be false for non-strong hidden classes.
   // even if their loader is the boot loader because they will have a different cld.
-  bool c_heap = !loader_data->is_the_null_class_loader_data();
+  bool is_permanent = loader_data->is_the_null_class_loader_data();
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
     unsigned int hash = hashValues[i];
     assert(lookup_shared(name, len, hash) == nullptr, "must have checked already");
-    Symbol* sym = do_add_if_needed(name, len, hash, c_heap);
+    Symbol* sym = do_add_if_needed(name, len, hash, is_permanent);
     assert(sym->refcount() != 0, "lookup should have incremented the count");
     cp->symbol_at_put(cp_indices[i], sym);
   }
 }
 
-Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool heap) {
+Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent) {
   SymbolTableLookup lookup(name, len, hash);
   SymbolTableGet stg;
   bool clean_hint = false;
@@ -465,8 +465,9 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
 
   ResourceMark rm(current);
   const int alloc_size = Symbol::byte_size(len);
-  u1* u1_buf = NEW_RESOURCE_ARRAY(u1, alloc_size);
-  Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len, (heap && !DumpSharedSpaces) ? 1 : PERM_REFCOUNT);
+  u1* u1_buf = NEW_RESOURCE_ARRAY_IN_THREAD(current, u1, alloc_size);
+  Symbol* tmp = ::new ((void*)u1_buf) Symbol((const u1*)name, len,
+                                             (is_permanent || DumpSharedSpaces) ? PERM_REFCOUNT : 1);
 
   do {
     if (_local_table->insert(current, lookup, *tmp, &rehash_warning, &clean_hint)) {
@@ -506,7 +507,7 @@ Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   int len = (int)strlen(name);
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
   if (sym == nullptr) {
-    sym = do_add_if_needed(name, len, hash, false);
+    sym = do_add_if_needed(name, len, hash, /* is_permanent */ true);
   }
   if (!sym->is_permanent()) {
     sym->make_permanent();

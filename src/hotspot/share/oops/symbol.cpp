@@ -65,6 +65,7 @@ Symbol::Symbol(const u1* name, int length, int refcount) {
   memcpy(_body, name, length);
 }
 
+// This copies the symbol when it is added to the ConcurrentHashTable.
 Symbol::Symbol(const Symbol& s1) {
   _hash_and_refcount = s1._hash_and_refcount;
   _length = s1._length;
