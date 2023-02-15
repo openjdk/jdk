@@ -24,8 +24,8 @@
 /**
  * @test
  * @summary Verifies correct JVMTI behavior for BoundVirtualThreads.
- * @compile --enable-preview -source ${jdk.version} BoundVThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:BoundVThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BoundVThreadTest
+ * @enablePreview
+ * @run main/othervm/native -agentlib:BoundVThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BoundVThreadTest
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
