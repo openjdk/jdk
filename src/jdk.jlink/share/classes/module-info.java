@@ -23,8 +23,6 @@
  * questions.
  */
 
-import jdk.tools.jlink.internal.plugins.ShareUTF8EntriesPlugin;
-
 /**
  * Defines the <em>{@index jlink jlink tool}</em> tool for creating run-time
  * images, the <em>{@index jmod jmod tool}</em> tool for creating and manipulating
@@ -83,7 +81,5 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin,
-        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin,
-        jdk.tools.jlink.internal.plugins.ShareUTF8EntriesPlugin;
-
+        jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
 }
