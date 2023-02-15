@@ -95,8 +95,21 @@ public sealed interface ConstantPoolBuilder
      */
     <T> T optionValue(Classfile.Option.Key option);
 
+    /**
+     * {@return whether the provided constant pool is index-compatible with this
+     * one}  This may be because they are the same constant pool, or because this
+     * constant pool was copied from the other.
+     *
+     * @param other the other constant pool
+     */
     boolean canWriteDirect(ConstantPool constantPool);
 
+    /**
+     * Writes associated bootstrap method entries to the specified writer
+     *
+     * @param buf the writer
+     * @return false when no bootstrap method entry has been written
+     */
     boolean writeBootstrapMethods(BufWriter buf);
 
     /**
@@ -184,7 +197,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module whose name
      * is encoded in the provided {@linkplain Utf8Entry}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
@@ -195,7 +208,7 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ModuleEntry} describing the module described by
      * provided {@linkplain ModuleDesc}}
-     * If a Module entry in the pool already describes this class,
+     * If a module entry in the pool already describes this class,
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
