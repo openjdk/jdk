@@ -74,7 +74,7 @@ class Bytes: AllStatic {
     T x = get_native<T>(p);
 
     if (Endian::is_Java_byte_ordering_different()) {
-      x = byteswap<T>(x);
+      x = byteswap(x);
     }
 
     return x;
@@ -83,7 +83,7 @@ class Bytes: AllStatic {
   template <typename T>
   static inline void put_Java(address p, T x) {
     if (Endian::is_Java_byte_ordering_different()) {
-      x = byteswap<T>(x);
+      x = byteswap(x);
     }
 
     put_native<T>(p, x);

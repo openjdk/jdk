@@ -128,7 +128,7 @@ private:
       }
 
       if (swap) {
-        tmp = byteswap<T>(tmp);
+        tmp = byteswap(tmp);
       }
 
       if (is_dst_aligned) {

@@ -60,3 +60,25 @@ TEST_VM(utilities, byteswap) {
   test_byteswap<int8_t>();
   test_byteswap<uint8_t>();
 }
+
+// Here is some object code to look at if we want to do a manual
+// study.  One could find the build file named test_byteswap.o.cmdline
+// and hand-edit the command line to produce assembly code in
+// test_byteswap.s.
+//
+// Or, given the two empty "fence functions", one could do a
+// quick scan like this:
+//
+// $ objdump -D $(find build/*release -name test_byteswap.o) \
+//   | sed -n '/start_code_quality/,$p;/end_code_quality/q' \
+//   | egrep -B10 bswap  # or grep -B20 cfi_endproc
+
+void start_code_quality_byteswap() { }
+
+int32_t code_quality_reverse_bytes_32(int32_t x) {
+  return byteswap(x);
+}
+
+int64_t code_quality_reverse_bytes_64(int64_t x) {
+  return byteswap(x);
+}

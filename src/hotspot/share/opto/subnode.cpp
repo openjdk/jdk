@@ -39,7 +39,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "utilities/moveBits.hpp"
+#include "utilities/reverse_bits.hpp"
 
 // Portions of code courtesy of Clifford Click
 

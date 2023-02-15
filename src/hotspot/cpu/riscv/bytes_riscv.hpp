@@ -155,13 +155,13 @@ class Bytes: AllStatic {
 #endif
 
   // Efficient reading and writing of unaligned unsigned data in Java byte ordering (i.e. big-endian ordering)
-  static inline u2 get_Java_u2(address p) { return byteswap<u2>(get_native_u2(p)); }
-  static inline u4 get_Java_u4(address p) { return byteswap<u4>(get_native_u4(p)); }
-  static inline u8 get_Java_u8(address p) { return byteswap<u8>(get_native_u8(p)); }
+  static inline u2 get_Java_u2(address p) { return byteswap(get_native_u2(p)); }
+  static inline u4 get_Java_u4(address p) { return byteswap(get_native_u4(p)); }
+  static inline u8 get_Java_u8(address p) { return byteswap(get_native_u8(p)); }
 
-  static inline void put_Java_u2(address p, u2 x) { put_native_u2(p, byteswap<u2>(x)); }
-  static inline void put_Java_u4(address p, u4 x) { put_native_u4(p, byteswap<u4>(x)); }
-  static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, byteswap<u8>(x)); }
+  static inline void put_Java_u2(address p, u2 x) { put_native_u2(p, byteswap(x)); }
+  static inline void put_Java_u4(address p, u4 x) { put_native_u4(p, byteswap(x)); }
+  static inline void put_Java_u8(address p, u8 x) { put_native_u8(p, byteswap(x)); }
 };
 
 #endif // CPU_RISCV_BYTES_RISCV_HPP

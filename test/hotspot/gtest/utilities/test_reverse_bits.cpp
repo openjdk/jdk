@@ -24,11 +24,11 @@
 
 #include "precompiled.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/moveBits.hpp"
+#include "utilities/reverse_bits.hpp"
 #include "unittest.hpp"
 
 template<typename T>
-static inline void test_moveBits() {
+static inline void test_reverse_bits() {
   const int  NBIT = sizeof(T) * 8;
   const bool IS_U = (T)-1 > 0;
   const int XOR_REV_BITS = (NBIT - 1);
@@ -48,43 +48,35 @@ static inline void test_moveBits() {
   }
 }
 
-TEST_VM(utilities, moveBits) {
-  test_moveBits<int64_t>();
-  test_moveBits<uint64_t>();
-  test_moveBits<int32_t>();
-  test_moveBits<uint32_t>();
-  test_moveBits<int16_t>();
-  test_moveBits<uint16_t>();
-  test_moveBits<int8_t>();
-  test_moveBits<uint8_t>();
+TEST_VM(utilities, reverse_bits) {
+  test_reverse_bits<int64_t>();
+  test_reverse_bits<uint64_t>();
+  test_reverse_bits<int32_t>();
+  test_reverse_bits<uint32_t>();
+  test_reverse_bits<int16_t>();
+  test_reverse_bits<uint16_t>();
+  test_reverse_bits<int8_t>();
+  test_reverse_bits<uint8_t>();
 }
 
 // Here is some object code to look at if we want to do a manual
-// study.  One could find the build file named test_moveBits.o.cmdline
+// study.  One could find the build file named test_reverse_bits.o.cmdline
 // and hand-edit the command line to produce assembly code in
-// test_moveBits.s.
+// test_reverse_bits.s.
 //
 // Or, given the two empty "fence functions", one could do a
 // quick scan like this:
 //
-// $ objdump -D $(find build/*release -name test_moveBits.o) \
+// $ objdump -D $(find build/*release -name test_reverse_bits.o) \
 //   | sed -n '/start_code_quality/,$p;/end_code_quality/q' \
 //   | egrep -B10 bswap  # or grep -B20 cfi_endproc
 
-void start_code_quality_moveBits() { }
+void start_code_quality_reverse_bits() { }
 
 int32_t code_quality_reverse_bits_32(int32_t x) {
   return reverse_bits(x);
 }
 
-int32_t code_quality_reverse_bytes_32(int32_t x) {
-  return byteswap(x);
-}
-
 int64_t code_quality_reverse_bits_64(int64_t x) {
   return reverse_bits(x);
-}
-
-int64_t code_quality_reverse_bytes_64(int64_t x) {
-  return byteswap(x);
 }

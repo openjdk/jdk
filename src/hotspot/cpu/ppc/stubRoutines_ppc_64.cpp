@@ -107,10 +107,10 @@ address StubRoutines::ppc::generate_crc_constants(juint reverse_poly) {
             c = fold_byte(b, reverse_poly),
             d = fold_byte(c, reverse_poly);
 #ifndef VM_LITTLE_ENDIAN
-      a = byteswap<juint>(a);
-      b = byteswap<juint>(b);
-      c = byteswap<juint>(c);
-      d = byteswap<juint>(d);
+      a = byteswap(a);
+      b = byteswap(b);
+      c = byteswap(c);
+      d = byteswap(d);
 #endif
       ptr[i         ] = a;
       ptr[i +    256] = b;

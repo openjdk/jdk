@@ -25,38 +25,33 @@
 #ifndef SHARE_UTILITIES_BYTESWAP_HPP
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
-// Byte swapping for 8-bit, 16-bit, 32-bit, and 64-bit integers.
-
-// T byteswap<T>(T)
-//
-// Reverses the bytes for the value of the integer type T. Partially compatible with std::byteswap
-// introduced in C++23.
-
 #include "metaprogramming/enableIf.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/macros.hpp"
 
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
-template <typename T>
-using CanByteswapImpl = std::integral_constant<bool, (std::is_integral<T>::value &&
-                                                      (sizeof(T) == 1 ||
-                                                       sizeof(T) == 2 ||
-                                                       sizeof(T) == 4 ||
-                                                       sizeof(T) == 8))>;
-
 template <typename T, size_t N = sizeof(T)>
 struct ByteswapImpl;
 
-template <typename T, ENABLE_IF(CanByteswapImpl<T>::value)>
-ALWAYSINLINE T byteswap(T x) {
+// T byteswap<T>(T)
+//
+// Reverses the bytes for the value of the integer type T. Partially compatible with std::byteswap
+// introduced in C++23.
+template <typename T, ENABLE_IF(std::is_integral<T>::value)>
+inline T byteswap(T x) {
   using U = std::make_unsigned_t<T>;
-  STATIC_ASSERT(sizeof(T) == sizeof(U));
   return static_cast<T>(ByteswapImpl<U>{}(static_cast<U>(x)));
 }
+
+// We support 8-bit integer types to be compatible with C++23's std::byteswap.
+template <typename T>
+struct ByteswapImpl<T, 1> {
+  inline constexpr T operator()(T x) const {
+    return x;
+  }
+};
 
 /*****************************************************************************
  * Fallback
@@ -65,47 +60,27 @@ ALWAYSINLINE T byteswap(T x) {
 template <typename T, size_t N = sizeof(T)>
 struct ByteswapFallbackImpl;
 
-// We support 8-bit integer types to be compatible with C++23's std::byteswap.
-template <typename T>
-struct ByteswapFallbackImpl<T, 1> {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 1);
-
-  ALWAYSINLINE T operator()(T x) const {
-    return x;
-  }
-};
-
 template <typename T>
 struct ByteswapFallbackImpl<T, 2> {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 2);
-
-  ALWAYSINLINE uint16_t operator()(uint16_t x) const {
+  inline constexpr uint16_t operator()(uint16_t x) const {
     return (((x & UINT16_C(0x00ff)) << 8) | ((x & UINT16_C(0xff00)) >> 8));
   }
 };
 
 template <typename T>
 struct ByteswapFallbackImpl<T, 4> {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 4);
-
-  ALWAYSINLINE uint32_t operator()(uint32_t x) const {
+  inline constexpr uint32_t operator()(uint32_t x) const {
     return (((x & UINT32_C(0x000000ff)) << 24) | ((x & UINT32_C(0x0000ff00)) << 8) |
-            ((x & UINT32_C(0x00ff0000)) >> 8) | ((x & UINT32_C(0xff000000)) >> 24));
+            ((x & UINT32_C(0x00ff0000)) >> 8)  | ((x & UINT32_C(0xff000000)) >> 24));
   }
 };
 
 template <typename T>
 struct ByteswapFallbackImpl<T, 8> {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 8);
-
-  ALWAYSINLINE uint64_t operator()(uint64_t x) const {
+  inline constexpr uint64_t operator()(uint64_t x) const {
     return (((x & UINT64_C(0x00000000000000ff)) << 56) | ((x & UINT64_C(0x000000000000ff00)) << 40) |
             ((x & UINT64_C(0x0000000000ff0000)) << 24) | ((x & UINT64_C(0x00000000ff000000)) << 8) |
-            ((x & UINT64_C(0x000000ff00000000)) >> 8) | ((x & UINT64_C(0x0000ff0000000000)) >> 24) |
+            ((x & UINT64_C(0x000000ff00000000)) >> 8)  | ((x & UINT64_C(0x0000ff0000000000)) >> 24) |
             ((x & UINT64_C(0x00ff000000000000)) >> 40) | ((x & UINT64_C(0xff00000000000000)) >> 56));
   }
 };
@@ -113,7 +88,7 @@ struct ByteswapFallbackImpl<T, 8> {
 /*****************************************************************************
  * GCC and compatible (including Clang)
  *****************************************************************************/
-#if defined(TARGET_COMPILER_gcc)
+#if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
 #if defined(__clang__) || defined(ASSERT)
 
@@ -123,44 +98,24 @@ struct ByteswapFallbackImpl<T, 8> {
 // architecture unlike GCC. This suggests the optimization pass for GCC that recognizes byteswapping
 // is architecture agnostic, while for Clang it is not.
 
-// We support 8-bit integer types to be compatible with C++23's std::byteswap.
 template <typename T>
-struct ByteswapImpl<T, 1> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 1);
-
-  ALWAYSINLINE T operator()(T x) const {
-    return x;
+struct ByteswapImpl<T, 2> {
+  inline constexpr uint16_t operator()(uint16_t x) const {
+    return __builtin_bswap16(x);
   }
 };
 
 template <typename T>
-struct ByteswapImpl<T, 2> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == sizeof(uint16_t));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(__builtin_bswap16(static_cast<uint16_t>(x)));
+struct ByteswapImpl<T, 4> {
+  inline constexpr uint32_t operator()(uint32_t x) const {
+    return __builtin_bswap32(x);
   }
 };
 
 template <typename T>
-struct ByteswapImpl<T, 4> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == sizeof(uint32_t));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(__builtin_bswap32(static_cast<uint32_t>(x)));
-  }
-};
-
-template <typename T>
-struct ByteswapImpl<T, 8> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == sizeof(uint64_t));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(__builtin_bswap64(static_cast<uint64_t>(x)));
+struct ByteswapImpl<T, 8> {
+  inline constexpr uint64_t operator()(uint64_t x) const {
+    return __builtin_bswap64(x);
   }
 };
 
@@ -176,7 +131,7 @@ struct ByteswapImpl<T, 8> final {
 // one way to implement it, as we have in fallback.
 
 template <typename T, size_t N>
-struct ByteswapImpl final : public ByteswapFallbackImpl<T, N> {};
+struct ByteswapImpl : public ByteswapFallbackImpl<T, N> {};
 
 #endif
 
@@ -185,123 +140,32 @@ struct ByteswapImpl final : public ByteswapFallbackImpl<T, N> {};
  *****************************************************************************/
 #elif defined(TARGET_COMPILER_visCPP)
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #pragma intrinsic(_byteswap_ushort)
 #pragma intrinsic(_byteswap_ulong)
 #pragma intrinsic(_byteswap_uint64)
 
-// We support 8-bit integer types to be compatible with C++23's std::byteswap.
 template <typename T>
-struct ByteswapImpl<T, 1> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 1);
-
-  ALWAYSINLINE T operator()(T x) const {
-    return x;
+struct ByteswapImpl<T, 2> {
+  inline unsigned short operator()(unsigned short x) const {
+    return _byteswap_ushort(x);
   }
 };
 
 template <typename T>
-struct ByteswapImpl<T, 2> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned short) == 2);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned short));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(_byteswap_ushort(static_cast<unsigned short>(x)));
+struct ByteswapImpl<T, 4> {
+  inline unsigned long operator()(unsigned long x) const {
+    return _byteswap_ulong(x);
   }
 };
 
 template <typename T>
-struct ByteswapImpl<T, 4> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned long) == 4);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned long));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(_byteswap_ulong(static_cast<unsigned long>(x)));
+struct ByteswapImpl<T, 8> {
+  inline unsigned __int64 operator()(unsigned __int64 x) const {
+    return _byteswap_uint64(x);
   }
 };
-
-template <typename T>
-struct ByteswapImpl<T, 8> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned __int64) == 8);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned __int64));
-
-  ALWAYSINLINE T operator()(T x) const {
-    return static_cast<T>(_byteswap_uint64(static_cast<unsigned __int64>(x)));
-  }
-};
-
-/*****************************************************************************
- * IBM XL C/C++
- *****************************************************************************/
-#elif defined(TARGET_COMPILER_xlc)
-
-#include <builtins.h>
-
-// We support 8-bit integer types to be compatible with C++23's std::byteswap.
-template <typename T>
-struct ByteswapImpl<T, 1> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(T) == 1);
-
-  ALWAYSINLINE T operator()(T x) const {
-    return x;
-  }
-};
-
-template <typename T>
-struct ByteswapImpl<T, 2> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned short) == 2);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned short));
-
-  ALWAYSINLINE T operator()(T x) const {
-    unsigned short y;
-    __store2r(static_cast<unsigned short>(x), &y);
-    return static_cast<T>(y);
-  }
-};
-
-template <typename T>
-struct ByteswapImpl<T, 4> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned int) == 4);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned int));
-
-  ALWAYSINLINE T operator()(T x) const {
-    unsigned int y;
-    __store4r(static_cast<unsigned int>(x), &y);
-    return static_cast<T>(y);
-  }
-};
-
-#if defined(_ARCH_PWR7) && defined(_ARCH_PPC64)
-
-// __store8r is only available on POWER7 and newer in 64-bit mode.
-
-template <typename T>
-struct ByteswapImpl<T, 8> final {
-  STATIC_ASSERT(CanByteswapImpl<T>::value);
-  STATIC_ASSERT(sizeof(unsigned long long) == 8);
-  STATIC_ASSERT(sizeof(T) == sizeof(unsigned long long));
-
-  ALWAYSINLINE T operator()(T x) const {
-    unsigned long long y;
-    __store8r(static_cast<unsigned long long>(x), &y);
-    return static_cast<T>(y);
-  }
-};
-
-#else
-
-template <typename T>
-struct ByteswapImpl<T, 8> final : public ByteswapFallbackImpl<T, 8> {};
-
-#endif
 
 /*****************************************************************************
  * Unknown toolchain
