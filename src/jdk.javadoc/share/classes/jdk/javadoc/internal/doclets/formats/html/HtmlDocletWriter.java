@@ -291,9 +291,10 @@ public class HtmlDocletWriter {
     private void addMethodInfo(ExecutableElement method, Content dl) {
         var enclosing = (TypeElement) method.getEnclosingElement();
         var overrideInfo = utils.overriddenMethod(method);
-        VisibleMemberTable vmt = configuration.getVisibleMemberTable(enclosing);
+        var vmt = configuration.getVisibleMemberTable(enclosing);
+        var implementedMethods = vmt.getImplementedMethods(method);
         if ((!enclosing.getInterfaces().isEmpty()
-                && !vmt.getImplementedMethods(method).isEmpty())
+                && !implementedMethods.isEmpty())
                 || overrideInfo != null) {
             // TODO note that if there are any overridden interface methods throughout the
             //   hierarchy, !vmt.getImplementedMethods(method).isEmpty(), their information
