@@ -39,7 +39,7 @@ import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERAR
  */
 public class Options {
 
-    public record OptionValue<V>(Classfile.Option.Key key, V value) implements Classfile.Option<V> { }
+    public record OptionValue(Classfile.Option.Key key, Object value) implements Classfile.Option { }
 
     public Boolean generateStackmaps = true;
     public Boolean processDebug = true;
@@ -58,20 +58,22 @@ public class Options {
     };
 
     @SuppressWarnings("unchecked")
-    public Options(Collection<Classfile.Option<?>> options) {
-        for (Classfile.Option<?> v : options)
-            switch (((Options.OptionValue<?>) v).key()) {
-                case GENERATE_STACK_MAPS -> generateStackmaps = (Boolean) v.value();
-                case PROCESS_DEBUG -> processDebug = (Boolean) v.value();
-                case PROCESS_LINE_NUMBERS -> processLineNumbers = (Boolean) v.value();
-                case PROCESS_UNKNOWN_ATTRIBUTES -> processUnknownAttributes = (Boolean) v.value();
-                case CP_SHARING -> cpSharing = (Boolean) v.value();
-                case FIX_SHORT_JUMPS -> fixJumps = (Boolean) v.value();
-                case PATCH_DEAD_CODE -> patchCode = (Boolean) v.value();
-                case HIERARCHY_RESOLVER -> classHierarchyResolver = (ClassHierarchyResolver) v.value();
-                case ATTRIBUTE_MAPPER -> attributeMapper = (Function<Utf8Entry, AttributeMapper<?>>) v.value();
-                case FILTER_DEAD_LABELS -> filterDeadLabels = (Boolean) v.value();
+    public Options(Collection<Classfile.Option> options) {
+        for (var o : options) {
+            var v = ((OptionValue)o).value();
+            switch (o.key()) {
+                case GENERATE_STACK_MAPS -> generateStackmaps = (Boolean) v;
+                case PROCESS_DEBUG -> processDebug = (Boolean) v;
+                case PROCESS_LINE_NUMBERS -> processLineNumbers = (Boolean) v;
+                case PROCESS_UNKNOWN_ATTRIBUTES -> processUnknownAttributes = (Boolean) v;
+                case CP_SHARING -> cpSharing = (Boolean) v;
+                case FIX_SHORT_JUMPS -> fixJumps = (Boolean) v;
+                case PATCH_DEAD_CODE -> patchCode = (Boolean) v;
+                case HIERARCHY_RESOLVER -> classHierarchyResolver = (ClassHierarchyResolver) v;
+                case ATTRIBUTE_MAPPER -> attributeMapper = (Function<Utf8Entry, AttributeMapper<?>>) v;
+                case FILTER_DEAD_LABELS -> filterDeadLabels = (Boolean) v;
             }
+        }
     }
 
     @SuppressWarnings("unchecked")

@@ -83,7 +83,7 @@ public sealed interface ConstantPoolBuilder
      *
      * @param options the processing options
      */
-    static ConstantPoolBuilder of(Collection<Classfile.Option<?>> options) {
+    static ConstantPoolBuilder of(Collection<Classfile.Option> options) {
         return new SplitConstantPool(new Options(options));
     }
 

@@ -64,7 +64,7 @@ public final class ClassImpl
     private List<ClassEntry> interfaces;
 
     public ClassImpl(byte[] cfbytes,
-                     Collection<Classfile.Option<?>> options) {
+                     Collection<Classfile.Option> options) {
         this.reader = new ClassReaderImpl(cfbytes, options);
         ClassReaderImpl reader = (ClassReaderImpl) this.reader;
         int p = reader.interfacesPos;

@@ -89,7 +89,7 @@ public final class ClassReaderImpl
 
     @SuppressWarnings("unchecked")
     ClassReaderImpl(byte[] classfileBytes,
-                    Collection<Classfile.Option<?>> options) {
+                    Collection<Classfile.Option> options) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.options = new Options(options);
