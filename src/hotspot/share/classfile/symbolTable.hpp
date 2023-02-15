@@ -74,7 +74,6 @@ class SymbolTable : public AllStatic {
   static void mark_has_items_to_clean();
   static bool has_items_to_clean();
 
-  static Symbol* allocate_symbol(const char* name, int len, bool c_heap); // Assumes no characters larger than 0x7F
   static Symbol* do_lookup(const char* name, int len, uintx hash);
   static Symbol* do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent);
 
