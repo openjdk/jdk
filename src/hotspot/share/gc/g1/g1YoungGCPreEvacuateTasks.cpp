@@ -76,10 +76,10 @@ public:
   }
 
   ~JavaThreadRetireTLABAndFlushLogs() {
-    static_assert(std::is_trivially_destructible<G1ConcurrentRefineStats>::value);
+    static_assert(std::is_trivially_destructible<G1ConcurrentRefineStats>::value, "must be");
     FREE_C_HEAP_ARRAY(G1ConcurrentRefineStats, _local_refinement_stats);
 
-    static_assert(std::is_trivially_destructible<ThreadLocalAllocStats>::value);
+    static_assert(std::is_trivially_destructible<ThreadLocalAllocStats>::value, "must be");
     FREE_C_HEAP_ARRAY(ThreadLocalAllocStats, _local_tlab_stats);
   }
 
