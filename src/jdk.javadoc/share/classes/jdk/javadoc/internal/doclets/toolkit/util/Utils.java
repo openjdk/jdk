@@ -1025,10 +1025,9 @@ public class Utils {
             }
             t = supertypes.get(0); // if non-empty, the first element is always the superclass
             var te = asTypeElement(t);
-            if (hasHiddenTag(te) || (!isPublic(te) && !isLinkable(te))) {
-                continue;
+            if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
+                return t;
             }
-            return t;
         }
     }
 
