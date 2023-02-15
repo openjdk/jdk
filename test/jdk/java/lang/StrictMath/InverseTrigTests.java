@@ -118,6 +118,9 @@ public class InverseTrigTests {
 
         // Probe near decision points in the FDLIBM algorithm.
         double[] decisionPoints = {
+             0x1p-27,
+            -0x1p-27,
+
              0.5,
             -0.5,
 
