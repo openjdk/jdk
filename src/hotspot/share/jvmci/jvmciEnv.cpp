@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler)
   _task(task),
   _compiler(compiler),
   _retryable(true),
-  _failure_reason(NULL),
+  _failure_reason(nullptr),
   _failure_reason_on_C_heap(false) {
   // Get Jvmti capabilities under lock to get consistent values.
   MutexLocker mu(JvmtiThreadState_lock);
@@ -61,7 +61,7 @@ JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler)
   _jvmti_can_access_local_variables     = JvmtiExport::can_access_local_variables() ? 1 : 0;
   _jvmti_can_post_on_exceptions         = JvmtiExport::can_post_on_exceptions() ? 1 : 0;
   _jvmti_can_pop_frame                  = JvmtiExport::can_pop_frame() ? 1 : 0;
-  _target_method_is_old                 = _task != NULL && _task->method()->is_old();
+  _target_method_is_old                 = _task != nullptr && _task->method()->is_old();
   if (task->is_blocking()) {
     task->set_blocking_jvmci_compile_state(this);
   }
@@ -173,8 +173,8 @@ void JVMCIEnv::copy_saved_properties(jbyte* properties, int properties_len, JVMC
 }
 
 void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool attach_OOME_is_fatal) {
-  assert(thread != NULL, "npe");
-  _env = NULL;
+  assert(thread != nullptr, "npe");
+  _env = nullptr;
   _pop_frame_on_close = false;
   _detach_on_close = false;
   if (!UseJVMCINativeLibrary) {
@@ -184,7 +184,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
     return;
   }
 
-  if (parent_env != NULL) {
+  if (parent_env != nullptr) {
     // If the parent JNI environment is non-null then figure out whether it
     // is a HotSpot or shared library JNIEnv and set the state appropriately.
     _is_hotspot = thread->jni_environment() == parent_env;
@@ -194,7 +194,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
       return;
     }
     _runtime = thread->libjvmci_runtime();
-    assert(_runtime != NULL, "npe");
+    assert(_runtime != nullptr, "npe");
     _env = parent_env;
     return;
   }
@@ -206,12 +206,12 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
   _runtime = JVMCI::compiler_runtime(thread);
   _env = _runtime->init_shared_library_javavm();
 
-  if (_env != NULL) {
+  if (_env != nullptr) {
     // Creating the JVMCI shared library VM also attaches the current thread
     _detach_on_close = true;
   } else {
     _runtime->GetEnv(thread, (void**)&parent_env, JNI_VERSION_1_2);
-    if (parent_env != NULL) {
+    if (parent_env != nullptr) {
       // Even though there's a parent JNI env, there's no guarantee
       // it was opened by a JVMCIEnv scope and thus may not have
       // pushed a local JNI frame. As such, we use a new JNI local
@@ -223,12 +223,12 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
       JavaVMAttachArgs attach_args;
       attach_args.version = JNI_VERSION_1_2;
       attach_args.name = const_cast<char*>(thread->name());
-      attach_args.group = NULL;
+      attach_args.group = nullptr;
       jint attach_result = _runtime->AttachCurrentThread(thread, (void**) &_env, &attach_args);
       if (attach_result == JNI_OK) {
         _detach_on_close = true;
       } else if (!attach_OOME_is_fatal && attach_result == JNI_ENOMEM) {
-        _env = NULL;
+        _env = nullptr;
         _attach_threw_OOME = true;
         return;
       } else {
@@ -237,7 +237,7 @@ void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, boo
     }
   }
 
-  assert(_env != NULL, "missing env");
+  assert(_env != nullptr, "missing env");
   assert(_throw_to_caller == false, "must be");
 
   JNIAccessMark jni(this, thread);
@@ -254,37 +254,37 @@ JVMCIEnv::JVMCIEnv(JavaThread* thread, JVMCICompileState* compile_state, const c
     _throw_to_caller(false), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(compile_state) {
   // In case of OOME, there's a good chance a subsequent attempt to attach might succeed.
   // Other errors most likely indicate a non-recoverable error in the JVMCI runtime.
-  init_env_mode_runtime(thread, NULL, false);
+  init_env_mode_runtime(thread, nullptr, false);
   if (_attach_threw_OOME) {
     compile_state->set_failure(true, "Out of memory while attaching JVMCI compiler to current thread");
   }
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, const char* file, int line):
-    _throw_to_caller(false), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(NULL) {
-  init_env_mode_runtime(thread, NULL);
+    _throw_to_caller(false), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(nullptr) {
+  init_env_mode_runtime(thread, nullptr);
 }
 
 JVMCIEnv::JVMCIEnv(JavaThread* thread, JNIEnv* parent_env, const char* file, int line):
-    _throw_to_caller(true), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(NULL) {
+    _throw_to_caller(true), _file(file), _line(line), _attach_threw_OOME(false), _compile_state(nullptr) {
   init_env_mode_runtime(thread, parent_env);
-  assert(_env == NULL || parent_env == _env, "mismatched JNIEnvironment");
+  assert(_env == nullptr || parent_env == _env, "mismatched JNIEnvironment");
 }
 
 void JVMCIEnv::init(JavaThread* thread, bool is_hotspot, const char* file, int line) {
-  _compile_state = NULL;
+  _compile_state = nullptr;
   _throw_to_caller = false;
   _file = file;
   _line = line;
   _attach_threw_OOME = false;
   if (is_hotspot) {
-    _env = NULL;
+    _env = nullptr;
     _pop_frame_on_close = false;
     _detach_on_close = false;
     _is_hotspot = true;
     _runtime = JVMCI::java_runtime();
   } else {
-    init_env_mode_runtime(thread, NULL);
+    init_env_mode_runtime(thread, nullptr);
   }
 }
 
@@ -294,9 +294,9 @@ void JVMCIEnv::describe_pending_exception(bool clear) {
   if (!is_hotspot()) {
     JNIAccessMark jni(this, THREAD);
     if (jni()->ExceptionCheck()) {
-      jthrowable ex = !clear ? jni()->ExceptionOccurred() : NULL;
+      jthrowable ex = !clear ? jni()->ExceptionOccurred() : nullptr;
       jni()->ExceptionDescribe();
-      if (ex != NULL) {
+      if (ex != nullptr) {
         jni()->Throw(ex);
       }
     }
@@ -310,8 +310,8 @@ void JVMCIEnv::describe_pending_exception(bool clear) {
 // Shared code for translating an exception from HotSpot to libjvmci or vice versa.
 class ExceptionTranslation: public StackObj {
  protected:
-  JVMCIEnv*  _from_env; // Source of translation. Can be nullptr.
-  JVMCIEnv*  _to_env;   // Destination of translation. Never nullptr.
+  JVMCIEnv*  _from_env; // Source of translation. Can be null.
+  JVMCIEnv*  _to_env;   // Destination of translation. Never null.
 
   ExceptionTranslation(JVMCIEnv* from_env, JVMCIEnv* to_env) : _from_env(from_env), _to_env(to_env) {}
 
@@ -484,7 +484,7 @@ JVMCIEnv::~JVMCIEnv() {
     if (_pop_frame_on_close) {
       // Pop the JNI local frame that was pushed when entering this JVMCIEnv scope.
       JNIAccessMark jni(this);
-      jni()->PopLocalFrame(NULL);
+      jni()->PopLocalFrame(nullptr);
     }
 
     if (has_pending_exception()) {
@@ -737,7 +737,7 @@ JVMCIObject JVMCIEnv::create_box(BasicType type, jvalue* value, JVMCI_TRAPS) {
   } else {
     JNIAccessMark jni(this, THREAD);
     jobject box = jni()->NewObjectA(JNIJVMCI::box_class(type), JNIJVMCI::box_constructor(type), value);
-    assert(box != NULL, "");
+    assert(box != nullptr, "");
     return wrap(box);
   }
 }
@@ -1028,7 +1028,7 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
     oop method_name = StringTable::intern(method_name_sym, CHECK_(JVMCIObject()));
     HotSpotJVMCI::StackTraceElement::set_methodName(this, obj(), method_name);
 
-    if (file_name_sym != NULL) {
+    if (file_name_sym != nullptr) {
       oop file_name = StringTable::intern(file_name_sym, CHECK_(JVMCIObject()));
       HotSpotJVMCI::StackTraceElement::set_fileName(this, obj(), file_name);
     }
@@ -1044,8 +1044,8 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
-    jobject file_name = NULL;
-    if (file_name_sym != NULL) {
+    jobject file_name = nullptr;
+    if (file_name_sym != nullptr) {
       file_name = jni()->NewStringUTF(file_name_sym->as_C_string());
       if (jni()->ExceptionCheck()) {
         return JVMCIObject();
@@ -1088,7 +1088,7 @@ JVMCIObject JVMCIEnv::new_HotSpotNmethod(const methodHandle& method, const char*
     return wrap(obj_h());
   } else {
     JNIAccessMark jni(this, THREAD);
-    jobject nameStr = name == NULL ? NULL : jni()->NewStringUTF(name);
+    jobject nameStr = name == nullptr ? nullptr : jni()->NewStringUTF(name);
     if (jni()->ExceptionCheck()) {
       return JVMCIObject();
     }
@@ -1159,7 +1159,7 @@ const char* JVMCIEnv::klass_name(JVMCIObject object) {
 
 JVMCIObject JVMCIEnv::get_jvmci_method(const methodHandle& method, JVMCI_TRAPS) {
   JVMCIObject method_object;
-  if (method() == NULL) {
+  if (method() == nullptr) {
     return method_object;
   }
 
@@ -1310,7 +1310,7 @@ JVMCIObjectArray JVMCIEnv::new_byte_array_array(int length, JVMCI_TRAPS) {
     return wrap(result);
   } else {
     JNIAccessMark jni(this, THREAD);
-    jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::byte_array(), NULL);
+    jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::byte_array(), nullptr);
     return wrap(result);
   }
 }
@@ -1458,8 +1458,8 @@ Handle JVMCIEnv::asConstant(JVMCIObject constant, JVMCI_TRAPS) {
       JVMCI_THROW_MSG_(NullPointerException, "Foreign object reference has been cleared", Handle());
     }
     oop result = resolve_oop_handle(object_handle);
-    if (result == NULL) {
-      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly NULL", Handle());
+    if (result == nullptr) {
+      JVMCI_THROW_MSG_(InternalError, "Constant was unexpectedly null", Handle());
     }
     return Handle(THREAD, result);
   } else {
@@ -1472,14 +1472,14 @@ JVMCIObject JVMCIEnv::wrap(jobject object) {
 }
 
 jlong JVMCIEnv::make_oop_handle(const Handle& obj) {
-  assert(!obj.is_null(), "should only create handle for non-NULL oops");
+  assert(!obj.is_null(), "should only create handle for non-null oops");
   return _runtime->make_oop_handle(obj);
 }
 
 oop JVMCIEnv::resolve_oop_handle(jlong oopHandle) {
   assert(oopHandle != 0, "should be a valid handle");
   oop obj = *((oopDesc**) oopHandle);
-  if (obj != NULL) {
+  if (obj != nullptr) {
     oopDesc::verify(obj);
   }
   return obj;
@@ -1568,7 +1568,7 @@ void JVMCIEnv::invalidate_nmethod_mirror(JVMCIObject mirror, bool deoptimize, JV
   }
 
   nmethod* nm = JVMCIENV->get_nmethod(mirror);
-  if (nm == NULL) {
+  if (nm == nullptr) {
     // Nothing to do
     return;
   }
@@ -1615,30 +1615,30 @@ ConstantPool* JVMCIEnv::asConstantPool(JVMCIObject obj) {
 
 // Lookup an nmethod with a matching base and compile id
 nmethod* JVMCIEnv::lookup_nmethod(address code, jlong compile_id_snapshot) {
-  if (code == NULL) {
-    return NULL;
+  if (code == nullptr) {
+    return nullptr;
   }
 
   CodeBlob* cb = CodeCache::find_blob(code);
   if (cb == (CodeBlob*) code) {
     nmethod* nm = cb->as_nmethod_or_null();
-    if (nm != NULL && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
+    if (nm != nullptr && (compile_id_snapshot == 0 || nm->compile_id() == compile_id_snapshot)) {
       return nm;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 
 CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
   address code = (address) get_InstalledCode_address(obj);
-  if (code == NULL) {
-    return NULL;
+  if (code == nullptr) {
+    return nullptr;
   }
   if (isa_HotSpotNmethod(obj)) {
     jlong compile_id_snapshot = get_HotSpotNmethod_compileIdSnapshot(obj);
     nmethod* nm = lookup_nmethod(code, compile_id_snapshot);
-    if (nm != NULL && compile_id_snapshot != 0L && nm->is_not_entrant()) {
+    if (nm != nullptr && compile_id_snapshot != 0L && nm->is_not_entrant()) {
       // Zero the entry point so that the nmethod
       // cannot be invoked by the mirror but can
       // still be deoptimized.
@@ -1647,7 +1647,7 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
       nm = lookup_nmethod(code, compile_id_snapshot);
     }
 
-    if (nm == NULL) {
+    if (nm == nullptr) {
       // The HotSpotNmethod was pointing at some nmethod but the nmethod is no longer valid, so
       // clear the InstalledCode fields of this HotSpotNmethod so that it no longer refers to a
       // nmethod in the code cache.
@@ -1665,10 +1665,10 @@ CodeBlob* JVMCIEnv::get_code_blob(JVMCIObject obj) {
 
 nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
   CodeBlob* cb = get_code_blob(obj);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     return cb->as_nmethod_or_null();
   }
-  return NULL;
+  return nullptr;
 }
 
 // Generate implementations for the initialize, new, isa, get and set methods for all the types and
@@ -1689,7 +1689,7 @@ nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
       return (JVMCIObjectArray) wrap(array);                                                                         \
     } else {                                                                                                         \
       JNIAccessMark jni(this);                                                                                       \
-      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), NULL);                       \
+      jobjectArray result = jni()->NewObjectArray(length, JNIJVMCI::className::clazz(), nullptr);                    \
       return wrap(result);                                                                                           \
     }                                                                                                                \
   }                                                                                                                  \

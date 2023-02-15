@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,23 +121,12 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     public Void visitAttribute(AttributeTree node, Void p) {
         try {
             print(node.getName());
-            String quote;
-            switch (node.getValueKind()) {
-                case EMPTY:
-                    quote = null;
-                    break;
-                case UNQUOTED:
-                    quote = "";
-                    break;
-                case SINGLE:
-                    quote = "'";
-                    break;
-                case DOUBLE:
-                    quote = "\"";
-                    break;
-                default:
-                    throw new AssertionError();
-            }
+            String quote = switch (node.getValueKind()) {
+                case EMPTY -> null;
+                case UNQUOTED -> "";
+                case SINGLE -> "'";
+                case DOUBLE -> "\"";
+            };
             if (quote != null) {
                 print("=" + quote);
                 print(node.getValue());
@@ -249,6 +238,17 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitErroneous(ErroneousTree node, Void p) {
         try {
+            print(node.getBody());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public Void visitEscape(EscapeTree node, Void p) {
+        try {
+            out.write("@");
             print(node.getBody());
         } catch (IOException e) {
             throw new UncheckedIOException(e);

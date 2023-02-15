@@ -60,9 +60,6 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _wb_breakpoint:
       return "WhiteBox Initiated Run to Breakpoint";
 
-    case _archive_time_gc:
-      return "Full GC for -Xshare:dump";
-
     case _no_gc:
       return "No GC";
 

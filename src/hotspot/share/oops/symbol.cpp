@@ -132,7 +132,7 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
     return -1;
   for (; scan <= limit; scan++) {
     scan = (address) memchr(scan, first_char, (limit + 1 - scan));
-    if (scan == NULL)
+    if (scan == nullptr)
       return -1;  // not found
     assert(scan >= bytes+i && scan <= limit, "scan oob");
     if (substr_len <= 2
@@ -145,7 +145,7 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
 }
 
 bool Symbol::is_star_match(const char* pattern) const {
-  if (strchr(pattern, '*') == NULL) {
+  if (strchr(pattern, '*') == nullptr) {
     return equals(pattern);
   } else {
     ResourceMark rm;
@@ -185,7 +185,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
     s = as_quoted_ascii();
     s = os::strdup(s);
   }
-  if (s == NULL) {
+  if (s == nullptr) {
     st->print("(null)");
   } else {
     st->print("%s", s);
@@ -340,10 +340,8 @@ bool Symbol::try_increment_refcount() {
 // this caller.
 void Symbol::increment_refcount() {
   if (!try_increment_refcount()) {
-#ifdef ASSERT
     print();
     fatal("refcount has gone to zero");
-#endif
   }
 #ifndef PRODUCT
   if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
@@ -363,10 +361,8 @@ void Symbol::decrement_refcount() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       found = Atomic::cmpxchg(&_hash_and_refcount, old_value, old_value - 1);
@@ -386,10 +382,8 @@ void Symbol::make_permanent() {
     if (refc == PERM_REFCOUNT) {
       return;  // refcount is permanent, permanent is sticky
     } else if (refc == 0) {
-#ifdef ASSERT
       print();
       fatal("refcount underflow");
-#endif
       return;
     } else {
       int hash = extract_hash(old_value);
