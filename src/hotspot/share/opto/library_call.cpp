@@ -1297,7 +1297,7 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
   }
   assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");
   Node* src         = argument(0); // byte[]
-  Node* tgt         = argument(1); // tgt is int ch
+  Node* int_ch      = argument(1);
   Node* from_index  = argument(2);
   Node* max         = argument(3);
 
@@ -1309,23 +1309,23 @@ bool LibraryCallKit::inline_string_indexOfChar(StrIntrinsicNode::ArgEnc ae) {
 
   // Range checks
   generate_string_range_check(src, src_offset, src_count, ae == StrIntrinsicNode::U);
-  if (stopped()) {
-    return true;
-  }
 
-  // Check for tgt >= 0
-  Node* tgt_cmp = _gvn.transform(new CmpINode(tgt, intcon(0)));
-  Node* tgt_bol = _gvn.transform(new BoolNode(tgt_cmp, BoolTest::ge));
+  // Check for int_ch >= 0
+  Node* int_ch_cmp = _gvn.transform(new CmpINode(int_ch, intcon(0)));
+  Node* int_ch_bol = _gvn.transform(new BoolNode(int_ch_cmp, BoolTest::ge));
   {
-    BuildCutout unless(this, tgt_bol, PROB_MAX);
+    BuildCutout unless(this, int_ch_bol, PROB_MAX);
     uncommon_trap(Deoptimization::Reason_intrinsic,
                   Deoptimization::Action_maybe_recompile);
+  }
+  if (stopped()) {
+    return true;
   }
 
   RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::INT);
 
-  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, ae);
+  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, int_ch, ae);
   C->set_has_split_ifs(true); // Has chance for split-if optimization
   _gvn.transform(result);
 
