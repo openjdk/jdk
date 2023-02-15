@@ -616,13 +616,6 @@ void Node::destruct(PhaseValues* phase) {
     //assert(def->out(def->outcnt()-1) == (Node *)this,"bad def-use hacking in reclaim");
   }
   assert(outcnt() == 0, "deleting a node must not leave a dangling use");
-  // See if the input array was allocated just prior to the object
-  int edge_size = _max*sizeof(void*);
-  int out_edge_size = _outmax*sizeof(void*);
-  char *in_array = ((char*)_in);
-  char *edge_end = in_array + edge_size;
-  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
-  int node_size = size_of();
 
   if (is_macro()) {
     compile->remove_macro_node(this);
@@ -647,12 +640,20 @@ void Node::destruct(PhaseValues* phase) {
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   bs->unregister_potential_barrier_node(this);
 
+  // See if the input array was allocated just prior to the object
+  int edge_size = _max*sizeof(void*);
+  int out_edge_size = _outmax*sizeof(void*);
+  char *in_array = ((char*)_in);
+  char *edge_end = in_array + edge_size;
+  char *out_array = (char*)(_out == NO_OUT_ARRAY? NULL: _out);
+  int node_size = size_of();
+
 #ifdef ASSERT
   // We will not actually delete the storage, but we'll make the node unusable.
+  compile->remove_modified_node(this);
   *(address*)this = badAddress;  // smash the C++ vtbl, probably
   _in = _out = (Node**) badAddress;
   _max = _cnt = _outmax = _outcnt = 0;
-  compile->remove_modified_node(this);
 #endif
 
   // Free the output edge array
