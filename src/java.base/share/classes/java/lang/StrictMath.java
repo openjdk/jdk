@@ -164,7 +164,9 @@ public final class StrictMath {
      * @param   a   the value whose arc sine is to be returned.
      * @return  the arc sine of the argument.
      */
-    public static native double asin(double a);
+    public static double asin(double a) {
+        return FdLibm.Asin.compute(a);
+    }
 
     /**
      * Returns the arc cosine of a value; the returned angle is in the
@@ -177,7 +179,9 @@ public final class StrictMath {
      * @param   a   the value whose arc cosine is to be returned.
      * @return  the arc cosine of the argument.
      */
-    public static native double acos(double a);
+    public static double acos(double a) {
+        return FdLibm.Acos.compute(a);
+    }
 
     /**
      * Returns the arc tangent of a value; the returned angle is in the
@@ -193,7 +197,9 @@ public final class StrictMath {
      * @param   a   the value whose arc tangent is to be returned.
      * @return  the arc tangent of the argument.
      */
-    public static native double atan(double a);
+    public static double atan(double a) {
+        return FdLibm.Atan.compute(a);
+    }
 
     /**
      * Converts an angle measured in degrees to an approximately
