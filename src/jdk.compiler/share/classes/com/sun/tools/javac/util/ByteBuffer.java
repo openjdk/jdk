@@ -174,8 +174,13 @@ public class ByteBuffer {
     }
 
     /** Extract an integer at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
     public int getInt(int bp) {
+        verifyRange(bp, 4);
         return
             ((elems[bp] & 0xFF) << 24) +
             ((elems[bp+1] & 0xFF) << 16) +
@@ -185,8 +190,13 @@ public class ByteBuffer {
 
 
     /** Extract a long integer at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
     public long getLong(int bp) {
+        verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
         try {
@@ -197,8 +207,13 @@ public class ByteBuffer {
     }
 
     /** Extract a float at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
     public float getFloat(int bp) {
+        verifyRange(bp, 4);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 4));
         try {
@@ -209,8 +224,13 @@ public class ByteBuffer {
     }
 
     /** Extract a double at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
     public double getDouble(int bp) {
+        verifyRange(bp, 8);
         DataInputStream elemsin =
             new DataInputStream(new ByteArrayInputStream(elems, bp, 8));
         try {
@@ -221,13 +241,25 @@ public class ByteBuffer {
     }
 
     /** Extract a character at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
      */
     public char getChar(int bp) {
+        verifyRange(bp, 2);
         return
             (char)(((elems[bp] & 0xFF) << 8) + (elems[bp+1] & 0xFF));
     }
 
+    /** Extract a byte at position bp from elems.
+     *
+     * @param bp starting offset
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code bp} is negative
+     */
     public byte getByte(int bp) {
+        verifyRange(bp, 1);
         return elems[bp];
     }
 
@@ -241,5 +273,17 @@ public class ByteBuffer {
      */
     public Name toName(Names names) {
         return names.fromUtf(elems, 0, length);
+    }
+
+    /** Verify there are at least the specified number of bytes in this buffer at the specified offset.
+     *
+     * @param off starting offset
+     * @param len required length
+     * @throws IllegalArgumentException if there is not enough data in this buffer
+     * @throws IllegalArgumentException if {@code off} or {@code len} is negative
+     */
+    public void verifyRange(int off, int len) {
+        if (off < 0 || len < 0 || off + len < 0 || off + len > length)
+            throw new IllegalArgumentException("off=" + off + ", len=" + len + ", length=" + length);
     }
 }

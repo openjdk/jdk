@@ -35,12 +35,32 @@ import java.lang.reflect.Array;
 public class ArrayUtils {
 
     private static int calculateNewLength(int currentLength, int maxIndex) {
-        while (currentLength < maxIndex + 1)
+        if (currentLength == 0)
+            currentLength++;                    // avoid infinite loop
+        if (maxIndex == Integer.MAX_VALUE)
+            maxIndex--;                         // avoid negative overflow
+        while (currentLength < maxIndex + 1) {
             currentLength = currentLength * 2;
+            if (currentLength < 0) {            // avoid negative overflow
+                currentLength = maxIndex + 1;
+                break;
+            }
+        }
         return currentLength;
     }
 
+    /**
+     * Ensure the given array has length at least {@code maxIndex + 1}.
+     *
+     * @param array original array
+     * @param maxIndex exclusive lower bound for desired length
+     * @return possibly reallocated array of length at least {@code maxIndex + 1}
+     * @throws NullPointerException if {@code array} is null
+     * @throws IllegalArgumentException if {@code maxIndex} is negative
+     */
     public static <T> T[] ensureCapacity(T[] array, int maxIndex) {
+        if (maxIndex < 0)
+            throw new IllegalArgumentException("maxIndex=" + maxIndex);
         if (maxIndex < array.length) {
             return array;
         } else {
@@ -52,7 +72,18 @@ public class ArrayUtils {
         }
     }
 
+    /**
+     * Ensure the given array has length at least {@code maxIndex + 1}.
+     *
+     * @param array original array
+     * @param maxIndex exclusive lower bound for desired length
+     * @return possibly reallocated array of length at least {@code maxIndex + 1}
+     * @throws NullPointerException if {@code array} is null
+     * @throws IllegalArgumentException if {@code maxIndex} is negative
+     */
     public static byte[] ensureCapacity(byte[] array, int maxIndex) {
+        if (maxIndex < 0)
+            throw new IllegalArgumentException("maxIndex=" + maxIndex);
         if (maxIndex < array.length) {
             return array;
         } else {
@@ -63,7 +94,18 @@ public class ArrayUtils {
         }
     }
 
+    /**
+     * Ensure the given array has length at least {@code maxIndex + 1}.
+     *
+     * @param array original array
+     * @param maxIndex exclusive lower bound for desired length
+     * @return possibly reallocated array of length at least {@code maxIndex + 1}
+     * @throws NullPointerException if {@code array} is null
+     * @throws IllegalArgumentException if {@code maxIndex} is negative
+     */
     public static char[] ensureCapacity(char[] array, int maxIndex) {
+        if (maxIndex < 0)
+            throw new IllegalArgumentException("maxIndex=" + maxIndex);
         if (maxIndex < array.length) {
             return array;
         } else {
@@ -74,7 +116,18 @@ public class ArrayUtils {
         }
     }
 
+    /**
+     * Ensure the given array has length at least {@code maxIndex + 1}.
+     *
+     * @param array original array
+     * @param maxIndex exclusive lower bound for desired length
+     * @return possibly reallocated array of length at least {@code maxIndex + 1}
+     * @throws NullPointerException if {@code array} is null
+     * @throws IllegalArgumentException if {@code maxIndex} is negative
+     */
     public static int[] ensureCapacity(int[] array, int maxIndex) {
+        if (maxIndex < 0)
+            throw new IllegalArgumentException("maxIndex=" + maxIndex);
         if (maxIndex < array.length) {
             return array;
         } else {
