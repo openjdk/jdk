@@ -98,7 +98,9 @@ final class ProxyClassesDumper {
 
     public static String encodeForFilename(String className) {
         final int len = className.length();
-        StringBuilder sb = new StringBuilder(len);
+        // stamp can be up to 19 digits, in theory, plus one hyphen
+        StringBuilder sb = new StringBuilder(len + 20);
+        sb.append(System.currentTimeMills()).append('-');
 
         for (int i = 0; i < len; i++) {
             char c = className.charAt(i);
