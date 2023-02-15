@@ -35,27 +35,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threads.hpp"
 
-struct RetireTLABAndFlushLogsClosure : public ThreadClosure {
-public:
-  ThreadLocalAllocStats _tlab_stats;
-  G1ConcurrentRefineStats _refinement_stats;
-
-  RetireTLABAndFlushLogsClosure() : _tlab_stats(), _refinement_stats() { }
-
-  void do_thread(Thread* thread) override {
-    if (thread->is_Java_thread()) {
-      // Flushes deferred card marks, so must precede concatenating logs.
-      BarrierSet::barrier_set()->make_parsable((JavaThread*)thread);
-      if (UseTLAB) {
-        thread->tlab().retire(&_tlab_stats);
-      }
-    }
-
-    G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
-    _refinement_stats += qset.concatenate_log_and_stats(thread);
-  }
-};
-
 class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : public G1AbstractSubTask {
   G1JavaThreadsListClaimer _claimer;
 
@@ -67,6 +46,25 @@ class G1PreEvacuateCollectionSetBatchTask::JavaThreadRetireTLABAndFlushLogs : pu
 
   // There is relatively little work to do per thread.
   static const uint ThreadsPerWorker = 250;
+
+  struct RetireTLABAndFlushLogsClosure : public ThreadClosure {
+    ThreadLocalAllocStats _tlab_stats;
+    G1ConcurrentRefineStats _refinement_stats;
+
+    RetireTLABAndFlushLogsClosure() : _tlab_stats(), _refinement_stats() { }
+
+    void do_thread(Thread* thread) override {
+      assert(thread->is_Java_thread(), "must be");
+      // Flushes deferred card marks, so must precede concatenating logs.
+      BarrierSet::barrier_set()->make_parsable((JavaThread*)thread);
+      if (UseTLAB) {
+        thread->tlab().retire(&_tlab_stats);
+      }
+
+      G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+      _refinement_stats += qset.concatenate_log_and_stats(thread);
+    }
+  };
 
 public:
   JavaThreadRetireTLABAndFlushLogs() :
@@ -126,7 +124,16 @@ public:
 };
 
 class G1PreEvacuateCollectionSetBatchTask::NonJavaThreadFlushLogs : public G1AbstractSubTask {
-  RetireTLABAndFlushLogsClosure _tc;
+  struct FlushLogsClosure : public ThreadClosure {
+    G1ConcurrentRefineStats _refinement_stats;
+
+    FlushLogsClosure() : _refinement_stats() { }
+
+    void do_thread(Thread* thread) override {
+      G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
+      _refinement_stats += qset.concatenate_log_and_stats(thread);
+    }
+  } _tc;
 
 public:
   NonJavaThreadFlushLogs() : G1AbstractSubTask(G1GCPhaseTimes::NonJavaThreadFlushLogs), _tc() { }
@@ -139,7 +146,6 @@ public:
     return 1.0;
   }
 
-  ThreadLocalAllocStats tlab_stats() const { return _tc._tlab_stats; }
   G1ConcurrentRefineStats refinement_stats() const { return _tc._refinement_stats; }
 };
 
@@ -174,10 +180,7 @@ static void verify_empty_dirty_card_logs() {
 }
 
 G1PreEvacuateCollectionSetBatchTask::~G1PreEvacuateCollectionSetBatchTask() {
-  ThreadLocalAllocStats total_tlab_stats;
-  total_tlab_stats.update(_java_retire_task->tlab_stats());
-  total_tlab_stats.update(_non_java_retire_task->tlab_stats());
-  total_tlab_stats.publish();
+  _java_retire_task->tlab_stats().publish();
 
   G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
 
