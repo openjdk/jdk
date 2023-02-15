@@ -415,7 +415,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
       CHECK_AVAILABLE: [
         AC_MSG_CHECKING([if AddressSanitizer (asan) is available])
         if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
-            test "x$TOOLCHAIN_TYPE" = "xclang"; then
+           test "x$TOOLCHAIN_TYPE" = "xclang" ||
+           test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
           AC_MSG_RESULT([yes])
         else
           AC_MSG_RESULT([no])
@@ -426,7 +427,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
         # ASan is simply incompatible with gcc -Wstringop-truncation. See
         # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=85650
         # It's harmless to be suppressed in clang as well.
-        ASAN_CFLAGS="-fsanitize=address -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common -DADDRESS_SANITIZER"
+        ASAN_CFLAGS="-fsanitize=address"
+        if test "x$TOOLCHAIN_TYPE" = "xgcc" ||
+           test "x$TOOLCHAIN_TYPE" = "xclang"; then
+          ASAN_CFLAGS="$ASAN_CFLAGS -Wno-stringop-truncation -fno-omit-frame-pointer -fno-common"
+        fi
+        if test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+          ASAN_CFLAGS="$ASAN_CFLAGS -Oy-"
+        fi
+        ASAN_CFLAGS="$ASAN_CFLAGS -DADDRESS_SANITIZER"
         ASAN_LDFLAGS="-fsanitize=address"
         JVM_CFLAGS="$JVM_CFLAGS $ASAN_CFLAGS"
         JVM_LDFLAGS="$JVM_LDFLAGS $ASAN_LDFLAGS"
