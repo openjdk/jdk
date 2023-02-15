@@ -298,7 +298,6 @@ void CollectedHeap::collect_as_vm_thread(GCCause::Cause cause) {
       do_full_collection(false);        // don't clear all soft refs
       break;
     }
-    case GCCause::_archive_time_gc:
     case GCCause::_metadata_GC_clear_soft_refs: {
       HandleMark hm(thread);
       do_full_collection(true);         // do clear all soft refs

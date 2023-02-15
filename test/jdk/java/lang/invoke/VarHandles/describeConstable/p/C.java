@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,10 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_SERVICES_MEMJFRREPORTER_HPP
-#define SHARE_SERVICES_MEMJFRREPORTER_HPP
+package p;
 
-#include "memory/allocation.hpp"
-#include "services/nmtUsage.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
-
-// MemJFRReporter is only used by threads sending periodic JFR
-// events. These threads are synchronized at a higher level,
-// so no more synchronization is needed.
-class MemJFRReporter : public AllStatic {
-private:
-  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
- public:
-  static void send_total_event();
-  static void send_type_events();
-};
-
-#endif //SHARE_SERVICES_MEMJFRREPORTER_HPP
+public class C extends p.q.Q implements I {
+    public static String cString =  "CClass";
+}
