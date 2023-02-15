@@ -55,6 +55,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/breakpoint.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1358,7 +1359,34 @@ void VMError::report_and_die(Thread* thread, const char* filename, int lineno, s
 
 void VMError::report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context, const char* filename,
-                             int lineno, size_t size)
+                             int lineno, size_t size) {
+  report_and_maybe_die_impl(AfterReportAction::Die,
+                            id, message, detail_fmt, detail_args,
+                            thread, pc, siginfo, context,
+                            filename, lineno, size);
+  // Shouldn't be able to get here.  Die immediately if we do.
+  os::die();
+}
+
+void VMError::report_and_maybe_die(AfterReportAction after_report_action,
+                                   Thread* thread, unsigned int sig, address pc,
+                                   void* siginfo, void* context,
+                                   const char* detail_fmt, ...) {
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  report_and_maybe_die_impl(after_report_action,
+                            sig, nullptr, detail_fmt, detail_args, thread, pc,
+                            siginfo, context, nullptr, 0, 0);
+  va_end(detail_args);
+}
+
+void VMError::report_and_maybe_die_impl(AfterReportAction after_report_action,
+                                        int id, const char* message,
+                                        const char* detail_fmt, va_list detail_args,
+                                        Thread* thread, address pc,
+                                        void* siginfo, void* context,
+                                        const char* filename, int lineno,
+                                        size_t size)
 {
   // A single scratch buffer to be used from here on.
   // Do not rely on it being preserved across function calls.
@@ -1441,14 +1469,12 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
     install_secondary_signal_handler();
+  } else if ((after_report_action == AfterReportAction::Return) && log_done) {
+    // Support for UseOSErrorReporting. We call this for each level of the
+    // call stack while searching for the exception handler.  Only the first
+    // level needs to be reported.
+    return;
   } else {
-#if defined(_WINDOWS)
-    // If UseOSErrorReporting we call this for each level of the call stack
-    // while searching for the exception handler.  Only the first level needs
-    // to be reported.
-    if (UseOSErrorReporting && log_done) return;
-#endif
-
     // This is not the first error, see if it happened in a different thread
     // or in the same thread during error reporting.
     if (_first_error_tid != mytid) {
@@ -1678,7 +1704,17 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     OnError = nullptr;
   }
 
-  if (WINDOWS_ONLY(!UseOSErrorReporting) NOT_WINDOWS(true)) {
+  if (after_report_action == AfterReportAction::Return) {
+    // Caller requested reporting without termination.
+    return;
+  } else if (after_report_action == AfterReportAction::Die) {
+#ifdef _WINDOWS
+    if (UseOSErrorReporting) {
+      // Before terminating, first signal a breakpoint exception to give a
+      // debugger or other OS tool a shot.
+      BREAKPOINT;
+    }
+#endif
     // os::abort() will call abort hooks, try it first.
     static bool skip_os_abort = false;
     if (!skip_os_abort) {
@@ -1690,6 +1726,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // if os::abort() doesn't abort, try os::die();
     os::die();
   }
+  // We REALLY better not reach here.
+  ShouldNotReachHere();
 }
 
 /*

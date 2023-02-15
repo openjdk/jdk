@@ -171,6 +171,30 @@ public:
                              VMErrorType vm_err_type, const char* detail_fmt,
                              va_list detail_args) ATTRIBUTE_PRINTF(6, 0);
 
+  // AfterReportAction and report_and_maybe_die support Windows-only
+  // UseOSErrorReporting.
+  enum class AfterReportAction { Return, Die };
+
+  // Error reporting function that is allowed to return to the caller
+  // if so requested by the after_report_action.  Otherwise, die after
+  // reporting the error.
+  static void report_and_maybe_die(AfterReportAction after_report_action,
+                                   Thread* thread, unsigned int sig, address pc,
+                                   void* siginfo, void* context,
+                                   const char* detail_fmt, ...) ATTRIBUTE_PRINTF(7, 8);
+
+private:
+  // Shared implementation of report_and_die and report_and_maybe_die.
+  static void report_and_maybe_die_impl(AfterReportAction after_report_action,
+                                        int id, const char* message,
+                                        const char* detail_fmt, va_list detail_args,
+                                        Thread* thread, address pc, void* siginfo,
+                                        void* context,
+                                        const char* filename, int lineno,
+                                        size_t size) ATTRIBUTE_PRINTF(4, 0);
+
+public:
+
   // reporting OutOfMemoryError
   static void report_java_out_of_memory(const char* message);
 

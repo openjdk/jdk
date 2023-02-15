@@ -216,10 +216,6 @@ void report_vm_out_of_memory(const char* file, int line, size_t size,
 
   VMError::report_and_die(Thread::current_or_null(), file, line, size, vm_err_type, detail_fmt, detail_args);
   va_end(detail_args);
-
-  // The UseOSErrorReporting option in report_and_die() may allow a return
-  // to here. If so then we'll have to figure out how to handle it.
-  guarantee(false, "report_and_die() should not return here");
 }
 
 void report_should_not_call(const char* file, int line) {

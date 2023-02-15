@@ -31,8 +31,12 @@
 
 LONG WINAPI crash_handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exceptionInfo->ExceptionRecord->ExceptionCode;
-  VMError::report_and_die(nullptr, exception_code, nullptr, exceptionInfo->ExceptionRecord,
-                          exceptionInfo->ContextRecord);
+  using ARA = VMError::AfterReportAction;
+  VMError::report_and_maybe_die((UseOSErrorReporting ? ARA::Return : ARA::Die),
+                                nullptr, exception_code, nullptr,
+                                exceptionInfo->ExceptionRecord,
+                                exceptionInfo->ContextRecord,
+                                "%s", "");
   return EXCEPTION_CONTINUE_SEARCH;
 }
 
