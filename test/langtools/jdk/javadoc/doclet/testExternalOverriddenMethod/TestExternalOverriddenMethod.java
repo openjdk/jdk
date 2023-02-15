@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,13 @@ public class TestExternalOverriddenMethod extends JavadocTester {
                 """
                     <dt>Overrides:</dt>
                     <dd><code><a href=\"""" + uri + """
-                    /java/io/FilterReader.html#read()" title="class or interface in java.io" class="\
+                    /java/io/FilterReader.html#read--" title="class or interface in java.io" class="\
                     external-link">read</a></code>&nbsp;in class&nbsp;<code><a href=\"""" + uri + """
                     /java/io/FilterReader.html" title="class or interface in java.io" class="external-link">FilterReader</a></code></dd>""",
                 """
                     <dt>Specified by:</dt>
                     <dd><code><a href=\"""" + uri + """
-                    /java/io/DataInput.html#readInt()" title="class or interface in java.io" class="\
+                    /java/io/DataInput.html#readInt--" title="class or interface in java.io" class="\
                     external-link">readInt</a></code>&nbsp;in interface&nbsp;<code><a href=\"""" + uri + """
                     /java/io/DataInput.html" title="class or interface in java.io" class="external-link">DataInput</a></code></dd>"""
         );

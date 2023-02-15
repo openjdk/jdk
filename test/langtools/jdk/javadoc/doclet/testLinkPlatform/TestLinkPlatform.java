@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8216497
+ * @bug 8216497 8297437
  * @summary javadoc should auto-link to platform classes
  * @library /tools/lib ../../lib
  * @modules
@@ -103,11 +103,19 @@ public class TestLinkPlatform extends JavadocTester {
             // Make sure there is no message about missing element-list resource
             checkOutput(Output.OUT, false, "element-list");
             String url = getPlatformUrlString(version);
-            checkOutput("p/q/A.html", true,
-                    "<a href=\"" + url + "\"",
-                    "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            if (version == 8 || version == 9) {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone--\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals-java.lang.Object-\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize--\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            } else {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            }
         }
     }
 
@@ -125,11 +133,19 @@ public class TestLinkPlatform extends JavadocTester {
 
             checkExit(Exit.OK);
             String url = getCustomPlatformUrlString(version);
-            checkOutput("p/q/A.html", true,
-                    "<a href=\"" + url + "\"",
-                    "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            if (version == 8 || version == 9) {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone--\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals-java.lang.Object-\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize--\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            } else {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            }
         }
     }
 
@@ -147,11 +163,19 @@ public class TestLinkPlatform extends JavadocTester {
 
             checkExit(Exit.OK);
             String url = getCustomPlatformUrlString(version);
-            checkOutput("p/q/A.html", true,
-                    "<a href=\"" + url + "\"",
-                    "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
-                    "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            if (version == 8 || version == 9) {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone--\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals-java.lang.Object-\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize--\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            } else {
+                checkOutput("p/q/A.html", true,
+                        "<a href=\"" + url + "\"",
+                        "<a href=\"" + url + "#clone()\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#equals(java.lang.Object)\" title=\"class or interface in java.lang\" class=\"external-link\">",
+                        "<a href=\"" + url + "#finalize()\" title=\"class or interface in java.lang\" class=\"external-link\">");
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class TestClassCrossReferences extends JavadocTester {
                     java/math/BigDecimal.html" title="class or interface in java.math" class="extern\
                     al-link"><code>Link to external class BigDecimal</code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigInteger.html#gcd(java.math.BigInteger)" title="class or interface i\
+                    java/math/BigInteger.html#gcd-java.math.BigInteger-" title="class or interface i\
                     n java.math" class="external-link"><code>Link to external member gcd</code></a>""",
                 "<a href=\"" + uri + """
                     javax/tools/SimpleJavaFileObject.html#uri" title="class or interface in javax.to\
@@ -102,7 +102,7 @@ public class TestClassCrossReferences extends JavadocTester {
                     java/math/BigDecimal.html" title="class or interface in java.math" class="extern\
                     al-link"><code>Link to external class BigDecimal</code></a>""",
                 "<a href=\"" + uri + """
-                    java/math/BigInteger.html#gcd(java.math.BigInteger)" title="class or interface i\
+                    java/math/BigInteger.html#gcd-java.math.BigInteger-" title="class or interface i\
                     n java.math" class="external-link"><code>Link to external member gcd</code></a>""",
                 "<a href=\"" + uri + """
                     javax/tools/SimpleJavaFileObject.html#uri" title="class or interface in javax.to\
