@@ -1340,12 +1340,7 @@ void ObjectMonitor::ExitEpilog(JavaThread* current, ObjectWaiter* Wakee) {
   OM_PERFDATA_OP(Parks, inc());
 }
 
-
-// -----------------------------------------------------------------------------
-// Class Loader deadlock handling.
-//
 // complete_exit exits a lock returning recursion count
-// complete_exit/reenter operate as a wait without waiting
 // complete_exit requires an inflated monitor
 // The _owner field is not always the Thread addr even with an
 // inflated monitor, e.g. the monitor can be inflated by a non-owning
@@ -1368,20 +1363,6 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
   exit(current);           // exit the monitor
   guarantee(owner_raw() != current, "invariant");
   return save;
-}
-
-// reenter() enters a lock and sets recursion count
-// complete_exit/reenter operate as a wait without waiting
-bool ObjectMonitor::reenter(intx recursions, JavaThread* current) {
-
-  guarantee(owner_raw() != current, "reenter already owner");
-  if (!enter(current)) {
-    return false;
-  }
-  // Entered the monitor.
-  guarantee(_recursions == 0, "reenter recursion");
-  _recursions = recursions;
-  return true;
 }
 
 // Checks that the current THREAD owns this monitor and causes an
