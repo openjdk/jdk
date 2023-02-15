@@ -332,13 +332,10 @@ public class EventHandler implements Runnable {
 
                 if (event instanceof ExceptionEvent &&
                     defaultExceptionRequest != null &&
-                    defaultExceptionRequest.equals(event.request())) {
-
-                    if (!EventFilters.filtered(event)) {
-                        complain("Unexpected Debuggee Exception: " + event);
-                        defaultExceptionCaught = true;
-                    }
-
+                    defaultExceptionRequest.equals(event.request()))
+                {
+                    complain("Unexpected Debuggee Exception: " + event);
+                    defaultExceptionCaught = true;
                     handled = true;
                     vm.resume();
                 }
