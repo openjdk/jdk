@@ -120,13 +120,14 @@ private:
 class G1SerialRePrepareClosure : public StackObj {
   G1FullGCCompactionPoint* _cp;
   HeapRegion* _current;
+  HeapWord* _dense_prefix_top;
   uint _bottom_index;
 
 public:
-  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr) :
+  G1SerialRePrepareClosure(G1FullGCCompactionPoint* hrcp, HeapRegion* hr, HeapWord* dense_prefix_top) :
     _cp(hrcp),
     _current(hr),
-    _bottom_index(hrcp->regions()->first()->hrm_index()) { }
+    _dense_prefix_top(dense_prefix_top) { }
 
   inline size_t apply(oop obj);
 };
