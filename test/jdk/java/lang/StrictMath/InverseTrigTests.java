@@ -21,6 +21,7 @@
  * questions.
  */
 import jdk.test.lib.RandomFactory;
+import java.util.function.DoubleUnaryOperator;
 
 /*
  * @test
@@ -36,7 +37,7 @@ import jdk.test.lib.RandomFactory;
  */
 
 /**
- * The tests in ../Math/InverseTripTests.java test properties that
+ * The tests in ../Math/InverseTrigTests.java test properties that
  * should hold for any implementation of the inverse trig functions
  * ason, acos, and atan, including the FDLIBM-based ones required by
  * the StrictMath class.  Therefore, the test cases in
@@ -53,6 +54,8 @@ public class InverseTrigTests {
     public static void main(String... args) {
         int failures = 0;
 
+        failures += testAgainstTranslitCommon();
+
         failures += testAgainstTranslitAsin();
         failures += testAgainstTranslitAcos();
         failures += testAgainstTranslitAtan();
@@ -64,51 +67,69 @@ public class InverseTrigTests {
         }
     }
 
+    /**
+     * Bundle together groups of testing methods.
+     */
+    private static enum InverseTrigTest {
+        ASIN(InverseTrigTests::testAsinCase, FdlibmTranslit::asin),
+        ACOS(InverseTrigTests::testAcosCase, FdlibmTranslit::acos),
+        ATAN(InverseTrigTests::testAtanCase, FdlibmTranslit::atan);
+
+        private DoubleDoubleToInt testCase;
+        private DoubleUnaryOperator transliteration;
+
+        InverseTrigTest(DoubleDoubleToInt testCase, DoubleUnaryOperator transliteration) {
+            this.testCase = testCase;
+            this.transliteration = transliteration;
+        }
+
+        public DoubleDoubleToInt testCase() {return testCase;}
+        public DoubleUnaryOperator transliteration() {return transliteration;}
+    }
+
     // Initialize shared random number generator
     private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test against shared points of interest.
+     */
+    private static int testAgainstTranslitCommon() {
+        int failures = 0;
+        double[] pointsOfInterest = {
+            Double.MIN_NORMAL,
+            1.0,
+            Tests.createRandomDouble(random),
+        };
+
+        for (var testMethods : InverseTrigTest.values()) {
+            for (double testPoint : pointsOfInterest) {
+                failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, testMethods);
+            }
+        }
+
+        return failures;
+    }
 
     /**
      * Test StrictMath.asin against transliteration port of asin.
      */
     private static int testAgainstTranslitAsin() {
         int failures = 0;
-        double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeAsin(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             0.5,
+            -0.5,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeAsin(x, -Math.ulp(x), 1000);
+             0.975,
+            -0.975,
+        };
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointAsin(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, InverseTrigTest.ASIN);
+        }
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.5,
-              -0.5,
-
-               0.975,
-              -0.975,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointAsin(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeAsin(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
     /**
@@ -116,43 +137,21 @@ public class InverseTrigTests {
      */
     private static int testAgainstTranslitAcos() {
         int failures = 0;
-        double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeAcos(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+             0.5,
+            -0.5,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeAcos(x, -Math.ulp(x), 1000);
+             0x1.0p-57,
+            -0x1.0p-57,
+        };
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointAcos(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000, InverseTrigTest.ACOS);
+        }
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.5,
-              -0.5,
-
-               0x1.0p-57,
-              -0x1.0p-57,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointAcos(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeAcos(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
     /**
@@ -160,114 +159,64 @@ public class InverseTrigTests {
      */
     private static int testAgainstTranslitAtan() {
         int failures = 0;
-        double x;
 
-        // Test just above subnormal threshold...
-        x = Double.MIN_NORMAL;
-        failures += testRangeAtan(x, Math.ulp(x), 1000);
+        // Probe near decision points in the FDLIBM algorithm.
+        double[] decisionPoints = {
+            0.0,
 
-         // ... and just below subnormal threshold ...
-          x = Math.nextDown(Double.MIN_NORMAL);
-          failures += testRangeAtan(x, -Math.ulp(x), 1000);
+            7.0/16.0,
+            11.0/16.0,
+            19.0/16.0,
+            39.0/16.0,
 
-         // ... and near 1.0 ...
-          failures += testRangeMidpointAtan(1.0, Math.ulp(x), 2000);
-          // (Note: probes every-other value less than 1.0 due to
-          // change in the size of an ulp at 1.0.
+            0x1.0p66,
+            0x1.0p-29,
+        };
 
-          // Probe near decision points in the FDLIBM algorithm.
-          double[] decisionPoints = {
-               0.0,
+        for (double testPoint : decisionPoints) {
+            failures += testRangeMidpoint(testPoint, Math.ulp(testPoint), 1000,  InverseTrigTest.ATAN);
+        }
 
-               7.0/16.0,
-               11.0/16.0,
-               19.0/16.0,
-               39.0/16.0,
-
-               0x1.0p66,
-               0x1.0p-29,
-          };
-
-          for (double testPoint : decisionPoints) {
-              failures += testRangeMidpointAtan(testPoint, Math.ulp(testPoint), 1000);
-          }
-
-          x = Tests.createRandomDouble(random);
-
-          // Make the increment twice the ulp value in case the random
-          // value is near an exponent threshold. Don't worry about test
-          // elements overflowing to infinity if the starting value is
-          // near Double.MAX_VALUE.
-          failures += testRangeAtan(x, 2.0 * Math.ulp(x), 1000);
-
-         return failures;
+        return failures;
     }
 
-    private static int testRangeAsin(double start, double increment, int count) {
+    private interface DoubleDoubleToInt {
+        int apply(double x, double y);
+    }
+
+    private static int testRange(double start, double increment, int count,
+                             InverseTrigTest testMethods) {
         int failures = 0;
         double x = start;
         for (int i = 0; i < count; i++, x += increment) {
-            failures += testAsinCase(x, FdlibmTranslit.asin(x));
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
         }
         return failures;
     }
 
-    private static int testRangeAcos(double start, double increment, int count) {
-        int failures = 0;
-        double x = start;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testAcosCase(x, FdlibmTranslit.acos(x));
-        }
-        return failures;
-    }
-
-    private static int testRangeAtan(double start, double increment, int count) {
-        int failures = 0;
-        double x = start;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testAtanCase(x, FdlibmTranslit.atan(x));
-        }
-        return failures;
-    }
-
-    private static int testRangeMidpointAsin(double midpoint, double increment, int count) {
+    private static int testRangeMidpoint(double midpoint, double increment, int count,
+                                         InverseTrigTest testMethods) {
         int failures = 0;
         double x = midpoint - increment*(count / 2) ;
         for (int i = 0; i < count; i++, x += increment) {
-            failures += testAsinCase(x, FdlibmTranslit.asin(x));
+            failures +=
+                testMethods.testCase().apply(x, testMethods.transliteration().applyAsDouble(x));
         }
         return failures;
     }
 
-    private static int testRangeMidpointAcos(double midpoint, double increment, int count) {
-        int failures = 0;
-        double x = midpoint - increment*(count / 2) ;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testAcosCase(x, FdlibmTranslit.acos(x));
-        }
-        return failures;
-    }
-
-    private static int testRangeMidpointAtan(double midpoint, double increment, int count) {
-        int failures = 0;
-        double x = midpoint - increment*(count / 2) ;
-        for (int i = 0; i < count; i++, x += increment) {
-            failures += testAtanCase(x, FdlibmTranslit.atan(x));
-        }
-        return failures;
-    }
-
-    static int testAsinCase(double input, double expected) {
+    private static int testAsinCase(double input, double expected) {
         return Tests.test("StrictMath.asin(double)", input,
                           StrictMath::asin, expected);
     }
 
-    static int testAcosCase(double input, double expected) {
+    private static int testAcosCase(double input, double expected) {
         return Tests.test("StrictMath.acos(double)", input,
                           StrictMath::acos, expected);
     }
 
-    static int testAtanCase(double input, double expected) {
+    private static int testAtanCase(double input, double expected) {
         return Tests.test("StrictMath.atan(double)", input,
                           StrictMath::atan, expected);
     }
