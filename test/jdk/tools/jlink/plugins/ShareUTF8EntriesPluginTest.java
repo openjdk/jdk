@@ -29,16 +29,14 @@
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.internal.plugins
  *          jdk.jlink/jdk.tools.jlink.plugin
- * @run main CompactConstantPoolsPluginTest
+ * @run main ShareUTF8EntriesPluginTest
  */
 
 import jdk.internal.jimage.decompressor.*;
 import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.StringTable;
-import jdk.tools.jlink.internal.plugins.CompactConstantPoolsPlugin;
+import jdk.tools.jlink.internal.plugins.ShareUTF8EntriesPlugin;
 import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-import jdk.tools.jlink.internal.plugins.StringSharingPlugin;
-import jdk.tools.jlink.internal.plugins.ZipPlugin;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -52,11 +50,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class CompactConstantPoolsPluginTest {
+public class ShareUTF8EntriesPluginTest {
     private static int strID = 1;
 
     public static void main(String[] args) throws Exception {
-        new CompactConstantPoolsPluginTest().test();
+        new ShareUTF8EntriesPluginTest().test();
     }
 
     public void test() throws Exception {
@@ -69,11 +67,11 @@ public class CompactConstantPoolsPluginTest {
         }
         Path javabase = fs.getPath("/modules/java.base");
         ResourcePool classes = gatherClasses(javabase);
-        CompactConstantPoolsPlugin compressPlugin;
+        ShareUTF8EntriesPlugin compressPlugin;
 
-        // Compact Constnat Pools
+        // Compact Constant Pools
         Properties options1 = new Properties();
-        compressPlugin = new CompactConstantPoolsPlugin();
+        compressPlugin = new ShareUTF8EntriesPlugin();
         checkCompress(classes, compressPlugin,
                 options1,
                 new ResourceDecompressorFactory[]{
@@ -83,7 +81,7 @@ public class CompactConstantPoolsPluginTest {
         // Compact Constant Pools + filter
         options1.setProperty(DefaultCompressPlugin.FILTER,
                 "**Exception.class");
-        compressPlugin = new CompactConstantPoolsPlugin();
+        compressPlugin = new ShareUTF8EntriesPlugin();
         checkCompress(classes, compressPlugin,
                 options1,
                 new ResourceDecompressorFactory[]{

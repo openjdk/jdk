@@ -25,13 +25,9 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
-import java.util.function.Function;
 
-import jdk.tools.jlink.internal.ResourcePoolManager.ResourcePoolImpl;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.ResourcePoolManager;
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 
@@ -39,13 +35,13 @@ import jdk.tools.jlink.internal.StringTable;
  *
  * ZIP and String Sharing compression plugin
  */
-public final class CompactConstantPoolsPlugin extends AbstractPlugin implements ResourcePrevisitor {
+public final class ShareUTF8EntriesPlugin extends AbstractPlugin implements ResourcePrevisitor {
 
     private static final String FILTER = "filter";
     private StringSharingPlugin ss;
 
-    public CompactConstantPoolsPlugin() {
-        super("compact-constant-pools");
+    public ShareUTF8EntriesPlugin() {
+        super("share-utf8-entries");
     }
 
     @Override
